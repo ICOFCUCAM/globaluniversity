@@ -42,7 +42,7 @@ export default function TopBar({ sidebarCollapsed, onMenuToggle }: TopBarProps) 
             placeholder="Search students, courses, results..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 pr-4 py-2 w-80 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all"
+            className="pl-10 pr-4 py-2 w-80 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30 focus:border-blue-400 transition-all"
           />
         </div>
       </div>

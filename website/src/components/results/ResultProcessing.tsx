@@ -152,7 +152,7 @@ export default function ResultProcessing() {
         <select
           value={selectedCourse}
           onChange={(e) => setSelectedCourse(e.target.value)}
-          className="w-full max-w-md px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+          className="w-full max-w-md px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30"
         >
           <option value="">-- Select a course --</option>
           {courses.map((c) => (
@@ -229,7 +229,7 @@ export default function ResultProcessing() {
                           max={40}
                           value={entry.caScore || ''}
                           onChange={(e) => updateScore(i, 'caScore', Math.min(40, Math.max(0, Number(e.target.value))))}
-                          className="w-16 px-2 py-1.5 border border-gray-200 rounded-lg text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                          className="w-16 px-2 py-1.5 border border-gray-200 rounded-lg text-sm text-center focus:outline-none focus:ring-2 focus:ring-[#422e59]/30"
                         />
                       </td>
                       <td className="px-5 py-2.5">
@@ -239,7 +239,7 @@ export default function ResultProcessing() {
                           max={60}
                           value={entry.examScore || ''}
                           onChange={(e) => updateScore(i, 'examScore', Math.min(60, Math.max(0, Number(e.target.value))))}
-                          className="w-16 px-2 py-1.5 border border-gray-200 rounded-lg text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                          className="w-16 px-2 py-1.5 border border-gray-200 rounded-lg text-sm text-center focus:outline-none focus:ring-2 focus:ring-[#422e59]/30"
                         />
                       </td>
                       <td className="px-5 py-2.5 text-center">

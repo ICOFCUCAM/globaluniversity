@@ -79,7 +79,7 @@ export default function FeeModule() {
   }
 
   const input =
-    'w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30';
+    'w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30';
   const total = receipts.reduce((sum, r) => {
     const m = r.file_name.match(/· ([\d,]+) FCFA/);
     return sum + (m ? Number(m[1].replace(/,/g, '')) : 0);
@@ -94,7 +94,7 @@ export default function FeeModule() {
         </div>
         <button
           onClick={() => setShowNew(true)}
-          className="flex items-center gap-2 rounded-xl bg-[#422e59] px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-blue-500/20 transition-colors hover:bg-[#322244]"
+          className="flex items-center gap-2 rounded-xl bg-[#422e59] px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-purple-900/20 transition-colors hover:bg-[#322244]"
         >
           <Plus size={16} /> Record Payment
         </button>

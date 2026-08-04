@@ -44,7 +44,7 @@ export default function AuditLogs() {
     students: 'bg-emerald-50 text-emerald-600',
     courses: 'bg-purple-50 text-purple-600',
     transcripts: 'bg-amber-50 text-amber-600',
-    certificates: 'bg-indigo-50 text-indigo-600',
+    certificates: 'bg-[#f6f4fa] text-[#422e59]',
     auth: 'bg-gray-100 text-gray-600',
   };
 
@@ -63,7 +63,7 @@ export default function AuditLogs() {
       <div className="relative max-w-md">
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
         <input type="text" placeholder="Search logs..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30" />
+          className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
       </div>
 
       <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">

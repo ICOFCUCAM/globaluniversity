@@ -46,7 +46,7 @@ export default function CertificateGenerator() {
             <Eye size={16} /> {showPreview ? 'Hide' : 'Show'} Preview
           </button>
           <button onClick={handlePrint}
-            className="flex items-center gap-2 px-4 py-2.5 bg-[#422e59] text-white rounded-xl text-sm font-medium hover:bg-[#322244] transition-colors shadow-lg shadow-blue-500/20">
+            className="flex items-center gap-2 px-4 py-2.5 bg-[#422e59] text-white rounded-xl text-sm font-medium hover:bg-[#322244] transition-colors shadow-lg shadow-purple-900/20">
             <Download size={16} /> Download PDF
           </button>
         </div>

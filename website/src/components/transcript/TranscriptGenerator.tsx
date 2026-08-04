@@ -51,7 +51,7 @@ export default function TranscriptGenerator() {
             <Eye size={16} /> {showPreview ? 'Hide' : 'Show'} Preview
           </button>
           <button onClick={handlePrint}
-            className="flex items-center gap-2 px-4 py-2.5 bg-[#422e59] text-white rounded-xl text-sm font-medium hover:bg-[#322244] transition-colors shadow-lg shadow-blue-500/20">
+            className="flex items-center gap-2 px-4 py-2.5 bg-[#422e59] text-white rounded-xl text-sm font-medium hover:bg-[#322244] transition-colors shadow-lg shadow-purple-900/20">
             <Download size={16} /> Download PDF
           </button>
         </div>
@@ -60,7 +60,7 @@ export default function TranscriptGenerator() {
       {/* Student Info Card */}
       <div className="bg-white rounded-xl border border-gray-100 p-5">
         <div className="flex items-center gap-4">
-          <img src={data.student.photo_url || IMAGES.students[0]} alt="" className="w-16 h-16 rounded-full object-cover border-2 border-blue-100" />
+          <img src={data.student.photo_url || IMAGES.students[0]} alt="" className="w-16 h-16 rounded-full object-cover border-2 border-[#ece7f4]" />
           <div className="flex-1">
             <h3 className="font-bold text-gray-800">{data.student.last_name} {data.student.first_name} {data.student.middle_name}</h3>
             <p className="text-sm text-gray-500 font-mono">{data.student.matric_no}</p>

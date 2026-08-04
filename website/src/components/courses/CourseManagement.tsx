@@ -67,7 +67,7 @@ export default function CourseManagement() {
           <p className="text-sm text-gray-500">{courses.length} courses across 4 years</p>
         </div>
         <button onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-[#422e59] text-white rounded-xl text-sm font-medium hover:bg-[#322244] transition-colors shadow-lg shadow-blue-500/20">
+          className="flex items-center gap-2 px-4 py-2.5 bg-[#422e59] text-white rounded-xl text-sm font-medium hover:bg-[#322244] transition-colors shadow-lg shadow-purple-900/20">
           <Plus size={16} /> Add Course
         </button>
       </div>
@@ -78,7 +78,7 @@ export default function CourseManagement() {
           <div className="relative flex-1 min-w-[250px]">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input type="text" placeholder="Search courses..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30" />
+              className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
           </div>
           <select value={yearFilter} onChange={(e) => setYearFilter(Number(e.target.value))}
             className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
@@ -142,18 +142,18 @@ export default function CourseManagement() {
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Course Code *</label>
                   <input required value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })}
-                    placeholder="e.g. CSC 501" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30" />
+                    placeholder="e.g. CSC 501" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Credit Units *</label>
                   <input required type="number" min={1} max={6} value={form.credit_unit} onChange={(e) => setForm({ ...form, credit_unit: parseInt(e.target.value) })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30" />
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
                 </div>
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Course Title *</label>
                 <input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30" />
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div>
@@ -181,7 +181,7 @@ export default function CourseManagement() {
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
                 <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30" />
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
               </div>
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => setShowAddModal(false)}
