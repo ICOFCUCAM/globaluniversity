@@ -138,7 +138,7 @@ export default function ExamModule() {
                 <ChevronLeft size={14} /> Previous
               </button>
               <button onClick={() => setCurrentQuestion(Math.min(sampleQuestions.length - 1, currentQuestion + 1))} disabled={currentQuestion === sampleQuestions.length - 1}
-                className="flex items-center gap-1 px-4 py-2 bg-[#1a237e] text-white rounded-lg text-sm disabled:opacity-40 hover:bg-[#283593] transition-colors">
+                className="flex items-center gap-1 px-4 py-2 bg-[#422e59] text-white rounded-lg text-sm disabled:opacity-40 hover:bg-[#322244] transition-colors">
                 Next <ChevronRight size={14} />
               </button>
             </div>
@@ -151,7 +151,7 @@ export default function ExamModule() {
               {sampleQuestions.map((_, i) => (
                 <button key={i} onClick={() => setCurrentQuestion(i)}
                   className={`w-full aspect-square rounded-lg text-xs font-bold flex items-center justify-center transition-all ${
-                    currentQuestion === i ? 'bg-[#1a237e] text-white ring-2 ring-blue-300' :
+                    currentQuestion === i ? 'bg-[#422e59] text-white ring-2 ring-blue-300' :
                     answers[i] !== undefined ? 'bg-emerald-100 text-emerald-700' :
                     flagged.has(i) ? 'bg-amber-100 text-amber-700' :
                     'bg-gray-100 text-gray-500 hover:bg-gray-200'
@@ -185,7 +185,7 @@ export default function ExamModule() {
           <p className="text-gray-500 mt-1">{activeExam?.courseCode}: {activeExam?.title}</p>
           <div className="flex justify-center gap-8 mt-6">
             <div>
-              <p className="text-3xl font-bold text-[#1a237e]">{score}/{sampleQuestions.length}</p>
+              <p className="text-3xl font-bold text-[#422e59]">{score}/{sampleQuestions.length}</p>
               <p className="text-xs text-gray-400">Score</p>
             </div>
             <div>
@@ -194,7 +194,7 @@ export default function ExamModule() {
             </div>
           </div>
           <button onClick={() => { setActiveExam(null); setShowResults(false); }}
-            className="mt-6 px-6 py-2.5 bg-[#1a237e] text-white rounded-xl text-sm font-medium hover:bg-[#283593] transition-colors">
+            className="mt-6 px-6 py-2.5 bg-[#422e59] text-white rounded-xl text-sm font-medium hover:bg-[#322244] transition-colors">
             Back to Exams
           </button>
         </div>
@@ -232,7 +232,7 @@ export default function ExamModule() {
               className={`w-full mt-4 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                 exam.status === 'completed' ? 'bg-gray-100 text-gray-400 cursor-not-allowed' :
                 exam.status === 'ongoing' ? 'bg-red-500 text-white hover:bg-red-600' :
-                'bg-[#1a237e] text-white hover:bg-[#283593]'
+                'bg-[#422e59] text-white hover:bg-[#322244]'
               }`}>
               <Play size={14} /> {exam.status === 'completed' ? 'Completed' : exam.status === 'ongoing' ? 'Join Now' : 'Start Exam'}
             </button>

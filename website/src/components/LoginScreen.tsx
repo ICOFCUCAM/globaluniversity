@@ -101,7 +101,7 @@ export default function LoginScreen() {
       <div className="relative overflow-hidden">
         <div className="absolute inset-0">
           <img src={IMAGES.hero} alt="Campus" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#0f1a3c]/95 via-[#1a237e]/90 to-[#1a237e]/80" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0f1a3c]/95 via-[#422e59]/90 to-[#422e59]/80" />
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 py-8">
@@ -164,7 +164,7 @@ export default function LoginScreen() {
                 <button
                   onClick={() => { setMode('login'); setError(''); setSuccess(''); }}
                   className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${
-                    mode === 'login' ? 'bg-[#1a237e] text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                    mode === 'login' ? 'bg-[#422e59] text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
                   Sign In
@@ -172,7 +172,7 @@ export default function LoginScreen() {
                 <button
                   onClick={() => { setMode('signup'); setError(''); setSuccess(''); }}
                   className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${
-                    mode === 'signup' ? 'bg-[#1a237e] text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                    mode === 'signup' ? 'bg-[#422e59] text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
                   Sign Up
@@ -228,7 +228,7 @@ export default function LoginScreen() {
                   </div>
                   <div className="flex items-center justify-between text-xs">
                     <label className="flex items-center gap-2 text-gray-500 cursor-pointer">
-                      <input type="checkbox" className="rounded border-gray-300 text-[#1a237e] focus:ring-blue-500" />
+                      <input type="checkbox" className="rounded border-gray-300 text-[#422e59] focus:ring-blue-500" />
                       Remember me
                     </label>
                     <a href="#" className="text-blue-600 hover:underline">Forgot password?</a>
@@ -236,7 +236,7 @@ export default function LoginScreen() {
                   <button
                     type="submit"
                     disabled={submitting || isLoading}
-                    className="w-full py-2.5 bg-[#1a237e] text-white rounded-xl text-sm font-semibold hover:bg-[#283593] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="w-full py-2.5 bg-[#422e59] text-white rounded-xl text-sm font-semibold hover:bg-[#322244] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                   >
                     {submitting ? <><Loader2 size={16} className="animate-spin" /> Signing in...</> : <>Sign In <ArrowRight size={14} /></>}
                   </button>
@@ -347,7 +347,7 @@ export default function LoginScreen() {
                   <button
                     type="submit"
                     disabled={submitting || isLoading}
-                    className="w-full py-2.5 bg-[#1a237e] text-white rounded-xl text-sm font-semibold hover:bg-[#283593] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="w-full py-2.5 bg-[#422e59] text-white rounded-xl text-sm font-semibold hover:bg-[#322244] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                   >
                     {submitting ? <><Loader2 size={16} className="animate-spin" /> Creating account...</> : <>Create Account <ArrowRight size={14} /></>}
                   </button>
@@ -391,7 +391,7 @@ export default function LoginScreen() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {features.map((feature, i) => (
             <div key={i} className="bg-white rounded-xl p-5 border border-gray-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#1a237e] to-[#3949ab] text-white flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#422e59] to-[#3949ab] text-white flex items-center justify-center">
                 {feature.icon}
               </div>
               <h4 className="text-sm font-bold text-gray-800 mt-3">{feature.title}</h4>

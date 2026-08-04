@@ -88,7 +88,7 @@ export default function StudentManagement() {
         </div>
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-[#1a237e] text-white rounded-xl text-sm font-medium hover:bg-[#283593] transition-colors shadow-lg shadow-blue-500/20"
+          className="flex items-center gap-2 px-4 py-2.5 bg-[#422e59] text-white rounded-xl text-sm font-medium hover:bg-[#322244] transition-colors shadow-lg shadow-blue-500/20"
         >
           <UserPlus size={16} /> Register Student
         </button>
@@ -270,7 +270,7 @@ export default function StudentManagement() {
                   Cancel
                 </button>
                 <button type="submit"
-                  className="flex-1 px-4 py-2.5 bg-[#1a237e] text-white rounded-xl text-sm font-medium hover:bg-[#283593] transition-colors">
+                  className="flex-1 px-4 py-2.5 bg-[#422e59] text-white rounded-xl text-sm font-medium hover:bg-[#322244] transition-colors">
                   Register Student
                 </button>
               </div>

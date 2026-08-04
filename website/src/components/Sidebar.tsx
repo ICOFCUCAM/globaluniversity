@@ -46,7 +46,7 @@ export default function Sidebar({ currentView, onViewChange, collapsed, onToggle
 
   return (
     <aside
-      className={`fixed left-0 top-0 h-full bg-gradient-to-b from-[#0f1a3c] to-[#1a237e] text-white z-40 transition-all duration-300 flex flex-col ${
+      className={`fixed left-0 top-0 h-full bg-gradient-to-b from-[#0f1a3c] to-[#422e59] text-white z-40 transition-all duration-300 flex flex-col ${
         collapsed ? 'w-[72px]' : 'w-64'
       }`}
     >

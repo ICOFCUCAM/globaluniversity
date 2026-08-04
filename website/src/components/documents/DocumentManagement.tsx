@@ -58,7 +58,7 @@ export default function DocumentManagement() {
           <p className="text-sm text-gray-500">Upload, manage, and verify student documents</p>
         </div>
         <button onClick={() => setShowUpload(!showUpload)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-[#1a237e] text-white rounded-xl text-sm font-medium hover:bg-[#283593] transition-colors shadow-lg shadow-blue-500/20">
+          className="flex items-center gap-2 px-4 py-2.5 bg-[#422e59] text-white rounded-xl text-sm font-medium hover:bg-[#322244] transition-colors shadow-lg shadow-blue-500/20">
           <Upload size={16} /> Upload Document
         </button>
       </div>
@@ -78,7 +78,7 @@ export default function DocumentManagement() {
           <p className="text-xs text-gray-400 mt-1">PDF, JPG, PNG up to 10MB each</p>
           <input type="file" className="hidden" id="file-upload" multiple />
           <label htmlFor="file-upload"
-            className="inline-block mt-3 px-4 py-2 bg-[#1a237e] text-white rounded-lg text-sm font-medium cursor-pointer hover:bg-[#283593] transition-colors">
+            className="inline-block mt-3 px-4 py-2 bg-[#422e59] text-white rounded-lg text-sm font-medium cursor-pointer hover:bg-[#322244] transition-colors">
             Browse Files
           </label>
         </div>

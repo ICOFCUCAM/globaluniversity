@@ -65,7 +65,7 @@ export default function AnalyticsDashboard() {
             <option>2024/2025</option>
             <option>2023/2024</option>
           </select>
-          <button className="flex items-center gap-1.5 px-4 py-2 bg-[#1a237e] text-white rounded-lg text-sm font-medium hover:bg-[#283593] transition-colors">
+          <button className="flex items-center gap-1.5 px-4 py-2 bg-[#422e59] text-white rounded-lg text-sm font-medium hover:bg-[#322244] transition-colors">
             <Download size={14} /> Export Report
           </button>
         </div>

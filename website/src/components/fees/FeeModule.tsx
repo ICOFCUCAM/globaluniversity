@@ -94,7 +94,7 @@ export default function FeeModule() {
         </div>
         <button
           onClick={() => setShowNew(true)}
-          className="flex items-center gap-2 rounded-xl bg-[#1a237e] px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-blue-500/20 transition-colors hover:bg-[#283593]"
+          className="flex items-center gap-2 rounded-xl bg-[#422e59] px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-blue-500/20 transition-colors hover:bg-[#322244]"
         >
           <Plus size={16} /> Record Payment
         </button>
@@ -151,7 +151,7 @@ export default function FeeModule() {
                 <option key={m}>{m}</option>
               ))}
             </select>
-            <button disabled={busy} className="w-full rounded-xl bg-[#1a237e] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#283593] disabled:opacity-60">
+            <button disabled={busy} className="w-full rounded-xl bg-[#422e59] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#322244] disabled:opacity-60">
               {busy ? 'Saving…' : 'Save & Issue Receipt'}
             </button>
           </form>

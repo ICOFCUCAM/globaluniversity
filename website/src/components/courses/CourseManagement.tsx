@@ -67,7 +67,7 @@ export default function CourseManagement() {
           <p className="text-sm text-gray-500">{courses.length} courses across 4 years</p>
         </div>
         <button onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-[#1a237e] text-white rounded-xl text-sm font-medium hover:bg-[#283593] transition-colors shadow-lg shadow-blue-500/20">
+          className="flex items-center gap-2 px-4 py-2.5 bg-[#422e59] text-white rounded-xl text-sm font-medium hover:bg-[#322244] transition-colors shadow-lg shadow-blue-500/20">
           <Plus size={16} /> Add Course
         </button>
       </div>
@@ -187,7 +187,7 @@ export default function CourseManagement() {
                 <button type="button" onClick={() => setShowAddModal(false)}
                   className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50">Cancel</button>
                 <button type="submit"
-                  className="flex-1 px-4 py-2.5 bg-[#1a237e] text-white rounded-xl text-sm font-medium hover:bg-[#283593]">Add Course</button>
+                  className="flex-1 px-4 py-2.5 bg-[#422e59] text-white rounded-xl text-sm font-medium hover:bg-[#322244]">Add Course</button>
               </div>
             </form>
           </div>
