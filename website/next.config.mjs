@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
+    // Serve modern formats and cache optimized variants aggressively.
+    formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 60 * 60 * 24 * 30,
     // The recovered WordPress images are served from /public; remote patterns
     // allow pulling media straight from the live site during content migration.
     remotePatterns: [

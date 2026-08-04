@@ -50,7 +50,21 @@ accreditation + ICOF global network.
         descriptions audit (new pages all have metadata)
 - [x] 19. Perf: image `sizes` on grids (key grids), fewer layout shifts (aspect ratios), build check
 - [x] 20. Push batch 2 (commits 10-19) — pushed to branch + main
-- [ ] 21+. Portal design polish (Sidebar/TopBar brand alignment), further
-        content depth per section, mobile nav refinement.
+- [x] 21. Premium CTA band + cinematic PageBanner (batch 3)
+- [x] 22. Contact page cards; portal indigo→purple rebrand (batch 3)
+- [x] 23. Program detail redesign + Course JSON-LD + related strip (batch 4)
+- [x] 24. Events calendar-leaf badges + Event JSON-LD; Breadcrumb JSON-LD (batch 4)
+- [x] 25. Catalog quick filters (batch 5)
+- [x] 26. Portal blue/indigo sweep; mobile slide-over drawer (batch 6)
+- [x] 27. Global positioning: footprint section, header tagline, multi-currency
+        fees, Alumni page (batch 7)
+- [x] 28. Login hero IGUC identity + real figures; Governance page (batch 8)
+- [x] 29. Perf: AVIF/WebP formats, 30-day image cache (batch 9)
+
+## Remaining (next runs)
+- [ ] French-language track (next-intl, /fr routes) — largest remaining item
+- [ ] Portal dashboard micro-polish (charts palette, empty states)
+- [ ] News/publications archive page fed from a CMS-ready list
+- [ ] Lighthouse audit run + fixes on deployed URL
 
 Keep commits small; build must pass before each commit.
