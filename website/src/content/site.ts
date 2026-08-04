@@ -64,18 +64,63 @@ export const site = {
     { label: 'Administration', href: 'https://iguc.net/administration/' },
     { label: 'Transcripts', href: 'https://iguc.net/transcript/' },
   ],
+  // Navigation mirrors the WordPress menu structure, including sub-menus.
   nav: [
     { label: 'Home', href: '/' },
-    { label: 'About', href: '/about' },
-    { label: 'Programs', href: '/programs' },
-    { label: 'Admissions', href: '/admissions' },
-    { label: 'Faculty', href: '/faculty' },
+    {
+      label: 'About',
+      href: '/about',
+      children: [
+        { label: 'About Us', href: '/about' },
+        { label: 'Administration', href: '/faculty' },
+        { label: 'Policies', href: '/policies' },
+        { label: 'Privacy Policy', href: '/privacy-policy' },
+      ],
+    },
+    {
+      label: 'Admission',
+      href: '/admissions',
+      children: [
+        { label: 'Admission Requirements', href: '/admissions' },
+        { label: 'Apply Now', href: '/apply' },
+        { label: 'Cost & Tuition', href: '/tuition' },
+      ],
+    },
+    {
+      label: 'Degrees & Programs',
+      href: '/programs',
+      children: [
+        { label: 'All Programs', href: '/programs' },
+        { label: "Bachelor's Degrees", href: '/degrees/bachelors-degrees' },
+        { label: "Master's Degrees", href: '/degrees/masters-degrees' },
+        { label: 'Doctoral', href: '/degrees/doctoral' },
+        { label: 'Higher National Diploma (HND)', href: '/degrees/higher-national-diploma-hnd' },
+        { label: 'Diploma (Dip)', href: '/degrees/diploma-dip' },
+        { label: 'Certificates', href: '/degrees/certificates' },
+        { label: 'PPDI-RC', href: '/ppdirc' },
+      ],
+    },
+    { label: 'Faculties & School', href: '/faculty' },
     { label: 'Campus Life', href: '/campus-life' },
     { label: 'Events', href: '/events' },
-    { label: 'Tuition', href: '/tuition' },
+    {
+      label: 'Support Us',
+      href: '/support',
+      children: [
+        { label: 'Support IGUC', href: '/support' },
+        { label: 'Donate', href: '/donate' },
+        { label: 'Charity', href: '/charity' },
+      ],
+    },
     { label: 'Contact', href: '/contact' },
   ],
 };
+
+export interface NavItem {
+  label: string;
+  href: string;
+  children?: Array<{ label: string; href: string }>;
+}
 
 export const hero = {
   title: 'The Community University of Africa',
@@ -114,7 +159,7 @@ export const heroSlides: HeroSlide[] = [
   {
     title: 'A University in Pursuit of a Brighter Future',
     text: 'Anything you can dream, you can do — and we have the alumni to prove it. Fill out our free online application today.',
-    cta: { label: 'Apply Now', href: '/admissions' },
+    cta: { label: 'Apply Now', href: '/apply' },
     image: '/images/graduation.jpg',
   },
 ];
@@ -133,6 +178,79 @@ export const stats = [
   { value: '213', label: 'Courses' },
   { value: '1,742', label: 'Happy Students' },
   { value: '15', label: 'Years Experience' },
+];
+
+// "Be in Demand with Our Professional Training" section from the live homepage.
+export const homeFeatures = {
+  heading: 'Be in Demand with Our Professional Training',
+  intro:
+    'We offer the best professional trainings with well designed courses to prepare you for the job market. We train top level management and entrepreneurs.',
+  items: [
+    {
+      title: 'Build Relevant Skills',
+      body: 'A skill set is a combination of abilities, qualities and experiences you can apply to perform tasks well. These can include soft skills such as interpersonal skills, organization and leadership as well as technical skills such as research, computer programming, accounting, writing and more. At ICOF, we don’t just teach in the classrooms, we help you to build relevant skills.',
+    },
+    {
+      title: 'Get The Right Path From The Best Learning Platform',
+      body: 'ICOF Global University provides a good learning platform that is engaging and focused on the learner, ensuring that a course becomes something more than just knowledge absorption. It turns the whole idea of learning into a pleasant, immersive experience.',
+    },
+    {
+      title: 'Learn From The Professionals',
+      body: 'ICOF Global University prides itself with professional staff who understand the field they lecture in and can give the best practical examples that exist in our day-to-day life.',
+    },
+  ],
+};
+
+// "School & Faculties" section from the live homepage.
+export const homeFaculties = {
+  heading: 'School & Faculties',
+  intro:
+    'Our courses are well designed and structured to fit you into the competitive job market. We pride our students to stand out unique in the job search market with our well designed and structured professional courses in all our faculties.',
+  items: [
+    { name: 'Faculty of Theology', image: '/images/wp/fac-theology.jpg' },
+    { name: 'Faculty of Education', image: '/images/wp/fac-education.png' },
+    { name: 'Faculty of Business & Management Science', image: '/images/wp/fac-business.jpg' },
+    { name: 'Faculty of Engineering & Technology', image: '/images/wp/fac-engineering.jpg' },
+  ],
+};
+
+// "Accreditation and Partners" logos from the live homepage.
+export const partners = [
+  { name: 'ABE', image: '/images/wp/logo-abe.png' },
+  { name: 'ICOF-B', image: '/images/wp/logo-b.png' },
+  { name: 'CSU', image: '/images/wp/logo-csu.png' },
+  { name: 'Global Revival Network', image: '/images/wp/logo-grn.png' },
+  { name: 'OTI', image: '/images/wp/logo-oti.png' },
+  { name: 'St Chama Foundation', image: '/images/wp/logo-chama.jpg' },
+];
+
+// FAQ from the live homepage.
+export const homeFaqs = [
+  {
+    question: 'Is ICOF Global University an accredited university?',
+    answer:
+      'ICOF Global University is accredited by the Ministry of Higher Education (www.minesup.gov.cm). Since 2007, ICOF Global University has been continually accredited by the Ministry of Higher Education and its predecessor, and continues to update its Reaffirmation of Accreditation as years go by.',
+  },
+  {
+    question: 'What degree programs are offered by ICOF Global University?',
+    answer:
+      'We offer undergraduate, master’s and doctoral degree programs in many high-demand fields, including business, education, and technology. You can complete your degree online from anywhere or on-campus, depending upon your location. The University also offers certificate programs, as well as individual, test-preparation and non-credit professional development courses.',
+  },
+  {
+    question: 'How long will it take for me to complete a program?',
+    answer:
+      'Completion time depends on the program you choose and the number of transfer credits applied to the program. Speak with an Enrollment Representative to get detailed information.',
+  },
+  {
+    question: 'How do I get started?',
+    answer:
+      'Review our admissions requirements to learn about our admissions process. Ready to enroll? Fill out the free online application, or call and speak with a representative to get started.',
+  },
+  {
+    question: 'How do I attend a class online?',
+    answer:
+      'Attending online class is easy — all you need is a reliable internet connection. You simply log into your classroom to complete assignments, access course materials and resources and interact with faculty and classmates. Class participation is graded based upon your contributions to online discussions, quizzes and exams. This is a great solution for students who might have a difficult time commuting and for those who learn better independently.',
+  },
 ];
 
 export const about = {
@@ -168,13 +286,13 @@ export const leadership: FacultyMember[] = [
   {
     name: 'Bishop Bernie L Wade, PhD',
     role: 'Chancellor',
-    image: '/images/chancellor.jpg',
+    image: '/images/wp/chancellor.jpg',
     bio: 'Wade holds doctorates in theology, divinity, Christian education, non-profit management and pastoral counseling. Presiding Bishop of the International Circle of Faith (ICOF). Email: chancellor@iguc.net',
   },
   {
     name: 'Prof Chamayah Meyembi',
     role: 'Vice Chancellor',
-    image: '/images/vice-chancellor.png',
+    image: '/images/wp/vc-meyembi.png',
     bio: 'Holds a PhD in Theology from International Circle of Faith Colleges, Seminaries and Universities. ICOF Africa Bishop to Youth; elevated to Continental leadership with ICOF in 2010. Email: vc@iguc.net',
   },
 ];
@@ -183,7 +301,7 @@ export const faculty: FacultyMember[] = [
   {
     name: 'Prof Aaron Ndenka',
     role: 'Academic Director General',
-    image: '/images/faculty-ndenka.jpg',
+    image: '/images/wp/ndenka.jpg',
     bio: 'Holds a PhD in Finance from the University of Buea and a PhD in Systematic Theology from ICOF College and University. Former lecturer at the University of Buea. Email: gad@iguc.net',
   },
   {
@@ -195,7 +313,7 @@ export const faculty: FacultyMember[] = [
   {
     name: 'Dr Samuel Kinge',
     role: 'Director of Exams',
-    image: '/images/faculty-samuel.png',
+    image: '/images/wp/samuel-kinge.png',
     bio: 'Holder of Doctor of Divinity from ICOF College Seminary and University USA. Email: dr.skinge@iguc.net',
   },
   {
@@ -205,6 +323,160 @@ export const faculty: FacultyMember[] = [
     bio: 'Director of the School of Business and Management Sciences. Email: hoffman@iguc.net',
   },
 ];
+
+// Full administration roster as published on the live About page.
+export const administration: FacultyMember[] = [
+  {
+    name: 'Bishop Bernie L Wade, PhD',
+    role: 'Chancellor',
+    image: '/images/wp/chancellor.jpg',
+    bio: 'Wade holds doctorates in theology, divinity, Christian education, non-profit management and pastoral counseling. Presiding Bishop of the International Circle of Faith (ICOF). Email: chancellor@iguc.net',
+  },
+  {
+    name: 'Dr. Raymond L Young',
+    role: 'President',
+    image: '',
+    bio: 'Founder and Global Coordinator of the Global Revival Network. A professional educator and tenured university faculty member for 18 years, teaching computer science and business. Email: president@iguc.net',
+  },
+  {
+    name: 'Prof Chamayah Meyembi',
+    role: 'Vice Chancellor',
+    image: '/images/wp/vc-meyembi.png',
+    bio: 'Holds a PhD in Theology from International Circle of Faith Colleges, Seminaries and Universities. ICOF Africa Bishop to Youth; elevated to Continental leadership with ICOF in 2010. Email: vc@iguc.net',
+  },
+  {
+    name: 'Prof Aaron Ndenka',
+    role: 'Academic Director General',
+    image: '/images/wp/ndenka.jpg',
+    bio: 'Holds a PhD in Finance from the University of Buea and a PhD in Systematic Theology from ICOF College and University. Former lecturer at the University of Buea; lecturer at the Bamenda University of Technology. Email: gad@iguc.net',
+  },
+  {
+    name: 'Dr Bishop Tembi Alfred Tembi',
+    role: 'Ministerial Association Presiding Bishop of Cameroon',
+    image: '/images/wp/tembi.jpg',
+    bio: 'ICOF Ministerial Association Presiding Bishop of Cameroon & RECOMA. Email: bishoptembi@iguc.net',
+  },
+  {
+    name: 'Arch Bishop Prof Godfred Anyere Tah',
+    role: 'Professor Emeritus & President of the Dissertation Council',
+    image: '/images/wp/godfred-tah.png',
+    bio: 'Teacher, Counselor, Motivational Speaker, President and Chancellor at Ambassador Seminary & University. Email: godfrey@iguc.net',
+  },
+  {
+    name: 'Prof Lyonga Divine',
+    role: 'Registrar',
+    image: '/images/wp/lyonga-divine.png',
+    bio: 'Master’s in Religious Studies and Theology from the Nation’s University; PhD in Theology from ICOF Global University. Lecturer at the Apostolic Bible Institute. Email: registrar@iguc.net',
+  },
+  {
+    name: 'Rev Tchamou Nico Tonga, BTh',
+    role: 'Head of Admission',
+    image: '/images/wp/nico-tonga.png',
+    bio: 'Holder of Doctor of Divinity from ICOF College Seminary and University USA. Email: admissions@iguc.net',
+  },
+  {
+    name: 'Dr Samuel Kinge',
+    role: 'Director of Exams',
+    image: '/images/wp/samuel-kinge.png',
+    bio: 'Holder of Doctor of Divinity from ICOF College Seminary and University USA. Email: dr.skinge@iguc.net',
+  },
+  {
+    name: 'Prof Bishop Lawrence Luba',
+    role: 'Director of School of Education',
+    image: '/images/wp/lawrence-luba.jpg',
+    bio: 'Postgraduate Ambassador. Email: prof.lawrenceluba@iguc.net',
+  },
+  {
+    name: 'Rev Momfor Phillip, M.Th',
+    role: 'Dean of Studies (Faculty of Theology)',
+    image: '/images/wp/momfor.jpg',
+    bio: 'Lecturer at IGUC; General Overseer of Christ Glory and Grace Mission. Email: faculty.theology@iguc.net',
+  },
+  {
+    name: 'Dr Bongbuen Alando',
+    role: 'Director of School of Theology (Douala)',
+    image: '/images/wp/alando.png',
+    bio: 'Masters and PhD holder from ICOF College and University. Founder and Chairman of the Reconciled Church of Christ; professor at ICOF Global University. Email: dr.mbonguen@iguc.net',
+  },
+  {
+    name: 'Prof. Barnabas Oluwaleye',
+    role: 'PPDI-RC, Nigeria',
+    image: '/images/wp/barnabas.jpg',
+    bio: 'Professor of Psychology and Behavior/Temperament Therapy — Personal Professional Development Industry & Resource Center, Nigeria. Email: ppdirc@iguc.net',
+  },
+  {
+    name: 'Prof Emmanuel Dangana',
+    role: 'Professor of Theology',
+    image: '/images/wp/dangana.jpg',
+    bio: 'Email: profd@iguc.net',
+  },
+  {
+    name: 'Dr Wake Jeo',
+    role: 'Liberation Theology and Identity Politics',
+    image: '/images/wp/wake-jeo.jpg',
+    bio: 'Associate Professor at ICOF Global University, USA. Email: wajeo@iguc.net',
+  },
+  {
+    name: 'Prof Sunday Ayah',
+    role: 'Theology and Criminology',
+    image: '',
+    bio: 'ICOF Global University, USA. Email: profachi@iguc.net',
+  },
+  {
+    name: 'Hoffman Betika Ayuk',
+    role: 'Director of School of Business and Management Sciences',
+    image: '/images/faculty-ayuk.jpg',
+    bio: 'Director of the School of Business and Management Sciences. Email: hoffman@iguc.net',
+  },
+  {
+    name: 'Kamgang Marcel',
+    role: 'Director of School of Technology and Engineering',
+    image: '/images/faculty-marcel.jpg',
+    bio: 'Director of the School of Technology and Engineering. Email: kamgang.marcel@iguc.net',
+  },
+  {
+    name: 'Forchu Venelda',
+    role: 'Secretary',
+    image: '',
+    bio: 'Holder of both advanced and A-level, and a National Diploma in Secretarial Duties. Email: info@iguc.net',
+  },
+];
+
+// "Our Lecturers" section from the live About page.
+export const lecturers: FacultyMember[] = [
+  { name: 'Rev Dr Gerald Mukwelle', role: 'Lecturer', image: '', bio: '' },
+  { name: 'Rev Momfor Phillip', role: 'Lecturer', image: '', bio: '' },
+  { name: 'Prof Bishop Lawrence Luba', role: 'Lecturer', image: '', bio: '' },
+  { name: 'Pastor Solomon Njie', role: 'Lecturer', image: '', bio: '' },
+  { name: 'Rev Sama Raphael Ndaghu', role: 'Lecturer', image: '', bio: '' },
+];
+
+// Schools & Faculties as listed on the live Faculties page.
+export const faculties = {
+  heading: 'Schools & Faculties',
+  intro:
+    'ICOF Global University has a number of faculties with various programs. Our courses are well designed and structured to fit you into the competitive job market. We pride our students to stand out unique with our well designed and structured professional courses in all our faculties.',
+  items: [
+    'Faculty of Theology Buea',
+    'School of Theology Douala',
+    'Faculty of Education',
+    'Faculty of Engineering and Technology',
+    'Global Institute of Business and Management Science (GIBMAS)',
+  ],
+  instructors: {
+    heading: 'Instructors who practice what they teach!',
+    paragraphs: [
+      'At ICOF Global University, our professors are called instructors because rather than professing knowledge, they’ve lived it. Our instructors are skilled professionals with advanced education.',
+      'Raise your virtual hand when you have a question, even if it’s after hours. You’ll receive a personal reply from your instructor — not a teacher’s assistant. If you need a little one-on-one help, we also offer tutoring services in math or reading 7 days a week.',
+      'Confidence isn’t something you get from textbooks or theory. Our instructors turn theory into skills you can put into practice right away — after all, they know firsthand what works and what doesn’t.',
+    ],
+  },
+  fastFacts: [
+    { value: '15', label: 'years average of professional experience we bring to the classroom' },
+    { value: '12', label: 'years average teaching instruction at ICOF Global University' },
+    { value: '100%', label: 'student internship placement to fortune companies' },
+  ],
+};
 
 // Full program catalog as published on the live Degrees & Programs page,
 // organised under the university's faculties:
@@ -308,7 +580,7 @@ export const admissions = {
   heading: 'Anything you can dream, you can do',
   intro:
     'And we have the alumni to prove it. Join our number of working adults who had the courage to pursue their degrees and the determination to earn them. If you’re considering taking classes with us at ICOF Global University, please take a moment and glance through the admissions requirements below. Requirements may vary by college and degree level. Our team of enrollment representatives are available to walk through the entire application process with you — clarifying admissions requirements, transferring coursework and explaining the financial commitment. Fill out our free online application today.',
-  applyUrl: 'https://iguc.net/forms/',
+  applyUrl: '/apply',
   email: 'admissions@iguc.net',
   steps: [
     {
@@ -351,14 +623,20 @@ export const campusLife = {
   intro:
     'Experience a new life with us, as we walk you through your academic journey. At ICOF Global University, we recognize that a vibrant campus life is integral to the college experience. Our campus serves as more than just an academic hub; it is a dynamic community where students can engage, connect, and grow both academically and personally — with student support services, community engagement, extracurricular activities, and modern facilities and amenities.',
   gallery: [
-    { image: '/images/graduates.jpg', caption: 'Graduating class celebration' },
-    { image: '/images/grand-ceremony.jpg', caption: 'Grand ceremony' },
-    { image: '/images/hall.jpg', caption: 'University hall' },
-    { image: '/images/students.jpg', caption: 'Student community' },
-    { image: '/images/ceremonial.jpg', caption: 'Ceremonial procession' },
-    { image: '/images/global.jpg', caption: 'A global family' },
-    { image: '/images/campus-global.jpg', caption: 'International delegation' },
-    { image: '/images/graduation.jpg', caption: 'Commencement day' },
+    { image: '/images/wp/g-grads.jpg', caption: 'Our graduates' },
+    { image: '/images/wp/g-celebration.jpg', caption: 'Celebration day' },
+    { image: '/images/wp/g-hall.jpg', caption: 'University hall' },
+    { image: '/images/wp/g-students.jpg', caption: 'Our students' },
+    { image: '/images/wp/g-student-celebration.jpg', caption: 'Student celebration' },
+    { image: '/images/wp/g-decor.jpg', caption: 'Ceremony decor' },
+    { image: '/images/wp/g-pict.jpg', caption: 'Campus moments' },
+    { image: '/images/wp/g-award2.jpg', caption: 'Award ceremony' },
+    { image: '/images/wp/g-prayer.jpg', caption: 'Prayer session' },
+    { image: '/images/wp/g-graduates.jpg', caption: 'Graduating class' },
+    { image: '/images/wp/g-greets.jpg', caption: 'Greetings & fellowship' },
+    { image: '/images/wp/g-2024a.jpg', caption: 'Graduation 2024' },
+    { image: '/images/wp/g-2024b.jpg', caption: 'Graduation 2024' },
+    { image: '/images/wp/g-2024c.jpg', caption: 'Graduation 2024' },
   ],
 };
 

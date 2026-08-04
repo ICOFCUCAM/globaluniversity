@@ -26,6 +26,12 @@ import {
   about,
   leadership,
   faculty,
+  administration,
+  lecturers,
+  faculties,
+  homeFeatures,
+  homeFaculties,
+  homeFaqs,
   programs,
   admissions,
   tuition,
@@ -45,7 +51,7 @@ export async function getSite() {
 }
 
 export async function getHomePage() {
-  return { hero, heroSlides, quickLinks, stats, about, events, news, cta };
+  return { hero, heroSlides, quickLinks, stats, about, events, news, cta, homeFeatures, homeFaculties, homeFaqs };
 }
 
 export async function getPrograms(): Promise<Program[]> {
@@ -58,6 +64,10 @@ export async function getProgram(slug: string): Promise<Program | undefined> {
 
 export async function getFaculty(): Promise<{ leadership: FacultyMember[]; faculty: FacultyMember[] }> {
   return { leadership, faculty };
+}
+
+export async function getFacultyPage() {
+  return { faculties, administration, lecturers };
 }
 
 export async function getEvents(): Promise<EventItem[]> {
