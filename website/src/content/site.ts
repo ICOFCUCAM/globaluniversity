@@ -57,13 +57,15 @@ export const site = {
   affiliation: 'International Circle of Faith · accredited by the Ministry of Higher Education since 2007',
   // Legacy applications still hosted on the cPanel server. Keep absolute URLs
   // so the Vercel site can link back to them until each is migrated.
+  // Every portal entry resolves inside this site. The legacy cPanel apps
+  // (Chamilo LMS, ownCloud, RosarioSIS, transcript service) are reachable at
+  // legacy.iguc.net once that subdomain is pointed at the old server.
   portals: [
     { label: 'Student Portal (Registration & Transcripts)', href: '/portal' },
-    { label: 'Online Application', href: 'https://iguc.net/forms/' },
-    { label: 'E-Learning (LMS)', href: 'https://iguc.net/online/' },
-    { label: 'Student Cloud', href: 'https://iguc.net/igucloud/' },
-    { label: 'Administration', href: 'https://iguc.net/administration/' },
-    { label: 'Transcripts', href: 'https://iguc.net/transcript/' },
+    { label: 'Online Application', href: '/apply' },
+    { label: 'E-Learning (LMS)', href: '/portal' },
+    { label: 'Administration', href: '/portal' },
+    { label: 'Transcripts', href: '/portal' },
   ],
   // Navigation mirrors the WordPress menu structure, including sub-menus.
   nav: [
@@ -171,8 +173,8 @@ export const quickLinks = [
   { label: 'Events & Important Dates', href: '/events', icon: 'calendar' },
   { label: 'Programs', href: '/programs', icon: 'book' },
   { label: 'Admissions', href: '/admissions', icon: 'award' },
-  { label: 'E-Learning', href: 'https://iguc.net/online/', icon: 'laptop' },
-  { label: 'Library', href: 'https://iguc.net/igucloud/', icon: 'library' },
+  { label: 'E-Learning', href: '/portal', icon: 'laptop' },
+  { label: 'Library', href: '/portal', icon: 'library' },
   { label: 'Contact', href: '/contact', icon: 'mail' },
 ];
 
