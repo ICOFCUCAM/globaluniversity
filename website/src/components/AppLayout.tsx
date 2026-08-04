@@ -16,6 +16,8 @@ import CertificateGenerator from './certificate/CertificateGenerator';
 import LMSModule from './lms/LMSModule';
 import ExamModule from './exams/ExamModule';
 import DocumentManagement from './documents/DocumentManagement';
+import AssignmentModule from './assignments/AssignmentModule';
+import FeeModule from './fees/FeeModule';
 import AnalyticsDashboard from './analytics/AnalyticsDashboard';
 import SettingsPage from './settings/SettingsPage';
 import AuditLogs from './audit/AuditLogs';
@@ -53,6 +55,10 @@ export default function AppLayout() {
         return <LMSModule />;
       case 'exams':
         return <ExamModule />;
+      case 'assignments':
+        return <AssignmentModule />;
+      case 'fees':
+        return <FeeModule />;
       case 'documents':
         return <DocumentManagement />;
       case 'analytics':
