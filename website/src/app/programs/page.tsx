@@ -15,11 +15,30 @@ export default async function ProgramsPage() {
     <>
       <PageBanner title="Programs & Degrees" image="/images/graduation.jpg" />
       <Section>
-        <SectionHeading>Course Catalog</SectionHeading>
+        <SectionHeading eyebrow="Degrees & Programs">Course catalog</SectionHeading>
         <p className="mx-auto mb-12 max-w-3xl text-center text-brand-muted">
           From certificates to doctoral degrees — Doctor of Philosophy, Doctor of Theology, Master of
           Arts, Bachelor of Science, Diploma and Certificate programs across our schools.
         </p>
+        <div className="mx-auto mb-14 flex max-w-4xl flex-wrap justify-center gap-3">
+          {[
+            ['Bachelor’s', '/degrees/bachelors-degrees'],
+            ['Master’s', '/degrees/masters-degrees'],
+            ['Doctoral', '/degrees/doctoral'],
+            ['HND', '/degrees/higher-national-diploma-hnd'],
+            ['Diploma', '/degrees/diploma-dip'],
+            ['Certificates', '/degrees/certificates'],
+            ['Study Online', '/online-learning'],
+          ].map(([label, href]) => (
+            <Link
+              key={href}
+              href={href}
+              className="rounded-full border border-brand-sand bg-white px-5 py-2 font-heading text-sm font-semibold text-brand-purple transition hover:border-brand-gold-deep hover:bg-brand-gold/20"
+            >
+              {label}
+            </Link>
+          ))}
+        </div>
         {schools.map((school) => (
           <div key={school} className="mb-14">
             <h3 className="mb-6 border-l-4 border-brand-gold pl-4 font-heading text-2xl font-bold text-brand-purple">
@@ -32,7 +51,7 @@ export default async function ProgramsPage() {
                   <Link
                     key={p.slug}
                     href={`/programs/${p.slug}`}
-                    className="group overflow-hidden rounded-xl bg-white shadow-sm transition hover:shadow-lg"
+                    className="group overflow-hidden rounded-2xl bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl"
                   >
                     <div className="relative h-44">
                       <Image src={p.image} alt={p.title} fill className="object-cover transition group-hover:scale-105" />
