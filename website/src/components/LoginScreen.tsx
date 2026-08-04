@@ -129,30 +129,30 @@ export default function LoginScreen() {
                 Next-Generation Academic Platform
               </div>
               <h2 className="text-4xl lg:text-5xl font-bold text-white leading-tight">
-                Transforming <span className="text-amber-400">University</span> Administration
+                ICOF Global <span className="text-amber-400">University</span> Portal
               </h2>
               <p className="text-blue-200 mt-4 text-lg leading-relaxed">
-                A comprehensive digital ecosystem managing the entire academic lifecycle — from student admission to graduation, with automated GPA calculations, professional transcript generation, and integrated online learning.
+                One portal for the whole academic journey — admission to graduation — with automated GPA calculation, verified transcript generation and integrated online learning, serving students on campus in Cameroon and online worldwide.
               </p>
               <div className="flex flex-wrap gap-4 mt-8">
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-white">2,847</p>
-                  <p className="text-xs text-blue-300">Active Students</p>
+                  <p className="text-3xl font-bold text-white">7,228</p>
+                  <p className="text-xs text-blue-300">Success Stories</p>
                 </div>
                 <div className="w-px bg-blue-400/30" />
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-white">186</p>
-                  <p className="text-xs text-blue-300">Lecturers</p>
-                </div>
-                <div className="w-px bg-blue-400/30" />
-                <div className="text-center">
-                  <p className="text-3xl font-bold text-white">342</p>
+                  <p className="text-3xl font-bold text-white">213</p>
                   <p className="text-xs text-blue-300">Courses</p>
                 </div>
                 <div className="w-px bg-blue-400/30" />
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-white">4,521</p>
-                  <p className="text-xs text-blue-300">Graduated</p>
+                  <p className="text-3xl font-bold text-white">1,742</p>
+                  <p className="text-xs text-blue-300">Happy Students</p>
+                </div>
+                <div className="w-px bg-blue-400/30" />
+                <div className="text-center">
+                  <p className="text-3xl font-bold text-white">15+</p>
+                  <p className="text-xs text-blue-300">Years of Excellence</p>
                 </div>
               </div>
             </div>
