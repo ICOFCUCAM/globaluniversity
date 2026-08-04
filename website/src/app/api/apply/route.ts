@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
+import { supabase } from '@/lib/supabase';
 
 export const runtime = 'nodejs';
 
@@ -67,15 +68,40 @@ const FIELDS: Array<[string, string]> = [
 
 const MAX_ATTACHMENT_BYTES = 4 * 1024 * 1024; // Vercel request body limit is ~4.5MB
 
+/**
+ * Record the application in the portal database as a student row with
+ * status "applicant", so admissions staff review it in Student Management
+ * and promote it to "active" on approval.
+ */
+async function recordApplicant(form: FormData): Promise<boolean> {
+  const year = new Date().getFullYear();
+  const appNo = `APP-${year}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
+  const get = (k: string) => String(form.get(k) ?? '').trim() || null;
+  const summary = FIELDS.map(([name, label]) => `${label}: ${get(name) ?? '—'}`).join('\n');
+  const { error } = await supabase.from('students').insert({
+    matric_no: appNo,
+    first_name: get('firstname') ?? '',
+    last_name: get('surname') ?? '',
+    middle_name: get('middlename'),
+    email: get('email'),
+    phone: get('phone_mobile'),
+    date_of_birth: get('dob'),
+    gender: get('gender'),
+    nationality: get('citizenship') ?? get('country') ?? 'Cameroonian',
+    state_of_origin: get('birth_place'),
+    address: [get('address_line1'), get('city'), get('country'), '', '--- FULL APPLICATION ---', summary]
+      .filter((x) => x !== null)
+      .join('\n'),
+    program: get('planned_major') ?? get('field') ?? '',
+    degree_type: get('level') ?? '',
+    admission_year: year,
+    status: 'applicant',
+  });
+  return !error;
+}
+
 export async function POST(request: Request) {
   const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, APPLY_TO } = process.env;
-
-  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
-    return NextResponse.json(
-      { ok: false, error: 'email-not-configured' },
-      { status: 503 },
-    );
-  }
 
   const form = await request.formData();
 
@@ -111,25 +137,36 @@ export async function POST(request: Request) {
     }
   }
 
-  const transporter = nodemailer.createTransport({
-    host: SMTP_HOST,
-    port: Number(SMTP_PORT ?? 465),
-    secure: Number(SMTP_PORT ?? 465) === 465,
-    auth: { user: SMTP_USER, pass: SMTP_PASS },
-  });
+  // Channel 1 — admissions pipeline: store the application in the portal DB.
+  const stored = await recordApplicant(form).catch(() => false);
 
-  try {
-    await transporter.sendMail({
-      from: `"IGUC Online Application" <${SMTP_USER}>`,
-      to: APPLY_TO ?? 'admission@iguc.net',
-      replyTo: applicantEmail,
-      subject: `New application: ${surname} ${firstname} — ${String(form.get('level') ?? '')} ${String(form.get('field') ?? '')}`,
-      text: `A new application was submitted on iguc.net.\n\n${lines.join('\n')}\n`,
-      attachments,
+  // Channel 2 — email to the admissions office (when SMTP is configured).
+  let emailed = false;
+  if (SMTP_HOST && SMTP_USER && SMTP_PASS) {
+    const transporter = nodemailer.createTransport({
+      host: SMTP_HOST,
+      port: Number(SMTP_PORT ?? 465),
+      secure: Number(SMTP_PORT ?? 465) === 465,
+      auth: { user: SMTP_USER, pass: SMTP_PASS },
     });
-  } catch {
-    return NextResponse.json({ ok: false, error: 'send-failed' }, { status: 502 });
+    try {
+      await transporter.sendMail({
+        from: `"IGUC Online Application" <${SMTP_USER}>`,
+        to: APPLY_TO ?? 'admission@iguc.net',
+        replyTo: applicantEmail,
+        subject: `New application: ${surname} ${firstname} — ${String(form.get('level') ?? '')} ${String(form.get('field') ?? '')}`,
+        text: `A new application was submitted on iguc.net.\n\n${lines.join('\n')}\n`,
+        attachments,
+      });
+      emailed = true;
+    } catch {
+      emailed = false;
+    }
   }
 
-  return NextResponse.json({ ok: true });
+  // The application succeeds if at least one channel captured it.
+  if (stored || emailed) {
+    return NextResponse.json({ ok: true, stored, emailed });
+  }
+  return NextResponse.json({ ok: false, error: 'not-captured' }, { status: 502 });
 }
