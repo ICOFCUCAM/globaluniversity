@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import TranscriptQR from './TranscriptQR';
 import { sampleTranscriptData } from '@/lib/sampleData';
 import { UNIVERSITY, IMAGES } from '@/lib/constants';
 import { getClassification } from '@/lib/grading';
@@ -112,6 +113,7 @@ export default function TranscriptGenerator() {
                 <div><strong>Date of Birth:</strong> {data.student.date_of_birth ? new Date(data.student.date_of_birth).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' }) : 'N/A'}</div>
                 <div><strong>Admission Year:</strong> {data.student.admission_year}/{data.student.admission_year + 1}</div>
                 <div><strong>Nationality:</strong> {data.student.nationality}</div>
+                <TranscriptQR student={data.student} />
               </div>
 
               {/* Academic Records */}
