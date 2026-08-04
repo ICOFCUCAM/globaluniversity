@@ -28,13 +28,14 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
             alt=""
             fill
             priority={i === 0}
-            className="object-cover opacity-25"
+            className="object-cover opacity-40"
           />
-          <div className="relative mx-auto max-w-4xl px-4 py-28 text-center sm:py-36">
-            <h1 className="font-heading text-4xl font-extrabold uppercase leading-tight tracking-wide text-brand-gold sm:text-6xl">
+          <div className="absolute inset-0 bg-gradient-to-b from-brand-purple/70 via-brand-purple/55 to-brand-purple-dark/90" />
+          <div className="relative mx-auto max-w-4xl px-4 py-32 text-center sm:py-44">
+            <h1 className="font-heading text-4xl font-bold leading-[1.05] tracking-tight text-white sm:text-6xl [text-wrap:balance]">
               {slide.title}
             </h1>
-            <p className="mx-auto mt-6 max-w-2xl text-white/90">{slide.text}</p>
+            <p className="mx-auto mt-6 max-w-2xl text-lg text-brand-gold/95">{slide.text}</p>
             <Link
               href={slide.cta.href}
               className="mt-10 inline-block rounded-full bg-brand-gold px-8 py-3 font-heading font-semibold text-brand-purple transition hover:bg-brand-gold-deep"
