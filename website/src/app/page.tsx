@@ -4,6 +4,7 @@ import { Section, SectionHeading } from '@/components/Section';
 import Cta from '@/components/Cta';
 import HeroSlider from '@/components/HeroSlider';
 import { getHomePage, getPrograms } from '@/lib/data';
+import { partners } from '@/content/site';
 
 const quickIcons: Record<string, string> = {
   calendar: '📅',
@@ -15,7 +16,8 @@ const quickIcons: Record<string, string> = {
 };
 
 export default async function HomePage() {
-  const { heroSlides, quickLinks, stats, about, events, news } = await getHomePage();
+  const { heroSlides, quickLinks, stats, about, events, news, homeFeatures, homeFaculties, homeFaqs } =
+    await getHomePage();
   const programs = (await getPrograms()).slice(0, 4);
 
   return (
@@ -89,6 +91,20 @@ export default async function HomePage() {
         </div>
       </Section>
 
+      {/* Professional training features */}
+      <Section>
+        <SectionHeading>{homeFeatures.heading}</SectionHeading>
+        <p className="mx-auto mb-10 max-w-3xl text-center text-brand-muted">{homeFeatures.intro}</p>
+        <div className="grid gap-8 md:grid-cols-3">
+          {homeFeatures.items.map((f) => (
+            <div key={f.title} className="rounded-xl border border-brand-sand bg-white p-6 shadow-sm">
+              <h3 className="font-heading text-lg font-bold text-brand-purple">{f.title}</h3>
+              <p className="mt-3 text-sm leading-relaxed text-brand-muted">{f.body}</p>
+            </div>
+          ))}
+        </div>
+      </Section>
+
       {/* Stats */}
       <section className="relative bg-brand-purple py-14 text-white">
         <div className="mx-auto grid max-w-6xl grid-cols-2 gap-8 px-4 text-center md:grid-cols-4">
@@ -132,8 +148,59 @@ export default async function HomePage() {
         </div>
       </Section>
 
-      {/* News */}
+      {/* School & Faculties */}
+      <Section>
+        <SectionHeading>{homeFaculties.heading}</SectionHeading>
+        <p className="mx-auto mb-10 max-w-3xl text-center text-brand-muted">{homeFaculties.intro}</p>
+        <div className="mx-auto grid max-w-5xl gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {homeFaculties.items.map((f) => (
+            <Link
+              key={f.name}
+              href="/faculty"
+              className="group overflow-hidden rounded-xl border border-brand-sand bg-white text-center shadow-sm transition hover:shadow-lg"
+            >
+              <div className="relative h-36">
+                <Image src={f.image} alt={f.name} fill className="object-cover transition group-hover:scale-105" />
+              </div>
+              <span className="block p-4 font-heading text-sm font-semibold text-brand-purple">{f.name}</span>
+            </Link>
+          ))}
+        </div>
+      </Section>
+
+      {/* Accreditation and Partners */}
       <Section className="bg-white">
+        <SectionHeading>Accreditation and Partners</SectionHeading>
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-10">
+          {partners.map((p) => (
+            <div key={p.name} className="relative h-20 w-32">
+              <Image src={p.image} alt={p.name} fill className="object-contain" />
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      {/* FAQ */}
+      <Section className="bg-white">
+        <SectionHeading>Frequently Asked Questions</SectionHeading>
+        <div className="mx-auto max-w-3xl space-y-3">
+          {homeFaqs.map((faq) => (
+            <details
+              key={faq.question}
+              className="group rounded-lg border border-brand-sand bg-brand-cream px-5 py-4 open:shadow-md"
+            >
+              <summary className="cursor-pointer list-none font-heading font-semibold text-brand-purple">
+                {faq.question}
+                <span className="float-right text-brand-gold-deep group-open:rotate-180">⌄</span>
+              </summary>
+              <p className="mt-3 text-sm leading-relaxed text-brand-muted">{faq.answer}</p>
+            </details>
+          ))}
+        </div>
+      </Section>
+
+      {/* News */}
+      <Section>
         <SectionHeading>What&apos;s Happening</SectionHeading>
         <div className="grid gap-8 md:grid-cols-3">
           {news.map((n) => (
