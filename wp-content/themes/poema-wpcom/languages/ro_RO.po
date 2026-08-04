@@ -1,0 +1,136 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: WordPress.com - Themes - Poema\n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2024-08-29T04:36:35+00:00\n"
+"PO-Revision-Date: 2024-08-27 16:29:38+0000\n"
+"Language: ro\n"
+"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : (n==0 || (n%100 > 0 && n%100 < 20)) ? 1 : 2);\n"
+"X-Generator: GlotPress/2.4.0-alpha\n"
+
+#: patterns/post-meta.php
+msgctxt "Pattern title"
+msgid "Default post meta"
+msgstr "Metadate implicite pentru articole"
+
+#: patterns/no-results.php
+msgctxt "Pattern title"
+msgid "No Results content"
+msgstr "Niciun conținut pentru rezultate"
+
+#: patterns/hidden-no-results-content.php
+msgctxt "Pattern title"
+msgid "Hidden No Results Content"
+msgstr "Conținut ascuns fără rezultate"
+
+#: patterns/footer.php
+msgctxt "Pattern title"
+msgid "Default footer"
+msgstr "Subsol implicit"
+
+#: patterns/comments.php
+msgctxt "Pattern title"
+msgid "Comments"
+msgstr "Comentarii"
+
+#: theme.json
+msgctxt "Color name"
+msgid "Tertiary"
+msgstr "Terță"
+
+#: theme.json
+msgctxt "Color name"
+msgid "Background"
+msgstr "Fundal"
+
+#: theme.json
+msgctxt "Color name"
+msgid "Foreground"
+msgstr "Prim-plan"
+
+#: theme.json
+msgctxt "Color name"
+msgid "Secondary"
+msgstr "Secundară"
+
+#: theme.json
+msgctxt "Color name"
+msgid "Primary"
+msgstr "Principală"
+
+#: theme.json
+msgctxt "Font family name"
+msgid "System Font"
+msgstr "System Font"
+
+#: theme.json
+msgctxt "Font size name"
+msgid "Extra Large"
+msgstr "Foarte mare"
+
+#: theme.json
+msgctxt "Font size name"
+msgid "Large"
+msgstr "Mare"
+
+#: theme.json
+msgctxt "Font size name"
+msgid "Medium"
+msgstr "Mediu"
+
+#: theme.json
+msgctxt "Font size name"
+msgid "Small"
+msgstr "Mic"
+
+#: patterns/post-meta.php:18
+msgid "Published by"
+msgstr "Publicat de"
+
+#: patterns/no-results.php:16
+msgid "Sorry, but nothing matched your search terms. Please try again with some different keywords."
+msgstr "Regret, dar nu s-a potrivit nimic cu termenii tăi de căutare. Te rog încearcă din nou cu alte cuvinte cheie."
+
+#: patterns/hidden-no-results-content.php:9
+msgctxt "Message explaining that there are no results returned from a search"
+msgid "Sorry, but nothing matched your search terms. Please try again with some different keywords."
+msgstr "Regret, dar nu s-a potrivit nimic cu termenii tăi de căutare. Te rog încearcă din nou cu alte cuvinte cheie."
+
+#: patterns/footer.php:24
+msgid "Designed with %1$s"
+msgstr "Proiectat cu %1$s"
+
+#. Translators: WordPress link.
+#: patterns/footer.php:22
+msgid "https://wordpress.org"
+msgstr "https://wordpress.org"
+
+#. Author URI of the theme
+#: style.css
+msgid "https://automattic.com"
+msgstr "https://automattic.com"
+
+#. Author of the theme
+#: style.css
+msgid "Automattic"
+msgstr "Automattic"
+
+#. Description of the theme
+#: style.css
+msgid "Poema pays tribute to the revered Portuguese writer and poet Fernando Pessoa, and his various pseudonyms. Its minimalist design features a black and white color scheme, complemented by an elegant serif font. Poema's carefully crafted templates boast a comfortable content width and meticulously considered white space that create a calming and immersive reading experience, ideal for the appreciation of poetry."
+msgstr "Poema îi aduce un omagiu veneratului scriitor și poet portughez Fernando Pessoa care avea mai multe pseudonime. Designul său simplu evidențiază o schemă de culori în alb și negru, completată cu un font serif elegant. Șabloanele oferite de Poema sunt realizate cu atenție și au o lățime confortabilă a conținutului și spații albe alese cu meticulozitate creând o experiență de lectură liniștitoare și captivantă, ideală pentru aprecierea poeziilor."
+
+#. Theme URI of the theme
+#: style.css
+msgid "https://github.com/Automattic/themes/tree/trunk/poema"
+msgstr "https://github.com/Automattic/themes/tree/trunk/poema"
+
+#. Theme Name of the theme
+#: style.css
+msgid "Poema"
+msgstr "Poema"

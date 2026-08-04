@@ -1,0 +1,80 @@
+# 
+# Translators:
+# Jan Blom <j.blom@ictfirst.nl>, 2017
+# Philip Carpentier <philip@oic.be>, 2016
+# Ramon Kienhuis <ramonkienhuis@gmail.com>, 2013
+# Mark Wilbrink <mark@wilbrink.design>, 2022
+msgid ""
+msgstr ""
+"Project-Id-Version: ProjectSend\n"
+"POT-Creation-Date: 2020-10-30 18:41-0300\n"
+"PO-Revision-Date: 2013-03-21 10:57+0000\n"
+"Last-Translator: Mark Wilbrink <mark@wilbrink.design>, 2022\n"
+"Language-Team: Dutch (http://www.transifex.com/subwaydesign/projectsend/language/nl/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: nl\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 2.3\n"
+"X-Poedit-Basepath: ..\n"
+"X-Poedit-KeywordsList: _e;__\n"
+"X-Poedit-SearchPath-0: .\n"
+"X-Poedit-SearchPathExcluded-0: font-awesome-4.6.3\n"
+"X-Poedit-SearchPathExcluded-1: js\n"
+
+#: template.php:20
+msgid "Available files"
+msgstr "Beschikbare bestanden"
+
+#: template.php:58
+msgid "Welcome"
+msgstr "Welkom"
+
+#: template.php:63
+msgid "Search..."
+msgstr "Zoeken..."
+
+#: template.php:73
+msgid "Categories"
+msgstr "Categoriën"
+
+#: template.php:75
+msgid "All files"
+msgstr "Alle bestanden"
+
+#: template.php:95
+msgid "Download zipped"
+msgstr "Download ingepakt"
+
+#: template.php:100
+msgid "Upload"
+msgstr "Upload"
+
+#: template.php:105
+msgid "Manage"
+msgstr "Beheren"
+
+#: template.php:110
+msgid "Logout"
+msgstr "Uitloggen"
+
+#: template.php:125
+msgid "There are no files."
+msgstr "Er zijn geen bestanden."
+
+#: template.php:174
+msgid "File size:"
+msgstr "Bestandsgrootte:"
+
+#: template.php:181
+msgid "Expiration date:"
+msgstr "Vervaldatum:"
+
+#: template.php:192
+msgid "Download"
+msgstr "Download"
+
+#: template.php:202
+msgid "File expired"
+msgstr "Bestand verlopen"

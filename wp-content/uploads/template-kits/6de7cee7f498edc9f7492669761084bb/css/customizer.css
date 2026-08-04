@@ -1,0 +1,17 @@
+.envato-kit-92-inline-block{
+	display: inline-block;
+}
+
+.envato-kit-92-progress-bar .elementor-progress-percentage{
+	font-family: 'Nunito', sans-serif;
+	font-size: 18px;
+	font-weight: 900;
+	margin-top: -34px;
+	padding-right: 0;
+}
+
+.envato-kit-92-progress-bar .elementor-progress-bar,
+.envato-kit-92-progress-bar .elementor-progress-wrapper{
+	height: 10px;
+	border-radius: 10px;
+}

@@ -1,0 +1,195 @@
+/*
+Theme Name: Flex Ecommerce Store
+Author: flextheme
+Author URI: 
+Theme URI : 
+Description: Flex Ecommerce is a powerful and flexible theme designed specifically for online stores and eCommerce businesses. Whether you’re selling physical products, digital downloads, or services, this theme provides everything you need to create a professional and user-friendly online shop. Built with Elementor compatibility, Flex Ecommerce offers a smooth drag-and-drop experience, making it easy to customize your site without any coding knowledge. The fully responsive design ensures your store looks great on all devices, from desktops to tablets and mobile phones, providing an optimal shopping experience for your customers no matter how they access your site. With the one-click demo import feature, you can set up your store in just minutes, choosing from a variety of stylish, pre-designed layouts and start selling right away. Flex Ecommerce is optimized for speed, performance, and SEO, ensuring your store loads quickly and ranks well in search engines. It’s also translation-ready, making it an excellent choice for global businesses. With built-in support for popular plugins like WooCommerce, you can extend the theme’s functionality as your store grows, offering a seamless and professional shopping experience to your customers.
+Version: 1.01
+Tested up to: 6.8
+Requires PHP: 5.6
+License: GNU General Public License v2 or later
+License URI: LICENSE
+Template: flex-multi-business
+Text Domain: flex-ecommerce-store
+Tags: custom-background, custom-logo, custom-menu, featured-images, blog , e-commerce , photography
+
+flex-ecommerce-store is based on Underscores https://underscores.me/, (C) 2012-2022 Automattic, Inc.
+Underscores is distributed under the terms of the GNU GPL v2 or later.
+*/
+
+:root {
+    --primary-theme-color: #3D7AFF !important;
+}
+
+.header-two,.read-more a,.widget_block .wp-block-search .wp-block-search__button, .page-content .search-form .search-submit, .widget_search .search-form .search-submit,#c-scroll:hover,.footer-one,.pagination .page-numbers:hover, .pagination .current{
+	background: var(--primary-theme-color);
+}
+
+.wp-block-calendar .wp-calendar-table tbody tr td#today, .widget_calendar .calendar_wrap .wp-calendar-table tbody tr td#today, .search-form .search-submit,.widget_block .wp-block-tag-cloud a:hover, .widget_tag_cloud .tagcloud a:hover{
+	background-color:  var(--primary-theme-color) !important;
+}
+
+.widget_block .wp-block-search .wp-block-search__button,.main-navigation .menu .children .page_item > a::before, .main-navigation .menu .dropdown-menu .menu-item > a::before,.comments-area .form-submit .submit{
+	background:  var(--primary-theme-color) !important;
+}
+
+.blog-2 .post-meta {
+	background: hsl(221.13deg 100% 50% / 27%) 0% 0%;
+}
+
+.read-more a{
+	outline-color:  var(--primary-theme-color);
+}
+
+.pagination .page-numbers, .pagination .current{
+	border-color:  var(--primary-theme-color);
+}
+
+.comments-area .comment-form-comment textarea:focus, .comments-area .comment-form-comment textarea:hover,.widget_block .wp-block-tag-cloud a:hover, .widget_tag_cloud .tagcloud a:hover{
+	border-color:  var(--primary-theme-color) !important;
+}
+
+.read-more a:hover,a:hover, a:active,#primary-menu .current-menu-item a,h5 a:hover, h6 a:hover,.post-meta li a:hover,.post-tags a:hover{
+	color:  var(--primary-theme-color);
+}
+
+#primary-menu .menu-item:hover .nav-link,.main-navigation .menu .children .page_item:hover>a, .main-navigation .menu .dropdown-menu .menu-item:hover>a{
+	color:  var(--primary-theme-color) !important;
+}
+
+.main-navbar{
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.ac-btn:hover, input[type=submit]:hover, input[type=reset]:hover, input[type=button]:hover, button:hover, .woocommerce a.button:hover, .woocommerce button.button:hover, .woocommerce input.button:hover, .woocommerce input[type=submit].button:hover, .woocommerce #respond input#submit:hover, .woocommerce a.button.alt:hover, .woocommerce button.button.alt:hover, .woocommerce input.button.alt:hover, .woocommerce #respond input#submit.alt:hover, .woocommerce #respond input#submit.disabled, .woocommerce #respond input#submit:disabled, .woocommerce #respond input#submit:disabled[disabled], .woocommerce a.button.disabled, .woocommerce a.button:disabled, .woocommerce a.button:disabled[disabled], .woocommerce button.button.disabled, .woocommerce button.button:disabled, .woocommerce button.button:disabled[disabled], .woocommerce input.button.disabled, .woocommerce input.button:disabled, .woocommerce input.button:disabled[disabled], .woocommerce #respond input#submit.disabled:hover, .woocommerce #respond input#submit:disabled:hover, .woocommerce #respond input#submit:disabled[disabled]:hover, .woocommerce a.button.disabled:hover, .woocommerce a.button:disabled:hover, .woocommerce a.button:disabled[disabled]:hover, .woocommerce button.button.disabled:hover, .woocommerce button.button:disabled:hover, .woocommerce button.button:disabled[disabled]:hover, .woocommerce input.button.disabled:hover, .woocommerce input.button:disabled:hover, .woocommerce input.button:disabled[disabled]:hover, .woocommerce #respond input#submit.alt.disabled, .woocommerce #respond input#submit.alt.disabled:hover, .woocommerce #respond input#submit.alt:disabled, .woocommerce #respond input#submit.alt:disabled:hover, .woocommerce #respond input#submit.alt:disabled[disabled], .woocommerce #respond input#submit.alt:disabled[disabled]:hover, .woocommerce a.button.alt.disabled, .woocommerce a.button.alt.disabled:hover, .woocommerce a.button.alt:disabled, .woocommerce a.button.alt:disabled:hover, .woocommerce a.button.alt:disabled[disabled], .woocommerce a.button.alt:disabled[disabled]:hover, .woocommerce button.button.alt.disabled, .woocommerce button.button.alt.disabled:hover, .woocommerce button.button.alt:disabled, .woocommerce button.button.alt:disabled:hover, .woocommerce button.button.alt:disabled[disabled], .woocommerce button.button.alt:disabled[disabled]:hover, .woocommerce input.button.alt.disabled, .woocommerce input.button.alt.disabled:hover, .woocommerce input.button.alt:disabled, .woocommerce input.button.alt:disabled:hover, .woocommerce input.button.alt:disabled[disabled], .woocommerce input.button.alt:disabled[disabled]:hover {
+    background-color:  var(--primary-theme-color) !important;
+    color: #ffffff;
+}
+#page #primary-menu a.nav-link,
+#page #primary-menu li:hover a.nav-link ,
+#page #primary-menu li{
+	color: #fff !important;
+}
+/* Home Page CSS Free */
+.ekit-wid-con .elementskit-post-image-card .elementskit-entry-header .elementskit-entry-thumb>img,
+.ekit-wid-con .elementskit-post-image-card:hover .elementskit-entry-thumb>img {
+    -webkit-transition: none !important;
+    transition:  none !important;
+    width: 100%;
+	transform: none !important;
+}
+.category-products-widget .woocommerce-Price-amount.amount{
+	color:  #000 !important;
+}
+.category-products-widget .star-rating span::before {
+	color: #FFBB00 !important;
+}
+.category-products-widget .hover-buttons {
+	display: none !important;
+}
+.hfe-search-button-wrapper{
+	margin-bottom: 0px;
+}
+.footer-copyright a:hover{
+	color: #fff;
+}
+.product-image img{
+    max-width: 150px;
+    max-height: 150px;
+    object-fit: contain;
+}
+.product-category .wl-row.wlno-gutters .wl-col-1:last-child .wlsingle-categorie{
+	border-bottom-left-radius: 10px;
+	border-bottom-right-radius: 10px;
+}
+.header-primary-menu .elementor-icon:hover svg{
+	fill: var(--primary-theme-color) !important;
+}
+.category-products-widget .price{
+	width: 50%;
+    float: left;
+}
+.category-products-widget .rating{
+	width: 48%;
+    float: right;
+    margin-top: 16px;
+}
+.product-category .wlsingle-categorie{
+	padding: 5px !important;
+}
+.product-category .wlsingle-categorie .wlcategorie-content h4 {
+	margin: 0px !important;
+	font-weight: 500;
+}
+.product-category .wlsingle-categorie .wlcategorie-content{
+	padding: 8px;
+	border-radius: 6px;
+}
+.product-category .wlsingle-categorie .wlcategorie-content:hover{
+	background-color: var(--primary-theme-color);
+	color: #fff !important;
+}
+.product-category .wlsingle-categorie .wlcategorie-content:hover a{
+	color: #fff !important;
+}
+.home .ecommerce-banner-slider .slick-slide{
+	padding: 0px !important;
+	display: block !important;
+}
+.home .ecommerce-banner-slider .slick-slide > div > .elementor-element{
+	padding: 50px;
+	display: flex !important;
+}
+.elementskit-post-body {
+	display: flex;
+	flex-direction: column-reverse;
+}
+.category-products-widget .product:hover{
+	background-color: var(--primary-theme-color);
+}
+.category-products-widget .product:hover div , 
+.category-products-widget .product:hover a,
+.category-products-widget .product:hover span,
+.category-products-widget .product:hover h3{
+	color: #fff !important;
+}
+.blog-section1 .elementskit-post-image-card:hover .elementskit-entry-thumb img{
+	transform: scale(0.99) !important;
+}
+@media screen and (max-width:767px){
+	.footer-box-col .menu-item a{
+		justify-self: center;
+	}
+	.deal-of-the-day > .e-con-inner > div.elementor-element:nth-child(2){
+		width: 300px !important;
+	}
+	.deal-of-the-day > .e-con-inner{
+		justify-content: center !important;
+		align-items: center !important;
+		text-align: center;
+	}
+}
+@media (min-width:1025px) and (max-width:1400px){
+	.top-header > .e-con-inner > div.elementor-element:nth-child(1){
+		--width: 40% !important;
+	}
+	.top-header > .e-con-inner > div.elementor-element:nth-child(2){
+		--width: 50% !important;
+	}
+}
+@media screen and (min-width:768px){
+	.deal-of-the-day > .e-con-inner > div.elementor-element:nth-child(1){
+		--width: calc(100% - 300px) !important;
+	}
+}
+@media (min-width:768px) and (max-width:999px){
+	.woocommerce.single-product div.product div.summary{
+		width: 50%;
+	}
+	.woocommerce.single-product div.product div.images .woocommerce-product-gallery__wrapper{
+		width: 48%;
+		float: left !important;
+	}
+}

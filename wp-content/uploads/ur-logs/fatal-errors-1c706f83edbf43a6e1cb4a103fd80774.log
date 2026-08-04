@@ -1,0 +1,2098 @@
+2025-05-28T17:31:32+00:00 CRITICAL Uncaught TypeError: imagesx(): Argument #1 ($image) must be of type GdImage, bool given in /home/igucmor1/public_html/wp-content/plugins/XSystem/SXINDEX/SXIRender.php:71
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/XSystem/SXINDEX/SXIRender.php(71): imagesx()
+#1 /home/igucmor1/public_html/wp-content/plugins/XSystem/SXINDEX/SXIRender.php(203): CIRender->XWPRenderImage()
+#2 /home/igucmor1/public_html/wp-content/plugins/XSystem/SXINDEX/SXINDEX.php(384): CIRender->XWPRenderLnkBlock()
+#3 /home/igucmor1/public_html/wp-content/plugins/XSystem/SXINDEX/SXINDEX.php(413): XWPMultiplePosts()
+#4 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): {closure}()
+#5 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#6 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#7 /home/igucmor1/public_html/wp-settings.php(700): do_action()
+#8 /home/igucmor1/public_html/wp-config.php(92): require_once('/home/igucmor1/...')
+#9 /home/igucmor1/public_html/wp-load.php(50): require_once('/home/igucmor1/...')
+#10 /home/igucmor1/public_html/wp-blog-header.php(13): require_once('/home/igucmor1/...')
+#11 /home/igucmor1/public_html/index.php(17): require('/home/igucmor1/...')
+#12 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/XSystem/SXINDEX/SXIRender.php on line 71
+
+2025-05-28T17:31:33+00:00 CRITICAL Uncaught TypeError: imagesx(): Argument #1 ($image) must be of type GdImage, bool given in /home/igucmor1/public_html/wp-content/plugins/XSystem/SXINDEX/SXIRender.php:71
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/XSystem/SXINDEX/SXIRender.php(71): imagesx()
+#1 /home/igucmor1/public_html/wp-content/plugins/XSystem/SXINDEX/SXIRender.php(203): CIRender->XWPRenderImage()
+#2 /home/igucmor1/public_html/wp-content/plugins/XSystem/SXINDEX/SXINDEX.php(384): CIRender->XWPRenderLnkBlock()
+#3 /home/igucmor1/public_html/wp-content/plugins/XSystem/SXINDEX/SXINDEX.php(413): XWPMultiplePosts()
+#4 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): {closure}()
+#5 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#6 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#7 /home/igucmor1/public_html/wp-settings.php(700): do_action()
+#8 /home/igucmor1/public_html/wp-config.php(92): require_once('/home/igucmor1/...')
+#9 /home/igucmor1/public_html/wp-load.php(50): require_once('/home/igucmor1/...')
+#10 /home/igucmor1/public_html/wp-blog-header.php(13): require_once('/home/igucmor1/...')
+#11 /home/igucmor1/public_html/index.php(17): require('/home/igucmor1/...')
+#12 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/XSystem/SXINDEX/SXIRender.php on line 71
+
+2025-07-07T07:01:37+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugins.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-07T07:01:37+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugins.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-07T07:01:38+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugins.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-07T07:01:39+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugins.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-07T07:01:40+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/theme-editor.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-07T07:01:41+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugins.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-07T07:01:44+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugin-install.php(16): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-07T07:01:46+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugin-install.php(16): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-07T07:01:47+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugin-install.php(16): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-07T07:01:48+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugin-install.php(16): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-07T07:01:49+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/theme-editor.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-07T07:01:50+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugins.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-07T07:01:54+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugin-install.php(16): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-07T07:01:56+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugin-install.php(16): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-07T07:01:57+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugin-install.php(16): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-07T07:01:57+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugin-install.php(16): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-07T07:01:58+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/theme-editor.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-07T07:01:59+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugins.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-07T07:02:03+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugin-install.php(16): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-07T07:02:03+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugin-install.php(16): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-07T07:02:04+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugin-install.php(16): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-07T07:02:06+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugin-install.php(16): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-07T07:02:07+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/theme-editor.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-07T07:02:07+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugins.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-07T07:02:12+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugin-install.php(16): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-07T07:02:13+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugin-install.php(16): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-07T07:02:13+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugin-install.php(16): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-07T07:02:14+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugin-install.php(16): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-07T07:02:16+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/theme-editor.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-07T07:02:17+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugins.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-07T22:41:09+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugin-install.php(16): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-07T22:41:12+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugin-install.php(16): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-07T22:41:13+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugin-install.php(16): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-07T22:41:14+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugin-install.php(16): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-08T05:05:36+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugins.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-08T05:07:36+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugins.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-08T05:07:54+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/theme-editor.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-08T05:07:55+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugins.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-08T05:08:06+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugins.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-08T05:10:53+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugins.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-08T05:16:31+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugin-install.php(16): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-08T05:16:32+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugin-install.php(16): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-08T05:16:33+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugin-install.php(16): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-08T05:16:35+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugin-install.php(16): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-08T05:16:36+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugin-install.php(16): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-08T10:06:49+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugin-install.php(16): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-08T10:06:50+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugin-install.php(16): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-08T10:06:51+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugin-install.php(16): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-08T10:06:53+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugin-install.php(16): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-08T10:10:04+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugin-install.php(16): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-08T10:10:05+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugin-install.php(16): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-08T10:10:06+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugin-install.php(16): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-08T10:10:07+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugin-install.php(16): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-08T10:10:08+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugin-install.php(16): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-08T10:10:41+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugin-install.php(16): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-08T10:10:41+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugin-install.php(16): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-08T10:10:42+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugin-install.php(16): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-08T10:10:43+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugin-install.php(16): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-08T10:10:44+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/plugin-install.php(16): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-09T02:12:13+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-09T03:01:22+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-09T08:58:05+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-10T13:00:13+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-10T13:00:23+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-10T13:00:39+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-10T13:00:55+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-10T13:01:53+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-10T13:03:22+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-10T13:03:32+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-10T13:03:39+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-10T13:04:10+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-10T13:04:54+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-10T13:05:00+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-10T13:05:06+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-10T13:05:11+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-10T13:05:14+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-10T13:05:59+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-10T13:06:09+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-10T13:06:56+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-10T13:07:12+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-10T13:07:17+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-10T13:07:48+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-10T13:07:54+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-10T13:08:14+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-10T13:08:19+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-10T13:08:45+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-10T13:09:02+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-10T13:09:57+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-10T13:10:13+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-10T22:53:15+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-10T22:57:18+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-10T23:01:38+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-11T13:36:37+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-11T13:36:45+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-11T13:37:59+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-11T13:39:40+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-11T13:40:37+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-11T13:41:01+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-11T13:41:22+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-11T13:44:10+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-11T13:44:24+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-11T13:45:17+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-11T13:45:32+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-11T14:58:06+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-11T21:02:24+00:00 CRITICAL Uncaught TypeError: array_keys(): Argument #1 ($array) must be of type array, null given in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php:386
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php(386): array_keys()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\Jetpack\Sync\Modules\Callables->set_plugin_action_links()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/includes/class-wp-screen.php(424): do_action()
+#5 /home/igucmor1/public_html/wp-admin/includes/screen.php(243): WP_Screen->set_current_screen()
+#6 /home/igucmor1/public_html/wp-admin/admin.php(212): set_current_screen()
+#7 /home/igucmor1/public_html/wp-admin/index.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/vendor/automattic/jetpack-sync/src/modules/class-callables.php on line 386
+
+2025-07-14T12:33:35+00:00 CRITICAL Uncaught Error: Call to undefined function _is_wcf_doing_optin_ajax() in /home/igucmor1/public_html/wp-content/plugins/cartflows/classes/class-cartflows-frontend.php:655
+Stack trace:
+#0 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Cartflows_Frontend->setup_optin_checkout_filter()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#2 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#3 /home/igucmor1/public_html/wp-settings.php(700): do_action()
+#4 /home/igucmor1/public_html/wp-config.php(92): require_once('/home/igucmor1/...')
+#5 /home/igucmor1/public_html/wp-load.php(50): require_once('/home/igucmor1/...')
+#6 /home/igucmor1/public_html/wp-admin/admin.php(34): require_once('/home/igucmor1/...')
+#7 /home/igucmor1/public_html/wp-admin/plugin-editor.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/cartflows/classes/class-cartflows-frontend.php on line 655
+
+2025-07-14T12:35:06+00:00 CRITICAL Unmatched '}' in /home/igucmor1/public_html/wp-content/plugins/header-footer-elementor/inc/hfe-functions.php on line 148
+
+2025-07-14T12:35:39+00:00 CRITICAL Uncaught Error: Call to undefined function oe_get_array_value_deep() in /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/menu-icons/includes/settings.php:47
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/menu-icons/includes/settings.php(55): OE_Menu_Icons_Settings::get()
+#1 /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/menu-icons/includes/settings.php(80): OE_Menu_Icons_Settings::get_menu_settings()
+#2 /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/menu-icons/includes/settings.php(124): OE_Menu_Icons_Settings::is_menu_icons_disabled_for_menu()
+#3 /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/menu-icons/menu-icons.php(107): OE_Menu_Icons_Settings::init()
+#4 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): OE_Menu_Icons::_init()
+#5 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#6 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#7 /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/menu-icons/includes/library/icon-selector/icon-selector.php(136): do_action()
+#8 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): OE_Icon_Selector->init()
+#9 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#10 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#11 /home/igucmor1/public_html/wp-settings.php(722): do_action()
+#12 /home/igucmor1/public_html/wp-config.php(92): require_once('/home/igucmor1/...')
+#13 /home/igucmor1/public_html/wp-load.php(50): require_once('/home/igucmor1/...')
+#14 /home/igucmor1/public_html/wp-admin/admin.php(34): require_once('/home/igucmor1/...')
+#15 /home/igucmor1/public_html/wp-admin/plugin-editor.php(10): require_once('/home/igucmor1/...')
+#16 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/menu-icons/includes/settings.php on line 47
+
+2025-07-14T12:36:04+00:00 CRITICAL Uncaught Error: Class "UAGB_Popup_Builder" not found in /home/igucmor1/public_html/wp-content/plugins/ultimate-addons-for-gutenberg/classes/class-uagb-loader.php:444
+Stack trace:
+#0 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): UAGB_Loader->init_actions()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#2 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#3 /home/igucmor1/public_html/wp-settings.php(700): do_action()
+#4 /home/igucmor1/public_html/wp-config.php(92): require_once('/home/igucmor1/...')
+#5 /home/igucmor1/public_html/wp-load.php(50): require_once('/home/igucmor1/...')
+#6 /home/igucmor1/public_html/wp-admin/admin.php(34): require_once('/home/igucmor1/...')
+#7 /home/igucmor1/public_html/wp-admin/plugin-editor.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/ultimate-addons-for-gutenberg/classes/class-uagb-loader.php on line 444
+
+2025-07-14T12:36:11+00:00 CRITICAL Uncaught Error: Call to undefined function astra_sites_has_import_started() in /home/igucmor1/public_html/wp-content/plugins/astra-sites/inc/classes/class-astra-sites-error-handler.php:48
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/astra-sites/inc/classes/class-astra-sites-error-handler.php(36): Astra_Sites_Error_Handler->__construct()
+#1 /home/igucmor1/public_html/wp-content/plugins/astra-sites/inc/classes/class-astra-sites-error-handler.php(164): Astra_Sites_Error_Handler::get_instance()
+#2 /home/igucmor1/public_html/wp-content/plugins/astra-sites/inc/classes/class-astra-sites.php(2165): require_once('/home/igucmor1/...')
+#3 /home/igucmor1/public_html/wp-content/plugins/astra-sites/inc/classes/class-astra-sites.php(127): Astra_Sites->includes()
+#4 /home/igucmor1/public_html/wp-content/plugins/astra-sites/inc/classes/class-astra-sites.php(108): Astra_Sites->__construct()
+#5 /home/igucmor1/public_html/wp-content/plugins/astra-sites/inc/classes/class-astra-sites.php(2730): Astra_Sites::get_instance()
+#6 /home/igucmor1/public_html/wp-content/plugins/astra-sites/astra-sites.php(79): require_once('/home/igucmor1/...')
+#7 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): astra_sites_setup()
+#8 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#9 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#10 /home/igucmor1/public_html/wp-settings.php(555): do_action()
+#11 /home/igucmor1/public_html/wp-config.php(92): require_once('/home/igucmor1/...')
+#12 /home/igucmor1/public_html/wp-load.php(50): require_once('/home/igucmor1/...')
+#13 /home/igucmor1/public_html/wp-admin/admin.php(34): require_once('/home/igucmor1/...')
+#14 /home/igucmor1/public_html/wp-admin/plugin-editor.php(10): require_once('/home/igucmor1/...')
+#15 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/astra-sites/inc/classes/class-astra-sites-error-handler.php on line 48
+
+2025-07-14T12:36:37+00:00 CRITICAL Uncaught Error: Call to undefined function skyrocket_get_social_media() in /home/igucmor1/public_html/wp-content/themes/oceanwp/inc/customizer/library/customizer-custom-controls/functions.php:314
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/themes/oceanwp/functions.php(284): require_once()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): OCEANWP_Theme_Class::classes()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-settings.php(678): do_action()
+#5 /home/igucmor1/public_html/wp-config.php(92): require_once('/home/igucmor1/...')
+#6 /home/igucmor1/public_html/wp-load.php(50): require_once('/home/igucmor1/...')
+#7 /home/igucmor1/public_html/wp-admin/admin.php(34): require_once('/home/igucmor1/...')
+#8 /home/igucmor1/public_html/wp-admin/theme-editor.php(10): require_once('/home/igucmor1/...')
+#9 {main}
+  thrown in /home/igucmor1/public_html/wp-content/themes/oceanwp/inc/customizer/library/customizer-custom-controls/functions.php on line 314
+
+2025-07-14T12:37:02+00:00 CRITICAL Uncaught Error: Undefined constant "OCEANWP_THEME_VERSION" in /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/admin-bar/admin-bar.php:180
+Stack trace:
+#0 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Ocean_Admin_Bar->enqueue_css()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#2 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#3 /home/igucmor1/public_html/wp-admin/admin-header.php(118): do_action()
+#4 /home/igucmor1/public_html/wp-admin/theme-editor.php(152): require_once('/home/igucmor1/...')
+#5 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/admin-bar/admin-bar.php on line 180
+
+2025-07-14T12:37:32+00:00 CRITICAL Uncaught Error: Call to undefined function oe_metabox_support_post_types() in /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/post-settings/post-settings.php:136
+Stack trace:
+#0 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): OceanWP_Post_Settings->post_args()
+#1 /home/igucmor1/public_html/wp-includes/plugin.php(205): WP_Hook->apply_filters()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-post-type.php(491): apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/class-wp-post-type.php(467): WP_Post_Type->set_props()
+#4 /home/igucmor1/public_html/wp-includes/post.php(1805): WP_Post_Type->__construct()
+#5 /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/panel/library.php(70): register_post_type()
+#6 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Ocean_Extra_My_Library::library_post_type()
+#7 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#8 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#9 /home/igucmor1/public_html/wp-settings.php(700): do_action()
+#10 /home/igucmor1/public_html/wp-config.php(92): require_once('/home/igucmor1/...')
+#11 /home/igucmor1/public_html/wp-load.php(50): require_once('/home/igucmor1/...')
+#12 /home/igucmor1/public_html/wp-admin/admin.php(34): require_once('/home/igucmor1/...')
+#13 /home/igucmor1/public_html/wp-admin/plugin-editor.php(10): require_once('/home/igucmor1/...')
+#14 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/post-settings/post-settings.php on line 136
+
+2025-07-14T12:38:06+00:00 CRITICAL Uncaught Error: Class "WC_Payments_Dependency_Service" not found in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/includes/class-wc-payments.php:319
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/woocommerce-payments.php(153): WC_Payments::init()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): wcpay_init()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-settings.php(555): do_action()
+#5 /home/igucmor1/public_html/wp-config.php(92): require_once('/home/igucmor1/...')
+#6 /home/igucmor1/public_html/wp-load.php(50): require_once('/home/igucmor1/...')
+#7 /home/igucmor1/public_html/wp-admin/admin.php(34): require_once('/home/igucmor1/...')
+#8 /home/igucmor1/public_html/wp-admin/plugin-editor.php(10): require_once('/home/igucmor1/...')
+#9 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/includes/class-wc-payments.php on line 319
+
+2025-07-14T12:38:40+00:00 CRITICAL Uncaught Error: Class "Elementor\Core\Admin\Notices\Elementor_Dev_Notice" not found in /home/igucmor1/public_html/wp-content/plugins/elementor/core/admin/admin-notices.php:43
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/elementor/core/admin/admin-notices.php(583): Elementor\Core\Admin\Admin_Notices->get_notices()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Elementor\Core\Admin\Admin_Notices->admin_notices()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/admin-header.php(303): do_action()
+#5 /home/igucmor1/public_html/wp-admin/plugin-editor.php(163): require_once('/home/igucmor1/...')
+#6 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/elementor/core/admin/admin-notices.php on line 43
+
+2025-07-14T12:40:09+00:00 CRITICAL Cannot redeclare fn_aa3fb05a15bfeb25dc278d4040ae23bf() (previously declared in /home/igucmor1/public_html/wp-content/plugins/ultimate-addons-for-gutenberg/includes/blocks/slider-child/block.php:7) in /home/igucmor1/public_html/wp-content/plugins/ultimate-addons-for-gutenberg/includes/blocks/slider-child/block.php on line 20
+
+2025-07-14T12:41:48+00:00 CRITICAL Uncaught Error: Class "Templately\Builder\Conditions\PostByAuthor" not found in /home/igucmor1/public_html/wp-content/plugins/templately/includes/Builder/Conditions/Post.php:60
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/templately/includes/Builder/Conditions/Condition.php(22): Templately\Builder\Conditions\Post->register_sub_conditions()
+#1 /home/igucmor1/public_html/wp-content/plugins/templately/includes/Builder/Conditions/Post.php(11): Templately\Builder\Conditions\Condition->__construct()
+#2 /home/igucmor1/public_html/wp-content/plugins/templately/includes/Builder/Conditions/Singular.php(44): Templately\Builder\Conditions\Post->__construct()
+#3 /home/igucmor1/public_html/wp-content/plugins/templately/includes/Builder/Conditions/Condition.php(22): Templately\Builder\Conditions\Singular->register_sub_conditions()
+#4 /home/igucmor1/public_html/wp-content/plugins/templately/includes/Builder/Managers/ConditionManager.php(141): Templately\Builder\Conditions\Condition->__construct()
+#5 /home/igucmor1/public_html/wp-content/plugins/templately/includes/Builder/Managers/ConditionManager.php(152): Templately\Builder\Managers\ConditionManager->register_condition()
+#6 /home/igucmor1/public_html/wp-content/plugins/templately/includes/Builder/Managers/ConditionManager.php(127): Templately\Builder\Managers\ConditionManager->register_condition()
+#7 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Templately\Builder\Managers\ConditionManager->register()
+#8 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#9 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#10 /home/igucmor1/public_html/wp-settings.php(722): do_action()
+#11 /home/igucmor1/public_html/wp-config.php(92): require_once('/home/igucmor1/...')
+#12 /home/igucmor1/public_html/wp-load.php(50): require_once('/home/igucmor1/...')
+#13 /home/igucmor1/public_html/wp-admin/admin.php(34): require_once('/home/igucmor1/...')
+#14 /home/igucmor1/public_html/wp-admin/plugin-editor.php(10): require_once('/home/igucmor1/...')
+#15 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/templately/includes/Builder/Conditions/Post.php on line 60
+
+2025-07-14T12:42:26+00:00 CRITICAL Uncaught Error: Class "ImageOptimization\Classes\Async_Operation\Async_Operation_Hook" not found in /home/igucmor1/public_html/wp-content/plugins/image-optimization/modules/optimization/components/single-optimization.php:89
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/image-optimization/classes/module-base.php(317): ImageOptimization\Modules\Optimization\Components\Single_Optimization->__construct()
+#1 /home/igucmor1/public_html/wp-content/plugins/image-optimization/modules/optimization/module.php(98): ImageOptimization\Classes\Module_Base->register_components()
+#2 /home/igucmor1/public_html/wp-content/plugins/image-optimization/classes/module-base.php(83): ImageOptimization\Modules\Optimization\Module->__construct()
+#3 /home/igucmor1/public_html/wp-content/plugins/image-optimization/includes/modules-manager.php(41): ImageOptimization\Classes\Module_Base::instance()
+#4 /home/igucmor1/public_html/wp-content/plugins/image-optimization/plugin.php(90): ImageOptimization\Manager->__construct()
+#5 /home/igucmor1/public_html/wp-content/plugins/image-optimization/plugin.php(105): ImageOptimization\Plugin->includes()
+#6 /home/igucmor1/public_html/wp-content/plugins/image-optimization/plugin.php(47): ImageOptimization\Plugin->__construct()
+#7 /home/igucmor1/public_html/wp-content/plugins/image-optimization/plugin.php(109): ImageOptimization\Plugin::instance()
+#8 /home/igucmor1/public_html/wp-content/plugins/image-optimization/image-optimization.php(195): require_once('/home/igucmor1/...')
+#9 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): ImageOptimization->init()
+#10 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#11 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#12 /home/igucmor1/public_html/wp-settings.php(555): do_action()
+#13 /home/igucmor1/public_html/wp-config.php(92): require_once('/home/igucmor1/...')
+#14 /home/igucmor1/public_html/wp-load.php(50): require_once('/home/igucmor1/...')
+#15 /home/igucmor1/public_html/wp-admin/admin.php(34): require_once('/home/igucmor1/...')
+#16 /home/igucmor1/public_html/wp-admin/plugin-editor.php(10): require_once('/home/igucmor1/...')
+#17 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/image-optimization/modules/optimization/components/single-optimization.php on line 89
+
+2025-07-14T12:42:33+00:00 CRITICAL Uncaught Error: Interface "Elementor\Core\Admin\Menu\Interfaces\Admin_Menu_Item_With_Page" not found in /home/igucmor1/public_html/wp-content/plugins/elementor/includes/settings/admin-menu-items/admin-menu-item.php:11
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/elementor/includes/autoloader.php(294): require()
+#1 /home/igucmor1/public_html/wp-content/plugins/elementor/includes/autoloader.php(330): Elementor\Autoloader::load_class()
+#2 /home/igucmor1/public_html/wp-content/plugins/elementor/includes/settings/settings.php(105): Elementor\Autoloader::autoload()
+#3 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Elementor\Settings->Elementor\{closure}()
+#4 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#5 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#6 /home/igucmor1/public_html/wp-content/plugins/elementor/core/admin/menu/admin-menu-manager.php(51): do_action()
+#7 /home/igucmor1/public_html/wp-content/plugins/elementor/core/admin/menu/admin-menu-manager.php(42): Elementor\Core\Admin\Menu\Admin_Menu_Manager->register_wp_menus()
+#8 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Elementor\Core\Admin\Menu\Admin_Menu_Manager->Elementor\Core\Admin\Menu\{closure}()
+#9 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#10 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#11 /home/igucmor1/public_html/wp-admin/includes/menu.php(161): do_action()
+#12 /home/igucmor1/public_html/wp-admin/menu.php(412): require_once('/home/igucmor1/...')
+#13 /home/igucmor1/public_html/wp-admin/admin.php(158): require('/home/igucmor1/...')
+#14 /home/igucmor1/public_html/wp-admin/plugin-editor.php(10): require_once('/home/igucmor1/...')
+#15 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/elementor/includes/settings/admin-menu-items/admin-menu-item.php on line 11
+
+2025-07-15T19:21:19+00:00 CRITICAL Maximum execution time of 300 seconds exceeded in /home/igucmor1/public_html/wp-includes/functions.php on line 847
+
+2025-07-19T02:16:14+00:00 CRITICAL Uncaught Error: Call to undefined function oe_get_array_value_deep() in /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/menu-icons/includes/settings.php:47
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/menu-icons/includes/settings.php(55): OE_Menu_Icons_Settings::get()
+#1 /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/menu-icons/includes/settings.php(80): OE_Menu_Icons_Settings::get_menu_settings()
+#2 /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/menu-icons/includes/settings.php(124): OE_Menu_Icons_Settings::is_menu_icons_disabled_for_menu()
+#3 /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/menu-icons/menu-icons.php(107): OE_Menu_Icons_Settings::init()
+#4 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): OE_Menu_Icons::_init()
+#5 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#6 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#7 /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/menu-icons/includes/library/icon-selector/icon-selector.php(136): do_action()
+#8 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): OE_Icon_Selector->init()
+#9 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#10 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#11 /home/igucmor1/public_html/wp-settings.php(722): do_action()
+#12 /home/igucmor1/public_html/wp-config.php(92): require_once('/home/igucmor1/...')
+#13 /home/igucmor1/public_html/wp-load.php(50): require_once('/home/igucmor1/...')
+#14 /home/igucmor1/public_html/wp-admin/admin.php(34): require_once('/home/igucmor1/...')
+#15 /home/igucmor1/public_html/wp-admin/plugin-editor.php(10): require_once('/home/igucmor1/...')
+#16 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/menu-icons/includes/settings.php on line 47
+
+2025-07-19T02:17:16+00:00 CRITICAL Uncaught Error: Call to undefined function _is_wcf_doing_optin_ajax() in /home/igucmor1/public_html/wp-content/plugins/cartflows/classes/class-cartflows-frontend.php:655
+Stack trace:
+#0 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Cartflows_Frontend->setup_optin_checkout_filter()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#2 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#3 /home/igucmor1/public_html/wp-settings.php(700): do_action()
+#4 /home/igucmor1/public_html/wp-config.php(92): require_once('/home/igucmor1/...')
+#5 /home/igucmor1/public_html/wp-load.php(50): require_once('/home/igucmor1/...')
+#6 /home/igucmor1/public_html/wp-admin/admin.php(34): require_once('/home/igucmor1/...')
+#7 /home/igucmor1/public_html/wp-admin/plugin-editor.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/cartflows/classes/class-cartflows-frontend.php on line 655
+
+2025-07-19T02:17:17+00:00 CRITICAL Uncaught Error: Call to undefined function _is_wcf_checkout_type() in /home/igucmor1/public_html/wp-content/plugins/cartflows/modules/checkout/classes/class-cartflows-checkout-markup.php:441
+Stack trace:
+#0 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Cartflows_Checkout_Markup->woo_checkout_flag()
+#1 /home/igucmor1/public_html/wp-includes/plugin.php(205): WP_Hook->apply_filters()
+#2 /home/igucmor1/public_html/wp-content/plugins/woocommerce/includes/wc-conditional-functions.php(112): apply_filters()
+#3 /home/igucmor1/public_html/wp-content/plugins/woocommerce/src/Blocks/BlockTypes/MiniCart.php(118): is_checkout()
+#4 /home/igucmor1/public_html/wp-content/plugins/woocommerce/src/Blocks/BlockTypes/AbstractBlock.php(149): Automattic\WooCommerce\Blocks\BlockTypes\MiniCart->get_block_type_script()
+#5 /home/igucmor1/public_html/wp-content/plugins/woocommerce/src/Blocks/BlockTypes/AbstractBlock.php(124): Automattic\WooCommerce\Blocks\BlockTypes\AbstractBlock->register_block_type_assets()
+#6 /home/igucmor1/public_html/wp-content/plugins/woocommerce/src/Blocks/BlockTypes/MiniCart.php(89): Automattic\WooCommerce\Blocks\BlockTypes\AbstractBlock->initialize()
+#7 /home/igucmor1/public_html/wp-content/plugins/woocommerce/src/Blocks/BlockTypes/AbstractBlock.php(70): Automattic\WooCommerce\Blocks\BlockTypes\MiniCart->initialize()
+#8 /home/igucmor1/public_html/wp-content/plugins/woocommerce/src/Blocks/BlockTypes/MiniCart.php(79): Automattic\WooCommerce\Blocks\BlockTypes\AbstractBlock->__construct()
+#9 /home/igucmor1/public_html/wp-content/plugins/woocommerce/src/Blocks/BlockTypesController.php(106): Automattic\WooCommerce\Blocks\BlockTypes\MiniCart->__construct()
+#10 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Automattic\WooCommerce\Blocks\BlockTypesController->register_blocks()
+#11 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#12 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#13 /home/igucmor1/public_html/wp-settings.php(700): do_action()
+#14 /home/igucmor1/public_html/wp-config.php(92): require_once('/home/igucmor1/...')
+#15 /home/igucmor1/public_html/wp-load.php(50): require_once('/home/igucmor1/...')
+#16 /home/igucmor1/public_html/wp-cron.php(46): require_once('/home/igucmor1/...')
+#17 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/cartflows/modules/checkout/classes/class-cartflows-checkout-markup.php on line 441
+
+2025-07-19T02:18:31+00:00 CRITICAL Uncaught Error: Class "WC_Payments_Dependency_Service" not found in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/includes/class-wc-payments.php:319
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/woocommerce-payments.php(153): WC_Payments::init()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): wcpay_init()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-settings.php(555): do_action()
+#5 /home/igucmor1/public_html/wp-config.php(92): require_once('/home/igucmor1/...')
+#6 /home/igucmor1/public_html/wp-load.php(50): require_once('/home/igucmor1/...')
+#7 /home/igucmor1/public_html/wp-admin/admin.php(34): require_once('/home/igucmor1/...')
+#8 /home/igucmor1/public_html/wp-admin/plugin-editor.php(10): require_once('/home/igucmor1/...')
+#9 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/includes/class-wc-payments.php on line 319
+
+2025-07-19T02:18:38+00:00 CRITICAL Uncaught Error: Call to undefined function astra_sites_has_import_started() in /home/igucmor1/public_html/wp-content/plugins/astra-sites/inc/classes/class-astra-sites-error-handler.php:48
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/astra-sites/inc/classes/class-astra-sites-error-handler.php(36): Astra_Sites_Error_Handler->__construct()
+#1 /home/igucmor1/public_html/wp-content/plugins/astra-sites/inc/classes/class-astra-sites-error-handler.php(164): Astra_Sites_Error_Handler::get_instance()
+#2 /home/igucmor1/public_html/wp-content/plugins/astra-sites/inc/classes/class-astra-sites.php(2165): require_once('/home/igucmor1/...')
+#3 /home/igucmor1/public_html/wp-content/plugins/astra-sites/inc/classes/class-astra-sites.php(127): Astra_Sites->includes()
+#4 /home/igucmor1/public_html/wp-content/plugins/astra-sites/inc/classes/class-astra-sites.php(108): Astra_Sites->__construct()
+#5 /home/igucmor1/public_html/wp-content/plugins/astra-sites/inc/classes/class-astra-sites.php(2730): Astra_Sites::get_instance()
+#6 /home/igucmor1/public_html/wp-content/plugins/astra-sites/astra-sites.php(79): require_once('/home/igucmor1/...')
+#7 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): astra_sites_setup()
+#8 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#9 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#10 /home/igucmor1/public_html/wp-settings.php(555): do_action()
+#11 /home/igucmor1/public_html/wp-config.php(92): require_once('/home/igucmor1/...')
+#12 /home/igucmor1/public_html/wp-load.php(50): require_once('/home/igucmor1/...')
+#13 /home/igucmor1/public_html/wp-admin/admin.php(34): require_once('/home/igucmor1/...')
+#14 /home/igucmor1/public_html/wp-admin/plugin-editor.php(10): require_once('/home/igucmor1/...')
+#15 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/astra-sites/inc/classes/class-astra-sites-error-handler.php on line 48
+
+2025-07-19T02:18:38+00:00 CRITICAL Uncaught Error: Call to undefined function astra_sites_has_import_started() in /home/igucmor1/public_html/wp-content/plugins/astra-sites/inc/classes/class-astra-sites-error-handler.php:48
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/astra-sites/inc/classes/class-astra-sites-error-handler.php(36): Astra_Sites_Error_Handler->__construct()
+#1 /home/igucmor1/public_html/wp-content/plugins/astra-sites/inc/classes/class-astra-sites-error-handler.php(164): Astra_Sites_Error_Handler::get_instance()
+#2 /home/igucmor1/public_html/wp-content/plugins/astra-sites/inc/classes/class-astra-sites.php(2165): require_once('/home/igucmor1/...')
+#3 /home/igucmor1/public_html/wp-content/plugins/astra-sites/inc/classes/class-astra-sites.php(127): Astra_Sites->includes()
+#4 /home/igucmor1/public_html/wp-content/plugins/astra-sites/inc/classes/class-astra-sites.php(108): Astra_Sites->__construct()
+#5 /home/igucmor1/public_html/wp-content/plugins/astra-sites/inc/classes/class-astra-sites.php(2730): Astra_Sites::get_instance()
+#6 /home/igucmor1/public_html/wp-content/plugins/astra-sites/astra-sites.php(79): require_once('/home/igucmor1/...')
+#7 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): astra_sites_setup()
+#8 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#9 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#10 /home/igucmor1/public_html/wp-settings.php(555): do_action()
+#11 /home/igucmor1/public_html/wp-config.php(92): require_once('/home/igucmor1/...')
+#12 /home/igucmor1/public_html/wp-load.php(50): require_once('/home/igucmor1/...')
+#13 /home/igucmor1/public_html/wp-cron.php(46): require_once('/home/igucmor1/...')
+#14 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/astra-sites/inc/classes/class-astra-sites-error-handler.php on line 48
+
+2025-07-19T02:18:56+00:00 CRITICAL Uncaught Error: Call to undefined function skyrocket_get_social_media() in /home/igucmor1/public_html/wp-content/themes/oceanwp/inc/customizer/library/customizer-custom-controls/functions.php:314
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/themes/oceanwp/functions.php(284): require_once()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): OCEANWP_Theme_Class::classes()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-settings.php(678): do_action()
+#5 /home/igucmor1/public_html/wp-config.php(92): require_once('/home/igucmor1/...')
+#6 /home/igucmor1/public_html/wp-load.php(50): require_once('/home/igucmor1/...')
+#7 /home/igucmor1/public_html/wp-admin/admin.php(34): require_once('/home/igucmor1/...')
+#8 /home/igucmor1/public_html/wp-admin/theme-editor.php(10): require_once('/home/igucmor1/...')
+#9 {main}
+  thrown in /home/igucmor1/public_html/wp-content/themes/oceanwp/inc/customizer/library/customizer-custom-controls/functions.php on line 314
+
+2025-07-19T02:19:25+00:00 CRITICAL Uncaught Error: Undefined constant "OCEANWP_THEME_VERSION" in /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/admin-bar/admin-bar.php:180
+Stack trace:
+#0 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Ocean_Admin_Bar->enqueue_css()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#2 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#3 /home/igucmor1/public_html/wp-admin/admin-header.php(118): do_action()
+#4 /home/igucmor1/public_html/wp-admin/theme-editor.php(152): require_once('/home/igucmor1/...')
+#5 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/admin-bar/admin-bar.php on line 180
+
+2025-07-19T02:19:58+00:00 CRITICAL Uncaught Error: Class "UAGB_Popup_Builder" not found in /home/igucmor1/public_html/wp-content/plugins/ultimate-addons-for-gutenberg/classes/class-uagb-loader.php:444
+Stack trace:
+#0 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): UAGB_Loader->init_actions()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#2 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#3 /home/igucmor1/public_html/wp-settings.php(700): do_action()
+#4 /home/igucmor1/public_html/wp-config.php(92): require_once('/home/igucmor1/...')
+#5 /home/igucmor1/public_html/wp-load.php(50): require_once('/home/igucmor1/...')
+#6 /home/igucmor1/public_html/wp-admin/admin.php(34): require_once('/home/igucmor1/...')
+#7 /home/igucmor1/public_html/wp-admin/plugin-editor.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/ultimate-addons-for-gutenberg/classes/class-uagb-loader.php on line 444
+
+2025-07-19T02:19:59+00:00 CRITICAL Uncaught Error: Class "UAGB_Popup_Builder" not found in /home/igucmor1/public_html/wp-content/plugins/ultimate-addons-for-gutenberg/classes/class-uagb-loader.php:444
+Stack trace:
+#0 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): UAGB_Loader->init_actions()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#2 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#3 /home/igucmor1/public_html/wp-settings.php(700): do_action()
+#4 /home/igucmor1/public_html/wp-config.php(92): require_once('/home/igucmor1/...')
+#5 /home/igucmor1/public_html/wp-load.php(50): require_once('/home/igucmor1/...')
+#6 /home/igucmor1/public_html/wp-cron.php(46): require_once('/home/igucmor1/...')
+#7 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/ultimate-addons-for-gutenberg/classes/class-uagb-loader.php on line 444
+
+2025-07-19T02:20:43+00:00 CRITICAL Uncaught Error: Call to undefined function oe_metabox_support_post_types() in /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/post-settings/post-settings.php:136
+Stack trace:
+#0 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): OceanWP_Post_Settings->post_args()
+#1 /home/igucmor1/public_html/wp-includes/plugin.php(205): WP_Hook->apply_filters()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-post-type.php(491): apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/class-wp-post-type.php(467): WP_Post_Type->set_props()
+#4 /home/igucmor1/public_html/wp-includes/post.php(1805): WP_Post_Type->__construct()
+#5 /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/panel/library.php(70): register_post_type()
+#6 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Ocean_Extra_My_Library::library_post_type()
+#7 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#8 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#9 /home/igucmor1/public_html/wp-settings.php(700): do_action()
+#10 /home/igucmor1/public_html/wp-config.php(92): require_once('/home/igucmor1/...')
+#11 /home/igucmor1/public_html/wp-load.php(50): require_once('/home/igucmor1/...')
+#12 /home/igucmor1/public_html/wp-admin/admin.php(34): require_once('/home/igucmor1/...')
+#13 /home/igucmor1/public_html/wp-admin/plugin-editor.php(10): require_once('/home/igucmor1/...')
+#14 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/post-settings/post-settings.php on line 136
+
+2025-07-19T02:20:49+00:00 CRITICAL Unmatched '}' in /home/igucmor1/public_html/wp-content/plugins/header-footer-elementor/inc/hfe-functions.php on line 148
+
+2025-07-19T23:06:40+00:00 CRITICAL Unmatched '}' in /home/igucmor1/public_html/wp-content/plugins/header-footer-elementor/inc/hfe-functions.php on line 148
+
+2025-07-19T23:06:47+00:00 CRITICAL Uncaught Error: Class "WC_Payments_Dependency_Service" not found in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/includes/class-wc-payments.php:319
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/woocommerce-payments.php(153): WC_Payments::init()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): wcpay_init()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-settings.php(555): do_action()
+#5 /home/igucmor1/public_html/wp-config.php(92): require_once('/home/igucmor1/...')
+#6 /home/igucmor1/public_html/wp-load.php(50): require_once('/home/igucmor1/...')
+#7 /home/igucmor1/public_html/wp-admin/admin.php(34): require_once('/home/igucmor1/...')
+#8 /home/igucmor1/public_html/wp-admin/plugin-editor.php(10): require_once('/home/igucmor1/...')
+#9 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/includes/class-wc-payments.php on line 319
+
+2025-07-19T23:07:22+00:00 CRITICAL Uncaught Error: Class "Elementor\Core\Admin\Notices\Elementor_Dev_Notice" not found in /home/igucmor1/public_html/wp-content/plugins/elementor/core/admin/admin-notices.php:43
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/elementor/core/admin/admin-notices.php(583): Elementor\Core\Admin\Admin_Notices->get_notices()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Elementor\Core\Admin\Admin_Notices->admin_notices()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/admin-header.php(303): do_action()
+#5 /home/igucmor1/public_html/wp-admin/plugin-editor.php(163): require_once('/home/igucmor1/...')
+#6 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/elementor/core/admin/admin-notices.php on line 43
+
+2025-07-19T23:09:19+00:00 CRITICAL Uncaught Error: Undefined constant "OCEANWP_THEME_VERSION" in /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/admin-bar/admin-bar.php:180
+Stack trace:
+#0 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Ocean_Admin_Bar->enqueue_css()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#2 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#3 /home/igucmor1/public_html/wp-admin/admin-header.php(118): do_action()
+#4 /home/igucmor1/public_html/wp-admin/theme-editor.php(152): require_once('/home/igucmor1/...')
+#5 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/admin-bar/admin-bar.php on line 180
+
+2025-07-19T23:09:26+00:00 CRITICAL Uncaught Error: Call to undefined function oe_metabox_support_post_types() in /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/post-settings/post-settings.php:136
+Stack trace:
+#0 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): OceanWP_Post_Settings->post_args()
+#1 /home/igucmor1/public_html/wp-includes/plugin.php(205): WP_Hook->apply_filters()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-post-type.php(491): apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/class-wp-post-type.php(467): WP_Post_Type->set_props()
+#4 /home/igucmor1/public_html/wp-includes/post.php(1805): WP_Post_Type->__construct()
+#5 /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/panel/library.php(70): register_post_type()
+#6 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Ocean_Extra_My_Library::library_post_type()
+#7 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#8 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#9 /home/igucmor1/public_html/wp-settings.php(700): do_action()
+#10 /home/igucmor1/public_html/wp-config.php(92): require_once('/home/igucmor1/...')
+#11 /home/igucmor1/public_html/wp-load.php(50): require_once('/home/igucmor1/...')
+#12 /home/igucmor1/public_html/wp-admin/admin.php(34): require_once('/home/igucmor1/...')
+#13 /home/igucmor1/public_html/wp-admin/plugin-editor.php(10): require_once('/home/igucmor1/...')
+#14 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/post-settings/post-settings.php on line 136
+
+2025-07-19T23:09:46+00:00 CRITICAL Uncaught Error: Class "UAGB_Popup_Builder" not found in /home/igucmor1/public_html/wp-content/plugins/ultimate-addons-for-gutenberg/classes/class-uagb-loader.php:444
+Stack trace:
+#0 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): UAGB_Loader->init_actions()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#2 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#3 /home/igucmor1/public_html/wp-settings.php(700): do_action()
+#4 /home/igucmor1/public_html/wp-config.php(92): require_once('/home/igucmor1/...')
+#5 /home/igucmor1/public_html/wp-load.php(50): require_once('/home/igucmor1/...')
+#6 /home/igucmor1/public_html/wp-admin/admin.php(34): require_once('/home/igucmor1/...')
+#7 /home/igucmor1/public_html/wp-admin/plugin-editor.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/ultimate-addons-for-gutenberg/classes/class-uagb-loader.php on line 444
+
+2025-07-19T23:10:08+00:00 CRITICAL Uncaught Error: Call to undefined function skyrocket_get_social_media() in /home/igucmor1/public_html/wp-content/themes/oceanwp/inc/customizer/library/customizer-custom-controls/functions.php:314
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/themes/oceanwp/functions.php(284): require_once()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): OCEANWP_Theme_Class::classes()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-settings.php(678): do_action()
+#5 /home/igucmor1/public_html/wp-config.php(92): require_once('/home/igucmor1/...')
+#6 /home/igucmor1/public_html/wp-load.php(50): require_once('/home/igucmor1/...')
+#7 /home/igucmor1/public_html/wp-admin/admin.php(34): require_once('/home/igucmor1/...')
+#8 /home/igucmor1/public_html/wp-admin/theme-editor.php(10): require_once('/home/igucmor1/...')
+#9 {main}
+  thrown in /home/igucmor1/public_html/wp-content/themes/oceanwp/inc/customizer/library/customizer-custom-controls/functions.php on line 314
+
+2025-07-19T23:10:32+00:00 CRITICAL Uncaught Error: Call to undefined function _is_wcf_doing_optin_ajax() in /home/igucmor1/public_html/wp-content/plugins/cartflows/classes/class-cartflows-frontend.php:655
+Stack trace:
+#0 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Cartflows_Frontend->setup_optin_checkout_filter()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#2 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#3 /home/igucmor1/public_html/wp-settings.php(700): do_action()
+#4 /home/igucmor1/public_html/wp-config.php(92): require_once('/home/igucmor1/...')
+#5 /home/igucmor1/public_html/wp-load.php(50): require_once('/home/igucmor1/...')
+#6 /home/igucmor1/public_html/wp-admin/admin.php(34): require_once('/home/igucmor1/...')
+#7 /home/igucmor1/public_html/wp-admin/plugin-editor.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/cartflows/classes/class-cartflows-frontend.php on line 655
+
+2025-07-19T23:10:39+00:00 CRITICAL Uncaught Error: Call to undefined function oe_get_array_value_deep() in /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/menu-icons/includes/settings.php:47
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/menu-icons/includes/settings.php(55): OE_Menu_Icons_Settings::get()
+#1 /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/menu-icons/includes/settings.php(80): OE_Menu_Icons_Settings::get_menu_settings()
+#2 /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/menu-icons/includes/settings.php(124): OE_Menu_Icons_Settings::is_menu_icons_disabled_for_menu()
+#3 /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/menu-icons/menu-icons.php(107): OE_Menu_Icons_Settings::init()
+#4 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): OE_Menu_Icons::_init()
+#5 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#6 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#7 /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/menu-icons/includes/library/icon-selector/icon-selector.php(136): do_action()
+#8 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): OE_Icon_Selector->init()
+#9 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#10 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#11 /home/igucmor1/public_html/wp-settings.php(722): do_action()
+#12 /home/igucmor1/public_html/wp-config.php(92): require_once('/home/igucmor1/...')
+#13 /home/igucmor1/public_html/wp-load.php(50): require_once('/home/igucmor1/...')
+#14 /home/igucmor1/public_html/wp-admin/admin.php(34): require_once('/home/igucmor1/...')
+#15 /home/igucmor1/public_html/wp-admin/plugin-editor.php(10): require_once('/home/igucmor1/...')
+#16 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/menu-icons/includes/settings.php on line 47
+
+2025-07-19T23:12:02+00:00 CRITICAL Uncaught Error: Call to undefined function astra_sites_has_import_started() in /home/igucmor1/public_html/wp-content/plugins/astra-sites/inc/classes/class-astra-sites-error-handler.php:48
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/astra-sites/inc/classes/class-astra-sites-error-handler.php(36): Astra_Sites_Error_Handler->__construct()
+#1 /home/igucmor1/public_html/wp-content/plugins/astra-sites/inc/classes/class-astra-sites-error-handler.php(164): Astra_Sites_Error_Handler::get_instance()
+#2 /home/igucmor1/public_html/wp-content/plugins/astra-sites/inc/classes/class-astra-sites.php(2165): require_once('/home/igucmor1/...')
+#3 /home/igucmor1/public_html/wp-content/plugins/astra-sites/inc/classes/class-astra-sites.php(127): Astra_Sites->includes()
+#4 /home/igucmor1/public_html/wp-content/plugins/astra-sites/inc/classes/class-astra-sites.php(108): Astra_Sites->__construct()
+#5 /home/igucmor1/public_html/wp-content/plugins/astra-sites/inc/classes/class-astra-sites.php(2730): Astra_Sites::get_instance()
+#6 /home/igucmor1/public_html/wp-content/plugins/astra-sites/astra-sites.php(79): require_once('/home/igucmor1/...')
+#7 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): astra_sites_setup()
+#8 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#9 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#10 /home/igucmor1/public_html/wp-settings.php(555): do_action()
+#11 /home/igucmor1/public_html/wp-config.php(92): require_once('/home/igucmor1/...')
+#12 /home/igucmor1/public_html/wp-load.php(50): require_once('/home/igucmor1/...')
+#13 /home/igucmor1/public_html/wp-admin/admin.php(34): require_once('/home/igucmor1/...')
+#14 /home/igucmor1/public_html/wp-admin/plugin-editor.php(10): require_once('/home/igucmor1/...')
+#15 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/astra-sites/inc/classes/class-astra-sites-error-handler.php on line 48
+
+2025-07-19T23:14:56+00:00 CRITICAL Uncaught Error: Class "ImageOptimization\Modules\Optimization\Module" not found in /home/igucmor1/public_html/wp-content/plugins/image-optimization/includes/modules-manager.php:40
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/image-optimization/plugin.php(90): ImageOptimization\Manager->__construct()
+#1 /home/igucmor1/public_html/wp-content/plugins/image-optimization/plugin.php(105): ImageOptimization\Plugin->includes()
+#2 /home/igucmor1/public_html/wp-content/plugins/image-optimization/plugin.php(47): ImageOptimization\Plugin->__construct()
+#3 /home/igucmor1/public_html/wp-content/plugins/image-optimization/plugin.php(109): ImageOptimization\Plugin::instance()
+#4 /home/igucmor1/public_html/wp-content/plugins/image-optimization/image-optimization.php(195): require_once('/home/igucmor1/...')
+#5 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): ImageOptimization->init()
+#6 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#7 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#8 /home/igucmor1/public_html/wp-settings.php(555): do_action()
+#9 /home/igucmor1/public_html/wp-config.php(92): require_once('/home/igucmor1/...')
+#10 /home/igucmor1/public_html/wp-load.php(50): require_once('/home/igucmor1/...')
+#11 /home/igucmor1/public_html/wp-admin/admin.php(34): require_once('/home/igucmor1/...')
+#12 /home/igucmor1/public_html/wp-admin/plugin-editor.php(10): require_once('/home/igucmor1/...')
+#13 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/image-optimization/includes/modules-manager.php on line 40
+
+2025-07-19T23:15:25+00:00 CRITICAL Uncaught Error: Class "WCPay\MultiCurrency\Analytics" not found in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/includes/multi-currency/MultiCurrency.php:286
+Stack trace:
+#0 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): WCPay\MultiCurrency\MultiCurrency->init()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#2 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#3 /home/igucmor1/public_html/wp-settings.php(700): do_action()
+#4 /home/igucmor1/public_html/wp-config.php(92): require_once('/home/igucmor1/...')
+#5 /home/igucmor1/public_html/wp-load.php(50): require_once('/home/igucmor1/...')
+#6 /home/igucmor1/public_html/wp-admin/admin.php(34): require_once('/home/igucmor1/...')
+#7 /home/igucmor1/public_html/wp-admin/plugin-editor.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/includes/multi-currency/MultiCurrency.php on line 286
+
+2025-07-21T08:34:05+00:00 CRITICAL Uncaught Error: Call to undefined function _is_wcf_doing_optin_ajax() in /home/igucmor1/public_html/wp-content/plugins/cartflows/classes/class-cartflows-frontend.php:655
+Stack trace:
+#0 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Cartflows_Frontend->setup_optin_checkout_filter()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#2 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#3 /home/igucmor1/public_html/wp-settings.php(700): do_action()
+#4 /home/igucmor1/public_html/wp-config.php(92): require_once('/home/igucmor1/...')
+#5 /home/igucmor1/public_html/wp-load.php(50): require_once('/home/igucmor1/...')
+#6 /home/igucmor1/public_html/wp-admin/admin.php(34): require_once('/home/igucmor1/...')
+#7 /home/igucmor1/public_html/wp-admin/plugin-editor.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/cartflows/classes/class-cartflows-frontend.php on line 655
+
+2025-07-21T08:35:16+00:00 CRITICAL Unmatched '}' in /home/igucmor1/public_html/wp-content/plugins/header-footer-elementor/inc/hfe-functions.php on line 148
+
+2025-07-21T08:35:24+00:00 CRITICAL Uncaught Error: Call to undefined function astra_sites_has_import_started() in /home/igucmor1/public_html/wp-content/plugins/astra-sites/inc/classes/class-astra-sites-error-handler.php:48
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/astra-sites/inc/classes/class-astra-sites-error-handler.php(36): Astra_Sites_Error_Handler->__construct()
+#1 /home/igucmor1/public_html/wp-content/plugins/astra-sites/inc/classes/class-astra-sites-error-handler.php(164): Astra_Sites_Error_Handler::get_instance()
+#2 /home/igucmor1/public_html/wp-content/plugins/astra-sites/inc/classes/class-astra-sites.php(2165): require_once('/home/igucmor1/...')
+#3 /home/igucmor1/public_html/wp-content/plugins/astra-sites/inc/classes/class-astra-sites.php(127): Astra_Sites->includes()
+#4 /home/igucmor1/public_html/wp-content/plugins/astra-sites/inc/classes/class-astra-sites.php(108): Astra_Sites->__construct()
+#5 /home/igucmor1/public_html/wp-content/plugins/astra-sites/inc/classes/class-astra-sites.php(2730): Astra_Sites::get_instance()
+#6 /home/igucmor1/public_html/wp-content/plugins/astra-sites/astra-sites.php(79): require_once('/home/igucmor1/...')
+#7 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): astra_sites_setup()
+#8 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#9 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#10 /home/igucmor1/public_html/wp-settings.php(555): do_action()
+#11 /home/igucmor1/public_html/wp-config.php(92): require_once('/home/igucmor1/...')
+#12 /home/igucmor1/public_html/wp-load.php(50): require_once('/home/igucmor1/...')
+#13 /home/igucmor1/public_html/wp-admin/admin.php(34): require_once('/home/igucmor1/...')
+#14 /home/igucmor1/public_html/wp-admin/plugin-editor.php(10): require_once('/home/igucmor1/...')
+#15 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/astra-sites/inc/classes/class-astra-sites-error-handler.php on line 48
+
+2025-07-21T08:35:39+00:00 CRITICAL Uncaught Error: Call to undefined function skyrocket_get_social_media() in /home/igucmor1/public_html/wp-content/themes/oceanwp/inc/customizer/library/customizer-custom-controls/functions.php:314
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/themes/oceanwp/functions.php(284): require_once()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): OCEANWP_Theme_Class::classes()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-settings.php(678): do_action()
+#5 /home/igucmor1/public_html/wp-config.php(92): require_once('/home/igucmor1/...')
+#6 /home/igucmor1/public_html/wp-load.php(50): require_once('/home/igucmor1/...')
+#7 /home/igucmor1/public_html/wp-admin/admin.php(34): require_once('/home/igucmor1/...')
+#8 /home/igucmor1/public_html/wp-admin/theme-editor.php(10): require_once('/home/igucmor1/...')
+#9 {main}
+  thrown in /home/igucmor1/public_html/wp-content/themes/oceanwp/inc/customizer/library/customizer-custom-controls/functions.php on line 314
+
+2025-07-21T08:35:54+00:00 CRITICAL Uncaught Error: Class "UAGB_Popup_Builder" not found in /home/igucmor1/public_html/wp-content/plugins/ultimate-addons-for-gutenberg/classes/class-uagb-loader.php:444
+Stack trace:
+#0 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): UAGB_Loader->init_actions()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#2 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#3 /home/igucmor1/public_html/wp-settings.php(700): do_action()
+#4 /home/igucmor1/public_html/wp-config.php(92): require_once('/home/igucmor1/...')
+#5 /home/igucmor1/public_html/wp-load.php(50): require_once('/home/igucmor1/...')
+#6 /home/igucmor1/public_html/wp-admin/admin.php(34): require_once('/home/igucmor1/...')
+#7 /home/igucmor1/public_html/wp-admin/plugin-editor.php(10): require_once('/home/igucmor1/...')
+#8 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/ultimate-addons-for-gutenberg/classes/class-uagb-loader.php on line 444
+
+2025-07-21T08:35:55+00:00 CRITICAL Uncaught Error: Class "UAGB_Popup_Builder" not found in /home/igucmor1/public_html/wp-content/plugins/ultimate-addons-for-gutenberg/classes/class-uagb-loader.php:444
+Stack trace:
+#0 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): UAGB_Loader->init_actions()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#2 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#3 /home/igucmor1/public_html/wp-settings.php(700): do_action()
+#4 /home/igucmor1/public_html/wp-config.php(92): require_once('/home/igucmor1/...')
+#5 /home/igucmor1/public_html/wp-load.php(50): require_once('/home/igucmor1/...')
+#6 /home/igucmor1/public_html/wp-cron.php(46): require_once('/home/igucmor1/...')
+#7 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/ultimate-addons-for-gutenberg/classes/class-uagb-loader.php on line 444
+
+2025-07-21T08:36:15+00:00 CRITICAL Uncaught Error: Undefined constant "OCEANWP_THEME_VERSION" in /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/admin-bar/admin-bar.php:180
+Stack trace:
+#0 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Ocean_Admin_Bar->enqueue_css()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#2 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#3 /home/igucmor1/public_html/wp-admin/admin-header.php(118): do_action()
+#4 /home/igucmor1/public_html/wp-admin/theme-editor.php(152): require_once('/home/igucmor1/...')
+#5 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/admin-bar/admin-bar.php on line 180
+
+2025-07-21T08:36:37+00:00 CRITICAL Uncaught Error: Class "Elementor\Core\Admin\Notices\Elementor_Dev_Notice" not found in /home/igucmor1/public_html/wp-content/plugins/elementor/core/admin/admin-notices.php:43
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/elementor/core/admin/admin-notices.php(583): Elementor\Core\Admin\Admin_Notices->get_notices()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Elementor\Core\Admin\Admin_Notices->admin_notices()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-admin/admin-header.php(303): do_action()
+#5 /home/igucmor1/public_html/wp-admin/plugin-editor.php(163): require_once('/home/igucmor1/...')
+#6 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/elementor/core/admin/admin-notices.php on line 43
+
+2025-07-21T08:37:35+00:00 CRITICAL Uncaught Error: Call to undefined function oe_metabox_support_post_types() in /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/post-settings/post-settings.php:136
+Stack trace:
+#0 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): OceanWP_Post_Settings->post_args()
+#1 /home/igucmor1/public_html/wp-includes/plugin.php(205): WP_Hook->apply_filters()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-post-type.php(491): apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/class-wp-post-type.php(467): WP_Post_Type->set_props()
+#4 /home/igucmor1/public_html/wp-includes/post.php(1805): WP_Post_Type->__construct()
+#5 /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/panel/library.php(70): register_post_type()
+#6 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): Ocean_Extra_My_Library::library_post_type()
+#7 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#8 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#9 /home/igucmor1/public_html/wp-settings.php(700): do_action()
+#10 /home/igucmor1/public_html/wp-config.php(92): require_once('/home/igucmor1/...')
+#11 /home/igucmor1/public_html/wp-load.php(50): require_once('/home/igucmor1/...')
+#12 /home/igucmor1/public_html/wp-admin/admin.php(34): require_once('/home/igucmor1/...')
+#13 /home/igucmor1/public_html/wp-admin/plugin-editor.php(10): require_once('/home/igucmor1/...')
+#14 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/post-settings/post-settings.php on line 136
+
+2025-07-21T08:38:06+00:00 CRITICAL Uncaught Error: Call to undefined function oe_get_array_value_deep() in /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/menu-icons/includes/settings.php:47
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/menu-icons/includes/settings.php(55): OE_Menu_Icons_Settings::get()
+#1 /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/menu-icons/includes/settings.php(80): OE_Menu_Icons_Settings::get_menu_settings()
+#2 /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/menu-icons/includes/settings.php(124): OE_Menu_Icons_Settings::is_menu_icons_disabled_for_menu()
+#3 /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/menu-icons/menu-icons.php(107): OE_Menu_Icons_Settings::init()
+#4 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): OE_Menu_Icons::_init()
+#5 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#6 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#7 /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/menu-icons/includes/library/icon-selector/icon-selector.php(136): do_action()
+#8 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): OE_Icon_Selector->init()
+#9 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#10 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#11 /home/igucmor1/public_html/wp-settings.php(722): do_action()
+#12 /home/igucmor1/public_html/wp-config.php(92): require_once('/home/igucmor1/...')
+#13 /home/igucmor1/public_html/wp-load.php(50): require_once('/home/igucmor1/...')
+#14 /home/igucmor1/public_html/wp-admin/admin.php(34): require_once('/home/igucmor1/...')
+#15 /home/igucmor1/public_html/wp-admin/plugin-editor.php(10): require_once('/home/igucmor1/...')
+#16 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/ocean-extra/includes/menu-icons/includes/settings.php on line 47
+
+2025-07-21T08:38:19+00:00 CRITICAL Uncaught Error: Class "WC_Payments_Dependency_Service" not found in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/includes/class-wc-payments.php:319
+Stack trace:
+#0 /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/woocommerce-payments.php(153): WC_Payments::init()
+#1 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(324): wcpay_init()
+#2 /home/igucmor1/public_html/wp-includes/class-wp-hook.php(348): WP_Hook->apply_filters()
+#3 /home/igucmor1/public_html/wp-includes/plugin.php(517): WP_Hook->do_action()
+#4 /home/igucmor1/public_html/wp-settings.php(555): do_action()
+#5 /home/igucmor1/public_html/wp-config.php(92): require_once('/home/igucmor1/...')
+#6 /home/igucmor1/public_html/wp-load.php(50): require_once('/home/igucmor1/...')
+#7 /home/igucmor1/public_html/wp-admin/admin.php(34): require_once('/home/igucmor1/...')
+#8 /home/igucmor1/public_html/wp-admin/plugin-editor.php(10): require_once('/home/igucmor1/...')
+#9 {main}
+  thrown in /home/igucmor1/public_html/wp-content/plugins/woocommerce-payments/includes/class-wc-payments.php on line 319
+

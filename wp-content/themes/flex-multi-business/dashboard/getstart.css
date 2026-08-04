@@ -1,0 +1,107 @@
+/* Getstarted notice  */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&display=swap');
+.notice-getstarted-flex{
+    background: linear-gradient(270deg, #485BA9 0%, #9E77B5 100%);
+	padding: 0px !important;
+}
+.inner-notice{
+	position: relative;
+	padding: 5px 150px 5px 150px;
+    display: flex;
+    flex-wrap: wrap;
+	align-items: center;
+    align-content: center;
+}
+.inner-notice::before{
+    content: "";
+   background-image: url("./images/notice-left.png");
+   left: 0;
+   top: 0;
+   position: absolute;
+   height: 100%;
+   background-size: 100% 100%;
+   width: 125px;
+   background-repeat: no-repeat;
+}
+.inner-notice::after{
+    content: "";
+   background-image: url("./images/notice-right.png");
+   right: 0;
+   top: 0;
+   position: absolute;
+   height: 100%;
+   background-size: 100% 100%;
+   background-repeat: no-repeat;
+   width: 125px;
+}
+.inner-content{
+	text-align: center;
+	width: calc(100% - 370px);
+}
+.notice-getstarted-flex .notice-dismiss::before{
+	font-size: 20px !important;
+	color: #fff !important;
+}
+.notice-getstarted-flex h2 {
+    text-align: center;
+    font-size: 27px;
+    letter-spacing: 0px;
+    color: #FFFFFF;
+    line-height: 35px;
+    margin: 10px;
+	font-family: "Noto Sans", sans-serif;
+}
+.notice-getstarted-flex p{
+	text-align: center;
+	font-size: 17px;
+	letter-spacing: 0px;
+	color: #ffffffd0;
+	font-family: "Noto Sans", sans-serif;
+}
+.wp-core-ui .inner-content a{
+	background: #000000 !important;
+	border-radius: 7px !important;
+	color: #fff !important;
+	padding: 2px 25px !important;
+	border: none !important;
+	text-transform: capitalize;
+	font-family: "Noto Sans", sans-serif;
+	margin: 0px !important;
+    font-weight: 600;
+}
+.notice-button{
+	margin: 13px 0px;
+	display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-content: center;
+    justify-content: center;
+	align-items: center;
+}
+.inner-content a:hover ,
+.inner-content a:active{
+	color: #000 !important;
+	background-color: #fff !important;
+}
+.inner-notice img{
+	max-width: 370px;
+	object-fit: contain;
+}
+.notice-getstarted-flex{
+	border: 0px solid #000 ;
+    border-left-width: 6px;
+}
+@media screen and (max-width: 1300px){
+	.inner-content {
+		width: 100%;
+	}
+	.inner-notice img {
+		max-width: 100%;
+	}
+	.inner-notice::before,.inner-notice::after{
+		display: none;
+	}
+	.inner-notice{
+		justify-content: center;
+	}
+}

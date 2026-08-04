@@ -1,0 +1,129 @@
+# 
+# Translators:
+# Alessandro Vicente <alessandrovicente@gmail.com>, 2016
+# Chico Santana, 2023
+# Erivelton Araujo <atendimento.cliente.top22@gmail.com>, 2020
+# 3128198d06f1ff7aa6c74c3928d4f1c2_99122fb, 2013
+# juleroliveira <juleroliveira@gmail.com>, 2018
+# leosass <leosass.pn@gmail.com>, 2014
+msgid ""
+msgstr ""
+"Project-Id-Version: ProjectSend\n"
+"POT-Creation-Date: 2022-10-13 18:49-0300\n"
+"PO-Revision-Date: 2013-03-21 10:56+0000\n"
+"Last-Translator: Chico Santana, 2023\n"
+"Language-Team: Portuguese (Brazil) (http://www.transifex.com/subwaydesign/projectsend/language/pt_BR/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=3; plural=(n == 0 || n == 1) ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;\n"
+"X-Generator: Poedit 3.1.1\n"
+"X-Poedit-Basepath: ..\n"
+"X-Poedit-KeywordsList: _e;__\n"
+"X-Poedit-SearchPath-0: .\n"
+
+#: public-download.php:2
+msgid "File information"
+msgstr "File information"
+
+#: public-download.php:41 public-list.php:115 public-list.php:171
+#: template.php:140 template.php:207
+msgid "Preview"
+msgstr "Preview"
+
+#: public-download.php:61
+msgid "Download file"
+msgstr "Download file"
+
+#: public-download.php:73 public-list.php:270
+msgid "Go back to the homepage."
+msgstr "Go back to the homepage."
+
+#: public-list.php:8 template.php:31
+msgid "Your search keywords returned no results."
+msgstr "Your search keywords returned no results."
+
+#: public-list.php:10 template.php:38
+msgid "There are no files available."
+msgstr "There are no files available."
+
+#: public-list.php:37
+msgid "Not in any group"
+msgstr "Not in any group"
+
+#: public-list.php:64
+msgid "About this group"
+msgstr "About this group"
+
+#: public-list.php:85 template.php:110
+msgid "Title"
+msgstr "Title"
+
+#: public-list.php:88 template.php:113
+msgid "Type"
+msgstr "Type"
+
+#: public-list.php:94 template.php:119
+msgid "Description"
+msgstr "Description"
+
+#: public-list.php:101 template.php:126
+msgid "Size"
+msgstr "Size"
+
+#: public-list.php:108 template.php:133
+msgid "Date"
+msgstr "Date"
+
+#: public-list.php:111 template.php:136
+msgid "Expiration date"
+msgstr "Expiration date"
+
+#: public-list.php:120 public-list.php:183 template.php:144 template.php:219
+msgid "Download"
+msgstr "Download"
+
+#: public-list.php:153 template.php:189
+msgid "Never"
+msgstr "Never"
+
+#: public-list.php:180 template.php:216
+msgid "File expired"
+msgstr "File expired"
+
+#: public-list.php:190
+msgid "Direct link"
+msgstr "Direct link"
+
+#: public-list.php:266
+msgid "Don't have an account yet?"
+msgstr "Don't have an account yet?"
+
+#: public-list.php:266
+msgid "Register as a new client."
+msgstr "Register as a new client."
+
+#: template.php:20
+msgid "File downloads"
+msgstr "File downloads"
+
+#: template.php:34
+msgid "The filters you selected returned no results."
+msgstr "The filters you selected returned no results."
+
+#: template.php:47
+msgid "Upload file"
+msgstr "Upload file"
+
+#: template.php:69
+msgid "All categories"
+msgstr "All categories"
+
+#: template.php:78
+msgid "Select action"
+msgstr "Select action"
+
+#: template.php:79
+msgid "Download zipped"
+msgstr "Download zipped"

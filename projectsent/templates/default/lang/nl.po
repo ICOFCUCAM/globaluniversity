@@ -1,0 +1,130 @@
+# 
+# Translators:
+# A C, 2023
+# Bruno S <brunoheyse@gmail.com>, 2021
+# Geert Janssen <geertjanssen@outlook.com>, 2017
+# Jan Blom <j.blom@ictfirst.nl>, 2017
+# Philip Carpentier <philip@oic.be>, 2016
+# Ramon Kienhuis <ramonkienhuis@gmail.com>, 2013
+# Mark Wilbrink <mark@wilbrink.design>, 2022
+msgid ""
+msgstr ""
+"Project-Id-Version: ProjectSend\n"
+"POT-Creation-Date: 2022-10-13 18:49-0300\n"
+"PO-Revision-Date: 2013-03-21 10:56+0000\n"
+"Last-Translator: A C, 2023\n"
+"Language-Team: Dutch (http://www.transifex.com/subwaydesign/projectsend/language/nl/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: nl\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 3.1.1\n"
+"X-Poedit-Basepath: ..\n"
+"X-Poedit-KeywordsList: _e;__\n"
+"X-Poedit-SearchPath-0: .\n"
+
+#: public-download.php:2
+msgid "File information"
+msgstr "Bestand informatie"
+
+#: public-download.php:41 public-list.php:115 public-list.php:171
+#: template.php:140 template.php:207
+msgid "Preview"
+msgstr "Voorbeeld"
+
+#: public-download.php:61
+msgid "Download file"
+msgstr "Download bestand"
+
+#: public-download.php:73 public-list.php:270
+msgid "Go back to the homepage."
+msgstr "Ga terug naar de startpagina."
+
+#: public-list.php:8 template.php:31
+msgid "Your search keywords returned no results."
+msgstr "Je zoekopdracht leverde geen resultaten op."
+
+#: public-list.php:10 template.php:38
+msgid "There are no files available."
+msgstr "Er zijn geen bestanden beschikbaar."
+
+#: public-list.php:37
+msgid "Not in any group"
+msgstr "Niet in een groep"
+
+#: public-list.php:64
+msgid "About this group"
+msgstr "Over deze groep"
+
+#: public-list.php:85 template.php:110
+msgid "Title"
+msgstr "Titel"
+
+#: public-list.php:88 template.php:113
+msgid "Type"
+msgstr "Soort"
+
+#: public-list.php:94 template.php:119
+msgid "Description"
+msgstr "Omschrijving"
+
+#: public-list.php:101 template.php:126
+msgid "Size"
+msgstr "Grootte"
+
+#: public-list.php:108 template.php:133
+msgid "Date"
+msgstr "Datum"
+
+#: public-list.php:111 template.php:136
+msgid "Expiration date"
+msgstr "Vervaldatum"
+
+#: public-list.php:120 public-list.php:183 template.php:144 template.php:219
+msgid "Download"
+msgstr "Download"
+
+#: public-list.php:153 template.php:189
+msgid "Never"
+msgstr "Nooit"
+
+#: public-list.php:180 template.php:216
+msgid "File expired"
+msgstr "Bestand vervallen"
+
+#: public-list.php:190
+msgid "Direct link"
+msgstr "Directe link"
+
+#: public-list.php:266
+msgid "Don't have an account yet?"
+msgstr "Heb je nog geen account?"
+
+#: public-list.php:266
+msgid "Register as a new client."
+msgstr "Registreer als nieuwe klant"
+
+#: template.php:20
+msgid "File downloads"
+msgstr "Bestanden downloads"
+
+#: template.php:34
+msgid "The filters you selected returned no results."
+msgstr "De geselecteerde filters hebben geen resultaten opgeleverd."
+
+#: template.php:47
+msgid "Upload file"
+msgstr "Bestand uploaden"
+
+#: template.php:69
+msgid "All categories"
+msgstr "Alle categoriën"
+
+#: template.php:78
+msgid "Select action"
+msgstr "Selecteer actie"
+
+#: template.php:79
+msgid "Download zipped"
+msgstr "Download zipbestand"
