@@ -471,6 +471,43 @@ export const contentPages: ContentPage[] = [
     ],
   },
   {
+    slug: 'alumni',
+    title: 'Alumni',
+    subtitle: 'Once a member of this community, always a member \u2014 wherever in the world you serve.',
+    image: '/images/wp/g-graduates.jpg',
+    sections: [
+      {
+        paragraphs: [
+          'More than 7,200 success stories have passed through ICOF Global University since 2007 \u2014 ministers, teachers, engineers, managers and counselors now serving congregations, schools, businesses and communities across Africa, Europe, the Americas and Asia. Our alumni are the university\u2019s living argument: evidence that faith and scholarship, formed together, change societies.',
+        ],
+      },
+      {
+        heading: 'Stay Connected',
+        paragraphs: [
+          'We are building a formal alumni network with verified alumni profiles in the student portal, reunion gatherings at the January graduation ceremony in Buea, and regional ICOF chapters worldwide. To register as an alumnus or update your details, write to registrar@iguc.net with your name, graduating class and program.',
+        ],
+      },
+      {
+        heading: 'Verify Your Credentials',
+        paragraphs: [
+          'Employers and institutions can verify ICOF Global University transcripts and certificates instantly: every document we issue carries a signed QR code that resolves at iguc.net/verify. Alumni needing re-issued transcripts should contact the Registrar\u2019s office.',
+        ],
+      },
+      {
+        heading: 'Give Back',
+        paragraphs: [
+          'Alumni giving funds the ministry scholarship program, the university building project and community initiatives from clean-water wells to prison education. Every gift, at any level, extends to the next generation the opportunity you received. Visit Support IGUC or write to info@iguc.net to give.',
+        ],
+      },
+      {
+        heading: 'Alumni in Service',
+        paragraphs: [
+          'Our graduates lead churches and ministries across the ICOF worldwide fellowship, teach in schools and universities, direct businesses and non-profits, and staff this university itself \u2014 several members of our administration and faculty earned their doctorates within the ICOF college network before returning to teach. That circle, from student to leader to teacher, is the university\u2019s proudest tradition.',
+        ],
+      },
+    ],
+  },
+  {
     slug: 'privacy-policy',
     title: 'Privacy Policy',
     image: '/images/banner.jpg',

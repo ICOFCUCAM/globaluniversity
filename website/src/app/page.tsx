@@ -248,6 +248,34 @@ export default async function HomePage() {
         </div>
       </Section>
 
+      {/* Global footprint */}
+      <section className="bg-brand-purple-dark py-16 text-white">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <p className="mb-10 text-center font-sans text-xs font-semibold uppercase tracking-[0.25em] text-brand-gold">
+            A Global University
+          </p>
+          <div className="grid gap-6 text-center sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              ['🏛️', 'Buea, Cameroon', 'Main campus — faculties of Theology, Education, Engineering & Technology, and GIBMAS'],
+              ['⛪', 'Douala, Cameroon', 'School of Theology under Dr Bongbuen Alando'],
+              ['🌍', 'Nigeria', 'PPDI-RC — professional development, research and training center'],
+              ['💻', 'Online Worldwide', 'Full master’s and doctoral programs delivered to students on every continent'],
+            ].map(([icon, place, desc]) => (
+              <div key={place} className="rounded-2xl border border-white/10 bg-white/5 p-6">
+                <span aria-hidden="true" className="text-3xl">{icon}</span>
+                <h3 className="mt-3 font-heading text-lg font-bold text-brand-gold">{place}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-white/80">{desc}</p>
+              </div>
+            ))}
+          </div>
+          <p className="mx-auto mt-8 max-w-2xl text-center text-sm text-white/70">
+            Connected through the International Circle of Faith — a worldwide fellowship of colleges,
+            seminaries and ministries across Africa, the Americas, Europe and Asia — with faculty
+            serving from Cameroon, Nigeria and the United States.
+          </p>
+        </div>
+      </section>
+
       {/* Online learning */}
       <Section className="bg-white">
         <div className="grid items-center gap-12 lg:grid-cols-2">

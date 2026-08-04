@@ -28,7 +28,7 @@ export default function FeeModule() {
   const [showNew, setShowNew] = useState(false);
   const [view, setView] = useState<Record<string, string> | null>(null);
   const [busy, setBusy] = useState(false);
-  const [form, setForm] = useState({ student_id: '', amount: '', purpose: 'Tuition', method: 'MTN Mobile Money' });
+  const [form, setForm] = useState({ student_id: '', amount: '', currency: 'FCFA', purpose: 'Tuition', method: 'MTN Mobile Money' });
 
   async function load() {
     const [{ data: r }, { data: s }] = await Promise.all([
@@ -51,21 +51,21 @@ export default function FeeModule() {
       receipt_no: no,
       student: student ? `${student.last_name} ${student.first_name}` : '',
       matric_no: student?.matric_no ?? '',
-      amount_fcfa: form.amount,
+      amount: `${Number(form.amount).toLocaleString()} ${form.currency}`,
       purpose: form.purpose,
       method: form.method,
       date: new Date().toISOString().slice(0, 10),
     };
     await supabase.from('documents').insert({
       student_id: form.student_id || null,
-      file_name: `${no} · ${payload.matric_no} · ${Number(form.amount).toLocaleString()} FCFA · ${form.purpose} (${form.method})`,
+      file_name: `${no} · ${payload.matric_no} · ${Number(form.amount).toLocaleString()} ${form.currency} · ${form.purpose} (${form.method})`,
       file_url: `data:application/json;base64,${btoa(unescape(encodeURIComponent(JSON.stringify(payload))))}`,
       file_type: 'application/json',
       document_type: 'fee-receipt',
     });
     setBusy(false);
     setShowNew(false);
-    setForm({ student_id: '', amount: '', purpose: 'Tuition', method: 'MTN Mobile Money' });
+    setForm({ student_id: '', amount: '', currency: 'FCFA', purpose: 'Tuition', method: 'MTN Mobile Money' });
     load();
   }
 
@@ -80,10 +80,11 @@ export default function FeeModule() {
 
   const input =
     'w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30';
-  const total = receipts.reduce((sum, r) => {
-    const m = r.file_name.match(/· ([\d,]+) FCFA/);
-    return sum + (m ? Number(m[1].replace(/,/g, '')) : 0);
-  }, 0);
+  const totals: Record<string, number> = {};
+  for (const r of receipts) {
+    const m = r.file_name.match(/· ([\d,]+) (FCFA|USD|EUR|GBP|NGN)/);
+    if (m) totals[m[2]] = (totals[m[2]] ?? 0) + Number(m[1].replace(/,/g, ''));
+  }
 
   return (
     <div className="space-y-6">
@@ -107,7 +108,13 @@ export default function FeeModule() {
         </div>
         <div className="rounded-xl border border-gray-100 bg-white p-5">
           <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Total collected</p>
-          <p className="mt-1 text-2xl font-bold text-emerald-600">{total.toLocaleString()} FCFA</p>
+          <p className="mt-1 text-xl font-bold text-emerald-600">
+            {Object.keys(totals).length === 0
+              ? '—'
+              : Object.entries(totals)
+                  .map(([cur, amt]) => `${amt.toLocaleString()} ${cur}`)
+                  .join(' · ')}
+          </p>
         </div>
       </div>
 
@@ -140,14 +147,21 @@ export default function FeeModule() {
                 </option>
               ))}
             </select>
-            <input required type="number" min={1} placeholder="Amount (FCFA)" className={input} value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
+            <div className="flex gap-2">
+              <input required type="number" min={1} placeholder="Amount" className={input} value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
+              <select className={input + ' max-w-[110px]'} value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value })}>
+                {['FCFA', 'USD', 'EUR', 'GBP', 'NGN'].map((c) => (
+                  <option key={c}>{c}</option>
+                ))}
+              </select>
+            </div>
             <select className={input} value={form.purpose} onChange={(e) => setForm({ ...form, purpose: e.target.value })}>
               {['Tuition', 'Registration', 'Accommodation', 'Examination', 'Graduation', 'Other'].map((p) => (
                 <option key={p}>{p}</option>
               ))}
             </select>
             <select className={input} value={form.method} onChange={(e) => setForm({ ...form, method: e.target.value })}>
-              {['MTN Mobile Money', 'Orange Money', 'Bank Transfer', 'Cash'].map((m) => (
+              {['MTN Mobile Money', 'Orange Money', 'Bank Transfer', 'Card / Online Payment', 'PayPal', 'Western Union', 'MoneyGram', 'Cash'].map((m) => (
                 <option key={m}>{m}</option>
               ))}
             </select>
@@ -172,7 +186,7 @@ export default function FeeModule() {
                 {Object.entries(view).map(([k, v]) => (
                   <div key={k} className="flex justify-between border-b border-gray-100 pb-1.5">
                     <span className="capitalize text-gray-500">{k.replace(/_/g, ' ')}</span>
-                    <span className="font-medium text-gray-800">{k === 'amount_fcfa' ? `${Number(v).toLocaleString()} FCFA` : String(v)}</span>
+                    <span className="font-medium text-gray-800">{String(v)}</span>
                   </div>
                 ))}
                 <p className="pt-2 text-center text-[10px] text-gray-400">Thank you. Keep this receipt for your records.</p>
