@@ -1,0 +1,17 @@
+{
+  "name": "ICOF Global University",
+  "short_name": "IGUC",
+  "description": "The Community University of Africa — programs, admissions and student portal.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#422e59",
+  "theme_color": "#422e59",
+  "icons": [
+    {
+      "src": "/images/site-icon.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
