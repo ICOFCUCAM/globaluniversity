@@ -320,6 +320,126 @@ export const contentPages: ContentPage[] = [
     ],
   },
   {
+    slug: 'research',
+    title: 'Research & Innovation',
+    subtitle: 'Scholarship in service of the church, the community and the continent.',
+    image: '/images/wp/g-decor.jpg',
+    sections: [
+      {
+        paragraphs: [
+          'Research at ICOF Global University grows out of our identity: a community of faith and scholarship serving African society. Our faculty and doctoral candidates pursue questions where theology, education, business and technology meet the lived realities of Cameroon and the wider continent.',
+        ],
+      },
+      {
+        heading: 'The Dissertation Council',
+        paragraphs: [
+          'Doctoral scholarship is examined by the Dissertation Council, presided over by Professor Emeritus Arch Bishop Godfred Anyere Tah. Every Doctor of Philosophy, Doctor of Theology and Doctor of Ministry dissertation passes through supervised research, defense and review, holding our doctoral graduates to international standards of academic rigor.',
+        ],
+      },
+      {
+        heading: 'Fields of Inquiry',
+        list: [
+          'Systematic and practical theology in African contexts',
+          'Liberation theology and identity politics',
+          'Theology and criminology',
+          'Christian counseling and behavioral/temperament therapy',
+          'Education and inclusive learning',
+          'Finance, management and non-profit governance',
+          'Community development and rehabilitation',
+        ],
+      },
+      {
+        heading: 'PPDI-RC: Applied Research & Development',
+        paragraphs: [
+          'Through the Personal Professional Development Industry & Resource Center in Nigeria, directed by Prof. Barnabas Oluwaleye, the university pursues applied research and professional training in behavioral therapy, agritourism and agritech, digital business development, medical social work and community development — connecting scholarship directly to industry and community practice.',
+        ],
+      },
+      {
+        heading: 'Research Training',
+        paragraphs: [
+          'Research methods, academic writing and supervised dissertation work are integral to our master\u2019s and doctoral programs. Candidates study with supervisors who publish and practice in their fields, and defend their work before the Dissertation Council. Prospective researchers should review the doctoral admission requirements or contact the Registrar at registrar@iguc.net.',
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'international',
+    title: 'International Students',
+    subtitle: 'A global family of learners, rooted in Africa and connected worldwide.',
+    image: '/images/global.jpg',
+    sections: [
+      {
+        paragraphs: [
+          'ICOF Global University belongs to the worldwide fellowship of the International Circle of Faith, with sister colleges, seminaries and ministries across Africa, the Americas, Europe and Asia. Students join us from many nations \u2014 on campus in Buea and Douala, through our center in Nigeria, and online from anywhere in the world.',
+        ],
+      },
+      {
+        heading: 'Admission for International Applicants',
+        list: [
+          'Apply with qualifications comparable to the Cameroon GCE Advanced Level (undergraduate) or an accredited degree (graduate study) from a recognized institution in your country.',
+          'Provide proof of English language proficiency.',
+          'Hold an approved, valid visa if you intend to reside in Cameroon; fully online study requires no visa.',
+          'Complete the free online application; our enrollment representatives guide credential evaluation and transfer of coursework.',
+        ],
+      },
+      {
+        heading: 'Studying From Abroad',
+        paragraphs: [
+          'Master\u2019s and doctoral programs are offered fully online: live classes, course materials, assessments and supervision are delivered through the student portal, and your transcript builds automatically as you study. Graduation ceremonies in Buea welcome international graduates and their families every January.',
+        ],
+      },
+      {
+        heading: 'Living in Buea',
+        paragraphs: [
+          'Buea, in the foothills of Mount Cameroon, is one of Central Africa\u2019s university towns \u2014 anglophone, welcoming and affordable. Single-room student accommodation with kitchen and facilities ranges from 35,000 to 50,000 FCFA per month, and the campus sits opposite Bulu Blind Junction with easy access to the town.',
+        ],
+      },
+      {
+        heading: 'Contact International Admissions',
+        paragraphs: [
+          'Write to admissions@iguc.net or call +237 675 133 426 (WhatsApp available). We respond to every enquiry and can connect you with ICOF representatives in your region.',
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'scholarships',
+    title: 'Scholarships & Financial Aid',
+    subtitle: 'Earning a degree shouldn\u2019t break the bank.',
+    image: '/images/graduates.jpg',
+    sections: [
+      {
+        paragraphs: [
+          'We realize each student is unique \u2014 and that includes their financial situation. Alongside flexible payment methods for tuition, the university provides financial aid through scholarship programs announced during the academic year.',
+        ],
+      },
+      {
+        heading: 'University Scholarships',
+        paragraphs: [
+          'Scholarship programs are published on this website and through our social media and newsletters. Awards consider academic merit and financial need. Follow our announcements, or subscribe to updates through the contact page, to know when a scholarship window opens.',
+        ],
+      },
+      {
+        heading: 'Support the Called \u2014 Ministry Scholarships',
+        paragraphs: [
+          'Many bright students called to theological education are hindered by financial constraints. Our comprehensive ministry scholarship program, funded by donors, supports biblical and theological training for those preparing for service. Prospective beneficiaries should write to admissions@iguc.net; donors can give through our Support IGUC initiative.',
+        ],
+      },
+      {
+        heading: 'Sponsorship Beyond the University',
+        paragraphs: [
+          'Through our charity arm, sponsorship extends to elementary education for children and individuals willing but not able to pursue their dreams \u2014 because access to education is part of our mission at every level.',
+        ],
+      },
+      {
+        heading: 'Flexible Payment',
+        paragraphs: [
+          'Tuition can be paid full-time or part-time, with mobile money, bank transfer and cash accepted at the bursary. See Cost & Tuition for the current schedule, or contact the student support office for a personal plan.',
+        ],
+      },
+    ],
+  },
+  {
     slug: 'privacy-policy',
     title: 'Privacy Policy',
     image: '/images/banner.jpg',
