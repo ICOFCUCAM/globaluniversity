@@ -87,6 +87,8 @@ export const site = {
         { label: 'Admission Requirements', href: '/admissions' },
         { label: 'Apply Now', href: '/apply' },
         { label: 'Registration', href: '/registration' },
+        { label: 'International Students', href: '/international' },
+        { label: 'Scholarships & Financial Aid', href: '/scholarships' },
         { label: 'Cost & Tuition', href: '/tuition' },
       ],
     },
@@ -107,6 +109,7 @@ export const site = {
       ],
     },
     { label: 'Faculties & School', href: '/faculty' },
+    { label: 'Research', href: '/research' },
     { label: 'Campus Life', href: '/campus-life' },
     { label: 'Events', href: '/events' },
     {

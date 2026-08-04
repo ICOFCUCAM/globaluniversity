@@ -45,6 +45,19 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 bg-brand-purple text-white shadow-lg">
+      <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:z-[60] focus:bg-brand-gold focus:px-4 focus:py-2 focus:text-brand-purple">
+        Skip to content
+      </a>
+      <div className="hidden border-b border-white/10 bg-brand-purple-dark/60 lg:block">
+        <div className="mx-auto flex max-w-7xl items-center justify-end gap-5 px-4 py-1.5 text-[11px] font-medium tracking-wide text-white/70">
+          <span className="mr-auto text-brand-gold/90">The Community University of Africa · Buea, Cameroon</span>
+          <Link href="/admissions" className="hover:text-brand-gold">Prospective Students</Link>
+          <Link href="/portal" className="hover:text-brand-gold">Current Students</Link>
+          <Link href="/international" className="hover:text-brand-gold">International</Link>
+          <Link href="/faculty" className="hover:text-brand-gold">Faculty &amp; Staff</Link>
+          <Link href="/support" className="hover:text-brand-gold">Alumni &amp; Giving</Link>
+        </div>
+      </div>
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3">
         <Link href="/" className="flex shrink-0 items-center gap-3">
           <Image
@@ -70,6 +83,8 @@ export default function Header() {
           <div className="relative">
             <button
               onClick={() => setPortalsOpen((v) => !v)}
+              aria-expanded={portalsOpen}
+              aria-haspopup="true"
               className="whitespace-nowrap rounded-full border border-brand-gold px-3 py-2 text-[13px] font-semibold text-brand-gold transition hover:bg-brand-gold hover:text-brand-purple"
             >
               Student Portals ▾
@@ -86,7 +101,7 @@ export default function Header() {
           </div>
         </nav>
 
-        <button className="lg:hidden" aria-label="Toggle menu" onClick={() => setOpen((v) => !v)}>
+        <button className="lg:hidden" aria-label="Toggle menu" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
           <span className="block h-0.5 w-6 bg-white" />
           <span className="mt-1.5 block h-0.5 w-6 bg-white" />
           <span className="mt-1.5 block h-0.5 w-6 bg-white" />
