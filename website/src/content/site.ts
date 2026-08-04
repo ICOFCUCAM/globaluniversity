@@ -84,6 +84,41 @@ export const hero = {
   image: '/images/home-hero.jpg',
 };
 
+// Hero slider — one slide per message the WordPress homepage rotated through.
+export interface HeroSlide {
+  title: string;
+  text: string;
+  cta: { label: string; href: string };
+  image: string;
+}
+
+export const heroSlides: HeroSlide[] = [
+  {
+    title: 'The Community University of Africa',
+    text: 'Educating men and women as skilled professionals in godly principles, morals and ministries worldwide.',
+    cta: { label: 'Enroll Today', href: '/admissions' },
+    image: '/images/home-hero.jpg',
+  },
+  {
+    title: 'Donate for Our University Building Project',
+    text: 'Join us in building the future of education — a cutting-edge campus where ideas flourish and innovation takes flight. Together, let’s raise $1,000,000 to bring this vision to life.',
+    cta: { label: 'Support Us', href: '/contact' },
+    image: '/images/hall.jpg',
+  },
+  {
+    title: 'Support Intermissions and Evangelism Worldwide',
+    text: 'Empower missions and outreach efforts to reach grassroots levels more effectively, amplifying the reach and impact of the Kingdom of God.',
+    cta: { label: 'Learn More', href: '/about' },
+    image: '/images/global.jpg',
+  },
+  {
+    title: 'A University in Pursuit of a Brighter Future',
+    text: 'Anything you can dream, you can do — and we have the alumni to prove it. Fill out our free online application today.',
+    cta: { label: 'Apply Now', href: '/admissions' },
+    image: '/images/graduation.jpg',
+  },
+];
+
 export const quickLinks = [
   { label: 'Events & Important Dates', href: '/events', icon: 'calendar' },
   { label: 'Programs', href: '/programs', icon: 'book' },
