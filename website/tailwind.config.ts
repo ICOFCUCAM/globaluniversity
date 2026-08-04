@@ -25,8 +25,14 @@ const config: Config = {
           'gold-deep': '#e9c14a',
           cream: '#f7f5ed',
           sand: '#f7e6b4',
-          ink: '#2b2b2b',
-          muted: '#777777',
+          ink: '#241a30',
+          muted: '#5f5a68',
+          50: '#f6f4fa',
+          100: '#ece7f4',
+          200: '#d5cbe6',
+          300: '#b3a2cf',
+          800: '#37264a',
+          950: '#1d1428',
         },
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
@@ -78,8 +84,9 @@ const config: Config = {
         sm: 'calc(var(--radius) - 4px)',
       },
       fontFamily: {
-        heading: ['Poppins', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        body: ['Roboto', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        heading: ['var(--font-display)', 'Georgia', 'serif'],
+        body: ['var(--font-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
       keyframes: {
         'accordion-down': {

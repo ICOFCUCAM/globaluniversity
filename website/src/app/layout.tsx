@@ -1,10 +1,14 @@
 import type { Metadata, Viewport } from 'next';
+import { Fraunces, Inter } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/react';
 import './globals.css';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import WhatsAppButton from '@/components/WhatsAppButton';
 import { site } from '@/content/site';
+
+const display = Fraunces({ subsets: ['latin'], variable: '--font-display', weight: ['400', '600', '700', '900'] });
+const sans = Inter({ subsets: ['latin'], variable: '--font-sans' });
 
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
@@ -58,7 +62,7 @@ const jsonLd = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${display.variable} ${sans.variable}`}>
       <body>
         <script
           type="application/ld+json"
