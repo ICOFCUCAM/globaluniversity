@@ -138,3 +138,20 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* ---- Premium chrome ---- */
+::selection {
+  background: #f7dc79;
+  color: #422e59;
+}
+html {
+  scroll-behavior: smooth;
+}
+@media print {
+  header, footer, .print\:hidden, [aria-label='Chat with us on WhatsApp'] {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+  }
+}
