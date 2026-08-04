@@ -36,8 +36,19 @@ export default async function HomePage() {
     await getHomePage();
   const programs = (await getPrograms()).slice(0, 4);
 
+  const faqLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: homeFaqs.map((f) => ({
+      '@type': 'Question',
+      name: f.question,
+      acceptedAnswer: { '@type': 'Answer', text: f.answer },
+    })),
+  };
+
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }} />
       {/* Hero */}
       <HeroSlider slides={heroSlides} />
 
