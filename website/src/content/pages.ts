@@ -253,6 +253,73 @@ export const contentPages: ContentPage[] = [
     ],
   },
   {
+    slug: 'registration',
+    title: 'Registration',
+    subtitle: 'Why everyone desires the ICOFGU',
+    image: '/images/wp/g-students.jpg',
+    sections: [
+      {
+        heading: 'Exceptional Academic Programs',
+        paragraphs: [
+          'Our institution boasts a diverse range of rigorous academic programs designed to challenge and inspire students. Whether you’re pursuing a degree in business, science, humanities, or any other field, our curriculum is crafted to provide you with the knowledge and skills necessary to excel in your chosen career path.',
+        ],
+      },
+      {
+        heading: 'Expert Faculty',
+        paragraphs: [
+          'Our faculty members are experts in their respective fields, dedicated to fostering a dynamic learning environment where students can thrive. With their wealth of experience and passion for teaching, they are committed to providing personalized guidance and support to help you reach your full potential.',
+        ],
+      },
+      {
+        heading: 'Opportunities for Growth and Development',
+        paragraphs: [
+          'Beyond the classroom, our school offers numerous opportunities for personal and professional growth. Whether through internships, research projects, study abroad programs, or extracurricular activities, you’ll have the chance to broaden your horizons, gain real-world experience, and build valuable skills that will benefit you both during your time at our institution and beyond graduation.',
+        ],
+      },
+      {
+        heading: 'Supportive Community',
+        paragraphs: [
+          'At our school, you’ll become part of a vibrant and supportive community of students, faculty, staff, and alumni who are committed to your success. Whether you need academic assistance, career guidance, or simply someone to talk to, you’ll find a network of individuals who are eager to help you thrive and succeed.',
+          'Ultimately, attending our school is not just about earning a degree — it’s about embarking on a transformative educational journey that will empower you to achieve your goals, make meaningful contributions to society, and lead a fulfilling life.',
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'ppdi-rc-application',
+    title: 'PPDI-RC Application',
+    subtitle: 'Register for a Personal Professional Development course',
+    image: '/images/program-business.jpg',
+    sections: [
+      {
+        heading: 'How to Register',
+        paragraphs: [
+          'To register for a PPDI-RC course, provide your name, email, phone, the course name and its start date, plus an emergency contact. Courses are free; an optional certificate of completion is available for a small fee of ₦6,000.',
+          'Send your registration details to Dr. Barnabas Oluwaleye, Director of Studies, Strategy & Relations — phone +234 803 428 1308, WhatsApp +234 708 227 3055, or email orchardsconsult@gmail.com — and you will receive confirmation with payment instructions for the certificate if desired.',
+        ],
+      },
+      {
+        heading: 'Available Courses',
+        list: [
+          'Agritourism (3 days)',
+          'Agric Food Development',
+          'Food Bank Operations & Development',
+          'AgriTech Daycation Program',
+          'Digital Business Development (3 days)',
+          'Religious Leadership Development Course',
+          'Youth | TeenClub Professional Network & Leadership Course',
+          'Youth & Teen Work Management',
+          'AI for Teen Leaders & AI for Youth Leaders',
+          'Rehabilitation and Disorder Management (5 days)',
+          'Medical Social Work',
+          'Digital Social Work Management',
+          'Behavior | Temperament Therapy',
+          'Community Development & Management',
+        ],
+      },
+    ],
+  },
+  {
     slug: 'privacy-policy',
     title: 'Privacy Policy',
     image: '/images/banner.jpg',

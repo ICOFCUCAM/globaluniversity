@@ -83,6 +83,7 @@ export const site = {
       children: [
         { label: 'Admission Requirements', href: '/admissions' },
         { label: 'Apply Now', href: '/apply' },
+        { label: 'Registration', href: '/registration' },
         { label: 'Cost & Tuition', href: '/tuition' },
       ],
     },
@@ -98,6 +99,7 @@ export const site = {
         { label: 'Diploma (Dip)', href: '/degrees/diploma-dip' },
         { label: 'Certificates', href: '/degrees/certificates' },
         { label: 'PPDI-RC', href: '/ppdirc' },
+        { label: 'PPDI-RC Application', href: '/ppdi-rc-application' },
       ],
     },
     { label: 'Faculties & School', href: '/faculty' },
