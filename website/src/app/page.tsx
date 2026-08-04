@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Section, SectionHeading } from '@/components/Section';
 import Cta from '@/components/Cta';
+import HeroSlider from '@/components/HeroSlider';
 import { getHomePage, getPrograms } from '@/lib/data';
 
 const quickIcons: Record<string, string> = {
@@ -14,33 +15,13 @@ const quickIcons: Record<string, string> = {
 };
 
 export default async function HomePage() {
-  const { hero, quickLinks, stats, about, events, news } = await getHomePage();
+  const { heroSlides, quickLinks, stats, about, events, news } = await getHomePage();
   const programs = (await getPrograms()).slice(0, 4);
 
   return (
     <>
-      {/* Hero */}
-      <section className="relative overflow-hidden bg-brand-purple text-white">
-        <Image
-          src={hero.image}
-          alt="ICOF Global University campus"
-          fill
-          priority
-          className="object-cover opacity-25"
-        />
-        <div className="relative mx-auto max-w-4xl px-4 py-28 text-center sm:py-36">
-          <h1 className="font-heading text-4xl font-extrabold uppercase leading-tight tracking-wide text-brand-gold sm:text-6xl">
-            {hero.title}
-          </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-white/90">{hero.text}</p>
-          <Link
-            href={hero.cta.href}
-            className="mt-10 inline-block rounded-full bg-brand-gold px-8 py-3 font-heading font-semibold text-brand-purple transition hover:bg-brand-gold-deep"
-          >
-            🎓 {hero.cta.label}
-          </Link>
-        </div>
-      </section>
+      {/* Hero slider */}
+      <HeroSlider slides={heroSlides} />
 
       {/* Quick links strip */}
       <div className="border-b-4 border-brand-gold bg-white shadow-sm">
