@@ -50,12 +50,12 @@ export default function Header() {
       </a>
       <div className="hidden border-b border-white/10 bg-brand-purple-dark/60 lg:block">
         <div className="mx-auto flex max-w-7xl items-center justify-end gap-5 px-4 py-1.5 text-[11px] font-medium tracking-wide text-white/70">
-          <span className="mr-auto text-brand-gold/90">The Community University of Africa · Buea, Cameroon</span>
+          <span className="mr-auto text-brand-gold/90">A Global University · Buea · Douala · Nigeria · Online Worldwide</span>
           <Link href="/admissions" className="hover:text-brand-gold">Prospective Students</Link>
           <Link href="/portal" className="hover:text-brand-gold">Current Students</Link>
           <Link href="/international" className="hover:text-brand-gold">International</Link>
           <Link href="/faculty" className="hover:text-brand-gold">Faculty &amp; Staff</Link>
-          <Link href="/support" className="hover:text-brand-gold">Alumni &amp; Giving</Link>
+          <Link href="/alumni" className="hover:text-brand-gold">Alumni &amp; Giving</Link>
         </div>
       </div>
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3">
