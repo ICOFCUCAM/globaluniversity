@@ -45,7 +45,7 @@ export default function LMSModule() {
           <p className="text-sm text-gray-500">Course materials, live classes, and progress tracking</p>
         </div>
         <button onClick={() => setShowUploadModal(true)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-[#1a237e] text-white rounded-xl text-sm font-medium hover:bg-[#283593] transition-colors shadow-lg shadow-blue-500/20">
+          className="flex items-center gap-2 px-4 py-2.5 bg-[#422e59] text-white rounded-xl text-sm font-medium hover:bg-[#322244] transition-colors shadow-lg shadow-blue-500/20">
           <Upload size={16} /> Upload Material
         </button>
       </div>
@@ -59,7 +59,7 @@ export default function LMSModule() {
         ].map((tab) => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
             className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              activeTab === tab.id ? 'bg-white text-[#1a237e] shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              activeTab === tab.id ? 'bg-white text-[#422e59] shadow-sm' : 'text-gray-500 hover:text-gray-700'
             }`}>
             {tab.icon} {tab.label}
           </button>
@@ -207,7 +207,7 @@ export default function LMSModule() {
                 <button type="button" onClick={() => setShowUploadModal(false)}
                   className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50">Cancel</button>
                 <button type="submit"
-                  className="flex-1 px-4 py-2.5 bg-[#1a237e] text-white rounded-xl text-sm font-medium hover:bg-[#283593]">Upload</button>
+                  className="flex-1 px-4 py-2.5 bg-[#422e59] text-white rounded-xl text-sm font-medium hover:bg-[#322244]">Upload</button>
               </div>
             </form>
           </div>

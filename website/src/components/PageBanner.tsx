@@ -10,12 +10,16 @@ export default function PageBanner({
   image: string;
 }) {
   return (
-    <section className="relative bg-brand-purple py-20 text-center text-white">
-      <Image src={image} alt="" fill className="object-cover opacity-20" />
-      <h1 className="relative font-heading text-4xl font-extrabold uppercase tracking-wide text-brand-gold sm:text-5xl">
-        {title}
-      </h1>
-      {subtitle && <p className="relative mx-auto mt-4 max-w-2xl px-4 text-white/90">{subtitle}</p>}
+    <section className="relative overflow-hidden bg-brand-purple py-24 text-center text-white sm:py-28">
+      <Image src={image} alt="" fill className="object-cover opacity-40" sizes="100vw" />
+      <div className="absolute inset-0 bg-gradient-to-b from-brand-purple/70 to-brand-purple-dark/90" />
+      <div className="relative mx-auto max-w-3xl px-4">
+        <h1 className="font-heading text-4xl font-bold leading-tight tracking-tight sm:text-5xl [text-wrap:balance]">
+          {title}
+        </h1>
+        <div className="mx-auto mt-5 h-[3px] w-16 rounded bg-brand-gold" />
+        {subtitle && <p className="mx-auto mt-5 max-w-2xl text-lg text-brand-gold/95">{subtitle}</p>}
+      </div>
     </section>
   );
 }

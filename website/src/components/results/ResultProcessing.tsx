@@ -196,7 +196,7 @@ export default function ResultProcessing() {
                 <button
                   onClick={handleSaveResults}
                   disabled={saving}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-[#1a237e] text-white rounded-lg text-xs font-medium hover:bg-[#283593] disabled:opacity-50 transition-colors"
+                  className="flex items-center gap-1.5 px-4 py-2 bg-[#422e59] text-white rounded-lg text-xs font-medium hover:bg-[#322244] disabled:opacity-50 transition-colors"
                 >
                   <Save size={14} /> {saving ? 'Saving...' : 'Save Results'}
                 </button>

@@ -32,7 +32,7 @@ export default function LecturerManagement() {
           <h2 className="text-xl font-bold text-gray-800">Lecturer Management</h2>
           <p className="text-sm text-gray-500">{lecturers.length} lecturers across all departments</p>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2.5 bg-[#1a237e] text-white rounded-xl text-sm font-medium hover:bg-[#283593] transition-colors shadow-lg shadow-blue-500/20">
+        <button className="flex items-center gap-2 px-4 py-2.5 bg-[#422e59] text-white rounded-xl text-sm font-medium hover:bg-[#322244] transition-colors shadow-lg shadow-blue-500/20">
           <Plus size={16} /> Add Lecturer
         </button>
       </div>

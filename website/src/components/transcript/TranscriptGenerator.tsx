@@ -51,7 +51,7 @@ export default function TranscriptGenerator() {
             <Eye size={16} /> {showPreview ? 'Hide' : 'Show'} Preview
           </button>
           <button onClick={handlePrint}
-            className="flex items-center gap-2 px-4 py-2.5 bg-[#1a237e] text-white rounded-xl text-sm font-medium hover:bg-[#283593] transition-colors shadow-lg shadow-blue-500/20">
+            className="flex items-center gap-2 px-4 py-2.5 bg-[#422e59] text-white rounded-xl text-sm font-medium hover:bg-[#322244] transition-colors shadow-lg shadow-blue-500/20">
             <Download size={16} /> Download PDF
           </button>
         </div>
@@ -69,7 +69,7 @@ export default function TranscriptGenerator() {
             <p className="text-sm text-gray-500">{data.student.degree_type} {data.student.program}</p>
             <p className="text-sm text-gray-500">{data.department.faculty}</p>
             <div className="mt-1">
-              <span className="text-lg font-bold text-[#1a237e]">CGPA: {data.cgpa}</span>
+              <span className="text-lg font-bold text-[#422e59]">CGPA: {data.cgpa}</span>
               <span className="text-xs text-gray-400 ml-2">({getClassification(data.cgpa)})</span>
             </div>
           </div>
@@ -81,17 +81,17 @@ export default function TranscriptGenerator() {
         <div className="bg-gray-100 rounded-xl p-8 flex justify-center overflow-auto">
           <div ref={transcriptRef} className="bg-white shadow-2xl" style={{ width: '210mm', minHeight: '297mm', padding: '15mm', fontFamily: "'Times New Roman', Times, serif", position: 'relative' }}>
             {/* Watermark */}
-            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%) rotate(-30deg)', opacity: 0.04, fontSize: '80px', fontWeight: 'bold', color: '#1a237e', whiteSpace: 'nowrap', pointerEvents: 'none', zIndex: 0 }}>
+            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%) rotate(-30deg)', opacity: 0.04, fontSize: '80px', fontWeight: 'bold', color: '#422e59', whiteSpace: 'nowrap', pointerEvents: 'none', zIndex: 0 }}>
               {UNIVERSITY.shortName}
             </div>
 
             <div style={{ position: 'relative', zIndex: 1 }}>
               {/* Header */}
-              <div style={{ textAlign: 'center', marginBottom: '20px', borderBottom: '3px double #1a237e', paddingBottom: '15px' }}>
+              <div style={{ textAlign: 'center', marginBottom: '20px', borderBottom: '3px double #422e59', paddingBottom: '15px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', marginBottom: '8px' }}>
                   <img src={IMAGES.logo} alt="Logo" style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover' }} />
                   <div>
-                    <h1 style={{ fontSize: '22px', fontWeight: 'bold', color: '#1a237e', margin: 0, textTransform: 'uppercase', letterSpacing: '2px' }}>
+                    <h1 style={{ fontSize: '22px', fontWeight: 'bold', color: '#422e59', margin: 0, textTransform: 'uppercase', letterSpacing: '2px' }}>
                       {UNIVERSITY.name}
                     </h1>
                     <p style={{ fontSize: '11px', color: '#666', margin: '2px 0' }}>{UNIVERSITY.address}</p>
@@ -120,7 +120,7 @@ export default function TranscriptGenerator() {
               {data.years.map((year) => {
                 return (
                   <div key={year.year} style={{ marginBottom: '12px' }}>
-                    <h3 style={{ fontSize: '13px', fontWeight: 'bold', color: '#1a237e', margin: '10px 0 5px', textTransform: 'uppercase', borderBottom: '1px solid #1a237e', paddingBottom: '3px' }}>
+                    <h3 style={{ fontSize: '13px', fontWeight: 'bold', color: '#422e59', margin: '10px 0 5px', textTransform: 'uppercase', borderBottom: '1px solid #422e59', paddingBottom: '3px' }}>
                       Year {year.year} ({data.student.admission_year + year.year - 1}/{data.student.admission_year + year.year} Academic Session)
                     </h3>
 
@@ -136,13 +136,13 @@ export default function TranscriptGenerator() {
                           </h4>
                           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
                             <thead>
-                              <tr style={{ backgroundColor: '#1a237e', color: 'white' }}>
-                                <th style={{ padding: '4px 6px', textAlign: 'left', border: '1px solid #1a237e' }}>Course Code</th>
-                                <th style={{ padding: '4px 6px', textAlign: 'left', border: '1px solid #1a237e' }}>Course Title</th>
-                                <th style={{ padding: '4px 6px', textAlign: 'center', border: '1px solid #1a237e' }}>Credit Unit</th>
-                                <th style={{ padding: '4px 6px', textAlign: 'center', border: '1px solid #1a237e' }}>Grade</th>
-                                <th style={{ padding: '4px 6px', textAlign: 'center', border: '1px solid #1a237e' }}>Grade Point</th>
-                                <th style={{ padding: '4px 6px', textAlign: 'center', border: '1px solid #1a237e' }}>Quality Point</th>
+                              <tr style={{ backgroundColor: '#422e59', color: 'white' }}>
+                                <th style={{ padding: '4px 6px', textAlign: 'left', border: '1px solid #422e59' }}>Course Code</th>
+                                <th style={{ padding: '4px 6px', textAlign: 'left', border: '1px solid #422e59' }}>Course Title</th>
+                                <th style={{ padding: '4px 6px', textAlign: 'center', border: '1px solid #422e59' }}>Credit Unit</th>
+                                <th style={{ padding: '4px 6px', textAlign: 'center', border: '1px solid #422e59' }}>Grade</th>
+                                <th style={{ padding: '4px 6px', textAlign: 'center', border: '1px solid #422e59' }}>Grade Point</th>
+                                <th style={{ padding: '4px 6px', textAlign: 'center', border: '1px solid #422e59' }}>Quality Point</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -179,7 +179,7 @@ export default function TranscriptGenerator() {
               })}
 
               {/* Summary */}
-              <div style={{ marginTop: '15px', padding: '10px', border: '2px solid #1a237e', backgroundColor: '#e8eaf6' }}>
+              <div style={{ marginTop: '15px', padding: '10px', border: '2px solid #422e59', backgroundColor: '#e8eaf6' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', fontSize: '12px' }}>
                   <div><strong>Total Credits Earned:</strong> {data.totalCredits}</div>
                   <div><strong>Final CGPA:</strong> {data.cgpa.toFixed(2)}/5.00</div>
@@ -190,35 +190,35 @@ export default function TranscriptGenerator() {
               {/* QR Code & Verification */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '25px', paddingTop: '15px', borderTop: '1px solid #ddd' }}>
                 <div style={{ fontSize: '10px', color: '#666' }}>
-                  <div style={{ width: '70px', height: '70px', border: '2px solid #1a237e', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '4px' }}>
+                  <div style={{ width: '70px', height: '70px', border: '2px solid #422e59', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '4px' }}>
                     <svg width="50" height="50" viewBox="0 0 50 50">
-                      <rect x="0" y="0" width="15" height="15" fill="#1a237e"/>
-                      <rect x="17" y="0" width="5" height="5" fill="#1a237e"/>
-                      <rect x="25" y="0" width="5" height="5" fill="#1a237e"/>
-                      <rect x="35" y="0" width="15" height="15" fill="#1a237e"/>
+                      <rect x="0" y="0" width="15" height="15" fill="#422e59"/>
+                      <rect x="17" y="0" width="5" height="5" fill="#422e59"/>
+                      <rect x="25" y="0" width="5" height="5" fill="#422e59"/>
+                      <rect x="35" y="0" width="15" height="15" fill="#422e59"/>
                       <rect x="2" y="2" width="11" height="11" fill="white"/>
-                      <rect x="4" y="4" width="7" height="7" fill="#1a237e"/>
+                      <rect x="4" y="4" width="7" height="7" fill="#422e59"/>
                       <rect x="37" y="2" width="11" height="11" fill="white"/>
-                      <rect x="39" y="4" width="7" height="7" fill="#1a237e"/>
-                      <rect x="0" y="17" width="5" height="5" fill="#1a237e"/>
-                      <rect x="8" y="17" width="5" height="5" fill="#1a237e"/>
-                      <rect x="17" y="17" width="5" height="5" fill="#1a237e"/>
-                      <rect x="25" y="20" width="5" height="5" fill="#1a237e"/>
-                      <rect x="35" y="17" width="5" height="5" fill="#1a237e"/>
-                      <rect x="0" y="25" width="5" height="5" fill="#1a237e"/>
-                      <rect x="10" y="25" width="5" height="5" fill="#1a237e"/>
-                      <rect x="20" y="25" width="5" height="5" fill="#1a237e"/>
-                      <rect x="30" y="25" width="5" height="5" fill="#1a237e"/>
-                      <rect x="45" y="25" width="5" height="5" fill="#1a237e"/>
-                      <rect x="0" y="35" width="15" height="15" fill="#1a237e"/>
+                      <rect x="39" y="4" width="7" height="7" fill="#422e59"/>
+                      <rect x="0" y="17" width="5" height="5" fill="#422e59"/>
+                      <rect x="8" y="17" width="5" height="5" fill="#422e59"/>
+                      <rect x="17" y="17" width="5" height="5" fill="#422e59"/>
+                      <rect x="25" y="20" width="5" height="5" fill="#422e59"/>
+                      <rect x="35" y="17" width="5" height="5" fill="#422e59"/>
+                      <rect x="0" y="25" width="5" height="5" fill="#422e59"/>
+                      <rect x="10" y="25" width="5" height="5" fill="#422e59"/>
+                      <rect x="20" y="25" width="5" height="5" fill="#422e59"/>
+                      <rect x="30" y="25" width="5" height="5" fill="#422e59"/>
+                      <rect x="45" y="25" width="5" height="5" fill="#422e59"/>
+                      <rect x="0" y="35" width="15" height="15" fill="#422e59"/>
                       <rect x="2" y="37" width="11" height="11" fill="white"/>
-                      <rect x="4" y="39" width="7" height="7" fill="#1a237e"/>
-                      <rect x="17" y="35" width="5" height="5" fill="#1a237e"/>
-                      <rect x="25" y="35" width="5" height="5" fill="#1a237e"/>
-                      <rect x="35" y="35" width="5" height="5" fill="#1a237e"/>
-                      <rect x="45" y="35" width="5" height="5" fill="#1a237e"/>
-                      <rect x="35" y="45" width="5" height="5" fill="#1a237e"/>
-                      <rect x="42" y="42" width="8" height="8" fill="#1a237e"/>
+                      <rect x="4" y="39" width="7" height="7" fill="#422e59"/>
+                      <rect x="17" y="35" width="5" height="5" fill="#422e59"/>
+                      <rect x="25" y="35" width="5" height="5" fill="#422e59"/>
+                      <rect x="35" y="35" width="5" height="5" fill="#422e59"/>
+                      <rect x="45" y="35" width="5" height="5" fill="#422e59"/>
+                      <rect x="35" y="45" width="5" height="5" fill="#422e59"/>
+                      <rect x="42" y="42" width="8" height="8" fill="#422e59"/>
                     </svg>
                   </div>
                   <p>Scan to verify</p>

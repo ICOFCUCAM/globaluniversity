@@ -106,7 +106,7 @@ export default function AssignmentModule() {
         {isStaff && (
           <button
             onClick={() => setShowNew(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-[#1a237e] text-white rounded-xl text-sm font-medium hover:bg-[#283593] transition-colors shadow-lg shadow-blue-500/20"
+            className="flex items-center gap-2 px-4 py-2.5 bg-[#422e59] text-white rounded-xl text-sm font-medium hover:bg-[#322244] transition-colors shadow-lg shadow-blue-500/20"
           >
             <Plus size={16} /> New Assignment
           </button>
@@ -194,7 +194,7 @@ export default function AssignmentModule() {
             <input required placeholder="Title" className={input} value={brief.title} onChange={(e) => setBrief({ ...brief, title: e.target.value })} />
             <input required type="date" className={input} value={brief.due} onChange={(e) => setBrief({ ...brief, due: e.target.value })} />
             <textarea rows={3} placeholder="Instructions" className={input} value={brief.instructions} onChange={(e) => setBrief({ ...brief, instructions: e.target.value })} />
-            <button disabled={busy} className="w-full rounded-xl bg-[#1a237e] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#283593] disabled:opacity-60">
+            <button disabled={busy} className="w-full rounded-xl bg-[#422e59] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#322244] disabled:opacity-60">
               {busy ? 'Publishing…' : 'Publish Assignment'}
             </button>
           </form>

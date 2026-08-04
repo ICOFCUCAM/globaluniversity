@@ -43,7 +43,7 @@ export default function SettingsPage() {
           {tabs.map((tab) => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm transition-all ${
-                activeTab === tab.id ? 'bg-[#1a237e] text-white font-medium' : 'text-gray-600 hover:bg-gray-50'
+                activeTab === tab.id ? 'bg-[#422e59] text-white font-medium' : 'text-gray-600 hover:bg-gray-50'
               }`}>
               {tab.icon} {tab.label}
             </button>
@@ -86,7 +86,7 @@ export default function SettingsPage() {
                 </div>
               </div>
               <button onClick={handleSave}
-                className="flex items-center gap-2 px-4 py-2.5 bg-[#1a237e] text-white rounded-xl text-sm font-medium hover:bg-[#283593] transition-colors">
+                className="flex items-center gap-2 px-4 py-2.5 bg-[#422e59] text-white rounded-xl text-sm font-medium hover:bg-[#322244] transition-colors">
                 {saved ? <><CheckCircle2 size={14} /> Saved!</> : <><Save size={14} /> Save Changes</>}
               </button>
             </div>
@@ -151,7 +151,7 @@ export default function SettingsPage() {
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" defaultChecked={i < 3} className="sr-only peer" />
-                    <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#1a237e]"></div>
+                    <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#422e59]"></div>
                   </label>
                 </div>
               ))}
@@ -177,7 +177,7 @@ export default function SettingsPage() {
                   <input type="password" placeholder="Confirm new password"
                     className="w-full max-w-md px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30" />
                 </div>
-                <button className="px-4 py-2 bg-[#1a237e] text-white rounded-lg text-sm font-medium hover:bg-[#283593] transition-colors">
+                <button className="px-4 py-2 bg-[#422e59] text-white rounded-lg text-sm font-medium hover:bg-[#322244] transition-colors">
                   Update Password
                 </button>
               </div>

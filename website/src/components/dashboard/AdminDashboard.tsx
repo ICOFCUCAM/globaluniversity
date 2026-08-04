@@ -66,7 +66,7 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-6">
       {/* Welcome Banner */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#1a237e] via-[#283593] to-[#3949ab] p-6 text-white">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#422e59] via-[#322244] to-[#3949ab] p-6 text-white">
         <div className="relative z-10">
           <h1 className="text-2xl font-bold">Welcome back, Administrator</h1>
           <p className="text-blue-200 mt-1">Here's what's happening at Federal University of Technology today.</p>
@@ -84,7 +84,7 @@ export default function AdminDashboard() {
           alt="Campus"
           className="absolute right-0 top-0 h-full w-1/3 object-cover opacity-20 rounded-r-2xl"
         />
-        <div className="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-r from-[#283593] to-transparent" />
+        <div className="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-r from-[#322244] to-transparent" />
       </div>
 
       {/* Stats Grid */}

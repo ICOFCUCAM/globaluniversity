@@ -58,7 +58,7 @@ export default function TopBar({ sidebarCollapsed, onMenuToggle }: TopBarProps) 
                 onClick={() => switchRole(role)}
                 className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all capitalize ${
                   user?.role === role
-                    ? 'bg-[#1a237e] text-white shadow-sm'
+                    ? 'bg-[#422e59] text-white shadow-sm'
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
@@ -131,7 +131,7 @@ export default function TopBar({ sidebarCollapsed, onMenuToggle }: TopBarProps) 
             {user.avatar ? (
               <img src={user.avatar} alt={user.name} className="w-8 h-8 rounded-full object-cover" />
             ) : (
-              <div className="w-8 h-8 rounded-full bg-[#1a237e] text-white flex items-center justify-center text-sm font-bold">
+              <div className="w-8 h-8 rounded-full bg-[#422e59] text-white flex items-center justify-center text-sm font-bold">
                 {user.name.charAt(0).toUpperCase()}
               </div>
             )}

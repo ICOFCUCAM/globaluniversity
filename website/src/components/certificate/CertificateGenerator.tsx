@@ -46,7 +46,7 @@ export default function CertificateGenerator() {
             <Eye size={16} /> {showPreview ? 'Hide' : 'Show'} Preview
           </button>
           <button onClick={handlePrint}
-            className="flex items-center gap-2 px-4 py-2.5 bg-[#1a237e] text-white rounded-xl text-sm font-medium hover:bg-[#283593] transition-colors shadow-lg shadow-blue-500/20">
+            className="flex items-center gap-2 px-4 py-2.5 bg-[#422e59] text-white rounded-xl text-sm font-medium hover:bg-[#322244] transition-colors shadow-lg shadow-blue-500/20">
             <Download size={16} /> Download PDF
           </button>
         </div>
@@ -83,7 +83,7 @@ export default function CertificateGenerator() {
               width: '297mm', height: '210mm', padding: '15mm',
               fontFamily: "'Times New Roman', Times, serif",
               position: 'relative', backgroundColor: '#fffff8',
-              border: '3px solid #1a237e', boxSizing: 'border-box',
+              border: '3px solid #422e59', boxSizing: 'border-box',
               background: 'linear-gradient(135deg, #fffff8 0%, #f5f0e8 100%)',
             }}>
               {/* Decorative Border */}
@@ -111,7 +111,7 @@ export default function CertificateGenerator() {
                 <img src={IMAGES.logo} alt="Logo" style={{ width: '70px', height: '70px', borderRadius: '50%', objectFit: 'cover', marginBottom: '10px' }} />
 
                 {/* University Name */}
-                <h1 style={{ fontSize: '28px', fontWeight: 'bold', color: '#1a237e', margin: '0', textTransform: 'uppercase', letterSpacing: '4px' }}>
+                <h1 style={{ fontSize: '28px', fontWeight: 'bold', color: '#422e59', margin: '0', textTransform: 'uppercase', letterSpacing: '4px' }}>
                   {UNIVERSITY.name}
                 </h1>
                 <p style={{ fontSize: '12px', color: '#666', margin: '4px 0 15px', letterSpacing: '2px' }}>
@@ -125,7 +125,7 @@ export default function CertificateGenerator() {
                 </p>
 
                 {/* Student Name */}
-                <h2 style={{ fontSize: '32px', fontWeight: 'bold', color: '#1a237e', margin: '10px 0', fontStyle: 'italic', borderBottom: '2px solid #c5a55a', paddingBottom: '5px' }}>
+                <h2 style={{ fontSize: '32px', fontWeight: 'bold', color: '#422e59', margin: '10px 0', fontStyle: 'italic', borderBottom: '2px solid #c5a55a', paddingBottom: '5px' }}>
                   {data.student.last_name.toUpperCase()}, {data.student.first_name} {data.student.middle_name}
                 </h2>
 
@@ -137,7 +137,7 @@ export default function CertificateGenerator() {
                 </p>
 
                 {/* Degree */}
-                <h3 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1a237e', margin: '12px 0 5px', textTransform: 'uppercase', letterSpacing: '3px' }}>
+                <h3 style={{ fontSize: '24px', fontWeight: 'bold', color: '#422e59', margin: '12px 0 5px', textTransform: 'uppercase', letterSpacing: '3px' }}>
                   Bachelor of Science
                 </h3>
                 <p style={{ fontSize: '16px', color: '#333', margin: '4px 0', fontWeight: 'bold' }}>
@@ -146,7 +146,7 @@ export default function CertificateGenerator() {
 
                 {/* Classification */}
                 <div style={{ margin: '12px 0', padding: '6px 30px', border: '2px solid #c5a55a', display: 'inline-block' }}>
-                  <p style={{ fontSize: '16px', fontWeight: 'bold', color: '#1a237e', margin: 0, letterSpacing: '2px' }}>
+                  <p style={{ fontSize: '16px', fontWeight: 'bold', color: '#422e59', margin: 0, letterSpacing: '2px' }}>
                     {classification.toUpperCase()}
                   </p>
                 </div>
