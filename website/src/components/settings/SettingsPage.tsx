@@ -56,7 +56,7 @@ export default function SettingsPage() {
             <div className="space-y-4">
               <h3 className="font-semibold text-gray-800">Profile Settings</h3>
               <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
-                <img src={user?.avatar} alt="" className="w-16 h-16 rounded-full object-cover border-2 border-blue-100" />
+                <img src={user?.avatar} alt="" className="w-16 h-16 rounded-full object-cover border-2 border-[#ece7f4]" />
                 <div>
                   <p className="font-semibold text-gray-800">{user?.name}</p>
                   <p className="text-sm text-gray-500 capitalize">{user?.role}</p>
@@ -67,17 +67,17 @@ export default function SettingsPage() {
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Full Name</label>
                   <input value={profile.name} onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30" />
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Email</label>
                   <input value={profile.email} onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30" />
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Phone</label>
                   <input value={profile.phone} onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30" />
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Department</label>
@@ -165,17 +165,17 @@ export default function SettingsPage() {
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Current Password</label>
                   <input type="password" placeholder="Enter current password"
-                    className="w-full max-w-md px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30" />
+                    className="w-full max-w-md px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">New Password</label>
                   <input type="password" placeholder="Enter new password"
-                    className="w-full max-w-md px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30" />
+                    className="w-full max-w-md px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Confirm Password</label>
                   <input type="password" placeholder="Confirm new password"
-                    className="w-full max-w-md px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30" />
+                    className="w-full max-w-md px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
                 </div>
                 <button className="px-4 py-2 bg-[#422e59] text-white rounded-lg text-sm font-medium hover:bg-[#322244] transition-colors">
                   Update Password

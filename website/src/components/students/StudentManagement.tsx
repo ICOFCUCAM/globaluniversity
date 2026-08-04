@@ -88,7 +88,7 @@ export default function StudentManagement() {
         </div>
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-[#422e59] text-white rounded-xl text-sm font-medium hover:bg-[#322244] transition-colors shadow-lg shadow-blue-500/20"
+          className="flex items-center gap-2 px-4 py-2.5 bg-[#422e59] text-white rounded-xl text-sm font-medium hover:bg-[#322244] transition-colors shadow-lg shadow-purple-900/20"
         >
           <UserPlus size={16} /> Register Student
         </button>
@@ -104,13 +104,13 @@ export default function StudentManagement() {
               placeholder="Search by name or matric number..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+              className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30"
             />
           </div>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+            className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30"
           >
             <option value="all">All Status</option>
             <option value="applicant">Applicants (pending review)</option>
@@ -203,41 +203,41 @@ export default function StudentManagement() {
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">First Name *</label>
                   <input required value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30" />
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Last Name *</label>
                   <input required value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30" />
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
                 </div>
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Middle Name</label>
                 <input value={form.middle_name} onChange={(e) => setForm({ ...form, middle_name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30" />
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Email *</label>
                   <input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30" />
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Phone</label>
                   <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30" />
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Date of Birth</label>
                   <input type="date" value={form.date_of_birth} onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30" />
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Gender</label>
                   <select value={form.gender} onChange={(e) => setForm({ ...form, gender: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30">
                     <option>Male</option>
                     <option>Female</option>
                   </select>
@@ -246,13 +246,13 @@ export default function StudentManagement() {
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">State of Origin</label>
                 <input value={form.state_of_origin} onChange={(e) => setForm({ ...form, state_of_origin: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30" />
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Program</label>
                   <select value={form.program} onChange={(e) => setForm({ ...form, program: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30">
                     <option>Computer Science</option>
                     <option>Software Engineering</option>
                     <option>Business Information Systems</option>
@@ -261,7 +261,7 @@ export default function StudentManagement() {
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Admission Year</label>
                   <input type="number" value={form.admission_year} onChange={(e) => setForm({ ...form, admission_year: parseInt(e.target.value) })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30" />
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
                 </div>
               </div>
               <div className="flex gap-3 pt-2">
@@ -284,7 +284,7 @@ export default function StudentManagement() {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedStudent(null)}>
           <div className="bg-white rounded-2xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
             <div className="p-6 text-center border-b border-gray-100">
-              <img src={selectedStudent.photo_url || IMAGES.students[0]} alt="" className="w-20 h-20 rounded-full object-cover mx-auto border-4 border-blue-100" />
+              <img src={selectedStudent.photo_url || IMAGES.students[0]} alt="" className="w-20 h-20 rounded-full object-cover mx-auto border-4 border-[#ece7f4]" />
               <h3 className="text-lg font-bold text-gray-800 mt-3">
                 {selectedStudent.first_name} {selectedStudent.middle_name} {selectedStudent.last_name}
               </h3>

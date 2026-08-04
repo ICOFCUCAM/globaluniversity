@@ -32,7 +32,7 @@ export default function LecturerManagement() {
           <h2 className="text-xl font-bold text-gray-800">Lecturer Management</h2>
           <p className="text-sm text-gray-500">{lecturers.length} lecturers across all departments</p>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2.5 bg-[#422e59] text-white rounded-xl text-sm font-medium hover:bg-[#322244] transition-colors shadow-lg shadow-blue-500/20">
+        <button className="flex items-center gap-2 px-4 py-2.5 bg-[#422e59] text-white rounded-xl text-sm font-medium hover:bg-[#322244] transition-colors shadow-lg shadow-purple-900/20">
           <Plus size={16} /> Add Lecturer
         </button>
       </div>
@@ -40,7 +40,7 @@ export default function LecturerManagement() {
       <div className="relative max-w-md">
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
         <input type="text" placeholder="Search lecturers..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30" />
+          className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
       </div>
 
       {loading ? (
@@ -53,7 +53,7 @@ export default function LecturerManagement() {
                 <img
                   src={lecturer.photo_url || IMAGES.professors[0]}
                   alt={`${lecturer.first_name} ${lecturer.last_name}`}
-                  className="w-20 h-20 rounded-full object-cover mx-auto border-3 border-blue-100 group-hover:border-blue-300 transition-colors"
+                  className="w-20 h-20 rounded-full object-cover mx-auto border-3 border-[#ece7f4] group-hover:border-blue-300 transition-colors"
                 />
                 <h4 className="text-sm font-bold text-gray-800 mt-3">{lecturer.title} {lecturer.first_name} {lecturer.last_name}</h4>
                 <p className="text-xs text-gray-400 font-mono">{lecturer.staff_id}</p>

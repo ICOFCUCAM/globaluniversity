@@ -179,7 +179,7 @@ export default function AdminDashboard() {
                 { label: 'Add Course', icon: <BookOpen size={16} />, color: 'bg-purple-50 text-purple-600 hover:bg-purple-100' },
                 { label: 'Enter Results', icon: <ClipboardList size={16} />, color: 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' },
                 { label: 'Transcript', icon: <FileText size={16} />, color: 'bg-amber-50 text-amber-600 hover:bg-amber-100' },
-                { label: 'Certificate', icon: <Award size={16} />, color: 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100' },
+                { label: 'Certificate', icon: <Award size={16} />, color: 'bg-[#f6f4fa] text-[#422e59] hover:bg-indigo-100' },
                 { label: 'Schedule Exam', icon: <PenTool size={16} />, color: 'bg-pink-50 text-pink-600 hover:bg-pink-100' },
               ].map((action, i) => (
                 <button

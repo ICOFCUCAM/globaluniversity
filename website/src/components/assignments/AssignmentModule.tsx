@@ -92,7 +92,7 @@ export default function AssignmentModule() {
   }
 
   const input =
-    'w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30';
+    'w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30';
 
   return (
     <div className="space-y-6">
@@ -106,7 +106,7 @@ export default function AssignmentModule() {
         {isStaff && (
           <button
             onClick={() => setShowNew(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-[#422e59] text-white rounded-xl text-sm font-medium hover:bg-[#322244] transition-colors shadow-lg shadow-blue-500/20"
+            className="flex items-center gap-2 px-4 py-2.5 bg-[#422e59] text-white rounded-xl text-sm font-medium hover:bg-[#322244] transition-colors shadow-lg shadow-purple-900/20"
           >
             <Plus size={16} /> New Assignment
           </button>
@@ -126,7 +126,7 @@ export default function AssignmentModule() {
             <div key={b.id} className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f6f4fa] text-[#422e59]">
                     <ClipboardList size={18} />
                   </span>
                   <div>
@@ -164,7 +164,7 @@ export default function AssignmentModule() {
                 <a
                   href={s.file_url}
                   download={s.file_name.split(' ⟶ ').pop()}
-                  className="flex items-center gap-1 text-xs font-medium text-indigo-600 hover:underline"
+                  className="flex items-center gap-1 text-xs font-medium text-[#422e59] hover:underline"
                 >
                   <Download size={13} /> Download
                 </a>

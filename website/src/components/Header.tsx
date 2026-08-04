@@ -109,7 +109,19 @@ export default function Header() {
       </div>
 
       {open && (
-        <nav className="max-h-[75vh] overflow-y-auto border-t border-white/10 bg-brand-purple-dark px-4 py-3 lg:hidden">
+        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setOpen(false)} />
+          <nav className="absolute right-0 top-0 h-full w-80 max-w-[85vw] overflow-y-auto bg-brand-purple-dark px-5 pb-8 pt-4 shadow-2xl">
+            <div className="mb-4 flex items-center justify-between">
+              <span className="font-heading text-sm font-bold text-brand-gold">Menu</span>
+              <button
+                aria-label="Close menu"
+                onClick={() => setOpen(false)}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-lg text-white hover:bg-white/20"
+              >
+                ✕
+              </button>
+            </div>
           {nav.map((item) =>
             item.children ? (
               <div key={item.label}>
@@ -160,8 +172,9 @@ export default function Header() {
                 {p.label}
               </a>
             ))}
-          </div>
-        </nav>
+            </div>
+          </nav>
+        </div>
       )}
     </header>
   );
