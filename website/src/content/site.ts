@@ -106,6 +106,7 @@ export const site = {
         { label: 'Certificates', href: '/degrees/certificates' },
         { label: 'PPDI-RC', href: '/ppdirc' },
         { label: 'PPDI-RC Application', href: '/ppdi-rc-application' },
+        { label: 'Lifelong Learning', href: '/lifelong-learning' },
       ],
     },
     { label: 'Faculties & School', href: '/faculty' },

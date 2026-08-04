@@ -440,6 +440,37 @@ export const contentPages: ContentPage[] = [
     ],
   },
   {
+    slug: 'lifelong-learning',
+    title: 'Lifelong Learning',
+    subtitle: 'Short courses and professional development for every stage of your career.',
+    image: '/images/program-business.jpg',
+    sections: [
+      {
+        paragraphs: [
+          'Education at ICOF Global University does not end at graduation. Through certificate programs, extension courses and the Personal Professional Development Industry & Resource Center (PPDI-RC), we serve working professionals, ministers, entrepreneurs and community leaders who keep learning throughout their careers.',
+        ],
+      },
+      {
+        heading: 'Professional Development Courses',
+        paragraphs: [
+          'PPDI-RC offers short, intensive courses \u2014 typically three to five days \u2014 in fields from Digital Business Development and Agritourism to Rehabilitation & Disorder Management and AI for Youth Leaders. Courses are free to attend; certification is available for a small fee.',
+        ],
+      },
+      {
+        heading: 'Certificates & Extension Courses',
+        paragraphs: [
+          'University certificate programs across theology, education, engineering, technology and business provide credentials you can earn quickly, with study modes that fit around full-time work. Extension courses vary by program \u2014 contact the student support office for the current offering.',
+        ],
+      },
+      {
+        heading: 'For Churches & Organizations',
+        paragraphs: [
+          'We partner with ministries, schools and businesses to train their teams \u2014 from pastoral training programs to management and secretarial upskilling. Write to info@iguc.net to discuss a cohort for your organization.',
+        ],
+      },
+    ],
+  },
+  {
     slug: 'privacy-policy',
     title: 'Privacy Policy',
     image: '/images/banner.jpg',
