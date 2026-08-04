@@ -23,8 +23,18 @@ export default function ContentPage({ params }: { params: { slug: string } }) {
   const page = getContentPage(params.slug);
   if (!page) notFound();
 
+  const breadcrumbLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://iguc.net' },
+      { '@type': 'ListItem', position: 2, name: page.title, item: `https://iguc.net/${page.slug}` },
+    ],
+  };
+
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
       <PageBanner title={page.title} subtitle={page.subtitle} image={page.image} />
       <Section>
         <div className="mx-auto max-w-3xl space-y-10">
