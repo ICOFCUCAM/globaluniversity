@@ -61,6 +61,16 @@ accreditation + ICOF global network.
 - [x] 28. Login hero IGUC identity + real figures; Governance page (batch 8)
 - [x] 29. Perf: AVIF/WebP formats, 30-day image cache (batch 9)
 
+## Premiumization batch 10 (commits premium 1-10)
+- [x] News & Announcements archive page + nav
+- [x] Reading-progress bar + back-to-top control
+- [x] Branded selection, smooth anchors, clean print output
+- [x] Branded route-transition loading state
+- [x] Footer action bar (apply / portal / verify / news / privacy)
+- [x] FAQPage structured data (rich-result eligible)
+- [x] Sitemap coverage for news + verify; header scroll elevation
+- [x] Hero carousel pause-on-hover + ARIA
+
 ## Remaining (next runs)
 - [ ] French-language track (next-intl, /fr routes) — largest remaining item
 - [ ] Portal dashboard micro-polish (charts palette, empty states)

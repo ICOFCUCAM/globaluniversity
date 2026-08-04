@@ -115,6 +115,7 @@ export const site = {
     { label: 'Research', href: '/research' },
     { label: 'Campus Life', href: '/campus-life' },
     { label: 'Events', href: '/events' },
+    { label: 'News', href: '/news' },
     {
       label: 'Support Us',
       href: '/support',

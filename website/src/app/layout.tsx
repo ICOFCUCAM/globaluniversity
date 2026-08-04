@@ -5,6 +5,7 @@ import './globals.css';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import WhatsAppButton from '@/components/WhatsAppButton';
+import PageChrome from '@/components/PageChrome';
 import { site } from '@/content/site';
 
 const display = Fraunces({ subsets: ['latin'], variable: '--font-display', weight: ['400', '600', '700', '900'] });
@@ -72,6 +73,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <main id="main">{children}</main>
         <Footer />
         <WhatsAppButton />
+        <PageChrome />
         <Analytics />
       </body>
     </html>
