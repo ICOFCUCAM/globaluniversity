@@ -8,12 +8,21 @@ export const metadata = { title: 'Events' };
 
 export default async function EventsPage() {
   const events = await getEvents();
+  const eventsLd = events.map((ev) => ({
+    '@context': 'https://schema.org',
+    '@type': 'Event',
+    name: ev.title,
+    startDate: ev.date,
+    location: { '@type': 'Place', name: ev.location },
+    organizer: { '@type': 'CollegeOrUniversity', name: 'ICOF Global University', url: 'https://iguc.net' },
+  }));
 
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(eventsLd) }} />
       <PageBanner title="Events" image="/images/grand-ceremony.jpg" />
       <Section>
-        <SectionHeading>Upcoming Events</SectionHeading>
+        <SectionHeading eyebrow="Mark Your Calendar">Upcoming events</SectionHeading>
         <div className="mx-auto max-w-4xl space-y-6">
           {events.map((ev) => (
             <article
@@ -23,13 +32,20 @@ export default async function EventsPage() {
               <div className="relative h-48 sm:h-auto sm:w-64 sm:shrink-0">
                 <Image src={ev.image} alt={ev.title} fill className="object-cover" />
               </div>
-              <div className="flex flex-col justify-center p-6">
-                <p className="text-sm font-bold uppercase tracking-wide text-brand-gold-deep">
-                  {new Date(ev.date).toLocaleDateString('en-GB', { dateStyle: 'full' })}
-                </p>
+              <div className="flex items-center gap-5 p-6">
+                <div className="flex h-20 w-20 shrink-0 flex-col items-center justify-center rounded-2xl bg-brand-purple text-white">
+                  <span className="font-heading text-2xl font-bold text-brand-gold">
+                    {new Date(ev.date).getDate()}
+                  </span>
+                  <span className="text-[10px] font-semibold uppercase tracking-widest">
+                    {new Date(ev.date).toLocaleDateString('en-GB', { month: 'short' })} {new Date(ev.date).getFullYear()}
+                  </span>
+                </div>
+                <div>
                 <h3 className="mt-1 font-heading text-xl font-semibold text-brand-purple">{ev.title}</h3>
                 <p className="mt-2 text-sm text-brand-muted">{ev.summary}</p>
                 <p className="mt-3 text-sm font-medium text-brand-purple">📍 {ev.location}</p>
+                </div>
               </div>
             </article>
           ))}
