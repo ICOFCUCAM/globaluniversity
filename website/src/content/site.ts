@@ -58,6 +58,7 @@ export const site = {
   // Legacy applications still hosted on the cPanel server. Keep absolute URLs
   // so the Vercel site can link back to them until each is migrated.
   portals: [
+    { label: 'Student Portal (Registration & Transcripts)', href: '/portal' },
     { label: 'Online Application', href: 'https://iguc.net/forms/' },
     { label: 'E-Learning (LMS)', href: 'https://iguc.net/online/' },
     { label: 'Student Cloud', href: 'https://iguc.net/igucloud/' },
