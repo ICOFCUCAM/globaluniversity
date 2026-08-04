@@ -76,6 +76,7 @@ export const site = {
       children: [
         { label: 'About Us', href: '/about' },
         { label: 'Administration', href: '/faculty' },
+        { label: 'Governance & Accreditation', href: '/governance' },
         { label: 'Policies', href: '/policies' },
         { label: 'Alumni', href: '/alumni' },
         { label: 'Privacy Policy', href: '/privacy-policy' },

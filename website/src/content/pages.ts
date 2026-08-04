@@ -508,6 +508,49 @@ export const contentPages: ContentPage[] = [
     ],
   },
   {
+    slug: 'governance',
+    title: 'Governance & Accreditation',
+    subtitle: 'How the university is led, and the recognition its degrees carry.',
+    image: '/images/wp/g-hall.jpg',
+    sections: [
+      {
+        heading: 'Accreditation',
+        paragraphs: [
+          'ICOF Global University is accredited by the Ministry of Higher Education of the Republic of Cameroon (www.minesup.gov.cm) and has been continually accredited since 2007, updating its Reaffirmation of Accreditation as the years progress. The university belongs to the International Circle of Faith network of colleges, seminaries and universities, whose institutions span Africa, the Americas, Europe and Asia.',
+        ],
+      },
+      {
+        heading: 'University Leadership',
+        list: [
+          'Chancellor \u2014 Bishop Bernie L Wade, PhD: visionary oversight of the university and the worldwide ICOF family.',
+          'President \u2014 Dr. Raymond L Young: institutional strategy and global coordination.',
+          'Vice Chancellor \u2014 Prof Chamayah Meyembi: academic administration and institutional development.',
+          'Academic Director General \u2014 Prof Aaron Ndenka: academic quality across all faculties.',
+          'Registrar \u2014 Prof Lyonga Divine: records, registration and certification.',
+          'Dissertation Council \u2014 presided by Professor Emeritus Arch Bishop Godfred Anyere Tah: examination of all doctoral research.',
+        ],
+      },
+      {
+        heading: 'Academic Structure',
+        paragraphs: [
+          'Five schools and faculties carry the university\u2019s teaching mission: the Faculty of Theology in Buea, the School of Theology in Douala, the Faculty of Education, the Faculty of Engineering and Technology, and the Global Institute of Business and Management Science (GIBMAS) \u2014 together with the PPDI-RC professional development center in Nigeria. Each is led by a director accountable to the Academic Director General.',
+        ],
+      },
+      {
+        heading: 'Integrity & Accountability',
+        paragraphs: [
+          'The university operates under a published Code of Conduct covering academic integrity, respectful behavior, non-discrimination and legal compliance, with a structured disciplinary process that guarantees due process \u2014 the right to be heard, to present evidence and to appeal. Every credential we issue carries a signed QR code verifiable at iguc.net/verify, and all portal activity is audit-logged.',
+        ],
+      },
+      {
+        heading: 'Quality Assurance',
+        paragraphs: [
+          'Program reviews, examination moderation and dissertation defense before the Dissertation Council uphold academic standards across campus and online delivery alike. Enquiries regarding governance or accreditation may be addressed to the Registrar at registrar@iguc.net.',
+        ],
+      },
+    ],
+  },
+  {
     slug: 'privacy-policy',
     title: 'Privacy Policy',
     image: '/images/banner.jpg',
