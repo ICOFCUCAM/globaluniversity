@@ -85,8 +85,15 @@ export default function Footer() {
           <p className="mt-4 text-xs text-white/60">{site.affiliation}</p>
         </div>
       </div>
-      <div className="relative border-t border-white/10 py-4 text-center text-xs text-white/60">
-        © {new Date().getFullYear()} {site.name}. All rights reserved.
+      <div className="relative border-t border-white/10 py-5 text-center text-xs text-white/60">
+        <div className="mb-3 flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+          <Link href="/apply" className="hover:text-brand-gold">Apply Now</Link>
+          <Link href="/portal" className="hover:text-brand-gold">Student Portal</Link>
+          <Link href="/verify" className="hover:text-brand-gold">Verify a Credential</Link>
+          <Link href="/news" className="hover:text-brand-gold">News</Link>
+          <Link href="/privacy-policy" className="hover:text-brand-gold">Privacy Policy</Link>
+        </div>
+        <p>© {new Date().getFullYear()} {site.name} · A Global University · Buea · Douala · Nigeria · Online Worldwide</p>
       </div>
     </footer>
   );
