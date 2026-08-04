@@ -95,6 +95,7 @@ export const site = {
       href: '/programs',
       children: [
         { label: 'All Programs', href: '/programs' },
+        { label: 'Study Online', href: '/online-learning' },
         { label: "Bachelor's Degrees", href: '/degrees/bachelors-degrees' },
         { label: "Master's Degrees", href: '/degrees/masters-degrees' },
         { label: 'Doctoral', href: '/degrees/doctoral' },
@@ -173,7 +174,7 @@ export const quickLinks = [
   { label: 'Events & Important Dates', href: '/events', icon: 'calendar' },
   { label: 'Programs', href: '/programs', icon: 'book' },
   { label: 'Admissions', href: '/admissions', icon: 'award' },
-  { label: 'E-Learning', href: '/portal', icon: 'laptop' },
+  { label: 'Study Online', href: '/online-learning', icon: 'laptop' },
   { label: 'Library', href: '/portal', icon: 'library' },
   { label: 'Contact', href: '/contact', icon: 'mail' },
 ];
