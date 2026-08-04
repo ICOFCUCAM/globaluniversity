@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import StudentIDCard from './StudentIDCard';
 import { supabase } from '@/lib/supabase';
 import type { Student } from '@/lib/types';
 import { IMAGES } from '@/lib/constants';
@@ -12,6 +13,7 @@ export default function StudentManagement() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [idCardStudent, setIdCardStudent] = useState<any>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
 
@@ -303,15 +305,21 @@ export default function StudentManagement() {
                 </div>
               ))}
             </div>
-            <div className="px-6 pb-6">
+            <div className="px-6 pb-6 flex gap-3">
+              <button
+                onClick={() => { setIdCardStudent(selectedStudent); }}
+                className="flex-1 px-4 py-2.5 bg-[#422e59] text-[#f7dc79] rounded-xl text-sm font-semibold hover:bg-[#322244] transition-colors">
+                🪪 ID Card
+              </button>
               <button onClick={() => setSelectedStudent(null)}
-                className="w-full px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors">
+                className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors">
                 Close
               </button>
             </div>
           </div>
         </div>
       )}
+      {idCardStudent && <StudentIDCard student={idCardStudent} onClose={() => setIdCardStudent(null)} />}
     </div>
   );
 }
