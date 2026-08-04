@@ -69,6 +69,7 @@ export default function StudentManagement() {
   });
 
   const statusColors: Record<string, string> = {
+    applicant: 'bg-purple-50 text-purple-700',
     active: 'bg-emerald-50 text-emerald-700',
     graduated: 'bg-blue-50 text-blue-700',
     suspended: 'bg-red-50 text-red-700',
@@ -110,6 +111,7 @@ export default function StudentManagement() {
             className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30"
           >
             <option value="all">All Status</option>
+            <option value="applicant">Applicants (pending review)</option>
             <option value="active">Active</option>
             <option value="graduated">Graduated</option>
             <option value="suspended">Suspended</option>
