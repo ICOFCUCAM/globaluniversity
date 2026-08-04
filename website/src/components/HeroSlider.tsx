@@ -7,14 +7,21 @@ import type { HeroSlide } from '@/content/site';
 
 export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
   const [current, setCurrent] = useState(0);
+  const [paused, setPaused] = useState(false);
 
   useEffect(() => {
+    if (paused) return;
     const timer = setInterval(() => setCurrent((c) => (c + 1) % slides.length), 6000);
     return () => clearInterval(timer);
-  }, [slides.length]);
+  }, [slides.length, paused]);
 
   return (
-    <section className="relative overflow-hidden bg-brand-purple text-white">
+    <section
+      className="relative overflow-hidden bg-brand-purple text-white"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      aria-roledescription="carousel"
+    >
       {slides.map((slide, i) => (
         <div
           key={slide.title}
