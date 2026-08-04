@@ -15,6 +15,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/tuition',
     '/contact',
     '/portal',
+    '/news',
+    '/verify',
   ];
   return [
     ...staticRoutes.map((path) => ({

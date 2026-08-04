@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { site, type NavItem } from '@/content/site';
 
 function DesktopItem({ item }: { item: NavItem }) {
@@ -41,10 +41,18 @@ export default function Header() {
   const [open, setOpen] = useState(false);
   const [portalsOpen, setPortalsOpen] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [elevated, setElevated] = useState(false);
   const nav = site.nav as NavItem[];
 
+  useEffect(() => {
+    const onScroll = () => setElevated(window.scrollY > 8);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   return (
-    <header className="sticky top-0 z-50 bg-brand-purple text-white shadow-lg">
+    <header className={`sticky top-0 z-50 bg-brand-purple text-white transition-shadow ${elevated ? 'shadow-2xl shadow-brand-purple-dark/40' : 'shadow-md'}`}>
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:z-[60] focus:bg-brand-gold focus:px-4 focus:py-2 focus:text-brand-purple">
         Skip to content
       </a>
