@@ -73,9 +73,8 @@ const MAX_ATTACHMENT_BYTES = 4 * 1024 * 1024; // Vercel request body limit is ~4
  * status "applicant", so admissions staff review it in Student Management
  * and promote it to "active" on approval.
  */
-async function recordApplicant(form: FormData): Promise<boolean> {
+async function recordApplicant(form: FormData, appNo: string): Promise<boolean> {
   const year = new Date().getFullYear();
-  const appNo = `APP-${year}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
   const get = (k: string) => String(form.get(k) ?? '').trim() || null;
   const summary = FIELDS.map(([name, label]) => `${label}: ${get(name) ?? '—'}`).join('\n');
   const { error } = await supabase.from('students').insert({
@@ -137,8 +136,10 @@ export async function POST(request: Request) {
     }
   }
 
+  const appNo = `APP-${new Date().getFullYear()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
+
   // Channel 1 — admissions pipeline: store the application in the portal DB.
-  const stored = await recordApplicant(form).catch(() => false);
+  const stored = await recordApplicant(form, appNo).catch(() => false);
 
   // Channel 2 — email to the admissions office (when SMTP is configured).
   let emailed = false;
@@ -154,7 +155,7 @@ export async function POST(request: Request) {
         from: `"IGUC Online Application" <${SMTP_USER}>`,
         to: APPLY_TO ?? 'admission@iguc.net',
         replyTo: applicantEmail,
-        subject: `New application: ${surname} ${firstname} — ${String(form.get('level') ?? '')} ${String(form.get('field') ?? '')}`,
+        subject: `New application ${appNo}: ${surname} ${firstname} — ${String(form.get('level') ?? '')} ${String(form.get('field') ?? '')}`,
         text: `A new application was submitted on iguc.net.\n\n${lines.join('\n')}\n`,
         attachments,
       });
@@ -166,7 +167,7 @@ export async function POST(request: Request) {
 
   // The application succeeds if at least one channel captured it.
   if (stored || emailed) {
-    return NextResponse.json({ ok: true, stored, emailed });
+    return NextResponse.json({ ok: true, stored, emailed, appNo });
   }
   return NextResponse.json({ ok: false, error: 'not-captured' }, { status: 502 });
 }

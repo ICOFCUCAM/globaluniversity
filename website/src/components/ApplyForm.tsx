@@ -1,6 +1,8 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+
+const DRAFT_KEY = 'iguc-application-draft';
 
 // Six steps, matching the original iguc.net application wizard:
 // Personal → Academic → Program → Uploads → Review → Declaration
@@ -104,7 +106,53 @@ export default function ApplyForm() {
   const [step, setStep] = useState(0);
   const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error' | 'unconfigured'>('idle');
   const [review, setReview] = useState<Array<[string, string]>>([]);
+  const [appNo, setAppNo] = useState<string | null>(null);
+  const [draftSaved, setDraftSaved] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+
+  // Restore a saved draft so applicants can leave and come back.
+  useEffect(() => {
+    const form = formRef.current;
+    if (!form) return;
+    try {
+      const draft = JSON.parse(localStorage.getItem(DRAFT_KEY) ?? 'null');
+      if (!draft) return;
+      for (const [name, value] of Object.entries(draft.fields as Record<string, string>)) {
+        const el = form.elements.namedItem(name);
+        if (el instanceof RadioNodeList || (el instanceof HTMLInputElement && (el.type === 'radio' || el.type === 'checkbox'))) {
+          form.querySelectorAll<HTMLInputElement>(`input[name="${name}"]`).forEach((r) => {
+            if (r.value === value) r.checked = true;
+          });
+        } else if (
+          el instanceof HTMLInputElement ||
+          el instanceof HTMLTextAreaElement ||
+          el instanceof HTMLSelectElement
+        ) {
+          if (el.type !== 'file') el.value = value;
+        }
+      }
+      if (typeof draft.step === 'number') setStep(Math.min(draft.step, 3));
+      setDraftSaved(true);
+    } catch {
+      /* corrupt draft — ignore */
+    }
+  }, []);
+
+  function saveDraft(currentStep = step) {
+    const form = formRef.current;
+    if (!form) return;
+    const fields: Record<string, string> = {};
+    new FormData(form).forEach((v, k) => {
+      if (typeof v === 'string' && v) fields[k] = v;
+    });
+    delete fields.website;
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({ fields, step: currentStep }));
+      setDraftSaved(true);
+    } catch {
+      /* storage full/blocked — non-fatal */
+    }
+  }
 
   function validateVisible(): boolean {
     const form = formRef.current;
@@ -131,6 +179,7 @@ export default function ApplyForm() {
       );
     }
     setStep(next);
+    saveDraft(next);
     document.getElementById('apply-form-top')?.scrollIntoView({ behavior: 'smooth' });
   }
 
@@ -139,8 +188,16 @@ export default function ApplyForm() {
     setStatus('sending');
     try {
       const res = await fetch('/api/apply', { method: 'POST', body: new FormData(e.currentTarget) });
-      if (res.ok) setStatus('sent');
-      else if (res.status === 503) setStatus('unconfigured');
+      if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setAppNo(data.appNo ?? null);
+        try {
+          localStorage.removeItem(DRAFT_KEY);
+        } catch {
+          /* ignore */
+        }
+        setStatus('sent');
+      } else if (res.status === 503) setStatus('unconfigured');
       else setStatus('error');
     } catch {
       setStatus('error');
@@ -152,7 +209,20 @@ export default function ApplyForm() {
       <div className="rounded-xl border border-brand-sand bg-white p-10 text-center shadow-sm">
         <p className="text-4xl">🎓</p>
         <h2 className="mt-4 font-heading text-2xl font-bold text-brand-purple">Application received!</h2>
-        <p className="mx-auto mt-3 max-w-md text-brand-muted">
+        {appNo && (
+          <div className="mx-auto mt-5 max-w-sm rounded-lg bg-brand-cream p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-brand-muted">
+              Your application number
+            </p>
+            <p className="mt-1 font-heading text-2xl font-extrabold tracking-wider text-brand-purple">
+              {appNo}
+            </p>
+            <p className="mt-2 text-xs text-brand-muted">
+              Keep this number — quote it in any correspondence with the admissions office.
+            </p>
+          </div>
+        )}
+        <p className="mx-auto mt-5 max-w-md text-brand-muted">
           Thank you for applying to ICOF Global University. Our admissions office will review your
           application and contact you by email or phone.
         </p>
@@ -162,8 +232,30 @@ export default function ApplyForm() {
 
   const show = (i: number) => ({ display: step === i ? undefined : 'none' });
 
+  const progress = Math.round((step / (STEPS.length - 1)) * 100);
+
   return (
     <div id="apply-form-top">
+      {/* Progress */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-brand-muted">
+          <span>Application progress</span>
+          <span>{progress}%</span>
+        </div>
+        <div className="mt-2 h-2 overflow-hidden rounded-full bg-brand-sand">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-brand-purple to-brand-gold-deep transition-all duration-500"
+            style={{ width: `${Math.max(progress, 4)}%` }}
+          />
+        </div>
+        <p className="mt-2 text-center text-xs text-brand-muted">
+          Takes about 10 minutes.{' '}
+          {draftSaved
+            ? '✓ Your progress is saved on this device — you can leave and continue later.'
+            : 'Your progress saves automatically as you type.'}
+        </p>
+      </div>
+
       {/* Step indicator */}
       <ol className="mb-10 flex flex-wrap items-center justify-center gap-2">
         {STEPS.map((s, i) => (
@@ -187,7 +279,12 @@ export default function ApplyForm() {
         ))}
       </ol>
 
-      <form ref={formRef} onSubmit={onSubmit} className="rounded-xl border border-brand-sand bg-white p-6 shadow-sm sm:p-8">
+      <form
+        ref={formRef}
+        onSubmit={onSubmit}
+        onBlur={() => saveDraft()}
+        className="rounded-xl border border-brand-sand bg-white p-6 shadow-sm sm:p-8"
+      >
         {/* Step 1 — Personal */}
         <div data-step={0} style={show(0)} className="space-y-5">
           <h2 className={groupCls}>Name</h2>
