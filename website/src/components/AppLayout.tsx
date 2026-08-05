@@ -149,7 +149,7 @@ export default function AppLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#f7f5f0]">
       <Sidebar
         currentView={currentView}
         onViewChange={setCurrentView}
@@ -159,10 +159,12 @@ export default function AppLayout() {
       <TopBar
         sidebarCollapsed={sidebarCollapsed}
         onMenuToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+        currentView={currentView}
+        onViewChange={setCurrentView}
       />
       <main
         className={`pt-16 transition-all duration-300 ${
-          sidebarCollapsed ? 'ml-[72px]' : 'ml-64'
+          sidebarCollapsed ? 'ml-[68px]' : 'ml-64'
         }`}
       >
         <div className="p-6">

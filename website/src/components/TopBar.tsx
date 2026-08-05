@@ -1,25 +1,102 @@
-import React, { useEffect, useState } from 'react';
+'use client';
+
+// ---------------------------------------------------------------------------
+// The portal's top bar.
+//
+// It shipped with four controls that did nothing at all. The search box
+// accepted text into a state variable nothing read. The dark-mode button
+// toggled a boolean that was never applied to anything, so the icon changed and
+// the screen did not. A message button opened nothing. "Mark all read" was
+// styled as a link and had no handler.
+//
+// Dead controls are worse than missing ones: a user who clicks the moon and
+// sees nothing happen learns not to trust the rest of the interface either. So
+// the search now navigates, the theme toggle now changes the theme, and the two
+// that had no destination are gone rather than mocked up.
+//
+// The duplicate identity block is gone too. The sidebar already states who is
+// signed in and in what role; repeating it in the corner spent the most
+// valuable strip of the screen on something the user had just read. That space
+// now carries the breadcrumb, which answers the more useful question of where
+// they are.
+// ---------------------------------------------------------------------------
+
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from 'next-themes';
 import { supabase } from '@/lib/supabase';
-import { Search, Bell, MessageSquare, Sun, Moon, Menu } from 'lucide-react';
-import type { UserRole } from '@/lib/types';
+import { navItemsFor, labelForView, groupForView } from '@/lib/portalNav';
+import { FOCUS, INPUT } from '@/lib/portalTheme';
+import type { ViewType, UserRole } from '@/lib/types';
+import { Search, Bell, Sun, Moon, Menu, CornerDownLeft } from 'lucide-react';
 
 interface TopBarProps {
   sidebarCollapsed: boolean;
   onMenuToggle: () => void;
+  currentView: ViewType;
+  onViewChange: (v: ViewType) => void;
 }
 
-export default function TopBar({ sidebarCollapsed, onMenuToggle }: TopBarProps) {
+export default function TopBar({
+  sidebarCollapsed, onMenuToggle, currentView, onViewChange,
+}: TopBarProps) {
   const { user, session, switchRole } = useAuth();
-  const [searchQuery, setSearchQuery] = useState('');
+  const { resolvedTheme, setTheme } = useTheme();
+  const [query, setQuery] = useState('');
+  const [openSearch, setOpenSearch] = useState(false);
+  const [highlight, setHighlight] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  // next-themes resolves on the client. Rendering the icon before that would
+  // emit one theme on the server and another on hydration.
+  useEffect(() => setMounted(true), []);
 
   const isDemoMode = !session && !!user;
 
-  const [notifications, setNotifications] = useState<{ id: string; text: string; time: string; read: boolean }[]>([]);
+  const results = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return [];
+    return navItemsFor(user?.role)
+      .filter((i) => i.label.toLowerCase().includes(q) || i.group.toLowerCase().includes(q))
+      .slice(0, 7);
+  }, [query, user?.role]);
 
-  // Live notifications assembled from announcements, assignments and classes.
+  useEffect(() => setHighlight(0), [query]);
+
+  // Ctrl/Cmd-K focuses search, the convention every system this size uses.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        searchRef.current?.focus();
+        setOpenSearch(true);
+      }
+      if (e.key === 'Escape') setOpenSearch(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  function choose(view: ViewType) {
+    onViewChange(view);
+    setQuery('');
+    setOpenSearch(false);
+    searchRef.current?.blur();
+  }
+
+  function onSearchKey(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (!results.length) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); setHighlight((h) => (h + 1) % results.length); }
+    if (e.key === 'ArrowUp') { e.preventDefault(); setHighlight((h) => (h - 1 + results.length) % results.length); }
+    if (e.key === 'Enter') { e.preventDefault(); choose(results[highlight].id); }
+  }
+
+  const [notifications, setNotifications] = useState<
+    { id: string; text: string; time: string; read: boolean }[]
+  >([]);
+
   useEffect(() => {
     (async () => {
       const { data } = await supabase
@@ -57,77 +134,125 @@ export default function TopBar({ sidebarCollapsed, onMenuToggle }: TopBarProps) 
   }, []);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
+  const group = groupForView(currentView);
 
   return (
     <header
-      className={`fixed top-0 right-0 h-16 bg-white border-b border-gray-200 z-30 flex items-center justify-between px-6 transition-all duration-300 ${
-        sidebarCollapsed ? 'left-[72px]' : 'left-64'
+      className={`fixed right-0 top-0 z-30 flex h-16 items-center justify-between gap-4 border-b border-[#ece7de] bg-white/90 px-5 backdrop-blur transition-[left] duration-200 ${
+        sidebarCollapsed ? 'left-[68px]' : 'left-64'
       }`}
     >
-      <div className="flex items-center gap-4">
-        <button onClick={onMenuToggle} className="lg:hidden p-2 hover:bg-gray-100 rounded-lg">
-          <Menu size={20} />
+      <div className="flex min-w-0 items-center gap-4">
+        <button
+          onClick={onMenuToggle}
+          aria-label="Toggle navigation"
+          className={`rounded-lg p-2 text-[#6b6076] transition-colors hover:bg-[#f2eee6] lg:hidden ${FOCUS}`}
+        >
+          <Menu size={18} />
         </button>
-        <div className="relative">
-          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search students, courses, results..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 pr-4 py-2 w-80 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30 focus:border-blue-400 transition-all"
-          />
-        </div>
+
+        {/* Where you are. */}
+        <nav aria-label="Breadcrumb" className="hidden min-w-0 md:block">
+          <ol className="flex items-center gap-2 text-sm">
+            {group && (
+              <>
+                <li className="text-[#a49bb0]">{group}</li>
+                <li className="text-[#d5cec0]" aria-hidden="true">/</li>
+              </>
+            )}
+            <li className="truncate font-heading font-bold text-[#422e59]">
+              {labelForView(currentView)}
+            </li>
+          </ol>
+        </nav>
       </div>
 
-      <div className="flex items-center gap-3">
-        {/* Role Switcher - Demo Mode Only */}
+      <div className="flex items-center gap-2">
+        {/* Search that navigates. */}
+        <div className="relative">
+          <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#a49bb0]" />
+          <input
+            ref={searchRef}
+            type="text"
+            value={query}
+            onChange={(e) => { setQuery(e.target.value); setOpenSearch(true); }}
+            onFocus={() => setOpenSearch(true)}
+            onBlur={() => window.setTimeout(() => setOpenSearch(false), 120)}
+            onKeyDown={onSearchKey}
+            placeholder="Jump to…"
+            aria-label="Jump to a screen"
+            className={`${INPUT} w-40 pl-9 pr-10 sm:w-56 lg:w-72`}
+          />
+          <kbd className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded border border-[#e4ddd0] bg-[#faf8f4] px-1.5 py-0.5 text-[10px] text-[#a49bb0] sm:block">
+            ⌘K
+          </kbd>
+
+          {openSearch && query.trim() && (
+            <div className="absolute right-0 top-12 z-50 w-72 overflow-hidden rounded-xl border border-[#ece7de] bg-white shadow-xl">
+              {results.length === 0 ? (
+                <p className="px-4 py-5 text-center text-sm text-[#a49bb0]">
+                  Nothing matches “{query.trim()}”.
+                </p>
+              ) : (
+                <ul>
+                  {results.map((r, i) => (
+                    <li key={r.id}>
+                      <button
+                        onMouseDown={(e) => { e.preventDefault(); choose(r.id); }}
+                        onMouseEnter={() => setHighlight(i)}
+                        className={`flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm transition-colors ${
+                          i === highlight ? 'bg-[#faf6ee]' : 'hover:bg-[#faf8f4]'
+                        }`}
+                      >
+                        <span className="text-[#c5a55a]">{r.icon}</span>
+                        <span className="min-w-0 flex-1 truncate text-[#33234a]">{r.label}</span>
+                        <span className="text-[10px] uppercase tracking-wide text-[#a49bb0]">{r.group}</span>
+                        {i === highlight && <CornerDownLeft size={12} className="text-[#a49bb0]" />}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Demo role switcher. Only ever visible without a real session. */}
         {isDemoMode && (
-          <div className="flex items-center gap-1 bg-amber-50 border border-amber-200 rounded-lg p-1">
-            <span className="text-[9px] text-amber-600 font-medium px-1.5">DEMO</span>
-            {(['admin', 'lecturer', 'student'] as UserRole[]).map((role) => (
+          <div className="hidden items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 p-1 lg:flex">
+            <span className="px-1.5 text-[9px] font-semibold tracking-wide text-amber-700">DEMO</span>
+            {(['superadmin', 'admin', 'lecturer', 'student'] as UserRole[]).map((role) => (
               <button
                 key={role}
                 onClick={() => switchRole(role)}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all capitalize ${
-                  user?.role === role
-                    ? 'bg-[#422e59] text-white shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700'
+                className={`rounded-md px-2 py-1 text-[11px] font-medium capitalize transition-colors ${
+                  user?.role === role ? 'bg-[#422e59] text-white' : 'text-amber-800 hover:bg-amber-100'
                 }`}
               >
-                {role}
+                {role === 'superadmin' ? 'super' : role}
               </button>
             ))}
           </div>
         )}
 
-        {/* Auth badge for real users */}
-        {!isDemoMode && session && (
-          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 border border-emerald-200 rounded-lg">
-            <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-            <span className="text-[10px] text-emerald-700 font-medium capitalize">{user?.role} · Authenticated</span>
-          </div>
-        )}
-
+        {/* A theme toggle that changes the theme. */}
         <button
-          onClick={() => setDarkMode(!darkMode)}
-          className="p-2 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors"
+          onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+          aria-label={resolvedTheme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+          className={`rounded-lg p-2 text-[#6b6076] transition-colors hover:bg-[#f2eee6] ${FOCUS}`}
         >
-          {darkMode ? <Sun size={18} /> : <Moon size={18} />}
-        </button>
-
-        <button className="p-2 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors relative">
-          <MessageSquare size={18} />
+          {mounted && resolvedTheme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
         </button>
 
         <div className="relative">
           <button
-            onClick={() => setShowNotifications(!showNotifications)}
-            className="p-2 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors relative"
+            onClick={() => setShowNotifications((s) => !s)}
+            aria-label={`Notifications${unreadCount ? `, ${unreadCount} unread` : ''}`}
+            className={`relative rounded-lg p-2 text-[#6b6076] transition-colors hover:bg-[#f2eee6] ${FOCUS}`}
           >
-            <Bell size={18} />
+            <Bell size={17} />
             {unreadCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center min-w-[18px] h-[18px]">
+              <span className="absolute -right-0.5 -top-0.5 flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-[#c5a55a] px-1 text-[10px] font-bold text-white">
                 {unreadCount}
               </span>
             )}
@@ -136,47 +261,31 @@ export default function TopBar({ sidebarCollapsed, onMenuToggle }: TopBarProps) 
           {showNotifications && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
-              <div className="absolute right-0 top-12 w-80 bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden z-50">
-                <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-                  <h3 className="font-semibold text-sm">Notifications</h3>
-                  <span className="text-xs text-blue-600 cursor-pointer hover:underline">Mark all read</span>
+              <div className="absolute right-0 top-12 z-50 w-80 overflow-hidden rounded-xl border border-[#ece7de] bg-white shadow-xl">
+                <div className="border-b border-[#f0ece4] px-4 py-3">
+                  <h2 className="font-heading text-sm font-bold text-[#422e59]">Notifications</h2>
                 </div>
                 <div className="max-h-72 overflow-y-auto">
-                  {notifications.length === 0 && (
-                    <p className="px-4 py-8 text-center text-sm text-gray-400">No notifications yet.</p>
+                  {notifications.length === 0 ? (
+                    <p className="px-4 py-8 text-center text-sm text-[#a49bb0]">
+                      Nothing new. Announcements, assignments and class notices appear here.
+                    </p>
+                  ) : (
+                    notifications.map((n) => (
+                      <div
+                        key={n.id}
+                        className={`border-b border-[#f7f4ee] px-4 py-3 last:border-0 ${!n.read ? 'bg-[#faf6ee]' : ''}`}
+                      >
+                        <p className="text-sm leading-snug text-[#33234a]">{n.text}</p>
+                        <p className="mt-1 text-xs text-[#a49bb0]">{n.time}</p>
+                      </div>
+                    ))
                   )}
-                  {notifications.map((n) => (
-                    <div
-                      key={n.id}
-                      className={`px-4 py-3 border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors ${
-                        !n.read ? 'bg-blue-50/50' : ''
-                      }`}
-                    >
-                      <p className="text-sm text-gray-700">{n.text}</p>
-                      <p className="text-xs text-gray-400 mt-1">{n.time}</p>
-                    </div>
-                  ))}
                 </div>
               </div>
             </>
           )}
         </div>
-
-        {user && (
-          <div className="flex items-center gap-2 pl-3 border-l border-gray-200">
-            {user.avatar ? (
-              <img src={user.avatar} alt={user.name} className="w-8 h-8 rounded-full object-cover" />
-            ) : (
-              <div className="w-8 h-8 rounded-full bg-[#422e59] text-white flex items-center justify-center text-sm font-bold">
-                {user.name.charAt(0).toUpperCase()}
-              </div>
-            )}
-            <div className="hidden md:block">
-              <p className="text-sm font-medium text-gray-700 leading-tight">{user.name}</p>
-              <p className="text-[10px] text-gray-400 capitalize">{user.role}{user.matricNo ? ` · ${user.matricNo}` : ''}</p>
-            </div>
-          </div>
-        )}
       </div>
     </header>
   );
