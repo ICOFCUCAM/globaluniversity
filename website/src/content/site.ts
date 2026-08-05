@@ -67,74 +67,129 @@ export const site = {
     { label: 'Administration', href: '/portal' },
     { label: 'Transcripts', href: '/portal' },
   ],
-  // Navigation mirrors the WordPress menu structure, including sub-menus.
+  // Navigation: five top-level entries, each opening a grouped mega-menu.
+  // Kept deliberately short — a crowded bar reads as a small institution.
   nav: [
-    { label: 'Home', href: '/' },
     {
       label: 'About',
       href: '/about',
-      children: [
-        { label: 'About Us', href: '/about' },
-        { label: 'Administration', href: '/faculty' },
-        { label: 'Governance & Accreditation', href: '/governance' },
-        { label: 'Policies', href: '/policies' },
-        { label: 'Alumni', href: '/alumni' },
-        { label: 'Careers', href: '/careers' },
-        { label: 'Privacy Policy', href: '/privacy-policy' },
+      groups: [
+        {
+          heading: 'The University',
+          items: [
+            { label: 'About Us', href: '/about' },
+            { label: 'Governance & Accreditation', href: '/governance' },
+            { label: 'Leadership & Administration', href: '/faculty' },
+            { label: 'Policies', href: '/policies' },
+          ],
+        },
+        {
+          heading: 'Community',
+          items: [
+            { label: 'Alumni', href: '/alumni' },
+            { label: 'Careers at IGUC', href: '/careers' },
+            { label: 'Contact', href: '/contact' },
+            { label: 'Privacy Policy', href: '/privacy-policy' },
+          ],
+        },
       ],
     },
     {
-      label: 'Admission',
-      href: '/admissions',
-      children: [
-        { label: 'Admission Requirements', href: '/admissions' },
-        { label: 'Apply Now', href: '/apply' },
-        { label: 'Registration', href: '/registration' },
-        { label: 'International Students', href: '/international' },
-        { label: 'Scholarships & Financial Aid', href: '/scholarships' },
-        { label: 'Cost & Tuition', href: '/tuition' },
-      ],
-    },
-    {
-      label: 'Degrees & Programs',
+      label: 'Academics',
       href: '/programs',
-      children: [
-        { label: 'All Programs', href: '/programs' },
-        { label: 'Course Catalogue', href: '/courses' },
-        { label: 'Study Online', href: '/online-learning' },
-        { label: "Bachelor's Degrees", href: '/degrees/bachelors-degrees' },
-        { label: "Master's Degrees", href: '/degrees/masters-degrees' },
-        { label: 'Doctoral', href: '/degrees/doctoral' },
-        { label: 'Higher National Diploma (HND)', href: '/degrees/higher-national-diploma-hnd' },
-        { label: 'Diploma (Dip)', href: '/degrees/diploma-dip' },
-        { label: 'Certificates', href: '/degrees/certificates' },
-        { label: 'PPDI-RC', href: '/ppdirc' },
-        { label: 'PPDI-RC Application', href: '/ppdi-rc-application' },
-        { label: 'Lifelong Learning', href: '/lifelong-learning' },
+      groups: [
+        {
+          heading: 'Study',
+          items: [
+            { label: 'Course Catalogue', href: '/courses' },
+            { label: 'All Programs', href: '/programs' },
+            { label: 'Study Online', href: '/online-learning' },
+            { label: 'Lifelong Learning', href: '/lifelong-learning' },
+          ],
+        },
+        {
+          heading: 'Degree Levels',
+          items: [
+            { label: "Bachelor's Degrees", href: '/degrees/bachelors-degrees' },
+            { label: "Master's Degrees", href: '/degrees/masters-degrees' },
+            { label: 'Doctoral', href: '/degrees/doctoral' },
+            { label: 'HND · Diploma · Certificates', href: '/degrees/higher-national-diploma-hnd' },
+          ],
+        },
+        {
+          heading: 'Faculty & Research',
+          items: [
+            { label: 'Schools & Faculties', href: '/faculty' },
+            { label: 'Research & Innovation', href: '/research' },
+            { label: 'PPDI-RC', href: '/ppdirc' },
+            { label: 'PPDI-RC Application', href: '/ppdi-rc-application' },
+          ],
+        },
       ],
     },
-    { label: 'Faculties & School', href: '/faculty' },
-    { label: 'Research', href: '/research' },
-    { label: 'Campus Life', href: '/campus-life' },
-    { label: 'Events', href: '/events' },
-    { label: 'News', href: '/news' },
     {
-      label: 'Support Us',
-      href: '/support',
-      children: [
-        { label: 'Support IGUC', href: '/support' },
-        { label: 'Donate', href: '/donate' },
-        { label: 'Charity', href: '/charity' },
+      label: 'Admissions',
+      href: '/admissions',
+      groups: [
+        {
+          heading: 'Apply',
+          items: [
+            { label: 'Admission Requirements', href: '/admissions' },
+            { label: 'Apply Now', href: '/apply' },
+            { label: 'Registration', href: '/registration' },
+          ],
+        },
+        {
+          heading: 'Planning Your Study',
+          items: [
+            { label: 'International Students', href: '/international' },
+            { label: 'Scholarships & Financial Aid', href: '/scholarships' },
+            { label: 'Cost & Tuition', href: '/tuition' },
+          ],
+        },
+      ],
+    },
+    {
+      label: 'Campus Life',
+      href: '/campus-life',
+      groups: [
+        {
+          heading: 'Student Life',
+          items: [
+            { label: 'Campus Life', href: '/campus-life' },
+            { label: 'Events', href: '/events' },
+            { label: 'News & Announcements', href: '/news' },
+          ],
+        },
+        {
+          heading: 'Giving',
+          items: [
+            { label: 'Support IGUC', href: '/support' },
+            { label: 'Donate', href: '/donate' },
+            { label: 'Charity', href: '/charity' },
+          ],
+        },
       ],
     },
     { label: 'Contact', href: '/contact' },
   ],
 };
 
+export interface NavLink {
+  label: string;
+  href: string;
+}
+
+export interface NavGroup {
+  heading: string;
+  items: NavLink[];
+}
+
 export interface NavItem {
   label: string;
   href: string;
-  children?: Array<{ label: string; href: string }>;
+  children?: NavLink[];
+  groups?: NavGroup[];
 }
 
 export const hero = {
