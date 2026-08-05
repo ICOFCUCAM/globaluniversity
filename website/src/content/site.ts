@@ -115,6 +115,7 @@ export const site = {
         {
           heading: 'Degree Levels',
           items: [
+            { label: 'Bachelor of Theology', href: '/bachelor-of-theology' },
             { label: "Bachelor's Degrees", href: '/degrees/bachelors-degrees' },
             { label: "Master's Degrees", href: '/degrees/masters-degrees' },
             { label: 'Doctoral', href: '/degrees/doctoral' },
@@ -589,6 +590,16 @@ export const programs: Program[] = [
     summary:
       'Doctoral research in theology — Doctor of Philosophy, Doctor of Theology and Doctor of Ministry (Christian Counseling & Administration) — culminating in an original dissertation.',
     outcomes: ['Research methods', 'Advanced doctrine', 'Original dissertation', 'Academic publishing'],
+  },
+  {
+    slug: 'bachelor-of-theology',
+    title: 'Bachelor of Theology',
+    level: 'Bachelor',
+    school: 'Faculty of Theology',
+    image: '/images/wp/fac-theology.jpg',
+    summary:
+      'A three-year, 180-ECTS undergraduate degree combining rigorous academic study with spiritual formation and practical ministry, available full-time, part-time, online and by distance learning.',
+    outcomes: ['Biblical interpretation', 'Christian doctrine', 'Church history', 'Pastoral ministry'],
   },
   {
     slug: 'master-of-theology',
