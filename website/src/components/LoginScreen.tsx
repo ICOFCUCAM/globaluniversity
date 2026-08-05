@@ -57,12 +57,12 @@ export default function LoginScreen() {
   const features = [
     { icon: <Users size={20} />, title: 'Student Management', desc: 'Complete lifecycle from admission to graduation' },
     { icon: <GraduationCap size={20} />, title: 'Lecturer Portal', desc: 'Course management and result processing' },
-    { icon: <BookOpen size={20} />, title: 'Course Catalog', desc: 'Courses across four faculties, on campus and online' },
-    { icon: <FileText size={20} />, title: 'Transcript Generation', desc: 'Pixel-perfect official transcripts with QR codes' },
-    { icon: <Award size={20} />, title: 'Certificate Issuance', desc: 'Automated degree certificate generation' },
+    { icon: <BookOpen size={20} />, title: 'Course catalogue', desc: 'Courses across five faculties, on campus and online' },
+    { icon: <FileText size={20} />, title: 'Transcripts', desc: 'Official transcripts with a QR code that verifies against the register' },
+    { icon: <Award size={20} />, title: 'Certificates', desc: 'Degree certificates printed under a published, versioned design' },
     { icon: <Monitor size={20} />, title: 'Online Learning', desc: 'LMS with materials, live classes, and CBT exams' },
-    { icon: <BarChart3 size={20} />, title: 'Analytics', desc: 'Comprehensive academic performance insights' },
-    { icon: <Shield size={20} />, title: 'Security', desc: 'Role-based access with audit logging' },
+    { icon: <BarChart3 size={20} />, title: 'Analytics', desc: 'Progression and performance across cohorts' },
+    { icon: <Shield size={20} />, title: 'Separation of duties', desc: 'Finance cannot admit; the Registrar cannot edit payments' },
   ];
 
   const roleOptions: { role: UserRole; label: string; icon: React.ReactNode; color: string; desc: string }[] = [
@@ -114,27 +114,30 @@ export default function LoginScreen() {
               <p className="mt-4 text-lg leading-relaxed text-white/85">
                 One portal for the whole academic journey — admission to graduation — with automated GPA calculation, verified transcript generation and integrated online learning, serving students on campus in Cameroon and online worldwide.
               </p>
-              <div className="flex flex-wrap gap-4 mt-8">
-                <div className="text-center">
-                  <p className="text-3xl font-bold text-white">7,228</p>
-                  <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-white/60">Success Stories</p>
+              {/* The four figures that were here — 7,228 success stories, 1,742
+                  happy students, 213 courses, 15+ years — were the template's
+                  and nobody counted them. Two of them contradicted each other:
+                  more "success stories" than students. A university that
+                  publishes invented numbers on its own sign-in page has told
+                  every member of staff that its numbers are decoration.
+
+                  What replaces them is what the university can stand behind:
+                  the campuses it teaches on, the year it was founded, and its
+                  accreditation. Facts, from src/lib/constants.ts. */}
+              <dl className="mt-8 flex flex-wrap gap-x-8 gap-y-4">
+                <div>
+                  <dt className="font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-white/55">Campuses</dt>
+                  <dd className="mt-0.5 font-heading text-lg font-bold text-white">Buea · Douala · Online</dd>
                 </div>
-                <div className="w-px bg-white/20" />
-                <div className="text-center">
-                  <p className="text-3xl font-bold text-white">213</p>
-                  <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-white/60">Courses</p>
+                <div>
+                  <dt className="font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-white/55">Founded</dt>
+                  <dd className="mt-0.5 font-heading text-lg font-bold tabular-nums text-white">2007</dd>
                 </div>
-                <div className="w-px bg-white/20" />
-                <div className="text-center">
-                  <p className="text-3xl font-bold text-white">1,742</p>
-                  <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-white/60">Happy Students</p>
+                <div>
+                  <dt className="font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-white/55">Faculties</dt>
+                  <dd className="mt-0.5 font-heading text-lg font-bold text-white">Five</dd>
                 </div>
-                <div className="w-px bg-white/20" />
-                <div className="text-center">
-                  <p className="text-3xl font-bold text-white">15+</p>
-                  <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-white/60">Years of Excellence</p>
-                </div>
-              </div>
+              </dl>
             </div>
 
             {/* Auth Card */}
