@@ -18,6 +18,7 @@ import ExamModule from './exams/ExamModule';
 import DocumentManagement from './documents/DocumentManagement';
 import AssignmentModule from './assignments/AssignmentModule';
 import AnnouncementModule from './announcements/AnnouncementModule';
+import TimetableModule from './timetable/TimetableModule';
 import ForumModule from './forum/ForumModule';
 import FeeModule from './fees/FeeModule';
 import AnalyticsDashboard from './analytics/AnalyticsDashboard';
@@ -61,6 +62,8 @@ export default function AppLayout() {
         return <AssignmentModule />;
       case 'announcements':
         return <AnnouncementModule />;
+      case 'timetable':
+        return <TimetableModule />;
       case 'forum':
         return <ForumModule />;
       case 'fees':

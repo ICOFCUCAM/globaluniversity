@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { site, type NavItem } from '@/content/site';
 import { fr } from '@/content/fr';
+import SiteSearch from './SiteSearch';
 
 function DesktopItem({ item }: { item: NavItem }) {
   if (!item.children) {
@@ -115,6 +116,7 @@ export default function Header() {
               </div>
             )}
           </div>
+          <SiteSearch />
           <Link
             href={langHref}
             hrefLang={isFr ? 'en' : 'fr'}

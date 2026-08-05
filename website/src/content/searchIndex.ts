@@ -1,0 +1,73 @@
+// Static search index for the public site. Kept alongside the content
+// modules so a new page is one entry away from being findable.
+import { courses } from './courses';
+import { contentPages, degreeLevels } from './pages';
+import { programs } from './site';
+
+export interface SearchEntry {
+  title: string;
+  href: string;
+  section: string;
+  text: string;
+}
+
+const pages: SearchEntry[] = [
+  { title: 'Home', href: '/', section: 'University', text: 'The Community University of Africa, a global university in Buea, Douala, Nigeria and online worldwide.' },
+  { title: 'About Us', href: '/about', section: 'University', text: 'History, mission and values, accreditation, International Circle of Faith, purpose.' },
+  { title: 'Governance & Accreditation', href: '/governance', section: 'University', text: 'Leadership, Chancellor, Vice Chancellor, Registrar, Dissertation Council, quality assurance, Ministry of Higher Education.' },
+  { title: 'Schools & Faculties', href: '/faculty', section: 'Academics', text: 'Faculty of Theology Buea, School of Theology Douala, Education, Engineering and Technology, GIBMAS, administration, lecturers.' },
+  { title: 'Research & Innovation', href: '/research', section: 'Academics', text: 'Dissertation Council, doctoral research, PPDI-RC, theology, liberation theology, criminology, counseling.' },
+  { title: 'Course Catalogue', href: '/courses', section: 'Academics', text: 'Search all courses by faculty, level and online availability.' },
+  { title: 'Degrees & Programs', href: '/programs', section: 'Academics', text: 'Certificates, diplomas, HND, bachelor, master and doctoral programs across all faculties.' },
+  { title: 'Study Online', href: '/online-learning', section: 'Academics', text: 'Online learning, live classes, course materials, assignments, exams, transcripts, distance study.' },
+  { title: 'Lifelong Learning', href: '/lifelong-learning', section: 'Academics', text: 'Short courses, professional development, certificates, extension courses, training for organisations.' },
+  { title: 'Admission Requirements', href: '/admissions', section: 'Admissions', text: 'Entry requirements for certificate, diploma, HND, bachelor, master and doctoral programs, GPA, A-Level, transcripts.' },
+  { title: 'Apply Now', href: '/apply', section: 'Admissions', text: 'Free online application form, six steps, personal, academic, program, uploads, review, declaration.' },
+  { title: 'International Students', href: '/international', section: 'Admissions', text: 'International admissions, visa, English proficiency, studying from abroad, living in Buea.' },
+  { title: 'Scholarships & Financial Aid', href: '/scholarships', section: 'Admissions', text: 'Scholarships, ministry scholarships, sponsorship, financial aid, flexible payment.' },
+  { title: 'Cost & Tuition', href: '/tuition', section: 'Admissions', text: 'Tuition fees, full-time, part-time, books, accommodation, student budget, payment methods.' },
+  { title: 'Registration', href: '/registration', section: 'Admissions', text: 'Why students choose IGUC, academic programs, expert faculty, supportive community.' },
+  { title: 'Campus Life', href: '/campus-life', section: 'Student Life', text: 'Student support services, community engagement, extracurricular activities, facilities, gallery.' },
+  { title: 'Events', href: '/events', section: 'Student Life', text: 'Graduation, admission opens, student orientation, important dates, CNPS Hall Buea.' },
+  { title: 'News & Announcements', href: '/news', section: 'Student Life', text: 'University news, initiatives, announcements, upcoming dates.' },
+  { title: 'Student Portal', href: '/portal', section: 'Portal', text: 'Registration, courses, results, GPA, transcripts, certificates, LMS, assignments, exams, fees, ID cards.' },
+  { title: 'Verify a Credential', href: '/verify', section: 'Portal', text: 'Verify transcript or certificate authenticity by QR code.' },
+  { title: 'Alumni', href: '/alumni', section: 'Community', text: 'Alumni network, stay connected, verify credentials, give back, alumni in service.' },
+  { title: 'Careers at IGUC', href: '/careers', section: 'Community', text: 'Teaching and staff vacancies, faculty recruitment, doctoral supervision, how to apply.' },
+  { title: 'Support IGUC', href: '/support', section: 'Community', text: 'University construction project, missions, wells, church construction, scholarships, giving.' },
+  { title: 'Donate', href: '/donate', section: 'Community', text: 'Donate to build, pastoral training, evangelism, prisoners, food and clean water.' },
+  { title: 'Charity', href: '/charity', section: 'Community', text: 'Schools, food, clothes, health, sanitation, sponsorship, causes.' },
+  { title: 'PPDI-RC', href: '/ppdirc', section: 'Academics', text: 'Personal Professional Development Industry and Resource Center Nigeria, professional courses, certification.' },
+  { title: 'Policies', href: '/policies', section: 'University', text: 'Code of conduct, academic integrity, disciplinary process, due process, appeals.' },
+  { title: 'Contact', href: '/contact', section: 'University', text: 'Phone, email, WhatsApp, address, Buea Cameroon, admissions office.' },
+];
+
+export const searchIndex: SearchEntry[] = [
+  ...pages,
+  ...programs.map((p) => ({
+    title: p.title,
+    href: `/programs/${p.slug}`,
+    section: 'Programs',
+    text: `${p.level} ${p.school} ${p.summary} ${p.outcomes.join(' ')}`,
+  })),
+  ...degreeLevels.map((d) => ({
+    title: d.title,
+    href: `/degrees/${d.slug}`,
+    section: 'Programs',
+    text: `${d.headline} ${d.subtitle} ${d.why.paragraphs.join(' ')}`,
+  })),
+  ...contentPages
+    .filter((c) => !pages.some((p) => p.href === `/${c.slug}`))
+    .map((c) => ({
+      title: c.title,
+      href: `/${c.slug}`,
+      section: 'Pages',
+      text: `${c.subtitle ?? ''} ${c.sections.map((s) => `${s.heading ?? ''} ${(s.paragraphs ?? []).join(' ')}`).join(' ')}`,
+    })),
+  ...courses.map((c) => ({
+    title: c.title,
+    href: '/courses',
+    section: `Course · ${c.code}`,
+    text: `${c.level} ${c.faculty} ${c.summary} ${c.online ? 'online' : 'on campus'}`,
+  })),
+];
