@@ -14,7 +14,7 @@ export default async function TuitionPage() {
       <Section>
         <SectionHeading>{tuition.heading}</SectionHeading>
         <p className="mx-auto mb-10 max-w-3xl text-center text-brand-muted">{tuition.intro}</p>
-        <div className="mx-auto max-w-3xl overflow-hidden rounded-xl bg-white shadow-sm">
+        <div className="mx-auto max-w-3xl overflow-hidden rounded-2xl border border-brand-sand bg-white shadow-lift">
           <table className="w-full text-left text-sm">
             <thead className="bg-brand-purple text-white">
               <tr>
