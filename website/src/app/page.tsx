@@ -618,41 +618,64 @@ export default async function HomePage() {
         </div>
       </Section>
 
-      {/* Success in numbers */}
-      <section className="relative overflow-hidden bg-brand-purple py-20 text-white">
-        {/* Faint engraved rule pattern — texture without another photograph. */}
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 opacity-[0.07]"
-          style={{
-            backgroundImage:
-              'repeating-linear-gradient(115deg, #f7dc79 0 1px, transparent 1px 22px)',
-          }}
-        />
-        <Aurora tone="gold" intensity={0.5} />
+      {/* Success in numbers — each figure sits inside its own progress ring,
+          so the band reads as instrumentation rather than a row of digits. */}
+      <section className="relative overflow-hidden bg-brand-purple py-24 text-white">
+        <Aurora tone="gold" intensity={0.45} />
         <Grain opacity={0.045} />
         <Seam />
+        {/* Engraved rule field */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 opacity-[0.06]"
+          style={{ backgroundImage: 'repeating-linear-gradient(115deg, #f7dc79 0 1px, transparent 1px 22px)' }}
+        />
+
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
-          <p className="mb-12 text-center font-sans text-xs font-semibold uppercase tracking-[0.25em] text-brand-gold">
+          <p className="mb-16 text-center font-sans text-xs font-semibold uppercase tracking-[0.25em] text-brand-gold">
             Student Success
           </p>
-          <div className="grid grid-cols-2 gap-y-12 text-center md:grid-cols-4">
+          <SpotlightGroup className="grid grid-cols-2 gap-x-6 gap-y-14 lg:grid-cols-4">
             {stats.map((s, i) => (
-              <div
-                key={s.label}
-                className={`px-4 ${i > 0 ? 'md:border-l md:border-white/12' : ''} ${
-                  i === 2 ? 'border-l-0' : ''
-                }`}
-              >
-                <p className="font-heading text-display-lg font-bold text-brand-gold">
-                  <CountUp value={s.value} />
-                </p>
-                <p className="mt-3 font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-white/70">
-                  {s.label}
-                </p>
-              </div>
+              <Reveal key={s.label} delay={i * 110}>
+                <div className="flex flex-col items-center text-center">
+                  <div className="relative h-[168px] w-[168px]">
+                    {/* Ring: a conic sweep clipped to an annulus. No SVG, no
+                        library — one element, one gradient, one mask. */}
+                    <div
+                      aria-hidden="true"
+                      className="absolute inset-0 animate-ring-in rounded-full"
+                      style={{
+                        background:
+                          'conic-gradient(from -90deg, #f7dc79 0deg, #e9c14a 190deg, rgba(247,220,121,0.10) 250deg, rgba(247,220,121,0.10) 360deg)',
+                        WebkitMask: 'radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px))',
+                        mask: 'radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px))',
+                        animationDelay: `${i * 110}ms`,
+                      }}
+                    />
+                    {/* Inner well */}
+                    <div className="absolute inset-[14px] rounded-full border border-white/10 bg-brand-purple-dark/45 backdrop-blur-sm" />
+                    {/* Orbiting node, one per ring, phase-shifted */}
+                    <div
+                      aria-hidden="true"
+                      className="absolute inset-0 animate-orbit"
+                      style={{ animationDelay: `${i * -3}s` }}
+                    >
+                      <span className="absolute left-1/2 top-0 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-gold shadow-gold" />
+                    </div>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <p className="font-heading text-[2.6rem] font-bold leading-none text-brand-gold">
+                        <CountUp value={s.value} />
+                      </p>
+                    </div>
+                  </div>
+                  <p className="mt-6 font-sans text-[11px] font-semibold uppercase tracking-[0.18em] text-white/70">
+                    {s.label}
+                  </p>
+                </div>
+              </Reveal>
             ))}
-          </div>
+          </SpotlightGroup>
         </div>
       </section>
 
