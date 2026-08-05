@@ -526,49 +526,105 @@ export default async function HomePage() {
         </div>
       </Section>
 
-      {/* Events */}
-      <Section>
-        <SectionHeading eyebrow="Mark Your Calendar">Events</SectionHeading>
-        <div className="grid gap-8 md:grid-cols-3">
-          {events.map((ev, i) => (
-            <Reveal key={ev.slug} delay={i * 100}>
-              <article className="h-full overflow-hidden rounded-2xl bg-white shadow-sm transition hover:shadow-xl">
-                <div className="relative h-44">
-                  <Image src={ev.image} alt={ev.title} fill className="object-cover" sizes="(min-width:768px) 33vw, 100vw" />
-                  <span className="absolute left-3 top-3 rounded bg-brand-gold px-2 py-1 text-xs font-bold text-brand-purple">
-                    {new Date(ev.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
-                  </span>
-                </div>
-                <div className="p-5">
-                  <h3 className="font-heading font-semibold text-brand-purple">{ev.title}</h3>
-                  <p className="mt-2 text-xs text-brand-muted">
-                    {new Date(ev.date).toLocaleDateString('en-GB', { dateStyle: 'long' })} · {ev.location}
-                  </p>
-                </div>
-              </article>
-            </Reveal>
-          ))}
-        </div>
-      </Section>
-
-      {/* News / initiatives */}
+      {/* Diary & initiatives — one band. Both halves were dead-end cards before;
+          every item now resolves somewhere. */}
       <Section className="bg-white">
-        <SectionHeading eyebrow="News & Initiatives">What&apos;s happening</SectionHeading>
-        <div className="grid gap-8 md:grid-cols-3">
-          {news.map((n, i) => (
-            <Reveal key={n.slug} delay={i * 100}>
-              <article className="h-full overflow-hidden rounded-2xl bg-brand-cream shadow-sm transition hover:shadow-xl">
-                <div className="relative h-44">
-                  <Image src={n.image} alt={n.title} fill className="object-cover" sizes="(min-width:768px) 33vw, 100vw" />
-                </div>
-                <div className="p-5">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-brand-gold-deep">{n.category}</p>
-                  <h3 className="mt-1 font-heading font-semibold text-brand-purple">{n.title}</h3>
-                  <p className="mt-2 text-sm text-brand-muted">{n.excerpt}</p>
-                </div>
-              </article>
-            </Reveal>
-          ))}
+        <div className="grid gap-14 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]">
+          {/* Diary */}
+          <div>
+            <SectionHeading eyebrow="Mark Your Calendar" align="left">
+              University diary
+            </SectionHeading>
+            <ol className="-mt-4 divide-y divide-brand-sand border-t border-brand-sand">
+              {events.map((ev, i) => {
+                const date = new Date(ev.date);
+                return (
+                  <li key={ev.slug}>
+                    <Reveal delay={i * 90}>
+                      <Link
+                        href="/events"
+                        className="group flex items-start gap-5 py-6 transition"
+                      >
+                        {/* Torn-calendar block */}
+                        <time
+                          dateTime={ev.date}
+                          className="flex w-16 shrink-0 flex-col items-center rounded-xl border border-brand-sand bg-brand-cream py-2.5 transition duration-500 group-hover:border-brand-gold group-hover:bg-brand-gold"
+                        >
+                          <span className="font-heading text-2xl font-bold leading-none text-brand-purple tabular">
+                            {date.toLocaleDateString('en-GB', { day: '2-digit' })}
+                          </span>
+                          <span className="mt-1 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-brand-gold-deep transition group-hover:text-brand-purple">
+                            {date.toLocaleDateString('en-GB', { month: 'short' })}
+                          </span>
+                          <span className="font-sans text-[9px] text-brand-muted transition group-hover:text-brand-purple/70">
+                            {date.getFullYear()}
+                          </span>
+                        </time>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-heading text-base font-bold text-brand-purple transition group-hover:text-brand-gold-deep">
+                            {ev.title}
+                          </h3>
+                          <p className="mt-1.5 text-sm leading-relaxed text-brand-muted">{ev.location}</p>
+                        </div>
+                      </Link>
+                    </Reveal>
+                  </li>
+                );
+              })}
+            </ol>
+            <Link
+              href="/events"
+              className="mt-7 inline-flex items-center gap-1.5 font-heading text-sm font-semibold text-brand-purple hover:text-brand-gold-deep"
+            >
+              All events and important dates
+              <span aria-hidden="true">→</span>
+            </Link>
+          </div>
+
+          {/* Initiatives */}
+          <div>
+            <SectionHeading eyebrow="Support the Work" align="left">
+              Our initiatives
+            </SectionHeading>
+            <div className="-mt-4 grid gap-5 sm:grid-cols-3">
+              {news.map((n, i) => (
+                <Reveal key={n.slug} delay={i * 100}>
+                  <Link
+                    href={n.href}
+                    className="group flex h-full flex-col overflow-hidden rounded-2xl bg-brand-cream shadow-lift ring-1 ring-brand-sand/70 transition duration-500 hover:-translate-y-1.5 hover:shadow-lift-lg hover:ring-brand-gold"
+                  >
+                    <div className="relative h-36 overflow-hidden">
+                      <Image
+                        src={n.image}
+                        alt=""
+                        fill
+                        className="object-cover transition duration-[900ms] ease-out group-hover:scale-110"
+                        sizes="(min-width:1024px) 20vw, (min-width:640px) 33vw, 100vw"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-brand-purple-dark/50 to-transparent" />
+                    </div>
+                    <div className="flex flex-1 flex-col p-5">
+                      <p className="font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-brand-gold-deep">
+                        {n.category}
+                      </p>
+                      <h3 className="mt-1.5 font-heading text-[15px] font-bold leading-snug text-brand-purple [text-wrap:balance]">
+                        {n.title}
+                      </h3>
+                      <p className="mt-2.5 flex-1 line-clamp-4 text-[13px] leading-relaxed text-brand-muted">
+                        {n.excerpt}
+                      </p>
+                      <span className="mt-4 flex items-center gap-1.5 font-heading text-[13px] font-semibold text-brand-purple">
+                        Learn more
+                        <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1.5">
+                          →
+                        </span>
+                      </span>
+                    </div>
+                  </Link>
+                </Reveal>
+              ))}
+            </div>
+          </div>
         </div>
       </Section>
 

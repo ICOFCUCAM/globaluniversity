@@ -42,6 +42,10 @@ export interface NewsItem {
   category: string;
   image: string;
   excerpt: string;
+  // Where the initiative is described in full. These three are the university's
+  // standing appeals rather than dated bulletins, so each resolves to the page
+  // that carries the detail rather than to a stub article.
+  href: string;
 }
 
 export const site = {
@@ -741,6 +745,7 @@ export const events: EventItem[] = [
 export const news: NewsItem[] = [
   {
     slug: 'university-construction-project',
+    href: '/support',
     title: 'University Construction Project',
     category: 'Support IGUC',
     image: '/images/hall.jpg',
@@ -749,6 +754,7 @@ export const news: NewsItem[] = [
   },
   {
     slug: 'missions-and-evangelism',
+    href: '/support',
     title: 'Missions & Evangelism',
     category: 'Support IGUC',
     image: '/images/global.jpg',
@@ -757,6 +763,7 @@ export const news: NewsItem[] = [
   },
   {
     slug: 'scholarships-for-the-called',
+    href: '/scholarships',
     title: 'Support the Called Through Biblical & Theological Training',
     category: 'Support IGUC',
     image: '/images/graduates.jpg',
