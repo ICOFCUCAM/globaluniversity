@@ -19,6 +19,7 @@ import { CheckCircle2, XCircle, Wallet, Loader2, AlertTriangle, Mail, RefreshCw,
 import { useAuth } from '@/contexts/AuthContext';
 import { can } from '@/lib/roles';
 import type { Student } from '@/lib/types';
+import { statusMeta } from '@/lib/status';
 import {
   financeQueue,
   registrarQueue,
@@ -27,18 +28,21 @@ import {
   declineApplication,
   approveApplication,
   requestDocuments,
-  stageOf,
-  stages,
-  stageChipClass,
+  deferAdmission,
+  transferProgramme,
 } from '@/lib/admissions';
 
 type Desk = 'finance' | 'registrar';
 
+/**
+ * Every status chip in the system renders through the universal table, so a
+ * colour means the same thing at the Finance desk, at the Registrar's desk and
+ * on the applicant's own tracking page.
+ */
 function StageChip({ student }: { student: Student }) {
-  const stage = stageOf(student);
-  const meta = stages[stage];
+  const meta = statusMeta(student.status);
   return (
-    <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em] ${stageChipClass[meta.tone]}`}>
+    <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em] ${meta.chip}`}>
       {meta.label}
     </span>
   );
@@ -71,6 +75,8 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
   const [note, setNote] = useState('');
   const [declineReason, setDeclineReason] = useState('');
   const [docsMessage, setDocsMessage] = useState('');
+  const [deferReason, setDeferReason] = useState('');
+  const [newProgramme, setNewProgramme] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -183,6 +189,40 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
     }
   }
 
+  async function onDefer() {
+    if (!selected || !deferReason.trim()) return;
+    setBusy(true);
+    try {
+      await deferAdmission(selected.id, { reason: deferReason.trim(), byUserId: user?.id ?? '' });
+      setFlash({ tone: 'ok', message: `Admission deferred for ${selected.first_name} ${selected.last_name}.` });
+      setDeferReason('');
+      setSelected(null);
+      await load();
+    } catch (e) {
+      setFlash({ tone: 'bad', message: (e as Error).message });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onTransfer() {
+    if (!selected || !newProgramme.trim()) return;
+    setBusy(true);
+    try {
+      await transferProgramme(selected.id, { programme: newProgramme.trim(), byUserId: user?.id ?? '' });
+      setFlash({
+        tone: 'ok',
+        message: `Programme changed to ${newProgramme.trim()}. The application stays in your queue — it still needs approving or rejecting.`,
+      });
+      setNewProgramme('');
+      await load();
+    } catch (e) {
+      setFlash({ tone: 'bad', message: (e as Error).message });
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const isFinance = desk === 'finance';
   // The role matrix decides, not the desk prop. Finance cannot admit and the
   // Registrar cannot verify payments — those two absences are the separation of
@@ -192,6 +232,8 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
   const mayAdmit = can(user?.role, 'admit-student');
   const mayRequestDocs = can(user?.role, 'request-documents');
   const mayReject = can(user?.role, 'reject-application');
+  const mayDefer = can(user?.role, 'defer-admission');
+  const mayTransfer = can(user?.role, 'transfer-programme');
 
   return (
     <div className="space-y-6">
@@ -451,6 +493,55 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
                         {busy ? <Loader2 size={15} className="animate-spin" /> : <FileQuestion size={15} />}
                         Request documents
                       </button>
+                    </div>
+                  )}
+
+                  {mayTransfer && (
+                    <div className="rounded-xl bg-blue-50 p-5 ring-1 ring-blue-200">
+                      <h3 className="font-bold text-blue-900">Transfer programme</h3>
+                      <p className="mt-1.5 text-xs text-blue-800">
+                        Changing the programme is not a decision on the application — the record
+                        stays in your queue and still needs approving or rejecting.
+                      </p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <input
+                          value={newProgramme}
+                          onChange={(e) => setNewProgramme(e.target.value)}
+                          placeholder="New programme"
+                          className="min-w-[14rem] flex-1 rounded-lg border border-blue-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                        />
+                        <button
+                          onClick={() => void onTransfer()}
+                          disabled={busy || !newProgramme.trim()}
+                          className="rounded-lg bg-blue-700 px-5 py-2 text-sm font-semibold text-white transition hover:bg-blue-800 disabled:opacity-40"
+                        >
+                          Change programme
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {mayDefer && (
+                    <div className="rounded-xl bg-neutral-100 p-5 ring-1 ring-neutral-300">
+                      <h3 className="font-bold text-neutral-900">Defer admission</h3>
+                      <p className="mt-1.5 text-xs text-neutral-700">
+                        Holds the admission over to a later intake. No account is created.
+                      </p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <input
+                          value={deferReason}
+                          onChange={(e) => setDeferReason(e.target.value)}
+                          placeholder="Reason and intended intake"
+                          className="min-w-[14rem] flex-1 rounded-lg border border-neutral-400 bg-white px-3 py-2 text-sm focus:border-neutral-700 focus:outline-none"
+                        />
+                        <button
+                          onClick={() => void onDefer()}
+                          disabled={busy || !deferReason.trim()}
+                          className="rounded-lg bg-neutral-800 px-5 py-2 text-sm font-semibold text-white transition hover:bg-neutral-900 disabled:opacity-40"
+                        >
+                          Defer
+                        </button>
+                      </div>
                     </div>
                   )}
 

@@ -30,6 +30,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/student-handbook',
     '/prospectus',
     '/admissions-portal',
+    '/erp',
     '/graduate-school-handbook',
     '/fr',
     '/fr/a-propos',

@@ -1,5 +1,10 @@
 # Admissions pipeline — how an application becomes a student
 
+> The wider ERP this sits inside is documented at `/erp` and in
+> `src/content/erp.ts` — seventeen modules, with an honest status against each.
+> The universal status system (`src/lib/status.ts`) and the role hierarchy
+> (`src/lib/roles.ts`) are shared by every module and are described there.
+
 Internal note. **Not rendered anywhere on the site.**
 
 The university set out how an application actually moves through the

@@ -99,6 +99,62 @@ const demoUsers: Record<UserRole, AuthUser> = {
     role: 'dean',
     avatar: 'FD',
   },
+  chancellor: {
+    id: 'demo-chancellor',
+    name: 'Demo Chancellor',
+    email: 'chancellor@iguc.net',
+    role: 'chancellor',
+    avatar: 'CH',
+  },
+  'vice-chancellor': {
+    id: 'demo-vice-chancellor',
+    name: 'Demo Vice Chancellor',
+    email: 'vice-chancellor@iguc.net',
+    role: 'vice-chancellor',
+    avatar: 'VC',
+  },
+  'finance-director': {
+    id: 'demo-finance-director',
+    name: 'Demo Finance Director',
+    email: 'finance-director@iguc.net',
+    role: 'finance-director',
+    avatar: 'FD',
+  },
+  hod: {
+    id: 'demo-hod',
+    name: 'Demo Head of Department',
+    email: 'hod@iguc.net',
+    role: 'hod',
+    avatar: 'HD',
+  },
+  'programme-coordinator': {
+    id: 'demo-programme-coordinator',
+    name: 'Demo Programme Coordinator',
+    email: 'programme-coordinator@iguc.net',
+    role: 'programme-coordinator',
+    avatar: 'PC',
+  },
+  'admissions-officer': {
+    id: 'demo-admissions-officer',
+    name: 'Demo Admissions Officer',
+    email: 'admissions-officer@iguc.net',
+    role: 'admissions-officer',
+    avatar: 'AO',
+  },
+  'library-staff': {
+    id: 'demo-library-staff',
+    name: 'Demo Library Staff',
+    email: 'library-staff@iguc.net',
+    role: 'library-staff',
+    avatar: 'LB',
+  },
+  'student-affairs': {
+    id: 'demo-student-affairs',
+    name: 'Demo Student Affairs',
+    email: 'student-affairs@iguc.net',
+    role: 'student-affairs',
+    avatar: 'SA',
+  },
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);

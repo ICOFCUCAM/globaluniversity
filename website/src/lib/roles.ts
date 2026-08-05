@@ -20,6 +20,33 @@
 
 import type { UserRole } from './types';
 
+/** Order of the hierarchy, as the university states it. Index 0 is the top. */
+export const HIERARCHY: UserRole[] = [
+  'chancellor',
+  'vice-chancellor',
+  'registrar',
+  'finance-director',
+  'dean',
+  'hod',
+  'programme-coordinator',
+  'lecturer',
+  'finance',
+  'admissions-officer',
+  'library-staff',
+  'student-affairs',
+  'student',
+  'applicant',
+];
+
+/**
+ * Position in the hierarchy. Lower is more senior. 'admin' is a system role
+ * outside the hierarchy and 'academic-office' predates it, so both return -1
+ * and neither is presented as ranking above or below anyone.
+ */
+export function rank(role: UserRole): number {
+  return HIERARCHY.indexOf(role);
+}
+
 export type Capability =
   // Applicant
   | 'apply'
@@ -48,6 +75,22 @@ export type Capability =
   | 'view-registered-students'
   | 'upload-grades'
   | 'take-attendance'
+  // Executive
+  | 'view-executive-dashboard'
+  | 'view-all-faculties'
+  | 'view-institutional-finance'
+  // Department
+  | 'assign-lecturers-to-courses'
+  | 'approve-course-allocation'
+  | 'monitor-teaching'
+  | 'department-reports'
+  // Admissions / library / student affairs
+  | 'process-applications'
+  | 'defer-admission'
+  | 'transfer-programme'
+  | 'manage-library'
+  | 'manage-hostel'
+  | 'manage-student-welfare'
   // Student
   | 'register-courses'
   | 'pay-fees'
@@ -64,6 +107,25 @@ export type Capability =
 const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   admin: 'all',
 
+  // The two executive offices see everything and decide nothing operationally.
+  // 'admit-student' and 'verify-payment' are deliberately absent from both: an
+  // institution where the Vice Chancellor can personally admit a student has
+  // no separation of duties left to speak of, whatever its org chart says.
+  chancellor: ['view-executive-dashboard', 'view-all-faculties', 'view-institutional-finance', 'view-admitted-students', 'monitor-progress'],
+  'vice-chancellor': ['view-executive-dashboard', 'view-all-faculties', 'view-institutional-finance', 'view-admitted-students', 'monitor-progress', 'department-reports'],
+
+  // Directs Finance. Still cannot admit.
+  'finance-director': ['verify-payment', 'approve-refund', 'generate-invoice', 'manage-student-accounts', 'view-institutional-finance'],
+
+  hod: ['assign-lecturers-to-courses', 'approve-course-allocation', 'monitor-teaching', 'department-reports', 'view-registered-students', 'view-admitted-students'],
+  'programme-coordinator': ['monitor-teaching', 'department-reports', 'view-registered-students', 'manage-courses'],
+
+  // Prepares applications for the Registrar. Cannot decide one.
+  'admissions-officer': ['process-applications', 'request-documents', 'track-application'],
+
+  'library-staff': ['manage-library'],
+  'student-affairs': ['manage-hostel', 'manage-student-welfare'],
+
   applicant: ['apply', 'upload-documents', 'track-application'],
 
   // Cannot admit students. 'admit-student' is absent, and that absence is the
@@ -75,9 +137,12 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
     'admit-student',
     'reject-application',
     'request-documents',
+    'defer-admission',
+    'transfer-programme',
     'assign-programme',
     'create-student-record',
     'view-admitted-students',
+    'process-applications',
   ],
 
   'academic-office': ['assign-lecturers', 'build-timetable', 'manage-courses'],
@@ -119,6 +184,14 @@ export function isEnrolledRole(role: UserRole | undefined | null): boolean {
 
 export const roleLabels: Record<UserRole, string> = {
   admin: 'System Administrator',
+  chancellor: 'Chancellor',
+  'vice-chancellor': 'Vice Chancellor',
+  'finance-director': 'Finance Director',
+  hod: 'Head of Department',
+  'programme-coordinator': 'Programme Coordinator',
+  'admissions-officer': 'Admissions Officer',
+  'library-staff': 'Library Staff',
+  'student-affairs': 'Student Affairs',
   applicant: 'Applicant',
   finance: 'Finance Administrator',
   registrar: 'Registrar Administrator',

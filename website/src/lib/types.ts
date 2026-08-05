@@ -6,15 +6,31 @@
 // roles rather than flavours of 'admin' because the whole control in the
 // admissions process is that the desk registering the fee is not the desk
 // that admits the student.
+/**
+ * The university's role hierarchy, top to bottom. Kept in the order the
+ * institution states it, because that order IS the hierarchy — `rank()` in
+ * roles.ts reads position from this list rather than from a separate number
+ * that could drift out of step with it.
+ */
 export type UserRole =
   | 'admin'
-  | 'applicant'
-  | 'student'
+  | 'chancellor'
+  | 'vice-chancellor'
+  | 'registrar'
+  | 'finance-director'
+  | 'dean'
+  | 'hod'
+  | 'programme-coordinator'
   | 'lecturer'
   | 'finance'
-  | 'registrar'
-  | 'academic-office'
-  | 'dean';
+  | 'admissions-officer'
+  | 'library-staff'
+  | 'student-affairs'
+  | 'student'
+  | 'applicant'
+  // Retained: 'academic-office' is used by the timetable and course-allocation
+  // screens built before the hierarchy was specified.
+  | 'academic-office';
 
 export interface Department {
   id: string;

@@ -5,7 +5,7 @@ import { Section, SectionHeading, Eyebrow } from '@/components/Section';
 import Reveal from '@/components/Reveal';
 import { Aurora, Grain, Seam } from '@/components/Atmosphere';
 import { site } from '@/content/site';
-import { stages } from '@/lib/admissions';
+import { allStatuses } from '@/lib/status';
 
 export const metadata: Metadata = {
   title: 'Admissions Portal — ICOF Global University',
@@ -187,28 +187,20 @@ export default function AdmissionsPortalPage() {
       <Section className="bg-white" chapter="Statuses">
         <SectionHeading eyebrow="Tracking">What each status means</SectionHeading>
         <div className="mx-auto max-w-3xl space-y-4">
-          {(['applicant', 'fee_paid', 'documents_required', 'approved', 'declined'] as const).map((k) => {
-            const m = stages[k];
-            const dot =
-              m.tone === 'red'
-                ? 'bg-red-500'
-                : m.tone === 'blue'
-                  ? 'bg-blue-500'
-                  : m.tone === 'amber'
-                    ? 'bg-amber-500'
-                    : m.tone === 'green'
-                      ? 'bg-emerald-500'
-                      : 'bg-gray-400';
-            return (
-              <div key={k} className="flex gap-4 rounded-2xl border border-brand-sand bg-brand-cream p-5">
-                <span aria-hidden="true" className={`mt-1.5 h-3 w-3 shrink-0 rounded-full ${dot}`} />
-                <div>
-                  <p className="font-heading text-[16px] font-bold text-brand-purple">{m.label}</p>
-                  <p className="mt-1 text-[15px] leading-relaxed text-brand-muted">{m.description}</p>
-                </div>
+          {allStatuses.map((m) => (
+            <div key={m.key} className="flex gap-4 rounded-2xl border border-brand-sand bg-brand-cream p-5">
+              <span aria-hidden="true" className={`mt-1.5 h-3 w-3 shrink-0 rounded-full ${m.dot}`} />
+              <div>
+                <p className="font-heading text-[16px] font-bold text-brand-purple">
+                  {m.label}{' '}
+                  <span className="font-sans text-[11px] font-semibold uppercase tracking-wide text-brand-muted">
+                    {m.colour}
+                  </span>
+                </p>
+                <p className="mt-1 text-[15px] leading-relaxed text-brand-muted">{m.meaning}</p>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
         <p className="mx-auto mt-8 max-w-3xl text-center text-sm text-brand-muted">
           Your application fee is not refundable once the Registrar has begun examining your

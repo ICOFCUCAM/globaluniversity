@@ -234,6 +234,46 @@ export async function declineApplication(
   if (error) throw new Error(error.message);
 }
 
+/** Registrar defers admission to a later intake. */
+export async function deferAdmission(
+  studentId: string,
+  opts: { reason: string; byUserId: string },
+): Promise<void> {
+  const { error } = await supabase
+    .from('students')
+    .update({
+      status: 'deferred',
+      decision_reason: opts.reason,
+      decided_by: opts.byUserId,
+      decided_at: new Date().toISOString(),
+    })
+    .eq('id', studentId)
+    .in('status', ['fee_paid', 'documents_required']);
+  if (error) throw new Error(error.message);
+}
+
+/**
+ * Registrar moves an applicant to a different programme before admitting them.
+ * The record stays in the queue: changing the programme is not a decision on
+ * the application, and the Registrar must still approve or reject it.
+ */
+export async function transferProgramme(
+  studentId: string,
+  opts: { programme: string; degreeType?: string; byUserId: string },
+): Promise<void> {
+  const { error } = await supabase
+    .from('students')
+    .update({
+      program: opts.programme,
+      ...(opts.degreeType ? { degree_type: opts.degreeType } : {}),
+      decision_reason: `Programme changed to ${opts.programme} by the Registrar before admission.`,
+      decided_by: opts.byUserId,
+    })
+    .eq('id', studentId)
+    .in('status', ['fee_paid', 'documents_required']);
+  if (error) throw new Error(error.message);
+}
+
 /**
  * Registrar approves. This is the only route by which a student account comes
  * into existence, so it runs server-side: creating an auth user requires the
