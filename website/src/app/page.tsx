@@ -156,10 +156,10 @@ export default async function HomePage() {
         <div className="grid items-center gap-12 lg:grid-cols-2">
           <Reveal>
             <Eyebrow>About the University</Eyebrow>
-            <h2 className="font-heading text-3xl font-bold leading-tight tracking-tight text-brand-purple sm:text-[2.6rem]">
+            <h2 className="font-heading text-display font-bold text-brand-purple [text-wrap:balance]">
               A university in pursuit of a brighter future
             </h2>
-            <div className="mt-4 h-[3px] w-16 rounded bg-brand-gold" />
+            <div className="mt-5 h-[3px] w-16 rounded-full bg-gradient-to-r from-brand-gold-deep to-brand-gold" />
             <p className="mt-6 leading-relaxed text-brand-muted">{about.intro}</p>
             <div className="mt-8 flex flex-wrap gap-4">
               <Link
@@ -216,7 +216,7 @@ export default async function HomePage() {
       {/* Schools & Faculties */}
       <Section>
         <SectionHeading eyebrow="Academic Community">{homeFaculties.heading}</SectionHeading>
-        <p className="mx-auto -mt-6 mb-10 max-w-3xl text-center text-brand-muted">{homeFaculties.intro}</p>
+        <p className="mx-auto -mt-5 mb-12 max-w-2xl text-center leading-relaxed text-brand-muted">{homeFaculties.intro}</p>
         <div className="mx-auto grid max-w-6xl gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {homeFaculties.items.map((f, i) => (
             <Reveal key={f.name} delay={i * 100}>
@@ -352,7 +352,7 @@ export default async function HomePage() {
           <Reveal>
             <div className="flex h-full flex-col rounded-2xl border border-brand-sand bg-white p-10 shadow-sm">
               <Eyebrow>Admissions</Eyebrow>
-              <h3 className="font-heading text-2xl font-bold text-brand-purple">
+              <h3 className="font-heading text-display-sm font-bold text-brand-purple">
                 Anything you can dream, you can do
               </h3>
               <p className="mt-4 flex-1 text-sm leading-relaxed text-brand-muted">
@@ -374,7 +374,7 @@ export default async function HomePage() {
           <Reveal delay={120}>
             <div className="flex h-full flex-col rounded-2xl border border-brand-sand bg-white p-10 shadow-sm">
               <Eyebrow>International Students</Eyebrow>
-              <h3 className="font-heading text-2xl font-bold text-brand-purple">
+              <h3 className="font-heading text-display-sm font-bold text-brand-purple">
                 A global family of learners
               </h3>
               <p className="mt-4 flex-1 text-sm leading-relaxed text-brand-muted">
@@ -438,10 +438,10 @@ export default async function HomePage() {
           </Reveal>
           <Reveal delay={120}>
             <Eyebrow>Online Learning</Eyebrow>
-            <h2 className="font-heading text-3xl font-bold leading-tight tracking-tight text-brand-purple sm:text-[2.6rem]">
+            <h2 className="font-heading text-display font-bold text-brand-purple [text-wrap:balance]">
               Your classroom, wherever you are
             </h2>
-            <div className="mt-4 h-[3px] w-16 rounded bg-brand-gold" />
+            <div className="mt-5 h-[3px] w-16 rounded-full bg-gradient-to-r from-brand-gold-deep to-brand-gold" />
             <p className="mt-6 leading-relaxed text-brand-muted">
               Master&apos;s and doctoral programs delivered fully online, with live classes, course
               materials, assignments and examinations in one student portal — and your results,
@@ -462,7 +462,7 @@ export default async function HomePage() {
       {/* Professional training features */}
       <Section>
         <SectionHeading eyebrow="Professional Formation">{homeFeatures.heading}</SectionHeading>
-        <p className="mx-auto -mt-6 mb-10 max-w-3xl text-center text-brand-muted">{homeFeatures.intro}</p>
+        <p className="mx-auto -mt-5 mb-12 max-w-2xl text-center leading-relaxed text-brand-muted">{homeFeatures.intro}</p>
         <div className="grid gap-8 md:grid-cols-3">
           {homeFeatures.items.map((f, i) => (
             <Reveal key={f.title} delay={i * 120}>
@@ -513,7 +513,7 @@ export default async function HomePage() {
       {/* Recognition */}
       <Section className="bg-white">
         <SectionHeading eyebrow="Recognition & Partners">Accreditation you can trust</SectionHeading>
-        <p className="mx-auto -mt-6 mb-10 max-w-3xl text-center text-brand-muted">
+        <p className="mx-auto -mt-5 mb-12 max-w-2xl text-center leading-relaxed text-brand-muted">
           ICOF Global University is accredited by the Ministry of Higher Education of Cameroon and
           has been continually accredited since 2007, working alongside partner institutions of the
           International Circle of Faith worldwide.
