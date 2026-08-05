@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Card, EmptyState, SkeletonRows } from '@/components/ui/portal';
 import { supabase } from '@/lib/supabase';
 import type { Course } from '@/lib/types';
 import {
@@ -99,7 +100,15 @@ export default function CourseManagement() {
 
       {/* Course Groups */}
       {loading ? (
-        <div className="text-center py-12 text-gray-400">Loading courses...</div>
+        <Card className="overflow-hidden"><SkeletonRows rows={5} cols={3} /></Card>
+      ) : Object.keys(grouped).length === 0 ? (
+        <Card>
+          <EmptyState
+            icon={<BookOpen size={20} />}
+            title="No courses in the catalogue yet"
+            description="Courses added here appear in registration, the timetable and the transcript. Codes follow the university's own scheme — BTH101, EDU204 — not the template's CSC numbering."
+          />
+        </Card>
       ) : (
         Object.entries(grouped).map(([group, groupCourses]) => (
           <div key={group} className="bg-white rounded-xl border border-gray-100 overflow-hidden">
@@ -111,12 +120,15 @@ export default function CourseManagement() {
               {groupCourses.map((course) => (
                 <div key={course.id} className="p-4 border border-gray-100 rounded-xl hover:shadow-md transition-all duration-300 group cursor-pointer">
                   <div className="flex items-start justify-between">
-                    <div className={`px-2.5 py-1 rounded-lg bg-gradient-to-r ${levelColors[course.level] || 'from-gray-500 to-gray-600'} text-white text-xs font-bold`}>
+                    {/* One treatment for every level. The gradient-per-level
+                        map made 100-level blue and 400-level pink, which reads
+                        as a meaning the university has not assigned. */}
+                    <div className="rounded-lg bg-[#422e59] px-2.5 py-1 font-mono text-xs font-bold tabular-nums text-white">
                       {course.code}
                     </div>
                     <span className="text-xs text-gray-400 font-medium">{course.credit_unit} CU</span>
                   </div>
-                  <h4 className="text-sm font-semibold text-gray-800 mt-3 group-hover:text-blue-600 transition-colors">{course.title}</h4>
+                  <h4 className="text-sm font-semibold text-gray-800 mt-3 transition-colors">{course.title}</h4>
                   <p className="text-xs text-gray-400 mt-1 line-clamp-2">{course.description}</p>
                   <div className="flex items-center gap-3 mt-3 text-[10px] text-gray-400">
                     <span className="flex items-center gap-1"><Clock size={10} /> Level {course.level}</span>
@@ -142,7 +154,7 @@ export default function CourseManagement() {
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Course Code *</label>
                   <input required value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })}
-                    placeholder="e.g. CSC 501" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
+                    placeholder="e.g. BTH101" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Credit Units *</label>
