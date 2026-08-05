@@ -20,10 +20,14 @@ const P = 'PPDI-RC Professional Development';
 export const courses: Course[] = [
   // Theology — Buea & Douala
   { code: 'THE-BA', title: 'Bachelor of Theology', faculty: T, level: 'Bachelor', online: true, summary: 'Biblical languages, exegesis, systematic theology and church history, forming ministers and scholars for service.' },
+  { code: 'BDIV', title: 'Bachelor of Divinity', faculty: T, level: 'Bachelor', online: true, summary: 'The theological route to ordination: biblical languages, exegesis and systematic doctrine studied in depth.' },
+  { code: 'BMIN', title: 'Bachelor of Ministry', faculty: T, level: 'Bachelor', online: true, summary: 'The practical route to ministry, with supervised placement throughout — preaching, pastoral care, administration and mission.' },
   { code: 'CED-BA', title: 'Bachelor of Christian Education', faculty: T, level: 'Bachelor', online: true, summary: 'Teaching and discipleship within the local church: curriculum, pedagogy and spiritual formation.' },
   { code: 'THE-MA', title: 'Master of Theology', faculty: T, level: 'Master', online: true, summary: 'Advanced study in doctrine, hermeneutics and theological method, with supervised research.' },
   { code: 'DIV-MA', title: 'Master of Divinity', faculty: T, level: 'Master', online: true, summary: 'Comprehensive ministerial formation — preaching, pastoral care, liturgy and church administration.' },
   { code: 'EVM-MA', title: 'Masters in Evangelism and Mission', faculty: T, level: 'Master', online: true, summary: 'Missiology, cross-cultural communication and the practice of evangelism in contemporary contexts.' },
+  { code: 'MACL', title: 'Master of Arts in Christian Leadership', faculty: T, level: 'Master', online: true, summary: 'Leadership as the object of study: organisational strategy, governance, ethics and a supervised leadership research project.' },
+  { code: 'BLT-MA', title: 'Master of Arts in Black Liberation Theology', faculty: T, level: 'Master', online: true, summary: 'Biblical revelation, history, archaeology, anthropology and social justice, pioneered at ICOF as an academic discipline.' },
   { code: 'PHD-TH', title: 'Doctor of Philosophy (Theology)', faculty: T, level: 'Doctorate', online: true, summary: 'Original doctoral research examined by the Dissertation Council, culminating in a defended thesis.' },
   { code: 'DTH', title: 'Doctor of Theology', faculty: T, level: 'Doctorate', online: true, summary: 'Advanced doctrinal scholarship for those teaching and leading within the church.' },
   { code: 'DMIN', title: 'Doctor of Ministry', faculty: T, level: 'Doctorate', online: true, summary: 'Professional doctorate in Christian counseling and church administration for practising ministers.' },
@@ -31,6 +35,7 @@ export const courses: Course[] = [
   { code: 'CERT-CE', title: 'Certificate of Christian Education', faculty: T, level: 'Certificate', online: true, summary: 'Introductory training for Sunday school teachers, youth workers and church educators.' },
   { code: 'DIP-TH', title: 'Diploma in Theology', faculty: T, level: 'Diploma', online: true, summary: 'A condensed theological education: key theological concepts, biblical interpretation, church history and practical ministry skills.' },
   { code: 'DIP-MIN', title: 'Diploma in Ministry', faculty: T, level: 'Diploma', online: true, summary: 'Practical ministerial formation for serving church workers — preaching, pastoral care, administration and evangelism.' },
+  { code: 'DIP-CL', title: 'Diploma in Christian Leadership', faculty: T, level: 'Diploma', online: true, summary: 'Servant leadership, governance, team building and stewardship for those leading churches and Christian organisations.' },
 
   // Education
   { code: 'EDU-PRI', title: 'Primary Education', faculty: E, level: 'Bachelor', online: false, summary: 'Classroom-ready teacher preparation: pedagogy, curriculum design, assessment and supervised practice.' },

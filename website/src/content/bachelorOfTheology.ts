@@ -267,7 +267,7 @@ export const bthCareers = [
 /** Postgraduate routes the university names. */
 export const bthProgression = [
   { label: 'Master of Theology (M.Th.)', href: '/master-of-theology' },
-  { label: 'Master of Divinity (M.Div.)', href: '/programs/ministry' },
+  { label: 'Master of Divinity (M.Div.)', href: '/programs/master-of-divinity' },
   { label: 'Master of Arts in Theology', href: '/degrees/masters-degrees' },
   { label: 'Doctoral programmes', href: '/degrees/doctoral' },
 ];

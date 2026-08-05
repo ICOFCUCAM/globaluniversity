@@ -130,7 +130,11 @@ export const facultyList: Faculty[] = [
     ],
     about: [
       'The Faculty of Theology at ICOF Global University is one of the University’s founding faculties and has served as a centre for biblical scholarship, ministerial formation, and Christian leadership for many years. Established to equip men and women for effective ministry in Africa and throughout the world, the Faculty combines rigorous academic study with spiritual formation and practical ministry.',
-      'The Faculty offers programmes from Diploma through Doctor of Philosophy (Ph.D.), preparing pastors, missionaries, theologians, educators, chaplains, counsellors, and Christian leaders for service in churches, educational institutions, humanitarian organisations, and public life.',
+      // "Diploma" in the supplied text; corrected to "Certificate" on the
+      // university's confirmation that the Faculty does award at certificate
+      // level. This and the matching line in `whyStudy` are the only two edits
+      // made to any copy the faculties sent.
+      'The Faculty offers programmes from Certificate through Doctor of Philosophy (Ph.D.), preparing pastors, missionaries, theologians, educators, chaplains, counsellors, and Christian leaders for service in churches, educational institutions, humanitarian organisations, and public life.',
       'Students engage deeply with the Holy Scriptures, Christian doctrine, church history, biblical languages, pastoral ministry, missiology, ethics, contextual theology, African theology, and leadership while developing research skills appropriate for postgraduate study and lifelong ministry.',
       'Graduates become part of a growing international network of Christian leaders serving across Africa, Europe, North America, Asia, Latin America, and the Middle East.',
     ],
@@ -183,22 +187,31 @@ export const facultyList: Faculty[] = [
       'Global student community',
       'Strong emphasis on leadership development',
       'Integration of faith, scholarship, and ministry',
-      'Clear progression from Diploma to Ph.D.',
+      // "Diploma to Ph.D." in the supplied text — see the note on `about`.
+      'Clear progression from Certificate to Ph.D.',
     ],
+    // Every award the faculty offers, each with its own page. The university
+    // confirmed the certificate level, added Black Liberation Theology to the
+    // list, and confirmed that Divinity and Ministry are separate awards at
+    // every level rather than two names for one degree.
     awards: [
+      { title: 'Certificate of Theology', level: 'Certificate', slug: 'certificate-in-theology' },
+      { title: 'Certificate of Christian Education', level: 'Certificate', slug: 'certificate-in-christian-education' },
       { title: 'Diploma in Theology', level: 'Diploma', slug: 'diploma-in-theology' },
       { title: 'Diploma in Ministry', level: 'Diploma', slug: 'diploma-in-ministry' },
-      { title: 'Diploma in Christian Leadership', level: 'Diploma' },
+      { title: 'Diploma in Christian Leadership', level: 'Diploma', slug: 'diploma-in-christian-leadership' },
       { title: 'Bachelor of Theology (B.Th.)', level: 'Bachelor', slug: 'bachelor-of-theology' },
-      { title: 'Bachelor of Ministry (B.Min.)', level: 'Bachelor' },
+      { title: 'Bachelor of Divinity (B.D.)', level: 'Bachelor', slug: 'divinity' },
+      { title: 'Bachelor of Ministry (B.Min.)', level: 'Bachelor', slug: 'bachelor-of-ministry' },
+      { title: 'Bachelor of Christian Education', level: 'Bachelor', slug: 'bachelor-of-christian-education' },
       { title: 'Master of Theology (M.Th.)', level: 'Master', slug: 'master-of-theology' },
-      // The next three point at umbrella programme pages that name them
-      // explicitly: /programs/ministry covers the M.Div, and /programs/theology
-      // covers the Ph.D. and the D.Min. They are not separate pages yet.
-      { title: 'Master of Divinity (M.Div.)', level: 'Master', slug: 'ministry' },
-      { title: 'Master of Arts in Christian Leadership', level: 'Master' },
-      { title: 'Doctor of Ministry (D.Min.)', level: 'Doctorate', slug: 'theology' },
-      { title: 'Doctor of Philosophy (Ph.D.) in Theology', level: 'Doctorate', slug: 'theology' },
+      { title: 'Master of Divinity (M.Div.)', level: 'Master', slug: 'master-of-divinity' },
+      { title: 'Masters in Evangelism and Mission', level: 'Master', slug: 'masters-evangelism-mission' },
+      { title: 'Master of Arts in Christian Leadership', level: 'Master', slug: 'master-of-arts-christian-leadership' },
+      { title: 'Master of Arts in Black Liberation Theology', level: 'Master', slug: 'black-liberation-theology' },
+      { title: 'Doctor of Philosophy (Ph.D.) in Theology', level: 'Doctorate', slug: 'doctor-of-philosophy-theology' },
+      { title: 'Doctor of Theology (D.Th.)', level: 'Doctorate', slug: 'doctor-of-theology' },
+      { title: 'Doctor of Ministry (D.Min.)', level: 'Doctorate', slug: 'doctor-of-ministry' },
     ],
     researchStrengths: [
       'Biblical Theology',

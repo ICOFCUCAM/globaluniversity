@@ -564,18 +564,41 @@ export const faculties = {
 // Theology is listed in ascending order of award — certificate, diploma,
 // bachelor, master, doctorate — because it is the one faculty that teaches at
 // every level, and a prospective student needs to see the ladder, not a
-// shuffled list. The faculty's own description has always said "certificate
-// through to doctorate"; until now the bottom two rungs had no entry here.
+// shuffled list.
+//
+// ONE AWARD PER ENTRY. Two entries here were umbrellas: "Ministry" stood for
+// the M.Div and the Masters in Evangelism and Mission at once, and "Theology"
+// stood for the Ph.D., the D.Th. and the D.Min. That collapsed distinct awards
+// into a single card, so the faculty's own award list could not be shown
+// without the same degree appearing twice — once by name and once inside its
+// umbrella. The university confirmed the awards are separate; both umbrellas
+// are now split, and their old routes redirect (see next.config.mjs).
+//
+// Divinity and Ministry are deliberately NOT the same degree at any level.
+// Divinity is the theological route — languages, exegesis, systematic doctrine
+// — for ordained ministry and further scholarship. Ministry is the practical
+// route — preaching, pastoral care, administration, evangelism — for those
+// already serving. Every pair below keeps that distinction.
 export const programs: Program[] = [
   {
     slug: 'certificate-in-theology',
-    title: 'Certificate in Theology',
+    title: 'Certificate of Theology',
     level: 'Certificate',
     school: 'Faculty of Theology',
     image: '/images/students.jpg',
     summary:
-      'The first rung of theological study — foundational biblical knowledge for lay leaders, church workers and those beginning ministerial training. The faculty awards the Certificate of Theology alongside the Certificate of Christian Education, the Certificate of Arts and the Certificate of Science.',
-    outcomes: ['Bible survey', 'Christian doctrine', 'Church and ministry practice', 'Entry to the Diploma'],
+      'The first rung of theological study: a foundational survey of the Scriptures, of Christian belief and of the practice of ministry, for lay leaders, church workers and anyone beginning ministerial training. No prior theological study is assumed.',
+    outcomes: ['Old and New Testament survey', 'Foundations of Christian doctrine', 'Introduction to church history', 'Basic ministry practice'],
+  },
+  {
+    slug: 'certificate-in-christian-education',
+    title: 'Certificate of Christian Education',
+    level: 'Certificate',
+    school: 'Faculty of Theology',
+    image: '/images/wp/fac-education.png',
+    summary:
+      'Introductory training for those who teach within the local church — Sunday school teachers, youth workers, small-group leaders and church educators — combining biblical foundations with practical teaching method.',
+    outcomes: ['Teaching the Bible to all ages', 'Lesson planning and delivery', 'Discipleship and formation', 'Safeguarding and pastoral care of learners'],
   },
   {
     slug: 'diploma-in-theology',
@@ -588,27 +611,34 @@ export const programs: Program[] = [
     outcomes: ['Biblical interpretation', 'Church history', 'Practical ministry skills', 'Foundation for the B.Th.'],
   },
   {
-    // Diploma-level ministry provision. The university confirmed this award
-    // exists; the faculty has not yet supplied its course list or credit
-    // structure, so nothing beyond the shape of the award is stated here.
     slug: 'diploma-in-ministry',
     title: 'Diploma in Ministry',
     level: 'Diploma',
     school: 'Faculty of Theology',
     image: '/images/ceremonial.jpg',
     summary:
-      'Practical ministerial formation at diploma level for those already serving in local churches — preaching, pastoral care, church administration and evangelism — leading on to the Bachelor of Theology or to the Master of Divinity and Masters in Evangelism and Mission.',
+      'Practical ministerial formation at diploma level for those already serving in local churches — preaching, pastoral care, church administration and evangelism — leading on to the Bachelor of Ministry or the Bachelor of Theology.',
     outcomes: ['Preaching and teaching', 'Pastoral care', 'Church administration', 'Evangelism and mission'],
   },
   {
+    slug: 'diploma-in-christian-leadership',
+    title: 'Diploma in Christian Leadership',
+    level: 'Diploma',
+    school: 'Faculty of Theology',
+    image: '/images/grand-ceremony.jpg',
+    summary:
+      'Leadership formation for those carrying responsibility in churches, ministries and Christian organisations. Where the Diploma in Ministry forms the pastor, this diploma forms the leader — governance, stewardship, team building and the handling of conflict, grounded in a biblical understanding of servant leadership.',
+    outcomes: ['Servant leadership and character', 'Governance and accountability', 'Team building and delegation', 'Stewardship, conflict and change'],
+  },
+  {
     slug: 'divinity',
-    title: 'Divinity',
+    title: 'Bachelor of Divinity',
     level: 'Bachelor',
     school: 'Faculty of Theology',
     image: '/images/ceremonial.jpg',
     summary:
-      'A comprehensive grounding in biblical studies, doctrine and pastoral practice, preparing graduates for ordained ministry and Christian leadership.',
-    outcomes: ['Biblical interpretation', 'Systematic theology', 'Pastoral care', 'Homiletics'],
+      'The theological route to ordained ministry. Divinity is the more academically weighted of the two ministry bachelors: biblical languages, exegesis and systematic doctrine are studied in depth, and the degree is the natural preparation for the Master of Divinity and for further scholarship.',
+    outcomes: ['Biblical languages and exegesis', 'Systematic theology', 'Homiletics', 'Preparation for ordination'],
   },
   {
     slug: 'bachelor-of-theology',
@@ -621,14 +651,24 @@ export const programs: Program[] = [
     outcomes: ['Biblical interpretation', 'Christian doctrine', 'Church history', 'Pastoral ministry'],
   },
   {
-    slug: 'ministry',
-    title: 'Ministry',
-    level: 'Master',
+    slug: 'bachelor-of-ministry',
+    title: 'Bachelor of Ministry',
+    level: 'Bachelor',
     school: 'Faculty of Theology',
-    image: '/images/grand-ceremony.jpg',
+    image: '/images/wp/g-hall.jpg',
     summary:
-      'Advanced ministerial formation for serving leaders — Master of Divinity and Masters in Evangelism and Mission tracks covering leadership, missions, church administration and practical theology.',
-    outcomes: ['Ministry leadership', 'Missiology', 'Church administration', 'Ethics'],
+      'The practical route to ministry, and a distinct award from the Bachelor of Divinity. The B.Min. is built for those already serving: supervised placement runs throughout, and the emphasis falls on preaching, pastoral care, discipleship, church administration and mission rather than on the biblical languages.',
+    outcomes: ['Preaching and worship leading', 'Pastoral care and counselling', 'Church administration and finance', 'Supervised ministry placement'],
+  },
+  {
+    slug: 'bachelor-of-christian-education',
+    title: 'Bachelor of Christian Education',
+    level: 'Bachelor',
+    school: 'Faculty of Theology',
+    image: '/images/wp/fac-education.png',
+    summary:
+      'Teaching and discipleship within the local church, taken to degree level: curriculum design for every age group, the theology of formation, and supervised teaching practice in a church setting.',
+    outcomes: ['Christian curriculum design', 'Teaching across the age range', 'Theology of discipleship', 'Supervised teaching practice'],
   },
   {
     slug: 'master-of-theology',
@@ -641,8 +681,39 @@ export const programs: Program[] = [
     outcomes: ['Contextual theology', 'African Christian history', 'Research methodologies', 'Thesis'],
   },
   {
+    // Formerly the "Ministry" umbrella. /programs/ministry redirects here.
+    slug: 'master-of-divinity',
+    title: 'Master of Divinity',
+    level: 'Master',
+    school: 'Faculty of Theology',
+    image: '/images/grand-ceremony.jpg',
+    summary:
+      'The comprehensive professional degree for ordained ministry — preaching, pastoral care, liturgy, church administration and practical theology, built on the doctrinal and biblical foundation of the Bachelor of Divinity or the Bachelor of Theology.',
+    outcomes: ['Homiletics and worship', 'Pastoral theology and care', 'Church administration', 'Ministerial ethics'],
+  },
+  {
+    slug: 'masters-evangelism-mission',
+    title: 'Masters in Evangelism and Mission',
+    level: 'Master',
+    school: 'Faculty of Theology',
+    image: '/images/ceremonial.jpg',
+    summary:
+      'Missiology and the practice of evangelism for those sent to plant, to cross cultures and to reach communities that the church has not yet reached — with particular attention to mission within and from Africa.',
+    outcomes: ['Missiology and mission history', 'Cross-cultural communication', 'Church planting', 'Contemporary evangelism'],
+  },
+  {
+    slug: 'master-of-arts-christian-leadership',
+    title: 'Master of Arts in Christian Leadership',
+    level: 'Master',
+    school: 'Faculty of Theology',
+    image: '/images/graduation.jpg',
+    summary:
+      'Advanced leadership study for those directing churches, denominations, Christian organisations and NGOs. The degree treats leadership itself as the object of study — organisational strategy, change, governance and ethics — and concludes with a supervised leadership research project.',
+    outcomes: ['Organisational strategy and change', 'Governance and financial stewardship', 'Leadership ethics and supervision', 'Leadership research project'],
+  },
+  {
     slug: 'black-liberation-theology',
-    title: 'Black Liberation Theology',
+    title: 'Master of Arts in Black Liberation Theology',
     level: 'Master',
     school: 'Faculty of Theology',
     image: '/images/wp/fac-theology.jpg',
@@ -656,14 +727,35 @@ export const programs: Program[] = [
     ],
   },
   {
-    slug: 'theology',
-    title: 'Theology',
+    // Formerly the "Theology" umbrella. /programs/theology redirects here.
+    slug: 'doctor-of-philosophy-theology',
+    title: 'Doctor of Philosophy (Ph.D.) in Theology',
     level: 'Doctorate',
     school: 'Faculty of Theology',
     image: '/images/graduation.jpg',
     summary:
-      'Doctoral research in theology — Doctor of Philosophy, Doctor of Theology and Doctor of Ministry (Christian Counseling & Administration) — culminating in an original dissertation.',
-    outcomes: ['Research methods', 'Advanced doctrine', 'Original dissertation', 'Academic publishing'],
+      'The university’s research doctorate. Candidates produce an original contribution to theological scholarship under supervision, examined by the Dissertation Council and defended orally.',
+    outcomes: ['Advanced research methods', 'Original contribution to knowledge', 'Dissertation and oral defence', 'Academic publishing'],
+  },
+  {
+    slug: 'doctor-of-theology',
+    title: 'Doctor of Theology',
+    level: 'Doctorate',
+    school: 'Faculty of Theology',
+    image: '/images/wp/fac-theology.jpg',
+    summary:
+      'Advanced doctrinal scholarship for those who teach and lead within the church. The D.Th. is weighted toward systematic and biblical theology rather than toward research method for its own sake, and is examined by dissertation.',
+    outcomes: ['Advanced systematic theology', 'Biblical theology and exegesis', 'Theological teaching', 'Dissertation'],
+  },
+  {
+    slug: 'doctor-of-ministry',
+    title: 'Doctor of Ministry',
+    level: 'Doctorate',
+    school: 'Faculty of Theology',
+    image: '/images/grand-ceremony.jpg',
+    summary:
+      'The professional doctorate for practising ministers, in Christian Counseling and Administration. Study is grounded in the candidate’s own ministry context, and the final project addresses a problem in that context rather than a question in the literature alone.',
+    outcomes: ['Christian counselling', 'Church and organisational administration', 'Reflective ministry practice', 'Applied doctoral project'],
   },
   {
     slug: 'primary-education',

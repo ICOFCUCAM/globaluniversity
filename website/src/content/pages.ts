@@ -657,7 +657,7 @@ export const degreeLevels: DegreeLevel[] = [
     facultyPrograms: [
       {
         faculty: 'Faculty of Theology',
-        programs: ['Bachelor of Christian Education', 'Bachelor of Arts', 'Bachelor of Theology', 'Bachelor of Science'],
+        programs: ['Bachelor of Theology (B.Th.)', 'Bachelor of Divinity (B.D.)', 'Bachelor of Ministry (B.Min.)', 'Bachelor of Christian Education', 'Bachelor of Arts', 'Bachelor of Science'],
       },
       { faculty: 'Engineering and Technology', programs: TECH_PROGRAMS.map((p) => `Bachelor’s of ${p}`) },
       { faculty: 'Business Management Science and Administration', programs: BUSINESS_PROGRAMS.map((p) => `Bachelor’s in ${p}`) },
@@ -680,7 +680,16 @@ export const degreeLevels: DegreeLevel[] = [
       ],
     },
     facultyPrograms: [
-      { faculty: 'Faculty of Theology', programs: ['Master of Theology', 'Master of Divinity', 'Masters in Evangelism and Mission'] },
+      {
+        faculty: 'Faculty of Theology',
+        programs: [
+          'Master of Theology (M.Th.)',
+          'Master of Divinity (M.Div.)',
+          'Masters in Evangelism and Mission',
+          'Master of Arts in Christian Leadership',
+          'Master of Arts in Black Liberation Theology',
+        ],
+      },
       { faculty: 'Faculty of Engineering and Technology', programs: ['Contact admissions for current offerings'] },
       { faculty: 'Business Management Science and Administration', programs: ['Project Management', 'Business Management'] },
     ],
@@ -709,7 +718,14 @@ export const degreeLevels: DegreeLevel[] = [
       ],
     },
     facultyPrograms: [
-      { faculty: 'Faculty of Theology', programs: ['Doctor of Philosophy', 'Doctor of Theology', 'Doctor of Ministry (Christian Counseling & Administration)'] },
+      {
+        faculty: 'Faculty of Theology',
+        programs: [
+          'Doctor of Philosophy (Ph.D.) in Theology',
+          'Doctor of Theology (D.Th.)',
+          'Doctor of Ministry (D.Min.) — Christian Counseling & Administration',
+        ],
+      },
     ],
     requirements: [
       'You must have a graduate degree from an approved, regionally or nationally accredited college or university, or hold a comparable degree from a recognized foreign institution.',
@@ -768,7 +784,7 @@ export const degreeLevels: DegreeLevel[] = [
     // no content behind it, which is why the Diploma in Theology introduction
     // above had no awards to point at. The tab is now filled.
     facultyPrograms: [
-      { faculty: 'Faculty of Theology', programs: ['Diploma in Theology', 'Diploma in Ministry'] },
+      { faculty: 'Faculty of Theology', programs: ['Diploma in Theology', 'Diploma in Ministry', 'Diploma in Christian Leadership'] },
       { faculty: 'Engineering and Technology', programs: TECH_PROGRAMS },
       { faculty: 'Business Management Science and Administration', programs: BUSINESS_PROGRAMS },
     ],

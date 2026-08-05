@@ -80,6 +80,38 @@ A prospective student reading a department list or a centre list has no way to
 tell a proposal from an existing structure. Confirm either and it goes on the
 page the same day.
 
+## 3a. Content drafted for this site, awaiting faculty sign-off
+
+The university asked for the missing awards to be separated out and written up.
+The following programme summaries and learning outcomes were **drafted here**,
+not supplied by the faculty, and should be reviewed before the site goes live:
+
+| Award | Page |
+|---|---|
+| Certificate of Christian Education | `/programs/certificate-in-christian-education` |
+| Diploma in Christian Leadership | `/programs/diploma-in-christian-leadership` |
+| Bachelor of Divinity | `/programs/divinity` (rewritten) |
+| Bachelor of Ministry | `/programs/bachelor-of-ministry` |
+| Bachelor of Christian Education | `/programs/bachelor-of-christian-education` |
+| Master of Divinity | `/programs/master-of-divinity` |
+| Masters in Evangelism and Mission | `/programs/masters-evangelism-mission` |
+| Master of Arts in Christian Leadership | `/programs/master-of-arts-christian-leadership` |
+| Doctor of Philosophy in Theology | `/programs/doctor-of-philosophy-theology` |
+| Doctor of Theology | `/programs/doctor-of-theology` |
+| Doctor of Ministry | `/programs/doctor-of-ministry` |
+
+Each carries a one-paragraph summary and four learning outcomes — the shape of
+the award, not a curriculum. **No course lists, credit values or durations have
+been invented.** Those must come from the faculty.
+
+**Divinity and Ministry are held apart deliberately**, on the university's
+instruction that they are separate awards. Throughout, Divinity is the
+theological route — biblical languages, exegesis, systematic doctrine, leading
+toward ordination and scholarship — and Ministry is the practical route —
+preaching, pastoral care, administration, mission, with supervised placement,
+for those already serving. Each page states the distinction explicitly so the
+two cannot be read as the same degree renamed.
+
 ## 4. The ladder, and the discrepancies it exposed
 
 Section 9 shows one numbered rung per level the faculty awards at. Each rung is
@@ -93,32 +125,48 @@ Awards the faculty declares but which have no programme record yet render as
 dashed chips reading **"Details to follow"** rather than as dead links, and the
 page states how many there are.
 
-Putting the two lists side by side surfaced five things that need a decision:
+Putting the two lists side by side surfaced five discrepancies. The university
+has now resolved all five:
 
-1. **"Diploma through Ph.D." vs the Certificate rung.** The supplied About text
-   says the Faculty "offers programmes from Diploma through Doctor of
-   Philosophy (Ph.D.)". But the recovered content lists a Certificate of
-   Theology, `CERT-TH` is in the course catalogue, and the faculty's older
-   description read "certificate through to doctorate". The ladder therefore
-   opens with a Certificate rung that the About paragraph appears to deny.
-   **Which is right — does the Faculty award at certificate level or not?**
-2. **Black Liberation Theology is missing from the declared award list.** It is
-   in the catalogue, it has its own page, and it is described elsewhere as
-   pioneered at ICOF. The ladder still shows it. Should it be added to the
-   Faculty's official award list, or has it moved?
-3. **Divinity vs Bachelor of Ministry.** The catalogue has a bachelor's in
-   "Divinity"; the declared list has a "Bachelor of Ministry (B.Min.)". These
-   may be the same award under two names, or two awards. They are shown
-   separately because merging them would be a guess.
-4. **Doctor of Theology (D.Th.)** is in the course catalogue and named on the
-   doctoral degree page, but not in the declared list, which names only the
-   D.Min. and the Ph.D.
-5. **Three awards have no curriculum:** Diploma in Christian Leadership,
-   Bachelor of Ministry, Master of Arts in Christian Leadership. Plus Diploma
-   in Ministry, confirmed earlier but still without a course list.
+1. **Certificate level — confirmed.** The Faculty does award at certificate
+   level. The supplied About text read "from Diploma through Doctor of
+   Philosophy"; "Diploma" was corrected to "Certificate" there and in the
+   matching `whyStudy` line. Those are the **only two edits made to any copy
+   the faculties sent.**
+2. **Black Liberation Theology — added** to the declared award list as the
+   Master of Arts in Black Liberation Theology.
+3. **Divinity and Ministry are separate awards** at every level, not two names
+   for one degree. See §3a for how the distinction is drawn.
+4. **Doctor of Theology — added** to the declared list alongside the Ph.D. and
+   the D.Min.
+5. **All eleven previously undescribed awards now have pages.** Nothing renders
+   as "Details to follow" any more. The chip state remains in the component for
+   the next award declared before it is written up.
+
+Both umbrella entries were split as a consequence. "Ministry" had stood for the
+M.Div and the Masters in Evangelism and Mission at once, and "Theology" for the
+Ph.D., the D.Th. and the D.Min. `/programs/ministry` and `/programs/theology`
+were live routes and are in the sitemap, so both redirect permanently (301) to
+the award each was named for — see `next.config.mjs`.
+
+The Faculty of Theology now holds **sixteen programmes across five levels**, up
+from six across three.
 
 ## 5. Still outstanding
 
+- **Certificate of Arts, Certificate of Science, Bachelor of Arts, Bachelor of
+  Science.** These four appear in the recovered content and are still listed on
+  `/degrees/certificates` and `/degrees/bachelors-degrees`, but they are *not*
+  in the Faculty of Theology's award list and have no programme page. Unlike
+  the eleven awards written up in §3a, there was nothing to write from: an
+  "Arts" or "Science" award inside a theology faculty could mean almost
+  anything, and guessing a whole field is different in kind from describing the
+  shape of a named degree. **Tell me what each covers and I will write them.**
+  Until then the faculty ladder shows two certificate awards while the
+  certificates page lists four — a visible mismatch, left visible on purpose.
+- **Course lists for the eleven new awards.** Every page states the shape of
+  its award and four learning outcomes. None states a course list, credit
+  value or duration, because none was supplied.
 - **Prospectus PDF.** The proposed hero included a "Download Prospectus"
   button. No prospectus file exists, so no button was added — a download that
   404s is worse than no download. Supply the PDF and the button appears.

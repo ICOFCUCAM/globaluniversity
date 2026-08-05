@@ -18,7 +18,18 @@ const LEVELS = [
 ];
 
 const FIELDS: Record<string, string[]> = {
-  Theology: ['Divinity', 'Ministry', 'Theology'],
+  // Fields of study, not award titles — the level is chosen separately above.
+  // Theology now teaches seven distinct fields, so an applicant is no longer
+  // forced to pick "Ministry" when they mean Christian Leadership or Mission.
+  Theology: [
+    'Theology',
+    'Divinity',
+    'Ministry',
+    'Christian Leadership',
+    'Christian Education',
+    'Evangelism and Mission',
+    'Black Liberation Theology',
+  ],
   Education: ['Primary Education', 'Special Education'],
   Engineering: ['Software Engineering', 'Networking'],
   Business: ['Business Management', 'Project Management'],
