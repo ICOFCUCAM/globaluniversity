@@ -164,6 +164,50 @@ Neither is a fault in the project. They mean the migration in §5 has to be run
 by someone with access — through the Supabase SQL editor is simplest — and the
 first real test has to happen from a machine that can reach it.
 
+## 5b. Verify row-level security BEFORE a real intake
+
+The publishable key `sb_publishable_…` is committed in `src/lib/supabase.ts`
+and is sent as the `apikey` header by every visitor's browser. That is what a
+publishable key is for, and it is normal — but it means **row-level security is
+the only thing standing between the public and the `students` table**, and that
+table holds the entire application text in its `address` column: date of birth,
+identity numbers, next of kin, medical disclosure, references.
+
+This has never been checked, on this project or the previous one, because
+nothing here can reach the host.
+
+**The check.** From any machine with network access — a terminal, or the
+browser console on the deployed site:
+
+```bash
+curl -s "https://bhpsftesricwotkziokd.supabase.co/rest/v1/students?select=id,email&limit=1" \
+  -H "apikey: sb_publishable_lQm8dFmj8PnQinSZooQbVg_WAfKJcGS"
+```
+
+- Returns `[]` or a permission error → RLS is on and denying anonymous reads. Good.
+- Returns rows → **every applicant's record is public right now.** Stop and fix
+  it before anyone applies.
+
+**The fix, if it returns rows.** In the Supabase SQL editor:
+
+```sql
+alter table students enable row level security;
+
+-- Staff read through the service role, which bypasses RLS by design, so no
+-- policy is needed for the two desks. Applicants get exactly their own row.
+create policy students_own_row on students
+  for select using (auth.uid() = auth_user_id);
+```
+
+That policy needs an `auth_user_id` column linking a student row to its auth
+account — part of the applicant-accounts work still outstanding. Until that
+exists, the safest position is RLS enabled with **no** select policy: the desks
+keep working through the service role and nothing is publicly readable.
+
+Run the same check against `documents`, and against any other table added
+later. A table created without RLS is readable by default, and that default is
+the single most common way a Supabase project leaks.
+
 ## 6. Environment variables
 
 | Variable | Needed for | If absent |
