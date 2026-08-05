@@ -18,12 +18,20 @@ export default function KineticText({
   children,
   as: Tag = 'h2',
   className = '',
+  wordClassName = '',
   delay = 0,
   stagger = 55,
 }: {
   children: string;
   as?: ElementType;
   className?: string;
+  /**
+   * Applied to each word. Required for effects that paint the glyphs
+   * themselves — background-clip:text on the parent produces transparent
+   * text here, because the words live in child inline-blocks that are
+   * outside the parent's own background box.
+   */
+  wordClassName?: string;
   delay?: number;
   stagger?: number;
 }) {
@@ -65,7 +73,7 @@ export default function KineticText({
         <span key={`${word}-${i}`} className="inline-block overflow-hidden align-bottom">
           <span
             data-kw=""
-            className="inline-block will-change-transform"
+            className={`inline-block will-change-transform ${wordClassName}`}
             style={{
               transform: 'translateY(110%)',
               transition: 'transform 0.62s cubic-bezier(0.22, 1, 0.36, 1)',

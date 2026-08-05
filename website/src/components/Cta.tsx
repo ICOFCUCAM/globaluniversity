@@ -10,9 +10,12 @@ export default async function Cta() {
   return (
     <section className="relative overflow-hidden py-20 text-center text-white sm:py-24">
       <Image src="/images/wp/footer-building.jpg" alt="" fill loading="lazy" quality={60} className="object-cover" sizes="100vw" />
-      <div className="absolute inset-0 bg-gradient-to-b from-brand-purple/88 to-brand-purple-dark/96" />
-      <Aurora tone="dual" intensity={0.9} />
+      {/* Order matters: atmosphere sits ON the photograph, then a scrim goes
+          over the atmosphere. Putting the aurora last washed the whole band
+          out — its purple field is lighter than the ground it was tinting. */}
+      <Aurora tone="purple" intensity={0.35} fields={2} />
       <LightShaft />
+      <div className="absolute inset-0 bg-gradient-to-b from-brand-purple-dark/80 via-brand-purple/70 to-brand-purple-dark/92" />
       <Grain />
       <Seam />
       <div className="relative mx-auto max-w-3xl px-4">
@@ -21,7 +24,8 @@ export default async function Cta() {
         </p>
         <KineticText
           as="h2"
-          className="font-heading text-display-lg font-bold text-transparent [text-wrap:balance] [background-image:linear-gradient(175deg,#ffffff_40%,#f7e6b4_80%,#e9c14a_100%)] [background-clip:text] [-webkit-background-clip:text]"
+          className="font-heading text-display-lg font-bold [text-wrap:balance]"
+          wordClassName="text-transparent [background-image:linear-gradient(175deg,#ffffff_40%,#f7e6b4_82%,#e9c14a_100%)] [background-clip:text] [-webkit-background-clip:text]"
         >
           {cta.title}
         </KineticText>

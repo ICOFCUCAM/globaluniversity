@@ -17,8 +17,9 @@ export default function Footer() {
         className="object-cover"
         sizes="100vw"
       />
-      <div className="absolute inset-0 bg-brand-purple-dark/88" />
-      <Aurora tone="purple" intensity={0.7} fields={2} />
+      {/* Same ordering rule as the CTA band: atmosphere first, scrim over it. */}
+      <Aurora tone="purple" intensity={0.3} fields={2} />
+      <div className="absolute inset-0 bg-brand-purple-dark/90" />
       <Grain opacity={0.05} />
       <Seam />
 
