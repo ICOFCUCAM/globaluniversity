@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, GraduationCap, BookOpen, ClipboardList,
   FileText, Award, Monitor, PenTool, FolderOpen, BarChart3,
   Settings, Shield, LogOut, ChevronLeft, ChevronRight
-} from 'lucide-react';
+, BookMarked } from 'lucide-react';
 
 interface MenuItem {
   id: ViewType;
@@ -17,6 +17,7 @@ interface MenuItem {
 
 const menuItems: MenuItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} />, roles: ['admin', 'student', 'lecturer'] },
+  { id: 'programme-resources', label: 'Programme Resources', icon: <BookMarked size={20} />, roles: ['admin', 'student', 'lecturer'] },
   { id: 'students', label: 'Students', icon: <Users size={20} />, roles: ['admin'] },
   { id: 'lecturers', label: 'Lecturers', icon: <GraduationCap size={20} />, roles: ['admin'] },
   { id: 'courses', label: 'Courses', icon: <BookOpen size={20} />, roles: ['admin', 'student', 'lecturer'] },

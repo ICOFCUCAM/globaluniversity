@@ -17,6 +17,7 @@ const pages: SearchEntry[] = [
   { title: 'About Us', href: '/about', section: 'University', text: 'History, mission and values, accreditation, International Circle of Faith, purpose.' },
   { title: 'Governance & Accreditation', href: '/governance', section: 'University', text: 'Leadership, Chancellor, Vice Chancellor, Registrar, Dissertation Council, quality assurance, Ministry of Higher Education.' },
   { title: 'Schools & Faculties', href: '/faculty', section: 'Academics', text: 'Faculty of Theology Buea, School of Theology Douala, Education, Engineering and Technology, GIBMAS, administration, lecturers.' },
+  { title: 'Black Liberation Theology', href: '/black-liberation-theology', section: 'Academics', text: 'Black Liberation Theology master degree, human liberation, Africa, slavery, colonialism, racism, apartheid, neo-colonialism, biblical narrative, African civilizations, salvific and epistemological liberation, Yahuah, justice, reconciliation, archaeology, anthropology, social justice.' },
   { title: 'Research & Innovation', href: '/research', section: 'Academics', text: 'Dissertation Council, doctoral research, PPDI-RC, theology, liberation theology, criminology, counseling.' },
   { title: 'Course Catalogue', href: '/courses', section: 'Academics', text: 'Search all courses by faculty, level and online availability.' },
   { title: 'Degrees & Programs', href: '/programs', section: 'Academics', text: 'Certificates, diplomas, HND, bachelor, master and doctoral programs across all faculties.' },

@@ -125,6 +125,7 @@ export const site = {
           heading: 'Faculty & Research',
           items: [
             { label: 'Schools & Faculties', href: '/faculty' },
+            { label: 'Black Liberation Theology', href: '/black-liberation-theology' },
             { label: 'Research & Innovation', href: '/research' },
             { label: 'PPDI-RC', href: '/ppdirc' },
             { label: 'PPDI-RC Application', href: '/ppdi-rc-application' },
@@ -588,6 +589,21 @@ export const programs: Program[] = [
     summary:
       'Doctoral research in theology — Doctor of Philosophy, Doctor of Theology and Doctor of Ministry (Christian Counseling & Administration) — culminating in an original dissertation.',
     outcomes: ['Research methods', 'Advanced doctrine', 'Original dissertation', 'Academic publishing'],
+  },
+  {
+    slug: 'black-liberation-theology',
+    title: 'Black Liberation Theology',
+    level: 'Master',
+    school: 'Faculty of Theology',
+    image: '/images/wp/fac-theology.jpg',
+    summary:
+      'A theology for the liberation of all humanity. Pioneered at ICOF Global University as an academic discipline, integrating biblical revelation, history, archaeology, anthropology, culture and social justice.',
+    outcomes: [
+      'Biblical interpretation in African context',
+      'Historical and archaeological method',
+      'Theology, justice and reconciliation',
+      'Original research and dissertation',
+    ],
   },
   {
     slug: 'primary-education',

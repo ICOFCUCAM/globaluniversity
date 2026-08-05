@@ -6,6 +6,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const staticRoutes = [
     '',
     '/welcome',
+    '/black-liberation-theology',
     '/about',
     '/programs',
     '/admissions',

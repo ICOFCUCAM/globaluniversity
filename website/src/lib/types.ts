@@ -170,6 +170,7 @@ export interface TranscriptCourse {
 }
 
 export type ViewType = 
+  | 'programme-resources'
   | 'dashboard' 
   | 'students' 
   | 'lecturers' 

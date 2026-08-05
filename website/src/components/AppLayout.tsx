@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ProgrammeResources from './programme/ProgrammeResources';
 import { useAuth } from '@/contexts/AuthContext';
 import type { ViewType } from '@/lib/types';
 import LoginScreen from './LoginScreen';
@@ -40,6 +41,8 @@ export default function AppLayout() {
 
   function renderView() {
     switch (currentView) {
+      case 'programme-resources':
+        return <ProgrammeResources />;
       case 'dashboard':
         if (user?.role === 'admin') return <AdminDashboard />;
         if (user?.role === 'student') return <StudentDashboard onNavigate={setCurrentView} />;
