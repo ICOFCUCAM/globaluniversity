@@ -12,6 +12,7 @@ import StudentManagement from './students/StudentManagement';
 import AdmissionsDesk from './admissions/AdmissionsDesk';
 import { isEnrolledRole } from '@/lib/roles';
 import { labelForView } from '@/lib/portalNav';
+import { UNIVERSITY } from '@/lib/constants';
 import LecturerManagement from './lecturers/LecturerManagement';
 import CourseManagement from './courses/CourseManagement';
 import ResultProcessing from './results/ResultProcessing';
@@ -52,6 +53,15 @@ export default function AppLayout() {
     setCurrentView(v);
     setMobileNavOpen(false);
   }, []);
+
+  // The browser tab, the history entry and the bookmark all read from
+  // document.title. It said "Student Portal" on all twenty-five screens, so a
+  // registrar with the admissions desk and the student register open in two
+  // tabs had two identical tabs and had to click to tell them apart.
+  useEffect(() => {
+    const label = labelForView(currentView);
+    document.title = `${label} · ${UNIVERSITY.shortName} Portal`;
+  }, [currentView]);
 
   // Escape closes it, and the body stops scrolling underneath while it is open
   // — without that, a swipe on the drawer scrolls the page behind it.
