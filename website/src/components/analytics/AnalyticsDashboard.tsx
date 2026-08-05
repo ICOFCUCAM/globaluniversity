@@ -59,7 +59,7 @@ export default function AnalyticsDashboard() {
           const k = (get(r) ?? '').toString().trim() || 'Not recorded';
           m.set(k, (m.get(k) ?? 0) + 1);
         }
-        return [...m.entries()]
+        return Array.from(m.entries())
           .map(([key, count]) => ({ key, count }))
           .sort((a, b) => b.count - a.count);
       };
