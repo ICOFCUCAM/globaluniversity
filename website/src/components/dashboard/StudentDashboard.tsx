@@ -1,3 +1,4 @@
+import { SampleDataNotice } from '@/components/ui/portal';
 import React from 'react';
 import MyWeek from './MyWeek';
 import { useAuth } from '@/contexts/AuthContext';
@@ -30,6 +31,7 @@ export default function StudentDashboard({ onNavigate }: StudentDashboardProps) 
 
   return (
     <div className="space-y-6">
+      <SampleDataNotice what="a sample student record" />
       {/* Welcome */}
       <div className="bg-gradient-to-r from-[#422e59] to-[#3949ab] rounded-2xl p-6 text-white relative overflow-hidden">
         <div className="relative z-10">

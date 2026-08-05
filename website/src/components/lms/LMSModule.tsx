@@ -1,3 +1,4 @@
+import { SampleDataNotice } from '@/components/ui/portal';
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { lmsMaterials } from '@/lib/sampleData';
@@ -75,6 +76,7 @@ export default function LMSModule() {
 
   return (
     <div className="space-y-6">
+      <SampleDataNotice what="sample course material" />
       <div className="flex items-center justify-between">
         <div>
           <h2 className="font-heading text-xl font-bold text-[#422e59] dark:text-[#e4dcf0]">Learning Management System</h2>

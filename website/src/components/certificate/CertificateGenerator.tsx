@@ -1,3 +1,4 @@
+import { SampleDataNotice } from '@/components/ui/portal';
 import React, { useRef, useState } from 'react';
 import { sampleTranscriptData } from '@/lib/sampleData';
 import { getClassification } from '@/lib/grading';
@@ -39,6 +40,7 @@ export default function CertificateGenerator() {
 
   return (
     <div className="space-y-6">
+      <SampleDataNotice what="a specimen certificate" />
       <div className="flex items-center justify-between">
         <div>
           <h2 className="font-heading text-xl font-bold text-[#422e59] dark:text-[#e4dcf0]">Certificate Generator</h2>

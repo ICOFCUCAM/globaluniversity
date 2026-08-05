@@ -1,3 +1,4 @@
+import { SampleDataNotice } from '@/components/ui/portal';
 import React, { useRef, useState } from 'react';
 import TranscriptQR from './TranscriptQR';
 import { sampleTranscriptData } from '@/lib/sampleData';
@@ -40,6 +41,7 @@ export default function TranscriptGenerator() {
 
   return (
     <div className="space-y-6">
+      <SampleDataNotice what="a specimen transcript" />
       <div className="flex items-center justify-between">
         <div>
           <h2 className="font-heading text-xl font-bold text-[#422e59] dark:text-[#e4dcf0]">Transcript Generator</h2>

@@ -1,3 +1,4 @@
+import { SampleDataNotice } from '@/components/ui/portal';
 import React, { useState, useEffect, useCallback } from 'react';
 import { examData } from '@/lib/sampleData';
 import {
@@ -204,6 +205,7 @@ export default function ExamModule() {
 
   return (
     <div className="space-y-6">
+      <SampleDataNotice what="sample examinations" />
       <div>
         <h2 className="font-heading text-xl font-bold text-[#422e59] dark:text-[#e4dcf0]">Examination System</h2>
         <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">Computer-Based Testing (CBT) with proctoring</p>
