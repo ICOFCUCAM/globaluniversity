@@ -352,8 +352,13 @@ export default function ApplyForm() {
 
   const progress = Math.round((step / (STEPS.length - 1)) * 100);
 
+  // scroll-mt-32 clears the sticky masthead. Without it scrollIntoView puts the
+  // anchor at y=0 — underneath a header 112px tall — so every "Continue" landed
+  // the applicant on a step whose progress bar and step numbers were hidden
+  // behind the navigation. Which step you have reached is the one thing a
+  // six-step form must always show.
   return (
-    <div id="apply-form-top">
+    <div id="apply-form-top" className="scroll-mt-32">
       {/* Progress */}
       <div className="mb-6">
         <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-brand-muted">
@@ -374,10 +379,14 @@ export default function ApplyForm() {
         </p>
       </div>
 
-      {/* Step indicator */}
-      <ol className="mb-10 flex flex-wrap items-center justify-center gap-2">
+      {/* Step indicator. A real ordered list with the current step marked, so
+          a screen reader announces "step 4 of 6" rather than six loose spans. */}
+      <ol
+        aria-label={`Step ${step + 1} of ${STEPS.length}: ${STEPS[step]}`}
+        className="mb-10 flex flex-wrap items-center justify-center gap-2"
+      >
         {STEPS.map((s, i) => (
-          <li key={s} className="flex items-center gap-2">
+          <li key={s} aria-current={i === step ? 'step' : undefined} className="flex items-center gap-2">
             <span
               className={`flex h-8 w-8 items-center justify-center rounded-full font-heading text-sm font-bold ${
                 i < step
@@ -387,7 +396,10 @@ export default function ApplyForm() {
                     : 'bg-brand-sand text-brand-muted'
               }`}
             >
-              {i < step ? '✓' : i + 1}
+              <span aria-hidden="true">{i < step ? '✓' : i + 1}</span>
+              <span className="sr-only">
+                {i < step ? 'completed' : i === step ? 'current step' : 'not started'}
+              </span>
             </span>
             <span className={`text-xs font-semibold uppercase tracking-wide ${i === step ? 'text-brand-purple' : 'text-brand-muted'}`}>
               {s}
