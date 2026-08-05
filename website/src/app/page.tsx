@@ -8,6 +8,7 @@ import { getHomePage, getPrograms } from '@/lib/data';
 import { partners } from '@/content/site';
 import { chancellor, welcomeExcerpt } from '@/content/welcome';
 import { quickIconMap } from '@/components/Icons';
+import CountUp from '@/components/CountUp';
 
 const PILLARS = [
   {
@@ -372,16 +373,34 @@ export default async function HomePage() {
       </Section>
 
       {/* Success in numbers */}
-      <section className="relative bg-brand-purple py-16 text-white">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <p className="mb-10 text-center font-sans text-xs font-semibold uppercase tracking-[0.25em] text-brand-gold">
+      <section className="relative overflow-hidden bg-brand-purple py-20 text-white">
+        {/* Faint engraved rule pattern — texture without another photograph. */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 opacity-[0.07]"
+          style={{
+            backgroundImage:
+              'repeating-linear-gradient(115deg, #f7dc79 0 1px, transparent 1px 22px)',
+          }}
+        />
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
+          <p className="mb-12 text-center font-sans text-xs font-semibold uppercase tracking-[0.25em] text-brand-gold">
             Student Success
           </p>
-          <div className="grid grid-cols-2 gap-8 text-center md:grid-cols-4">
-            {stats.map((s) => (
-              <div key={s.label}>
-                <p className="font-heading text-5xl font-bold text-brand-gold">{s.value}</p>
-                <p className="mt-2 text-sm font-medium text-white/85">{s.label}</p>
+          <div className="grid grid-cols-2 gap-y-12 text-center md:grid-cols-4">
+            {stats.map((s, i) => (
+              <div
+                key={s.label}
+                className={`px-4 ${i > 0 ? 'md:border-l md:border-white/12' : ''} ${
+                  i === 2 ? 'border-l-0' : ''
+                }`}
+              >
+                <p className="font-heading text-display-lg font-bold text-brand-gold">
+                  <CountUp value={s.value} />
+                </p>
+                <p className="mt-3 font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-white/70">
+                  {s.label}
+                </p>
               </div>
             ))}
           </div>
