@@ -217,7 +217,7 @@ export async function POST(request: Request) {
   const intakeYear = Number(student.admission_year) || new Date().getFullYear();
   const studentNumber = await nextStudentNumber(admin, intakeYear);
 
-  const { error: authErr } = await admin.auth.admin.createUser({
+  const { data: created, error: authErr } = await admin.auth.admin.createUser({
     email: student.email,
     password,
     email_confirm: true,
@@ -237,6 +237,32 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
+  const authUserId = created?.user?.id;
+  if (!authUserId) {
+    return NextResponse.json(
+      { ok: false, error: 'account-created-without-id' },
+      { status: 500 },
+    );
+  }
+
+  // The portal reads the signed-in user's role from `profiles`, not from the
+  // auth record — AuthContext refuses the session outright if no row is found.
+  // The migration installs a trigger that writes this row on every new auth
+  // user, so this is normally a no-op; it is written here as well because an
+  // account the student cannot sign in to is not an account, and this route
+  // should not depend on a trigger having been installed to keep its promise.
+  const { error: profErr } = await admin
+    .from('profiles')
+    .upsert(
+      { id: authUserId, email: student.email, full_name: fullName, role: 'student' },
+      { onConflict: 'id' },
+    );
+  if (profErr) {
+    return NextResponse.json(
+      { ok: false, error: `account-created-but-profile-not-created: ${profErr.message}` },
+      { status: 500 },
+    );
+  }
 
   // Only now mark it approved. If the account creation above failed we did not
   // reach here, so an approved record always has an account behind it.
@@ -249,6 +275,11 @@ export async function POST(request: Request) {
       status: isConditional ? 'conditional' : 'approved',
       admission_conditions: isConditional ? JSON.stringify(conditions) : null,
       student_number: studentNumber,
+      // Ties the record to the account just created. Without it the
+      // `students_own_row` policy matches nothing and the student signs in to
+      // an empty portal — no programme, no results, no transcript — because
+      // RLS cannot tell that the row in front of it is theirs.
+      auth_user_id: authUserId,
       decided_by: byUserId ?? null,
       decided_at: new Date().toISOString(),
       account_created_at: new Date().toISOString(),

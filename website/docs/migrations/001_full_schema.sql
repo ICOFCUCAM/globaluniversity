@@ -226,6 +226,71 @@ create trigger results_updated_at before update on results
 
 
 -- ---------------------------------------------------------------------------
+-- 5b. Give every new account a profile
+--
+-- The portal reads the signed-in user's role from `profiles`, not from the auth
+-- record: src/contexts/AuthContext.tsx signs in, looks up the row, and if there
+-- is none it rejects the session with "Profile not found. Please contact
+-- administrator." Creating a user in the Supabase dashboard therefore produces
+-- an account that authenticates and still cannot get in.
+--
+-- That is how staff accounts are made — there is no sign-up form, by design, so
+-- the Registrar, Finance and admin accounts are all created by hand in the
+-- dashboard. Without this trigger every one of them would be dead on arrival.
+--
+-- `security definer` is required: the insert into auth.users runs as
+-- supabase_auth_admin, which has no rights on public.profiles. The function
+-- therefore runs as its owner instead, and search_path is pinned so it cannot
+-- be redirected to a shadowed table.
+--
+-- The role comes from user_metadata when the caller set one — the approve route
+-- stamps role='student' there — and falls back to 'student', the least
+-- privileged role, when it did not. Promote a staff account afterwards:
+--
+--   update profiles set role = 'admin' where email = 'registrar@iguc.net';
+--
+-- Valid roles are the sixteen in src/lib/types.ts: admin, chancellor,
+-- vice-chancellor, registrar, finance-director, dean, hod,
+-- programme-coordinator, lecturer, finance, admissions-officer, library-staff,
+-- student-affairs, student, applicant, academic-office.
+-- ---------------------------------------------------------------------------
+
+create or replace function handle_new_user() returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.profiles (id, email, full_name, role)
+  values (
+    new.id,
+    new.email,
+    coalesce(new.raw_user_meta_data->>'full_name', new.email),
+    coalesce(new.raw_user_meta_data->>'role', 'student')
+  )
+  on conflict (id) do nothing;
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function handle_new_user();
+
+-- Backfill: any account created before this trigger existed has no profile and
+-- cannot sign in. This gives each one the same row the trigger would have.
+insert into profiles (id, email, full_name, role)
+select
+  u.id,
+  u.email,
+  coalesce(u.raw_user_meta_data->>'full_name', u.email),
+  coalesce(u.raw_user_meta_data->>'role', 'student')
+from auth.users u
+where not exists (select 1 from profiles p where p.id = u.id);
+
+
+-- ---------------------------------------------------------------------------
 -- 6. ROW-LEVEL SECURITY — THE IMPORTANT PART
 --
 -- The publishable key is in the site's JavaScript and is sent by every
@@ -330,6 +395,33 @@ where table_name = 'students'
     'faculty','intake','auth_user_id'
   )
 order by column_name;
+
+-- Every auth account must have a profile or it cannot sign in. Expect 0 rows.
+select u.email, u.created_at
+from auth.users u
+where not exists (select 1 from profiles p where p.id = u.id);
+
+
+-- ===========================================================================
+-- CREATING THE FIRST STAFF ACCOUNT
+--
+-- There is no sign-up form. Students are created by the Registrar's approve
+-- route; everyone else is created here, in two steps:
+--
+--   1. Dashboard → Authentication → Users → Add user. Tick "Auto Confirm
+--      User", or the account cannot sign in until someone clicks an email.
+--   2. Promote it — the trigger in section 5b defaults every new account to
+--      'student':
+--
+--        update profiles
+--        set role = 'admin', full_name = 'Full Name'
+--        where email = 'registrar@iguc.net';
+--
+-- 'admin' sees the whole system. 'registrar' and 'finance' are the two
+-- admissions desks and deliberately cannot do each other's job — Finance
+-- cannot admit, the Registrar cannot edit payments (src/lib/roles.ts).
+-- ===========================================================================
+
 
 -- ===========================================================================
 -- AFTER RUNNING THIS, do the outside check. From a terminal — not the SQL
