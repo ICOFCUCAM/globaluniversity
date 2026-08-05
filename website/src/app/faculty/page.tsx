@@ -8,7 +8,9 @@ import Reveal from '@/components/Reveal';
 import CountUp from '@/components/CountUp';
 import { SpotlightGroup, SpotlightCard } from '@/components/Spotlight';
 import { Aurora, Grain, Seam } from '@/components/Atmosphere';
-import { IconCampus } from '@/components/Icons';
+import { facultyList } from '@/content/faculties';
+import { programs } from '@/content/site';
+import { courses } from '@/content/courses';
 
 export const metadata = { title: 'Schools & Faculties — ICOF Global University' };
 
@@ -83,20 +85,64 @@ export default async function FacultyPage() {
       <Section className="bg-white">
         <SectionHeading>{faculties.heading}</SectionHeading>
         <p className="mx-auto mb-10 max-w-3xl text-center text-brand-muted">{faculties.intro}</p>
-        <SpotlightGroup className="mx-auto grid max-w-4xl gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {faculties.items.map((f, i) => (
-            <Reveal key={f} delay={i * 70}>
-              <SpotlightCard
-                className="flex h-full items-center gap-4 rounded-xl border border-brand-sand bg-brand-cream p-5 transition duration-500 hover:shadow-lift"
-                tone="light"
-              >
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white text-brand-purple ring-1 ring-brand-sand">
-                  <IconCampus className="h-5 w-5" />
-                </span>
-                <span className="font-heading text-sm font-semibold leading-snug text-brand-purple">{f}</span>
-              </SpotlightCard>
-            </Reveal>
-          ))}
+        {/* Real tiles, with counts derived from the programme and course data
+            rather than typed by hand. */}
+        <SpotlightGroup className="mx-auto grid max-w-6xl gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {facultyList.map((f, i) => {
+            const nProg = f.programSchool ? programs.filter((p) => p.school === f.programSchool).length : 0;
+            const nCourse = f.courseFaculty ? courses.filter((c) => c.faculty === f.courseFaculty).length : 0;
+            return (
+              <Reveal key={f.slug} delay={i * 90} className={i % 2 === 1 ? 'lg:mt-8' : ''}>
+                <SpotlightCard className="h-full rounded-2xl" tone="dark">
+                  <Link
+                    href={`/faculty/${f.slug}`}
+                    className="group relative flex h-80 flex-col justify-end overflow-hidden rounded-2xl shadow-lift transition duration-500 hover:-translate-y-2 hover:shadow-lift-lg"
+                  >
+                    <Image
+                      src={f.image}
+                      alt=""
+                      fill
+                      loading="lazy"
+                      sizes="(min-width:1024px) 33vw, (min-width:640px) 50vw, 100vw"
+                      className="object-cover transition duration-[1100ms] ease-out group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-brand-purple-dark via-brand-purple-dark/55 to-transparent" />
+                    <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-brand-gold to-transparent opacity-0 transition duration-500 group-hover:opacity-100" />
+
+                    <span
+                      aria-hidden="true"
+                      className="absolute right-4 top-4 font-sans text-[10px] font-bold tracking-[0.2em] text-white/35 transition duration-500 group-hover:text-brand-gold"
+                    >
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
+
+                    <div className="relative p-6">
+                      <span
+                        aria-hidden="true"
+                        className="mb-3.5 block h-[2px] w-9 origin-left rounded-full bg-brand-gold transition-transform duration-500 group-hover:scale-x-[2.6]"
+                      />
+                      <h3 className="font-heading text-[17px] font-bold leading-snug text-white transition-transform duration-500 group-hover:-translate-y-1 [text-wrap:balance]">
+                        {f.name}
+                      </h3>
+                      <p className="mt-1.5 font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-brand-gold/80">
+                        {f.campus}
+                      </p>
+                      <p className="mt-2.5 line-clamp-2 text-[13px] leading-relaxed text-white/70">{f.standsFor}</p>
+                      <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 font-sans text-[10px] font-semibold uppercase tracking-[0.12em] text-white/55">
+                        {nProg > 0 && <span>{nProg} programmes</span>}
+                        {nCourse > 0 && <span>{nCourse} courses</span>}
+                        {f.degrees && <span>{f.degrees.length} degree routes</span>}
+                      </div>
+                      <span className="mt-4 flex translate-y-2 items-center gap-1.5 font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-gold opacity-0 transition duration-500 group-hover:translate-y-0 group-hover:opacity-100">
+                        Explore the faculty
+                        <span aria-hidden="true">→</span>
+                      </span>
+                    </div>
+                  </Link>
+                </SpotlightCard>
+              </Reveal>
+            );
+          })}
         </SpotlightGroup>
       </Section>
 
@@ -125,7 +171,7 @@ export default async function FacultyPage() {
       </section>
 
       {/* Administration */}
-      <Section>
+      <Section id="administration">
         <SectionHeading>Meet Our Administration</SectionHeading>
         <p className="mx-auto mb-12 max-w-3xl text-center text-brand-muted">
           ICOF Global University provides access to higher education opportunities that enable

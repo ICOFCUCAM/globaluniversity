@@ -3,6 +3,7 @@
 import { courses } from './courses';
 import { contentPages, degreeLevels } from './pages';
 import { programs } from './site';
+import { facultyList } from './faculties';
 
 export interface SearchEntry {
   title: string;
@@ -49,6 +50,12 @@ const pages: SearchEntry[] = [
 
 export const searchIndex: SearchEntry[] = [
   ...pages,
+  ...facultyList.map((f) => ({
+    title: f.name,
+    href: `/faculty/${f.slug}`,
+    section: 'Faculties',
+    text: `${f.shortName} ${f.campus} ${f.standsFor} ${f.description.join(' ')} ${f.leadName ?? ''}`,
+  })),
   ...programs.map((p) => ({
     title: p.title,
     href: `/programs/${p.slug}`,

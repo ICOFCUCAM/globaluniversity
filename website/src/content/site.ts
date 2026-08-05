@@ -106,6 +106,7 @@ export const site = {
         {
           heading: 'Study',
           items: [
+            { label: 'Schools & Faculties', href: '/faculty' },
             { label: 'Course Catalogue', href: '/courses' },
             { label: 'All Programs', href: '/programs' },
             { label: 'Study Online', href: '/online-learning' },
@@ -125,7 +126,7 @@ export const site = {
         {
           heading: 'Theology & Research',
           items: [
-            { label: 'Schools & Faculties', href: '/faculty' },
+            { label: 'Faculty of Theology', href: '/faculty/theology-buea' },
             { label: 'M.A. Black Liberation Theology', href: '/black-liberation-theology' },
             { label: 'Master of Theology', href: '/master-of-theology' },
             { label: 'Research & Innovation', href: '/research' },

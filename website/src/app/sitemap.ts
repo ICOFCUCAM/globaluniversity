@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { site, programs } from '@/content/site';
 import { contentPages, degreeLevels } from '@/content/pages';
+import { facultyList } from '@/content/faculties';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const staticRoutes = [
@@ -37,6 +38,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     })),
     ...programs.map((p) => ({
       url: `${site.url}/programs/${p.slug}`,
+      changeFrequency: 'monthly' as const,
+      priority: 0.7,
+    })),
+    ...facultyList.map((f) => ({
+      url: `${site.url}/faculty/${f.slug}`,
       changeFrequency: 'monthly' as const,
       priority: 0.7,
     })),
