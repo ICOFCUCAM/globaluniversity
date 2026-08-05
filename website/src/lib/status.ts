@@ -30,6 +30,7 @@ export type UniversalStatus =
   | 'registrar-reviewing'
   | 'documents-required'
   | 'approved'
+  | 'conditional'
   | 'rejected'
   | 'deferred'
   | 'graduated';
@@ -125,6 +126,17 @@ export const STATUSES: Record<UniversalStatus, StatusMeta> = {
     chip: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200',
     dot: 'bg-emerald-500',
   },
+  conditional: {
+    key: 'conditional',
+    label: 'Conditionally admitted',
+    colour: 'Green, hatched',
+    order: 8,
+    terminal: false,
+    meaning:
+      'Admitted and studying, with named conditions to meet by a stated date. The conditions stay visible to the student, the adviser and the Registrar until each is discharged.',
+    chip: 'bg-emerald-50 text-emerald-800 ring-1 ring-emerald-400 ring-dashed',
+    dot: 'bg-emerald-400',
+  },
   rejected: {
     key: 'rejected',
     label: 'Rejected',
@@ -193,6 +205,8 @@ export function toUniversal(stored: string | null | undefined): UniversalStatus 
     case 'approved':
     case 'active':
       return 'approved';
+    case 'conditional':
+      return 'conditional';
     case 'declined':
     case 'rejected':
       return 'rejected';

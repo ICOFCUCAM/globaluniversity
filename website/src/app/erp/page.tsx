@@ -283,6 +283,7 @@ export default function ErpPage() {
           <SectionHeading eyebrow="Related">Where the rest is recorded</SectionHeading>
           <div className="flex flex-wrap justify-center gap-3">
             {[
+              ['Enterprise architecture', '/erp/architecture'],
               ['Institutional documents', '/documents'],
               ['Admissions Portal', '/admissions-portal'],
               ['Student Portal', '/portal'],

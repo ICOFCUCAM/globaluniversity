@@ -282,7 +282,16 @@ export async function transferProgramme(
  */
 export async function approveApplication(
   studentId: string,
-  opts: { byUserId: string; note?: string },
+  opts: {
+    byUserId: string;
+    note?: string;
+    /**
+     * Conditions attached to a conditional admission. The student is admitted
+     * either way; passing conditions records them against the master record so
+     * they stay enforceable, rather than living in an email nobody can act on.
+     */
+    conditions?: { requirement: string; dueBy: string }[];
+  },
 ): Promise<{ ok: boolean; error?: string; email?: string }> {
   const res = await fetch('/api/admissions/approve', {
     method: 'POST',
@@ -310,4 +319,5 @@ export const requiredColumns = [
   'decided_by uuid',
   'decided_at timestamptz',
   'account_created_at timestamptz',
+  'admission_conditions jsonb',
 ] as const;

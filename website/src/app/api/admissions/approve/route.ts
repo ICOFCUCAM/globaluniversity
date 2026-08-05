@@ -72,8 +72,9 @@ function welcomeEmail(opts: {
   password: string;
   portalUrl: string;
   note?: string;
+  conditions?: { requirement: string; dueBy: string }[];
 }) {
-  const { fullName, studentNumber, programme, faculty, intake, password, portalUrl, note } = opts;
+  const { fullName, studentNumber, programme, faculty, intake, password, portalUrl, note, conditions } = opts;
   const canDo = [
     'Register Courses',
     'View Timetable',
@@ -103,7 +104,7 @@ Please log in immediately and change your password. Your password is personal to
 
 Inside your portal you can:
 ${canDo.map((c) => `  - ${c}`).join('\n')}
-${note ? `\nA note from the Registrar:\n${note}\n` : ''}
+${conditions?.length ? `\nYOUR ADMISSION IS CONDITIONAL.\nYou are admitted and may register, but the following must be completed:\n${conditions.map((c) => `  - ${c.requirement} — by ${c.dueBy}`).join('\n')}\nThese remain on your record until each is met.\n` : ''}${note ? `\nA note from the Registrar:\n${note}\n` : ''}
 If anything here is wrong — your name, your programme, your campus — reply to this email before you register for courses and the Registrar's office will correct it.
 
 Welcome to ICOF Global University.
@@ -138,6 +139,11 @@ ICOF Global University`;
     <ul style="padding-left:0;list-style:none">
       ${canDo.map((c) => `<li style="padding:3px 0">&#10003; ${c}</li>`).join('')}
     </ul>
+    ${conditions?.length ? `<div style="margin:20px 0;padding:16px 20px;background:#fffbeb;border-left:3px solid #d97706">
+      <strong style="display:block;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#92400e;font-family:Helvetica,Arial,sans-serif">Your admission is conditional</strong>
+      <p style="margin:8px 0 0">You are admitted and may register. The following must be completed, and remain on your record until each is met:</p>
+      <ul style="margin:8px 0 0">${conditions.map((c) => `<li style="padding:2px 0">${c.requirement} — <strong>by ${c.dueBy}</strong></li>`).join('')}</ul>
+    </div>` : ''}
     ${note ? `<p style="padding:12px 16px;background:#faf6ee"><strong>A note from the Registrar:</strong><br>${note}</p>` : ''}
     <p>If anything here is wrong — your name, your programme, your campus — reply to this email before you register for courses and the Registrar\u2019s office will correct it.</p>
     <p style="margin-top:28px">Welcome to ICOF Global University.</p>
@@ -159,13 +165,19 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: { studentId?: string; byUserId?: string; note?: string };
+  let body: {
+    studentId?: string;
+    byUserId?: string;
+    note?: string;
+    conditions?: { requirement: string; dueBy: string }[];
+  };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ ok: false, error: 'bad-json' }, { status: 400 });
   }
-  const { studentId, byUserId, note } = body;
+  const { studentId, byUserId, note, conditions } = body;
+  const isConditional = Array.isArray(conditions) && conditions.length > 0;
   if (!studentId) {
     return NextResponse.json({ ok: false, error: 'missing-student-id' }, { status: 400 });
   }
@@ -228,7 +240,11 @@ export async function POST(request: Request) {
   const { error: updErr } = await admin
     .from('students')
     .update({
-      status: 'approved',
+      // Conditional admission is a distinct status, not 'approved' with a
+      // note. The difference has to survive every later query — a report of
+      // students with outstanding conditions cannot be built from prose.
+      status: isConditional ? 'conditional' : 'approved',
+      admission_conditions: isConditional ? JSON.stringify(conditions) : null,
       student_number: studentNumber,
       decided_by: byUserId ?? null,
       decided_at: new Date().toISOString(),
@@ -254,6 +270,7 @@ export async function POST(request: Request) {
     password,
     portalUrl,
     note,
+    conditions: isConditional ? conditions : undefined,
   });
 
   if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
@@ -280,7 +297,9 @@ export async function POST(request: Request) {
     await transporter.sendMail({
       from: `"ICOF Global University — Office of the Registrar" <${SMTP_USER}>`,
       to: student.email,
-      subject: 'Congratulations! Welcome to ICOF Global University',
+      subject: isConditional
+        ? 'Welcome to ICOF Global University — conditional admission'
+        : 'Congratulations! Welcome to ICOF Global University',
       text: mail.text,
       html: mail.html,
     });

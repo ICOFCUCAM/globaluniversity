@@ -20,6 +20,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { can } from '@/lib/roles';
 import type { Student } from '@/lib/types';
 import { statusMeta } from '@/lib/status';
+import { commonConditions } from '@/lib/lifecycle';
 import {
   financeQueue,
   registrarQueue,
@@ -77,6 +78,9 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
   const [docsMessage, setDocsMessage] = useState('');
   const [deferReason, setDeferReason] = useState('');
   const [newProgramme, setNewProgramme] = useState('');
+  const [conditions, setConditions] = useState<{ requirement: string; dueBy: string }[]>([]);
+  const [condText, setCondText] = useState('');
+  const [condDue, setCondDue] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -131,7 +135,11 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
     if (!selected) return;
     setBusy(true);
     try {
-      const res = await approveApplication(selected.id, { byUserId: user?.id ?? '', note: note.trim() || undefined });
+      const res = await approveApplication(selected.id, {
+        byUserId: user?.id ?? '',
+        note: note.trim() || undefined,
+        conditions: conditions.length ? conditions : undefined,
+      });
       if (!res.ok) {
         setFlash({ tone: 'bad', message: `Not approved — ${res.error}` });
       } else if ((res as { emailSent?: boolean }).emailSent === false) {
@@ -142,9 +150,15 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
           message: `Account created for ${res.email}, but the welcome email could not be sent (${res.error}). The applicant has NOT been told. Their password is shown in the response and must be passed on another way.`,
         });
       } else {
-        setFlash({ tone: 'ok', message: `Approved. Account created and credentials emailed to ${res.email}.` });
+        setFlash({
+          tone: 'ok',
+          message: conditions.length
+            ? `Conditionally admitted. Account created, credentials emailed to ${res.email}, and ${conditions.length} condition${conditions.length === 1 ? '' : 's'} recorded on the record.`
+            : `Approved. Account created and credentials emailed to ${res.email}.`,
+        });
       }
       setNote('');
+      setConditions([]);
       setSelected(null);
       await load();
     } catch (e) {
@@ -454,13 +468,77 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
                         className="mt-1 w-full rounded-lg border border-emerald-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none"
                       />
                     </label>
+                    {/* Conditions turn a full admission into a conditional one.
+                        They are stored on the record, not written into the
+                        note, so a report of students with outstanding
+                        conditions is a query rather than a reading exercise. */}
+                    <div className="mt-4 rounded-lg border border-emerald-300 bg-white p-4">
+                      <p className="text-[10px] font-bold uppercase tracking-wide text-emerald-800">
+                        Conditions (optional) — adding any makes this a conditional admission
+                      </p>
+                      {conditions.length > 0 && (
+                        <ul className="mt-3 space-y-1.5">
+                          {conditions.map((c, i) => (
+                            <li key={`${c.requirement}-${i}`} className="flex items-start gap-2 text-sm text-gray-700">
+                              <span className="flex-1">
+                                {c.requirement} — <strong>by {c.dueBy}</strong>
+                              </span>
+                              <button
+                                onClick={() => setConditions(conditions.filter((_, j) => j !== i))}
+                                className="shrink-0 text-xs text-red-600 underline"
+                              >
+                                remove
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <input
+                          value={condText}
+                          onChange={(e) => setCondText(e.target.value)}
+                          list="common-conditions"
+                          placeholder="What must the student do?"
+                          className="min-w-[12rem] flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none"
+                        />
+                        <datalist id="common-conditions">
+                          {commonConditions.map((c) => (
+                            <option key={c} value={c} />
+                          ))}
+                        </datalist>
+                        <input
+                          type="date"
+                          value={condDue}
+                          onChange={(e) => setCondDue(e.target.value)}
+                          className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none"
+                        />
+                        <button
+                          onClick={() => {
+                            if (!condText.trim() || !condDue) return;
+                            setConditions([...conditions, { requirement: condText.trim(), dueBy: condDue }]);
+                            setCondText('');
+                            setCondDue('');
+                          }}
+                          disabled={!condText.trim() || !condDue}
+                          className="rounded-lg border border-emerald-600 px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-40"
+                        >
+                          Add condition
+                        </button>
+                      </div>
+                      <p className="mt-2 text-[11px] text-gray-500">
+                        A condition needs a date. One without a deadline cannot be chased, and will
+                        not be.
+                      </p>
+                    </div>
                     <button
                       onClick={() => void onApprove()}
                       disabled={busy}
                       className="mt-3 inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800 disabled:opacity-40"
                     >
                       {busy ? <Loader2 size={15} className="animate-spin" /> : <Mail size={15} />}
-                      Approve, create account and send credentials
+                      {conditions.length
+                        ? `Admit conditionally with ${conditions.length} condition${conditions.length === 1 ? '' : 's'}`
+                        : 'Approve, create account and send credentials'}
                     </button>
                   </div>
 

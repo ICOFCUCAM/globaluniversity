@@ -114,7 +114,8 @@ alter table students
   add column if not exists decision_reason    text,
   add column if not exists decided_by         uuid,
   add column if not exists decided_at         timestamptz,
-  add column if not exists account_created_at timestamptz;
+  add column if not exists account_created_at timestamptz,
+  add column if not exists admission_conditions jsonb;
 
 -- The two queues are read on every page load of the desks.
 create index if not exists students_status_created_idx
