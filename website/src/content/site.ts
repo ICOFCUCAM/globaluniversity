@@ -561,7 +561,45 @@ export const faculties = {
 // Faculty of Theology (Buea) · School of Theology (Douala) · Faculty of
 // Education · Faculty of Engineering and Technology · Global Institute of
 // Business and Management Science (GIBMAS).
+// Theology is listed in ascending order of award — certificate, diploma,
+// bachelor, master, doctorate — because it is the one faculty that teaches at
+// every level, and a prospective student needs to see the ladder, not a
+// shuffled list. The faculty's own description has always said "certificate
+// through to doctorate"; until now the bottom two rungs had no entry here.
 export const programs: Program[] = [
+  {
+    slug: 'certificate-in-theology',
+    title: 'Certificate in Theology',
+    level: 'Certificate',
+    school: 'Faculty of Theology',
+    image: '/images/students.jpg',
+    summary:
+      'The first rung of theological study — foundational biblical knowledge for lay leaders, church workers and those beginning ministerial training. The faculty awards the Certificate of Theology alongside the Certificate of Christian Education, the Certificate of Arts and the Certificate of Science.',
+    outcomes: ['Bible survey', 'Christian doctrine', 'Church and ministry practice', 'Entry to the Diploma'],
+  },
+  {
+    slug: 'diploma-in-theology',
+    title: 'Diploma in Theology',
+    level: 'Diploma',
+    school: 'Faculty of Theology',
+    image: '/images/wp/fac-theology.jpg',
+    summary:
+      'A condensed theological education giving a solid grounding in key theological concepts, biblical interpretation, church history and practical ministry skills — for personal enrichment, for ministry preparation, or as a foundation for further theological study.',
+    outcomes: ['Biblical interpretation', 'Church history', 'Practical ministry skills', 'Foundation for the B.Th.'],
+  },
+  {
+    // Diploma-level ministry provision. The university confirmed this award
+    // exists; the faculty has not yet supplied its course list or credit
+    // structure, so nothing beyond the shape of the award is stated here.
+    slug: 'diploma-in-ministry',
+    title: 'Diploma in Ministry',
+    level: 'Diploma',
+    school: 'Faculty of Theology',
+    image: '/images/ceremonial.jpg',
+    summary:
+      'Practical ministerial formation at diploma level for those already serving in local churches — preaching, pastoral care, church administration and evangelism — leading on to the Bachelor of Theology or to the Master of Divinity and Masters in Evangelism and Mission.',
+    outcomes: ['Preaching and teaching', 'Pastoral care', 'Church administration', 'Evangelism and mission'],
+  },
   {
     slug: 'divinity',
     title: 'Divinity',
@@ -573,26 +611,6 @@ export const programs: Program[] = [
     outcomes: ['Biblical interpretation', 'Systematic theology', 'Pastoral care', 'Homiletics'],
   },
   {
-    slug: 'ministry',
-    title: 'Ministry',
-    level: 'Master',
-    school: 'Faculty of Theology',
-    image: '/images/grand-ceremony.jpg',
-    summary:
-      'Advanced ministerial formation for serving leaders — Master of Divinity and Masters in Evangelism and Mission tracks covering leadership, missions, church administration and practical theology.',
-    outcomes: ['Ministry leadership', 'Missiology', 'Church administration', 'Ethics'],
-  },
-  {
-    slug: 'theology',
-    title: 'Theology',
-    level: 'Doctorate',
-    school: 'Faculty of Theology',
-    image: '/images/graduation.jpg',
-    summary:
-      'Doctoral research in theology — Doctor of Philosophy, Doctor of Theology and Doctor of Ministry (Christian Counseling & Administration) — culminating in an original dissertation.',
-    outcomes: ['Research methods', 'Advanced doctrine', 'Original dissertation', 'Academic publishing'],
-  },
-  {
     slug: 'bachelor-of-theology',
     title: 'Bachelor of Theology',
     level: 'Bachelor',
@@ -601,6 +619,16 @@ export const programs: Program[] = [
     summary:
       'A three-year, 180-ECTS undergraduate degree combining rigorous academic study with spiritual formation and practical ministry, available full-time, part-time, online and by distance learning.',
     outcomes: ['Biblical interpretation', 'Christian doctrine', 'Church history', 'Pastoral ministry'],
+  },
+  {
+    slug: 'ministry',
+    title: 'Ministry',
+    level: 'Master',
+    school: 'Faculty of Theology',
+    image: '/images/grand-ceremony.jpg',
+    summary:
+      'Advanced ministerial formation for serving leaders — Master of Divinity and Masters in Evangelism and Mission tracks covering leadership, missions, church administration and practical theology.',
+    outcomes: ['Ministry leadership', 'Missiology', 'Church administration', 'Ethics'],
   },
   {
     slug: 'master-of-theology',
@@ -626,6 +654,16 @@ export const programs: Program[] = [
       'Theology, justice and reconciliation',
       'Original research and dissertation',
     ],
+  },
+  {
+    slug: 'theology',
+    title: 'Theology',
+    level: 'Doctorate',
+    school: 'Faculty of Theology',
+    image: '/images/graduation.jpg',
+    summary:
+      'Doctoral research in theology — Doctor of Philosophy, Doctor of Theology and Doctor of Ministry (Christian Counseling & Administration) — culminating in an original dissertation.',
+    outcomes: ['Research methods', 'Advanced doctrine', 'Original dissertation', 'Academic publishing'],
   },
   {
     slug: 'primary-education',

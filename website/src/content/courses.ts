@@ -28,6 +28,9 @@ export const courses: Course[] = [
   { code: 'DTH', title: 'Doctor of Theology', faculty: T, level: 'Doctorate', online: true, summary: 'Advanced doctrinal scholarship for those teaching and leading within the church.' },
   { code: 'DMIN', title: 'Doctor of Ministry', faculty: T, level: 'Doctorate', online: true, summary: 'Professional doctorate in Christian counseling and church administration for practising ministers.' },
   { code: 'CERT-TH', title: 'Certificate of Theology', faculty: T, level: 'Certificate', online: true, summary: 'Foundational biblical studies for lay leaders and those beginning ministerial training.' },
+  { code: 'CERT-CE', title: 'Certificate of Christian Education', faculty: T, level: 'Certificate', online: true, summary: 'Introductory training for Sunday school teachers, youth workers and church educators.' },
+  { code: 'DIP-TH', title: 'Diploma in Theology', faculty: T, level: 'Diploma', online: true, summary: 'A condensed theological education: key theological concepts, biblical interpretation, church history and practical ministry skills.' },
+  { code: 'DIP-MIN', title: 'Diploma in Ministry', faculty: T, level: 'Diploma', online: true, summary: 'Practical ministerial formation for serving church workers — preaching, pastoral care, administration and evangelism.' },
 
   // Education
   { code: 'EDU-PRI', title: 'Primary Education', faculty: E, level: 'Bachelor', online: false, summary: 'Classroom-ready teacher preparation: pedagogy, curriculum design, assessment and supervised practice.' },

@@ -764,7 +764,11 @@ export const degreeLevels: DegreeLevel[] = [
         'Join us on this transformative educational journey as we explore the depths of theology, cultivate spiritual growth, and equip ourselves to make a positive impact in the world. Enroll in the Diploma in Theology at ICOF Global University and embark on a path of discovery, inspiration, and transformation.',
       ],
     },
+    // The original site carried a "Faculty of Theology" tab on this page with
+    // no content behind it, which is why the Diploma in Theology introduction
+    // above had no awards to point at. The tab is now filled.
     facultyPrograms: [
+      { faculty: 'Faculty of Theology', programs: ['Diploma in Theology', 'Diploma in Ministry'] },
       { faculty: 'Engineering and Technology', programs: TECH_PROGRAMS },
       { faculty: 'Business Management Science and Administration', programs: BUSINESS_PROGRAMS },
     ],
@@ -783,7 +787,16 @@ export const degreeLevels: DegreeLevel[] = [
         'The University offers certificate programs, as well as individual, test-preparation and non-credit professional development courses — practical credentials you can earn quickly.',
       ],
     },
+    // Theology's four certificate awards are recovered verbatim from the
+    // original site — where they appeared, evidently in error, on the Higher
+    // National Diploma page rather than this one. They are listed here as
+    // well, on the page whose name they carry; the HND page is left as
+    // recovered rather than silently rewritten.
     facultyPrograms: [
+      {
+        faculty: 'Faculty of Theology',
+        programs: ['Certificate of Theology', 'Certificate of Christian Education', 'Certificate of Arts', 'Certificate of Science'],
+      },
       { faculty: 'Engineering and Technology', programs: TECH_PROGRAMS },
       { faculty: 'Business Management Science and Administration', programs: BUSINESS_PROGRAMS },
     ],

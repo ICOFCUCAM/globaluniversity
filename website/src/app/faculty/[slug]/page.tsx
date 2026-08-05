@@ -48,6 +48,18 @@ export default function FacultyDetailPage({ params }: { params: { slug: string }
   const onlineCount = facultyCourses.filter((c) => c.online).length;
   const sibling = f.sharesProvisionWith ? getFaculty(f.sharesProvisionWith) : undefined;
 
+  // The study ladder. A faculty that teaches at five levels was showing a flat
+  // grid of programme cards, so a visitor could not see that one award leads to
+  // the next — which is how the Diploma and Certificate rungs went unnoticed as
+  // missing. Rungs are derived from the programmes themselves; a level with no
+  // programme simply does not appear, so this can never claim provision that
+  // does not exist.
+  const LEVEL_ORDER = ['Certificate', 'Diploma', 'Bachelor', 'Master', 'Doctorate'] as const;
+  const ladder = LEVEL_ORDER.map((level) => ({
+    level,
+    entries: facultyPrograms.filter((p) => p.level === level),
+  })).filter((rung) => rung.entries.length > 0);
+
   const ld = {
     '@context': 'https://schema.org',
     '@graph': [
@@ -191,6 +203,51 @@ export default function FacultyDetailPage({ params }: { params: { slug: string }
             </ul>
           </div>
         </section>
+      )}
+
+      {/* The ladder — one rung per level the faculty actually awards at */}
+      {ladder.length > 1 && (
+        <Section chapter="Pathway">
+          <SectionHeading eyebrow="Study Pathway">
+            {`From ${ladder[0].level.toLowerCase()} to ${ladder[ladder.length - 1].level.toLowerCase()}`}
+          </SectionHeading>
+          <ol className="mx-auto max-w-4xl">
+            {ladder.map((rung, i) => (
+              <Reveal key={rung.level} delay={i * 90}>
+                <li className="relative flex gap-6 pb-10 last:pb-0">
+                  {/* Connector, drawn between rungs rather than after the last */}
+                  {i < ladder.length - 1 && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute left-[27px] top-14 bottom-0 w-px bg-gradient-to-b from-brand-gold/70 to-brand-sand"
+                    />
+                  )}
+                  <span className="relative z-10 flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-brand-purple font-heading text-lg font-bold text-brand-gold ring-4 ring-brand-cream">
+                    {i + 1}
+                  </span>
+                  <div className="flex-1 pt-1">
+                    <h3 className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-brand-gold-deep">
+                      {rung.level}
+                    </h3>
+                    <ul className="mt-3 flex flex-wrap gap-2.5">
+                      {rung.entries.map((p) => (
+                        <li key={p.slug}>
+                          <Link
+                            href={`/programs/${p.slug}`}
+                            className="group inline-flex items-center gap-1.5 rounded-full border border-brand-sand bg-white px-4 py-2 font-heading text-sm font-semibold text-brand-purple shadow-sm transition hover:border-brand-gold hover:shadow-lift"
+                          >
+                            {p.title}
+                            <span aria-hidden="true" className="text-brand-gold-deep transition-transform duration-300 group-hover:translate-x-1">→</span>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </li>
+              </Reveal>
+            ))}
+          </ol>
+        </Section>
       )}
 
       {/* Programmes, pulled live */}
