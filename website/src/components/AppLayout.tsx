@@ -99,7 +99,7 @@ export default function AppLayout() {
       case 'students':
         return <StudentManagement />;
       case 'lecturers':
-        return <LecturerManagement />;
+        return <LecturerManagement onNavigate={setCurrentView} />;
       case 'courses':
         return <CourseManagement />;
       case 'results':
