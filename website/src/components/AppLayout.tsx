@@ -196,7 +196,19 @@ export default function AppLayout() {
         currentView={currentView}
         onViewChange={navigate}
       />
+      {/* A keyboard user starting at the top of the portal otherwise tabs
+          through twenty-five navigation items before reaching the screen they
+          asked for — on every single navigation. The public site has had this
+          since it was built; the portal never did. */}
+      <a
+        href="#portal-main"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[60] focus:rounded-lg focus:bg-[#e9c14a] focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-[#241a30]"
+      >
+        Skip to content
+      </a>
       <main
+        id="portal-main"
+        tabIndex={-1}
         className={`pt-16 transition-[margin] duration-200 ${
           sidebarCollapsed ? 'lg:ml-[68px]' : 'lg:ml-64'
         }`}
