@@ -89,7 +89,7 @@ export const site = {
             { label: 'About Us', href: '/about' },
             { label: 'Governance & Accreditation', href: '/governance' },
             { label: 'Academic Catalog', href: '/academic-catalog' },
-            { label: 'Institutional Documents', href: '/documents' },
+            { label: 'Academic Regulations', href: '/academic-regulations' },
           ],
         },
         {
@@ -98,8 +98,8 @@ export const site = {
             { label: 'Alumni', href: '/alumni' },
             { label: 'Careers at IGUC', href: '/careers' },
             { label: 'Contact', href: '/contact' },
+            { label: 'Institutional Documents', href: '/documents' },
             { label: 'Policies', href: '/policies' },
-            { label: 'Privacy Policy', href: '/privacy-policy' },
           ],
         },
       ],

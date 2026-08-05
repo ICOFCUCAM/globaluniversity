@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { Section } from '@/components/Section';
 import Cta from '@/components/Cta';
 import { getProgram, getPrograms } from '@/lib/data';
+import { getCurriculum, termCredits } from '@/content/curricula';
 
 export async function generateStaticParams() {
   const programs = await getPrograms();
@@ -18,6 +19,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 export default async function ProgramDetailPage({ params }: { params: { slug: string } }) {
   const program = await getProgram(params.slug);
   if (!program) notFound();
+  const curriculum = getCurriculum(params.slug);
   const related = (await getPrograms()).filter((p) => p.slug !== program.slug && p.school === program.school).slice(0, 3);
   const courseLd = {
     '@context': 'https://schema.org',
@@ -86,6 +88,86 @@ export default async function ProgramDetailPage({ params }: { params: { slug: st
           </aside>
         </div>
       </Section>
+      {/* Course list, where the university has supplied one. Codes and credit
+          values are the faculty's own; nothing here is derived or estimated. */}
+      {curriculum && (
+        <Section className="bg-white">
+          <div className="mx-auto max-w-4xl">
+            <h2 className="font-heading text-2xl font-bold text-brand-purple">Course Structure</h2>
+            <p className="mt-2 font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-gold-deep">
+              {curriculum.duration} · {curriculum.terms.reduce((n, t) => n + t.courses.length, 0)} courses
+            </p>
+            {curriculum.note && (
+              <p className="mt-5 rounded-xl border border-dashed border-brand-gold/60 bg-brand-cream/70 px-5 py-4 text-sm leading-relaxed text-brand-muted">
+                {curriculum.note}
+              </p>
+            )}
+            {curriculum.objectives && (
+              <>
+                <h3 className="mt-9 font-heading text-lg font-bold text-brand-purple">Programme objectives</h3>
+                <ul className="mt-4 space-y-2.5">
+                  {curriculum.objectives.map((o) => (
+                    <li key={o} className="flex gap-3 text-[15px] leading-relaxed text-brand-muted">
+                      <span aria-hidden="true" className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-brand-gold-deep" />
+                      <span>{o}</span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+            {curriculum.terms.map((term) => {
+              const total = termCredits(term);
+              return (
+                <div key={term.label} className="mt-10">
+                  <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-brand-sand pb-2">
+                    <h3 className="font-heading text-lg font-bold text-brand-purple">{term.label}</h3>
+                    <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.12em] text-brand-gold-deep">
+                      {term.courses.length} courses
+                      {total !== undefined ? ` · ${total} ${curriculum.creditUnit}` : ''}
+                    </p>
+                  </div>
+                  <ul className="mt-4 space-y-4">
+                    {term.courses.map((c) => (
+                      <li key={c.code} className="border-l-2 border-brand-sand pl-5">
+                        <p className="flex flex-wrap items-baseline gap-x-3">
+                          <span className="font-mono text-xs font-bold text-brand-gold-deep">{c.code}</span>
+                          <span className="font-heading text-[16px] font-bold text-brand-purple">{c.title}</span>
+                          {c.credits !== undefined && (
+                            <span className="rounded-full bg-brand-cream px-2.5 py-0.5 font-sans text-[10px] font-bold uppercase tracking-[0.1em] text-brand-gold-deep">
+                              {c.credits} {curriculum.creditUnit === 'ECTS' ? 'ECTS' : 'cr'}
+                            </span>
+                          )}
+                        </p>
+                        {c.description && (
+                          <p className="mt-1.5 text-sm leading-relaxed text-brand-muted">{c.description}</p>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
+            {curriculum.textbooks && (
+              <>
+                <h3 className="mt-10 font-heading text-lg font-bold text-brand-purple">Recommended textbooks</h3>
+                <ul className="mt-4 space-y-2">
+                  {curriculum.textbooks.map((t) => (
+                    <li key={t} className="text-[15px] leading-relaxed text-brand-muted">{t}</li>
+                  ))}
+                </ul>
+              </>
+            )}
+            <p className="mt-9 text-sm text-brand-muted">
+              Assessment weightings and the grading scale are published in the{' '}
+              <Link href="/academic-regulations" className="font-semibold text-brand-purple underline decoration-brand-gold underline-offset-4">
+                Academic Regulations
+              </Link>
+              .
+            </p>
+          </div>
+        </Section>
+      )}
+
       {related.length > 0 && (
         <Section className="bg-white">
           <h2 className="mb-8 text-center font-heading text-2xl font-bold text-brand-purple">

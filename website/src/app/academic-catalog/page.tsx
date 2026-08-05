@@ -28,6 +28,8 @@ import { chancellor, chancellorBio, viceChancellor } from '@/content/welcome';
 import { facultyList } from '@/content/faculties';
 import { courses } from '@/content/courses';
 import { degreeLevels, contentPages } from '@/content/pages';
+import { gradeScale, passMark, specialGrades, gpaRule, refundSchedule, loadRules } from '@/content/regulations';
+import { curricula } from '@/content/curricula';
 
 export const metadata: Metadata = {
   title: 'Academic Catalog — ICOF Global University',
@@ -405,15 +407,38 @@ export default function AcademicCatalogPage() {
                 )}
               </>
             )}
-            <AwaitingAdoption
-              title="Refunds and financial hardship"
-              body="The catalog states what a student pays. It does not yet state what happens when a student withdraws, defers, or cannot pay — the questions a fees section is most often consulted for."
-              needs={[
-                'Refund schedule by point of withdrawal',
-                'Deferral and instalment terms',
-                'Consequence of unpaid fees for registration, examination and transcripts',
-              ]}
-            />
+            <H3>Withdrawal and refunds</H3>
+            <P>
+              Refunds are calculated from the date of enrolment. A Withdrawal Form must be submitted
+              and clearance granted; a student who leaves without one remains liable for the whole
+              semester&rsquo;s fees.
+            </P>
+            <div className="mt-5 overflow-x-auto rounded-2xl border border-brand-sand">
+              <table className="w-full min-w-[26rem] text-left text-[15px]">
+                <thead className="bg-brand-cream">
+                  <tr>
+                    <th className="px-5 py-3 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-brand-gold-deep">Withdrawal within</th>
+                    <th className="px-5 py-3 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-brand-gold-deep">Refund</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-brand-sand/70">
+                  {refundSchedule.map((r) => (
+                    <tr key={r.window}>
+                      <td className="px-5 py-3 text-brand-muted">{r.window}</td>
+                      <td className="w-28 px-5 py-3 tabular font-bold text-brand-purple">{r.refund}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <P>
+              Terms of payment, the charges payable in addition to tuition and the terms for
+              sponsors are set out in full in the{' '}
+              <Link href="/academic-regulations#fees" className="font-semibold text-brand-purple underline decoration-brand-gold underline-offset-4">
+                Academic Regulations
+              </Link>
+              .
+            </P>
           </Part>
 
           {/* VIII — Regulations */}
@@ -428,14 +453,64 @@ export default function AcademicCatalogPage() {
             <H3>Due Process and Appeals</H3>
             {dueProcess?.paragraphs?.map((p, i) => <P key={i}>{p}</P>)}
 
+            <H3>Grading scale</H3>
+            <P>
+              The pass mark is {passMark}. Grade points run in one-third steps from 4.00 and the
+              scale has no 3.67 point; it is the university&rsquo;s own and should be read as
+              printed rather than mapped onto the more common four-point scale.
+            </P>
+            <div className="mt-5 overflow-x-auto rounded-2xl border border-brand-sand">
+              <table className="w-full min-w-[30rem] text-left text-[15px]">
+                <thead className="bg-brand-cream">
+                  <tr>
+                    {['Grade', 'Descriptor', 'Percentage', 'Points'].map((h) => (
+                      <th key={h} className="px-5 py-3 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-brand-gold-deep">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-brand-sand/70">
+                  {gradeScale.map((g) => (
+                    <tr key={g.grade}>
+                      <td className="px-5 py-3 font-heading font-bold text-brand-purple">{g.grade}</td>
+                      <td className="px-5 py-3 text-brand-muted">{g.descriptor}</td>
+                      <td className="px-5 py-3 tabular text-brand-muted">{g.range}</td>
+                      <td className="px-5 py-3 tabular font-semibold text-brand-purple">{g.points}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <P>
+              <span className="font-semibold text-brand-purple">Special grades. </span>
+              {specialGrades.map((s) => `${s.code} — ${s.meaning.split(' — ')[0]}`).join('; ')}.
+            </P>
+            <P>{gpaRule}</P>
+
+            <H3>Study load by level</H3>
+            <ul className="mt-5 space-y-3">
+              {loadRules.map((r) => (
+                <li key={r.level} className="border-l-2 border-brand-sand pl-5 text-[15px] leading-relaxed">
+                  <span className="font-heading font-semibold text-brand-purple">{r.level}. </span>
+                  <span className="text-brand-muted">{r.load}</span>
+                </li>
+              ))}
+            </ul>
+            <P>
+              The complete regulations — assessment weightings, fees, sponsorship and refunds — are
+              published at{' '}
+              <Link href="/academic-regulations" className="font-semibold text-brand-purple underline decoration-brand-gold underline-offset-4">
+                Academic Regulations
+              </Link>
+              .
+            </P>
+
             <AwaitingAdoption
               title="Examination regulations, graduation requirements and degree classifications"
-              body="These are the three sections of a catalog that carry the most weight for an individual student, and all three are instruments the Academic Board adopts. Nothing is stated here in their place."
+              body="The grading scale above is adopted and published. What is still missing is the machinery around it: how a student enters an examination, what happens when they miss one, and what final GPA earns which class of award. All three are instruments the Academic Board adopts, and nothing is stated here in their place."
               needs={[
                 'Examination entry conditions and registration deadlines',
                 'Conduct of examinations, and the definition and penalties of misconduct',
-                'Absence, deferral, resit and repeat rules',
-                'Marking scale, pass mark and compensation rules',
+                'Absence, deferral, resit and repeat rules, and when a supplementary examination is granted',
                 'Degree classification bands and their names',
                 'Credit minimum and residency requirement for each award',
                 'Appeal route against an examination board decision',
@@ -565,12 +640,13 @@ export default function AcademicCatalogPage() {
             ))}
             <AwaitingAdoption
               title="Course descriptions with credit values"
-              body="Each programme above states its aim and its learning outcomes. A full catalog also states, for every course, its credit value, contact hours, prerequisites and assessment scheme. Those exist for the Bachelor of Theology and are being prepared for the rest."
+              body={`Course lists with the university\u2019s own codes are now published for ${curricula.length} programmes, and assessment weightings apply across all of them. What is still missing is a credit value against every course, and the reconciliation of the two incompatible B.Th. structures the university has supplied.`}
               needs={[
-                'Credit value and contact hours per course',
+                'Credit values for the Diploma of Theology, whose fifteen courses are published without them',
+                'Year Three of the Bachelor of Theology credit-hour structure',
+                'Which structure governs the B.Th. award — 180 ECTS or the credit-hour scheme',
+                'Course lists for the remaining awards',
                 'Prerequisites and co-requisites',
-                'Assessment scheme and weightings',
-                'Programme duration in semesters for each award',
               ]}
             />
           </Part>

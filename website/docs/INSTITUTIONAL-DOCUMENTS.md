@@ -65,6 +65,47 @@ stylesheet drops the site chrome, forces a page break before each part, keeps
 headings with their content and tables unsplit, and forces `Reveal`-animated
 blocks visible so nothing below the fold prints blank. Verified: 30 pages.
 
+## 2a. Done — steps 3 and 4, plus the regulations
+
+**Academic Regulations** (`/academic-regulations`) — the grading scale, special
+grades, course classification, GPA rule, study loads and seminar requirements
+by level, doctoral entry standard, assessment weightings, the full fee terms,
+the miscellaneous fee schedule, sponsor terms, withdrawal rules and the refund
+schedule. All supplied by the university and reproduced exactly.
+
+**University Prospectus** (`/prospectus`) — nine parts, assembled like the
+catalog. Leads with the Yeshiva style of learning, which is the one thing here
+no competing institution can claim.
+
+**Student Handbook** (`/student-handbook`) — nine parts. Rights and
+responsibilities are stated in one place for the first time, each traceable to
+a commitment the university had already made somewhere else.
+
+**Course lists with codes** — the Diploma of Theology (15 courses, complete)
+and the Bachelor of Theology credit-hour structure (Years One and Two,
+87 credit hours) now render on their programme pages.
+
+## 2b. Eight errors found in the source documents
+
+Recorded on `/academic-regulations` Part VIII rather than silently corrected,
+because correcting a regulation is the university's act. The two that matter
+most:
+
+- **§1.9 of the Fees Guide is headed "Cost of Doctorates and PhDs at GRU
+  UNIVERSITY".** GRU is not ICOF. The section appears adapted from another
+  institution's document with the name left in. The heading is not reproduced
+  on this site; the body is, because it reads as ICOF policy throughout.
+- **Two incompatible B.Th. structures.** 36 courses × 5 ECTS = 180 ECTS, versus
+  Years One and Two in credit hours totalling 87. ECTS and credit hours are not
+  interchangeable. Both are recorded, neither converted — an invented
+  conversion is the one number a credential evaluator would reject.
+
+Also recorded: the Fees Guide is marked "Preliminary Copy"; the DBA fee is
+quoted with no currency for a year commencing 2016; tuition is USD on the site
+and FCFA in the Fees Guide; the grading scale has no 3.67 point; B+ spans only
+two percentage points; degree classification bands are still missing; and the
+doctoral seminar totals imply two years without saying so.
+
 ## 3. The five things blocking most of the rest
 
 Almost every remaining document waits on one of these. They are listed in the
@@ -73,11 +114,13 @@ order that unblocks the most work:
 1. **The academic calendar.** Term dates, registration windows, examination
    periods, graduation dates. Blocks: Catalog Part V, every faculty handbook,
    every programme handbook.
-2. **Examination and award regulations.** Entry conditions, conduct, absence,
-   resit, the marking scale, the pass mark, degree classification bands, credit
-   minimums, and the appeal route. Blocks: Catalog Part VIII, the Student
-   Handbook, the Graduate School Handbook, and honestly the credibility of the
-   whole set — this is the first thing an accreditor turns to.
+2. **Examination and award regulations.** The marking scale and pass mark are
+   now published. Still missing: examination entry conditions, conduct,
+   absence, resit and when a supplementary examination is granted; **degree
+   classification bands**; credit minimums and residency per award; and the
+   appeal route. Degree classification is now the single largest gap — the
+   university can grade a course but cannot yet say what class of degree a
+   given GPA earns.
 3. **Course lists and credit values** for the eleven awards written up in
    `FACULTY-PAGES.md` §3a. Blocks: all programme handbooks, Catalog Part XII.
 4. **The quality assurance framework.** Programme approval route, review

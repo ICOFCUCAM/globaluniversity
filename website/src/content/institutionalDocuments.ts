@@ -107,9 +107,10 @@ export const institutionalDocuments: InstitutionalDocument[] = [
   {
     order: 3,
     title: 'University Prospectus',
+    href: '/prospectus',
     purpose:
-      'The recruitment publication — 60 to 100 pages, designed for print and for download.',
-    status: 'awaiting',
+      'The recruitment publication — designed to be read online or printed and kept.',
+    status: 'partial',
     contains: [
       'Why ICOF?',
       'Campuses',
@@ -134,6 +135,7 @@ export const institutionalDocuments: InstitutionalDocument[] = [
   {
     order: 4,
     title: 'Student Handbook',
+    href: '/student-handbook',
     purpose: 'What a student may expect of the university, and what it expects of them.',
     status: 'partial',
     contains: [
