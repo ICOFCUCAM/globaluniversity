@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
+import { roleLabels } from '@/lib/roles';
 import { GRADING_SCALE } from '@/lib/grading';
 import { UNIVERSITY } from '@/lib/constants';
 import {
@@ -11,16 +13,50 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('profile');
   const [saved, setSaved] = useState(false);
 
+  // No invented defaults. The phone read "+234 801 234 5678" and the department
+  // "Computer Science" — a Nigerian number and a subject this university does
+  // not teach, both inherited from the template. A field pre-filled with
+  // somebody else's data is worse than an empty one: it gets saved.
   const [profile, setProfile] = useState({
     name: user?.name || '',
     email: user?.email || '',
-    phone: '+234 801 234 5678',
-    department: 'Computer Science',
   });
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
-  function handleSave() {
+  useEffect(() => {
+    setProfile({ name: user?.name || '', email: user?.email || '' });
+  }, [user?.name, user?.email]);
+
+  /**
+   * Save, rather than say "Saved!".
+   *
+   * This function used to set a flag, show a tick for two seconds and write
+   * nothing anywhere. The user then reloaded and found their change gone —
+   * which is the worst version of this bug, because they had been told it
+   * worked and had no reason to check.
+   *
+   * Only full_name is written. Email is the sign-in identifier and changing it
+   * belongs to the Superadministrator, not to a profile form; column privileges
+   * in migration 002 mean an attempt from here would be refused by the database
+   * anyway, so the field is shown read-only rather than accepting an edit that
+   * cannot land.
+   */
+  async function handleSave() {
+    if (!user?.id) return;
+    setSaving(true);
+    setSaveError(null);
+    const { error } = await supabase
+      .from('profiles')
+      .update({ full_name: profile.name.trim() })
+      .eq('id', user.id);
+    setSaving(false);
+    if (error) {
+      setSaveError(error.message);
+      return;
+    }
     setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    setTimeout(() => setSaved(false), 2500);
   }
 
   const tabs = [
@@ -60,7 +96,7 @@ export default function SettingsPage() {
                 <div>
                   <p className="font-semibold text-gray-800">{user?.name}</p>
                   <p className="text-sm text-gray-500 capitalize">{user?.role}</p>
-                  <button className="text-xs text-blue-600 hover:underline mt-1">Change Photo</button>
+
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -71,23 +107,31 @@ export default function SettingsPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Email</label>
-                  <input value={profile.email} onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Phone</label>
-                  <input value={profile.phone} onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Department</label>
-                  <input value={profile.department} disabled
+                  <input value={profile.email} readOnly
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 text-gray-500" />
+                  <p className="mt-1 text-[11px] text-gray-400">
+                    Your sign-in address. Only the Superadministrator can change it.
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Role</label>
+                  <input value={roleLabels[user?.role ?? 'student'] ?? ''} readOnly
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 text-gray-500" />
+                  <p className="mt-1 text-[11px] text-gray-400">
+                    Assigned by the Superadministrator and recorded in the audit log.
+                  </p>
                 </div>
               </div>
-              <button onClick={handleSave}
-                className="flex items-center gap-2 px-4 py-2.5 bg-[#422e59] text-white rounded-xl text-sm font-medium hover:bg-[#322244] transition-colors">
-                {saved ? <><CheckCircle2 size={14} /> Saved!</> : <><Save size={14} /> Save Changes</>}
+              {saveError && (
+                <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                  Not saved: {saveError}
+                </p>
+              )}
+              <button onClick={handleSave} disabled={saving || !profile.name.trim()}
+                className="flex items-center gap-2 px-4 py-2.5 bg-[#422e59] text-white rounded-xl text-sm font-medium hover:bg-[#322244] transition-colors disabled:opacity-40">
+                {saving ? <><Save size={14} className="animate-pulse" /> Saving…</>
+                  : saved ? <><CheckCircle2 size={14} /> Saved</>
+                  : <><Save size={14} /> Save changes</>}
               </button>
             </div>
           )}
