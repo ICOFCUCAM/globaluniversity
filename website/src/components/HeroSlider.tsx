@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { HeroSlide } from '@/content/site';
+import { Aurora, Grain, LightShaft } from './Atmosphere';
 
 const DURATION = 7000;
 
@@ -89,6 +90,14 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
         );
       })}
 
+      {/* Atmosphere: shafts from a clerestory, aurora beneath, grain over all.
+          z-[1] puts it above the photographic frames, below the copy. */}
+      <div className="pointer-events-none absolute inset-0 z-[1]">
+        <Aurora tone="dual" intensity={0.85} />
+        <LightShaft />
+        <Grain opacity={0.06} />
+      </div>
+
       {/* Copy is rendered once, outside the fading frames, so the headline
           never cross-fades against itself. */}
       <div className="relative z-[2] mx-auto flex min-h-[clamp(26rem,78vh,46rem)] max-w-5xl flex-col items-center justify-center px-4 py-20 text-center sm:py-28">
@@ -114,11 +123,11 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
             {/* Only the visible slide is the document's h1; the rest are plain
                 text so the page never ships four competing top-level headings. */}
             {i === current ? (
-              <h1 className="font-heading text-display-xl font-bold text-white [text-wrap:balance]">
+              <h1 className="font-heading text-display-xl font-bold text-transparent [text-wrap:balance] [background-image:linear-gradient(175deg,#ffffff_38%,#f7e6b4_78%,#e9c14a_100%)] [background-clip:text] [-webkit-background-clip:text] drop-shadow-[0_2px_24px_rgba(29,20,40,0.45)]">
                 {slide.title}
               </h1>
             ) : (
-              <p className="font-heading text-display-xl font-bold text-white [text-wrap:balance]">
+              <p className="font-heading text-display-xl font-bold text-transparent [text-wrap:balance] [background-image:linear-gradient(175deg,#ffffff_38%,#f7e6b4_78%,#e9c14a_100%)] [background-clip:text] [-webkit-background-clip:text]">
                 {slide.title}
               </p>
             )}
@@ -149,9 +158,16 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
         ))}
       </div>
 
+      {/* The hero dissolves downward into the quick-links card instead of
+          terminating on a hard edge. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-24 bg-gradient-to-b from-transparent to-brand-purple-dark/85"
+      />
+
       {/* Controls */}
       <div className="absolute inset-x-0 bottom-0 z-[3]">
-        <div className="mx-auto flex max-w-5xl items-center justify-center gap-3 px-4 pb-8">
+        <div className="mx-auto flex max-w-5xl items-center justify-center gap-3 px-4 pb-10">
           <button
             onClick={() => go(-1)}
             aria-label="Previous slide"
