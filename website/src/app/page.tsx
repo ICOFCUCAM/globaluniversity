@@ -714,20 +714,23 @@ export default async function HomePage() {
         </ul>
 
         {/* The accreditation claim itself, stated plainly rather than left to the logos */}
-        <div className="mx-auto mt-12 flex max-w-3xl flex-wrap items-center justify-center gap-x-8 gap-y-4 rounded-2xl border border-brand-sand bg-brand-cream px-8 py-6 text-center">
-          <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-gold-deep">
-            Ministry of Higher Education, Cameroon
-          </p>
-          <span aria-hidden="true" className="hidden h-4 w-px bg-brand-sand sm:block" />
-          <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-gold-deep">
-            Continuously accredited since 2007
-          </p>
-          <span aria-hidden="true" className="hidden h-4 w-px bg-brand-sand sm:block" />
+        {/* Stacked rather than inline: at 3-up the link wrapped to a second
+            row and left an orphaned divider hanging above it. */}
+        <div className="mx-auto mt-12 max-w-3xl overflow-hidden rounded-2xl border border-brand-sand bg-brand-cream text-center">
+          <div className="flex flex-col divide-y divide-brand-sand sm:flex-row sm:divide-x sm:divide-y-0">
+            <p className="flex-1 px-6 py-5 font-sans text-[11px] font-semibold uppercase leading-relaxed tracking-[0.16em] text-brand-gold-deep">
+              Ministry of Higher&nbsp;Education, Cameroon
+            </p>
+            <p className="flex-1 px-6 py-5 font-sans text-[11px] font-semibold uppercase leading-relaxed tracking-[0.16em] text-brand-gold-deep">
+              Continuously accredited since&nbsp;2007
+            </p>
+          </div>
           <Link
             href="/governance"
-            className="font-heading text-sm font-semibold text-brand-purple underline underline-offset-4 hover:text-brand-gold-deep"
+            className="group flex items-center justify-center gap-2 border-t border-brand-sand bg-white px-6 py-4 font-heading text-sm font-semibold text-brand-purple transition hover:bg-brand-purple hover:text-white"
           >
             Governance &amp; accreditation
+            <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">→</span>
           </Link>
         </div>
       </Section>
@@ -741,20 +744,22 @@ export default async function HomePage() {
             <SectionHeading eyebrow="Mark Your Calendar" align="left">
               University diary
             </SectionHeading>
-            <ol className="-mt-4 divide-y divide-brand-sand border-t border-brand-sand">
+            <ol className="relative -mt-4 border-t border-brand-sand">
+              {/* Rail: a single gradient line the date blocks sit on */}
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute bottom-6 left-8 top-6 w-px bg-gradient-to-b from-brand-gold via-brand-sand to-transparent"
+              />
               {events.map((ev, i) => {
                 const date = new Date(ev.date);
                 return (
-                  <li key={ev.slug}>
+                  <li key={ev.slug} className="relative border-b border-brand-sand last:border-b-0">
                     <Reveal delay={i * 90}>
-                      <Link
-                        href="/events"
-                        className="group flex items-start gap-5 py-6 transition"
-                      >
+                      <Link href="/events" className="group relative flex items-start gap-5 py-6">
                         {/* Torn-calendar block */}
                         <time
                           dateTime={ev.date}
-                          className="flex w-16 shrink-0 flex-col items-center rounded-xl border border-brand-sand bg-brand-cream py-2.5 transition duration-500 group-hover:border-brand-gold group-hover:bg-brand-gold"
+                          className="relative z-10 flex w-16 shrink-0 flex-col items-center rounded-xl border border-brand-sand bg-white py-2.5 shadow-sm transition duration-500 group-hover:border-brand-gold group-hover:bg-brand-gold group-hover:shadow-gold"
                         >
                           <span className="font-heading text-2xl font-bold leading-none text-brand-purple tabular">
                             {date.toLocaleDateString('en-GB', { day: '2-digit' })}
