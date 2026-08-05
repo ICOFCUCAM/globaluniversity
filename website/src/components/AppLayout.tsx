@@ -16,6 +16,7 @@ import TranscriptGenerator from './transcript/TranscriptGenerator';
 import CertificateGenerator from './certificate/CertificateGenerator';
 import LMSModule from './lms/LMSModule';
 import ExamModule from './exams/ExamModule';
+import QuestionBank from './exams/QuestionBank';
 import DocumentManagement from './documents/DocumentManagement';
 import AssignmentModule from './assignments/AssignmentModule';
 import AnnouncementModule from './announcements/AnnouncementModule';
@@ -62,6 +63,8 @@ export default function AppLayout() {
         return <LMSModule />;
       case 'exams':
         return <ExamModule />;
+      case 'questionbank':
+        return <QuestionBank />;
       case 'assignments':
         return <AssignmentModule />;
       case 'announcements':
