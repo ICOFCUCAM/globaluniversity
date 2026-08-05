@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { UNIVERSITY, IMAGES } from '@/lib/constants';
+import { Aurora, Grain, LightShaft, Seam } from './Atmosphere';
 import type { UserRole } from '@/lib/types';
 import {
   Shield, Users, GraduationCap, BookOpen, Award,
@@ -98,25 +99,29 @@ export default function LoginScreen() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <div className="min-h-screen bg-brand-cream">
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0">
-          <img src={IMAGES.hero} alt="Campus" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#0f1a3c]/95 via-[#422e59]/90 to-[#422e59]/80" />
+          <img src={IMAGES.hero} alt="" className="h-full w-full object-cover" />
+          <Aurora tone="dual" intensity={0.5} fields={2} />
+          <LightShaft />
+          <div className="absolute inset-0 bg-gradient-to-br from-[#241a30]/95 via-[#422e59]/88 to-[#57549a]/70" />
+          <Grain />
+          <Seam flip />
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 py-8">
           {/* Nav */}
           <div className="flex items-center justify-between mb-12">
             <div className="flex items-center gap-3">
-              <img src={IMAGES.logo} alt="Logo" className="w-12 h-12 rounded-full object-cover border-2 border-amber-400" />
+              <img src={IMAGES.logo} alt="" className="w-12 h-12 rounded-full object-cover border-2 border-brand-gold" />
               <div>
                 <h1 className="text-white font-bold text-lg">{UNIVERSITY.shortName}</h1>
-                <p className="text-blue-200 text-[10px]">University Management System</p>
+                <p className="text-[10px] tracking-wide text-brand-gold/80">University Management System</p>
               </div>
             </div>
-            <div className="hidden md:flex items-center gap-6 text-sm text-blue-200">
+            <div className="hidden items-center gap-6 text-sm text-white/70 md:flex">
               <a href="#features" className="hover:text-white transition-colors">Features</a>
               <a href="/about" className="hover:text-white transition-colors">About</a>
               <a href="/contact" className="hover:text-white transition-colors">Contact</a>
@@ -126,35 +131,35 @@ export default function LoginScreen() {
           {/* Hero Content */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center pb-16">
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-500/20 rounded-full text-amber-300 text-xs font-medium mb-4">
-                <span className="w-2 h-2 bg-amber-400 rounded-full animate-pulse" />
-                Next-Generation Academic Platform
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-brand-gold/30 bg-brand-gold/10 px-4 py-1.5 font-sans text-[10px] font-semibold uppercase tracking-[0.2em] text-brand-gold backdrop-blur-sm">
+                <span className="h-1.5 w-1.5 rounded-full bg-brand-gold" />
+                The ICOF Global University portal
               </div>
-              <h2 className="text-4xl lg:text-5xl font-bold text-white leading-tight">
-                ICOF Global <span className="text-amber-400">University</span> Portal
+              <h2 className="font-heading text-4xl font-bold leading-tight text-transparent lg:text-5xl [background-image:linear-gradient(175deg,#ffffff_38%,#f7e6b4_80%,#e9c14a_100%)] [background-clip:text] [-webkit-background-clip:text]">
+                ICOF Global <span className="text-brand-gold">University</span> Portal
               </h2>
-              <p className="text-blue-200 mt-4 text-lg leading-relaxed">
+              <p className="mt-4 text-lg leading-relaxed text-white/85">
                 One portal for the whole academic journey — admission to graduation — with automated GPA calculation, verified transcript generation and integrated online learning, serving students on campus in Cameroon and online worldwide.
               </p>
               <div className="flex flex-wrap gap-4 mt-8">
                 <div className="text-center">
                   <p className="text-3xl font-bold text-white">7,228</p>
-                  <p className="text-xs text-blue-300">Success Stories</p>
+                  <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-white/60">Success Stories</p>
                 </div>
-                <div className="w-px bg-blue-400/30" />
+                <div className="w-px bg-white/20" />
                 <div className="text-center">
                   <p className="text-3xl font-bold text-white">213</p>
-                  <p className="text-xs text-blue-300">Courses</p>
+                  <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-white/60">Courses</p>
                 </div>
-                <div className="w-px bg-blue-400/30" />
+                <div className="w-px bg-white/20" />
                 <div className="text-center">
                   <p className="text-3xl font-bold text-white">1,742</p>
-                  <p className="text-xs text-blue-300">Happy Students</p>
+                  <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-white/60">Happy Students</p>
                 </div>
-                <div className="w-px bg-blue-400/30" />
+                <div className="w-px bg-white/20" />
                 <div className="text-center">
                   <p className="text-3xl font-bold text-white">15+</p>
-                  <p className="text-xs text-blue-300">Years of Excellence</p>
+                  <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-white/60">Years of Excellence</p>
                 </div>
               </div>
             </div>
@@ -311,7 +316,7 @@ export default function LoginScreen() {
                         {[1, 2, 3, 4].map((i) => (
                           <div key={i} className={`h-1 flex-1 rounded-full transition-colors ${
                             password.length >= i * 3
-                              ? password.length >= 12 ? 'bg-emerald-500' : password.length >= 8 ? 'bg-blue-500' : 'bg-amber-500'
+                              ? password.length >= 12 ? 'bg-emerald-500' : password.length >= 8 ? 'bg-brand-gold-deep' : 'bg-amber-500'
                               : 'bg-gray-200'
                           }`} />
                         ))}
@@ -386,8 +391,8 @@ export default function LoginScreen() {
       {/* Features Section */}
       <div id="features" className="max-w-7xl mx-auto px-6 py-16">
         <div className="text-center mb-12">
-          <h3 className="text-2xl font-bold text-gray-800">Enterprise-Grade Features</h3>
-          <p className="text-gray-500 mt-2">Everything you need to manage a modern university</p>
+          <h3 className="text-2xl font-bold text-gray-800">What the portal does</h3>
+          <p className="text-gray-500 mt-2">One system, from application through to graduation and credential verification</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {features.map((feature, i) => (

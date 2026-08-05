@@ -46,7 +46,7 @@ const demoUsers: Record<UserRole, AuthUser> = {
     name: 'Prof. Aisha Mohammed',
     email: 'registrar@futech.edu.ng',
     role: 'admin',
-    avatar: 'https://d64gsuwffb70l.cloudfront.net/69d7c86adbb6212cee108ac6_1775749435689_3700159e.jpg',
+    avatar: '/images/site-icon.png',
   },
   student: {
     id: 'demo-student',
@@ -54,7 +54,7 @@ const demoUsers: Record<UserRole, AuthUser> = {
     email: 'adebayo.o@uni.edu',
     role: 'student',
     matricNo: 'UNI/2022/CS/001',
-    avatar: 'https://d64gsuwffb70l.cloudfront.net/69d7c86adbb6212cee108ac6_1775749569308_8c6d4c22.png',
+    avatar: '/images/site-icon.png',
   },
   lecturer: {
     id: 'demo-lecturer',
@@ -62,7 +62,7 @@ const demoUsers: Record<UserRole, AuthUser> = {
     email: 'j.okonkwo@uni.edu',
     role: 'lecturer',
     staffId: 'STF/2020/001',
-    avatar: 'https://d64gsuwffb70l.cloudfront.net/69d7c86adbb6212cee108ac6_1775749428122_5e19cbff.jpg',
+    avatar: '/images/site-icon.png',
   },
 };
 

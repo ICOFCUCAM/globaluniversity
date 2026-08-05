@@ -15,21 +15,25 @@ export const UNIVERSITY = {
   viceChancellor: 'Prof Chamayah Meyembi',
 };
 
+// Portal imagery. Previously eleven URLs on the original template's
+// CloudFront bucket — third-party assets of unknown provenance and licence,
+// on a live login page, that would break the moment that bucket went away.
+// All replaced with the university's own files from /public.
 export const IMAGES = {
-  logo: 'https://d64gsuwffb70l.cloudfront.net/69d7c86adbb6212cee108ac6_1775749380782_7c9e38b4.png',
-  hero: 'https://d64gsuwffb70l.cloudfront.net/69d7c86adbb6212cee108ac6_1775749398840_e54c6d17.jpg',
-  seal: 'https://d64gsuwffb70l.cloudfront.net/69d7c86adbb6212cee108ac6_1775749634439_40752e00.png',
+  logo: '/images/site-icon.png',
+  hero: '/images/hall.jpg',
+  seal: '/images/site-icon.png',
   professors: [
-    'https://d64gsuwffb70l.cloudfront.net/69d7c86adbb6212cee108ac6_1775749428122_5e19cbff.jpg',
-    'https://d64gsuwffb70l.cloudfront.net/69d7c86adbb6212cee108ac6_1775749435689_3700159e.jpg',
-    'https://d64gsuwffb70l.cloudfront.net/69d7c86adbb6212cee108ac6_1775749463982_121406f0.png',
-    'https://d64gsuwffb70l.cloudfront.net/69d7c86adbb6212cee108ac6_1775749428316_b24f9443.jpg',
+    '/images/wp/ndenka.jpg',
+    '/images/wp/vc-meyembi.png',
+    '/images/wp/samuel-kinge.png',
+    '/images/wp/lyonga-divine.png',
   ],
   students: [
-    'https://d64gsuwffb70l.cloudfront.net/69d7c86adbb6212cee108ac6_1775749569308_8c6d4c22.png',
-    'https://d64gsuwffb70l.cloudfront.net/69d7c86adbb6212cee108ac6_1775749510527_0843627c.png',
-    'https://d64gsuwffb70l.cloudfront.net/69d7c86adbb6212cee108ac6_1775749539720_8546a178.png',
-    'https://d64gsuwffb70l.cloudfront.net/69d7c86adbb6212cee108ac6_1775749546851_7c9916a1.png',
+    '/images/wp/g-graduates.jpg',
+    '/images/wp/g-students.jpg',
+    '/images/wp/g-grads.jpg',
+    '/images/wp/g-student-celebration.jpg',
   ],
 };
 
