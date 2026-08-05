@@ -401,50 +401,6 @@ export default function LoginScreen() {
         </div>
       </div>
 
-      {/* Footer */}
-      <footer className="bg-[#0f1a3c] text-white py-12">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <img src={IMAGES.logo} alt="" className="w-8 h-8 rounded-full object-cover" />
-                <span className="font-bold">{UNIVERSITY.shortName}</span>
-              </div>
-              <p className="text-sm text-blue-200">{UNIVERSITY.motto}</p>
-              <p className="text-xs text-blue-300 mt-2">{UNIVERSITY.address}</p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-3 text-sm">Quick Links</h4>
-              <div className="space-y-2 text-sm text-blue-200">
-                <p className="hover:text-white cursor-pointer transition-colors">Student Portal</p>
-                <p className="hover:text-white cursor-pointer transition-colors">Lecturer Portal</p>
-                <p className="hover:text-white cursor-pointer transition-colors">Course Catalog</p>
-                <p className="hover:text-white cursor-pointer transition-colors">Library</p>
-              </div>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-3 text-sm">Resources</h4>
-              <div className="space-y-2 text-sm text-blue-200">
-                <p className="hover:text-white cursor-pointer transition-colors">Academic Calendar</p>
-                <p className="hover:text-white cursor-pointer transition-colors">Exam Timetable</p>
-                <p className="hover:text-white cursor-pointer transition-colors">Transcripts</p>
-                <p className="hover:text-white cursor-pointer transition-colors">Help Center</p>
-              </div>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-3 text-sm">Contact</h4>
-              <div className="space-y-2 text-sm text-blue-200">
-                <p>{UNIVERSITY.email}</p>
-                <p>{UNIVERSITY.phone}</p>
-                <p>{UNIVERSITY.website}</p>
-              </div>
-            </div>
-          </div>
-          <div className="border-t border-white/10 mt-8 pt-6 text-center text-xs text-blue-300">
-            <p>&copy; {new Date().getFullYear()} {UNIVERSITY.name}. All rights reserved. Powered by UMS v2.0</p>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
