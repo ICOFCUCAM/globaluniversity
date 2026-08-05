@@ -1,12 +1,35 @@
+'use client';
+
+// ---------------------------------------------------------------------------
+// Portal navigation.
+//
+// This was one flat list of up to twenty-five items in the order they happened
+// to be written, so finding "Grade Book" meant reading the whole thing. Long
+// lists are not navigated, they are scanned — and scanning needs groups.
+//
+// The groups are the university's own divisions of work rather than the
+// software's: Admissions, Academic, Teaching, Records, Administration. A
+// registrar looking for the admissions queue looks under Admissions, not under
+// whichever screen was built first.
+//
+// Two details that were bugs rather than taste. The rail is a flex column with
+// only the nav scrolling, so the sign-out control cannot be pushed off the
+// bottom of the screen — it was, at every viewport under about 900px. And each
+// group heading is a real <h2> inside a <nav>, so a screen-reader user can jump
+// between sections instead of hearing twenty-five buttons in a row.
+// ---------------------------------------------------------------------------
+
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { IMAGES, UNIVERSITY } from '@/lib/constants';
 import type { ViewType, UserRole } from '@/lib/types';
+import { roleLabels, SYSTEM_ROLES } from '@/lib/roles';
+import { FOCUS } from '@/lib/portalTheme';
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen, ClipboardList,
   FileText, Award, Monitor, PenTool, FolderOpen, BarChart3,
   Settings, Shield, LogOut, ChevronLeft, ChevronRight, BookMarked, Wallet, Stamp,
-  UserCog, Palette
+  UserCog, Palette,
 } from 'lucide-react';
 
 interface MenuItem {
@@ -16,35 +39,83 @@ interface MenuItem {
   roles: UserRole[];
 }
 
-const menuItems: MenuItem[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} />, roles: ['superadmin', 'admin', 'student', 'lecturer'] },
-  // System custody. These two are the Superadministrator's alone — 'admin' is
-  // deliberately absent, and that absence is the control, not an oversight.
-  { id: 'accounts', label: 'Accounts', icon: <UserCog size={20} />, roles: ['superadmin'] },
-  { id: 'studio', label: 'Credential Studio', icon: <Palette size={20} />, roles: ['superadmin'] },
-  { id: 'programme-resources', label: 'Programme Resources', icon: <BookMarked size={20} />, roles: ['superadmin', 'admin', 'student', 'lecturer'] },
-  { id: 'admissions-finance', label: 'Admissions — Finance', icon: <Wallet size={20} />, roles: ['superadmin', 'admin', 'finance'] },
-  { id: 'admissions-registrar', label: 'Admissions — Registrar', icon: <Stamp size={20} />, roles: ['superadmin', 'admin', 'registrar'] },
-  { id: 'students', label: 'Students', icon: <Users size={20} />, roles: ['superadmin', 'admin', 'registrar'] },
-  { id: 'lecturers', label: 'Lecturers', icon: <GraduationCap size={20} />, roles: ['superadmin', 'admin'] },
-  { id: 'courses', label: 'Courses', icon: <BookOpen size={20} />, roles: ['superadmin', 'admin', 'student', 'lecturer'] },
-  { id: 'results', label: 'Results', icon: <ClipboardList size={20} />, roles: ['superadmin', 'admin', 'lecturer', 'student'] },
-  { id: 'gradebook', label: 'Grade Book', icon: <ClipboardList size={20} />, roles: ['superadmin', 'admin', 'lecturer'] },
-  { id: 'transcript', label: 'Transcript', icon: <FileText size={20} />, roles: ['superadmin', 'admin', 'student'] },
-  { id: 'certificate', label: 'Certificate', icon: <Award size={20} />, roles: ['superadmin', 'admin', 'student'] },
-  { id: 'lms', label: 'Learning (LMS)', icon: <Monitor size={20} />, roles: ['superadmin', 'admin', 'student', 'lecturer'] },
-  { id: 'exams', label: 'Examinations', icon: <PenTool size={20} />, roles: ['superadmin', 'admin', 'student', 'lecturer'] },
-  { id: 'questionbank', label: 'Question Bank', icon: <PenTool size={20} />, roles: ['superadmin', 'admin', 'lecturer'] },
-  { id: 'assignments', label: 'Assignments', icon: <ClipboardList size={20} />, roles: ['superadmin', 'admin', 'student', 'lecturer'] },
-  { id: 'timetable', label: 'Timetable', icon: <ClipboardList size={20} />, roles: ['superadmin', 'admin', 'student', 'lecturer'] },
-  { id: 'announcements', label: 'Announcements', icon: <ClipboardList size={20} />, roles: ['superadmin', 'admin', 'student', 'lecturer'] },
-  { id: 'forum', label: 'Discussion Forum', icon: <ClipboardList size={20} />, roles: ['superadmin', 'admin', 'student', 'lecturer'] },
-  { id: 'fees', label: 'Fees & Receipts', icon: <ClipboardList size={20} />, roles: ['superadmin', 'admin'] },
-  { id: 'documents', label: 'Documents', icon: <FolderOpen size={20} />, roles: ['superadmin', 'admin', 'student'] },
-  { id: 'analytics', label: 'Analytics', icon: <BarChart3 size={20} />, roles: ['superadmin', 'admin'] },
-  { id: 'insights', label: 'Learning Analytics', icon: <BarChart3 size={20} />, roles: ['superadmin', 'admin', 'lecturer'] },
-  { id: 'audit', label: 'Audit Logs', icon: <Shield size={20} />, roles: ['superadmin', 'admin'] },
-  { id: 'settings', label: 'Settings', icon: <Settings size={20} />, roles: ['superadmin', 'admin', 'student', 'lecturer'] },
+interface MenuGroup {
+  /** Shown above the group. Null for the first group, which needs no label. */
+  title: string | null;
+  items: MenuItem[];
+}
+
+const ALL: UserRole[] = ['superadmin', 'admin', 'student', 'lecturer'];
+
+const menuGroups: MenuGroup[] = [
+  {
+    title: null,
+    items: [
+      { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} />, roles: ALL },
+    ],
+  },
+  {
+    title: 'Admissions',
+    items: [
+      { id: 'admissions-finance', label: 'Finance desk', icon: <Wallet size={18} />, roles: ['superadmin', 'admin', 'finance'] },
+      { id: 'admissions-registrar', label: 'Registrar desk', icon: <Stamp size={18} />, roles: ['superadmin', 'admin', 'registrar'] },
+      { id: 'students', label: 'Students', icon: <Users size={18} />, roles: ['superadmin', 'admin', 'registrar'] },
+    ],
+  },
+  {
+    title: 'Academic',
+    items: [
+      { id: 'programme-resources', label: 'Programme resources', icon: <BookMarked size={18} />, roles: ALL },
+      { id: 'courses', label: 'Courses', icon: <BookOpen size={18} />, roles: ALL },
+      { id: 'timetable', label: 'Timetable', icon: <ClipboardList size={18} />, roles: ALL },
+      { id: 'lms', label: 'Learning (LMS)', icon: <Monitor size={18} />, roles: ALL },
+    ],
+  },
+  {
+    title: 'Teaching',
+    items: [
+      { id: 'lecturers', label: 'Lecturers', icon: <GraduationCap size={18} />, roles: ['superadmin', 'admin'] },
+      { id: 'assignments', label: 'Assignments', icon: <ClipboardList size={18} />, roles: ALL },
+      { id: 'exams', label: 'Examinations', icon: <PenTool size={18} />, roles: ALL },
+      { id: 'questionbank', label: 'Question bank', icon: <PenTool size={18} />, roles: ['superadmin', 'admin', 'lecturer'] },
+      { id: 'gradebook', label: 'Grade book', icon: <ClipboardList size={18} />, roles: ['superadmin', 'admin', 'lecturer'] },
+    ],
+  },
+  {
+    title: 'Records',
+    items: [
+      { id: 'results', label: 'Results', icon: <ClipboardList size={18} />, roles: ALL },
+      { id: 'transcript', label: 'Transcript', icon: <FileText size={18} />, roles: ['superadmin', 'admin', 'student'] },
+      { id: 'certificate', label: 'Certificate', icon: <Award size={18} />, roles: ['superadmin', 'admin', 'student'] },
+      { id: 'documents', label: 'Documents', icon: <FolderOpen size={18} />, roles: ['superadmin', 'admin', 'student'] },
+      { id: 'fees', label: 'Fees & receipts', icon: <Wallet size={18} />, roles: ['superadmin', 'admin'] },
+    ],
+  },
+  {
+    title: 'Community',
+    items: [
+      { id: 'announcements', label: 'Announcements', icon: <ClipboardList size={18} />, roles: ALL },
+      { id: 'forum', label: 'Discussion forum', icon: <ClipboardList size={18} />, roles: ALL },
+    ],
+  },
+  {
+    title: 'Insight',
+    items: [
+      { id: 'analytics', label: 'Analytics', icon: <BarChart3 size={18} />, roles: ['superadmin', 'admin'] },
+      { id: 'insights', label: 'Learning analytics', icon: <BarChart3 size={18} />, roles: ['superadmin', 'admin', 'lecturer'] },
+      { id: 'audit', label: 'Audit log', icon: <Shield size={18} />, roles: ['superadmin', 'admin'] },
+    ],
+  },
+  {
+    // System custody. 'admin' is deliberately absent from both, and that
+    // absence is the control — see src/lib/roles.ts.
+    title: 'System',
+    items: [
+      { id: 'accounts', label: 'Accounts', icon: <UserCog size={18} />, roles: ['superadmin'] },
+      { id: 'studio', label: 'Credential studio', icon: <Palette size={18} />, roles: ['superadmin'] },
+      { id: 'settings', label: 'Settings', icon: <Settings size={18} />, roles: ALL },
+    ],
+  },
 ];
 
 interface SidebarProps {
@@ -56,81 +127,110 @@ interface SidebarProps {
 
 export default function Sidebar({ currentView, onViewChange, collapsed, onToggle }: SidebarProps) {
   const { user, logout } = useAuth();
-  const filteredItems = menuItems.filter((item) => user && item.roles.includes(user.role));
+
+  const groups = menuGroups
+    .map((g) => ({ ...g, items: g.items.filter((i) => user && i.roles.includes(user.role)) }))
+    .filter((g) => g.items.length > 0);
+
+  const initials = (user?.name ?? '')
+    .split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
 
   return (
     <aside
-      className={`fixed left-0 top-0 h-full bg-gradient-to-b from-[#0f1a3c] to-[#422e59] text-white z-40 transition-all duration-300 flex flex-col ${
-        collapsed ? 'w-[72px]' : 'w-64'
+      className={`fixed left-0 top-0 z-40 flex h-full flex-col bg-[#241a30] text-white transition-[width] duration-200 ${
+        collapsed ? 'w-[68px]' : 'w-64'
       }`}
     >
-      {/* Logo */}
-      <div className="flex items-center gap-3 px-4 py-5 border-b border-white/10">
-        <img src={IMAGES.logo} alt="Logo" className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
+      {/* Masthead */}
+      <div className={`flex flex-shrink-0 items-center gap-3 border-b border-white/10 px-4 py-4 ${collapsed ? 'justify-center px-0' : ''}`}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={IMAGES.logo} alt="" className="h-9 w-9 flex-shrink-0 rounded-full object-cover ring-1 ring-[#c5a55a]/50" />
         {!collapsed && (
-          <div className="overflow-hidden">
-            <h1 className="text-sm font-bold leading-tight truncate">{UNIVERSITY.shortName}</h1>
-            <p className="text-[10px] text-blue-200 truncate">University Management</p>
+          <div className="min-w-0">
+            <p className="truncate font-heading text-sm font-bold leading-tight">{UNIVERSITY.shortName}</p>
+            <p className="truncate text-[10px] uppercase tracking-[0.12em] text-[#c5a55a]">Management System</p>
           </div>
         )}
       </div>
 
-      {/* User Info */}
+      {/* Who is signed in. The role label is the university's own wording —
+          "Registrar Administrator", not the raw `registrar`. */}
       {user && (
-        <div className={`px-4 py-3 border-b border-white/10 ${collapsed ? 'flex justify-center' : ''}`}>
-          <div className={`flex items-center gap-3 ${collapsed ? 'justify-center' : ''}`}>
-            <img
-              src={user.avatar}
-              alt={user.name}
-              className="w-9 h-9 rounded-full object-cover border-2 border-amber-400 flex-shrink-0"
-            />
-            {!collapsed && (
-              <div className="overflow-hidden">
-                <p className="text-sm font-medium truncate">{user.name}</p>
-                <p className="text-[10px] text-blue-200 capitalize">{user.role}</p>
-              </div>
-            )}
-          </div>
+        <div className={`flex flex-shrink-0 items-center gap-3 border-b border-white/10 px-4 py-3 ${collapsed ? 'justify-center px-0' : ''}`}>
+          <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[#422e59] text-[11px] font-bold text-[#e9c14a] ring-1 ring-[#c5a55a]/40">
+            {initials || '·'}
+          </span>
+          {!collapsed && (
+            <div className="min-w-0">
+              <p className="truncate text-xs font-medium text-white/90">{user.name}</p>
+              <p className="truncate text-[10px] text-white/45">
+                {roleLabels[user.role] ?? user.role}
+                {SYSTEM_ROLES.includes(user.role) && (
+                  <span className="ml-1 text-[#c5a55a]">·&nbsp;system</span>
+                )}
+              </p>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
-        {filteredItems.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => onViewChange(item.id)}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 group ${
-              currentView === item.id
-                ? 'bg-white/15 text-amber-300 font-semibold shadow-lg shadow-black/10'
-                : 'text-blue-100 hover:bg-white/10 hover:text-white'
-            } ${collapsed ? 'justify-center' : ''}`}
-            title={collapsed ? item.label : undefined}
-          >
-            <span className="flex-shrink-0">{item.icon}</span>
-            {!collapsed && <span className="truncate">{item.label}</span>}
-          </button>
+      {/* Only this scrolls, so the controls below cannot be pushed off-screen. */}
+      <nav className="min-h-0 flex-1 overflow-y-auto px-2 py-3">
+        {groups.map((group, gi) => (
+          <div key={group.title ?? `g${gi}`} className={gi > 0 ? 'mt-4' : ''}>
+            {group.title && !collapsed && (
+              <h2 className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/35">
+                {group.title}
+              </h2>
+            )}
+            {group.title && collapsed && <div className="mx-3 mb-2 border-t border-white/10" />}
+            <ul className="space-y-0.5">
+              {group.items.map((item) => {
+                const active = currentView === item.id;
+                return (
+                  <li key={item.id}>
+                    <button
+                      onClick={() => onViewChange(item.id)}
+                      aria-current={active ? 'page' : undefined}
+                      title={collapsed ? item.label : undefined}
+                      className={`relative flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${FOCUS} ${
+                        active
+                          ? 'bg-white/10 font-semibold text-[#e9c14a]'
+                          : 'text-white/65 hover:bg-white/[0.06] hover:text-white'
+                      } ${collapsed ? 'justify-center px-0' : ''}`}
+                    >
+                      {/* A gold rule marks the current screen. Colour alone
+                          would not: on a dark rail the active and inactive
+                          weights are close, and the rule survives both
+                          greyscale and a colour-blind reader. */}
+                      {active && !collapsed && (
+                        <span className="absolute inset-y-1 left-0 w-0.5 rounded-r bg-[#e9c14a]" aria-hidden="true" />
+                      )}
+                      <span className="flex-shrink-0">{item.icon}</span>
+                      {!collapsed && <span className="truncate">{item.label}</span>}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
         ))}
       </nav>
 
-      {/* Bottom Actions */}
-      <div className="px-2 py-3 border-t border-white/10 space-y-1">
+      <div className="flex-shrink-0 space-y-0.5 border-t border-white/10 px-2 py-2.5">
         <button
           onClick={logout}
-          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-red-300 hover:bg-red-500/20 hover:text-red-200 transition-all ${
-            collapsed ? 'justify-center' : ''
-          }`}
+          className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-white/60 transition-colors hover:bg-red-500/15 hover:text-red-300 ${FOCUS} ${collapsed ? 'justify-center px-0' : ''}`}
         >
-          <LogOut size={20} />
-          {!collapsed && <span>Sign Out</span>}
+          <LogOut size={18} />
+          {!collapsed && <span>Sign out</span>}
         </button>
         <button
           onClick={onToggle}
-          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-blue-200 hover:bg-white/10 transition-all ${
-            collapsed ? 'justify-center' : ''
-          }`}
+          aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}
+          className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-white/45 transition-colors hover:bg-white/[0.06] hover:text-white ${FOCUS} ${collapsed ? 'justify-center px-0' : ''}`}
         >
-          {collapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+          {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
           {!collapsed && <span>Collapse</span>}
         </button>
       </div>
