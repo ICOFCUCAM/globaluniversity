@@ -22,6 +22,39 @@ export default function SettingsPage() {
     email: user?.email || '',
   });
   const [saving, setSaving] = useState(false);
+  const [pw1, setPw1] = useState('');
+  const [pw2, setPw2] = useState('');
+  const [pwBusy, setPwBusy] = useState(false);
+  const [pwMessage, setPwMessage] = useState<{ ok: boolean; text: string } | null>(null);
+
+  /**
+   * Change the signed-in user's password.
+   *
+   * Supabase re-checks the session rather than the old password, so there is no
+   * "current password" field: asking for one and not verifying it would be
+   * theatre. The session itself is the proof of identity.
+   */
+  async function changePassword(e: React.FormEvent) {
+    e.preventDefault();
+    setPwMessage(null);
+    if (pw1 !== pw2) {
+      setPwMessage({ ok: false, text: 'The two passwords do not match.' });
+      return;
+    }
+    if (pw1.length < 10) {
+      setPwMessage({ ok: false, text: 'Use at least 10 characters.' });
+      return;
+    }
+    setPwBusy(true);
+    const { error } = await supabase.auth.updateUser({ password: pw1 });
+    setPwBusy(false);
+    if (error) {
+      setPwMessage({ ok: false, text: error.message });
+      return;
+    }
+    setPw1(''); setPw2('');
+    setPwMessage({ ok: true, text: 'Password updated. Use it the next time you sign in.' });
+  }
   const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -204,33 +237,68 @@ export default function SettingsPage() {
 
           {activeTab === 'security' && (
             <div className="space-y-4">
-              <h3 className="font-semibold text-[#33234a] dark:text-[#e4dcf0]">Security Settings</h3>
-              <div className="p-4 bg-gray-50 rounded-xl space-y-3">
+              <h3 className="font-semibold text-[#33234a] dark:text-[#e4dcf0]">Security</h3>
+
+              {/* This form previously had three password fields and a button
+                  with no handler. Somebody following the university's own
+                  instruction to change their temporary password would have
+                  typed a new one, pressed the button, seen nothing happen, and
+                  carried on using the password that was emailed to them in
+                  plain text. */}
+              <form onSubmit={changePassword} className="space-y-3 rounded-xl bg-[#faf8f4] p-4 dark:bg-[#241f2c]">
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Current Password</label>
-                  <input type="password" placeholder="Enter current password"
-                    className="w-full max-w-md px-3 py-2 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35" />
+                  <label htmlFor="new-password" className="mb-1 block text-xs font-medium text-[#6b6076] dark:text-[#9c93ad]">
+                    New password
+                  </label>
+                  <input
+                    id="new-password" type="password" autoComplete="new-password" required minLength={10}
+                    value={pw1} onChange={(e) => setPw1(e.target.value)}
+                    className="w-full max-w-md rounded-lg border border-[#ded6c8] px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35 dark:border-[#3d3349] dark:bg-[#1f1a27]"
+                  />
+                  <p className="mt-1 text-[11px] text-[#a49bb0]">
+                    At least 10 characters. Length is what makes a password hard to guess; a short
+                    one with a symbol in it is not.
+                  </p>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">New Password</label>
-                  <input type="password" placeholder="Enter new password"
-                    className="w-full max-w-md px-3 py-2 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35" />
+                  <label htmlFor="confirm-password" className="mb-1 block text-xs font-medium text-[#6b6076] dark:text-[#9c93ad]">
+                    Confirm new password
+                  </label>
+                  <input
+                    id="confirm-password" type="password" autoComplete="new-password" required
+                    value={pw2} onChange={(e) => setPw2(e.target.value)}
+                    className="w-full max-w-md rounded-lg border border-[#ded6c8] px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35 dark:border-[#3d3349] dark:bg-[#1f1a27]"
+                  />
                 </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Confirm Password</label>
-                  <input type="password" placeholder="Confirm new password"
-                    className="w-full max-w-md px-3 py-2 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35" />
-                </div>
-                <button className="px-4 py-2 bg-[#422e59] text-white rounded-lg text-sm font-medium hover:bg-[#322244] transition-colors">
-                  Update Password
+                {pwMessage && (
+                  <p className={`max-w-md rounded-lg px-3 py-2 text-sm ${
+                    pwMessage.ok
+                      ? 'border border-emerald-200 bg-emerald-50 text-emerald-800'
+                      : 'border border-red-200 bg-red-50 text-red-700'
+                  }`}>
+                    {pwMessage.text}
+                  </p>
+                )}
+                <button
+                  type="submit" disabled={pwBusy || !pw1 || !pw2}
+                  className="rounded-lg bg-[#422e59] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#322244] disabled:opacity-40"
+                >
+                  {pwBusy ? 'Updating…' : 'Update password'}
                 </button>
-              </div>
-              <div className="p-4 bg-gray-50 rounded-xl">
-                <h4 className="text-sm font-medium text-gray-700 mb-2">Two-Factor Authentication</h4>
-                <p className="text-xs text-[#6b6076] dark:text-[#9c93ad] mb-3">Add an extra layer of security to your account</p>
-                <button className="px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-medium hover:bg-emerald-600 transition-colors">
-                  Enable 2FA
-                </button>
+              </form>
+
+              {/* Two-factor authentication is not implemented. The button that
+                  offered it was styled in confident green and did nothing, so
+                  anyone who pressed it had every reason to believe their
+                  account was now protected by a second factor. Claiming a
+                  security control you do not have is worse than not having it:
+                  it changes how carefully people treat the first one. */}
+              <div className="rounded-xl border border-[#ece7de] bg-[#faf8f4] p-4 dark:border-[#2e2637] dark:bg-[#241f2c]">
+                <h4 className="text-sm font-medium text-[#33234a] dark:text-[#e4dcf0]">Two-factor authentication</h4>
+                <p className="mt-1 text-xs text-[#6b6076] dark:text-[#9c93ad]">
+                  Not yet available on this portal. When it is, it will be required for the
+                  Superadministrator and the two admissions desks before anyone else.
+                </p>
               </div>
             </div>
           )}
