@@ -118,6 +118,10 @@ const config: Config = {
           from: { transform: 'translateX(0)' },
           to: { transform: 'translateX(-50%)' },
         },
+        'marquee-rev': {
+          from: { transform: 'translateX(-50%)' },
+          to: { transform: 'translateX(0)' },
+        },
         'aurora-a': {
           '0%,100%': { transform: 'translate3d(0,0,0) scale(1)' },
           '33%': { transform: 'translate3d(12%, 8%, 0) scale(1.18)' },
@@ -153,7 +157,8 @@ const config: Config = {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
         'ken-burns': 'ken-burns 12s ease-out forwards',
-        'marquee': 'marquee 38s linear infinite',
+        'marquee': 'marquee var(--dur,38s) linear infinite',
+        'marquee-rev': 'marquee-rev var(--dur,38s) linear infinite',
         'sheen': 'sheen 2.4s ease-in-out infinite',
         'aurora-a': 'aurora-a 26s ease-in-out infinite',
         'aurora-b': 'aurora-b 32s ease-in-out infinite',

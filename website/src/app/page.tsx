@@ -12,6 +12,7 @@ import CountUp from '@/components/CountUp';
 import { Aurora, Grain, Seam } from '@/components/Atmosphere';
 import KineticText from '@/components/KineticText';
 import { SpotlightGroup, SpotlightCard } from '@/components/Spotlight';
+import ProgramRibbon from '@/components/ProgramRibbon';
 import { IconCampus, IconChapel, IconGlobe, IconLaptop } from '@/components/Icons';
 
 const PILLARS = [
@@ -32,7 +33,13 @@ const PILLARS = [
 export default async function HomePage() {
   const { heroSlides, quickLinks, stats, about, events, news, homeFeatures, homeFaculties, homeFaqs } =
     await getHomePage();
-  const programs = (await getPrograms()).slice(0, 4);
+  const allPrograms = await getPrograms();
+  const programs = allPrograms.slice(0, 4);
+  // Real program titles, deduplicated — the ribbon must never invent a field.
+  const ribbon = Array.from(new Map(allPrograms.map((p) => [p.title, p])).values()).map((p) => ({
+    label: p.title,
+    href: `/programs/${p.slug}`,
+  }));
 
   // One @graph rather than three separate script tags: the university, the
   // questions and the featured programs, cross-referenced by @id so search
@@ -367,6 +374,8 @@ export default async function HomePage() {
           </Link>
         </div>
       </Section>
+
+      <ProgramRibbon items={ribbon} />
 
       {/* Research & Innovation */}
       <section className="relative overflow-hidden bg-brand-purple py-20 text-white sm:py-24">
