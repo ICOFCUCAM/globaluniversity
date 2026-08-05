@@ -206,17 +206,38 @@ export default async function HomePage() {
       <Section>
         <SectionHeading eyebrow="Academic Community">{homeFaculties.heading}</SectionHeading>
         <p className="mx-auto -mt-6 mb-10 max-w-3xl text-center text-brand-muted">{homeFaculties.intro}</p>
-        <div className="mx-auto grid max-w-5xl gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mx-auto grid max-w-6xl gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {homeFaculties.items.map((f, i) => (
             <Reveal key={f.name} delay={i * 100}>
               <Link
                 href="/faculty"
-                className="group block overflow-hidden rounded-2xl border border-brand-sand bg-white text-center shadow-sm transition hover:-translate-y-1 hover:shadow-xl"
+                className="group relative block h-72 overflow-hidden rounded-2xl shadow-lift transition duration-500 hover:-translate-y-1.5 hover:shadow-lift-lg"
               >
-                <div className="relative h-36">
-                  <Image src={f.image} alt={f.name} fill className="object-cover transition duration-500 group-hover:scale-105" sizes="(min-width:1024px) 25vw, 50vw" />
+                <Image
+                  src={f.image}
+                  alt=""
+                  fill
+                  className="object-cover transition duration-[900ms] ease-out group-hover:scale-110"
+                  sizes="(min-width:1024px) 25vw, (min-width:640px) 50vw, 100vw"
+                />
+                {/* Two stops rather than one: the name stays legible on light
+                    photographs without flattening the image behind it. */}
+                <div className="absolute inset-0 bg-gradient-to-t from-brand-purple-dark via-brand-purple-dark/55 to-transparent" />
+                <div className="absolute inset-0 bg-brand-purple/0 transition duration-500 group-hover:bg-brand-purple/25" />
+
+                <div className="absolute inset-x-0 bottom-0 p-5">
+                  <span
+                    aria-hidden="true"
+                    className="mb-3 block h-[2px] w-9 origin-left rounded-full bg-brand-gold transition-transform duration-500 group-hover:scale-x-[2.4]"
+                  />
+                  <h3 className="font-heading text-base font-bold leading-snug text-white [text-wrap:balance]">
+                    {f.name}
+                  </h3>
+                  <span className="mt-2 flex items-center gap-1.5 font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-gold opacity-0 transition duration-500 group-hover:opacity-100">
+                    Explore
+                    <span aria-hidden="true">→</span>
+                  </span>
                 </div>
-                <span className="block p-4 font-heading text-sm font-semibold text-brand-purple">{f.name}</span>
               </Link>
             </Reveal>
           ))}
