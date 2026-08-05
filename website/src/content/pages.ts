@@ -723,6 +723,7 @@ export const degreeLevels: DegreeLevel[] = [
         programs: [
           'Doctor of Philosophy (Ph.D.) in Theology',
           'Doctor of Theology (D.Th.)',
+          'Doctor of Systematic Theology (DSTh)',
           'Doctor of Ministry (D.Min.) — Christian Counseling & Administration',
         ],
       },

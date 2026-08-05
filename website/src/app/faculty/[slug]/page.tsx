@@ -186,6 +186,12 @@ export default function FacultyDetailPage({ params }: { params: { slug: string }
             Entry Requirements
           </Link>
           <Link
+            href={`/faculty/${f.slug}/handbook`}
+            className="rounded-full border-2 border-brand-sand px-7 py-3 font-heading text-sm font-semibold text-brand-muted transition hover:border-brand-gold hover:text-brand-purple"
+          >
+            Faculty Handbook
+          </Link>
+          <Link
             href="#contact"
             className="rounded-full border-2 border-brand-sand px-7 py-3 font-heading text-sm font-semibold text-brand-muted transition hover:border-brand-gold hover:text-brand-purple"
           >

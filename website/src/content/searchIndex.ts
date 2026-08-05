@@ -49,6 +49,7 @@ const pages: SearchEntry[] = [
   { title: 'Academic Regulations', href: '/academic-regulations', section: 'University', text: 'Grading scale grade points GPA A B C D F pass mark 65%, special grades W WA WC I NG NC, compulsory elective required course classification, study load subjects per year, seminars, doctoral entry 3.25 GPA, assessment weightings participation assignments examinations presentations research paper, fees late registration penalty bounced cheque, miscellaneous fees transcripts certificate student ID supplementary exams, withdrawal refund schedule 100% 75% 50% 25%, scholarships bursaries.' },
   { title: 'Student Handbook', href: '/student-handbook', section: 'University', text: 'Student rights responsibilities code of conduct academic misconduct discipline attendance grades progress fees withdrawal refunds complaints appeals graduation process.' },
   { title: 'University Prospectus', href: '/prospectus', section: 'University', text: 'Why ICOF, Yeshiva style of learning, campuses Buea Douala online, faculties, degree programmes certificate diploma bachelor master doctorate, student life, international students, admissions, fees scholarships, contact, prospectus download.' },
+  { title: 'Graduate School Handbook', href: '/graduate-school-handbook', section: 'Academics', text: 'Postgraduate admission, master degree seminars, doctoral entry 68% GPA 3.25, Doctor of Theology Th.D., Doctor of Systematic Theology DSTh, Doctor of Philosophy PhD, core courses electives, comprehensive examinations, dissertation defence, thesis preparation research methodologies qualitative quantitative exegesis, APA Chicago citation, viva voce, supervisor.' },
   { title: 'Policies', href: '/policies', section: 'University', text: 'Code of conduct, academic integrity, disciplinary process, due process, appeals.' },
   { title: 'Contact', href: '/contact', section: 'University', text: 'Phone, email, WhatsApp, address, Buea Cameroon, admissions office.' },
 ];
@@ -58,6 +59,12 @@ export const searchIndex: SearchEntry[] = [
   // Faculty pages carry the dean's message, research strengths, careers and
   // graduate destinations now. Searching for "chaplaincy" or "cybersecurity"
   // should reach the faculty that teaches it, so all of it is indexed.
+  ...facultyList.map((f) => ({
+    title: `${f.shortName} Faculty Handbook`,
+    href: `/faculty/${f.slug}/handbook`,
+    section: 'Faculties',
+    text: `Faculty handbook ${f.name} dean welcome programmes course descriptions assessment grading practicum ministry chapel research expectations graduation requirements contact.`,
+  })),
   ...facultyList.map((f) => ({
     title: f.name,
     href: `/faculty/${f.slug}`,

@@ -186,6 +186,7 @@ export const institutionalDocuments: InstitutionalDocument[] = [
   {
     order: 6,
     title: 'Graduate School Handbook',
+    href: '/graduate-school-handbook',
     purpose: 'The rules of research degree study, for Master’s and doctoral candidates.',
     status: 'partial',
     contains: [
@@ -370,7 +371,8 @@ export const institutionalDocuments: InstitutionalDocument[] = [
     // practicum requirements.
     order: 15,
     title: 'Faculty Handbooks',
-    purpose: 'One handbook per faculty, covering what is common to all its awards.',
+    href: '/faculty/theology-buea/handbook',
+    purpose: 'One handbook per faculty, covering what is common to all its awards. Five published.',
     status: 'partial',
     contains: [
       'Dean’s Welcome',

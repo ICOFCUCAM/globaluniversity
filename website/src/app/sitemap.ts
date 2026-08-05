@@ -29,6 +29,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/academic-regulations',
     '/student-handbook',
     '/prospectus',
+    '/graduate-school-handbook',
     '/fr',
     '/fr/a-propos',
     '/fr/admission',
@@ -45,6 +46,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: `${site.url}/programs/${p.slug}`,
       changeFrequency: 'monthly' as const,
       priority: 0.7,
+    })),
+    ...facultyList.map((f) => ({
+      url: `${site.url}/faculty/${f.slug}/handbook`,
+      changeFrequency: 'monthly' as const,
+      priority: 0.6,
     })),
     ...facultyList.map((f) => ({
       url: `${site.url}/faculty/${f.slug}`,

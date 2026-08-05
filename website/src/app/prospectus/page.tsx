@@ -286,6 +286,7 @@ export default function ProspectusPage() {
                 </tbody>
               </table>
             </div>
+            <P>{tuition.bands}</P>
             <P>{tuition.note}</P>
             <P>
               Fees payable in addition to tuition, the terms of payment and the refund schedule are

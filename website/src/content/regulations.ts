@@ -145,6 +145,53 @@ export const assessmentSchemes: AssessmentScheme[] = [
   },
 ];
 
+
+// --- Fee bands -------------------------------------------------------------
+// The two currencies on this site are not an inconsistency: they are two fee
+// bands. The university confirmed that the FCFA schedule is a subsidised rate,
+// funded as scholarship, for students from Africa and the Global South, and
+// that students from Europe and North America pay a higher rate approaching
+// European levels.
+//
+// NOT SET HERE: the exact figures for the international band. The USD amounts
+// already published on the tuition page are shown against it as the current
+// figures, because they are the only international figures the university has
+// published — but the university should confirm they are the international
+// band rather than a general rate, and state the per-region schedule.
+
+export interface FeeBand {
+  name: string;
+  appliesTo: string;
+  basis: string;
+  figures: string;
+  confirmed: boolean;
+}
+
+export const feeBands: FeeBand[] = [
+  {
+    name: 'Africa and the Global South',
+    appliesTo:
+      'Students who are nationals of, or resident in, countries of Africa and the Global South.',
+    basis:
+      'A subsidised rate, funded as scholarship. The published FCFA schedule is this band: the university carries the difference so that cost is not what keeps a called student out of higher education.',
+    figures:
+      'The fee schedule in Part V of these regulations — registration, examination, certificate, transcript and development fees in FCFA — applies to this band.',
+    confirmed: true,
+  },
+  {
+    name: 'Europe and North America',
+    appliesTo: 'Students who are nationals of, or resident in, Europe and North America.',
+    basis:
+      'A higher rate, set at approximately European levels and slightly below them. Students in this band are not subsidised, and their fees help fund the scholarship band above.',
+    figures:
+      'The tuition figures published on the Cost & Tuition page — full-time and part-time annual tuition quoted in US dollars — are the only international figures the university has published, and are shown against this band pending confirmation.',
+    confirmed: false,
+  },
+];
+
+export const feeBandNote =
+  'Which band applies is determined by nationality and residence, not by mode of study. A student in either band studying online sits the same assessments and receives the same award.';
+
 /** Fees payable in addition to tuition. */
 export const miscellaneousFees: { item: string; amount: string; optional?: boolean }[] = [
   { item: 'Academic record (transcripts)', amount: '2,000 FCFA' },
@@ -236,9 +283,9 @@ export const sourceNotes: { issue: string; detail: string }[] = [
       'The figure carries no currency and the year is long past. It is not published on this site until both are corrected.',
   },
   {
-    issue: 'Tuition is stated in USD on the website and in FCFA in the Fees Guide.',
+    issue: 'The two currencies are two fee bands — now stated, but only one is costed.',
     detail:
-      'The website quotes full-time tuition at $12,200 per year; the Fees Guide quotes penalties, miscellaneous fees and deposits in FCFA. A student cannot tell from either document what the total cost of a year is. One currency should be primary, with the other shown as a conversion.',
+      'The university has confirmed that the FCFA schedule is a subsidised, scholarship-funded rate for students from Africa and the Global South, and that students from Europe and North America pay a higher rate approaching European levels. That resolves what looked like an inconsistency. What is still missing is the international band’s own schedule: the USD tuition already published is shown against it provisionally, and needs confirming or replacing.',
   },
   {
     issue: 'The grading scale has no 3.67 point.',

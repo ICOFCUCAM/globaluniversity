@@ -5,8 +5,11 @@
 // codes and credit values, which is what a programme handbook is built from
 // and what a credential evaluator asks for.
 //
-// A CONFLICT THE UNIVERSITY MUST SETTLE. The Bachelor of Theology has now been
-// specified to this project twice, in two incompatible systems:
+// SETTLED. The Bachelor of Theology was specified twice, in two incompatible
+// systems. The university has confirmed that the 180-ECTS structure governs
+// the award. The credit-hour listing below is retained as a supplementary
+// course listing — it carries course codes and descriptions the ECTS structure
+// does not — but it does not determine the credit a student earns.
 //
 //   Earlier    36 courses, six per semester across six semesters, every course
 //              worth 5 ECTS, totalling 180 ECTS. Published at
@@ -15,13 +18,11 @@
 //              hours, mostly 3 and occasionally 2, seven or eight courses per
 //              semester. Year 3 was not supplied.
 //
-// The course titles overlap only partly and the codes are new. ECTS and credit
-// hours are not interchangeable: 180 ECTS is a three-year European bachelor's,
-// while these credit hours total far less over the two years supplied. Both are
-// recorded — the ECTS structure where it already sits, and the credit-hour
-// structure here — and neither has been converted into the other, because a
-// conversion invented by this project would be the one number a credential
-// evaluator would reject.
+// The two are still not converted into one another. 180 ECTS is the award;
+// the credit hours here describe the same teaching under a different
+// accounting, and an invented conversion factor between them would be the one
+// number a credential evaluator would reject. The university should state the
+// ECTS value of each course in this listing when it is next revised.
 // ---------------------------------------------------------------------------
 
 export interface CurriculumCourse {
@@ -264,11 +265,11 @@ export const diplomaOfTheologyCurriculum: Curriculum = {
 
 export const bachelorOfTheologyCreditCurriculum: Curriculum = {
   programSlug: 'bachelor-of-theology',
-  title: 'Bachelor of Theology — credit-hour structure',
+  title: 'Bachelor of Theology — supplementary course schedule',
   duration: 'Three years',
   creditUnit: 'credit hours',
   note:
-    'Years One and Two as supplied by the university. Year Three has not been supplied. This structure uses credit hours and does not reconcile with the 180-ECTS structure published at /bachelor-of-theology; the university must confirm which governs the award.',
+    'The 180-ECTS structure published at /bachelor-of-theology governs this award — the university has confirmed it. The listing below is a supplementary course schedule for Years One and Two, supplied with course codes and descriptions that the ECTS structure does not carry. Year Three has not been supplied, and the ECTS value of each course below has not been stated.',
   terms: [
     {
       label: 'Year One · First Semester',

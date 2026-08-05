@@ -32,6 +32,7 @@ export default async function TuitionPage() {
             </tbody>
           </table>
         </div>
+        <p className="mx-auto mt-6 max-w-3xl text-center text-sm text-brand-muted">{tuition.bands}</p>
         <p className="mx-auto mt-6 max-w-3xl text-center text-sm text-brand-muted">{tuition.note}</p>
       </Section>
       <Cta />

@@ -95,16 +95,27 @@ most:
   UNIVERSITY".** GRU is not ICOF. The section appears adapted from another
   institution's document with the name left in. The heading is not reproduced
   on this site; the body is, because it reads as ICOF policy throughout.
-- **Two incompatible B.Th. structures.** 36 courses × 5 ECTS = 180 ECTS, versus
-  Years One and Two in credit hours totalling 87. ECTS and credit hours are not
-  interchangeable. Both are recorded, neither converted — an invented
-  conversion is the one number a credential evaluator would reject.
+- **Two incompatible B.Th. structures — SETTLED.** The university confirmed the
+  **180-ECTS structure governs the award**. The credit-hour listing is retained
+  as a supplementary course schedule, because it carries course codes and
+  descriptions the ECTS structure does not, but it does not determine credit.
+  The two are still not converted into one another; the ECTS value of each
+  course in that listing should be stated when it is next revised.
+
+**The USD/FCFA split — SETTLED, and it was never an error.** The university
+confirmed two fee bands: the FCFA schedule is a **subsidised rate funded as
+scholarship** for students from Africa and the Global South, and students from
+Europe and North America pay a higher rate at approximately European levels,
+slightly below them. Which band applies is determined by nationality and
+residence, not by mode of study. What is still missing is the international
+band's own schedule of amounts — the published USD tuition is shown against it
+provisionally and marked "to be confirmed".
 
 Also recorded: the Fees Guide is marked "Preliminary Copy"; the DBA fee is
-quoted with no currency for a year commencing 2016; tuition is USD on the site
-and FCFA in the Fees Guide; the grading scale has no 3.67 point; B+ spans only
-two percentage points; degree classification bands are still missing; and the
-doctoral seminar totals imply two years without saying so.
+quoted with no currency for a year commencing 2016; the grading scale has no
+3.67 point; B+ spans only two percentage points; degree classification bands
+are still missing; and the doctoral seminar totals imply two years without
+saying so.
 
 ## 3. The five things blocking most of the rest
 

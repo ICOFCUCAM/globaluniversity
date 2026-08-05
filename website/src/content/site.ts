@@ -753,6 +753,19 @@ export const programs: Program[] = [
     outcomes: ['Advanced systematic theology', 'Biblical theology and exegesis', 'Theological teaching', 'Dissertation'],
   },
   {
+    // A fourth doctorate, specified by the university with its own core
+    // courses, electives and dissertation. It was absent from the faculty's
+    // declared award list, which named only the Ph.D., D.Th. and D.Min.
+    slug: 'doctor-of-systematic-theology',
+    title: 'Doctor of Systematic Theology',
+    level: 'Doctorate',
+    school: 'Faculty of Theology',
+    image: '/images/ceremonial.jpg',
+    summary:
+      'A specialised doctorate in the foundational doctrines of the Christian faith — their historical development, theological implications and contemporary relevance. Where the D.Th. ranges across the discipline, the DSTh stays within systematics: God, Christ, Spirit, humanity, salvation and last things.',
+    outcomes: ['Trinitarian theology', 'Christology and soteriology', 'Theological method and hermeneutics', 'Dissertation in systematic theology'],
+  },
+  {
     slug: 'doctor-of-ministry',
     title: 'Doctor of Ministry',
     level: 'Doctorate',
@@ -863,6 +876,7 @@ export const tuition = {
     { program: 'Student housing (single room, toilet & kitchen)', fee: '35,000 – 50,000 FCFA per month' },
     { program: 'Extension courses', fee: 'Varies by program — email admissions@iguc.net' },
   ],
+  bands: 'ICOF operates two fee bands. Students from Africa and the Global South pay a subsidised rate, funded as scholarship — the university carries the difference so that cost is not what keeps a called student out of higher education. Students from Europe and North America pay a higher rate, set at approximately European levels and slightly below them; those fees help fund the scholarship band. Which band applies is determined by nationality and residence, not by mode of study.',
   note: 'We provide financial aid through scholarships — follow our announcements and newsletters to know when a scholarship program is published. Online courses are offered for master’s and doctoral programs.',
 };
 

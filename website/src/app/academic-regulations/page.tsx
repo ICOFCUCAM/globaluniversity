@@ -14,6 +14,8 @@ import {
   miscellaneousFees,
   miscellaneousFeesTotal,
   paymentTerms,
+  feeBands,
+  feeBandNote,
   sponsorTerms,
   refundSchedule,
   withdrawalRules,
@@ -236,10 +238,38 @@ export default function AcademicRegulationsPage() {
           </Part>
 
           <Part id="fees" n="V" title="Fees and Payment">
+            <H3>Fee bands</H3>
+            <P>
+              The university operates two fee bands. Which applies is determined by nationality and
+              residence, not by mode of study.
+            </P>
+            <div className="mt-6 grid gap-5 sm:grid-cols-2">
+              {feeBands.map((b) => (
+                <div key={b.name} className="rounded-2xl border border-brand-sand bg-brand-cream p-6">
+                  <h4 className="font-heading text-[17px] font-bold text-brand-purple">{b.name}</h4>
+                  <p className="mt-2.5 text-[15px] leading-relaxed text-brand-muted">{b.appliesTo}</p>
+                  <p className="mt-3 text-[15px] leading-relaxed text-brand-muted">{b.basis}</p>
+                  <p className="mt-3 text-sm leading-relaxed text-brand-muted">{b.figures}</p>
+                  {!b.confirmed && (
+                    <p className="mt-4 rounded-lg border border-dashed border-brand-gold/60 bg-white px-3.5 py-2.5 text-[12px] leading-relaxed text-brand-muted">
+                      <span className="font-semibold text-brand-purple">To be confirmed. </span>
+                      The university has stated the policy for this band but has not yet published
+                      its schedule of amounts.
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+            <P>{feeBandNote}</P>
+
             <H3>Terms of payment</H3>
             <Rules items={paymentTerms} />
 
             <H3>Fees payable in addition to tuition</H3>
+            <P>
+              These amounts are the Africa and Global South band. The equivalent schedule for the
+              Europe and North America band has not been published.
+            </P>
             <Table head={['Item', 'Amount']}>
               {miscellaneousFees.map((f) => (
                 <tr key={f.item}>

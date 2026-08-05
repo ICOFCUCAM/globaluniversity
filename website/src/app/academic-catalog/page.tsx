@@ -398,6 +398,7 @@ export default function AcademicCatalogPage() {
                 </tbody>
               </table>
             </div>
+            <P>{tuition.bands}</P>
             <P>{tuition.note}</P>
             {scholarships && (
               <>

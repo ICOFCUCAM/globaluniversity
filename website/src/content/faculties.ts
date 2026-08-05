@@ -211,6 +211,7 @@ export const facultyList: Faculty[] = [
       { title: 'Master of Arts in Black Liberation Theology', level: 'Master', slug: 'black-liberation-theology' },
       { title: 'Doctor of Philosophy (Ph.D.) in Theology', level: 'Doctorate', slug: 'doctor-of-philosophy-theology' },
       { title: 'Doctor of Theology (D.Th.)', level: 'Doctorate', slug: 'doctor-of-theology' },
+      { title: 'Doctor of Systematic Theology (DSTh)', level: 'Doctorate', slug: 'doctor-of-systematic-theology' },
       { title: 'Doctor of Ministry (D.Min.)', level: 'Doctorate', slug: 'doctor-of-ministry' },
     ],
     researchStrengths: [
