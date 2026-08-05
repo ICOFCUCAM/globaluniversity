@@ -182,4 +182,4 @@ export type ViewType =
   | 'documents'
   | 'analytics'
   | 'settings'
-  | 'audit' | 'assignments' | 'fees';
+  | 'audit' | 'assignments' | 'fees' | 'announcements' | 'forum';

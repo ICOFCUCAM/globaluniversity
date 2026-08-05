@@ -17,6 +17,8 @@ import LMSModule from './lms/LMSModule';
 import ExamModule from './exams/ExamModule';
 import DocumentManagement from './documents/DocumentManagement';
 import AssignmentModule from './assignments/AssignmentModule';
+import AnnouncementModule from './announcements/AnnouncementModule';
+import ForumModule from './forum/ForumModule';
 import FeeModule from './fees/FeeModule';
 import AnalyticsDashboard from './analytics/AnalyticsDashboard';
 import SettingsPage from './settings/SettingsPage';
@@ -57,6 +59,10 @@ export default function AppLayout() {
         return <ExamModule />;
       case 'assignments':
         return <AssignmentModule />;
+      case 'announcements':
+        return <AnnouncementModule />;
+      case 'forum':
+        return <ForumModule />;
       case 'fees':
         return <FeeModule />;
       case 'documents':
