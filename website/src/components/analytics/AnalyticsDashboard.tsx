@@ -1,166 +1,219 @@
-import React, { useState } from 'react';
+'use client';
+
+// ---------------------------------------------------------------------------
+// Analytics.
+//
+// Every figure on this screen was invented. It reported six departments —
+// Computer Science, Mechanical Engineering, Business Info Systems — that this
+// university does not have, each with a fabricated average GPA and pass rate.
+// It drew a classification distribution over 2,847 graduates: 156 First Class,
+// 890 Second Upper, and so on, none of them counted from anything. And it
+// offered an "Export Report" button with no handler, so nobody ever exported
+// the numbers and discovered they were fiction.
+//
+// This is the same failure as the dashboard and the audit log, in the screen
+// most likely to be photographed for a board paper. "Average GPA 3.82 in
+// Computer Science" is exactly the sort of line that ends up in a strategic
+// plan, and this university teaches theology.
+//
+// What is here now is what can be counted: students by faculty and by status,
+// from the register. What cannot yet be computed — grade distributions,
+// progression, pass rates — says so and explains what it is waiting for, rather
+// than drawing a plausible chart. An empty chart is a smaller failure than a
+// convincing wrong one.
+// ---------------------------------------------------------------------------
+
+import React, { useEffect, useMemo, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { statusMeta, toUniversal } from '@/lib/status';
 import {
-  BarChart3, TrendingUp, Users, GraduationCap, BookOpen,
-  Award, Download, Calendar, Filter
-} from 'lucide-react';
+  Card, CardHeader, PageHeader, EmptyState, Skeleton, TableShell, THead, TBody, Th, Td,
+} from '@/components/ui/portal';
+import { BTN_SECONDARY } from '@/lib/portalTheme';
+import { Download, BarChart3, Info } from 'lucide-react';
 
-function BarChart({ data, labels, color }: { data: number[]; labels: string[]; color: string }) {
-  const max = Math.max(...data);
-  return (
-    <div className="flex items-end gap-2 h-40">
-      {data.map((val, i) => (
-        <div key={i} className="flex-1 flex flex-col items-center gap-1">
-          <span className="text-[10px] font-medium text-gray-500">{val}</span>
-          <div className={`w-full rounded-t ${color} transition-all duration-700`} style={{ height: `${(val / max) * 100}%`, minHeight: '4px' }} />
-          <span className="text-[9px] text-gray-400 truncate max-w-full">{labels[i]}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function DonutChart({ value, max, color, label }: { value: number; max: number; color: string; label: string }) {
-  const pct = (value / max) * 100;
-  const circumference = 2 * Math.PI * 40;
-  const offset = circumference - (pct / 100) * circumference;
-
-  return (
-    <div className="flex flex-col items-center">
-      <svg width="100" height="100" viewBox="0 0 100 100">
-        <circle cx="50" cy="50" r="40" fill="none" stroke="#f3f4f6" strokeWidth="8" />
-        <circle cx="50" cy="50" r="40" fill="none" stroke={color} strokeWidth="8"
-          strokeDasharray={circumference} strokeDashoffset={offset}
-          strokeLinecap="round" transform="rotate(-90 50 50)"
-          className="transition-all duration-1000" />
-        <text x="50" y="48" textAnchor="middle" className="text-lg font-bold" fill="#1f2937">{pct.toFixed(0)}%</text>
-        <text x="50" y="62" textAnchor="middle" className="text-[10px]" fill="#9ca3af">{label}</text>
-      </svg>
-    </div>
-  );
-}
+interface Row { key: string; count: number }
 
 export default function AnalyticsDashboard() {
-  const [period, setPeriod] = useState('2025/2026');
+  const [byFaculty, setByFaculty] = useState<Row[]>([]);
+  const [byStatus, setByStatus] = useState<Row[]>([]);
+  const [byIntake, setByIntake] = useState<Row[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
 
-  const deptPerformance = [
-    { name: 'Computer Science', avgGPA: 3.82, students: 450, passRate: 94 },
-    { name: 'Software Engineering', avgGPA: 3.65, students: 320, passRate: 91 },
-    { name: 'Business Info Systems', avgGPA: 3.41, students: 280, passRate: 88 },
-    { name: 'Electrical Engineering', avgGPA: 3.28, students: 390, passRate: 85 },
-    { name: 'Mechanical Engineering', avgGPA: 3.15, students: 410, passRate: 83 },
-    { name: 'Business Administration', avgGPA: 3.52, students: 520, passRate: 90 },
-  ];
+  useEffect(() => {
+    let live = true;
+    (async () => {
+      // One read, grouped in the browser. The alternative is a view or an RPC;
+      // for a register of this size a single select is cheaper than either, and
+      // it cannot drift out of step with the table the way a view can.
+      const { data } = await supabase
+        .from('students')
+        .select('faculty, program, status, intake, admission_year');
+      if (!live) return;
+
+      const rows = data ?? [];
+      const tally = (get: (r: any) => string | null | undefined): Row[] => {
+        const m = new Map<string, number>();
+        for (const r of rows) {
+          const k = (get(r) ?? '').toString().trim() || 'Not recorded';
+          m.set(k, (m.get(k) ?? 0) + 1);
+        }
+        return [...m.entries()]
+          .map(([key, count]) => ({ key, count }))
+          .sort((a, b) => b.count - a.count);
+      };
+
+      setTotal(rows.length);
+      setByFaculty(tally((r) => r.faculty || r.program));
+      setByStatus(tally((r) => r.status));
+      setByIntake(tally((r) => r.intake || r.admission_year));
+      setLoading(false);
+    })();
+    return () => { live = false; };
+  }, []);
+
+  const max = useMemo(() => Math.max(1, ...byFaculty.map((r) => r.count)), [byFaculty]);
+
+  function exportCsv() {
+    const esc = (v: string) => (/[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
+    const section = (title: string, rows: Row[]) => [
+      esc(title),
+      'Group,Students',
+      ...rows.map((r) => `${esc(r.key)},${r.count}`),
+      '',
+    ];
+    const csv = [
+      `ICOF Global University — student register summary`,
+      `Generated,${new Date().toISOString()}`,
+      `Total students,${total}`,
+      '',
+      ...section('By faculty', byFaculty),
+      ...section('By status', byStatus),
+      ...section('By intake', byIntake),
+    ].join('\r\n');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `icof-register-summary-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="font-heading text-xl font-bold text-[#422e59] dark:text-[#e4dcf0]">Analytics & Reports</h2>
-          <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">Comprehensive academic performance analytics</p>
-        </div>
-        <div className="flex gap-2">
-          <select value={period} onChange={(e) => setPeriod(e.target.value)}
-            className="px-3 py-2 bg-white rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm">
-            <option>2025/2026</option>
-            <option>2024/2025</option>
-            <option>2023/2024</option>
-          </select>
-          <button className="flex items-center gap-1.5 px-4 py-2 bg-[#422e59] text-white rounded-lg text-sm font-medium hover:bg-[#322244] transition-colors">
-            <Download size={14} /> Export Report
+      <PageHeader
+        title="Analytics"
+        subtitle={loading ? 'Reading the register…' : `${total.toLocaleString()} student records`}
+        action={
+          <button onClick={exportCsv} disabled={loading || total === 0} className={BTN_SECONDARY}>
+            <Download size={15} /> Export summary
           </button>
+        }
+      />
+
+      {loading ? (
+        <div className="grid gap-6 lg:grid-cols-2">
+          {[0, 1].map((i) => (
+            <Card key={i} className="p-5">
+              <Skeleton className="h-4 w-40" />
+              {Array.from({ length: 5 }, (_, j) => <Skeleton key={j} className="mt-3 h-5 w-full" />)}
+            </Card>
+          ))}
         </div>
-      </div>
-
-      {/* Key Metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: 'Overall Pass Rate', value: '89.3%', change: '+2.1%', icon: <TrendingUp size={20} />, color: 'from-emerald-500 to-emerald-600' },
-          { label: 'Average CGPA', value: '3.47', change: '+0.12', icon: <BarChart3 size={20} />, color: 'from-blue-500 to-blue-600' },
-          { label: 'First Class', value: '156', change: '+23', icon: <Award size={20} />, color: 'from-amber-500 to-amber-600' },
-          { label: 'Graduation Rate', value: '92.1%', change: '+1.8%', icon: <GraduationCap size={20} />, color: 'from-purple-500 to-purple-600' },
-        ].map((metric, i) => (
-          <div key={i} className="bg-white rounded-xl p-4 border border-gray-100">
-            <div className={`p-2.5 rounded-xl bg-gradient-to-br ${metric.color} text-white shadow-lg w-fit`}>
-              {metric.icon}
-            </div>
-            <p className="text-2xl font-bold text-[#33234a] dark:text-[#e4dcf0] mt-3">{metric.value}</p>
-            <div className="flex items-center justify-between mt-0.5">
-              <p className="text-xs text-[#6b6076] dark:text-[#9c93ad]">{metric.label}</p>
-              <span className="text-xs font-medium text-emerald-600">{metric.change}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl p-5 border border-gray-100">
-          <h3 className="font-semibold text-[#33234a] dark:text-[#e4dcf0] mb-4">Enrollment by Year</h3>
-          <BarChart
-            data={[520, 680, 750, 820, 890, 950]}
-            labels={['2020', '2021', '2022', '2023', '2024', '2025']}
-            color="bg-blue-500"
+      ) : total === 0 ? (
+        <Card>
+          <EmptyState
+            icon={<BarChart3 size={20} />}
+            title="Nothing to analyse yet"
+            description="These figures are counted from the student register. Once applications have been approved, the breakdowns by faculty, status and intake appear here."
           />
-        </div>
-
-        <div className="bg-white rounded-xl p-5 border border-gray-100">
-          <h3 className="font-semibold text-[#33234a] dark:text-[#e4dcf0] mb-4">Grade Distribution</h3>
-          <BarChart
-            data={[156, 420, 680, 520, 180, 45]}
-            labels={['A', 'B', 'C', 'D', 'E', 'F']}
-            color="bg-purple-500"
-          />
-        </div>
-      </div>
-
-      {/* Donut Charts */}
-      <div className="bg-white rounded-xl p-5 border border-gray-100">
-        <h3 className="font-semibold text-[#33234a] dark:text-[#e4dcf0] mb-4">Classification Distribution</h3>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <DonutChart value={156} max={2847} color="#10b981" label="1st Class" />
-          <DonutChart value={890} max={2847} color="#3b82f6" label="2nd Upper" />
-          <DonutChart value={1200} max={2847} color="#8b5cf6" label="2nd Lower" />
-          <DonutChart value={420} max={2847} color="#f59e0b" label="3rd Class" />
-          <DonutChart value={181} max={2847} color="#ef4444" label="Pass/Fail" />
-        </div>
-      </div>
-
-      {/* Department Performance */}
-      <div className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] overflow-hidden">
-        <div className="px-5 py-4 border-b border-[#f0ece4] dark:border-[#2a2333]">
-          <h3 className="font-semibold text-[#33234a] dark:text-[#e4dcf0]">Department Performance</h3>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-[#ece7de] bg-[#faf8f4] dark:border-[#2e2637] dark:bg-[#241f2c]">
-                <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Department</th>
-                <th className="text-center px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Students</th>
-                <th className="text-center px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Avg GPA</th>
-                <th className="text-center px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Pass Rate</th>
-                <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Performance</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#f0ece4] dark:divide-[#2a2333]">
-              {deptPerformance.map((dept, i) => (
-                <tr key={i} className="transition-colors hover:bg-[#faf8f4] dark:hover:bg-[#241f2c]">
-                  <td className="px-5 py-3 text-sm font-medium text-[#33234a] dark:text-[#e4dcf0]">{dept.name}</td>
-                  <td className="px-5 py-3 text-sm text-gray-600 text-center">{dept.students}</td>
-                  <td className="px-5 py-3 text-center">
-                    <span className="text-sm font-bold text-blue-600">{dept.avgGPA}</span>
-                  </td>
-                  <td className="px-5 py-3 text-sm text-gray-600 text-center">{dept.passRate}%</td>
-                  <td className="px-5 py-3">
-                    <div className="w-full bg-gray-100 rounded-full h-2">
-                      <div className="bg-gradient-to-r from-blue-500 to-blue-400 h-2 rounded-full" style={{ width: `${dept.passRate}%` }} />
+        </Card>
+      ) : (
+        <>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Card>
+              <CardHeader title="Students by faculty" subtitle="Counted from the register" />
+              <div className="space-y-3 p-5">
+                {byFaculty.map((r) => (
+                  <div key={r.key}>
+                    <div className="flex items-baseline justify-between gap-3 text-sm">
+                      <span className="truncate text-[#33234a] dark:text-[#e4dcf0]">{r.key}</span>
+                      <span className="tabular-nums text-[#6b6076] dark:text-[#9c93ad]">{r.count}</span>
                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    <div className="mt-1 h-2 overflow-hidden rounded-full bg-[#f0ece4] dark:bg-[#2a2333]">
+                      {/* Bars are proportional to the largest group, and the
+                          number is printed beside every one. A bar with no
+                          figure next to it invites the reader to estimate, and
+                          they will estimate wrong. */}
+                      <div className="h-full rounded-full bg-[#422e59]" style={{ width: `${(r.count / max) * 100}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            <Card>
+              <CardHeader title="Students by status" subtitle="Where each record sits in the lifecycle" />
+              <TableShell>
+                <THead>
+                  <tr><Th>Status</Th><Th align="right">Students</Th><Th align="right">Share</Th></tr>
+                </THead>
+                <TBody>
+                  {byStatus.map((r) => {
+                    const meta = statusMeta(toUniversal(r.key));
+                    return (
+                      <tr key={r.key}>
+                        <Td>
+                          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-medium ${meta.chip}`}>
+                            <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} aria-hidden="true" />
+                            {meta.label}
+                          </span>
+                        </Td>
+                        <Td align="right" numeric>{r.count}</Td>
+                        <Td align="right" numeric className="text-[#8a8194]">
+                          {((r.count / total) * 100).toFixed(1)}%
+                        </Td>
+                      </tr>
+                    );
+                  })}
+                </TBody>
+              </TableShell>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader title="Students by intake" subtitle="Counted from the register" />
+            <TableShell>
+              <THead><tr><Th>Intake</Th><Th align="right">Students</Th></tr></THead>
+              <TBody>
+                {byIntake.map((r) => (
+                  <tr key={r.key}>
+                    <Td numeric>{r.key}</Td>
+                    <Td align="right" numeric>{r.count}</Td>
+                  </tr>
+                ))}
+              </TBody>
+            </TableShell>
+          </Card>
+        </>
+      )}
+
+      {/* What is deliberately absent, and why. */}
+      <Card className="p-4">
+        <div className="flex items-start gap-2.5">
+          <Info size={16} className="mt-0.5 flex-shrink-0 text-[#c5a55a]" />
+          <div className="text-sm text-[#6b6076] dark:text-[#9c93ad]">
+            <p className="font-medium text-[#33234a] dark:text-[#e4dcf0]">Not shown yet</p>
+            <p className="mt-1 leading-relaxed">
+              Grade distribution, classification breakdown, pass rates and progression need approved
+              results to compute from. They appear here once results are being approved through the
+              Grade Book — not before. This screen previously drew all four from invented numbers.
+            </p>
+          </div>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }
