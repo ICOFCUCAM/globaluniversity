@@ -11,6 +11,7 @@ import { quickIconMap } from '@/components/Icons';
 import CountUp from '@/components/CountUp';
 import { Aurora, Grain, Seam } from '@/components/Atmosphere';
 import KineticText from '@/components/KineticText';
+import { SpotlightGroup, SpotlightCard } from '@/components/Spotlight';
 import { IconCampus, IconChapel, IconGlobe, IconLaptop } from '@/components/Icons';
 
 const PILLARS = [
@@ -246,10 +247,10 @@ export default async function HomePage() {
         <SectionHeading eyebrow="Why ICOF Global University">
           Nobility, professionalism &amp; godliness
         </SectionHeading>
-        <div className="grid gap-6 md:grid-cols-3">
+        <SpotlightGroup className="grid gap-6 md:grid-cols-3">
           {PILLARS.map((p, i) => (
             <Reveal key={p.title} delay={i * 120}>
-              <article className="group relative h-full overflow-hidden rounded-2xl border border-brand-sand bg-brand-cream p-9 transition duration-500 hover:border-brand-gold hover:shadow-lift">
+              <SpotlightCard className="group h-full overflow-hidden rounded-2xl border border-brand-sand bg-brand-cream p-9 transition duration-500 hover:shadow-lift" tone="light">
                 {/* Ghost numeral sits behind the copy as a watermark */}
                 <span
                   aria-hidden="true"
@@ -264,10 +265,10 @@ export default async function HomePage() {
                   </h3>
                   <p className="mt-3.5 text-sm leading-relaxed text-brand-muted">{p.body}</p>
                 </div>
-              </article>
+              </SpotlightCard>
             </Reveal>
           ))}
-        </div>
+        </SpotlightGroup>
       </Section>
 
       {/* Schools & Faculties */}
@@ -377,7 +378,7 @@ export default async function HomePage() {
           <SectionHeading light eyebrow="Research & Innovation">
             Scholarship in service of society
           </SectionHeading>
-          <div className="grid gap-8 md:grid-cols-3">
+          <SpotlightGroup className="grid gap-8 md:grid-cols-3">
             {[
               {
                 t: 'Dissertation Council',
@@ -396,9 +397,10 @@ export default async function HomePage() {
               },
             ].map((r, i) => (
               <Reveal key={r.t} delay={i * 120}>
+                <SpotlightCard className="h-full rounded-2xl" tone="dark">
                 <Link
                   href={r.href}
-                  className="group flex h-full flex-col rounded-2xl border border-white/15 bg-white/5 p-8 backdrop-blur transition duration-500 hover:-translate-y-1 hover:border-brand-gold/60 hover:bg-white/10"
+                  className="group relative flex h-full flex-col rounded-2xl border border-white/15 bg-white/5 p-8 backdrop-blur transition duration-500 hover:-translate-y-1 hover:bg-white/[0.08]"
                 >
                   <span
                     aria-hidden="true"
@@ -411,9 +413,10 @@ export default async function HomePage() {
                     <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">→</span>
                   </span>
                 </Link>
+                </SpotlightCard>
               </Reveal>
             ))}
-          </div>
+          </SpotlightGroup>
         </div>
       </section>
 
@@ -506,7 +509,7 @@ export default async function HomePage() {
           <p className="mb-10 text-center font-sans text-xs font-semibold uppercase tracking-[0.25em] text-brand-gold">
             A Global University
           </p>
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <SpotlightGroup className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {[
               { Icon: IconCampus, place: 'Buea, Cameroon', tag: 'Main campus', desc: 'Faculties of Theology, Education, Engineering & Technology, and GIBMAS' },
               { Icon: IconChapel, place: 'Douala, Cameroon', tag: 'School of Theology', desc: 'Led by Dr Bongbuen Alando, Director of the School of Theology' },
@@ -514,7 +517,7 @@ export default async function HomePage() {
               { Icon: IconLaptop, place: 'Online Worldwide', tag: 'Distance study', desc: 'Full master’s and doctoral programs delivered on every continent' },
             ].map(({ Icon, place, tag, desc }, i) => (
               <Reveal key={place} delay={i * 90}>
-                <div className="group h-full rounded-2xl border border-white/10 bg-white/[0.04] p-7 transition duration-500 hover:border-brand-gold/45 hover:bg-white/[0.08]">
+                <SpotlightCard className="group h-full rounded-2xl border border-white/10 bg-white/[0.04] p-7 transition duration-500 hover:bg-white/[0.08]" tone="dark">
                   <span className="flex h-12 w-12 items-center justify-center rounded-xl border border-brand-gold/25 bg-brand-gold/10 text-brand-gold transition duration-500 group-hover:bg-brand-gold group-hover:text-brand-purple">
                     <Icon className="h-6 w-6" />
                   </span>
@@ -523,10 +526,10 @@ export default async function HomePage() {
                   </p>
                   <h3 className="mt-1 font-heading text-lg font-bold text-white">{place}</h3>
                   <p className="mt-2.5 text-sm leading-relaxed text-white/70">{desc}</p>
-                </div>
+                </SpotlightCard>
               </Reveal>
             ))}
-          </div>
+          </SpotlightGroup>
           <p className="mx-auto mt-8 max-w-2xl text-center text-sm text-white/70">
             Connected through the International Circle of Faith — a worldwide fellowship of colleges,
             seminaries and ministries across Africa, the Americas, Europe and Asia — with faculty
