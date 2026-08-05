@@ -17,7 +17,7 @@ import {
   bthPhilosophy,
   bthProgression,
   bthStructure,
-  bthYearOneSemesterOne,
+  bthCurriculum,
 } from '@/content/bachelorOfTheology';
 import { site } from '@/content/site';
 
@@ -47,11 +47,13 @@ export default function BachelorOfTheologyPage() {
         timeRequired: 'P3Y',
         provider: { '@id': `${site.url}/#organization` },
         occupationalCredentialAwarded: bth.award,
-        hasCourseInstance: bthYearOneSemesterOne.map((c) => ({
-          '@type': 'CourseInstance',
-          name: `${c.code} ${c.title}`,
-          courseMode: ['onsite', 'online'],
-        })),
+        hasCourseInstance: bthCurriculum.flatMap((s) =>
+          s.courses.map((c) => ({
+            '@type': 'CourseInstance',
+            name: `${c.code} ${c.title}`,
+            courseMode: ['onsite', 'online'],
+          })),
+        ),
       },
       {
         '@type': 'BreadcrumbList',
@@ -200,7 +202,7 @@ export default function BachelorOfTheologyPage() {
           <table className="w-full">
             <thead>
               <tr className="bg-brand-cream">
-                {['Year', 'Semester', 'Credits', 'Course listing'].map((h) => (
+                {['Year', 'Semester', 'Credits'].map((h) => (
                   <th key={h} className="px-6 py-4 text-left font-sans text-[10px] font-bold uppercase tracking-[0.16em] text-brand-gold-deep">{h}</th>
                 ))}
               </tr>
@@ -211,79 +213,83 @@ export default function BachelorOfTheologyPage() {
                   <td className="px-6 py-4 font-heading text-sm font-bold text-brand-purple">{r.year}</td>
                   <td className="px-6 py-4 text-sm text-brand-muted">{r.semester}</td>
                   <td className="px-6 py-4 font-heading text-sm font-bold tabular text-brand-purple">{r.credits}</td>
-                  <td className="px-6 py-4">
-                    {r.published ? (
-                      <a href="#semester-one" className="text-sm font-semibold text-brand-purple underline underline-offset-4 hover:text-brand-gold-deep">
-                        Published below
-                      </a>
-                    ) : (
-                      <span className="rounded-full bg-brand-cream px-3 py-1 font-sans text-[10px] font-semibold uppercase tracking-[0.12em] text-brand-muted">
-                        In development
-                      </span>
-                    )}
-                  </td>
                 </tr>
               ))}
               <tr className="bg-brand-cream">
                 <td className="px-6 py-4 font-heading text-sm font-bold text-brand-purple" colSpan={2}>Total</td>
                 <td className="px-6 py-4 font-heading text-sm font-bold tabular text-brand-purple">180</td>
-                <td className="px-6 py-4" />
               </tr>
             </tbody>
           </table>
         </div>
       </Section>
 
-      {/* Year One Semester One */}
-      <Section className="bg-white" id="semester-one" chapter="Year One">
-        <SectionHeading eyebrow="Year One · Semester One">Six courses, 30 ECTS</SectionHeading>
-        <div className="mx-auto max-w-4xl divide-y divide-brand-sand overflow-hidden rounded-2xl border border-brand-sand bg-brand-cream">
-          {bthYearOneSemesterOne.map((c) => (
-            <details key={c.code} className="group">
-              <summary className="flex cursor-pointer list-none items-center gap-4 px-6 py-4 transition hover:bg-white">
-                <span className="w-20 shrink-0 font-mono text-xs font-bold text-brand-gold-deep">{c.code}</span>
-                <span className="flex-1 font-heading text-[15px] font-semibold text-brand-purple">{c.title}</span>
-                <span className="shrink-0 font-sans text-[11px] font-bold tabular text-brand-muted">{c.ects} ECTS</span>
-                <span aria-hidden="true" className="relative h-4 w-4 shrink-0 text-brand-gold-deep transition duration-300 group-open:rotate-180">
-                  <span className="absolute left-1/2 top-1/2 h-[1.5px] w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-current" />
-                  <span className="absolute left-1/2 top-1/2 h-2.5 w-[1.5px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-current transition duration-300 group-open:scale-y-0" />
-                </span>
-              </summary>
-              <div className="px-6 pb-6 pl-[6.5rem]">
-                {c.units && (
-                  <>
-                    <p className="mb-3 font-sans text-[10px] font-bold uppercase tracking-[0.16em] text-brand-gold-deep">
-                      {c.units.length} units
-                    </p>
-                    <ol className="grid gap-x-6 gap-y-1.5 sm:grid-cols-2">
-                      {c.units.map((u, ui) => (
-                        <li key={u} className="text-sm text-brand-muted">
-                          <span className="font-mono text-xs text-brand-gold-deep">{String(ui + 1).padStart(2, '0')}</span>{' '}
-                          {u}
-                        </li>
-                      ))}
-                    </ol>
-                  </>
-                )}
-                {c.contents && (
-                  <ul className="flex flex-wrap gap-2">
-                    {c.contents.map((t) => (
-                      <li key={t} className="rounded-full border border-brand-sand bg-white px-3 py-1.5 text-[12px] text-brand-purple">{t}</li>
-                    ))}
-                  </ul>
-                )}
+      {/* Full curriculum — all six semesters */}
+      <Section className="bg-white" id="semester-one" chapter="Courses">
+        <SectionHeading eyebrow="Course Listing">Thirty-six courses</SectionHeading>
+        <p className="mx-auto -mt-5 mb-12 max-w-2xl text-center leading-relaxed text-brand-muted">
+          Every course carries 5 ECTS. Full syllabi — unit-by-unit teaching material,
+          assessment strategy and reading lists — are issued to enrolled students through the
+          student portal.
+        </p>
+
+        <div className="mx-auto max-w-4xl space-y-8">
+          {bthCurriculum.map((sem, si) => (
+            <Reveal key={`${sem.year}-${sem.label}`} delay={si * 50}>
+              <div>
+                <div className="flex items-baseline gap-3">
+                  <span className="font-sans text-[10px] font-bold uppercase tracking-[0.2em] text-brand-gold-deep">
+                    {sem.year}
+                  </span>
+                  <h3 className="font-heading text-xl font-bold text-brand-purple">{sem.label}</h3>
+                  <span className="ml-auto font-sans text-[11px] font-bold tabular text-brand-muted">30 ECTS</span>
+                </div>
+                <div className="mt-4 divide-y divide-brand-sand overflow-hidden rounded-2xl border border-brand-sand bg-brand-cream">
+                  {sem.courses.map((c) =>
+                    c.units ? (
+                      <details key={c.code} className="group">
+                        <summary className="flex cursor-pointer list-none items-center gap-4 px-6 py-4 transition hover:bg-white">
+                          <span className="w-20 shrink-0 font-mono text-xs font-bold text-brand-gold-deep">{c.code}</span>
+                          <span className="flex-1 font-heading text-[15px] font-semibold text-brand-purple">{c.title}</span>
+                          <span className="shrink-0 font-sans text-[11px] font-bold tabular text-brand-muted">{c.ects} ECTS</span>
+                          <span aria-hidden="true" className="relative h-4 w-4 shrink-0 text-brand-gold-deep transition duration-300 group-open:rotate-180">
+                            <span className="absolute left-1/2 top-1/2 h-[1.5px] w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-current" />
+                            <span className="absolute left-1/2 top-1/2 h-2.5 w-[1.5px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-current transition duration-300 group-open:scale-y-0" />
+                          </span>
+                        </summary>
+                        <div className="px-6 pb-6 pl-[6.5rem]">
+                          <p className="mb-3 font-sans text-[10px] font-bold uppercase tracking-[0.16em] text-brand-gold-deep">
+                            {c.units.length} units
+                          </p>
+                          <ol className="grid gap-x-6 gap-y-1.5 sm:grid-cols-2">
+                            {c.units.map((u, ui) => (
+                              <li key={u} className="text-sm text-brand-muted">
+                                <span className="font-mono text-xs text-brand-gold-deep">{String(ui + 1).padStart(2, '0')}</span>{' '}
+                                {u}
+                              </li>
+                            ))}
+                          </ol>
+                        </div>
+                      </details>
+                    ) : (
+                      <div key={c.code} className="flex items-center gap-4 px-6 py-4">
+                        <span className="w-20 shrink-0 font-mono text-xs font-bold text-brand-gold-deep">{c.code}</span>
+                        <span className="flex-1 font-heading text-[15px] font-semibold text-brand-purple">{c.title}</span>
+                        <span className="shrink-0 font-sans text-[11px] font-bold tabular text-brand-muted">{c.ects} ECTS</span>
+                      </div>
+                    ),
+                  )}
+                </div>
               </div>
-            </details>
+            </Reveal>
           ))}
         </div>
 
         <p className="mx-auto mt-8 max-w-4xl rounded-2xl border border-brand-sand bg-brand-cream px-6 py-5 text-sm leading-relaxed text-brand-muted">
-          <strong className="font-semibold text-brand-purple">Remaining semesters.</strong>{' '}
-          Semester Two and Years Two and Three are in development within the Faculty of Theology.
-          Each semester is published here once its courses, credit values and unit outlines are
-          validated. Prospective students should contact{' '}
-          <a href="mailto:admission@iguc.net" className="font-semibold text-brand-purple underline underline-offset-4">admission@iguc.net</a>{' '}
-          for the current position.
+          <strong className="font-semibold text-brand-purple">Unit outlines.</strong>{' '}
+          BTH101 and BTH102 carry their published unit outlines above — expand either course to see
+          them. Unit outlines for the remaining courses are released as each syllabus is validated
+          by the Faculty of Theology.
         </p>
       </Section>
 

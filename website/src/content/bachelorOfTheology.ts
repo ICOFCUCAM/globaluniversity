@@ -3,21 +3,22 @@
 //
 // PUBLIC content, supplied by the university and reproduced verbatim.
 //
-// SCOPE NOTE — read before adding to this file.
-// The university has fully specified: the qualification details, programme
-// description, philosophy, ten aims, ten learning outcomes, the 180-ECTS
-// structure table, and Year One Semester One (six courses with codes and
-// credit values). Unit outlines exist for those six.
+// SCOPE NOTE — read before editing.
+// The university has now supplied the COMPLETE 36-course structure across all
+// six semesters (BTH101-BTH312). That table supersedes the earlier partial
+// specification and is published in full.
 //
-// Semester Two and Years Two and Three are described only as counts —
-// "six more fully developed courses", "twelve fully developed courses" — with
-// no titles, codes or credit values supplied. Those 30 courses are therefore
-// NOT in this file and must not be invented. The page states plainly that the
-// remaining semesters are in development.
+// It also supersedes it in ways that are NOT simple renames. See
+// docs/BTH-HANDBOOK-PLANNING.md for the reconciliation record:
+//   · BTH105 and BTH106 are now DIFFERENT COURSES, not renamed ones.
+//     Evangelism moved to BTH110, Christology I to BTH109.
+//   · BTH101's units 8-15 were replaced wholesale.
 //
-// The proposed course-renaming table and the list of recommended additional
-// courses are advice to the institution, not published fact. They live in
-// docs/BTH-HANDBOOK-PLANNING.md and are rendered by no route.
+// VISIBILITY. Course codes, titles, credit values and unit TITLES are public.
+// The unit TEXT — the actual teaching material, e.g. "8.1 Introduction to
+// Biblical Geography" and the prose under it — is course content that enrolled
+// students receive. It lives in src/content/courseMaterial.ts and renders only
+// inside the authenticated portal, on the same principle as reading lists.
 // ---------------------------------------------------------------------------
 
 export interface BthCourse {
@@ -82,113 +83,127 @@ export const bthOutcomes = [
 ];
 
 export const bthStructure = [
-  { year: 'Year One', semester: 'Semester One', credits: 30, published: true },
-  { year: 'Year One', semester: 'Semester Two', credits: 30, published: false },
-  { year: 'Year Two', semester: 'Semester One', credits: 30, published: false },
-  { year: 'Year Two', semester: 'Semester Two', credits: 30, published: false },
-  { year: 'Year Three', semester: 'Semester One', credits: 30, published: false },
-  { year: 'Year Three', semester: 'Semester Two', credits: 30, published: false },
+  { year: 'Year One', semester: 'Semester One', credits: 30 },
+  { year: 'Year One', semester: 'Semester Two', credits: 30 },
+  { year: 'Year Two', semester: 'Semester Three', credits: 30 },
+  { year: 'Year Two', semester: 'Semester Four', credits: 30 },
+  { year: 'Year Three', semester: 'Semester Five', credits: 30 },
+  { year: 'Year Three', semester: 'Semester Six', credits: 30 },
 ];
 
-/** Year One, Semester One — the only semester the university has specified. */
-export const bthYearOneSemesterOne: BthCourse[] = [
+export interface BthSemester {
+  year: string;
+  label: string;
+  courses: BthCourse[];
+}
+
+/**
+ * The complete 36-course, 180-ECTS structure as supplied by the university.
+ * Every course is 5 ECTS; six courses per semester; six semesters.
+ */
+export const bthCurriculum: BthSemester[] = [
   {
-    code: 'BTH101',
-    title: 'Introduction to Biblical Studies',
-    ects: 5,
-    units: [
-      'The Nature of Theology',
-      'Divine Revelation',
-      'The Inspiration of Scripture',
-      'The Canon of Scripture',
-      'Biblical Authority',
-      'Formation of the Old Testament',
-      'Formation of the New Testament',
-      'Transmission of Scripture',
-      'Ancient Bible Manuscripts',
-      'Modern Bible Translations',
-      'Biblical Geography',
-      'Historical Background',
-      'Literary Genres',
-      'Biblical Interpretation',
-      'Application of Scripture',
+    year: 'Year 1',
+    label: 'Semester 1',
+    courses: [
+      { code: 'BTH101', title: 'Introduction to Biblical Studies', ects: 5, units: [
+        'The Nature of Theology',
+        'Divine Revelation',
+        'The Inspiration of Scripture',
+        'The Canon of Scripture',
+        'Biblical Authority',
+        'Formation of the Old Testament',
+        'Formation of the New Testament',
+        'Biblical Geography and Archaeology',
+        'The Cultural Context of the New Testament',
+        'The Gospels and the Old Testament',
+        'Pauline Theology',
+        'Biblical Hermeneutics and Interpretation',
+        'Biblical Theology',
+        'Scripture, Doctrine, and Christian Ministry',
+        'Global and Contextual Interpretation of Scripture',
+      ] },
+      { code: 'BTH102', title: 'Biblical Studies I: Old Testament Survey', ects: 5, units: [
+        'Introduction to the Old Testament',
+        'The Book of Genesis',
+        'Abraham and the Covenant Promise',
+        'Moses, the Exodus, and the Covenant at Sinai',
+        'The Books of the Law',
+        'Joshua: Entering the Promised Land',
+        'Judges and the Cycle of Israel’s Failure',
+        'Samuel and the Rise of the Kingdom',
+        'David, Covenant, and Messianic Hope',
+        'Solomon and the Temple',
+        'Divided Kingdom and Prophetic Ministry',
+        'Exile and Restoration',
+        'Old Testament Theology of Messiah',
+        'Theological Themes for Christian Ministry',
+        'Assessment and Bibliography',
+      ] },
+      { code: 'BTH103', title: 'Biblical Studies II: New Testament Survey', ects: 5 },
+      { code: 'BTH104', title: 'Church History I', ects: 5 },
+      { code: 'BTH105', title: 'Introduction to Christian Doctrine', ects: 5 },
+      { code: 'BTH106', title: 'Academic Writing and Study Skills', ects: 5 },
     ],
   },
   {
-    code: 'BTH102',
-    title: 'Bible Survey I: The Old Testament',
-    ects: 5,
-    contents: [
-      'Genesis through Malachi',
-      'Every biblical book introduced separately',
-      'Historical timeline',
-      'Major themes',
-      'Key theological doctrines',
-      'Messianic prophecies',
-      'Application',
+    year: 'Year 1',
+    label: 'Semester 2',
+    courses: [
+      { code: 'BTH107', title: 'Pentateuch', ects: 5 },
+      { code: 'BTH108', title: 'Historical Books of the Old Testament', ects: 5 },
+      { code: 'BTH109', title: 'Christology I', ects: 5 },
+      { code: 'BTH110', title: 'Evangelism and Discipleship', ects: 5 },
+      { code: 'BTH111', title: 'Christian Ethics', ects: 5 },
+      { code: 'BTH112', title: 'Introduction to Biblical Hebrew', ects: 5 },
     ],
   },
   {
-    code: 'BTH103',
-    title: 'Bible Survey II: The New Testament',
-    ects: 5,
-    contents: [
-      'Matthew through Revelation',
-      'Every New Testament book',
-      'Historical setting',
-      'Major doctrines',
-      'Kingdom Theology',
-      'Pauline Theology',
-      'General Epistles',
-      'Apocalyptic Theology',
+    year: 'Year 2',
+    label: 'Semester 3',
+    courses: [
+      { code: 'BTH201', title: 'Pauline Theology', ects: 5 },
+      { code: 'BTH202', title: 'Synoptic Gospels', ects: 5 },
+      { code: 'BTH203', title: 'Biblical Hermeneutics', ects: 5 },
+      { code: 'BTH204', title: 'Homiletics I', ects: 5 },
+      { code: 'BTH205', title: 'Research Methodology', ects: 5 },
+      { code: 'BTH206', title: 'Philosophy of Religion', ects: 5 },
     ],
   },
   {
-    code: 'BTH104',
-    title: 'Church History I',
-    ects: 5,
-    contents: [
-      'From Pentecost',
-      'Early Church',
-      'Church Fathers',
-      'Roman Empire',
-      'Councils',
-      'Canon',
-      'Creeds',
-      'Persecution',
-      'Constantine',
-      'Monasticism',
+    year: 'Year 2',
+    label: 'Semester 4',
+    courses: [
+      { code: 'BTH207', title: 'Pneumatology', ects: 5 },
+      { code: 'BTH208', title: 'Systematic Theology I', ects: 5 },
+      { code: 'BTH209', title: 'Church History II', ects: 5 },
+      { code: 'BTH210', title: 'Christian Leadership', ects: 5 },
+      { code: 'BTH211', title: 'Introduction to New Testament Greek', ects: 5 },
+      { code: 'BTH212', title: 'Missiology and World Christianity', ects: 5 },
     ],
   },
   {
-    code: 'BTH105',
-    title: 'Introduction to Evangelism',
-    ects: 5,
-    contents: [
-      'Biblical Theology of Evangelism',
-      'Personal Evangelism',
-      'Mass Evangelism',
-      'Apologetics',
-      'Church Planting',
-      'Discipleship',
-      'Digital Evangelism',
-      'Practical Exercises',
+    year: 'Year 3',
+    label: 'Semester 5',
+    courses: [
+      { code: 'BTH301', title: 'Johannine Literature', ects: 5 },
+      { code: 'BTH302', title: 'Advanced Hermeneutics', ects: 5 },
+      { code: 'BTH303', title: 'Systematic Theology II', ects: 5 },
+      { code: 'BTH304', title: 'African Theology', ects: 5 },
+      { code: 'BTH305', title: 'Contextual Theology', ects: 5 },
+      { code: 'BTH306', title: 'Pastoral Care and Counseling', ects: 5 },
     ],
   },
   {
-    code: 'BTH106',
-    title: 'Christology I',
-    ects: 5,
-    contents: [
-      'Messianic Prophecies',
-      'Virgin Birth',
-      'Incarnation',
-      'Names of Christ',
-      'Humanity',
-      'Divinity',
-      'Miracles',
-      'Sinlessness',
-      'The Kingdom',
+    year: 'Year 3',
+    label: 'Semester 6',
+    courses: [
+      { code: 'BTH307', title: 'Eschatology', ects: 5 },
+      { code: 'BTH308', title: 'Church Administration and Governance', ects: 5 },
+      { code: 'BTH309', title: 'Christian Apologetics', ects: 5 },
+      { code: 'BTH310', title: 'Contemporary Issues in Theology', ects: 5 },
+      { code: 'BTH311', title: 'Ministry Internship', ects: 5 },
+      { code: 'BTH312', title: 'Undergraduate Research Thesis', ects: 5 },
     ],
   },
 ];

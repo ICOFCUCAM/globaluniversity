@@ -107,3 +107,79 @@ that gap should be the priority when Semester Two is drafted.
    message, academic regulations, admission and graduation requirements,
    assessment policy) should be published on the site or remain a student
    handbook document.
+
+---
+
+# RECONCILIATION — full 36-course table supersedes the earlier spec
+
+The university supplied a complete BTH101–BTH312 table. It has been adopted and
+published in full. It did **not** merely rename the earlier Semester One; four
+entries changed, two of them substantively.
+
+| Code | Previously published | Now published | Kind |
+|---|---|---|---|
+| BTH101 | Introduction to Biblical Studies | *unchanged* | — |
+| BTH102 | Bible Survey I: The Old Testament | Biblical Studies I: Old Testament Survey | Rename |
+| BTH103 | Bible Survey II: The New Testament | Biblical Studies II: New Testament Survey | Rename |
+| BTH104 | Church History I | *unchanged* | — |
+| **BTH105** | **Introduction to Evangelism** | **Introduction to Christian Doctrine** | **Different course** |
+| **BTH106** | **Christology I** | **Academic Writing and Study Skills** | **Different course** |
+
+Evangelism now sits at **BTH110 Evangelism and Discipleship** (Semester 2) and
+Christology at **BTH109 Christology I** (Semester 2). Nothing was lost; two
+codes were reassigned. Any student record, transcript or prior advertisement
+citing "BTH105 Introduction to Evangelism" or "BTH106 Christology I" now refers
+to a code that means something else. **If either code was ever issued to a
+student, the registry must be checked.**
+
+## BTH101 units 8–15 were replaced wholesale
+
+| Unit | Previously published | Now published |
+|---|---|---|
+| 8 | Transmission of Scripture | Biblical Geography and Archaeology |
+| 9 | Ancient Bible Manuscripts | The Cultural Context of the New Testament |
+| 10 | Modern Bible Translations | The Gospels and the Old Testament |
+| 11 | Biblical Geography | Pauline Theology |
+| 12 | Historical Background | Biblical Hermeneutics and Interpretation |
+| 13 | Literary Genres | Biblical Theology |
+| 14 | Biblical Interpretation | Scripture, Doctrine, and Christian Ministry |
+| 15 | Application of Scripture | Global and Contextual Interpretation of Scripture |
+
+Four topics from the old list — transmission of Scripture, ancient manuscripts,
+modern translations, historical background — now appear **nowhere** in BTH101.
+Units 1–7 are unchanged. Confirm this is intended and not an accidental
+overwrite; textual transmission is normally considered core to an introductory
+biblical studies course.
+
+## Content overlap to resolve
+
+**BTH102 duplicates BTH107 and BTH108.** The BTH102 course document is
+subtitled "The Pentateuch, Historical Books, and the Formation of Yahuah's
+Covenant People" and its units cover Genesis through Exile — but the new table
+also lists **BTH107 Pentateuch** and **BTH108 Historical Books of the Old
+Testament** as separate 5-ECTS courses in Semester 2. As written, a student
+takes the same material twice for 15 ECTS.
+
+Either BTH102 is a survey and 107/108 go deeper — in which case BTH102's
+subtitle and unit list need narrowing — or 107/108 are redundant. This is the
+most consequential thing an accreditor would query.
+
+**Duplication also across BTH101 and later courses.** BTH101 now contains full
+units on Pauline Theology (unit 11), Biblical Hermeneutics (unit 12) and
+Biblical Theology (unit 13). The table separately lists **BTH201 Pauline
+Theology**, **BTH203 Biblical Hermeneutics** and **BTH302 Advanced
+Hermeneutics**. Introductory treatment inside BTH101 is defensible, but the
+relationship should be stated in each syllabus.
+
+## Where the teaching text lives
+
+The unit **text** supplied for BTH101 (units 8–15) and BTH102 (units 1–5) is
+the actual teaching material — the lecture content an enrolled student receives
+for their fees. It is in `src/content/courseMaterial.ts` and renders only in the
+portal, with BTH101's assessment weightings and required reading.
+
+Unit **titles** remain public: a prospective student must be able to see what a
+course covers. Verified each build: no teaching text in any public page.
+
+Still to be written: BTH101 units 1–7 text, BTH102 units 6–15 text, and all of
+BTH103–BTH312.
