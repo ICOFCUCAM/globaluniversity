@@ -9,6 +9,7 @@ import { partners, site } from '@/content/site';
 import { chancellor, welcomeExcerpt } from '@/content/welcome';
 import { quickIconMap } from '@/components/Icons';
 import CountUp from '@/components/CountUp';
+import { Aurora, Grain, Seam } from '@/components/Atmosphere';
 import { IconCampus, IconChapel, IconGlobe, IconLaptop } from '@/components/Icons';
 
 const PILLARS = [
@@ -127,6 +128,10 @@ export default async function HomePage() {
           sizes="100vw"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-brand-purple-dark via-brand-purple-dark/95 to-brand-purple/85" />
+        <Aurora tone="dual" intensity={0.9} />
+        <Grain />
+        <Seam />
+        <Seam flip />
 
         <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-[minmax(0,300px)_minmax(0,1fr)] lg:gap-16">
           <Reveal>
@@ -364,6 +369,9 @@ export default async function HomePage() {
       {/* Research & Innovation */}
       <section className="relative overflow-hidden bg-brand-purple py-20 text-white sm:py-24">
         <Image src="/images/wp/g-decor.jpg" alt="" fill loading="lazy" quality={55} className="object-cover opacity-10" sizes="100vw" />
+        <Aurora tone="purple" intensity={0.8} />
+        <Grain />
+        <Seam />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
           <SectionHeading light eyebrow="Research & Innovation">
             Scholarship in service of society
@@ -489,8 +497,11 @@ export default async function HomePage() {
       </Section>
 
       {/* Global footprint */}
-      <section className="bg-brand-purple-dark py-16 text-white">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+      <section className="relative overflow-hidden bg-brand-purple-dark py-16 text-white">
+        <Aurora tone="dual" intensity={0.75} />
+        <Grain />
+        <Seam />
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
           <p className="mb-10 text-center font-sans text-xs font-semibold uppercase tracking-[0.25em] text-brand-gold">
             A Global University
           </p>
@@ -614,6 +625,9 @@ export default async function HomePage() {
               'repeating-linear-gradient(115deg, #f7dc79 0 1px, transparent 1px 22px)',
           }}
         />
+        <Aurora tone="gold" intensity={0.5} />
+        <Grain opacity={0.045} />
+        <Seam />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
           <p className="mb-12 text-center font-sans text-xs font-semibold uppercase tracking-[0.25em] text-brand-gold">
             Student Success

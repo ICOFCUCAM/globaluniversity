@@ -118,6 +118,24 @@ const config: Config = {
           from: { transform: 'translateX(0)' },
           to: { transform: 'translateX(-50%)' },
         },
+        'aurora-a': {
+          '0%,100%': { transform: 'translate3d(0,0,0) scale(1)' },
+          '33%': { transform: 'translate3d(12%, 8%, 0) scale(1.18)' },
+          '66%': { transform: 'translate3d(-6%, 14%, 0) scale(0.94)' },
+        },
+        'aurora-b': {
+          '0%,100%': { transform: 'translate3d(0,0,0) scale(1.05)' },
+          '40%': { transform: 'translate3d(-14%, 12%, 0) scale(0.9)' },
+          '75%': { transform: 'translate3d(8%, -10%, 0) scale(1.22)' },
+        },
+        'aurora-c': {
+          '0%,100%': { transform: 'translate3d(0,0,0) scale(0.96)' },
+          '50%': { transform: 'translate3d(10%, -14%, 0) scale(1.2)' },
+        },
+        'shaft': {
+          '0%,100%': { opacity: '0.55', transform: 'rotate(14deg) translateY(0)' },
+          '50%': { opacity: '1', transform: 'rotate(14deg) translateY(-3%)' },
+        },
         'sheen': {
           '0%': { transform: 'translateX(-120%) skewX(-18deg)' },
           '60%,100%': { transform: 'translateX(220%) skewX(-18deg)' },
@@ -129,6 +147,10 @@ const config: Config = {
         'ken-burns': 'ken-burns 12s ease-out forwards',
         'marquee': 'marquee 38s linear infinite',
         'sheen': 'sheen 2.4s ease-in-out infinite',
+        'aurora-a': 'aurora-a 26s ease-in-out infinite',
+        'aurora-b': 'aurora-b 32s ease-in-out infinite',
+        'aurora-c': 'aurora-c 38s ease-in-out infinite',
+        'shaft': 'shaft 14s ease-in-out infinite',
       },
     },
   },
