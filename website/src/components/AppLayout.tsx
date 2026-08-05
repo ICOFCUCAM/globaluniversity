@@ -90,12 +90,12 @@ export default function AppLayout() {
           <h1 className="font-heading text-2xl font-bold text-[#422e59]">
             This is the Student Portal
           </h1>
-          <p className="mt-3 text-sm leading-relaxed text-gray-600">
+          <p className="mt-3 text-sm leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">
             You are signed in as an applicant. The Student Portal is for enrolled students only —
             it carries no application forms. Track your application, upload documents and see your
             payment status in the Admissions Portal instead.
           </p>
-          <p className="mt-3 text-sm leading-relaxed text-gray-600">
+          <p className="mt-3 text-sm leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">
             Your student account is created for you automatically the moment the Office of the
             Registrar approves your application, and your student number, username and temporary
             password are emailed to you.

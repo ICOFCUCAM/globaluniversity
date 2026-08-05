@@ -48,7 +48,7 @@ export default function CertificateGenerator() {
         </div>
         <div className="flex gap-2">
           <button onClick={() => setShowPreview(!showPreview)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors">
+            className="flex items-center gap-2 px-4 py-2.5 bg-[#f2eee6] text-[#33234a] dark:bg-[#2a2333] dark:text-[#d8d2e2] rounded-xl text-sm font-medium hover:bg-[#e9e3d7] dark:hover:bg-[#332b3d] transition-colors">
             <Eye size={16} /> {showPreview ? 'Hide' : 'Show'} Preview
           </button>
           <button onClick={handlePrint}
@@ -104,7 +104,7 @@ export default function CertificateGenerator() {
 
       {/* Certificate Preview */}
       {showPreview && (
-        <div className="bg-gray-100 rounded-xl p-8 flex justify-center overflow-auto">
+        <div className="rounded-xl bg-[#f2eee6] dark:bg-[#2a2333] p-8 flex justify-center overflow-auto">
           <CertificateDocument
             ref={certRef}
             design={template.design}

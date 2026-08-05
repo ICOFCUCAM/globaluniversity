@@ -148,11 +148,11 @@ export default function ResultProcessing() {
 
       {/* Course Selection */}
       <div className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] p-5">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Select Course</label>
+        <label className="block text-sm font-medium text-[#4a4155] dark:text-[#c8c1d4] mb-2">Select Course</label>
         <select
           value={selectedCourse}
           onChange={(e) => setSelectedCourse(e.target.value)}
-          className="w-full max-w-md px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35"
+          className="w-full max-w-md px-4 py-2.5 border border-[#ded6c8] dark:border-[#3d3349] rounded-xl text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35"
         >
           <option value="">-- Select a course --</option>
           {courses.map((c) => (
@@ -165,19 +165,19 @@ export default function ResultProcessing() {
         <>
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white rounded-xl p-4 border border-gray-100">
+            <div className="bg-white rounded-xl p-4 border border-[#ece7de] dark:border-[#2e2637]">
               <p className="text-xs text-[#6b6076] dark:text-[#9c93ad]">Course</p>
               <p className="font-heading text-lg font-bold text-[#422e59] dark:text-[#e4dcf0]">{selectedCourseData?.code}</p>
             </div>
-            <div className="bg-white rounded-xl p-4 border border-gray-100">
+            <div className="bg-white rounded-xl p-4 border border-[#ece7de] dark:border-[#2e2637]">
               <p className="text-xs text-[#6b6076] dark:text-[#9c93ad]">Class Average</p>
               <p className="text-lg font-bold text-blue-600">{classAvg}%</p>
             </div>
-            <div className="bg-white rounded-xl p-4 border border-gray-100">
+            <div className="bg-white rounded-xl p-4 border border-[#ece7de] dark:border-[#2e2637]">
               <p className="text-xs text-[#6b6076] dark:text-[#9c93ad]">Pass</p>
               <p className="text-lg font-bold text-emerald-600">{passCount}</p>
             </div>
-            <div className="bg-white rounded-xl p-4 border border-gray-100">
+            <div className="bg-white rounded-xl p-4 border border-[#ece7de] dark:border-[#2e2637]">
               <p className="text-xs text-[#6b6076] dark:text-[#9c93ad]">Fail</p>
               <p className="text-lg font-bold text-red-600">{failCount}</p>
             </div>
@@ -186,7 +186,7 @@ export default function ResultProcessing() {
           {/* Results Table */}
           <div className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] overflow-hidden">
             <div className="px-5 py-3 border-b border-[#ece7de] bg-[#faf8f4] dark:border-[#2e2637] dark:bg-[#241f2c] flex items-center justify-between">
-              <h3 className="font-semibold text-gray-700 text-sm">Score Entry</h3>
+              <h3 className="font-semibold text-[#4a4155] dark:text-[#c8c1d4] text-sm">Score Entry</h3>
               <div className="flex items-center gap-2">
                 {saved && (
                   <span className="flex items-center gap-1 text-xs text-emerald-600">
@@ -206,21 +206,21 @@ export default function ResultProcessing() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-[#f0ece4] dark:border-[#2a2333]">
-                    <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase">S/N</th>
-                    <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Matric No</th>
-                    <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Student Name</th>
-                    <th className="text-center px-5 py-3 text-xs font-semibold text-gray-500 uppercase">CA (40)</th>
-                    <th className="text-center px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Exam (60)</th>
-                    <th className="text-center px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Total</th>
-                    <th className="text-center px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Grade</th>
-                    <th className="text-center px-5 py-3 text-xs font-semibold text-gray-500 uppercase">GP</th>
+                    <th className="text-left px-5 py-3 text-xs font-semibold text-[#6b6076] dark:text-[#9c93ad] uppercase">S/N</th>
+                    <th className="text-left px-5 py-3 text-xs font-semibold text-[#6b6076] dark:text-[#9c93ad] uppercase">Matric No</th>
+                    <th className="text-left px-5 py-3 text-xs font-semibold text-[#6b6076] dark:text-[#9c93ad] uppercase">Student Name</th>
+                    <th className="text-center px-5 py-3 text-xs font-semibold text-[#6b6076] dark:text-[#9c93ad] uppercase">CA (40)</th>
+                    <th className="text-center px-5 py-3 text-xs font-semibold text-[#6b6076] dark:text-[#9c93ad] uppercase">Exam (60)</th>
+                    <th className="text-center px-5 py-3 text-xs font-semibold text-[#6b6076] dark:text-[#9c93ad] uppercase">Total</th>
+                    <th className="text-center px-5 py-3 text-xs font-semibold text-[#6b6076] dark:text-[#9c93ad] uppercase">Grade</th>
+                    <th className="text-center px-5 py-3 text-xs font-semibold text-[#6b6076] dark:text-[#9c93ad] uppercase">GP</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#f0ece4] dark:divide-[#2a2333]">
                   {results.map((entry, i) => (
                     <tr key={entry.studentId} className="transition-colors hover:bg-[#faf8f4] dark:hover:bg-[#241f2c]">
                       <td className="px-5 py-2.5 text-sm text-[#6b6076] dark:text-[#9c93ad]">{i + 1}</td>
-                      <td className="px-5 py-2.5 text-sm text-gray-600 font-mono">{entry.matricNo}</td>
+                      <td className="px-5 py-2.5 text-sm text-[#6b6076] dark:text-[#9c93ad] font-mono">{entry.matricNo}</td>
                       <td className="px-5 py-2.5 text-sm text-[#33234a] dark:text-[#e4dcf0] font-medium">{entry.studentName}</td>
                       <td className="px-5 py-2.5">
                         <input
@@ -250,7 +250,7 @@ export default function ResultProcessing() {
                           {entry.grade}
                         </span>
                       </td>
-                      <td className="px-5 py-2.5 text-center text-sm font-semibold text-gray-700">{entry.gradePoint}</td>
+                      <td className="px-5 py-2.5 text-center text-sm font-semibold text-[#4a4155] dark:text-[#c8c1d4]">{entry.gradePoint}</td>
                     </tr>
                   ))}
                 </tbody>

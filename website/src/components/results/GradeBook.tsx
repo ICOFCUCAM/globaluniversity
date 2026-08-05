@@ -124,7 +124,7 @@ export default function GradeBook() {
     setSaved(count);
   }
 
-  const cell = 'w-20 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35';
+  const cell = 'w-20 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] bg-gray-50 px-2 py-1.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35';
 
   return (
     <div className="space-y-6">
@@ -137,13 +137,13 @@ export default function GradeBook() {
 
       <div className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] p-4">
         <label className="flex flex-wrap items-center gap-3">
-          <span className="flex items-center gap-2 text-sm font-medium text-gray-700">
+          <span className="flex items-center gap-2 text-sm font-medium text-[#4a4155] dark:text-[#c8c1d4]">
             <BookOpen size={15} /> Course
           </span>
           <select
             value={courseId}
             onChange={(e) => setCourseId(e.target.value)}
-            className="min-w-[280px] rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35"
+            className="min-w-[280px] rounded-lg border border-[#ded6c8] dark:border-[#3d3349] bg-gray-50 px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35"
           >
             <option value="">Select a course…</option>
             {courses.map((c) => (
@@ -169,19 +169,19 @@ export default function GradeBook() {
       </div>
 
       {!courseId && (
-        <p className="rounded-2xl border-2 border-dashed border-[#ece7f4] bg-white p-10 text-center text-sm text-gray-400">
+        <p className="rounded-2xl border-2 border-dashed border-[#ece7f4] bg-white p-10 text-center text-sm text-[#a49bb0] dark:text-[#7b7289]">
           Choose a course to open its grade book.
         </p>
       )}
 
       {courseId && (
-        <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white">
+        <div className="overflow-hidden rounded-2xl border border-[#ece7de] dark:border-[#2e2637] bg-white">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-[#f0ece4] dark:border-[#2a2333] bg-gray-50">
                   {['Student', 'Matric', 'CA (30)', 'Exam (70)', 'Total', 'Grade', 'Point'].map((h) => (
-                    <th key={h} className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    <th key={h} className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[#6b6076] dark:text-[#9c93ad]">
                       {h}
                     </th>
                   ))}
@@ -190,20 +190,20 @@ export default function GradeBook() {
               <tbody className="divide-y divide-[#f0ece4] dark:divide-[#2a2333]">
                 {loading && (
                   <tr>
-                    <td colSpan={7} className="px-5 py-10 text-center text-gray-400">
+                    <td colSpan={7} className="px-5 py-10 text-center text-[#a49bb0] dark:text-[#7b7289]">
                       Loading…
                     </td>
                   </tr>
                 )}
                 {!loading && computed.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-5 py-10 text-center text-gray-400">
+                    <td colSpan={7} className="px-5 py-10 text-center text-[#a49bb0] dark:text-[#7b7289]">
                       No students enrolled in this course yet.
                     </td>
                   </tr>
                 )}
                 {computed.map((r, i) => (
-                  <tr key={r.studentId} className="hover:bg-gray-50">
+                  <tr key={r.studentId} className="hover:bg-[#faf8f4] dark:hover:bg-[#241f2c]">
                     <td className="px-5 py-2.5 text-sm font-medium text-[#33234a] dark:text-[#e4dcf0]">{r.name}</td>
                     <td className="px-5 py-2.5 font-mono text-xs text-[#a49bb0] dark:text-[#7b7289]">{r.matric}</td>
                     <td className="px-5 py-2.5">
@@ -224,7 +224,7 @@ export default function GradeBook() {
                         </span>
                       )}
                     </td>
-                    <td className="px-5 py-2.5 text-sm text-gray-600">{r.entered ? r.gradePoint.toFixed(1) : '—'}</td>
+                    <td className="px-5 py-2.5 text-sm text-[#6b6076] dark:text-[#9c93ad]">{r.entered ? r.gradePoint.toFixed(1) : '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -232,7 +232,7 @@ export default function GradeBook() {
           </div>
 
           {computed.length > 0 && (
-            <div className="flex items-center justify-between gap-4 border-t border-gray-100 bg-gray-50 px-5 py-4">
+            <div className="flex items-center justify-between gap-4 border-t border-[#ece7de] dark:border-[#2e2637] bg-gray-50 px-5 py-4">
               {saved !== null ? (
                 <p className="flex items-center gap-2 text-sm text-emerald-700">
                   <CheckCircle2 size={15} /> Saved {saved} result{saved === 1 ? '' : 's'} — GPA and transcripts updated.

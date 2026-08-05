@@ -201,7 +201,7 @@ export default function AccountManagement() {
       )}
 
       {/* Create ------------------------------------------------------- */}
-      <form onSubmit={createAccount} className="rounded-xl border border-gray-200 bg-white p-5">
+      <form onSubmit={createAccount} className="rounded-xl border border-[#ded6c8] dark:border-[#3d3349] bg-white p-5">
         <h3 className="flex items-center gap-2 text-sm font-semibold text-[#33234a] dark:text-[#e4dcf0]">
           <UserPlus size={16} /> Create a staff account
         </h3>
@@ -211,22 +211,22 @@ export default function AccountManagement() {
         </p>
         <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
           <label className="block">
-            <span className="text-xs text-gray-600">Email</span>
+            <span className="text-xs text-[#6b6076] dark:text-[#9c93ad]">Email</span>
             <input required type="email" value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
-              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm" />
+              className="mt-1 w-full rounded-lg border border-[#ded6c8] dark:border-[#3d3349] px-3 py-2 text-sm" />
           </label>
           <label className="block">
-            <span className="text-xs text-gray-600">Full name</span>
+            <span className="text-xs text-[#6b6076] dark:text-[#9c93ad]">Full name</span>
             <input required value={form.fullName}
               onChange={(e) => setForm({ ...form, fullName: e.target.value })}
-              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm" />
+              className="mt-1 w-full rounded-lg border border-[#ded6c8] dark:border-[#3d3349] px-3 py-2 text-sm" />
           </label>
           <label className="block">
-            <span className="text-xs text-gray-600">Role</span>
+            <span className="text-xs text-[#6b6076] dark:text-[#9c93ad]">Role</span>
             <select value={form.role}
               onChange={(e) => setForm({ ...form, role: e.target.value as UserRole })}
-              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm">
+              className="mt-1 w-full rounded-lg border border-[#ded6c8] dark:border-[#3d3349] px-3 py-2 text-sm">
               {CREATABLE.filter((r) => canActOn(user?.role, r)).map((r) => (
                 <option key={r} value={r}>{roleLabels[r]}</option>
               ))}
@@ -239,22 +239,22 @@ export default function AccountManagement() {
         {form.role === 'lecturer' && (
           <div className="mt-3 grid grid-cols-1 gap-3 rounded-lg bg-gray-50 p-3 md:grid-cols-3">
             <label className="block">
-              <span className="text-xs text-gray-600">Title</span>
+              <span className="text-xs text-[#6b6076] dark:text-[#9c93ad]">Title</span>
               <input value={form.title} placeholder="Dr / Prof / Rev"
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
-                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm" />
+                className="mt-1 w-full rounded-lg border border-[#ded6c8] dark:border-[#3d3349] px-3 py-2 text-sm" />
             </label>
             <label className="block">
-              <span className="text-xs text-gray-600">Specialisation</span>
+              <span className="text-xs text-[#6b6076] dark:text-[#9c93ad]">Specialisation</span>
               <input value={form.specialization} placeholder="Systematic Theology"
                 onChange={(e) => setForm({ ...form, specialization: e.target.value })}
-                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm" />
+                className="mt-1 w-full rounded-lg border border-[#ded6c8] dark:border-[#3d3349] px-3 py-2 text-sm" />
             </label>
             <label className="block">
-              <span className="text-xs text-gray-600">Phone</span>
+              <span className="text-xs text-[#6b6076] dark:text-[#9c93ad]">Phone</span>
               <input value={form.phone}
                 onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm" />
+                className="mt-1 w-full rounded-lg border border-[#ded6c8] dark:border-[#3d3349] px-3 py-2 text-sm" />
             </label>
           </div>
         )}
@@ -266,24 +266,24 @@ export default function AccountManagement() {
       </form>
 
       {/* List --------------------------------------------------------- */}
-      <div className="rounded-xl border border-gray-200 bg-white">
+      <div className="rounded-xl border border-[#ded6c8] dark:border-[#3d3349] bg-white">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#f0ece4] dark:border-[#2a2333] p-4">
           <h3 className="text-sm font-semibold text-[#33234a] dark:text-[#e4dcf0]">
-            All accounts <span className="font-normal text-gray-400">({rows.length})</span>
+            All accounts <span className="font-normal text-[#a49bb0] dark:text-[#7b7289]">({rows.length})</span>
           </h3>
           <div className="relative">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#a49bb0] dark:text-[#7b7289]" />
             <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search…"
-              className="w-56 rounded-lg border border-gray-200 py-1.5 pl-9 pr-3 text-sm" />
+              className="w-56 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] py-1.5 pl-9 pr-3 text-sm" />
           </div>
         </div>
 
         {loading ? (
-          <p className="p-6 text-sm text-gray-400">Loading…</p>
+          <p className="p-6 text-sm text-[#a49bb0] dark:text-[#7b7289]">Loading…</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
+              <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-[#6b6076] dark:text-[#9c93ad]">
                 <tr>
                   <th className="px-4 py-2.5 font-medium">Name</th>
                   <th className="px-4 py-2.5 font-medium">Email</th>
@@ -300,14 +300,14 @@ export default function AccountManagement() {
                     <tr key={r.id} className={r.suspended_at ? 'bg-red-50/40' : undefined}>
                       <td className="px-4 py-2.5 text-[#33234a] dark:text-[#e4dcf0]">
                         {r.full_name ?? '—'}
-                        {isSelf && <span className="ml-2 text-[11px] text-gray-400">(you)</span>}
+                        {isSelf && <span className="ml-2 text-[11px] text-[#a49bb0] dark:text-[#7b7289]">(you)</span>}
                       </td>
-                      <td className="px-4 py-2.5 font-mono text-xs text-gray-600">{r.email}</td>
+                      <td className="px-4 py-2.5 font-mono text-xs text-[#6b6076] dark:text-[#9c93ad]">{r.email}</td>
                       <td className="px-4 py-2.5">
                         <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
                           SYSTEM_ROLES.includes(r.role)
                             ? 'bg-purple-50 text-purple-700'
-                            : 'bg-gray-100 text-gray-600'
+                            : 'bg-gray-100 text-[#6b6076] dark:text-[#9c93ad]'
                         }`}>
                           {roleLabels[r.role] ?? r.role}
                         </span>

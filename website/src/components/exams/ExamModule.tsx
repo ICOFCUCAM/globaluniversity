@@ -108,7 +108,7 @@ export default function ExamModule() {
                 if (newFlagged.has(currentQuestion)) newFlagged.delete(currentQuestion);
                 else newFlagged.add(currentQuestion);
                 setFlagged(newFlagged);
-              }} className={`p-2 rounded-lg transition-colors ${flagged.has(currentQuestion) ? 'bg-amber-100 text-amber-600' : 'bg-gray-100 text-gray-400 hover:bg-amber-50'}`}>
+              }} className={`p-2 rounded-lg transition-colors ${flagged.has(currentQuestion) ? 'bg-amber-100 text-amber-600' : 'bg-gray-100 text-[#a49bb0] dark:text-[#7b7289] hover:bg-amber-50'}`}>
                 <Flag size={16} />
               </button>
             </div>
@@ -119,11 +119,11 @@ export default function ExamModule() {
                   className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
                     answers[currentQuestion] === oi
                       ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-gray-100 hover:border-gray-300 text-gray-700'
+                      : 'border-[#ece7de] dark:border-[#2e2637] hover:border-gray-300 text-[#4a4155] dark:text-[#c8c1d4]'
                   }`}>
                   <div className="flex items-center gap-3">
                     <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                      answers[currentQuestion] === oi ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-500'
+                      answers[currentQuestion] === oi ? 'bg-blue-500 text-white' : 'bg-gray-100 text-[#6b6076] dark:text-[#9c93ad]'
                     }`}>
                       {String.fromCharCode(65 + oi)}
                     </span>
@@ -135,7 +135,7 @@ export default function ExamModule() {
 
             <div className="flex items-center justify-between mt-6">
               <button onClick={() => setCurrentQuestion(Math.max(0, currentQuestion - 1))} disabled={currentQuestion === 0}
-                className="flex items-center gap-1 px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm disabled:opacity-40 hover:bg-gray-200 transition-colors">
+                className="flex items-center gap-1 px-4 py-2 bg-gray-100 text-[#6b6076] dark:text-[#9c93ad] rounded-lg text-sm disabled:opacity-40 hover:bg-[#e9e3d7] dark:hover:bg-[#332b3d] transition-colors">
                 <ChevronLeft size={14} /> Previous
               </button>
               <button onClick={() => setCurrentQuestion(Math.min(sampleQuestions.length - 1, currentQuestion + 1))} disabled={currentQuestion === sampleQuestions.length - 1}
@@ -155,7 +155,7 @@ export default function ExamModule() {
                     currentQuestion === i ? 'bg-[#422e59] text-white ring-2 ring-blue-300' :
                     answers[i] !== undefined ? 'bg-emerald-100 text-emerald-700' :
                     flagged.has(i) ? 'bg-amber-100 text-amber-700' :
-                    'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                    'bg-gray-100 text-[#6b6076] dark:text-[#9c93ad] hover:bg-[#e9e3d7] dark:hover:bg-[#332b3d]'
                   }`}>
                   {i + 1}
                 </button>
@@ -183,7 +183,7 @@ export default function ExamModule() {
             <CheckCircle2 size={40} className={score >= 7 ? 'text-emerald-600' : score >= 5 ? 'text-blue-600' : 'text-red-600'} />
           </div>
           <h2 className="text-2xl font-bold text-[#33234a] dark:text-[#e4dcf0] mt-4">Exam Completed!</h2>
-          <p className="text-gray-500 mt-1">{activeExam?.courseCode}: {activeExam?.title}</p>
+          <p className="text-[#6b6076] dark:text-[#9c93ad] mt-1">{activeExam?.courseCode}: {activeExam?.title}</p>
           <div className="flex justify-center gap-8 mt-6">
             <div>
               <p className="text-3xl font-bold text-[#422e59]">{score}/{sampleQuestions.length}</p>
@@ -218,7 +218,7 @@ export default function ExamModule() {
               <div className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
                 exam.status === 'ongoing' ? 'bg-red-50 text-red-600' :
                 exam.status === 'upcoming' ? 'bg-blue-50 text-blue-600' :
-                'bg-gray-100 text-gray-500'
+                'bg-gray-100 text-[#6b6076] dark:text-[#9c93ad]'
               }`}>
                 {exam.status.toUpperCase()}
               </div>
@@ -232,7 +232,7 @@ export default function ExamModule() {
             </div>
             <button onClick={() => startExam(exam)} disabled={exam.status === 'completed'}
               className={`w-full mt-4 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                exam.status === 'completed' ? 'bg-gray-100 text-gray-400 cursor-not-allowed' :
+                exam.status === 'completed' ? 'bg-gray-100 text-[#a49bb0] dark:text-[#7b7289] cursor-not-allowed' :
                 exam.status === 'ongoing' ? 'bg-red-500 text-white hover:bg-red-600' :
                 'bg-[#422e59] text-white hover:bg-[#322244]'
               }`}>

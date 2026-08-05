@@ -50,7 +50,7 @@ export default function LecturerDashboard({ onNavigate }: LecturerDashboardProps
           { label: 'Results Pending', value: 2, icon: <ClipboardList size={20} />, color: 'from-amber-500 to-amber-600' },
           { label: 'Materials Uploaded', value: 24, icon: <Upload size={20} />, color: 'from-purple-500 to-purple-600' },
         ].map((stat, i) => (
-          <div key={i} className="bg-white rounded-xl p-4 border border-gray-100">
+          <div key={i} className="bg-white rounded-xl p-4 border border-[#ece7de] dark:border-[#2e2637]">
             <div className={`p-2.5 rounded-xl bg-gradient-to-br ${stat.color} text-white shadow-lg w-fit`}>
               {stat.icon}
             </div>
@@ -114,7 +114,7 @@ export default function LecturerDashboard({ onNavigate }: LecturerDashboardProps
                   <p className="text-xs font-bold text-blue-600">{item.time}</p>
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-700">{item.course} - {item.type}</p>
+                  <p className="text-sm font-medium text-[#4a4155] dark:text-[#c8c1d4]">{item.course} - {item.type}</p>
                   <p className="text-xs text-[#a49bb0] dark:text-[#7b7289]">{item.room}</p>
                 </div>
                 <button className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors">
@@ -134,7 +134,7 @@ export default function LecturerDashboard({ onNavigate }: LecturerDashboardProps
               return (
                 <div key={i} className="p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm font-medium text-gray-700">{course.code}</p>
+                    <p className="text-sm font-medium text-[#4a4155] dark:text-[#c8c1d4]">{course.code}</p>
                     <span className="text-xs text-[#a49bb0] dark:text-[#7b7289]">Avg: {avgScore}%</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
@@ -143,7 +143,7 @@ export default function LecturerDashboard({ onNavigate }: LecturerDashboardProps
                       style={{ width: `${passRate}%` }}
                     />
                   </div>
-                  <p className="text-[10px] text-gray-400 mt-1">{passRate}% pass rate</p>
+                  <p className="text-[10px] text-[#a49bb0] dark:text-[#7b7289] mt-1">{passRate}% pass rate</p>
                 </div>
               );
             })}

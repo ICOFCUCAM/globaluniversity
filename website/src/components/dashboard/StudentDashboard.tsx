@@ -72,7 +72,7 @@ export default function StudentDashboard({ onNavigate }: StudentDashboardProps) 
           <button
             key={i}
             onClick={() => onNavigate(action.view)}
-            className="bg-white rounded-xl p-4 border border-gray-100 hover:shadow-lg transition-all duration-300 group text-left"
+            className="bg-white rounded-xl p-4 border border-[#ece7de] dark:border-[#2e2637] hover:shadow-lg transition-all duration-300 group text-left"
           >
             <div className={`p-2.5 rounded-xl bg-gradient-to-br ${action.color} text-white shadow-lg w-fit`}>
               {action.icon}
@@ -88,17 +88,17 @@ export default function StudentDashboard({ onNavigate }: StudentDashboardProps) 
 
       {/* GPA Progress */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl p-5 border border-gray-100">
+        <div className="bg-white rounded-xl p-5 border border-[#ece7de] dark:border-[#2e2637]">
           <h3 className="font-semibold text-[#33234a] dark:text-[#e4dcf0] mb-4">GPA Progress</h3>
           <div className="flex items-end gap-2 h-32">
             {semesterGPAs.map((s, i) => (
               <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                <span className="text-[10px] font-medium text-gray-600">{s.gpa}</span>
+                <span className="text-[10px] font-medium text-[#6b6076] dark:text-[#9c93ad]">{s.gpa}</span>
                 <div
                   className="w-full bg-gradient-to-t from-blue-600 to-blue-400 rounded-t transition-all duration-500"
                   style={{ height: `${(s.gpa / 5) * 100}%` }}
                 />
-                <span className="text-[9px] text-gray-400">{s.label}</span>
+                <span className="text-[9px] text-[#a49bb0] dark:text-[#7b7289]">{s.label}</span>
               </div>
             ))}
           </div>
@@ -114,12 +114,12 @@ export default function StudentDashboard({ onNavigate }: StudentDashboardProps) 
             {currentSem?.courses.map((course, i) => (
               <div key={i} className="px-5 py-3 flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-700">{course.code}</p>
+                  <p className="text-sm font-medium text-[#4a4155] dark:text-[#c8c1d4]">{course.code}</p>
                   <p className="text-xs text-[#a49bb0] dark:text-[#7b7289]">{course.title}</p>
                 </div>
                 <div className="text-right">
                   <span className={`text-sm font-bold ${getGPAColor(course.gradePoint)}`}>{course.grade}</span>
-                  <p className="text-[10px] text-gray-400">{course.creditUnit} CU</p>
+                  <p className="text-[10px] text-[#a49bb0] dark:text-[#7b7289]">{course.creditUnit} CU</p>
                 </div>
               </div>
             ))}
@@ -137,11 +137,11 @@ export default function StudentDashboard({ onNavigate }: StudentDashboardProps) 
             { title: 'CSC 411 Project Defense', time: 'April 15, 9:00 AM', type: 'Exam', color: 'border-l-red-500' },
           ].map((item, i) => (
             <div key={i} className={`p-3 bg-gray-50 rounded-lg border-l-4 ${item.color}`}>
-              <p className="text-sm font-medium text-gray-700">{item.title}</p>
+              <p className="text-sm font-medium text-[#4a4155] dark:text-[#c8c1d4]">{item.title}</p>
               <p className="text-xs text-[#a49bb0] dark:text-[#7b7289] mt-1 flex items-center gap-1">
                 <Clock size={10} /> {item.time}
               </p>
-              <span className="text-[10px] font-medium text-gray-500 mt-1 inline-block">{item.type}</span>
+              <span className="text-[10px] font-medium text-[#6b6076] dark:text-[#9c93ad] mt-1 inline-block">{item.type}</span>
             </div>
           ))}
         </div>

@@ -112,7 +112,7 @@ export default function SettingsPage() {
           {tabs.map((tab) => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm transition-all ${
-                activeTab === tab.id ? 'bg-[#422e59] text-white font-medium' : 'text-gray-600 hover:bg-gray-50'
+                activeTab === tab.id ? 'bg-[#422e59] text-white font-medium' : 'text-[#6b6076] dark:text-[#9c93ad] hover:bg-[#faf8f4] dark:hover:bg-[#241f2c]'
               }`}>
               {tab.icon} {tab.label}
             </button>
@@ -124,7 +124,7 @@ export default function SettingsPage() {
           {activeTab === 'profile' && (
             <div className="space-y-4">
               <h3 className="font-semibold text-[#33234a] dark:text-[#e4dcf0]">Profile Settings</h3>
-              <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-[#faf8f4] dark:bg-[#241f2c]">
                 <img src={user?.avatar} alt="" className="w-16 h-16 rounded-full object-cover border-2 border-[#ece7f4]" />
                 <div>
                   <p className="font-semibold text-[#33234a] dark:text-[#e4dcf0]">{user?.name}</p>
@@ -134,23 +134,23 @@ export default function SettingsPage() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Full Name</label>
+                  <label className="block text-xs font-medium text-[#6b6076] dark:text-[#9c93ad] mb-1">Full Name</label>
                   <input value={profile.name} onChange={(e) => setProfile({ ...profile, name: e.target.value })}
                     className="w-full px-3 py-2 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Email</label>
+                  <label className="block text-xs font-medium text-[#6b6076] dark:text-[#9c93ad] mb-1">Email</label>
                   <input value={profile.email} readOnly
-                    className="w-full px-3 py-2 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm bg-gray-50 text-gray-500" />
-                  <p className="mt-1 text-[11px] text-gray-400">
+                    className="w-full px-3 py-2 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm bg-gray-50 text-[#6b6076] dark:text-[#9c93ad]" />
+                  <p className="mt-1 text-[11px] text-[#a49bb0] dark:text-[#7b7289]">
                     Your sign-in address. Only the Superadministrator can change it.
                   </p>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Role</label>
+                  <label className="block text-xs font-medium text-[#6b6076] dark:text-[#9c93ad] mb-1">Role</label>
                   <input value={roleLabels[user?.role ?? 'student'] ?? ''} readOnly
-                    className="w-full px-3 py-2 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm bg-gray-50 text-gray-500" />
-                  <p className="mt-1 text-[11px] text-gray-400">
+                    className="w-full px-3 py-2 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm bg-gray-50 text-[#6b6076] dark:text-[#9c93ad]" />
+                  <p className="mt-1 text-[11px] text-[#a49bb0] dark:text-[#7b7289]">
                     Assigned by the Superadministrator and recorded in the audit log.
                   </p>
                 </div>
@@ -176,15 +176,15 @@ export default function SettingsPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-[#ece7de] bg-[#faf8f4] dark:border-[#2e2637] dark:bg-[#241f2c]">
-                    <th className="text-left px-4 py-2 text-xs font-semibold text-gray-500">Score Range</th>
-                    <th className="text-center px-4 py-2 text-xs font-semibold text-gray-500">Grade</th>
-                    <th className="text-center px-4 py-2 text-xs font-semibold text-gray-500">Grade Point</th>
-                    <th className="text-left px-4 py-2 text-xs font-semibold text-gray-500">Remark</th>
+                    <th className="text-left px-4 py-2 text-xs font-semibold text-[#6b6076] dark:text-[#9c93ad]">Score Range</th>
+                    <th className="text-center px-4 py-2 text-xs font-semibold text-[#6b6076] dark:text-[#9c93ad]">Grade</th>
+                    <th className="text-center px-4 py-2 text-xs font-semibold text-[#6b6076] dark:text-[#9c93ad]">Grade Point</th>
+                    <th className="text-left px-4 py-2 text-xs font-semibold text-[#6b6076] dark:text-[#9c93ad]">Remark</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#f0ece4] dark:divide-[#2a2333]">
                   {GRADING_SCALE.map((g) => (
-                    <tr key={g.grade} className="hover:bg-gray-50">
+                    <tr key={g.grade} className="hover:bg-[#faf8f4] dark:hover:bg-[#241f2c]">
                       <td className="px-4 py-2 text-sm">{g.minScore} - {g.maxScore}</td>
                       <td className="px-4 py-2 text-sm text-center font-bold">{g.grade}</td>
                       <td className="px-4 py-2 text-sm text-center">{g.gradePoint}</td>
@@ -221,9 +221,9 @@ export default function SettingsPage() {
                 { label: 'System Alerts', desc: 'Important system maintenance notices' },
                 { label: 'Email Notifications', desc: 'Receive notifications via email' },
               ].map((item, i) => (
-                <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-[#faf8f4] dark:bg-[#241f2c]">
                   <div>
-                    <p className="text-sm font-medium text-gray-700">{item.label}</p>
+                    <p className="text-sm font-medium text-[#4a4155] dark:text-[#c8c1d4]">{item.label}</p>
                     <p className="text-xs text-[#a49bb0] dark:text-[#7b7289]">{item.desc}</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">

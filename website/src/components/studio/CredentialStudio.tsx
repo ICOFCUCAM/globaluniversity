@@ -180,7 +180,7 @@ export default function CredentialStudio() {
               key={k}
               onClick={() => setKind(k)}
               className={`rounded-xl px-4 py-2 text-sm font-medium capitalize transition-colors ${
-                kind === k ? 'bg-[#422e59] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                kind === k ? 'bg-[#422e59] text-white' : 'bg-gray-100 text-[#6b6076] dark:text-[#9c93ad] hover:bg-[#e9e3d7] dark:hover:bg-[#332b3d]'
               }`}
             >
               {k}
@@ -259,7 +259,7 @@ export default function CredentialStudio() {
                     next[i] = { ...next[i], name: e.target.value };
                     set('signatories', next);
                   }}
-                  className="min-w-0 flex-1 rounded-lg border border-gray-200 px-2 py-1.5 text-xs"
+                  className="min-w-0 flex-1 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] px-2 py-1.5 text-xs"
                 />
                 <input
                   value={s.office}
@@ -269,11 +269,11 @@ export default function CredentialStudio() {
                     next[i] = { ...next[i], office: e.target.value };
                     set('signatories', next);
                   }}
-                  className="min-w-0 flex-1 rounded-lg border border-gray-200 px-2 py-1.5 text-xs"
+                  className="min-w-0 flex-1 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] px-2 py-1.5 text-xs"
                 />
                 <button
                   onClick={() => set('signatories', design.signatories.filter((_, j) => j !== i))}
-                  className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600"
+                  className="rounded-lg p-1.5 text-[#a49bb0] dark:text-[#7b7289] hover:bg-red-50 hover:text-red-600"
                   aria-label="Remove signatory"
                 >
                   <Trash2 size={14} />
@@ -290,7 +290,7 @@ export default function CredentialStudio() {
 
           <button
             onClick={() => setDesign(defaultDesign(kind))}
-            className="flex items-center gap-1.5 text-xs text-[#6b6076] dark:text-[#9c93ad] hover:text-gray-700"
+            className="flex items-center gap-1.5 text-xs text-[#6b6076] dark:text-[#9c93ad] hover:text-[#4a4155] dark:text-[#c8c1d4]"
           >
             <RotateCcw size={13} /> Reset to the built-in default
           </button>
@@ -317,14 +317,14 @@ export default function CredentialStudio() {
             </div>
           )}
 
-          <div className="rounded-xl border border-gray-200 bg-white p-4">
-            <label className="block text-xs font-medium text-gray-600">Name this version</label>
+          <div className="rounded-xl border border-[#ded6c8] dark:border-[#3d3349] bg-white p-4">
+            <label className="block text-xs font-medium text-[#6b6076] dark:text-[#9c93ad]">Name this version</label>
             <div className="mt-1.5 flex flex-wrap gap-2">
               <input
                 value={versionName}
                 onChange={(e) => setVersionName(e.target.value)}
                 placeholder="e.g. 2026 Senate-approved certificate"
-                className="min-w-[240px] flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                className="min-w-[240px] flex-1 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] px-3 py-2 text-sm"
               />
               <button
                 onClick={publish}
@@ -340,12 +340,12 @@ export default function CredentialStudio() {
             </p>
           </div>
 
-          <div className="rounded-xl border border-gray-200 bg-white p-4">
+          <div className="rounded-xl border border-[#ded6c8] dark:border-[#3d3349] bg-white p-4">
             <h3 className="flex items-center gap-2 text-sm font-semibold text-[#33234a] dark:text-[#e4dcf0]">
               <History size={15} /> Published versions
             </h3>
             {loading ? (
-              <p className="mt-3 text-sm text-gray-400">Loading…</p>
+              <p className="mt-3 text-sm text-[#a49bb0] dark:text-[#7b7289]">Loading…</p>
             ) : versions.length === 0 ? (
               <p className="mt-3 text-sm text-[#6b6076] dark:text-[#9c93ad]">
                 None yet. Until you publish one, credentials print under the built-in default.
@@ -390,7 +390,7 @@ export default function CredentialStudio() {
 
 function Panel({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4">
+    <div className="rounded-xl border border-[#ded6c8] dark:border-[#3d3349] bg-white p-4">
       <h3 className="text-sm font-semibold text-[#33234a] dark:text-[#e4dcf0]">{title}</h3>
       {hint && <p className="mt-0.5 text-xs text-[#a49bb0] dark:text-[#7b7289]">{hint}</p>}
       <div className="mt-3 space-y-2.5">{children}</div>
@@ -401,7 +401,7 @@ function Panel({ title, hint, children }: { title: string; hint?: string; childr
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-3">
-      <span className="w-24 flex-shrink-0 text-xs text-gray-600">{label}</span>
+      <span className="w-24 flex-shrink-0 text-xs text-[#6b6076] dark:text-[#9c93ad]">{label}</span>
       {children}
     </div>
   );
@@ -410,7 +410,7 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 function Select({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: string[] }) {
   return (
     <select value={value} onChange={(e) => onChange(e.target.value)}
-      className="flex-1 rounded-lg border border-gray-200 px-2 py-1.5 text-xs capitalize">
+      className="flex-1 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] px-2 py-1.5 text-xs capitalize">
       {options.map((o) => <option key={o} value={o}>{o}</option>)}
     </select>
   );
@@ -421,9 +421,9 @@ function Colour({ value, onChange }: { value: string; onChange: (v: string) => v
     <div className="flex flex-1 items-center gap-2">
       <input type="color" value={/^#[0-9a-fA-F]{6}$/.test(value) ? value : '#000000'}
         onChange={(e) => onChange(e.target.value)}
-        className="h-7 w-9 cursor-pointer rounded border border-gray-200 bg-white" />
+        className="h-7 w-9 cursor-pointer rounded border border-[#ded6c8] dark:border-[#3d3349] bg-white" />
       <input value={value} onChange={(e) => onChange(e.target.value)}
-        className="w-24 rounded-lg border border-gray-200 px-2 py-1.5 font-mono text-xs" />
+        className="w-24 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] px-2 py-1.5 font-mono text-xs" />
     </div>
   );
 }
@@ -431,9 +431,9 @@ function Colour({ value, onChange }: { value: string; onChange: (v: string) => v
 function Field({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   return (
     <div>
-      <label className="block text-xs text-gray-600">{label}</label>
+      <label className="block text-xs text-[#6b6076] dark:text-[#9c93ad]">{label}</label>
       <textarea value={value} onChange={(e) => onChange(e.target.value)} rows={2}
-        className="mt-1 w-full resize-y rounded-lg border border-gray-200 px-2 py-1.5 text-xs" />
+        className="mt-1 w-full resize-y rounded-lg border border-[#ded6c8] dark:border-[#3d3349] px-2 py-1.5 text-xs" />
     </div>
   );
 }

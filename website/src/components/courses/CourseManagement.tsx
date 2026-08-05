@@ -77,7 +77,7 @@ export default function CourseManagement() {
       <div className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] p-4">
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative flex-1 min-w-[250px]">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#a49bb0] dark:text-[#7b7289]" />
             <input type="text" placeholder="Search courses..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-4 py-2 bg-gray-50 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35" />
           </div>
@@ -113,12 +113,12 @@ export default function CourseManagement() {
         Object.entries(grouped).map(([group, groupCourses]) => (
           <div key={group} className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] overflow-hidden">
             <div className="px-5 py-3 border-b border-[#ece7de] bg-[#faf8f4] dark:border-[#2e2637] dark:bg-[#241f2c] flex items-center justify-between">
-              <h3 className="font-semibold text-gray-700 text-sm">{group}</h3>
+              <h3 className="font-semibold text-[#4a4155] dark:text-[#c8c1d4] text-sm">{group}</h3>
               <span className="text-xs text-[#a49bb0] dark:text-[#7b7289]">{groupCourses.length} courses · {groupCourses.reduce((s, c) => s + c.credit_unit, 0)} credits</span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
               {groupCourses.map((course) => (
-                <div key={course.id} className="p-4 border border-gray-100 rounded-xl hover:shadow-md transition-all duration-300 group cursor-pointer">
+                <div key={course.id} className="p-4 border border-[#ece7de] dark:border-[#2e2637] rounded-xl hover:shadow-md transition-all duration-300 group cursor-pointer">
                   <div className="flex items-start justify-between">
                     {/* One treatment for every level. The gradient-per-level
                         map made 100-level blue and 400-level pink, which reads
@@ -130,7 +130,7 @@ export default function CourseManagement() {
                   </div>
                   <h4 className="text-sm font-semibold text-[#33234a] dark:text-[#e4dcf0] mt-3 transition-colors">{course.title}</h4>
                   <p className="text-xs text-[#a49bb0] dark:text-[#7b7289] mt-1 line-clamp-2">{course.description}</p>
-                  <div className="flex items-center gap-3 mt-3 text-[10px] text-gray-400">
+                  <div className="flex items-center gap-3 mt-3 text-[10px] text-[#a49bb0] dark:text-[#7b7289]">
                     <span className="flex items-center gap-1"><Clock size={10} /> Level {course.level}</span>
                     <span>Sem {course.semester}</span>
                   </div>
@@ -147,43 +147,43 @@ export default function CourseManagement() {
           <div className="bg-white rounded-2xl w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
             <div className="px-6 py-4 border-b border-[#f0ece4] dark:border-[#2a2333] flex items-center justify-between">
               <h3 className="font-heading text-lg font-bold text-[#422e59] dark:text-[#e4dcf0]">Add New Course</h3>
-              <button onClick={() => setShowAddModal(false)} className="p-1 hover:bg-gray-100 rounded-lg"><X size={18} /></button>
+              <button onClick={() => setShowAddModal(false)} className="p-1 rounded-lg hover:bg-[#f2eee6] dark:hover:bg-[#2a2333]"><X size={18} /></button>
             </div>
             <form onSubmit={handleAddCourse} className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Course Code *</label>
+                  <label className="block text-xs font-medium text-[#6b6076] dark:text-[#9c93ad] mb-1">Course Code *</label>
                   <input required value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })}
                     placeholder="e.g. BTH101" className="w-full px-3 py-2 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Credit Units *</label>
+                  <label className="block text-xs font-medium text-[#6b6076] dark:text-[#9c93ad] mb-1">Credit Units *</label>
                   <input required type="number" min={1} max={6} value={form.credit_unit} onChange={(e) => setForm({ ...form, credit_unit: parseInt(e.target.value) })}
                     className="w-full px-3 py-2 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35" />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Course Title *</label>
+                <label className="block text-xs font-medium text-[#6b6076] dark:text-[#9c93ad] mb-1">Course Title *</label>
                 <input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })}
                   className="w-full px-3 py-2 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35" />
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Level</label>
+                  <label className="block text-xs font-medium text-[#6b6076] dark:text-[#9c93ad] mb-1">Level</label>
                   <select value={form.level} onChange={(e) => setForm({ ...form, level: parseInt(e.target.value) })}
                     className="w-full px-3 py-2 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm">
                     <option value={100}>100</option><option value={200}>200</option><option value={300}>300</option><option value={400}>400</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Semester</label>
+                  <label className="block text-xs font-medium text-[#6b6076] dark:text-[#9c93ad] mb-1">Semester</label>
                   <select value={form.semester} onChange={(e) => setForm({ ...form, semester: parseInt(e.target.value) })}
                     className="w-full px-3 py-2 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm">
                     <option value={1}>First</option><option value={2}>Second</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Year</label>
+                  <label className="block text-xs font-medium text-[#6b6076] dark:text-[#9c93ad] mb-1">Year</label>
                   <select value={form.year} onChange={(e) => setForm({ ...form, year: parseInt(e.target.value) })}
                     className="w-full px-3 py-2 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm">
                     <option value={1}>1</option><option value={2}>2</option><option value={3}>3</option><option value={4}>4</option>
@@ -191,13 +191,13 @@ export default function CourseManagement() {
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
+                <label className="block text-xs font-medium text-[#6b6076] dark:text-[#9c93ad] mb-1">Description</label>
                 <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3}
                   className="w-full px-3 py-2 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35" />
               </div>
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => setShowAddModal(false)}
-                  className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50">Cancel</button>
+                  className="flex-1 px-4 py-2.5 border border-[#ded6c8] dark:border-[#3d3349] rounded-xl text-sm font-medium text-[#6b6076] dark:text-[#9c93ad] hover:bg-[#faf8f4] dark:hover:bg-[#241f2c]">Cancel</button>
                 <button type="submit"
                   className="flex-1 px-4 py-2.5 bg-[#422e59] text-white rounded-xl text-sm font-medium hover:bg-[#322244]">Add Course</button>
               </div>

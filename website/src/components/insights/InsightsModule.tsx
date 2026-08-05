@@ -127,7 +127,7 @@ export default function InsightsModule() {
           { label: 'Fees recorded', value: counts.paid, icon: <Wallet size={16} />, tone: 'text-emerald-600' },
         ].map((c) => (
           <div key={c.label} className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] p-5">
-            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
+            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#a49bb0] dark:text-[#7b7289]">
               {c.icon} {c.label}
             </p>
             <p className={`mt-1 text-2xl font-bold ${c.tone}`}>{c.value}</p>
@@ -135,13 +135,13 @@ export default function InsightsModule() {
         ))}
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white">
+      <div className="overflow-hidden rounded-2xl border border-[#ece7de] dark:border-[#2e2637] bg-white">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-[#f0ece4] dark:border-[#2a2333] bg-gray-50">
                 {['Student', 'Programme', 'Attendance', 'Avg. score', 'Fees', 'Status'].map((h) => (
-                  <th key={h} className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                  <th key={h} className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[#6b6076] dark:text-[#9c93ad]">
                     {h}
                   </th>
                 ))}
@@ -150,41 +150,41 @@ export default function InsightsModule() {
             <tbody className="divide-y divide-[#f0ece4] dark:divide-[#2a2333]">
               {loading && (
                 <tr>
-                  <td colSpan={6} className="px-5 py-10 text-center text-gray-400">
+                  <td colSpan={6} className="px-5 py-10 text-center text-[#a49bb0] dark:text-[#7b7289]">
                     Loading…
                   </td>
                 </tr>
               )}
               {!loading && signals.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-5 py-10 text-center text-gray-400">
+                  <td colSpan={6} className="px-5 py-10 text-center text-[#a49bb0] dark:text-[#7b7289]">
                     No active students yet. Insights appear as attendance, results and fees are recorded.
                   </td>
                 </tr>
               )}
               {signals.map((s) => (
-                <tr key={s.student.id} className="hover:bg-gray-50">
+                <tr key={s.student.id} className="hover:bg-[#faf8f4] dark:hover:bg-[#241f2c]">
                   <td className="px-5 py-3">
                     <p className="text-sm font-medium text-[#33234a] dark:text-[#e4dcf0]">
                       {s.student.first_name} {s.student.last_name}
                     </p>
                     <p className="font-mono text-xs text-[#a49bb0] dark:text-[#7b7289]">{s.student.matric_no}</p>
                   </td>
-                  <td className="px-5 py-3 text-sm text-gray-600">{s.student.program || '—'}</td>
+                  <td className="px-5 py-3 text-sm text-[#6b6076] dark:text-[#9c93ad]">{s.student.program || '—'}</td>
                   <td className="px-5 py-3 text-sm">
                     {s.attendanceRate === null ? (
-                      <span className="text-gray-400">no records</span>
+                      <span className="text-[#a49bb0] dark:text-[#7b7289]">no records</span>
                     ) : (
-                      <span className={s.attendanceRate < 60 ? 'font-semibold text-red-600' : 'text-gray-700'}>
+                      <span className={s.attendanceRate < 60 ? 'font-semibold text-red-600' : 'text-[#4a4155] dark:text-[#c8c1d4]'}>
                         {s.attendanceRate}% <span className="text-xs text-[#a49bb0] dark:text-[#7b7289]">({s.sessions})</span>
                       </span>
                     )}
                   </td>
                   <td className="px-5 py-3 text-sm">
                     {s.avgScore === null ? (
-                      <span className="text-gray-400">—</span>
+                      <span className="text-[#a49bb0] dark:text-[#7b7289]">—</span>
                     ) : (
-                      <span className={s.avgScore < 50 ? 'font-semibold text-red-600' : 'text-gray-700'}>{s.avgScore}%</span>
+                      <span className={s.avgScore < 50 ? 'font-semibold text-red-600' : 'text-[#4a4155] dark:text-[#c8c1d4]'}>{s.avgScore}%</span>
                     )}
                   </td>
                   <td className="px-5 py-3 text-sm">
@@ -195,7 +195,7 @@ export default function InsightsModule() {
                       {s.risk === 'ok' ? 'on track' : s.risk}
                     </span>
                     {s.reasons.length > 0 && (
-                      <p className="mt-1 text-[11px] text-gray-400">{s.reasons.join(' · ')}</p>
+                      <p className="mt-1 text-[11px] text-[#a49bb0] dark:text-[#7b7289]">{s.reasons.join(' · ')}</p>
                     )}
                   </td>
                 </tr>

@@ -116,7 +116,7 @@ export default function AssignmentModule() {
       {/* Briefs */}
       <div className="grid gap-4 md:grid-cols-2">
         {briefs.length === 0 && (
-          <p className="col-span-2 rounded-2xl border-2 border-dashed border-[#ece7f4] bg-white p-10 text-center text-sm text-gray-400">
+          <p className="col-span-2 rounded-2xl border-2 border-dashed border-[#ece7f4] bg-white p-10 text-center text-sm text-[#a49bb0] dark:text-[#7b7289]">
             No assignments published yet.
           </p>
         )}
@@ -154,13 +154,13 @@ export default function AssignmentModule() {
       {/* Submissions (staff) */}
       {isStaff && subs.length > 0 && (
         <div className="overflow-hidden rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27]">
-          <p className="border-b border-[#f0ece4] dark:border-[#2a2333] bg-gray-50 px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+          <p className="border-b border-[#f0ece4] dark:border-[#2a2333] bg-gray-50 px-5 py-3 text-xs font-semibold uppercase tracking-wider text-[#6b6076] dark:text-[#9c93ad]">
             Submissions
           </p>
           <div className="divide-y divide-[#f0ece4] dark:divide-[#2a2333]">
             {subs.map((s) => (
               <div key={s.id} className="flex items-center justify-between gap-3 px-5 py-3">
-                <p className="min-w-0 flex-1 truncate text-sm text-gray-700">{s.file_name}</p>
+                <p className="min-w-0 flex-1 truncate text-sm text-[#4a4155] dark:text-[#c8c1d4]">{s.file_name}</p>
                 <a
                   href={s.file_url}
                   download={s.file_name.split(' ⟶ ').pop()}
@@ -174,7 +174,7 @@ export default function AssignmentModule() {
                     load();
                   }}
                   className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold ${
-                    s.verified ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500'
+                    s.verified ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-[#6b6076] dark:text-[#9c93ad]'
                   }`}
                 >
                   <CheckCircle2 size={13} /> {s.verified ? 'Marked' : 'Mark as reviewed'}

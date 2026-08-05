@@ -67,16 +67,16 @@ export default function MyWeek() {
   }, []);
 
   return (
-    <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+    <div className="rounded-2xl border border-[#ece7de] dark:border-[#2e2637] bg-white p-6 shadow-sm">
       <div className="flex items-center justify-between">
         <h3 className="font-bold text-[#33234a] dark:text-[#e4dcf0]">My Week</h3>
         <span className="text-xs text-[#a49bb0] dark:text-[#7b7289]">Deadlines, classes and notices</span>
       </div>
 
       <div className="mt-5 space-y-3">
-        {loading && <p className="py-6 text-center text-sm text-gray-400">Loading…</p>}
+        {loading && <p className="py-6 text-center text-sm text-[#a49bb0] dark:text-[#7b7289]">Loading…</p>}
         {!loading && items.length === 0 && (
-          <p className="rounded-xl border-2 border-dashed border-[#ece7f4] p-8 text-center text-sm text-gray-400">
+          <p className="rounded-xl border-2 border-dashed border-[#ece7f4] p-8 text-center text-sm text-[#a49bb0] dark:text-[#7b7289]">
             Nothing scheduled yet. Assignments, classes and announcements will appear here.
           </p>
         )}

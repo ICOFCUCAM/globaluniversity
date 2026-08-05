@@ -178,37 +178,37 @@ export default function LoginScreen() {
               {mode === 'login' && (
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1.5">Email Address</label>
+                    <label className="block text-xs font-medium text-[#6b6076] dark:text-[#9c93ad] mb-1.5">Email Address</label>
                     <div className="relative">
-                      <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#a49bb0] dark:text-[#7b7289]" />
                       <input
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="your.email@uni.edu"
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35 focus:border-blue-400 transition-all"
+                        className="w-full pl-10 pr-4 py-2.5 border border-[#ded6c8] dark:border-[#3d3349] rounded-xl text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35 focus:border-blue-400 transition-all"
                       />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1.5">Password</label>
+                    <label className="block text-xs font-medium text-[#6b6076] dark:text-[#9c93ad] mb-1.5">Password</label>
                     <div className="relative">
-                      <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#a49bb0] dark:text-[#7b7289]" />
                       <input
                         type={showPassword ? 'text' : 'password'}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="Enter your password"
-                        className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35 focus:border-blue-400 transition-all"
+                        className="w-full pl-10 pr-10 py-2.5 border border-[#ded6c8] dark:border-[#3d3349] rounded-xl text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35 focus:border-blue-400 transition-all"
                       />
                       <button type="button" onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#a49bb0] dark:text-[#7b7289] hover:text-[#6b6076] dark:text-[#9c93ad]">
                         {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
                     </div>
                   </div>
                   <div className="flex items-center justify-between text-xs">
-                    <label className="flex items-center gap-2 text-gray-500 cursor-pointer">
+                    <label className="flex items-center gap-2 text-[#6b6076] dark:text-[#9c93ad] cursor-pointer">
                       <input type="checkbox" className="rounded border-gray-300 text-[#422e59] focus:ring-blue-500" />
                       Remember me
                     </label>
@@ -235,7 +235,7 @@ export default function LoginScreen() {
               {DEMO_ENABLED && (
                 <>
                   <div className="relative my-5">
-                    <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200" /></div>
+                    <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-[#ded6c8] dark:border-[#3d3349]" /></div>
                     <div className="relative flex justify-center"><span className="bg-white px-3 text-xs text-[#a49bb0] dark:text-[#7b7289]">or try demo access</span></div>
                   </div>
                   <div className="grid grid-cols-3 gap-2">
@@ -244,20 +244,20 @@ export default function LoginScreen() {
                         key={opt.role}
                         onClick={() => handleDemoLogin(opt.role)}
                         disabled={isLoading}
-                        className="p-2 rounded-xl bg-gray-50 hover:bg-gray-100 text-center transition-all duration-200 border border-gray-100 hover:border-gray-200 group"
+                        className="p-2 rounded-xl bg-gray-50 hover:bg-gray-100 text-center transition-all duration-200 border border-[#ece7de] dark:border-[#2e2637] hover:border-[#ded6c8] dark:border-[#3d3349] group"
                       >
-                        <div className="flex justify-center mb-0.5 text-gray-400 group-hover:text-gray-600">{opt.icon}</div>
-                        <p className="text-[10px] font-semibold text-gray-500 group-hover:text-gray-700">Demo {opt.label}</p>
+                        <div className="flex justify-center mb-0.5 text-[#a49bb0] dark:text-[#7b7289] group-hover:text-[#6b6076] dark:text-[#9c93ad]">{opt.icon}</div>
+                        <p className="text-[10px] font-semibold text-[#6b6076] dark:text-[#9c93ad] group-hover:text-[#4a4155] dark:text-[#c8c1d4]">Demo {opt.label}</p>
                       </button>
                     ))}
                   </div>
-                  <p className="text-[9px] text-gray-400 text-center mt-2">
+                  <p className="text-[9px] text-[#a49bb0] dark:text-[#7b7289] text-center mt-2">
                     Demo mode uses sample data — no account required
                   </p>
                 </>
               )}
 
-              <div className="mt-5 space-y-1.5 border-t border-gray-100 pt-4 text-center text-[11px] text-gray-400">
+              <div className="mt-5 space-y-1.5 border-t border-[#ece7de] dark:border-[#2e2637] pt-4 text-center text-[11px] text-[#a49bb0] dark:text-[#7b7289]">
                 <p>
                   Applying to study?{' '}
                   <a href="/admissions-portal" className="font-medium text-[#422e59] hover:underline">
@@ -266,7 +266,7 @@ export default function LoginScreen() {
                 </p>
                 <p>
                   Trouble signing in? Contact the Registrar&apos;s office at{' '}
-                  <a href="mailto:registrar@iguc.net" className="underline hover:text-gray-600">registrar@iguc.net</a>
+                  <a href="mailto:registrar@iguc.net" className="underline hover:text-[#6b6076] dark:text-[#9c93ad]">registrar@iguc.net</a>
                 </p>
               </div>
             </div>
@@ -278,11 +278,11 @@ export default function LoginScreen() {
       <div id="features" className="max-w-7xl mx-auto px-6 py-16">
         <div className="text-center mb-12">
           <h3 className="text-2xl font-bold text-[#33234a] dark:text-[#e4dcf0]">What the portal does</h3>
-          <p className="text-gray-500 mt-2">One system, from application through to graduation and credential verification</p>
+          <p className="text-[#6b6076] dark:text-[#9c93ad] mt-2">One system, from application through to graduation and credential verification</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {features.map((feature, i) => (
-            <div key={i} className="bg-white rounded-xl p-5 border border-gray-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+            <div key={i} className="bg-white rounded-xl p-5 border border-[#ece7de] dark:border-[#2e2637] hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#422e59] to-[#3949ab] text-white flex items-center justify-center">
                 {feature.icon}
               </div>

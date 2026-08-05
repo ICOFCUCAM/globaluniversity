@@ -26,19 +26,19 @@ function ReadingSection({
   groups: { area: string; works: { title: string; author?: string }[] }[];
 }) {
   return (
-    <section className="rounded-2xl border border-gray-100 bg-white p-6">
+    <section className="rounded-2xl border border-[#ece7de] dark:border-[#2e2637] bg-white p-6">
       <div className="flex items-center gap-2.5">
         <BookMarked size={17} className="text-[#422e59]" />
         <h3 className="font-semibold text-[#33234a] dark:text-[#e4dcf0]">{title}</h3>
       </div>
-      <p className="mt-1.5 text-xs leading-relaxed text-gray-500">{note}</p>
+      <p className="mt-1.5 text-xs leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">{note}</p>
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
         {groups.map((g) => (
-          <div key={g.area} className="rounded-xl border border-gray-100 p-4">
+          <div key={g.area} className="rounded-xl border border-[#ece7de] dark:border-[#2e2637] p-4">
             <p className="text-[10px] font-bold uppercase tracking-wider text-[#e9c14a]">{g.area}</p>
             <ul className="mt-2.5 space-y-2">
               {g.works.map((w) => (
-                <li key={w.title + (w.author ?? '')} className="text-sm leading-snug text-gray-700">
+                <li key={w.title + (w.author ?? '')} className="text-sm leading-snug text-[#4a4155] dark:text-[#c8c1d4]">
                   {w.author && <span className="font-medium text-[#33234a] dark:text-[#e4dcf0]">{w.author} </span>}
                   <span>{w.title}</span>
                 </li>
@@ -64,13 +64,13 @@ export default function ProgrammeResources() {
       {/* Make the gating visible: students should know this is theirs. */}
       <div className="flex items-start gap-3 rounded-xl border border-[#ece7f4] bg-[#f6f4fa] p-4">
         <Lock size={16} className="mt-0.5 shrink-0 text-[#422e59]" />
-        <p className="text-xs leading-relaxed text-gray-600">
+        <p className="text-xs leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">
           These materials are provided to enrolled students and are not published on the public
           website. Please do not redistribute them outside the university.
         </p>
       </div>
 
-      <section className="rounded-2xl border border-gray-100 bg-white p-6">
+      <section className="rounded-2xl border border-[#ece7de] dark:border-[#2e2637] bg-white p-6">
         <div className="flex items-center gap-2.5">
           <GraduationCap size={17} className="text-[#422e59]" />
           <h3 className="font-semibold text-[#33234a] dark:text-[#e4dcf0]">{bltProgramme.award}</h3>
@@ -88,7 +88,7 @@ export default function ProgrammeResources() {
               <p className="text-sm font-semibold text-[#33234a] dark:text-[#e4dcf0]">{sem.label}</p>
               <ul className="mt-2 space-y-1">
                 {sem.modules.map((m) => (
-                  <li key={m.code} className="text-xs text-gray-600">
+                  <li key={m.code} className="text-xs text-[#6b6076] dark:text-[#9c93ad]">
                     <span className="font-mono font-semibold text-[#422e59]">{m.code}</span> {m.title}
                   </li>
                 ))}
@@ -100,7 +100,7 @@ export default function ProgrammeResources() {
 
       {/* Full teaching material — the syllabus text itself */}
       {courseMaterials.map((m) => (
-        <section key={m.code} className="rounded-2xl border border-gray-100 bg-white p-6">
+        <section key={m.code} className="rounded-2xl border border-[#ece7de] dark:border-[#2e2637] bg-white p-6">
           <div className="flex items-center gap-2.5">
             <FileText size={17} className="text-[#422e59]" />
             <h3 className="font-semibold text-[#33234a] dark:text-[#e4dcf0]">
@@ -108,7 +108,7 @@ export default function ProgrammeResources() {
             </h3>
             <span className="ml-auto text-xs text-[#a49bb0] dark:text-[#7b7289]">{m.ects} ECTS</span>
           </div>
-          {m.subtitle && <p className="mt-1 text-xs italic text-gray-500">{m.subtitle}</p>}
+          {m.subtitle && <p className="mt-1 text-xs italic text-[#6b6076] dark:text-[#9c93ad]">{m.subtitle}</p>}
 
           {m.conflictNote && (
             <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-[11px] leading-relaxed text-red-800">
@@ -118,8 +118,8 @@ export default function ProgrammeResources() {
 
           <div className="mt-5 space-y-2">
             {m.units.map((u) => (
-              <details key={u.number} className="group rounded-xl border border-gray-100">
-                <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3 hover:bg-gray-50">
+              <details key={u.number} className="group rounded-xl border border-[#ece7de] dark:border-[#2e2637]">
+                <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3 hover:bg-[#faf8f4] dark:hover:bg-[#241f2c]">
                   <span className="font-mono text-xs font-bold text-[#e9c14a]">
                     {String(u.number).padStart(2, '0')}
                   </span>
@@ -131,12 +131,12 @@ export default function ProgrammeResources() {
                     <div key={s.heading}>
                       <p className="text-xs font-bold uppercase tracking-wider text-[#422e59]">{s.heading}</p>
                       {s.body.map((b, bi) => (
-                        <p key={bi} className="mt-2 text-[13px] leading-relaxed text-gray-600">{b}</p>
+                        <p key={bi} className="mt-2 text-[13px] leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">{b}</p>
                       ))}
                       {s.list && (
                         <ul className="mt-2 flex flex-wrap gap-1.5">
                           {s.list.map((l) => (
-                            <li key={l} className="rounded-full bg-gray-50 px-2.5 py-1 text-[11px] text-gray-600">{l}</li>
+                            <li key={l} className="rounded-full bg-gray-50 px-2.5 py-1 text-[11px] text-[#6b6076] dark:text-[#9c93ad]">{l}</li>
                           ))}
                         </ul>
                       )}
@@ -152,7 +152,7 @@ export default function ProgrammeResources() {
               <p className="text-[10px] font-bold uppercase tracking-wider text-[#e9c14a]">Assessment</p>
               <ul className="mt-2.5 space-y-2">
                 {m.assessment.map((a) => (
-                  <li key={a.label} className="text-sm text-gray-700">
+                  <li key={a.label} className="text-sm text-[#4a4155] dark:text-[#c8c1d4]">
                     <span className="font-medium">{a.label}</span>
                     <span className="ml-2 font-mono text-xs font-bold text-[#422e59]">{a.weight}</span>
                     {a.detail && <span className="block text-xs text-[#6b6076] dark:text-[#9c93ad]">{a.detail.join(' · ')}</span>}
@@ -167,7 +167,7 @@ export default function ProgrammeResources() {
               <p className="text-[10px] font-bold uppercase tracking-wider text-[#e9c14a]">Required reading</p>
               <ul className="mt-2 space-y-1">
                 {m.reading.map((r) => (
-                  <li key={r} className="text-[13px] text-gray-600">{r}</li>
+                  <li key={r} className="text-[13px] text-[#6b6076] dark:text-[#9c93ad]">{r}</li>
                 ))}
               </ul>
             </div>

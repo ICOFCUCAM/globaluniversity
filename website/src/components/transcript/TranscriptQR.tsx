@@ -33,7 +33,7 @@ export default function TranscriptQR({ student }: { student: any }) {
   return (
     <div className="mt-3 flex items-center gap-3">
       <QRCodeSVG value={url} size={64} level="M" />
-      <p className="max-w-[220px] text-[9px] leading-snug text-gray-500">
+      <p className="max-w-[220px] text-[9px] leading-snug text-[#6b6076] dark:text-[#9c93ad]">
         Scan to verify the authenticity of this transcript at iguc.net/verify. Unauthorized
         alteration invalidates this document.
       </p>

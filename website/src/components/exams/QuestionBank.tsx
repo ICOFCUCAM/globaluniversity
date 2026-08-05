@@ -93,7 +93,7 @@ export default function QuestionBank() {
   }
 
   const input =
-    'w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35';
+    'w-full rounded-lg border border-[#ded6c8] dark:border-[#3d3349] bg-gray-50 px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35';
   const tone: Record<Question['difficulty'], string> = {
     easy: 'bg-emerald-50 text-emerald-700',
     medium: 'bg-amber-50 text-amber-700',
@@ -116,7 +116,7 @@ export default function QuestionBank() {
       </div>
 
       <div className="flex flex-wrap items-center gap-3 rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] p-4">
-        <span className="flex items-center gap-2 text-sm font-medium text-gray-700">
+        <span className="flex items-center gap-2 text-sm font-medium text-[#4a4155] dark:text-[#c8c1d4]">
           <Database size={15} /> Bank
         </span>
         <select value={course} onChange={(e) => setCourse(e.target.value)} className={`${input} max-w-[240px]`}>
@@ -148,14 +148,14 @@ export default function QuestionBank() {
       </div>
 
       {filtered.length === 0 && (
-        <p className="rounded-2xl border-2 border-dashed border-[#ece7f4] bg-white p-10 text-center text-sm text-gray-400">
+        <p className="rounded-2xl border-2 border-dashed border-[#ece7f4] bg-white p-10 text-center text-sm text-[#a49bb0] dark:text-[#7b7289]">
           No questions in the bank yet. Add questions to build reusable papers.
         </p>
       )}
 
       <div className="space-y-3">
         {filtered.map((q, i) => (
-          <div key={q.id} className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+          <div key={q.id} className="rounded-2xl border border-[#ece7de] dark:border-[#2e2637] bg-white p-5 shadow-sm">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
@@ -173,7 +173,7 @@ export default function QuestionBank() {
                     <li
                       key={oi}
                       className={`rounded-lg px-3 py-1.5 text-xs ${
-                        oi === q.answer ? 'bg-emerald-50 font-semibold text-emerald-700' : 'bg-gray-50 text-gray-600'
+                        oi === q.answer ? 'bg-emerald-50 font-semibold text-emerald-700' : 'bg-gray-50 text-[#6b6076] dark:text-[#9c93ad]'
                       }`}
                     >
                       {String.fromCharCode(65 + oi)}. {o}
@@ -207,7 +207,7 @@ export default function QuestionBank() {
               <input placeholder="Topic (optional)" className={input} value={form.topic} onChange={(e) => setForm({ ...form, topic: e.target.value })} />
             </div>
             <textarea required rows={3} placeholder="Question text" className={input} value={form.text} onChange={(e) => setForm({ ...form, text: e.target.value })} />
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Options — select the correct answer</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-[#a49bb0] dark:text-[#7b7289]">Options — select the correct answer</p>
             {form.options.map((o, i) => (
               <label key={i} className="flex items-center gap-2">
                 <input
@@ -246,7 +246,7 @@ export default function QuestionBank() {
       {paper && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 print:static print:bg-white print:p-0" onClick={() => setPaper(null)}>
           <div onClick={(e) => e.stopPropagation()} className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-8">
-            <div className="mb-6 border-b border-gray-200 pb-4 text-center">
+            <div className="mb-6 border-b border-[#ded6c8] dark:border-[#3d3349] pb-4 text-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/images/site-icon.png" alt="" className="mx-auto h-12 w-12" />
               <h3 className="mt-2 font-bold text-[#33234a] dark:text-[#e4dcf0]">ICOF GLOBAL UNIVERSITY</h3>
@@ -263,7 +263,7 @@ export default function QuestionBank() {
                   </p>
                   <div className="mt-1.5 grid gap-1 sm:grid-cols-2">
                     {q.options.filter(Boolean).map((o, oi) => (
-                      <p key={oi} className="text-xs text-gray-600">
+                      <p key={oi} className="text-xs text-[#6b6076] dark:text-[#9c93ad]">
                         {String.fromCharCode(65 + oi)}. {o}
                       </p>
                     ))}
@@ -275,10 +275,10 @@ export default function QuestionBank() {
               <button onClick={() => window.print()} className="flex items-center gap-1.5 rounded-xl bg-[#f7dc79] px-5 py-2 text-sm font-semibold text-[#422e59]">
                 <Printer size={14} /> Print Paper
               </button>
-              <button onClick={generate} className="rounded-xl border border-gray-200 px-5 py-2 text-sm text-gray-700">
+              <button onClick={generate} className="rounded-xl border border-[#ded6c8] dark:border-[#3d3349] px-5 py-2 text-sm text-[#4a4155] dark:text-[#c8c1d4]">
                 Reshuffle
               </button>
-              <button onClick={() => setPaper(null)} className="rounded-xl bg-gray-100 px-5 py-2 text-sm text-gray-700">
+              <button onClick={() => setPaper(null)} className="rounded-xl bg-gray-100 px-5 py-2 text-sm text-[#4a4155] dark:text-[#c8c1d4]">
                 Close
               </button>
             </div>

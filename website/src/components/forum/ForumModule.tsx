@@ -124,7 +124,7 @@ export default function ForumModule() {
 
       <div className="space-y-4">
         {threads.length === 0 && (
-          <p className="rounded-2xl border-2 border-dashed border-[#ece7f4] bg-white p-10 text-center text-sm text-gray-400">
+          <p className="rounded-2xl border-2 border-dashed border-[#ece7f4] bg-white p-10 text-center text-sm text-[#a49bb0] dark:text-[#7b7289]">
             No discussions yet — start the first topic.
           </p>
         )}
@@ -132,7 +132,7 @@ export default function ForumModule() {
           const tReplies = replies.filter((r) => r.threadId === t.id);
           const isOpen = openThread === t.id;
           return (
-            <article key={t.id} className="rounded-2xl border border-gray-100 bg-white shadow-sm">
+            <article key={t.id} className="rounded-2xl border border-[#ece7de] dark:border-[#2e2637] bg-white shadow-sm">
               <button
                 onClick={() => setOpenThread(isOpen ? null : t.id)}
                 className="flex w-full items-start gap-4 p-6 text-left"
@@ -158,14 +158,14 @@ export default function ForumModule() {
               </button>
 
               {isOpen && (
-                <div className="border-t border-gray-100 px-6 pb-6 pt-4">
-                  <p className="whitespace-pre-line text-sm leading-relaxed text-gray-600">{t.body}</p>
+                <div className="border-t border-[#ece7de] dark:border-[#2e2637] px-6 pb-6 pt-4">
+                  <p className="whitespace-pre-line text-sm leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">{t.body}</p>
                   <div className="mt-5 space-y-3">
                     {tReplies.map((r) => (
                       <div key={r.id} className="flex gap-3 rounded-xl bg-gray-50 p-4">
                         <CornerDownRight size={15} className="mt-0.5 shrink-0 text-[#422e59]" />
                         <div>
-                          <p className="text-sm text-gray-700">{r.body}</p>
+                          <p className="text-sm text-[#4a4155] dark:text-[#c8c1d4]">{r.body}</p>
                           <p className="mt-1 text-xs text-[#a49bb0] dark:text-[#7b7289]">
                             {r.author} · {new Date(r.posted).toLocaleDateString('en-GB', { dateStyle: 'medium' })}
                           </p>

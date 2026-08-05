@@ -99,7 +99,7 @@ export default function StudentIDCard({ student, onClose }: { student: StudentLi
           </button>
           <button
             onClick={onClose}
-            className="rounded-xl bg-white/90 px-6 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-white"
+            className="rounded-xl bg-white/90 px-6 py-2.5 text-sm font-medium text-[#4a4155] dark:text-[#c8c1d4] transition hover:bg-white"
           >
             Close
           </button>

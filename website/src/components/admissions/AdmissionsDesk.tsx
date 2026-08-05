@@ -256,7 +256,7 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
           <h1 className="text-2xl font-bold text-[#422e59]">
             {isFinance ? 'Finance — Application Fees' : 'Office of the Registrar — Admissions'}
           </h1>
-          <p className="mt-1 max-w-2xl text-sm text-gray-600">
+          <p className="mt-1 max-w-2xl text-sm text-[#6b6076] dark:text-[#9c93ad]">
             {isFinance
               ? 'Applications awaiting the application fee. Registering a payment turns the record from red to blue and passes it to the Office of the Registrar.'
               : 'Applications whose fee Finance has registered. Approving an application creates the student’s account on their chosen programme and emails them their login details.'}
@@ -264,7 +264,7 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
         </div>
         <button
           onClick={() => void load()}
-          className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3.5 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50"
+          className="inline-flex items-center gap-2 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] px-3.5 py-2 text-sm font-medium text-[#6b6076] dark:text-[#9c93ad] transition hover:bg-[#faf8f4] dark:hover:bg-[#241f2c]"
         >
           <RefreshCw size={14} /> Refresh
         </button>
@@ -296,9 +296,9 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
         {/* Queue */}
-        <div className="rounded-xl border border-gray-200 bg-white">
+        <div className="rounded-xl border border-[#ded6c8] dark:border-[#3d3349] bg-white">
           <div className="border-b border-[#f0ece4] dark:border-[#2a2333] px-4 py-3">
-            <p className="text-xs font-bold uppercase tracking-wide text-gray-500">
+            <p className="text-xs font-bold uppercase tracking-wide text-[#6b6076] dark:text-[#9c93ad]">
               {isFinance ? 'Awaiting fee' : 'Awaiting examination'}
             </p>
             <p className="mt-0.5 text-2xl font-bold text-[#422e59]">{queue.length}</p>
@@ -319,7 +319,7 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
                 <li key={s.id}>
                   <button
                     onClick={() => setSelected(s)}
-                    className={`w-full px-4 py-3 text-left transition hover:bg-gray-50 ${
+                    className={`w-full px-4 py-3 text-left transition hover:bg-[#faf8f4] dark:hover:bg-[#241f2c] ${
                       selected?.id === s.id ? 'bg-[#422e59]/5' : ''
                     }`}
                   >
@@ -329,8 +329,8 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
                       </span>
                       <StageChip student={s} />
                     </div>
-                    <p className="mt-0.5 font-mono text-[11px] text-gray-500">{s.matric_no}</p>
-                    <p className="mt-1 truncate text-xs text-gray-600">
+                    <p className="mt-0.5 font-mono text-[11px] text-[#6b6076] dark:text-[#9c93ad]">{s.matric_no}</p>
+                    <p className="mt-1 truncate text-xs text-[#6b6076] dark:text-[#9c93ad]">
                       {s.degree_type ? `${s.degree_type} · ` : ''}
                       {s.program || 'Programme not stated'}
                     </p>
@@ -342,7 +342,7 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
         </div>
 
         {/* Record */}
-        <div className="rounded-xl border border-gray-200 bg-white">
+        <div className="rounded-xl border border-[#ded6c8] dark:border-[#3d3349] bg-white">
           {!selected ? (
             <p className="px-6 py-16 text-center text-sm text-[#6b6076] dark:text-[#9c93ad]">
               Select an application from the queue.
@@ -369,18 +369,18 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
                   ['Admission year', String(selected.admission_year ?? '—')],
                 ].map(([k, v]) => (
                   <div key={k}>
-                    <dt className="text-[10px] font-bold uppercase tracking-wide text-gray-500">{k}</dt>
+                    <dt className="text-[10px] font-bold uppercase tracking-wide text-[#6b6076] dark:text-[#9c93ad]">{k}</dt>
                     <dd className="mt-0.5 text-sm text-[#33234a] dark:text-[#e4dcf0]">{v}</dd>
                   </div>
                 ))}
               </dl>
 
               {detail?.summary && (
-                <details className="mt-6 rounded-lg border border-gray-200 bg-gray-50">
+                <details className="mt-6 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] bg-gray-50">
                   <summary className="cursor-pointer px-4 py-2.5 text-sm font-semibold text-[#422e59]">
                     Full application as submitted
                   </summary>
-                  <pre className="max-h-72 overflow-auto whitespace-pre-wrap px-4 pb-4 text-xs leading-relaxed text-gray-700">
+                  <pre className="max-h-72 overflow-auto whitespace-pre-wrap px-4 pb-4 text-xs leading-relaxed text-[#4a4155] dark:text-[#c8c1d4]">
                     {detail.summary}
                   </pre>
                 </details>
@@ -388,7 +388,7 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
 
               {/* Finance action */}
               {isFinance && !mayVerifyPayment && (
-                <p className="mt-7 flex items-start gap-2 rounded-xl bg-gray-50 p-5 text-sm text-gray-600 ring-1 ring-gray-200">
+                <p className="mt-7 flex items-start gap-2 rounded-xl bg-gray-50 p-5 text-sm text-[#6b6076] dark:text-[#9c93ad] ring-1 ring-gray-200">
                   <Lock size={16} className="mt-0.5 shrink-0" />
                   Your role cannot verify payments. Only the Finance Administrator may do so.
                 </p>
@@ -398,13 +398,13 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
                   <h3 className="flex items-center gap-2 font-bold text-[#422e59]">
                     <Wallet size={18} /> Register the application fee
                   </h3>
-                  <p className="mt-1.5 text-xs text-gray-600">
+                  <p className="mt-1.5 text-xs text-[#6b6076] dark:text-[#9c93ad]">
                     Registering the payment turns this record blue and makes it visible to the Office
                     of the Registrar. It does not admit the applicant.
                   </p>
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     <label className="block">
-                      <span className="text-[10px] font-bold uppercase tracking-wide text-gray-500">
+                      <span className="text-[10px] font-bold uppercase tracking-wide text-[#6b6076] dark:text-[#9c93ad]">
                         Payment reference *
                       </span>
                       <input
@@ -415,7 +415,7 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
                       />
                     </label>
                     <label className="block">
-                      <span className="text-[10px] font-bold uppercase tracking-wide text-gray-500">
+                      <span className="text-[10px] font-bold uppercase tracking-wide text-[#6b6076] dark:text-[#9c93ad]">
                         Amount received
                       </span>
                       <input
@@ -439,7 +439,7 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
 
               {/* Registrar actions */}
               {!isFinance && !mayAdmit && (
-                <p className="mt-7 flex items-start gap-2 rounded-xl bg-gray-50 p-5 text-sm text-gray-600 ring-1 ring-gray-200">
+                <p className="mt-7 flex items-start gap-2 rounded-xl bg-gray-50 p-5 text-sm text-[#6b6076] dark:text-[#9c93ad] ring-1 ring-gray-200">
                   <Lock size={16} className="mt-0.5 shrink-0" />
                   Your role cannot admit students. Only the Registrar Administrator may approve,
                   reject or request documents.
@@ -479,7 +479,7 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
                       {conditions.length > 0 && (
                         <ul className="mt-3 space-y-1.5">
                           {conditions.map((c, i) => (
-                            <li key={`${c.requirement}-${i}`} className="flex items-start gap-2 text-sm text-gray-700">
+                            <li key={`${c.requirement}-${i}`} className="flex items-start gap-2 text-sm text-[#4a4155] dark:text-[#c8c1d4]">
                               <span className="flex-1">
                                 {c.requirement} — <strong>by {c.dueBy}</strong>
                               </span>
@@ -525,7 +525,7 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
                           Add condition
                         </button>
                       </div>
-                      <p className="mt-2 text-[11px] text-gray-500">
+                      <p className="mt-2 text-[11px] text-[#6b6076] dark:text-[#9c93ad]">
                         A condition needs a date. One without a deadline cannot be chased, and will
                         not be.
                       </p>
@@ -629,7 +629,7 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
                       <XCircle size={18} /> Reject
                     </h3>
                     <label className="mt-3 block">
-                      <span className="text-[10px] font-bold uppercase tracking-wide text-gray-500">
+                      <span className="text-[10px] font-bold uppercase tracking-wide text-[#6b6076] dark:text-[#9c93ad]">
                         Reason * — a rejected applicant with no reason has no route to reapply
                       </span>
                       <textarea
@@ -642,7 +642,7 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
                     <button
                       onClick={() => void onDecline()}
                       disabled={busy || !declineReason.trim()}
-                      className="mt-3 inline-flex items-center gap-2 rounded-lg border border-gray-400 px-5 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-100 disabled:opacity-40"
+                      className="mt-3 inline-flex items-center gap-2 rounded-lg border border-gray-400 px-5 py-2.5 text-sm font-semibold text-[#4a4155] dark:text-[#c8c1d4] transition hover:bg-gray-100 disabled:opacity-40"
                     >
                       Reject application
                     </button>
@@ -657,18 +657,18 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
 
       {/* Recently processed */}
       {processed.length > 0 && (
-        <div className="rounded-xl border border-gray-200 bg-white">
+        <div className="rounded-xl border border-[#ded6c8] dark:border-[#3d3349] bg-white">
           <div className="border-b border-[#f0ece4] dark:border-[#2a2333] px-5 py-3">
-            <p className="text-xs font-bold uppercase tracking-wide text-gray-500">Recently decided</p>
+            <p className="text-xs font-bold uppercase tracking-wide text-[#6b6076] dark:text-[#9c93ad]">Recently decided</p>
           </div>
           <ul className="max-h-72 divide-y divide-[#f0ece4] dark:divide-[#2a2333] overflow-y-auto">
             {processed.map((s) => (
               <li key={s.id} className="flex flex-wrap items-center gap-3 px-5 py-3 text-sm">
-                <span className="font-mono text-[11px] text-gray-500">{s.matric_no}</span>
+                <span className="font-mono text-[11px] text-[#6b6076] dark:text-[#9c93ad]">{s.matric_no}</span>
                 <span className="flex-1 font-medium text-[#422e59]">
                   {s.first_name} {s.last_name}
                 </span>
-                <span className="text-xs text-gray-600">{s.program}</span>
+                <span className="text-xs text-[#6b6076] dark:text-[#9c93ad]">{s.program}</span>
                 <StageChip student={s} />
               </li>
             ))}

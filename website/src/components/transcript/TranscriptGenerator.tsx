@@ -59,7 +59,7 @@ export default function TranscriptGenerator() {
         </div>
         <div className="flex gap-2">
           <button onClick={() => setShowPreview(!showPreview)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors">
+            className="flex items-center gap-2 px-4 py-2.5 bg-[#f2eee6] text-[#33234a] dark:bg-[#2a2333] dark:text-[#d8d2e2] rounded-xl text-sm font-medium hover:bg-[#e9e3d7] dark:hover:bg-[#332b3d] transition-colors">
             <Eye size={16} /> {showPreview ? 'Hide' : 'Show'} Preview
           </button>
           <button onClick={handlePrint}
@@ -90,7 +90,7 @@ export default function TranscriptGenerator() {
 
       {/* Transcript Preview */}
       {showPreview && (
-        <div className="bg-gray-100 rounded-xl p-8 flex justify-center overflow-auto">
+        <div className="rounded-xl bg-[#f2eee6] dark:bg-[#2a2333] p-8 flex justify-center overflow-auto">
           <div ref={transcriptRef} className="bg-white shadow-2xl" style={{ width: '210mm', minHeight: '297mm', padding: '15mm', fontFamily: "'Times New Roman', Times, serif", position: 'relative' }}>
             {/* Watermark */}
             <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%) rotate(-30deg)', opacity: 0.04, fontSize: '80px', fontWeight: 'bold', color: '#422e59', whiteSpace: 'nowrap', pointerEvents: 'none', zIndex: 0 }}>

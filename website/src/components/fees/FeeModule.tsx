@@ -103,11 +103,11 @@ export default function FeeModule() {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] p-5">
-          <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Payments recorded</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-[#a49bb0] dark:text-[#7b7289]">Payments recorded</p>
           <p className="mt-1 text-2xl font-bold text-[#33234a] dark:text-[#e4dcf0]">{receipts.length}</p>
         </div>
         <div className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] p-5">
-          <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Total collected</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-[#a49bb0] dark:text-[#7b7289]">Total collected</p>
           <p className="mt-1 text-xl font-bold text-emerald-600">
             {Object.keys(totals).length === 0
               ? '—'
@@ -121,14 +121,14 @@ export default function FeeModule() {
       <div className="overflow-hidden rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27]">
         <div className="divide-y divide-[#f0ece4] dark:divide-[#2a2333]">
           {receipts.length === 0 && (
-            <p className="p-10 text-center text-sm text-gray-400">No payments recorded yet.</p>
+            <p className="p-10 text-center text-sm text-[#a49bb0] dark:text-[#7b7289]">No payments recorded yet.</p>
           )}
           {receipts.map((r) => (
-            <button key={r.id} onClick={() => open(r)} className="flex w-full items-center gap-3 px-5 py-3 text-left hover:bg-gray-50">
+            <button key={r.id} onClick={() => open(r)} className="flex w-full items-center gap-3 px-5 py-3 text-left hover:bg-[#faf8f4] dark:hover:bg-[#241f2c]">
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
                 <Banknote size={16} />
               </span>
-              <span className="min-w-0 flex-1 truncate text-sm text-gray-700">{r.file_name}</span>
+              <span className="min-w-0 flex-1 truncate text-sm text-[#4a4155] dark:text-[#c8c1d4]">{r.file_name}</span>
               <span className="text-xs text-[#a49bb0] dark:text-[#7b7289]">{new Date(r.uploaded_at).toLocaleDateString()}</span>
             </button>
           ))}
@@ -185,18 +185,18 @@ export default function FeeModule() {
               <div className="space-y-2 p-6 text-sm">
                 {Object.entries(view).map(([k, v]) => (
                   <div key={k} className="flex justify-between border-b border-[#f0ece4] dark:border-[#2a2333] pb-1.5">
-                    <span className="capitalize text-gray-500">{k.replace(/_/g, ' ')}</span>
+                    <span className="capitalize text-[#6b6076] dark:text-[#9c93ad]">{k.replace(/_/g, ' ')}</span>
                     <span className="font-medium text-[#33234a] dark:text-[#e4dcf0]">{String(v)}</span>
                   </div>
                 ))}
-                <p className="pt-2 text-center text-[10px] text-gray-400">Thank you. Keep this receipt for your records.</p>
+                <p className="pt-2 text-center text-[10px] text-[#a49bb0] dark:text-[#7b7289]">Thank you. Keep this receipt for your records.</p>
               </div>
             </div>
             <div className="mt-4 flex justify-center gap-3 print:hidden">
               <button onClick={() => window.print()} className="flex items-center gap-1.5 rounded-xl bg-[#f7dc79] px-5 py-2 text-sm font-semibold text-[#422e59]">
                 <Printer size={14} /> Print
               </button>
-              <button onClick={() => setView(null)} className="rounded-xl bg-white px-5 py-2 text-sm text-gray-700">
+              <button onClick={() => setView(null)} className="rounded-xl bg-white px-5 py-2 text-sm text-[#4a4155] dark:text-[#c8c1d4]">
                 Close
               </button>
             </div>

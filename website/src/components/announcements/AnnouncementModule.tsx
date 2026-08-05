@@ -100,7 +100,7 @@ export default function AnnouncementModule() {
 
       <div className="space-y-4">
         {notices.length === 0 && (
-          <p className="rounded-2xl border-2 border-dashed border-[#ece7f4] bg-white p-10 text-center text-sm text-gray-400">
+          <p className="rounded-2xl border-2 border-dashed border-[#ece7f4] bg-white p-10 text-center text-sm text-[#a49bb0] dark:text-[#7b7289]">
             No announcements yet.
           </p>
         )}
@@ -108,7 +108,7 @@ export default function AnnouncementModule() {
           <article
             key={n.id}
             className={`rounded-2xl border bg-white p-6 shadow-sm ${
-              n.pinned ? 'border-[#e9c14a]' : 'border-gray-100'
+              n.pinned ? 'border-[#e9c14a]' : 'border-[#ece7de] dark:border-[#2e2637]'
             }`}
           >
             <div className="flex items-start gap-4">
@@ -127,7 +127,7 @@ export default function AnnouncementModule() {
                     {n.audience}
                   </span>
                 </div>
-                <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-gray-600">{n.body}</p>
+                <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">{n.body}</p>
                 <p className="mt-3 text-xs text-[#a49bb0] dark:text-[#7b7289]">
                   Posted {new Date(n.posted).toLocaleDateString('en-GB', { dateStyle: 'medium' })}
                 </p>
@@ -140,7 +140,7 @@ export default function AnnouncementModule() {
                       await supabase.from('documents').update({ verified: !n.pinned }).eq('id', n.id);
                       load();
                     }}
-                    className={`rounded-lg p-2 ${n.pinned ? 'bg-[#f7dc79] text-[#422e59]' : 'bg-gray-100 text-gray-500'}`}
+                    className={`rounded-lg p-2 ${n.pinned ? 'bg-[#f7dc79] text-[#422e59]' : 'bg-gray-100 text-[#6b6076] dark:text-[#9c93ad]'}`}
                   >
                     <Pin size={14} />
                   </button>

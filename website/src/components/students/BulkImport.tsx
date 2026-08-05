@@ -128,7 +128,7 @@ export default function BulkImport({ onClose, onDone }: { onClose: () => void; o
   }
 
   const field =
-    'w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35';
+    'w-full rounded-lg border border-[#ded6c8] dark:border-[#3d3349] bg-gray-50 px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35';
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
@@ -138,7 +138,7 @@ export default function BulkImport({ onClose, onDone }: { onClose: () => void; o
             <h3 className="font-heading text-lg font-bold text-[#422e59] dark:text-[#e4dcf0]">Bulk Import Students</h3>
             <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">Paste CSV or upload a file to register many students at once</p>
           </div>
-          <button aria-label="Close" onClick={onClose} className="rounded-full bg-gray-100 p-2 text-gray-500">
+          <button aria-label="Close" onClick={onClose} className="rounded-full bg-gray-100 p-2 text-[#6b6076] dark:text-[#9c93ad]">
             <X size={16} />
           </button>
         </div>
@@ -157,7 +157,7 @@ export default function BulkImport({ onClose, onDone }: { onClose: () => void; o
               }}
             />
           </label>
-          <button onClick={() => analyse(TEMPLATE)} className="rounded-lg bg-gray-100 px-4 py-2 text-sm text-gray-700">
+          <button onClick={() => analyse(TEMPLATE)} className="rounded-lg bg-gray-100 px-4 py-2 text-sm text-[#4a4155] dark:text-[#c8c1d4]">
             Load template
           </button>
           <a
@@ -191,12 +191,12 @@ export default function BulkImport({ onClose, onDone }: { onClose: () => void; o
         )}
 
         {preview.length > 0 && errors.length === 0 && (
-          <div className="mt-3 max-h-40 overflow-auto rounded-lg border border-gray-100">
+          <div className="mt-3 max-h-40 overflow-auto rounded-lg border border-[#ece7de] dark:border-[#2e2637]">
             <table className="w-full text-xs">
               <thead className="bg-gray-50">
                 <tr>
                   {['matric_no', 'first_name', 'last_name', 'program', 'admission_year'].map((h) => (
-                    <th key={h} className="px-3 py-2 text-left font-semibold text-gray-500">
+                    <th key={h} className="px-3 py-2 text-left font-semibold text-[#6b6076] dark:text-[#9c93ad]">
                       {h}
                     </th>
                   ))}

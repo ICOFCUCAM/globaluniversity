@@ -135,14 +135,14 @@ export default function TimetableModule() {
           ['Attendance rate', rate === null ? '—' : `${rate}%`],
         ].map(([label, value]) => (
           <div key={label} className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] p-5">
-            <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">{label}</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-[#a49bb0] dark:text-[#7b7289]">{label}</p>
             <p className="mt-1 text-2xl font-bold text-[#33234a] dark:text-[#e4dcf0]">{value}</p>
           </div>
         ))}
       </div>
 
       {slots.length === 0 ? (
-        <p className="rounded-2xl border-2 border-dashed border-[#ece7f4] bg-white p-10 text-center text-sm text-gray-400">
+        <p className="rounded-2xl border-2 border-dashed border-[#ece7f4] bg-white p-10 text-center text-sm text-[#a49bb0] dark:text-[#7b7289]">
           No classes scheduled yet.
         </p>
       ) : (
@@ -150,7 +150,7 @@ export default function TimetableModule() {
           {byDay
             .filter((d) => d.items.length > 0)
             .map((d) => (
-              <div key={d.day} className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+              <div key={d.day} className="rounded-2xl border border-[#ece7de] dark:border-[#2e2637] bg-white p-5 shadow-sm">
                 <p className="flex items-center gap-2 border-b border-[#f0ece4] dark:border-[#2a2333] pb-3 text-sm font-bold text-[#422e59]">
                   <CalendarDays size={15} /> {d.day}
                 </p>
@@ -246,7 +246,7 @@ export default function TimetableModule() {
               <button
                 disabled={busy}
                 onClick={() => mark('absent')}
-                className="flex-1 rounded-xl bg-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-300 disabled:opacity-60"
+                className="flex-1 rounded-xl bg-gray-200 px-4 py-2.5 text-sm font-medium text-[#4a4155] dark:text-[#c8c1d4] hover:bg-gray-300 disabled:opacity-60"
               >
                 Mark Absent
               </button>
@@ -256,12 +256,12 @@ export default function TimetableModule() {
                 .filter((r) => r.slotId === markFor.id)
                 .map((r) => (
                   <p key={r.id} className="flex justify-between rounded-lg bg-gray-50 px-3 py-1.5 text-xs">
-                    <span className="font-mono text-gray-700">{r.matric}</span>
-                    <span className={r.status === 'present' ? 'text-emerald-600' : 'text-gray-400'}>{r.status}</span>
+                    <span className="font-mono text-[#4a4155] dark:text-[#c8c1d4]">{r.matric}</span>
+                    <span className={r.status === 'present' ? 'text-emerald-600' : 'text-[#a49bb0] dark:text-[#7b7289]'}>{r.status}</span>
                   </p>
                 ))}
             </div>
-            <button onClick={() => setMarkFor(null)} className="w-full rounded-xl bg-gray-100 px-4 py-2.5 text-sm text-gray-700">
+            <button onClick={() => setMarkFor(null)} className="w-full rounded-xl bg-gray-100 px-4 py-2.5 text-sm text-[#4a4155] dark:text-[#c8c1d4]">
               Close
             </button>
           </div>
