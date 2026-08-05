@@ -52,7 +52,6 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ error: string | null }>;
-  signup: (email: string, password: string, fullName: string, role: UserRole) => Promise<{ error: string | null }>;
   logout: () => Promise<void>;
   switchRole: (role: UserRole) => void;
   demoLogin: (role: UserRole) => void;
@@ -327,59 +326,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [fetchProfile, profileToAuthUser]);
 
-  // Real email/password signup
-  const signup = useCallback(async (
-    email: string,
-    password: string,
-    fullName: string,
-    role: UserRole
-  ): Promise<{ error: string | null }> => {
-    try {
-      setIsLoading(true);
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-            role: role,
-          },
-        },
-      });
-
-      if (error) {
-        setIsLoading(false);
-        return { error: error.message };
-      }
-
-      if (data.user && data.session) {
-        // Profile is auto-created by the DB trigger
-        // Wait a moment for the trigger to execute
-        await new Promise(resolve => setTimeout(resolve, 500));
-        const prof = await fetchProfile(data.user.id);
-        if (prof) {
-          setProfile(prof);
-          setUser(profileToAuthUser(prof));
-          setSession(data.session);
-          setIsDemoMode(false);
-        }
-        setIsLoading(false);
-        return { error: null };
-      }
-
-      // If email confirmation is required
-      if (data.user && !data.session) {
-        setIsLoading(false);
-        return { error: null }; // Success but needs email confirmation
-      }
-
-      setIsLoading(false);
-      return { error: 'Signup failed. Please try again.' };
-    } catch (err: any) {
-      setIsLoading(false);
-      return { error: err.message || 'Signup failed' };
-    }
-  }, [fetchProfile, profileToAuthUser]);
+  /**
+   * Self-registration is not part of this system, and the function that
+   * performed it has been removed rather than left unused.
+   *
+   * It called supabase.auth.signUp with a role taken from its own argument. It
+   * was already unreachable from the interface — the sign-up form went when the
+   * admissions pipeline was built — but an exported function that mints
+   * accounts is not made safe by nobody currently calling it. It is one import
+   * away from being called again, and the role parameter meant the caller
+   * chose the privilege level.
+   *
+   * Accounts are created in exactly two places, both server-side and both
+   * holding the service-role key: the Registrar's approve route, which requires
+   * a paid application, and /api/admin/staff, which requires the
+   * Superadministrator. Migration 002 enforces the same rule at the database:
+   * the browser roles have no UPDATE privilege on profiles.role, so even a
+   * successful self-signup could not raise itself above 'student'.
+   */
 
   // Logout
   const logout = useCallback(async () => {
@@ -426,7 +390,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: !!user,
       isLoading,
       login,
-      signup,
       logout,
       switchRole,
       demoLogin,
