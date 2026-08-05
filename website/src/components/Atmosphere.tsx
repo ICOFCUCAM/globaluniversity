@@ -15,33 +15,50 @@ type Tone = 'purple' | 'gold' | 'dual';
 export function Aurora({
   tone = 'dual',
   intensity = 1,
+  fields = 3,
   className = '',
 }: {
   tone?: Tone;
   intensity?: number;
+  /** Drop to 2 on secondary bands — each field is a separately blurred layer. */
+  fields?: 2 | 3;
   className?: string;
 }) {
-  const fields =
+  const colors =
     tone === 'gold'
       ? ['rgba(247,220,121,0.30)', 'rgba(233,193,74,0.22)', 'rgba(247,230,180,0.16)']
       : tone === 'purple'
         ? ['rgba(87,84,154,0.42)', 'rgba(66,46,89,0.34)', 'rgba(179,162,207,0.20)']
         : ['rgba(87,84,154,0.40)', 'rgba(247,220,121,0.20)', 'rgba(179,162,207,0.22)'];
 
+  // content-visibility lets the browser skip painting — and therefore skip
+  // animating — these layers entirely while the band is off-screen. Without
+  // it every aurora on the page composites on every frame, all the way down.
+  const skipOffscreen = {
+    contentVisibility: 'auto',
+    containIntrinsicSize: '1px 600px',
+  } as React.CSSProperties;
+
   return (
-    <div aria-hidden="true" className={`pointer-events-none absolute inset-0 overflow-hidden ${className}`}>
+    <div
+      aria-hidden="true"
+      className={`pointer-events-none absolute inset-0 overflow-hidden ${className}`}
+      style={skipOffscreen}
+    >
       <div
-        className="absolute -left-[15%] -top-[30%] h-[75%] w-[65%] animate-aurora-a rounded-full blur-[110px]"
-        style={{ background: fields[0], opacity: intensity }}
+        className="absolute -left-[15%] -top-[30%] h-[75%] w-[65%] animate-aurora-a rounded-full blur-[80px] will-change-transform"
+        style={{ background: colors[0], opacity: intensity }}
       />
       <div
-        className="absolute -right-[12%] top-[10%] h-[70%] w-[55%] animate-aurora-b rounded-full blur-[120px]"
-        style={{ background: fields[1], opacity: intensity }}
+        className="absolute -right-[12%] top-[10%] h-[70%] w-[55%] animate-aurora-b rounded-full blur-[88px] will-change-transform"
+        style={{ background: colors[1], opacity: intensity }}
       />
-      <div
-        className="absolute bottom-[-25%] left-[25%] h-[65%] w-[60%] animate-aurora-c rounded-full blur-[130px]"
-        style={{ background: fields[2], opacity: intensity }}
-      />
+      {fields === 3 && (
+        <div
+          className="absolute bottom-[-25%] left-[25%] h-[65%] w-[60%] animate-aurora-c rounded-full blur-[92px] will-change-transform"
+          style={{ background: colors[2], opacity: intensity }}
+        />
+      )}
     </div>
   );
 }
@@ -71,10 +88,13 @@ export function Grain({ opacity = 0.055 }: { opacity?: number }) {
  */
 export function LightShaft({ className = '' }: { className?: string }) {
   return (
-    <div aria-hidden="true" className={`pointer-events-none absolute inset-0 overflow-hidden ${className}`}>
+    <div
+      aria-hidden="true"
+      className={`pointer-events-none absolute inset-0 overflow-hidden ${className}`}
+      style={{ contentVisibility: 'auto', containIntrinsicSize: '1px 600px' } as React.CSSProperties}
+    >
       {[
-        { left: '12%', w: '9rem', delay: '0s', o: 0.10 },
-        { left: '38%', w: '5rem', delay: '-4s', o: 0.07 },
+        { left: '12%', w: '9rem', delay: '0s', o: 0.11 },
         { left: '67%', w: '12rem', delay: '-8s', o: 0.09 },
       ].map((s) => (
         <div
@@ -85,7 +105,7 @@ export function LightShaft({ className = '' }: { className?: string }) {
             width: s.w,
             animationDelay: s.delay,
             background: `linear-gradient(to bottom, rgba(247,220,121,${s.o}), transparent 72%)`,
-            filter: 'blur(22px)',
+            filter: 'blur(16px)',
             transform: 'rotate(14deg)',
           }}
         />

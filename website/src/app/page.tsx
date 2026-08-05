@@ -414,7 +414,7 @@ export default async function HomePage() {
       {/* Research & Innovation */}
       <section data-chapter="Research" className="relative overflow-hidden bg-brand-purple py-20 text-white sm:py-24">
         <Image src="/images/wp/g-decor.jpg" alt="" fill loading="lazy" quality={55} className="object-cover opacity-10" sizes="100vw" />
-        <Aurora tone="purple" intensity={0.8} />
+        <Aurora tone="purple" intensity={0.8} fields={2} />
         <Grain />
         <Seam />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
@@ -545,7 +545,7 @@ export default async function HomePage() {
 
       {/* Global footprint */}
       <section data-chapter="Global" className="relative overflow-hidden bg-brand-purple-dark py-16 text-white">
-        <Aurora tone="dual" intensity={0.75} />
+        <Aurora tone="dual" intensity={0.75} fields={2} />
         <Grain />
         <Seam />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
@@ -674,7 +674,7 @@ export default async function HomePage() {
       {/* Success in numbers — each figure sits inside its own progress ring,
           so the band reads as instrumentation rather than a row of digits. */}
       <section data-chapter="Impact" className="relative overflow-hidden bg-brand-purple py-24 text-white">
-        <Aurora tone="gold" intensity={0.45} />
+        <Aurora tone="gold" intensity={0.45} fields={2} />
         <Grain opacity={0.045} />
         <Seam />
         {/* Engraved rule field */}

@@ -18,7 +18,7 @@ export default function Footer() {
         sizes="100vw"
       />
       <div className="absolute inset-0 bg-brand-purple-dark/88" />
-      <Aurora tone="purple" intensity={0.7} />
+      <Aurora tone="purple" intensity={0.7} fields={2} />
       <Grain opacity={0.05} />
       <Seam />
 
