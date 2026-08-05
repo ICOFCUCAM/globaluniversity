@@ -103,30 +103,33 @@ export default async function HomePage() {
       <HeroSlider slides={heroSlides} />
 
       {/* Quick links — the six routes most visitors arrive wanting */}
-      <nav aria-label="Quick links" className="relative z-10 -mt-10 px-4">
-        <div className="mx-auto grid max-w-6xl grid-cols-2 gap-px overflow-hidden rounded-2xl bg-brand-sand/60 shadow-lift-lg ring-1 ring-brand-purple/5 sm:grid-cols-3 lg:grid-cols-6">
+      <nav aria-label="Quick links" className="relative z-10 -mt-14 px-4">
+        <SpotlightGroup className="mx-auto grid max-w-6xl grid-cols-2 gap-px overflow-hidden rounded-2xl bg-brand-sand/60 shadow-lift-lg ring-1 ring-brand-purple/5 backdrop-blur-xl sm:grid-cols-3 lg:grid-cols-6">
           {quickLinks.map((q) => {
             const Icon = quickIconMap[q.icon as keyof typeof quickIconMap];
             return (
-              <Link
-                key={q.label}
-                href={q.href}
-                className="group relative flex flex-col items-center gap-3 bg-white px-3 py-7 text-center transition hover:bg-brand-cream"
-              >
-                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-cream text-brand-purple transition duration-300 group-hover:bg-brand-purple group-hover:text-brand-gold">
-                  {Icon ? <Icon className="h-[22px] w-[22px]" /> : null}
-                </span>
-                <span className="text-[11px] font-semibold uppercase leading-tight tracking-[0.08em] text-brand-purple">
-                  {q.label}
-                </span>
-                <span
-                  aria-hidden="true"
-                  className="absolute inset-x-6 bottom-0 h-0.5 origin-center scale-x-0 rounded-full bg-brand-gold transition-transform duration-300 group-hover:scale-x-100"
-                />
-              </Link>
+              <SpotlightCard key={q.label} tone="light">
+                <Link
+                  href={q.href}
+                  className="group relative flex h-full flex-col items-center gap-3 bg-white/95 px-3 py-8 text-center transition duration-300 hover:bg-brand-cream"
+                >
+                  {/* Icon well lifts and inverts; the glyph itself never scales,
+                      so 1.5px strokes stay 1.5px. */}
+                  <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-cream text-brand-purple ring-1 ring-brand-sand/60 transition duration-500 group-hover:-translate-y-1 group-hover:bg-brand-purple group-hover:text-brand-gold group-hover:shadow-lift">
+                    {Icon ? <Icon className="h-[22px] w-[22px]" /> : null}
+                  </span>
+                  <span className="text-[11px] font-semibold uppercase leading-tight tracking-[0.08em] text-brand-purple">
+                    {q.label}
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-x-5 bottom-0 h-[3px] origin-center scale-x-0 rounded-full bg-gradient-to-r from-brand-gold-deep to-brand-gold transition-transform duration-500 group-hover:scale-x-100"
+                  />
+                </Link>
+              </SpotlightCard>
             );
           })}
-        </div>
+        </SpotlightGroup>
       </nav>
 
       {/* Chancellor's welcome — the site opened with this on the original iguc.net */}
