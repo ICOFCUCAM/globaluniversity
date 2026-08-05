@@ -71,10 +71,19 @@ accreditation + ICOF global network.
 - [x] Sitemap coverage for news + verify; header scroll elevation
 - [x] Hero carousel pause-on-hover + ARIA
 
+## Premiumization batch 11-20 (French track + careers)
+- [x] French content module (src/content/fr.ts) — faithful translations
+- [x] /fr French homepage (hero, overview, pillars, campuses, stats, CTA)
+- [x] /fr/a-propos, /fr/admission, /fr/programmes, /fr/contact
+- [x] Bilingual header: French nav on /fr, 🌐 language switcher (desktop+mobile)
+- [x] hreflang alternates + French routes in sitemap
+- [x] Careers page (faculty/staff recruitment, all schools + PPDI-RC)
+- [x] Portal empty/loading states refined to brand styling
+- [x] Footer: Careers + Français links
+
 ## Remaining (next runs)
-- [ ] French-language track (next-intl, /fr routes) — largest remaining item
-- [ ] Portal dashboard micro-polish (charts palette, empty states)
-- [ ] News/publications archive page fed from a CMS-ready list
+- [ ] Extend French edition to remaining pages (research, scholarships, alumni)
 - [ ] Lighthouse audit run + fixes on deployed URL
+- [ ] Portal dashboard chart palette alignment
 
 Keep commits small; build must pass before each commit.
