@@ -4,9 +4,51 @@
 // Rendered only inside AppLayout, which is only reachable once AuthContext
 // reports an authenticated user, so nothing here reaches the public site.
 import React from 'react';
-import { bltReadingList, readingListNote } from '@/content/programmeResources';
+import {
+  bltReadingList,
+  readingListNote,
+  blackHebrewsReading,
+  blackHebrewsReadingNote,
+  mthReading,
+  mthReadingNote,
+} from '@/content/programmeResources';
 import { bltCurriculum, bltProgramme } from '@/content/blackLiberationTheology';
 import { BookMarked, Lock, GraduationCap } from 'lucide-react';
+
+function ReadingSection({
+  title,
+  note,
+  groups,
+}: {
+  title: string;
+  note: string;
+  groups: { area: string; works: { title: string; author?: string }[] }[];
+}) {
+  return (
+    <section className="rounded-2xl border border-gray-100 bg-white p-6">
+      <div className="flex items-center gap-2.5">
+        <BookMarked size={17} className="text-[#422e59]" />
+        <h3 className="font-semibold text-gray-800">{title}</h3>
+      </div>
+      <p className="mt-1.5 text-xs leading-relaxed text-gray-500">{note}</p>
+      <div className="mt-5 grid gap-4 sm:grid-cols-2">
+        {groups.map((g) => (
+          <div key={g.area} className="rounded-xl border border-gray-100 p-4">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[#e9c14a]">{g.area}</p>
+            <ul className="mt-2.5 space-y-2">
+              {g.works.map((w) => (
+                <li key={w.title + (w.author ?? '')} className="text-sm leading-snug text-gray-700">
+                  {w.author && <span className="font-medium text-gray-800">{w.author} </span>}
+                  <span>{w.title}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 export default function ProgrammeResources() {
   return (
@@ -55,31 +97,21 @@ export default function ProgrammeResources() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-gray-100 bg-white p-6">
-        <div className="flex items-center gap-2.5">
-          <BookMarked size={17} className="text-[#422e59]" />
-          <h3 className="font-semibold text-gray-800">Core Reading List</h3>
-        </div>
-        <p className="mt-1.5 text-xs leading-relaxed text-gray-500">{readingListNote}</p>
-
-        <div className="mt-5 grid gap-4 sm:grid-cols-2">
-          {bltReadingList.map((g) => (
-            <div key={g.area} className="rounded-xl border border-gray-100 p-4">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-[#e9c14a]">
-                {g.area}
-              </p>
-              <ul className="mt-2.5 space-y-2">
-                {g.works.map((w) => (
-                  <li key={w.title + (w.author ?? '')} className="text-sm leading-snug text-gray-700">
-                    <span className="font-medium">{w.title}</span>
-                    {w.author && <span className="block text-xs text-gray-400">{w.author}</span>}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-      </section>
+      <ReadingSection
+        title="M.A. Black Liberation Theology — Core Reading"
+        note={readingListNote}
+        groups={bltReadingList}
+      />
+      <ReadingSection
+        title="Master of Theology — Selected Reading"
+        note={mthReadingNote}
+        groups={mthReading}
+      />
+      <ReadingSection
+        title="The Black Hebrews — Recommended Reading"
+        note={blackHebrewsReadingNote}
+        groups={blackHebrewsReading}
+      />
     </div>
   );
 }

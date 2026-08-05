@@ -122,13 +122,13 @@ export const site = {
           ],
         },
         {
-          heading: 'Faculty & Research',
+          heading: 'Theology & Research',
           items: [
             { label: 'Schools & Faculties', href: '/faculty' },
-            { label: 'Black Liberation Theology', href: '/black-liberation-theology' },
+            { label: 'M.A. Black Liberation Theology', href: '/black-liberation-theology' },
+            { label: 'Master of Theology', href: '/master-of-theology' },
             { label: 'Research & Innovation', href: '/research' },
             { label: 'PPDI-RC', href: '/ppdirc' },
-            { label: 'PPDI-RC Application', href: '/ppdi-rc-application' },
           ],
         },
       ],
@@ -589,6 +589,16 @@ export const programs: Program[] = [
     summary:
       'Doctoral research in theology — Doctor of Philosophy, Doctor of Theology and Doctor of Ministry (Christian Counseling & Administration) — culminating in an original dissertation.',
     outcomes: ['Research methods', 'Advanced doctrine', 'Original dissertation', 'Academic publishing'],
+  },
+  {
+    slug: 'master-of-theology',
+    title: 'Master of Theology',
+    level: 'Master',
+    school: 'Faculty of Theology',
+    image: '/images/grand-ceremony.jpg',
+    summary:
+      'An advanced theological degree emphasising African and Black Hebrew theology, contextual theology and ecotheology, feminist and queer theologies, and disability theology, completed with a thesis.',
+    outcomes: ['Contextual theology', 'African Christian history', 'Research methodologies', 'Thesis'],
   },
   {
     slug: 'black-liberation-theology',
