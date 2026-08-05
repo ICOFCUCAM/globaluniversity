@@ -1,4 +1,5 @@
 import { SampleDataNotice } from '@/components/ui/portal';
+import { useCredentialTemplate } from '@/lib/useCredentialTemplate';
 import React, { useRef, useState } from 'react';
 import TranscriptQR from './TranscriptQR';
 import { sampleTranscriptData } from '@/lib/sampleData';
@@ -11,6 +12,11 @@ export default function TranscriptGenerator() {
   const transcriptRef = useRef<HTMLDivElement>(null);
   const [data] = useState<TranscriptData>(sampleTranscriptData);
   const [showPreview, setShowPreview] = useState(true);
+  // The page setup and typeface come from the published transcript design, the
+  // same record the certificate reads. Two official documents of one university
+  // set in two different faces, because two components each hardcoded their
+  // own, is the kind of detail a registrar's office is judged on.
+  const template = useCredentialTemplate('transcript');
 
   function handlePrint() {
     const content = transcriptRef.current;
@@ -22,8 +28,12 @@ export default function TranscriptGenerator() {
         <head>
           <title>Academic Transcript - ${data.student.matric_no}</title>
           <style>
-            @page { size: A4; margin: 15mm; }
-            body { margin: 0; font-family: 'Times New Roman', Times, serif; }
+            @page { size: ${template.design.pageSize} ${template.design.orientation}; margin: 15mm; }
+            body { margin: 0; font-family: ${template.design.fontFamily}; }
+            /* Backgrounds and rules are the document, not decoration. Without
+               this Chrome drops every fill and the seal, and the transcript
+               prints as unbranded text nobody would accept as official. */
+            @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
             * { box-sizing: border-box; }
             ${getTranscriptStyles()}
           </style>
