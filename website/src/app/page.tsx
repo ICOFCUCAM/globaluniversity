@@ -285,42 +285,58 @@ export default async function HomePage() {
       <Section chapter="Faculties">
         <SectionHeading eyebrow="Academic Community">{homeFaculties.heading}</SectionHeading>
         <p className="mx-auto -mt-5 mb-12 max-w-2xl text-center leading-relaxed text-brand-muted">{homeFaculties.intro}</p>
-        <div className="mx-auto grid max-w-6xl gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Tiles are staggered vertically at lg — an even row of four reads as
+            a contact sheet; an offset row reads as a composition. */}
+        <SpotlightGroup className="mx-auto grid max-w-6xl gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {homeFaculties.items.map((f, i) => (
-            <Reveal key={f.name} delay={i * 100}>
-              <Link
-                href="/faculty"
-                className="group relative block h-72 overflow-hidden rounded-2xl shadow-lift transition duration-500 hover:-translate-y-1.5 hover:shadow-lift-lg"
-              >
-                <Image
-                  src={f.image}
-                  alt=""
-                  fill
-                  className="object-cover transition duration-[900ms] ease-out group-hover:scale-110"
-                  sizes="(min-width:1024px) 25vw, (min-width:640px) 50vw, 100vw"
-                />
-                {/* Two stops rather than one: the name stays legible on light
-                    photographs without flattening the image behind it. */}
-                <div className="absolute inset-0 bg-gradient-to-t from-brand-purple-dark via-brand-purple-dark/55 to-transparent" />
-                <div className="absolute inset-0 bg-brand-purple/0 transition duration-500 group-hover:bg-brand-purple/25" />
+            <Reveal key={f.name} delay={i * 100} className={i % 2 === 1 ? 'lg:mt-10' : ''}>
+              <SpotlightCard className="h-80 rounded-2xl" tone="dark">
+                <Link
+                  href="/faculty"
+                  className="group relative block h-full overflow-hidden rounded-2xl shadow-lift transition duration-500 hover:-translate-y-2 hover:shadow-lift-lg"
+                >
+                  <Image
+                    src={f.image}
+                    alt=""
+                    fill
+                    loading="lazy"
+                    className="object-cover transition duration-[1100ms] ease-out group-hover:scale-[1.14]"
+                    sizes="(min-width:1024px) 25vw, (min-width:640px) 50vw, 100vw"
+                  />
+                  {/* Two stops rather than one: the name stays legible on light
+                      photographs without flattening the image behind it. */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-brand-purple-dark via-brand-purple-dark/50 to-transparent" />
+                  {/* Purple wash deepens on hover, gold rim lights from below */}
+                  <div className="absolute inset-0 bg-brand-purple/0 transition duration-500 group-hover:bg-brand-purple/30" />
+                  <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-brand-gold to-transparent opacity-0 transition duration-500 group-hover:opacity-100" />
 
-                <div className="absolute inset-x-0 bottom-0 p-5">
+                  {/* Index, set as a plate marking */}
                   <span
                     aria-hidden="true"
-                    className="mb-3 block h-[2px] w-9 origin-left rounded-full bg-brand-gold transition-transform duration-500 group-hover:scale-x-[2.4]"
-                  />
-                  <h3 className="font-heading text-base font-bold leading-snug text-white [text-wrap:balance]">
-                    {f.name}
-                  </h3>
-                  <span className="mt-2 flex items-center gap-1.5 font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-gold opacity-0 transition duration-500 group-hover:opacity-100">
-                    Explore
-                    <span aria-hidden="true">→</span>
+                    className="absolute right-4 top-4 font-sans text-[10px] font-bold tracking-[0.2em] text-white/35 transition duration-500 group-hover:text-brand-gold"
+                  >
+                    {String(i + 1).padStart(2, '0')}
                   </span>
-                </div>
-              </Link>
+
+                  <div className="absolute inset-x-0 bottom-0 p-6">
+                    <span
+                      aria-hidden="true"
+                      className="mb-3.5 block h-[2px] w-9 origin-left rounded-full bg-brand-gold transition-transform duration-500 group-hover:scale-x-[2.6]"
+                    />
+                    {/* The name rises to make room for the affordance */}
+                    <h3 className="font-heading text-[17px] font-bold leading-snug text-white transition-transform duration-500 group-hover:-translate-y-1 [text-wrap:balance]">
+                      {f.name}
+                    </h3>
+                    <span className="mt-2 flex translate-y-2 items-center gap-1.5 font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-gold opacity-0 transition duration-500 group-hover:translate-y-0 group-hover:opacity-100">
+                      Explore
+                      <span aria-hidden="true">→</span>
+                    </span>
+                  </div>
+                </Link>
+              </SpotlightCard>
             </Reveal>
           ))}
-        </div>
+        </SpotlightGroup>
       </Section>
 
       {/* Programs */}
