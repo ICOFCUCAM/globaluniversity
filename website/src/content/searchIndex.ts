@@ -50,11 +50,26 @@ const pages: SearchEntry[] = [
 
 export const searchIndex: SearchEntry[] = [
   ...pages,
+  // Faculty pages carry the dean's message, research strengths, careers and
+  // graduate destinations now. Searching for "chaplaincy" or "cybersecurity"
+  // should reach the faculty that teaches it, so all of it is indexed.
   ...facultyList.map((f) => ({
     title: f.name,
     href: `/faculty/${f.slug}`,
     section: 'Faculties',
-    text: `${f.shortName} ${f.campus} ${f.standsFor} ${f.description.join(' ')} ${f.leadName ?? ''}`,
+    text: [
+      f.shortName,
+      f.campus,
+      f.standsFor,
+      (f.about ?? f.description).join(' '),
+      (f.deansMessage ?? []).join(' '),
+      (f.researchStrengths ?? []).join(' '),
+      (f.careers ?? []).join(' '),
+      (f.graduateDestinations ?? []).join(' '),
+      (f.coreValues ?? []).join(' '),
+      (f.awards ?? []).map((a) => a.title).join(' '),
+      f.leadName ?? '',
+    ].join(' '),
   })),
   ...programs.map((p) => ({
     title: p.title,
