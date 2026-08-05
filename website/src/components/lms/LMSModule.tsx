@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
 import { lmsMaterials } from '@/lib/sampleData';
 import {
   FileText, Video, Upload, Download, Play, Search,
@@ -16,12 +17,47 @@ export default function LMSModule() {
     (m) => m.title.toLowerCase().includes(searchQuery.toLowerCase()) || m.courseCode.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const liveClasses = [
-    { id: 1, course: 'CSC 301', title: 'AI: Neural Networks', lecturer: 'Dr. James Okonkwo', time: 'Today, 2:00 PM', status: 'live', attendees: 67 },
-    { id: 2, course: 'CSC 311', title: 'ML: Gradient Descent', lecturer: 'Prof. Michael Eze', time: 'Today, 4:00 PM', status: 'upcoming', attendees: 0 },
-    { id: 3, course: 'CSC 212', title: 'React Advanced Patterns', lecturer: 'Dr. Sarah Adeyemi', time: 'Tomorrow, 10:00 AM', status: 'upcoming', attendees: 0 },
-    { id: 4, course: 'CSC 202', title: 'SQL Optimization', lecturer: 'Dr. Sarah Adeyemi', time: 'Yesterday', status: 'recorded', attendees: 82 },
-  ];
+  const [liveClasses, setLiveClasses] = useState<any[]>([]);
+  const [showSchedule, setShowSchedule] = useState(false);
+  const [sched, setSched] = useState({ course: '', title: '', lecturer: '', time: '', link: '', status: 'upcoming', attendees: 0 });
+
+  async function loadClasses() {
+    const { data } = await supabase
+      .from('documents')
+      .select('*')
+      .eq('document_type', 'live-class')
+      .order('uploaded_at', { ascending: false });
+    if (data) {
+      setLiveClasses(
+        (data as any[])
+          .map((d) => {
+            try {
+              return { id: d.id, ...JSON.parse(decodeURIComponent(escape(atob(d.file_url.split('base64,')[1])))) };
+            } catch {
+              return null;
+            }
+          })
+          .filter(Boolean),
+      );
+    }
+  }
+
+  useEffect(() => {
+    loadClasses();
+  }, []);
+
+  async function scheduleClass(e: React.FormEvent) {
+    e.preventDefault();
+    await supabase.from('documents').insert({
+      file_name: `${sched.course} · ${sched.title} · ${sched.time}`,
+      file_url: `data:application/json;base64,${btoa(unescape(encodeURIComponent(JSON.stringify(sched))))}`,
+      file_type: 'application/json',
+      document_type: 'live-class',
+    });
+    setShowSchedule(false);
+    setSched({ course: '', title: '', lecturer: '', time: '', link: '', status: 'upcoming', attendees: 0 });
+    loadClasses();
+  }
 
   const courseProgress = [
     { code: 'CSC 301', title: 'Artificial Intelligence', progress: 78, materials: 12, completed: 9 },
@@ -103,6 +139,49 @@ export default function LMSModule() {
       {/* Live Classes Tab */}
       {activeTab === 'classes' && (
         <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-gray-500">Live sessions and recorded lectures for your courses</p>
+            <button
+              onClick={() => setShowSchedule(true)}
+              className="flex items-center gap-2 rounded-xl bg-[#422e59] px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-purple-900/20 hover:bg-[#322244]"
+            >
+              <Plus size={16} /> Schedule Class
+            </button>
+          </div>
+          {liveClasses.length === 0 && (
+            <p className="rounded-2xl border-2 border-dashed border-[#ece7f4] bg-white p-10 text-center text-sm text-gray-400">
+              No classes scheduled yet. Use “Schedule Class” to add a live session or publish a recorded lecture.
+            </p>
+          )}
+          {showSchedule && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowSchedule(false)}>
+              <form onSubmit={scheduleClass} onClick={(e) => e.stopPropagation()} className="w-full max-w-md space-y-3 rounded-2xl bg-white p-6">
+                <h3 className="text-lg font-bold text-gray-800">Schedule Class / Add Recording</h3>
+                {([['course','Course code'],['title','Session title'],['lecturer','Lecturer'],['time','When (e.g. Mon 14:00)'],['link','Meeting or recording URL']] as const).map(([k,label]) => (
+                  <input
+                    key={k}
+                    required={k !== 'link'}
+                    placeholder={label}
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30"
+                    value={(sched as any)[k]}
+                    onChange={(e) => setSched({ ...sched, [k]: e.target.value })}
+                  />
+                ))}
+                <select
+                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30"
+                  value={sched.status}
+                  onChange={(e) => setSched({ ...sched, status: e.target.value })}
+                >
+                  <option value="upcoming">Upcoming live session</option>
+                  <option value="live">Live now</option>
+                  <option value="recorded">Recorded lecture</option>
+                </select>
+                <button className="w-full rounded-xl bg-[#422e59] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#322244]">
+                  Save
+                </button>
+              </form>
+            </div>
+          )}
           {liveClasses.map((cls) => (
             <div key={cls.id} className="bg-white rounded-xl border border-gray-100 p-5 flex items-center justify-between hover:shadow-md transition-all">
               <div className="flex items-center gap-4">
