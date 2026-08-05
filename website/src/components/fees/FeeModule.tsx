@@ -121,7 +121,7 @@ export default function FeeModule() {
       <div className="overflow-hidden rounded-xl border border-gray-100 bg-white">
         <div className="divide-y divide-gray-50">
           {receipts.length === 0 && (
-            <p className="p-8 text-center text-sm text-gray-400">No payments recorded yet.</p>
+            <p className="p-10 text-center text-sm text-gray-400">No payments recorded yet.</p>
           )}
           {receipts.map((r) => (
             <button key={r.id} onClick={() => open(r)} className="flex w-full items-center gap-3 px-5 py-3 text-left hover:bg-gray-50">

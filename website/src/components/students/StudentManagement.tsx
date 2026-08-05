@@ -140,7 +140,7 @@ export default function StudentManagement() {
             </thead>
             <tbody className="divide-y divide-gray-50">
               {loading ? (
-                <tr><td colSpan={6} className="px-5 py-8 text-center text-gray-400">Loading...</td></tr>
+                <tr><td colSpan={6} className="px-5 py-8 text-center text-gray-400">Loading…</td></tr>
               ) : filtered.length === 0 ? (
                 <tr><td colSpan={6} className="px-5 py-8 text-center text-gray-400">No students found</td></tr>
               ) : (

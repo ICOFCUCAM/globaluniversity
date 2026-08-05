@@ -69,7 +69,7 @@ export default function AuditLogs() {
       <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
         <div className="divide-y divide-gray-50">
           {loading ? (
-            <div className="p-8 text-center text-gray-400">Loading...</div>
+            <div className="p-8 text-center text-gray-400">Loading…</div>
           ) : filtered.length === 0 ? (
             <div className="p-8 text-center text-gray-400">No logs found</div>
           ) : (
