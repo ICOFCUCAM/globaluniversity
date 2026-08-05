@@ -202,7 +202,7 @@ export default function BachelorOfTheologyPage() {
           <table className="w-full">
             <thead>
               <tr className="bg-brand-cream">
-                {['Year', 'Semester', 'Credits'].map((h) => (
+                {['Year', 'Semester', 'Courses'].map((h) => (
                   <th key={h} className="px-6 py-4 text-left font-sans text-[10px] font-bold uppercase tracking-[0.16em] text-brand-gold-deep">{h}</th>
                 ))}
               </tr>
@@ -212,12 +212,12 @@ export default function BachelorOfTheologyPage() {
                 <tr key={`${r.year}-${r.semester}`}>
                   <td className="px-6 py-4 font-heading text-sm font-bold text-brand-purple">{r.year}</td>
                   <td className="px-6 py-4 text-sm text-brand-muted">{r.semester}</td>
-                  <td className="px-6 py-4 font-heading text-sm font-bold tabular text-brand-purple">{r.credits}</td>
+                  <td className="px-6 py-4 font-heading text-sm font-bold tabular text-brand-purple">{r.courses}</td>
                 </tr>
               ))}
               <tr className="bg-brand-cream">
                 <td className="px-6 py-4 font-heading text-sm font-bold text-brand-purple" colSpan={2}>Total</td>
-                <td className="px-6 py-4 font-heading text-sm font-bold tabular text-brand-purple">180</td>
+                <td className="px-6 py-4 font-heading text-sm font-bold tabular text-brand-purple">32</td>
               </tr>
             </tbody>
           </table>
@@ -226,9 +226,10 @@ export default function BachelorOfTheologyPage() {
 
       {/* Full curriculum — all six semesters */}
       <Section className="bg-white" id="semester-one" chapter="Courses">
-        <SectionHeading eyebrow="Course Listing">Thirty-six courses</SectionHeading>
+        <SectionHeading eyebrow="Course Listing">Thirty-two courses</SectionHeading>
         <p className="mx-auto -mt-5 mb-12 max-w-2xl text-center leading-relaxed text-brand-muted">
-          Every course carries 5 ECTS. Full syllabi — unit-by-unit teaching material,
+          The programme carries 180 ECTS in total. Per-course credit weightings are being
+          finalised by the Faculty of Theology. Full syllabi — unit-by-unit teaching material,
           assessment strategy and reading lists — are issued to enrolled students through the
           student portal.
         </p>
@@ -242,7 +243,9 @@ export default function BachelorOfTheologyPage() {
                     {sem.year}
                   </span>
                   <h3 className="font-heading text-xl font-bold text-brand-purple">{sem.label}</h3>
-                  <span className="ml-auto font-sans text-[11px] font-bold tabular text-brand-muted">30 ECTS</span>
+                  <span className="ml-auto font-sans text-[11px] font-bold tabular text-brand-muted">
+                    {sem.courses.length} courses
+                  </span>
                 </div>
                 <div className="mt-4 divide-y divide-brand-sand overflow-hidden rounded-2xl border border-brand-sand bg-brand-cream">
                   {sem.courses.map((c) =>
@@ -251,7 +254,7 @@ export default function BachelorOfTheologyPage() {
                         <summary className="flex cursor-pointer list-none items-center gap-4 px-6 py-4 transition hover:bg-white">
                           <span className="w-20 shrink-0 font-mono text-xs font-bold text-brand-gold-deep">{c.code}</span>
                           <span className="flex-1 font-heading text-[15px] font-semibold text-brand-purple">{c.title}</span>
-                          <span className="shrink-0 font-sans text-[11px] font-bold tabular text-brand-muted">{c.ects} ECTS</span>
+                          {c.ects && <span className="shrink-0 font-sans text-[11px] font-bold tabular text-brand-muted">{c.ects} ECTS</span>}
                           <span aria-hidden="true" className="relative h-4 w-4 shrink-0 text-brand-gold-deep transition duration-300 group-open:rotate-180">
                             <span className="absolute left-1/2 top-1/2 h-[1.5px] w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-current" />
                             <span className="absolute left-1/2 top-1/2 h-2.5 w-[1.5px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-current transition duration-300 group-open:scale-y-0" />
@@ -272,10 +275,18 @@ export default function BachelorOfTheologyPage() {
                         </div>
                       </details>
                     ) : (
-                      <div key={c.code} className="flex items-center gap-4 px-6 py-4">
-                        <span className="w-20 shrink-0 font-mono text-xs font-bold text-brand-gold-deep">{c.code}</span>
-                        <span className="flex-1 font-heading text-[15px] font-semibold text-brand-purple">{c.title}</span>
-                        <span className="shrink-0 font-sans text-[11px] font-bold tabular text-brand-muted">{c.ects} ECTS</span>
+                      <div key={c.code} className="px-6 py-4">
+                        <div className="flex items-center gap-4">
+                          <span className="w-20 shrink-0 font-mono text-xs font-bold text-brand-gold-deep">{c.code}</span>
+                          <span className="flex-1 font-heading text-[15px] font-semibold text-brand-purple">{c.title}</span>
+                        </div>
+                        {c.contents && (
+                          <ul className="mt-2.5 flex flex-wrap gap-1.5 pl-[6.5rem]">
+                            {c.contents.map((t) => (
+                              <li key={t} className="rounded-full border border-brand-sand bg-white px-2.5 py-1 text-[11px] text-brand-muted">{t}</li>
+                            ))}
+                          </ul>
+                        )}
                       </div>
                     ),
                   )}
@@ -287,9 +298,9 @@ export default function BachelorOfTheologyPage() {
 
         <p className="mx-auto mt-8 max-w-4xl rounded-2xl border border-brand-sand bg-brand-cream px-6 py-5 text-sm leading-relaxed text-brand-muted">
           <strong className="font-semibold text-brand-purple">Unit outlines.</strong>{' '}
-          BTH101 and BTH102 carry their published unit outlines above — expand either course to see
-          them. Unit outlines for the remaining courses are released as each syllabus is validated
-          by the Faculty of Theology.
+          BTH101 to BTH104 carry their full unit outlines above — expand any of them to see the
+          units. The remaining courses show their indicative content; full unit outlines are
+          released as each syllabus is validated by the Faculty of Theology.
         </p>
       </Section>
 

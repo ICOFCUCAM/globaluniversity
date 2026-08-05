@@ -292,7 +292,7 @@ export const bth101Material: CourseMaterial = {
 
 export const bth102Material: CourseMaterial = {
   code: 'BTH102',
-  title: 'Biblical Studies I: Old Testament Survey',
+  title: 'Bible Survey I',
   subtitle: 'The Pentateuch, Historical Books, and the Formation of Yahuah’s Covenant People',
   ects: 5,
   units: [
@@ -581,8 +581,11 @@ export const bth103Material: CourseMaterial = {
   title: 'Bible Survey II',
   subtitle: 'The Prophets, Wisdom Literature, Gospels, Acts, and the Development of the New Covenant Community',
   ects: 5,
+  // Reconciled: the development brief confirms BTH103 = Bible Survey II in
+  // Semester One. The document's own header said Semester Two with BTH102 as
+  // prerequisite, which the brief overrides — flagged for the faculty.
   conflictNote:
-    'This document is headed "Bible Survey II" and placed in the First Year Second Semester, with BTH102 as prerequisite. The published programme table lists BTH103 as "Biblical Studies II: New Testament Survey" in Semester One. Do not issue this syllabus to students until the code, title and semester are reconciled.',
+    'Reconciled as Bible Survey II. One point outstanding: this document states Semester Two with BTH102 as prerequisite, while the programme structure places both in Semester One. The prerequisite cannot stand as written.',
   units: [
     { number: 1, title: 'Introduction to the Prophetic Movement', sections: [
       { heading: '1.1–1.3 The prophet, the covenant, and two dimensions', body: [
@@ -745,8 +748,9 @@ export const bth104Material: CourseMaterial = {
   title: 'Bible Doctrine I',
   subtitle: 'Foundations of Theology: Yahuah, Scripture, Creation, Humanity, Sin, and Redemption',
   ects: 5,
+  // Reconciled: the development brief confirms BTH104 = Bible Doctrine I.
   conflictNote:
-    'SERIOUS CONFLICT. This document is headed "Bible Doctrine I" and placed in the First Year Second Semester, with BTH102 and BTH103 as prerequisites. The published programme table lists BTH104 as "Church History I" in Semester One — an entirely different subject. Its content also overlaps BTH105 Introduction to Christian Doctrine, BTH208 Systematic Theology I and BTH303 Systematic Theology II. Do not issue this syllabus to students until the code and title are reconciled.',
+    'Reconciled as Bible Doctrine I. Two points outstanding: this document states Semester Two with BTH102 and BTH103 as prerequisites, while the structure places all three in Semester One; and its content overlaps BTH106 Bible Doctrine II, BTH206 Systematic Theology I and BTH309 Systematic Theology II.',
   units: [
     { number: 1, title: 'What is Theology?', sections: [
       { heading: '1.1–1.3 Definition, knowledge and purpose', body: [

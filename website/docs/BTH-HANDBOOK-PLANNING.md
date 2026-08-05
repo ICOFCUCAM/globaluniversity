@@ -248,3 +248,78 @@ bibliography; BTH103 units 1–15 with assessment and bibliography; BTH104 units
 2. Fix the prerequisite chain against whichever wins.
 3. Resolve BTH102/107/108 and BTH104/105/208/303 before drafting them, or the
    same material will be written three and four times.
+
+---
+
+# RESOLVED — development brief settles the naming, breaks the arithmetic
+
+The university's development brief supersedes both the 36-course table and the
+earlier specifications. It resolves the conflict **in favour of the written
+course documents**, and the site has been updated to match:
+
+- **BTH104 = Bible Doctrine I** (not Church History I)
+- **BTH105 = Evangelism and Missions Introduction** (not Introduction to Christian Doctrine)
+- **BTH102/103 = Bible Survey I / II** (not "Biblical Studies … Survey")
+- Semester One carries **five** courses, not six
+- Programme is **32 courses**, not 36
+
+Verified live: all 32 codes present; no superseded title remains on any page.
+
+## NEW PROBLEM 1 — 180 ECTS no longer divides
+
+| Semester | Courses |
+|---|---|
+| Y1 S1 | 5 |
+| Y1 S2 | 5 |
+| Y2 S3 | 5 |
+| Y2 S4 | 5 |
+| Y3 S5 | 5 |
+| Y3 S6 | **7** |
+| **Total** | **32** |
+
+- 32 × 5 ECTS = **160 ECTS**. The brief states 180. Short by 20.
+- 180 ÷ 32 = **5.625 ECTS** per course — not a whole number.
+- Semesters are uneven, so a flat 30 ECTS per semester is impossible.
+
+**Per-course ECTS values have therefore been removed from the public page.** The
+programme total of 180 ECTS is still stated, with per-course weightings marked
+as being finalised. Publishing invented numbers on an accredited degree is not
+an option. Three ways out, for the faculty to choose:
+
+1. Add four courses to reach 36 × 5 = 180 and even the semesters at 6 each.
+2. Weight courses unevenly — e.g. the thesis at 15–20 ECTS, which is normal.
+3. Restate the programme as 160 ECTS.
+
+## NEW PROBLEM 2 — ten subjects disappeared
+
+Present in the 36-course table, absent from the brief:
+
+Church History I · Church History II · Introduction to Biblical Hebrew ·
+Introduction to New Testament Greek · Philosophy of Religion · Christian
+Apologetics · Synoptic Gospels · Johannine Literature · Pastoral Care and
+Counseling · Academic Writing and Study Skills
+
+Two of these are serious for accreditation:
+
+- **Church history is now entirely absent.** No recognised Bachelor of Theology
+  omits it. The published programme description still promises "Church History"
+  and "the historical development of Christianity from the apostolic period to
+  the contemporary Church" — a promise the course list no longer keeps.
+- **Both biblical languages are gone.** Hebrew and Greek were on the
+  university's own earlier list of courses to add; they are now dropped.
+  BTH201 lists "Hebrew and Greek background" as a topic inside a hermeneutics
+  course, which is not the same as language study.
+
+If the four courses needed to fix Problem 1 were Church History I, Church
+History II, Biblical Hebrew and New Testament Greek, both problems close at
+once and every semester evens out at six courses.
+
+## NEW PROBLEM 3 — overlaps persist under the new numbering
+
+- BTH104 Bible Doctrine I / BTH106 Bible Doctrine II / BTH206 Systematic
+  Theology I / BTH309 Systematic Theology II — four courses over one body of doctrine.
+- BTH102 Bible Survey I / BTH107 Old Testament History and Theology / BTH109
+  Pentateuch Studies — BTH102's completed units already run Genesis to exile.
+- BTH201 Hermeneutics / BTH301 Advanced Hermeneutics, and BTH202 Homiletics I /
+  BTH306 Advanced Homiletics — defensible as progression, but each pair needs a
+  stated relationship.
