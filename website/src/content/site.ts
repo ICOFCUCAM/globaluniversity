@@ -378,7 +378,7 @@ export const faculty: FacultyMember[] = [
   {
     name: 'Kamgang Marcel',
     role: 'Director, School of Technology and Engineering',
-    image: '/images/faculty-marcel.jpg',
+    image: '/images/wp/kamgang-marcel.jpg',
     bio: 'Director of the School of Technology and Engineering. Email: kamgang.marcel@iguc.net',
   },
   {
@@ -390,7 +390,7 @@ export const faculty: FacultyMember[] = [
   {
     name: 'Hoffman Betika Ayuk',
     role: 'Director, School of Business and Management Sciences',
-    image: '/images/faculty-ayuk.jpg',
+    image: '/images/wp/hoffman-ayuk.jpg',
     bio: 'Director of the School of Business and Management Sciences. Email: hoffman@iguc.net',
   },
 ];
@@ -406,7 +406,7 @@ export const administration: FacultyMember[] = [
   {
     name: 'Dr. Raymond L Young',
     role: 'President',
-    image: '',
+    image: '/images/wp/president-young.jpg',
     bio: 'Founder and Global Coordinator of the Global Revival Network. A professional educator and tenured university faculty member for 18 years, teaching computer science and business. Email: president@iguc.net',
   },
   {
@@ -490,36 +490,36 @@ export const administration: FacultyMember[] = [
   {
     name: 'Prof Sunday Ayah',
     role: 'Theology and Criminology',
-    image: '',
+    image: '/images/wp/sunday-ayah.jpg',
     bio: 'ICOF Global University, USA. Email: profachi@iguc.net',
   },
   {
     name: 'Hoffman Betika Ayuk',
     role: 'Director of School of Business and Management Sciences',
-    image: '/images/faculty-ayuk.jpg',
+    image: '/images/wp/hoffman-ayuk.jpg',
     bio: 'Director of the School of Business and Management Sciences. Email: hoffman@iguc.net',
   },
   {
     name: 'Kamgang Marcel',
     role: 'Director of School of Technology and Engineering',
-    image: '/images/faculty-marcel.jpg',
+    image: '/images/wp/kamgang-marcel.jpg',
     bio: 'Director of the School of Technology and Engineering. Email: kamgang.marcel@iguc.net',
   },
   {
     name: 'Forchu Venelda',
     role: 'Secretary',
-    image: '',
+    image: '/images/wp/forchu-venelda.png',
     bio: 'Holder of both advanced and A-level, and a National Diploma in Secretarial Duties. Email: info@iguc.net',
   },
 ];
 
 // "Our Lecturers" section from the live About page.
 export const lecturers: FacultyMember[] = [
-  { name: 'Rev Dr Gerald Mukwelle', role: 'Lecturer', image: '', bio: '' },
-  { name: 'Rev Momfor Phillip', role: 'Lecturer', image: '', bio: '' },
-  { name: 'Prof Bishop Lawrence Luba', role: 'Lecturer', image: '', bio: '' },
-  { name: 'Pastor Solomon Njie', role: 'Lecturer', image: '', bio: '' },
-  { name: 'Rev Sama Raphael Ndaghu', role: 'Lecturer', image: '', bio: '' },
+  { name: 'Rev Dr Gerald Mukwelle', role: 'Lecturer', image: '/images/wp/gerald-mukwelle.png', bio: '' },
+  { name: 'Rev Momfor Phillip', role: 'Lecturer', image: '/images/wp/momfor.jpg', bio: '' },
+  { name: 'Prof Bishop Lawrence Luba', role: 'Lecturer', image: '/images/wp/lawrence-luba.jpg', bio: '' },
+  { name: 'Pastor Solomon Njie', role: 'Lecturer', image: '/images/wp/solomon-njie.png', bio: '' },
+  { name: 'Rev Sama Raphael Ndaghu', role: 'Lecturer', image: '/images/wp/sama-raphael.jpg', bio: '' },
 ];
 
 // Schools & Faculties as listed on the live Faculties page.
