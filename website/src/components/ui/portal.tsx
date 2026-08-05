@@ -52,12 +52,12 @@ export function CardHeader({
   icon?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[#f0ece4] px-5 py-4">
+    <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[#f0ece4] px-5 py-4 dark:border-[#2a2333]">
       <div className="flex min-w-0 items-start gap-2.5">
-        {icon && <span className="mt-0.5 text-[#8a8194]">{icon}</span>}
+        {icon && <span className="mt-0.5 text-[#8a8194] dark:text-[#8f869e]">{icon}</span>}
         <div className="min-w-0">
-          <h3 className="truncate font-heading text-sm font-bold text-[#422e59]">{title}</h3>
-          {subtitle && <p className="mt-0.5 text-xs text-[#8a8194]">{subtitle}</p>}
+          <h3 className="truncate font-heading text-sm font-bold text-[#422e59] dark:text-[#e4dcf0]">{title}</h3>
+          {subtitle && <p className="mt-0.5 text-xs text-[#8a8194] dark:text-[#8f869e]">{subtitle}</p>}
         </div>
       </div>
       {action}
@@ -106,7 +106,7 @@ export function Figure({
   tone?: 'neutral' | 'brand' | 'muted';
 }) {
   const valueTone =
-    tone === 'brand' ? 'text-[#422e59]' : tone === 'muted' ? 'text-[#8a8194]' : 'text-[#241a30]';
+    tone === 'brand' ? 'text-[#422e59] dark:text-[#c9b6e6]' : tone === 'muted' ? 'text-[#a49bb0] dark:text-[#7b7289]' : 'text-[#241a30] dark:text-[#ece9f0]';
   return (
     <Card className="p-4">
       <div className="flex items-start justify-between gap-3">
@@ -114,7 +114,7 @@ export function Figure({
         {icon && <span className="text-[#c5a55a]">{icon}</span>}
       </div>
       <p className={`mt-2 font-heading text-2xl font-bold ${NUMERIC} ${valueTone}`}>{value}</p>
-      {hint && <p className="mt-1 text-xs text-[#8a8194]">{hint}</p>}
+      {hint && <p className="mt-1 text-xs text-[#8a8194] dark:text-[#8f869e]">{hint}</p>}
     </Card>
   );
 }
@@ -123,8 +123,8 @@ export function Figure({
 export function Detail({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="grid grid-cols-[minmax(0,8rem)_1fr] gap-4 px-5 py-2.5">
-      <dt className="text-xs text-[#8a8194]">{label}</dt>
-      <dd className="break-words text-sm text-[#33234a]">{children}</dd>
+      <dt className="text-xs text-[#8a8194] dark:text-[#8f869e]">{label}</dt>
+      <dd className="break-words text-sm text-[#33234a] dark:text-[#d8d2e2]">{children}</dd>
     </div>
   );
 }
@@ -135,7 +135,7 @@ export function Detail({ label, children }: { label: string; children: React.Rea
 
 /** A grey block in the shape of the thing that is coming. */
 export function Skeleton({ className = '' }: { className?: string }) {
-  return <div className={`animate-pulse rounded bg-[#ece7de] ${className}`} aria-hidden="true" />;
+  return <div className={`animate-pulse rounded bg-[#ece7de] dark:bg-[#2a2333] ${className}`} aria-hidden="true" />;
 }
 
 /** Several rows of skeleton, for a table that has not arrived. */
@@ -171,13 +171,13 @@ export function EmptyState({
   return (
     <div className="flex flex-col items-center justify-center px-6 py-14 text-center">
       {icon && (
-        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#faf6ee] text-[#c5a55a]">
+        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#faf6ee] text-[#c5a55a] dark:bg-[#2a2333]">
           {icon}
         </div>
       )}
-      <p className="font-heading text-sm font-bold text-[#422e59]">{title}</p>
+      <p className="font-heading text-sm font-bold text-[#422e59] dark:text-[#e4dcf0]">{title}</p>
       {description && (
-        <p className="mt-1.5 max-w-sm text-sm leading-relaxed text-[#8a8194]">{description}</p>
+        <p className="mt-1.5 max-w-sm text-sm leading-relaxed text-[#8a8194] dark:text-[#8f869e]">{description}</p>
       )}
       {action && <div className="mt-4">{action}</div>}
     </div>
@@ -193,7 +193,7 @@ export function EmptyState({
  */
 export function SampleDataNotice({ what = 'figures' }: { what?: string }) {
   return (
-    <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs text-amber-900">
+    <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
       <span aria-hidden="true">⚠</span>
       <p>
         These {what} are illustrative sample data, not the university&apos;s records. They will be
@@ -253,5 +253,5 @@ export function TBody({ children }: { children: React.ReactNode }) {
 }
 
 export function THead({ children }: { children: React.ReactNode }) {
-  return <thead className={`${SURFACE.inset} border-b border-[#ece7de]`}>{children}</thead>;
+  return <thead className={`${SURFACE.inset} border-b border-[#ece7de] dark:border-[#2e2637]`}>{children}</thead>;
 }

@@ -8,6 +8,12 @@ type Theme = "dark" | "light" | "system"
 
 type ThemeContextType = {
   theme: Theme
+  /**
+   * The theme actually in force. `theme` may be "system", which is not a
+   * colour — a consumer drawing a sun-or-moon icon needs to know which one the
+   * system resolved to, not that the choice was delegated.
+   */
+  resolvedTheme: "dark" | "light"
   setTheme: (theme: Theme) => void
 }
 
@@ -29,24 +35,31 @@ export function ThemeProvider({
     return defaultTheme as Theme
   })
 
+  const [resolvedTheme, setResolvedTheme] = useState<"dark" | "light">("light")
+
   useEffect(() => {
     const root = window.document.documentElement
-    root.classList.remove("light", "dark")
+    const media = window.matchMedia("(prefers-color-scheme: dark)")
 
-    if (theme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
-        .matches
-        ? "dark"
-        : "light"
-      root.classList.add(systemTheme)
-      return
+    const apply = () => {
+      const next: "dark" | "light" =
+        theme === "system" ? (media.matches ? "dark" : "light") : theme
+      root.classList.remove("light", "dark")
+      root.classList.add(next)
+      setResolvedTheme(next)
     }
 
-    root.classList.add(theme)
+    apply()
+    // Following the system means following it as it changes, not only at load.
+    if (theme === "system") {
+      media.addEventListener("change", apply)
+      return () => media.removeEventListener("change", apply)
+    }
   }, [theme])
 
   const value: ThemeContextType = {
     theme,
+    resolvedTheme,
     setTheme: (theme: Theme) => {
       localStorage.setItem("theme", theme)
       setTheme(theme)

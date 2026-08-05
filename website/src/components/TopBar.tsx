@@ -23,7 +23,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTheme } from 'next-themes';
+import { useTheme } from '@/components/theme-provider';
 import { supabase } from '@/lib/supabase';
 import { navItemsFor, labelForView, groupForView } from '@/lib/portalNav';
 import { FOCUS, INPUT } from '@/lib/portalTheme';
@@ -49,8 +49,8 @@ export default function TopBar({
   const [mounted, setMounted] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
 
-  // next-themes resolves on the client. Rendering the icon before that would
-  // emit one theme on the server and another on hydration.
+  // The theme resolves on the client. Rendering the icon before that would emit
+  // one theme on the server and another on hydration.
   useEffect(() => setMounted(true), []);
 
   const isDemoMode = !session && !!user;
@@ -138,7 +138,7 @@ export default function TopBar({
 
   return (
     <header
-      className={`fixed right-0 top-0 z-30 flex h-16 items-center justify-between gap-4 border-b border-[#ece7de] bg-white/90 px-5 backdrop-blur transition-[left] duration-200 ${
+      className={`fixed right-0 top-0 z-30 flex h-16 items-center justify-between gap-4 border-b border-[#ece7de] bg-white/90 px-5 backdrop-blur dark:border-[#2e2637] dark:bg-[#1b1723]/90 transition-[left] duration-200 ${
         sidebarCollapsed ? 'left-[68px]' : 'left-64'
       }`}
     >
@@ -146,7 +146,7 @@ export default function TopBar({
         <button
           onClick={onMenuToggle}
           aria-label="Toggle navigation"
-          className={`rounded-lg p-2 text-[#6b6076] transition-colors hover:bg-[#f2eee6] lg:hidden ${FOCUS}`}
+          className={`rounded-lg p-2 text-[#6b6076] transition-colors hover:bg-[#f2eee6] dark:text-[#9c93ad] dark:hover:bg-[#2a2333] lg:hidden ${FOCUS}`}
         >
           <Menu size={18} />
         </button>
@@ -156,11 +156,11 @@ export default function TopBar({
           <ol className="flex items-center gap-2 text-sm">
             {group && (
               <>
-                <li className="text-[#a49bb0]">{group}</li>
-                <li className="text-[#d5cec0]" aria-hidden="true">/</li>
+                <li className="text-[#a49bb0] dark:text-[#7b7289]">{group}</li>
+                <li className="text-[#d5cec0] dark:text-[#3d3349]" aria-hidden="true">/</li>
               </>
             )}
-            <li className="truncate font-heading font-bold text-[#422e59]">
+            <li className="truncate font-heading font-bold text-[#422e59] dark:text-[#e4dcf0]">
               {labelForView(currentView)}
             </li>
           </ol>
@@ -183,12 +183,12 @@ export default function TopBar({
             aria-label="Jump to a screen"
             className={`${INPUT} w-40 pl-9 pr-10 sm:w-56 lg:w-72`}
           />
-          <kbd className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded border border-[#e4ddd0] bg-[#faf8f4] px-1.5 py-0.5 text-[10px] text-[#a49bb0] sm:block">
+          <kbd className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded border border-[#e4ddd0] bg-[#faf8f4] px-1.5 py-0.5 text-[10px] text-[#a49bb0] dark:border-[#3d3349] dark:bg-[#241f2c] dark:text-[#7b7289] sm:block">
             ⌘K
           </kbd>
 
           {openSearch && query.trim() && (
-            <div className="absolute right-0 top-12 z-50 w-72 overflow-hidden rounded-xl border border-[#ece7de] bg-white shadow-xl">
+            <div className="absolute right-0 top-12 z-50 w-72 overflow-hidden rounded-xl border border-[#ece7de] bg-white shadow-xl dark:border-[#2e2637] dark:bg-[#1f1a27]">
               {results.length === 0 ? (
                 <p className="px-4 py-5 text-center text-sm text-[#a49bb0]">
                   Nothing matches “{query.trim()}”.
@@ -201,11 +201,11 @@ export default function TopBar({
                         onMouseDown={(e) => { e.preventDefault(); choose(r.id); }}
                         onMouseEnter={() => setHighlight(i)}
                         className={`flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm transition-colors ${
-                          i === highlight ? 'bg-[#faf6ee]' : 'hover:bg-[#faf8f4]'
+                          i === highlight ? 'bg-[#faf6ee] dark:bg-[#2a2333]' : 'hover:bg-[#faf8f4] dark:hover:bg-[#241f2c]'
                         }`}
                       >
                         <span className="text-[#c5a55a]">{r.icon}</span>
-                        <span className="min-w-0 flex-1 truncate text-[#33234a]">{r.label}</span>
+                        <span className="min-w-0 flex-1 truncate text-[#33234a] dark:text-[#d8d2e2]">{r.label}</span>
                         <span className="text-[10px] uppercase tracking-wide text-[#a49bb0]">{r.group}</span>
                         {i === highlight && <CornerDownLeft size={12} className="text-[#a49bb0]" />}
                       </button>
@@ -239,7 +239,7 @@ export default function TopBar({
         <button
           onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
           aria-label={resolvedTheme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
-          className={`rounded-lg p-2 text-[#6b6076] transition-colors hover:bg-[#f2eee6] ${FOCUS}`}
+          className={`rounded-lg p-2 text-[#6b6076] transition-colors hover:bg-[#f2eee6] dark:text-[#9c93ad] dark:hover:bg-[#2a2333] ${FOCUS}`}
         >
           {mounted && resolvedTheme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
         </button>
@@ -248,7 +248,7 @@ export default function TopBar({
           <button
             onClick={() => setShowNotifications((s) => !s)}
             aria-label={`Notifications${unreadCount ? `, ${unreadCount} unread` : ''}`}
-            className={`relative rounded-lg p-2 text-[#6b6076] transition-colors hover:bg-[#f2eee6] ${FOCUS}`}
+            className={`relative rounded-lg p-2 text-[#6b6076] transition-colors hover:bg-[#f2eee6] dark:text-[#9c93ad] dark:hover:bg-[#2a2333] ${FOCUS}`}
           >
             <Bell size={17} />
             {unreadCount > 0 && (
@@ -261,22 +261,22 @@ export default function TopBar({
           {showNotifications && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
-              <div className="absolute right-0 top-12 z-50 w-80 overflow-hidden rounded-xl border border-[#ece7de] bg-white shadow-xl">
-                <div className="border-b border-[#f0ece4] px-4 py-3">
-                  <h2 className="font-heading text-sm font-bold text-[#422e59]">Notifications</h2>
+              <div className="absolute right-0 top-12 z-50 w-80 overflow-hidden rounded-xl border border-[#ece7de] bg-white shadow-xl dark:border-[#2e2637] dark:bg-[#1f1a27]">
+                <div className="border-b border-[#f0ece4] px-4 py-3 dark:border-[#2a2333]">
+                  <h2 className="font-heading text-sm font-bold text-[#422e59] dark:text-[#e4dcf0]">Notifications</h2>
                 </div>
                 <div className="max-h-72 overflow-y-auto">
                   {notifications.length === 0 ? (
-                    <p className="px-4 py-8 text-center text-sm text-[#a49bb0]">
+                    <p className="px-4 py-8 text-center text-sm text-[#a49bb0] dark:text-[#7b7289]">
                       Nothing new. Announcements, assignments and class notices appear here.
                     </p>
                   ) : (
                     notifications.map((n) => (
                       <div
                         key={n.id}
-                        className={`border-b border-[#f7f4ee] px-4 py-3 last:border-0 ${!n.read ? 'bg-[#faf6ee]' : ''}`}
+                        className={`border-b border-[#f7f4ee] px-4 py-3 last:border-0 dark:border-[#241f2c] ${!n.read ? 'bg-[#faf6ee] dark:bg-[#2a2333]' : ''}`}
                       >
-                        <p className="text-sm leading-snug text-[#33234a]">{n.text}</p>
+                        <p className="text-sm leading-snug text-[#33234a] dark:text-[#d8d2e2]">{n.text}</p>
                         <p className="mt-1 text-xs text-[#a49bb0]">{n.time}</p>
                       </div>
                     ))

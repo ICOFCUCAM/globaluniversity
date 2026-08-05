@@ -149,7 +149,7 @@ export default function AppLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f5f0]">
+    <div className="min-h-screen bg-[#f7f5f0] dark:bg-[#17131d]">
       <Sidebar
         currentView={currentView}
         onViewChange={setCurrentView}
