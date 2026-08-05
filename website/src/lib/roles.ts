@@ -39,73 +39,166 @@ export const HIERARCHY: UserRole[] = [
 ];
 
 /**
- * Position in the hierarchy. Lower is more senior. 'admin' is a system role
- * outside the hierarchy and 'academic-office' predates it, so both return -1
- * and neither is presented as ranking above or below anyone.
+ * Position in the hierarchy. Lower is more senior. 'superadmin' and 'admin' are
+ * system roles outside the hierarchy and 'academic-office' predates it, so all
+ * three return -1 and none is presented as ranking above or below an office of
+ * the university. The Chancellor is not junior to the Superadministrator; they
+ * are answerable for different things.
  */
 export function rank(role: UserRole): number {
   return HIERARCHY.indexOf(role);
 }
 
-export type Capability =
-  // Applicant
-  | 'apply'
-  | 'upload-documents'
-  | 'track-application'
-  // Finance
-  | 'verify-payment'
-  | 'approve-refund'
-  | 'generate-invoice'
-  | 'manage-student-accounts'
-  // Registrar
-  | 'admit-student'
-  | 'reject-application'
-  | 'request-documents'
-  | 'assign-programme'
-  | 'create-student-record'
-  // Academic office
-  | 'assign-lecturers'
-  | 'build-timetable'
-  | 'manage-courses'
-  // Dean
-  | 'view-admitted-students'
-  | 'approve-transfers'
-  | 'monitor-progress'
-  // Lecturer
-  | 'view-registered-students'
-  | 'upload-grades'
-  | 'take-attendance'
-  // Executive
-  | 'view-executive-dashboard'
-  | 'view-all-faculties'
-  | 'view-institutional-finance'
-  // Department
-  | 'assign-lecturers-to-courses'
-  | 'approve-course-allocation'
-  | 'monitor-teaching'
-  | 'department-reports'
-  // Admissions / library / student affairs
-  | 'process-applications'
-  | 'defer-admission'
-  | 'transfer-programme'
-  | 'manage-library'
-  | 'manage-hostel'
-  | 'manage-student-welfare'
-  // Student
-  | 'register-courses'
-  | 'pay-fees'
-  | 'view-results'
-  | 'download-transcript'
-  | 'message-lecturers'
-  | 'access-lms';
+/**
+ * The system roles, most privileged first. Custody of the system, as distinct
+ * from office within the university.
+ */
+export const SYSTEM_ROLES: UserRole[] = ['superadmin', 'admin'];
+
+export function isSystemRole(role: UserRole | undefined | null): boolean {
+  return !!role && SYSTEM_ROLES.includes(role);
+}
 
 /**
- * What each role may do. Anything absent is forbidden — there is no wildcard
- * except `admin`, which exists so the institution is not locked out of its own
- * system, and which is deliberately the only role with one.
+ * Whether `actor` may act on `target`'s account — suspend it, reset its
+ * password, change its role.
+ *
+ * Two rules, and both matter more than they look:
+ *
+ *   1. Only a system role may act on anyone. Seniority within the university is
+ *      not custody of the system: a Dean does not suspend a lecturer here, the
+ *      Superadministrator does, at the Dean's request and in the audit log.
+ *   2. You may not act on your own rank or above. A Superadministrator cannot
+ *      suspend another Superadministrator, and an administrator cannot touch
+ *      one. Without this, two administrators can suspend each other and the
+ *      faster click wins — governance decided by network latency.
+ *
+ * Acting on yourself is refused separately by the routes, so that nobody can
+ * lock themselves out with one mis-click.
+ */
+export function canActOn(actor: UserRole | undefined | null, target: UserRole): boolean {
+  if (!isSystemRole(actor)) return false;
+  const a = SYSTEM_ROLES.indexOf(actor as UserRole);
+  const t = SYSTEM_ROLES.indexOf(target);
+  // Target is not a system role: any system role outranks it.
+  if (t === -1) return true;
+  // Target is a system role: the actor must be strictly more senior.
+  return a < t;
+}
+
+/**
+ * Everything the university's day-to-day work consists of. A role holds some
+ * subset of this; `admin` holds all of it.
+ */
+export const OPERATIONAL_CAPABILITIES = [
+  // Applicant
+  'apply',
+  'upload-documents',
+  'track-application',
+  // Finance
+  'verify-payment',
+  'approve-refund',
+  'generate-invoice',
+  'manage-student-accounts',
+  // Registrar
+  'admit-student',
+  'reject-application',
+  'request-documents',
+  'assign-programme',
+  'create-student-record',
+  // Academic office
+  'assign-lecturers',
+  'build-timetable',
+  'manage-courses',
+  // Dean
+  'view-admitted-students',
+  'approve-transfers',
+  'monitor-progress',
+  // Lecturer
+  'view-registered-students',
+  'upload-grades',
+  'take-attendance',
+  // Executive
+  'view-executive-dashboard',
+  'view-all-faculties',
+  'view-institutional-finance',
+  // Department
+  'assign-lecturers-to-courses',
+  'approve-course-allocation',
+  'monitor-teaching',
+  'department-reports',
+  // Admissions / library / student affairs
+  'process-applications',
+  'defer-admission',
+  'transfer-programme',
+  'manage-library',
+  'manage-hostel',
+  'manage-student-welfare',
+  // Student
+  'register-courses',
+  'pay-fees',
+  'view-results',
+  'download-transcript',
+  'message-lecturers',
+  'access-lms',
+] as const;
+
+/**
+ * System custody — the Superadministrator's alone.
+ *
+ * The test for membership here is not "is this powerful" but "does holding it
+ * mean changing the rules rather than acting within them". An administrator who
+ * can assign roles can make themselves anything, which ends every other line in
+ * this file. One who can redesign a certificate can alter what the university
+ * has already attested to. One who can suspend accounts can silence the officer
+ * who would have objected. Each of these is a power over the system rather than
+ * a power exercised through it, so each sits with the person who answers for
+ * the system as a whole.
+ *
+ * These are absent from `admin`. That absence is the entire point: it is what
+ * makes the Superadministrator a distinct office rather than a longer title.
+ */
+export const SYSTEM_CAPABILITIES = [
+  // Who exists, and who may act
+  'assign-roles',
+  'create-staff-account',
+  'suspend-account',
+  'reinstate-account',
+  'reset-user-password',
+  'impersonate-user',
+  // What the university's awards look like and whether they stand
+  'design-credentials',
+  'publish-credential-template',
+  'revoke-credential',
+  // The system itself
+  'configure-system',
+  'manage-academic-session',
+  'maintenance-mode',
+  'export-data',
+] as const;
+
+export type Capability =
+  | typeof OPERATIONAL_CAPABILITIES[number]
+  | typeof SYSTEM_CAPABILITIES[number];
+
+/**
+ * What each role may do. Anything absent is forbidden.
+ *
+ * `superadmin` is the only wildcard. `admin` used to be, and that was the flaw
+ * this hierarchy exists to correct: while it was, nothing could be reserved
+ * from an administrator, so "only the Superadministrator may redesign a
+ * certificate" would have been a sentence in a document contradicted by one
+ * line of code. Admin now carries the operational list explicitly — everything
+ * the university does, and nothing that changes what the university is.
  */
 const MATRIX: Record<UserRole, Capability[] | 'all'> = {
-  admin: 'all',
+  superadmin: 'all',
+
+  // Every operational capability, no system capability. Derived rather than
+  // typed out so a capability added above cannot be quietly withheld from the
+  // administrator by forgetting to list it here — and, more importantly, so a
+  // capability added to SYSTEM_CAPABILITIES is withheld automatically.
+  admin: [...OPERATIONAL_CAPABILITIES],
 
   // The two executive offices see everything and decide nothing operationally.
   // 'admit-student' and 'verify-payment' are deliberately absent from both: an
@@ -183,6 +276,7 @@ export function isEnrolledRole(role: UserRole | undefined | null): boolean {
 }
 
 export const roleLabels: Record<UserRole, string> = {
+  superadmin: 'Superadministrator',
   admin: 'System Administrator',
   chancellor: 'Chancellor',
   'vice-chancellor': 'Vice Chancellor',

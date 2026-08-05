@@ -5,7 +5,8 @@ import type { ViewType, UserRole } from '@/lib/types';
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen, ClipboardList,
   FileText, Award, Monitor, PenTool, FolderOpen, BarChart3,
-  Settings, Shield, LogOut, ChevronLeft, ChevronRight, BookMarked, Wallet, Stamp
+  Settings, Shield, LogOut, ChevronLeft, ChevronRight, BookMarked, Wallet, Stamp,
+  UserCog, Palette
 } from 'lucide-react';
 
 interface MenuItem {
@@ -16,30 +17,34 @@ interface MenuItem {
 }
 
 const menuItems: MenuItem[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} />, roles: ['admin', 'student', 'lecturer'] },
-  { id: 'programme-resources', label: 'Programme Resources', icon: <BookMarked size={20} />, roles: ['admin', 'student', 'lecturer'] },
-  { id: 'admissions-finance', label: 'Admissions — Finance', icon: <Wallet size={20} />, roles: ['admin', 'finance'] },
-  { id: 'admissions-registrar', label: 'Admissions — Registrar', icon: <Stamp size={20} />, roles: ['admin', 'registrar'] },
-  { id: 'students', label: 'Students', icon: <Users size={20} />, roles: ['admin', 'registrar'] },
-  { id: 'lecturers', label: 'Lecturers', icon: <GraduationCap size={20} />, roles: ['admin'] },
-  { id: 'courses', label: 'Courses', icon: <BookOpen size={20} />, roles: ['admin', 'student', 'lecturer'] },
-  { id: 'results', label: 'Results', icon: <ClipboardList size={20} />, roles: ['admin', 'lecturer', 'student'] },
-  { id: 'gradebook', label: 'Grade Book', icon: <ClipboardList size={20} />, roles: ['admin', 'lecturer'] },
-  { id: 'transcript', label: 'Transcript', icon: <FileText size={20} />, roles: ['admin', 'student'] },
-  { id: 'certificate', label: 'Certificate', icon: <Award size={20} />, roles: ['admin', 'student'] },
-  { id: 'lms', label: 'Learning (LMS)', icon: <Monitor size={20} />, roles: ['admin', 'student', 'lecturer'] },
-  { id: 'exams', label: 'Examinations', icon: <PenTool size={20} />, roles: ['admin', 'student', 'lecturer'] },
-  { id: 'questionbank', label: 'Question Bank', icon: <PenTool size={20} />, roles: ['admin', 'lecturer'] },
-  { id: 'assignments', label: 'Assignments', icon: <ClipboardList size={20} />, roles: ['admin', 'student', 'lecturer'] },
-  { id: 'timetable', label: 'Timetable', icon: <ClipboardList size={20} />, roles: ['admin', 'student', 'lecturer'] },
-  { id: 'announcements', label: 'Announcements', icon: <ClipboardList size={20} />, roles: ['admin', 'student', 'lecturer'] },
-  { id: 'forum', label: 'Discussion Forum', icon: <ClipboardList size={20} />, roles: ['admin', 'student', 'lecturer'] },
-  { id: 'fees', label: 'Fees & Receipts', icon: <ClipboardList size={20} />, roles: ['admin'] },
-  { id: 'documents', label: 'Documents', icon: <FolderOpen size={20} />, roles: ['admin', 'student'] },
-  { id: 'analytics', label: 'Analytics', icon: <BarChart3 size={20} />, roles: ['admin'] },
-  { id: 'insights', label: 'Learning Analytics', icon: <BarChart3 size={20} />, roles: ['admin', 'lecturer'] },
-  { id: 'audit', label: 'Audit Logs', icon: <Shield size={20} />, roles: ['admin'] },
-  { id: 'settings', label: 'Settings', icon: <Settings size={20} />, roles: ['admin', 'student', 'lecturer'] },
+  { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} />, roles: ['superadmin', 'admin', 'student', 'lecturer'] },
+  // System custody. These two are the Superadministrator's alone — 'admin' is
+  // deliberately absent, and that absence is the control, not an oversight.
+  { id: 'accounts', label: 'Accounts', icon: <UserCog size={20} />, roles: ['superadmin'] },
+  { id: 'studio', label: 'Credential Studio', icon: <Palette size={20} />, roles: ['superadmin'] },
+  { id: 'programme-resources', label: 'Programme Resources', icon: <BookMarked size={20} />, roles: ['superadmin', 'admin', 'student', 'lecturer'] },
+  { id: 'admissions-finance', label: 'Admissions — Finance', icon: <Wallet size={20} />, roles: ['superadmin', 'admin', 'finance'] },
+  { id: 'admissions-registrar', label: 'Admissions — Registrar', icon: <Stamp size={20} />, roles: ['superadmin', 'admin', 'registrar'] },
+  { id: 'students', label: 'Students', icon: <Users size={20} />, roles: ['superadmin', 'admin', 'registrar'] },
+  { id: 'lecturers', label: 'Lecturers', icon: <GraduationCap size={20} />, roles: ['superadmin', 'admin'] },
+  { id: 'courses', label: 'Courses', icon: <BookOpen size={20} />, roles: ['superadmin', 'admin', 'student', 'lecturer'] },
+  { id: 'results', label: 'Results', icon: <ClipboardList size={20} />, roles: ['superadmin', 'admin', 'lecturer', 'student'] },
+  { id: 'gradebook', label: 'Grade Book', icon: <ClipboardList size={20} />, roles: ['superadmin', 'admin', 'lecturer'] },
+  { id: 'transcript', label: 'Transcript', icon: <FileText size={20} />, roles: ['superadmin', 'admin', 'student'] },
+  { id: 'certificate', label: 'Certificate', icon: <Award size={20} />, roles: ['superadmin', 'admin', 'student'] },
+  { id: 'lms', label: 'Learning (LMS)', icon: <Monitor size={20} />, roles: ['superadmin', 'admin', 'student', 'lecturer'] },
+  { id: 'exams', label: 'Examinations', icon: <PenTool size={20} />, roles: ['superadmin', 'admin', 'student', 'lecturer'] },
+  { id: 'questionbank', label: 'Question Bank', icon: <PenTool size={20} />, roles: ['superadmin', 'admin', 'lecturer'] },
+  { id: 'assignments', label: 'Assignments', icon: <ClipboardList size={20} />, roles: ['superadmin', 'admin', 'student', 'lecturer'] },
+  { id: 'timetable', label: 'Timetable', icon: <ClipboardList size={20} />, roles: ['superadmin', 'admin', 'student', 'lecturer'] },
+  { id: 'announcements', label: 'Announcements', icon: <ClipboardList size={20} />, roles: ['superadmin', 'admin', 'student', 'lecturer'] },
+  { id: 'forum', label: 'Discussion Forum', icon: <ClipboardList size={20} />, roles: ['superadmin', 'admin', 'student', 'lecturer'] },
+  { id: 'fees', label: 'Fees & Receipts', icon: <ClipboardList size={20} />, roles: ['superadmin', 'admin'] },
+  { id: 'documents', label: 'Documents', icon: <FolderOpen size={20} />, roles: ['superadmin', 'admin', 'student'] },
+  { id: 'analytics', label: 'Analytics', icon: <BarChart3 size={20} />, roles: ['superadmin', 'admin'] },
+  { id: 'insights', label: 'Learning Analytics', icon: <BarChart3 size={20} />, roles: ['superadmin', 'admin', 'lecturer'] },
+  { id: 'audit', label: 'Audit Logs', icon: <Shield size={20} />, roles: ['superadmin', 'admin'] },
+  { id: 'settings', label: 'Settings', icon: <Settings size={20} />, roles: ['superadmin', 'admin', 'student', 'lecturer'] },
 ];
 
 interface SidebarProps {

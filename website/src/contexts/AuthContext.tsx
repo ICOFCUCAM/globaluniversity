@@ -13,6 +13,26 @@ interface Profile {
   avatar_url?: string;
   matric_no?: string;
   staff_id?: string;
+  // Set by the Superadministrator. Null means active.
+  suspended_at?: string | null;
+  suspension_reason?: string | null;
+}
+
+/**
+ * A suspended account is refused here as well as at the auth layer.
+ *
+ * The real enforcement is the ban applied to the auth user by
+ * /api/admin/suspend, which stops Supabase issuing or refreshing a token at
+ * all. This check is the second line: it closes the window between the profile
+ * being flagged and an existing token expiring, and it means a suspension
+ * applied directly in SQL — without going through the route — still takes
+ * effect at the next page load rather than at the next token refresh.
+ */
+const SUSPENDED_MESSAGE =
+  'This account is suspended. Contact the Superadministrator at superadmin@iguc.net.';
+
+function isSuspended(p: Profile | null): boolean {
+  return !!p?.suspended_at;
 }
 
 interface AuthUser {
@@ -41,6 +61,13 @@ interface AuthContextType {
 
 // Demo users for quick access (fallback when no real auth)
 const demoUsers: Record<UserRole, AuthUser> = {
+  superadmin: {
+    id: 'demo-superadmin',
+    name: 'Demo Superadministrator',
+    email: 'superadmin@iguc.net',
+    role: 'superadmin',
+    avatar: 'SA',
+  },
   admin: {
     id: 'demo-admin',
     name: 'Prof. Aisha Mohammed',
@@ -201,8 +228,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         
         if (currentSession?.user && mounted) {
-          setSession(currentSession);
           const prof = await fetchProfile(currentSession.user.id);
+          // Suspended between page loads: end the session rather than restore
+          // it. Restoring first and checking later would show the console, and
+          // a suspended administrator seeing the console for even one render is
+          // a suspension that did not happen.
+          if (isSuspended(prof)) {
+            await supabase.auth.signOut();
+            if (mounted) {
+              setSession(null);
+              setProfile(null);
+              setUser(null);
+            }
+            return;
+          }
+          setSession(currentSession);
           if (prof && mounted) {
             setProfile(prof);
             setUser(profileToAuthUser(prof));
@@ -227,6 +267,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (event === 'SIGNED_IN' && newSession?.user) {
           const prof = await fetchProfile(newSession.user.id);
+          if (isSuspended(prof)) {
+            await supabase.auth.signOut();
+            return;
+          }
           if (prof && mounted) {
             setProfile(prof);
             setUser(profileToAuthUser(prof));
@@ -259,6 +303,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (data.user) {
         const prof = await fetchProfile(data.user.id);
+        if (isSuspended(prof)) {
+          await supabase.auth.signOut();
+          setIsLoading(false);
+          return { error: SUSPENDED_MESSAGE };
+        }
         if (prof) {
           setProfile(prof);
           setUser(profileToAuthUser(prof));

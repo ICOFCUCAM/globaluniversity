@@ -243,9 +243,8 @@ create trigger results_updated_at before update on results
 -- therefore runs as its owner instead, and search_path is pinned so it cannot
 -- be redirected to a shadowed table.
 --
--- The role comes from user_metadata when the caller set one — the approve route
--- stamps role='student' there — and falls back to 'student', the least
--- privileged role, when it did not. Promote a staff account afterwards:
+-- Every account starts as 'student', the least privileged role, whatever the
+-- caller asked for. Promote a staff account afterwards:
 --
 --   update profiles set role = 'admin' where email = 'registrar@iguc.net';
 --
@@ -266,7 +265,15 @@ begin
     new.id,
     new.email,
     coalesce(new.raw_user_meta_data->>'full_name', new.email),
-    coalesce(new.raw_user_meta_data->>'role', 'student')
+    -- ALWAYS 'student'. Never a role taken from user_metadata.
+    --
+    -- raw_user_meta_data is caller-supplied: supabase.auth.signUp is callable
+    -- from any browser holding the publishable key, and it stores whatever the
+    -- caller passes in options.data. Honouring a role from there would let
+    -- anyone sign themselves up as a Superadministrator. The server routes set
+    -- the real role immediately afterwards with the service-role key, which is
+    -- the only path that can raise a role at all.
+    'student'
   )
   on conflict (id) do nothing;
   return new;
@@ -285,7 +292,7 @@ select
   u.id,
   u.email,
   coalesce(u.raw_user_meta_data->>'full_name', u.email),
-  coalesce(u.raw_user_meta_data->>'role', 'student')
+  'student'  -- same reasoning as above; promote deliberately, never by metadata
 from auth.users u
 where not exists (select 1 from profiles p where p.id = u.id);
 

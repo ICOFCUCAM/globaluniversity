@@ -13,6 +13,13 @@
  * that could drift out of step with it.
  */
 export type UserRole =
+  // The two system roles, outside the university's hierarchy of offices.
+  // 'superadmin' owns the system itself — who exists, who may act, and what an
+  // award certificate looks like. 'admin' runs it day to day. The difference is
+  // enforced in src/lib/roles.ts, and the powers that separate them are the
+  // ones that would let a holder rewrite the rules rather than work within
+  // them: assigning roles, suspending accounts, designing credentials.
+  | 'superadmin'
   | 'admin'
   | 'chancellor'
   | 'vice-chancellor'
@@ -197,7 +204,10 @@ export interface TranscriptCourse {
   qualityPoint: number;
 }
 
-export type ViewType = 
+export type ViewType =
+  // Superadministrator only. See src/lib/roles.ts — SYSTEM_CAPABILITIES.
+  | 'accounts'
+  | 'studio'
   | 'programme-resources'
   | 'dashboard' 
   | 'students' 

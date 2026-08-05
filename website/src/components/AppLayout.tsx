@@ -30,6 +30,8 @@ import AnalyticsDashboard from './analytics/AnalyticsDashboard';
 import InsightsModule from './insights/InsightsModule';
 import SettingsPage from './settings/SettingsPage';
 import AuditLogs from './audit/AuditLogs';
+import AccountManagement from './accounts/AccountManagement';
+import CredentialStudio from './studio/CredentialStudio';
 
 export default function AppLayout() {
   // The Student Portal is exclusively for enrolled students. An applicant who
@@ -86,7 +88,7 @@ export default function AppLayout() {
       case 'programme-resources':
         return <ProgrammeResources />;
       case 'dashboard':
-        if (user?.role === 'admin') return <AdminDashboard />;
+        if (user?.role === 'admin' || user?.role === 'superadmin') return <AdminDashboard />;
         if (user?.role === 'student') return <StudentDashboard onNavigate={setCurrentView} />;
         if (user?.role === 'lecturer') return <LecturerDashboard onNavigate={setCurrentView} />;
         return <AdminDashboard />;
@@ -134,6 +136,13 @@ export default function AppLayout() {
         return <SettingsPage />;
       case 'audit':
         return <AuditLogs />;
+      // Both screens refuse from the inside as well as being hidden from the
+      // sidebar. Hiding a menu item is courtesy; the check inside the component
+      // and the check in the route are the control.
+      case 'accounts':
+        return <AccountManagement />;
+      case 'studio':
+        return <CredentialStudio />;
       default:
         return <AdminDashboard />;
     }
