@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import StudentIDCard from './StudentIDCard';
+import BulkImport from './BulkImport';
 import { supabase } from '@/lib/supabase';
 import type { Student } from '@/lib/types';
 import { IMAGES } from '@/lib/constants';
@@ -14,6 +15,7 @@ export default function StudentManagement() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [idCardStudent, setIdCardStudent] = useState<any>(null);
+  const [showImport, setShowImport] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
 
@@ -86,12 +88,20 @@ export default function StudentManagement() {
           <h2 className="text-xl font-bold text-gray-800">Student Management</h2>
           <p className="text-sm text-gray-500">Manage student records, registration, and status</p>
         </div>
+        <div className="flex items-center">
         <button
           onClick={() => setShowAddModal(true)}
           className="flex items-center gap-2 px-4 py-2.5 bg-[#422e59] text-white rounded-xl text-sm font-medium hover:bg-[#322244] transition-colors shadow-lg shadow-purple-900/20"
         >
           <UserPlus size={16} /> Register Student
         </button>
+        <button
+          onClick={() => setShowImport(true)}
+          className="ml-2 flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+        >
+          <Upload size={16} /> Bulk Import
+        </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -319,6 +329,7 @@ export default function StudentManagement() {
           </div>
         </div>
       )}
+      {showImport && <BulkImport onClose={() => setShowImport(false)} onDone={fetchStudents} />}
       {idCardStudent && <StudentIDCard student={idCardStudent} onClose={() => setIdCardStudent(null)} />}
     </div>
   );
