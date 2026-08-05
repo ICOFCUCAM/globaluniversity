@@ -22,6 +22,7 @@ import TimetableModule from './timetable/TimetableModule';
 import ForumModule from './forum/ForumModule';
 import FeeModule from './fees/FeeModule';
 import AnalyticsDashboard from './analytics/AnalyticsDashboard';
+import InsightsModule from './insights/InsightsModule';
 import SettingsPage from './settings/SettingsPage';
 import AuditLogs from './audit/AuditLogs';
 
@@ -72,6 +73,8 @@ export default function AppLayout() {
         return <DocumentManagement />;
       case 'analytics':
         return <AnalyticsDashboard />;
+      case 'insights':
+        return <InsightsModule />;
       case 'settings':
         return <SettingsPage />;
       case 'audit':

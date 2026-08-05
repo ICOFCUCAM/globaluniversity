@@ -32,6 +32,7 @@ const menuItems: MenuItem[] = [
   { id: 'fees', label: 'Fees & Receipts', icon: <ClipboardList size={20} />, roles: ['admin'] },
   { id: 'documents', label: 'Documents', icon: <FolderOpen size={20} />, roles: ['admin', 'student'] },
   { id: 'analytics', label: 'Analytics', icon: <BarChart3 size={20} />, roles: ['admin'] },
+  { id: 'insights', label: 'Learning Analytics', icon: <BarChart3 size={20} />, roles: ['admin', 'lecturer'] },
   { id: 'audit', label: 'Audit Logs', icon: <Shield size={20} />, roles: ['admin'] },
   { id: 'settings', label: 'Settings', icon: <Settings size={20} />, roles: ['admin', 'student', 'lecturer'] },
 ];
