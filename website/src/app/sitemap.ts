@@ -16,6 +16,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/contact',
     '/portal',
     '/news',
+    '/courses',
     '/verify',
     '/fr',
     '/fr/a-propos',
