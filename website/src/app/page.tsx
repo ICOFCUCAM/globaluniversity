@@ -9,6 +9,7 @@ import { partners } from '@/content/site';
 import { chancellor, welcomeExcerpt } from '@/content/welcome';
 import { quickIconMap } from '@/components/Icons';
 import CountUp from '@/components/CountUp';
+import { IconCampus, IconChapel, IconGlobe, IconLaptop } from '@/components/Icons';
 
 const PILLARS = [
   {
@@ -388,18 +389,25 @@ export default async function HomePage() {
           <p className="mb-10 text-center font-sans text-xs font-semibold uppercase tracking-[0.25em] text-brand-gold">
             A Global University
           </p>
-          <div className="grid gap-6 text-center sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              ['🏛️', 'Buea, Cameroon', 'Main campus — faculties of Theology, Education, Engineering & Technology, and GIBMAS'],
-              ['⛪', 'Douala, Cameroon', 'School of Theology under Dr Bongbuen Alando'],
-              ['🌍', 'Nigeria', 'PPDI-RC — professional development, research and training center'],
-              ['💻', 'Online Worldwide', 'Full master’s and doctoral programs delivered to students on every continent'],
-            ].map(([icon, place, desc]) => (
-              <div key={place} className="rounded-2xl border border-white/10 bg-white/5 p-6">
-                <span aria-hidden="true" className="text-3xl">{icon}</span>
-                <h3 className="mt-3 font-heading text-lg font-bold text-brand-gold">{place}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-white/80">{desc}</p>
-              </div>
+              { Icon: IconCampus, place: 'Buea, Cameroon', tag: 'Main campus', desc: 'Faculties of Theology, Education, Engineering & Technology, and GIBMAS' },
+              { Icon: IconChapel, place: 'Douala, Cameroon', tag: 'School of Theology', desc: 'Led by Dr Bongbuen Alando, Director of the School of Theology' },
+              { Icon: IconGlobe, place: 'Nigeria', tag: 'PPDI-RC', desc: 'Professional development, applied research and training centre' },
+              { Icon: IconLaptop, place: 'Online Worldwide', tag: 'Distance study', desc: 'Full master’s and doctoral programs delivered on every continent' },
+            ].map(({ Icon, place, tag, desc }, i) => (
+              <Reveal key={place} delay={i * 90}>
+                <div className="group h-full rounded-2xl border border-white/10 bg-white/[0.04] p-7 transition duration-500 hover:border-brand-gold/45 hover:bg-white/[0.08]">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-xl border border-brand-gold/25 bg-brand-gold/10 text-brand-gold transition duration-500 group-hover:bg-brand-gold group-hover:text-brand-purple">
+                    <Icon className="h-6 w-6" />
+                  </span>
+                  <p className="mt-5 font-sans text-[10px] font-semibold uppercase tracking-[0.18em] text-brand-gold/70">
+                    {tag}
+                  </p>
+                  <h3 className="mt-1 font-heading text-lg font-bold text-white">{place}</h3>
+                  <p className="mt-2.5 text-sm leading-relaxed text-white/70">{desc}</p>
+                </div>
+              </Reveal>
             ))}
           </div>
           <p className="mx-auto mt-8 max-w-2xl text-center text-sm text-white/70">
