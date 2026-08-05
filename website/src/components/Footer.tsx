@@ -35,13 +35,23 @@ export default function Footer() {
             Explore
           </h3>
           <ul className="mt-4 space-y-2 text-sm">
-            {site.nav.slice(1).map((item) => (
-              <li key={item.href}>
+            {site.nav.map((item) => (
+              <li key={item.href + item.label}>
                 <Link href={item.href} className="text-white/80 hover:text-brand-gold">
                   {item.label}
                 </Link>
               </li>
             ))}
+            <li>
+              <Link href="/courses" className="text-white/80 hover:text-brand-gold">
+                Course Catalogue
+              </Link>
+            </li>
+            <li>
+              <Link href="/research" className="text-white/80 hover:text-brand-gold">
+                Research
+              </Link>
+            </li>
           </ul>
         </div>
 
