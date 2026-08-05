@@ -518,12 +518,39 @@ export default async function HomePage() {
           has been continually accredited since 2007, working alongside partner institutions of the
           International Circle of Faith worldwide.
         </p>
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-10">
-          {partners.map((p) => (
-            <div key={p.name} className="relative h-20 w-32 grayscale transition hover:grayscale-0">
-              <Image src={p.image} alt={p.name} fill className="object-contain" sizes="128px" />
-            </div>
+        <ul className="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-x-4 gap-y-6">
+          {partners.map((p, i) => (
+            <li key={p.name}>
+              <Reveal delay={i * 70}>
+                <div
+                  title={p.name}
+                  className="group flex h-24 w-36 items-center justify-center rounded-xl border border-transparent px-4 transition duration-500 hover:border-brand-sand hover:bg-brand-cream"
+                >
+                  <div className="relative h-14 w-full opacity-55 grayscale transition duration-500 group-hover:opacity-100 group-hover:grayscale-0">
+                    <Image src={p.image} alt={p.name} fill className="object-contain" sizes="144px" />
+                  </div>
+                </div>
+              </Reveal>
+            </li>
           ))}
+        </ul>
+
+        {/* The accreditation claim itself, stated plainly rather than left to the logos */}
+        <div className="mx-auto mt-12 flex max-w-3xl flex-wrap items-center justify-center gap-x-8 gap-y-4 rounded-2xl border border-brand-sand bg-brand-cream px-8 py-6 text-center">
+          <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-gold-deep">
+            Ministry of Higher Education, Cameroon
+          </p>
+          <span aria-hidden="true" className="hidden h-4 w-px bg-brand-sand sm:block" />
+          <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-gold-deep">
+            Continuously accredited since 2007
+          </p>
+          <span aria-hidden="true" className="hidden h-4 w-px bg-brand-sand sm:block" />
+          <Link
+            href="/governance"
+            className="font-heading text-sm font-semibold text-brand-purple underline underline-offset-4 hover:text-brand-gold-deep"
+          >
+            Governance &amp; accreditation
+          </Link>
         </div>
       </Section>
 
