@@ -26,12 +26,14 @@ function DesktopItem({ item }: { item: NavItem }) {
     <div className="group relative">
       <Link
         href={item.href}
-        className="whitespace-nowrap px-1 py-2 text-sm font-medium text-white/90 transition group-hover:text-brand-gold"
+        className="whitespace-nowrap px-1 py-2 text-sm font-medium text-white/90 transition group-hover:text-brand-gold group-focus-within:text-brand-gold"
       >
         {item.label} <span aria-hidden="true" className="text-[10px]">▾</span>
       </Link>
       <div
-        className={`invisible absolute left-1/2 top-full z-50 -translate-x-1/2 pt-3 opacity-0 transition group-hover:visible group-hover:opacity-100 ${
+        // focus-within as well as hover: without it a keyboard user tabbing
+        // through the bar can never open a mega-menu.
+        className={`invisible absolute left-1/2 top-full z-50 -translate-x-1/2 pt-3 opacity-0 transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 ${
           cols >= 3 ? 'w-[46rem]' : cols === 2 ? 'w-[34rem]' : 'w-64'
         }`}
       >
