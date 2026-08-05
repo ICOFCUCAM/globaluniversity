@@ -136,6 +136,10 @@ const config: Config = {
           '0%,100%': { transform: 'translate3d(0,0,0) scale(0.96)' },
           '50%': { transform: 'translate3d(10%, -14%, 0) scale(1.2)' },
         },
+        'crest': {
+          from: { transform: 'rotate(0deg)' },
+          to: { transform: 'rotate(360deg)' },
+        },
         'orbit': {
           from: { transform: 'rotate(0deg)' },
           to: { transform: 'rotate(360deg)' },
@@ -165,6 +169,7 @@ const config: Config = {
         'aurora-c': 'aurora-c 38s ease-in-out infinite',
         'shaft': 'shaft 14s ease-in-out infinite',
         'orbit': 'orbit 18s linear infinite',
+        'crest': 'crest 60s linear infinite',
         'ring-in': 'ring-in 1.1s cubic-bezier(0.22,1,0.36,1) both',
       },
     },

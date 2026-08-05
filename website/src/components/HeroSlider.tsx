@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { HeroSlide } from '@/content/site';
 import { Aurora, Grain, LightShaft } from './Atmosphere';
+import Magnetic from './Magnetic';
 
 const DURATION = 7000;
 
@@ -135,10 +136,11 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
               {slide.text}
             </p>
             <div className="mt-8 flex flex-col items-stretch justify-center gap-3 sm:mt-10 sm:flex-row sm:items-center sm:gap-4">
+              <Magnetic strength={9}>
               <Link
                 href={slide.cta.href}
                 tabIndex={i === current ? 0 : -1}
-                className="group relative overflow-hidden rounded-full bg-brand-gold px-7 py-3.5 font-heading text-[15px] font-semibold text-brand-purple shadow-gold transition hover:bg-brand-gold-deep sm:px-9 sm:py-4 sm:text-base"
+                className="group relative block overflow-hidden rounded-full bg-brand-gold px-7 py-3.5 font-heading text-[15px] font-semibold text-brand-purple shadow-gold transition hover:bg-brand-gold-deep sm:px-9 sm:py-4 sm:text-base"
               >
                 <span className="relative z-10">{slide.cta.label}</span>
                 <span
@@ -146,6 +148,8 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
                   className="absolute inset-y-0 -left-1/3 w-1/3 bg-white/40 blur-md transition-transform duration-700 group-hover:translate-x-[420%]"
                 />
               </Link>
+              </Magnetic>
+              <Magnetic strength={9}>
               <Link
                 href="/apply"
                 tabIndex={i === current ? 0 : -1}
@@ -153,6 +157,7 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
               >
                 Start an Application
               </Link>
+              </Magnetic>
             </div>
           </div>
         ))}

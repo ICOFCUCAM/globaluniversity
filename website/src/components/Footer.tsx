@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { site } from '@/content/site';
+import Crest from './Crest';
 
 export default function Footer() {
   return (
@@ -18,13 +19,7 @@ export default function Footer() {
       <div className="relative mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <div className="flex items-center gap-3">
-            <Image
-              src="/images/site-icon.png"
-              alt={`${site.name} crest`}
-              width={48}
-              height={48}
-              className="rounded-full bg-white/90 p-0.5"
-            />
+            <Crest size={48} />
             <span className="font-heading font-bold">{site.name}</span>
           </div>
           <p className="mt-4 text-sm leading-relaxed text-white/75">{site.description}</p>

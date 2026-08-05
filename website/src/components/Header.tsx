@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation';
 import { site, type NavItem } from '@/content/site';
 import { fr } from '@/content/fr';
 import SiteSearch from './SiteSearch';
+import Crest from './Crest';
 
 function DesktopItem({ item }: { item: NavItem }) {
   const hasMenu = Boolean(item.groups?.length || item.children?.length);
@@ -129,13 +130,7 @@ export default function Header() {
 
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-4 py-3">
         <Link href={isFr ? '/fr' : '/'} className="flex shrink-0 items-center gap-3">
-          <Image
-            src="/images/site-icon.png"
-            alt={`${site.name} crest`}
-            width={44}
-            height={44}
-            className="rounded-full bg-white/90 p-0.5"
-          />
+          <Crest size={44} priority />
           <span className="font-heading text-sm font-bold leading-tight md:hidden">ICOF Global</span>
           <span className="hidden font-heading text-base font-bold leading-tight md:block xl:text-lg">
             {site.name}
