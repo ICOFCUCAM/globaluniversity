@@ -25,7 +25,7 @@ export default function FrenchHome() {
           <p className="mx-auto mt-6 max-w-2xl text-lg text-brand-gold/95">{fr.home.lead}</p>
           <div className="mt-10 flex flex-wrap justify-center gap-4">
             <Link href="/apply" className="rounded-full bg-brand-gold px-8 py-3 font-heading font-semibold text-brand-purple transition hover:bg-brand-gold-deep">
-              🎓 {fr.home.ctaPrimary}
+              {fr.home.ctaPrimary}
             </Link>
             <Link href="/fr/programmes" className="rounded-full border-2 border-white/60 px-8 py-3 font-heading font-semibold text-white transition hover:border-brand-gold hover:text-brand-gold">
               {fr.home.ctaSecondary}

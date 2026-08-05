@@ -55,7 +55,7 @@ export default async function ProgramDetailPage({ params }: { params: { slug: st
             <ul className="mt-4 grid gap-3 sm:grid-cols-2">
               {program.outcomes.map((o) => (
                 <li key={o} className="rounded-lg bg-white px-4 py-3 text-sm shadow-sm">
-                  <span className="mr-2 text-brand-gold-deep">✓</span>
+                  <svg aria-hidden="true" viewBox="0 0 24 24" className="mr-2 inline h-3 w-3 text-brand-gold-deep" fill="none" stroke="currentColor" strokeWidth={3.5} strokeLinecap="round" strokeLinejoin="round"><path d="m5 12.5 4.5 4.5L19 7" /></svg>
                   {o}
                 </li>
               ))}

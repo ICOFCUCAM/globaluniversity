@@ -207,7 +207,7 @@ export default function ApplyForm() {
   if (status === 'sent') {
     return (
       <div className="rounded-xl border border-brand-sand bg-white p-10 text-center shadow-sm">
-        <p className="text-4xl">🎓</p>
+        <svg aria-hidden="true" viewBox="0 0 24 24" className="mx-auto h-10 w-10 text-brand-gold-deep" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5 12 4l9 5.5-9 5.5Z" /><path d="M7 11.8V17c0 1.1 2.2 2 5 2s5-.9 5-2v-5.2M21 9.5V15" /></svg>
         <h2 className="mt-4 font-heading text-2xl font-bold text-brand-purple">Application received!</h2>
         {appNo && (
           <div className="mx-auto mt-5 max-w-sm rounded-lg bg-brand-cream p-4">
@@ -496,7 +496,7 @@ export default function ApplyForm() {
               disabled={status === 'sending'}
               className="rounded-full bg-brand-gold px-8 py-3 font-heading text-lg font-bold text-brand-purple transition hover:bg-brand-gold-deep disabled:opacity-60"
             >
-              {status === 'sending' ? 'Submitting…' : '🎓 Submit Application'}
+              {status === 'sending' ? 'Submitting…' : 'Submit Application'}
             </button>
           )}
         </div>

@@ -50,7 +50,7 @@ export default function DegreeLevelPage({ params }: { params: { slug: string } }
               <ul className="mt-4 space-y-2">
                 {fp.programs.map((p) => (
                   <li key={p} className="flex gap-3 text-sm text-brand-muted">
-                    <span className="text-brand-gold-deep">◆</span>
+                    <span aria-hidden="true" className="mt-[7px] h-1.5 w-1.5 shrink-0 rotate-45 rounded-[1px] bg-brand-gold-deep" />
                     <span>{p}</span>
                   </li>
                 ))}
@@ -87,7 +87,7 @@ export default function DegreeLevelPage({ params }: { params: { slug: string } }
               href="/apply"
               className="inline-block rounded-full bg-brand-gold px-8 py-3 font-heading font-semibold text-brand-purple transition hover:bg-brand-gold-deep"
             >
-              🎓 Apply Now
+              Apply Now
             </Link>
           </div>
         </div>

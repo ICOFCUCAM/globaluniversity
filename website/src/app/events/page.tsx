@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { IconCampus } from '@/components/Icons';
 import { Section, SectionHeading } from '@/components/Section';
 import PageBanner from '@/components/PageBanner';
 import Cta from '@/components/Cta';
@@ -44,7 +45,7 @@ export default async function EventsPage() {
                 <div>
                 <h3 className="mt-1 font-heading text-xl font-semibold text-brand-purple">{ev.title}</h3>
                 <p className="mt-2 text-sm text-brand-muted">{ev.summary}</p>
-                <p className="mt-3 text-sm font-medium text-brand-purple">📍 {ev.location}</p>
+                <p className="mt-3 text-sm font-medium text-brand-purple"><IconCampus className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {ev.location}</p>
                 </div>
               </div>
             </article>

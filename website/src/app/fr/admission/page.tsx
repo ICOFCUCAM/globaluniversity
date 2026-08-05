@@ -35,7 +35,7 @@ export default function FrAdmission() {
             href="/apply"
             className="inline-block rounded-full bg-brand-gold px-8 py-3 font-heading font-semibold text-brand-purple transition hover:bg-brand-gold-deep"
           >
-            🎓 {fr.common.applyNow}
+            {fr.common.applyNow}
           </Link>
         </div>
       </Section>

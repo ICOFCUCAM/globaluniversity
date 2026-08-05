@@ -4,6 +4,11 @@ import { Section, SectionHeading } from '@/components/Section';
 import PageBanner from '@/components/PageBanner';
 import Cta from '@/components/Cta';
 import { getFacultyPage } from '@/lib/data';
+import Reveal from '@/components/Reveal';
+import CountUp from '@/components/CountUp';
+import { SpotlightGroup, SpotlightCard } from '@/components/Spotlight';
+import { Aurora, Grain, Seam } from '@/components/Atmosphere';
+import { IconCampus } from '@/components/Icons';
 
 export const metadata = { title: 'Schools & Faculties — ICOF Global University' };
 
@@ -21,19 +26,32 @@ function initials(name: string) {
 function PersonCard({ person, size = 'md' }: { person: { name: string; role: string; image: string; bio: string }; size?: 'lg' | 'md' }) {
   const dim = size === 'lg' ? 'h-56 w-56' : 'h-36 w-36';
   return (
-    <div className="text-center">
-      <div className={`relative mx-auto ${dim} overflow-hidden rounded-full bg-brand-purple shadow-lg`}>
+    <div className="group text-center">
+      <div
+        className={`relative mx-auto ${dim} overflow-hidden rounded-full bg-brand-purple shadow-lift ring-2 ring-transparent transition duration-500 group-hover:-translate-y-1 group-hover:shadow-lift-lg group-hover:ring-brand-gold`}
+      >
         {person.image ? (
-          <Image src={person.image} alt={person.name} fill className="object-cover" />
+          <Image
+            src={person.image}
+            alt={person.name}
+            fill
+            loading="lazy"
+            className="object-cover object-top transition duration-[900ms] ease-out group-hover:scale-105"
+            sizes={size === 'lg' ? '224px' : '144px'}
+          />
         ) : (
           <span className="flex h-full w-full items-center justify-center font-heading text-3xl font-bold text-brand-gold">
             {initials(person.name)}
           </span>
         )}
       </div>
-      <h3 className="mt-4 font-heading font-semibold text-brand-purple">{person.name}</h3>
-      <p className="text-sm font-medium text-brand-gold-deep">{person.role}</p>
-      {person.bio && <p className="mx-auto mt-2 max-w-xs text-xs leading-relaxed text-brand-muted">{person.bio}</p>}
+      <h3 className="mt-4 font-heading font-semibold leading-snug text-brand-purple [text-wrap:balance]">
+        {person.name}
+      </h3>
+      <p className="mt-0.5 font-sans text-[11px] font-semibold uppercase tracking-[0.1em] text-brand-gold-deep">
+        {person.role}
+      </p>
+      {person.bio && <p className="mx-auto mt-2.5 max-w-xs text-xs leading-relaxed text-brand-muted">{person.bio}</p>}
     </div>
   );
 }
@@ -65,31 +83,44 @@ export default async function FacultyPage() {
       <Section className="bg-white">
         <SectionHeading>{faculties.heading}</SectionHeading>
         <p className="mx-auto mb-10 max-w-3xl text-center text-brand-muted">{faculties.intro}</p>
-        <div className="mx-auto grid max-w-4xl gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {faculties.items.map((f) => (
-            <div
-              key={f}
-              className="flex items-center gap-3 rounded-xl border border-brand-sand bg-brand-cream p-5"
-            >
-              <span className="text-2xl">🏛️</span>
-              <span className="font-heading text-sm font-semibold text-brand-purple">{f}</span>
-            </div>
+        <SpotlightGroup className="mx-auto grid max-w-4xl gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {faculties.items.map((f, i) => (
+            <Reveal key={f} delay={i * 70}>
+              <SpotlightCard
+                className="flex h-full items-center gap-4 rounded-xl border border-brand-sand bg-brand-cream p-5 transition duration-500 hover:shadow-lift"
+                tone="light"
+              >
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white text-brand-purple ring-1 ring-brand-sand">
+                  <IconCampus className="h-5 w-5" />
+                </span>
+                <span className="font-heading text-sm font-semibold leading-snug text-brand-purple">{f}</span>
+              </SpotlightCard>
+            </Reveal>
           ))}
-        </div>
+        </SpotlightGroup>
       </Section>
 
       {/* Fast facts */}
-      <section className="bg-brand-purple py-14 text-white">
-        <h2 className="text-center font-heading text-2xl font-bold uppercase text-brand-gold">
-          Faculty Fast Facts
-        </h2>
-        <div className="mx-auto mt-10 grid max-w-5xl grid-cols-1 gap-8 px-4 text-center sm:grid-cols-3">
-          {faculties.fastFacts.map((f) => (
-            <div key={f.label}>
-              <p className="font-heading text-5xl font-extrabold text-brand-gold">{f.value}</p>
-              <p className="mx-auto mt-3 max-w-xs text-sm text-white/85">{f.label}</p>
-            </div>
-          ))}
+      <section className="relative overflow-hidden bg-brand-purple py-16 text-white">
+        <Aurora tone="gold" intensity={0.4} fields={2} />
+        <Grain opacity={0.045} />
+        <Seam />
+        <div className="relative">
+          <p className="text-center font-sans text-xs font-semibold uppercase tracking-[0.25em] text-brand-gold">
+            Faculty Fast Facts
+          </p>
+          <div className="mx-auto mt-12 grid max-w-5xl grid-cols-1 gap-y-10 px-4 text-center sm:grid-cols-3">
+            {faculties.fastFacts.map((f, i) => (
+              <div key={f.label} className={i > 0 ? 'sm:border-l sm:border-white/12' : ''}>
+                <p className="font-heading text-display-lg font-bold text-brand-gold">
+                  <CountUp value={f.value} />
+                </p>
+                <p className="mx-auto mt-3 max-w-xs font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-white/70">
+                  {f.label}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -101,8 +132,10 @@ export default async function FacultyPage() {
           students to develop knowledge and skills necessary to achieve their professional goals.
         </p>
         <div className="grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
-          {administration.map((person) => (
-            <PersonCard key={person.name} person={person} />
+          {administration.map((person, i) => (
+            <Reveal key={person.name} delay={(i % 3) * 90}>
+              <PersonCard person={person} />
+            </Reveal>
           ))}
         </div>
       </Section>
@@ -114,8 +147,10 @@ export default async function FacultyPage() {
           Here are a few of our instructors.
         </p>
         <div className="grid gap-x-6 gap-y-10 sm:grid-cols-3 lg:grid-cols-5">
-          {lecturers.map((person) => (
-            <PersonCard key={person.name} person={person} />
+          {lecturers.map((person, i) => (
+            <Reveal key={person.name} delay={(i % 5) * 70}>
+              <PersonCard person={person} />
+            </Reveal>
           ))}
         </div>
         <div className="mt-12 rounded-xl bg-brand-cream p-8 text-center">
@@ -128,7 +163,7 @@ export default async function FacultyPage() {
             href="/apply"
             className="mt-6 inline-block rounded-full bg-brand-gold px-8 py-3 font-heading font-semibold text-brand-purple transition hover:bg-brand-gold-deep"
           >
-            🎓 Apply Now
+            Apply Now
           </Link>
         </div>
       </Section>
