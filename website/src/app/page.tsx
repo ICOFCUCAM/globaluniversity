@@ -348,48 +348,79 @@ export default async function HomePage() {
 
       {/* Admissions + International */}
       <Section>
-        <div className="grid gap-8 lg:grid-cols-2">
-          <Reveal>
-            <div className="flex h-full flex-col rounded-2xl border border-brand-sand bg-white p-10 shadow-sm">
-              <Eyebrow>Admissions</Eyebrow>
-              <h3 className="font-heading text-display-sm font-bold text-brand-purple">
-                Anything you can dream, you can do
-              </h3>
-              <p className="mt-4 flex-1 text-sm leading-relaxed text-brand-muted">
-                From certificate to doctorate, our enrollment representatives walk with you through
-                requirements, transferred coursework and financing. Applications are free, online,
-                and reviewed continuously — and our support continues from enrollment to graduation
-                and beyond.
-              </p>
-              <div className="mt-6 flex flex-wrap gap-3">
-                <Link href="/apply" className="rounded-full bg-brand-gold px-6 py-2.5 font-heading text-sm font-semibold text-brand-purple transition hover:bg-brand-gold-deep">
-                  Apply Now
-                </Link>
-                <Link href="/admissions" className="rounded-full border-2 border-brand-purple px-6 py-2.5 font-heading text-sm font-semibold text-brand-purple transition hover:bg-brand-purple hover:text-white">
-                  Requirements
-                </Link>
+        <div className="grid gap-6 lg:grid-cols-2">
+          {[
+            {
+              eyebrow: 'Admissions',
+              title: 'Anything you can dream, you can do',
+              body:
+                'From certificate to doctorate, our enrollment representatives walk with you through requirements, transferred coursework and financing. Applications are free, online, and reviewed continuously — and our support continues from enrollment to graduation and beyond.',
+              points: ['Free online application', 'Rolling review', 'Credit for prior study'],
+              primary: { label: 'Apply Now', href: '/apply' },
+              secondary: { label: 'Requirements', href: '/admissions' },
+              image: '/images/wp/g-grads.jpg',
+            },
+            {
+              eyebrow: 'International Students',
+              title: 'A global family of learners',
+              body:
+                'Rooted in Buea and Douala, connected worldwide through the International Circle of Faith, we welcome students from every nation. English-language study, recognized qualifications and online delivery make an IGUC education accessible wherever you are.',
+              points: ['Study in English', 'Recognized qualifications', 'Fully online routes'],
+              primary: { label: 'International Admissions', href: '/international' },
+              secondary: { label: 'Scholarships', href: '/scholarships' },
+              image: '/images/global.jpg',
+            },
+          ].map((c, i) => (
+            <Reveal key={c.eyebrow} delay={i * 120}>
+              <div className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-brand-sand bg-white shadow-lift transition duration-500 hover:shadow-lift-lg">
+                {/* Photograph reads at a whisper behind the copy and warms on hover */}
+                <Image
+                  src={c.image}
+                  alt=""
+                  fill
+                  className="object-cover opacity-[0.07] transition duration-700 group-hover:opacity-[0.13] group-hover:scale-105"
+                  sizes="(min-width:1024px) 50vw, 100vw"
+                />
+                <div className="relative flex h-full flex-col p-9 sm:p-10">
+                  <Eyebrow>{c.eyebrow}</Eyebrow>
+                  <h3 className="font-heading text-display-sm font-bold text-brand-purple [text-wrap:balance]">
+                    {c.title}
+                  </h3>
+                  <p className="mt-4 text-sm leading-relaxed text-brand-muted">{c.body}</p>
+
+                  <ul className="mt-6 flex flex-1 flex-wrap content-start gap-2">
+                    {c.points.map((pt) => (
+                      <li
+                        key={pt}
+                        className="rounded-full border border-brand-sand bg-brand-cream px-3.5 py-1.5 font-sans text-[11px] font-semibold uppercase tracking-[0.1em] text-brand-purple"
+                      >
+                        {pt}
+                      </li>
+                    ))}
+                  </ul>
+
+                  <div className="mt-8 flex flex-wrap gap-3">
+                    <Link
+                      href={c.primary.href}
+                      className={`rounded-full px-7 py-3 font-heading text-sm font-semibold transition ${
+                        i === 0
+                          ? 'bg-brand-gold text-brand-purple shadow-gold hover:bg-brand-gold-deep'
+                          : 'bg-brand-purple text-white hover:bg-brand-purple-dark'
+                      }`}
+                    >
+                      {c.primary.label}
+                    </Link>
+                    <Link
+                      href={c.secondary.href}
+                      className="rounded-full border-2 border-brand-purple px-7 py-3 font-heading text-sm font-semibold text-brand-purple transition hover:bg-brand-purple hover:text-white"
+                    >
+                      {c.secondary.label}
+                    </Link>
+                  </div>
+                </div>
               </div>
-            </div>
-          </Reveal>
-          <Reveal delay={120}>
-            <div className="flex h-full flex-col rounded-2xl border border-brand-sand bg-white p-10 shadow-sm">
-              <Eyebrow>International Students</Eyebrow>
-              <h3 className="font-heading text-display-sm font-bold text-brand-purple">
-                A global family of learners
-              </h3>
-              <p className="mt-4 flex-1 text-sm leading-relaxed text-brand-muted">
-                Rooted in Buea and Douala, connected worldwide through the International Circle of
-                Faith, we welcome students from every nation. English-language study, recognized
-                qualifications and online delivery make an IGUC education accessible wherever you
-                are.
-              </p>
-              <div className="mt-6">
-                <Link href="/international" className="rounded-full bg-brand-purple px-6 py-2.5 font-heading text-sm font-semibold text-white transition hover:bg-brand-purple-dark">
-                  International Admissions
-                </Link>
-              </div>
-            </div>
-          </Reveal>
+            </Reveal>
+          ))}
         </div>
       </Section>
 
