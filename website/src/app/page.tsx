@@ -150,15 +150,27 @@ export default async function HomePage() {
 
         <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-[minmax(0,300px)_minmax(0,1fr)] lg:gap-16">
           <Reveal>
-            <figure className="relative mx-auto w-56 lg:w-full">
-              <div className="relative aspect-[4/5] overflow-hidden rounded-2xl shadow-lift-lg ring-1 ring-brand-gold/25">
+            <figure className="group relative mx-auto w-56 lg:w-full">
+              {/* Conic halo behind the plate — the portrait sits lit rather
+                  than pasted onto the band. */}
+              <span
+                aria-hidden="true"
+                className="absolute -inset-3 animate-crest rounded-[1.4rem] opacity-70 blur-md"
+                style={{
+                  background:
+                    'conic-gradient(from 0deg, transparent 0deg, rgba(247,220,121,0.55) 80deg, rgba(87,84,154,0.5) 170deg, transparent 260deg, transparent 360deg)',
+                }}
+              />
+              <div className="relative aspect-[4/5] overflow-hidden rounded-2xl shadow-lift-lg ring-1 ring-brand-gold/30">
                 <Image
                   src={chancellor.image}
                   alt={`${chancellor.name}, Chancellor of ICOF Global University`}
                   fill
-                  className="object-cover object-top"
+                  className="object-cover object-top transition duration-[1200ms] ease-out group-hover:scale-[1.06]"
                   sizes="(min-width:1024px) 300px, 224px"
                 />
+                {/* Gradient floor so the plate reads as attached, not overlaid */}
+                <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-brand-purple-dark/70 to-transparent" />
               </div>
               {/* Gold plate, as an inscribed portrait would carry */}
               <figcaption className="absolute -bottom-4 left-1/2 w-[88%] -translate-x-1/2 rounded-lg bg-brand-gold px-4 py-2 text-center shadow-gold">
