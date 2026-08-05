@@ -188,16 +188,25 @@ export default async function HomePage() {
         <SectionHeading eyebrow="Why ICOF Global University">
           Nobility, professionalism &amp; godliness
         </SectionHeading>
-        <div className="grid gap-8 md:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-3">
           {PILLARS.map((p, i) => (
             <Reveal key={p.title} delay={i * 120}>
-              <div className="h-full rounded-2xl border border-brand-sand bg-brand-cream p-8">
-                <span className="font-heading text-4xl font-bold text-brand-gold-deep">
+              <article className="group relative h-full overflow-hidden rounded-2xl border border-brand-sand bg-brand-cream p-9 transition duration-500 hover:border-brand-gold hover:shadow-lift">
+                {/* Ghost numeral sits behind the copy as a watermark */}
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -right-2 -top-6 font-heading text-[7rem] font-bold leading-none text-brand-gold/15 transition duration-700 group-hover:text-brand-gold/25"
+                >
                   {String(i + 1).padStart(2, '0')}
                 </span>
-                <h3 className="mt-4 font-heading text-xl font-bold text-brand-purple">{p.title}</h3>
-                <p className="mt-3 text-sm leading-relaxed text-brand-muted">{p.body}</p>
-              </div>
+                <div className="relative">
+                  <span aria-hidden="true" className="block h-[3px] w-10 rounded-full bg-brand-gold-deep" />
+                  <h3 className="mt-5 font-heading text-xl font-bold leading-snug text-brand-purple [text-wrap:balance]">
+                    {p.title}
+                  </h3>
+                  <p className="mt-3.5 text-sm leading-relaxed text-brand-muted">{p.body}</p>
+                </div>
+              </article>
             </Reveal>
           ))}
         </div>
