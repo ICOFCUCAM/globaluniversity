@@ -6,6 +6,47 @@ body {
   @apply bg-brand-cream font-body text-brand-ink antialiased;
 }
 
+/* Serif display face wants optical sizing and old-style joins where available. */
+.font-heading {
+  font-optical-sizing: auto;
+  font-variant-ligatures: common-ligatures;
+}
+
+/* Figures in statistics must line up column-to-column. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* One consistent focus ring across the public site. */
+:where(a, button, [tabindex]):focus-visible {
+  outline: 2px solid theme('colors.brand.gold');
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* Hairline gold rule used to open sections. */
+.rule-gold::after {
+  content: '';
+  display: block;
+  width: 4rem;
+  height: 3px;
+  margin-top: 1rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, theme('colors.brand.gold-deep'), theme('colors.brand.gold'));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* ---- Student portal (shadcn/ui) design tokens ---- */
 @layer base {
   :root {

@@ -78,6 +78,19 @@ const config: Config = {
           ring: 'hsl(var(--sidebar-ring))',
         },
       },
+      // Fluid display scale — headlines resolve between the mobile and desktop
+      // bounds without breakpoint jumps, so the home page reads as one system.
+      fontSize: {
+        'display-sm': ['clamp(1.75rem, 1.25rem + 2vw, 2.35rem)', { lineHeight: '1.15', letterSpacing: '-0.015em' }],
+        'display': ['clamp(2.1rem, 1.4rem + 3vw, 3.1rem)', { lineHeight: '1.08', letterSpacing: '-0.02em' }],
+        'display-lg': ['clamp(2.6rem, 1.6rem + 4.4vw, 4.25rem)', { lineHeight: '1.03', letterSpacing: '-0.025em' }],
+        'display-xl': ['clamp(3rem, 1.6rem + 6vw, 5.5rem)', { lineHeight: '0.98', letterSpacing: '-0.03em' }],
+      },
+      boxShadow: {
+        'lift': '0 1px 2px rgba(36,26,48,0.04), 0 12px 32px -12px rgba(66,46,89,0.20)',
+        'lift-lg': '0 2px 4px rgba(36,26,48,0.05), 0 28px 60px -20px rgba(66,46,89,0.32)',
+        'gold': '0 10px 30px -10px rgba(233,193,74,0.55)',
+      },
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
@@ -97,10 +110,25 @@ const config: Config = {
           from: { height: 'var(--radix-accordion-content-height)' },
           to: { height: '0' },
         },
+        'ken-burns': {
+          '0%': { transform: 'scale(1.06) translate3d(0,0,0)' },
+          '100%': { transform: 'scale(1.16) translate3d(-1.2%, -1.2%, 0)' },
+        },
+        'marquee': {
+          from: { transform: 'translateX(0)' },
+          to: { transform: 'translateX(-50%)' },
+        },
+        'sheen': {
+          '0%': { transform: 'translateX(-120%) skewX(-18deg)' },
+          '60%,100%': { transform: 'translateX(220%) skewX(-18deg)' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        'ken-burns': 'ken-burns 12s ease-out forwards',
+        'marquee': 'marquee 38s linear infinite',
+        'sheen': 'sheen 2.4s ease-in-out infinite',
       },
     },
   },
