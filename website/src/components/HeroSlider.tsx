@@ -98,10 +98,16 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
         {slides.map((slide, i) => (
           <div
             key={slide.title}
-            className={`transition-all duration-700 ${
-              i === current ? 'opacity-100' : 'pointer-events-none absolute opacity-0'
+            // Inactive copy is pulled out of flow AND made `invisible`. Opacity
+            // alone left it painting for a frame before hydration settled, which
+            // showed as ghost text stacked under the live headline.
+            className={`w-full transition-opacity duration-700 ${
+              i === current
+                ? 'opacity-100'
+                : 'pointer-events-none invisible absolute inset-x-0 top-0 opacity-0'
             }`}
             aria-hidden={i !== current}
+            {...(i !== current ? { inert: '' as unknown as boolean } : {})}
           >
             <h1 className="font-heading text-display-xl font-bold text-white [text-wrap:balance]">
               {slide.title}

@@ -118,11 +118,12 @@ export default async function HomePage() {
             </h2>
             <div className="mt-5 h-[3px] w-16 rounded bg-brand-gold" />
 
-            <blockquote className="mt-8">
-              {/* Oversized opening quotation set as decoration, not content */}
+            {/* The quotation mark is positioned, not floated: a float re-flows
+                only the first two lines and leaves the paragraph ragged. */}
+            <blockquote className="relative mt-8 max-w-2xl pl-10">
               <span
                 aria-hidden="true"
-                className="float-left -mt-4 mr-3 font-heading text-7xl leading-[0.7] text-brand-gold/40"
+                className="absolute -top-5 left-0 select-none font-heading text-[5.5rem] leading-none text-brand-gold/30"
               >
                 &ldquo;
               </span>
