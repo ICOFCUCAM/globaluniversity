@@ -7,15 +7,7 @@ import Reveal from '@/components/Reveal';
 import { getHomePage, getPrograms } from '@/lib/data';
 import { partners } from '@/content/site';
 import { chancellor, welcomeExcerpt } from '@/content/welcome';
-
-const quickIcons: Record<string, string> = {
-  calendar: '📅',
-  book: '📚',
-  award: '🎓',
-  laptop: '💻',
-  library: '🏛️',
-  mail: '✉️',
-};
+import { quickIconMap } from '@/components/Icons';
 
 const PILLARS = [
   {
@@ -53,23 +45,32 @@ export default async function HomePage() {
       {/* Hero */}
       <HeroSlider slides={heroSlides} />
 
-      {/* Quick links strip */}
-      <div className="border-b-4 border-brand-gold bg-white shadow-sm">
-        <div className="mx-auto grid max-w-6xl grid-cols-3 divide-x divide-brand-cream sm:grid-cols-6">
-          {quickLinks.map((q) => (
-            <Link
-              key={q.label}
-              href={q.href}
-              className="flex flex-col items-center gap-2 py-6 text-center transition hover:bg-brand-cream"
-            >
-              <span aria-hidden="true" className="text-2xl">{quickIcons[q.icon] ?? '•'}</span>
-              <span className="text-xs font-semibold uppercase tracking-wide text-brand-purple">
-                {q.label}
-              </span>
-            </Link>
-          ))}
+      {/* Quick links — the six routes most visitors arrive wanting */}
+      <nav aria-label="Quick links" className="relative z-10 -mt-10 px-4">
+        <div className="mx-auto grid max-w-6xl grid-cols-2 gap-px overflow-hidden rounded-2xl bg-brand-sand/60 shadow-lift-lg ring-1 ring-brand-purple/5 sm:grid-cols-3 lg:grid-cols-6">
+          {quickLinks.map((q) => {
+            const Icon = quickIconMap[q.icon as keyof typeof quickIconMap];
+            return (
+              <Link
+                key={q.label}
+                href={q.href}
+                className="group relative flex flex-col items-center gap-3 bg-white px-3 py-7 text-center transition hover:bg-brand-cream"
+              >
+                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-cream text-brand-purple transition duration-300 group-hover:bg-brand-purple group-hover:text-brand-gold">
+                  {Icon ? <Icon className="h-[22px] w-[22px]" /> : null}
+                </span>
+                <span className="text-[11px] font-semibold uppercase leading-tight tracking-[0.08em] text-brand-purple">
+                  {q.label}
+                </span>
+                <span
+                  aria-hidden="true"
+                  className="absolute inset-x-6 bottom-0 h-0.5 origin-center scale-x-0 rounded-full bg-brand-gold transition-transform duration-300 group-hover:scale-x-100"
+                />
+              </Link>
+            );
+          })}
         </div>
-      </div>
+      </nav>
 
       {/* Chancellor's welcome — the site opened with this on the original iguc.net */}
       <section className="bg-brand-cream py-16 sm:py-20">
