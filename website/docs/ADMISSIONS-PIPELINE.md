@@ -98,39 +98,24 @@ username quoted in the welcome email.
 
 ## 5. Database migration — MUST BE RUN BEFORE THE DESKS WORK
 
-The pipeline adds columns to `students`. Run this against the project database:
+**The whole script is `docs/migrations/001_full_schema.sql`.** Paste it into the
+Supabase SQL editor and run it once.
 
-```sql
-alter table students
-  add column if not exists payment_status     text default 'pending',
-  add column if not exists fee_currency       text,
-  add column if not exists student_number     text,
-  add column if not exists faculty            text,
-  add column if not exists intake             text,
-  add column if not exists fee_reference      text,
-  add column if not exists fee_amount         text,
-  add column if not exists fee_registered_by  uuid,
-  add column if not exists fee_registered_at  timestamptz,
-  add column if not exists decision_reason    text,
-  add column if not exists decided_by         uuid,
-  add column if not exists decided_at         timestamptz,
-  add column if not exists account_created_at timestamptz,
-  add column if not exists admission_conditions jsonb;
+It is written to be run against an **empty project as well as an existing one**,
+because the project the university supplied is a fresh Supabase project while
+the previous data lived on a different host. So it creates the nine tables the
+portal reads — `departments`, `profiles`, `students`, `lecturers`, `courses`,
+`enrollments`, `results`, `documents`, `audit_logs` — and then adds the fifteen
+admissions-pipeline columns, the indexes, the `updated_at` triggers and the RLS
+policies.
 
--- The two queues are read on every page load of the desks.
-create index if not exists students_status_created_idx
-  on students (status, created_at);
+Every statement is idempotent (`if not exists`, `drop policy if exists` before
+each `create policy`) and **nothing in it drops or deletes anything**, so it is
+safe to run twice and safe to re-run after an edit.
 
--- Student numbers must be unique. nextStudentNumber() derives the sequence
--- from the highest existing number for the year, so two approvals racing would
--- both compute the same one; this index makes the second fail loudly instead of
--- issuing a duplicate.
-create unique index if not exists students_student_number_key
-  on students (student_number) where student_number is not null;
-```
-
-The list is also held in code as `requiredColumns` in `src/lib/admissions.ts`,
-so the migration and the code that depends on it cannot drift apart.
+The column list is also held in code as `requiredColumns` in
+`src/lib/admissions.ts`, so the migration and the code that depends on it
+cannot drift apart.
 
 ## 5a. Pointing at a different Supabase project
 
