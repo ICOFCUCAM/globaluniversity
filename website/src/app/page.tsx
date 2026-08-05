@@ -13,6 +13,7 @@ import { Aurora, Grain, Seam } from '@/components/Atmosphere';
 import KineticText from '@/components/KineticText';
 import { SpotlightGroup, SpotlightCard } from '@/components/Spotlight';
 import ProgramRibbon from '@/components/ProgramRibbon';
+import ScrollRail from '@/components/ScrollRail';
 import { IconCampus, IconChapel, IconGlobe, IconLaptop } from '@/components/Icons';
 
 const PILLARS = [
@@ -96,6 +97,8 @@ export default async function HomePage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(homeLd) }} />
+      <ScrollRail />
+
       {/* Hero */}
       <HeroSlider slides={heroSlides} />
 
@@ -127,7 +130,7 @@ export default async function HomePage() {
       </nav>
 
       {/* Chancellor's welcome — the site opened with this on the original iguc.net */}
-      <section className="relative overflow-hidden bg-brand-purple-dark py-20 text-white sm:py-24">
+      <section data-chapter="Welcome" className="relative overflow-hidden bg-brand-purple-dark py-20 text-white sm:py-24">
         <Image
           src="/images/wp/g-hall.jpg"
           alt=""
@@ -209,7 +212,7 @@ export default async function HomePage() {
       </section>
 
       {/* University overview */}
-      <Section>
+      <Section chapter="About">
         <div className="grid items-center gap-12 lg:grid-cols-2">
           <Reveal>
             <Eyebrow>About the University</Eyebrow>
@@ -250,7 +253,7 @@ export default async function HomePage() {
       </Section>
 
       {/* Why choose */}
-      <Section className="bg-white">
+      <Section chapter="Why IGUC" className="bg-white">
         <SectionHeading eyebrow="Why ICOF Global University">
           Nobility, professionalism &amp; godliness
         </SectionHeading>
@@ -279,7 +282,7 @@ export default async function HomePage() {
       </Section>
 
       {/* Schools & Faculties */}
-      <Section>
+      <Section chapter="Faculties">
         <SectionHeading eyebrow="Academic Community">{homeFaculties.heading}</SectionHeading>
         <p className="mx-auto -mt-5 mb-12 max-w-2xl text-center leading-relaxed text-brand-muted">{homeFaculties.intro}</p>
         <div className="mx-auto grid max-w-6xl gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -321,7 +324,7 @@ export default async function HomePage() {
       </Section>
 
       {/* Programs */}
-      <Section className="bg-white">
+      <Section chapter="Programs" className="bg-white">
         <SectionHeading eyebrow="Degrees & Programs">Programs that shape careers</SectionHeading>
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {programs.map((p, i) => (
@@ -378,7 +381,7 @@ export default async function HomePage() {
       <ProgramRibbon items={ribbon} />
 
       {/* Research & Innovation */}
-      <section className="relative overflow-hidden bg-brand-purple py-20 text-white sm:py-24">
+      <section data-chapter="Research" className="relative overflow-hidden bg-brand-purple py-20 text-white sm:py-24">
         <Image src="/images/wp/g-decor.jpg" alt="" fill loading="lazy" quality={55} className="object-cover opacity-10" sizes="100vw" />
         <Aurora tone="purple" intensity={0.8} />
         <Grain />
@@ -430,7 +433,7 @@ export default async function HomePage() {
       </section>
 
       {/* Admissions + International */}
-      <Section>
+      <Section chapter="Admissions">
         <div className="grid gap-6 lg:grid-cols-2">
           {[
             {
@@ -510,7 +513,7 @@ export default async function HomePage() {
       </Section>
 
       {/* Global footprint */}
-      <section className="relative overflow-hidden bg-brand-purple-dark py-16 text-white">
+      <section data-chapter="Global" className="relative overflow-hidden bg-brand-purple-dark py-16 text-white">
         <Aurora tone="dual" intensity={0.75} />
         <Grain />
         <Seam />
@@ -548,7 +551,7 @@ export default async function HomePage() {
       </section>
 
       {/* Online learning */}
-      <Section className="bg-white">
+      <Section chapter="Online" className="bg-white">
         <div className="grid items-center gap-12 lg:grid-cols-2">
           <Reveal>
             <div className="relative h-72 overflow-hidden rounded-2xl shadow-xl lg:h-96">
@@ -612,7 +615,7 @@ export default async function HomePage() {
       </Section>
 
       {/* Professional training features */}
-      <Section>
+      <Section chapter="Training">
         <SectionHeading eyebrow="Professional Formation">{homeFeatures.heading}</SectionHeading>
         <p className="mx-auto -mt-5 mb-12 max-w-2xl text-center leading-relaxed text-brand-muted">{homeFeatures.intro}</p>
         <div className="grid gap-8 md:grid-cols-3">
@@ -629,7 +632,7 @@ export default async function HomePage() {
 
       {/* Success in numbers — each figure sits inside its own progress ring,
           so the band reads as instrumentation rather than a row of digits. */}
-      <section className="relative overflow-hidden bg-brand-purple py-24 text-white">
+      <section data-chapter="Impact" className="relative overflow-hidden bg-brand-purple py-24 text-white">
         <Aurora tone="gold" intensity={0.45} />
         <Grain opacity={0.045} />
         <Seam />
@@ -689,7 +692,7 @@ export default async function HomePage() {
       </section>
 
       {/* Recognition */}
-      <Section className="bg-white">
+      <Section chapter="Accreditation" className="bg-white">
         <SectionHeading eyebrow="Recognition & Partners">Accreditation you can trust</SectionHeading>
         <p className="mx-auto -mt-5 mb-12 max-w-2xl text-center leading-relaxed text-brand-muted">
           ICOF Global University is accredited by the Ministry of Higher Education of Cameroon and
@@ -737,7 +740,7 @@ export default async function HomePage() {
 
       {/* Diary & initiatives — one band. Both halves were dead-end cards before;
           every item now resolves somewhere. */}
-      <Section className="bg-white">
+      <Section chapter="Diary" className="bg-white">
         <div className="grid gap-14 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]">
           {/* Diary */}
           <div>
@@ -840,7 +843,7 @@ export default async function HomePage() {
       </Section>
 
       {/* FAQ */}
-      <Section>
+      <Section chapter="Questions">
         <SectionHeading eyebrow="Questions, Answered">Frequently asked questions</SectionHeading>
         <div className="mx-auto max-w-3xl divide-y divide-brand-sand overflow-hidden rounded-2xl border border-brand-sand bg-white">
           {homeFaqs.map((faq) => (
