@@ -97,7 +97,7 @@ export default function AppLayout() {
       case 'admissions-registrar':
         return <AdmissionsDesk desk="registrar" />;
       case 'students':
-        return <StudentManagement />;
+        return <StudentManagement onNavigate={setCurrentView} />;
       case 'lecturers':
         return <LecturerManagement onNavigate={setCurrentView} />;
       case 'courses':

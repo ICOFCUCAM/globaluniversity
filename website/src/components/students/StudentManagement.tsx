@@ -1,334 +1,340 @@
-import React, { useState, useEffect } from 'react';
+'use client';
+
+// ---------------------------------------------------------------------------
+// The student register.
+//
+// THE CHANGE THAT MATTERS: "Register Student" is gone.
+//
+// It opened a form that inserted a row with status 'active' — creating an
+// enrolled student with no application, no fee, and no decision by the
+// Registrar. Every control in src/lib/roles.ts exists to make those three
+// things unskippable, and this button skipped all of them from inside the
+// system that enforces them. It also stamped `UNI/2026/CS/001` as the matric
+// number and defaulted the programme to Computer Science, which this university
+// does not teach: both were the template's, not the university's.
+//
+// A student record is the output of the admissions process, not an input to it.
+// The screen now says so and sends the user to the desk that produces one.
+//
+// Bulk import stays. It is how an existing cohort is brought across from the
+// old system — a migration, which is a different act from admitting somebody,
+// and one the Registrar performs knowingly.
+// ---------------------------------------------------------------------------
+
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import StudentIDCard from './StudentIDCard';
 import BulkImport from './BulkImport';
 import { supabase } from '@/lib/supabase';
-import type { Student } from '@/lib/types';
+import type { Student, ViewType } from '@/lib/types';
 import { IMAGES } from '@/lib/constants';
+import { statusMeta, toUniversal } from '@/lib/status';
 import {
-  Search, Plus, Filter, Download, Upload, Eye, Edit2,
-  Trash2, ChevronLeft, ChevronRight, X, UserPlus, Check
-} from 'lucide-react';
+  Card, PageHeader, EmptyState, SkeletonRows, TableShell, THead, TBody, Th, Td, Detail,
+} from '@/components/ui/portal';
+import { BTN_SECONDARY, BTN_GHOST, INPUT, FOCUS } from '@/lib/portalTheme';
+import { Search, Download, Upload, Eye, X, Users, Stamp, IdCard } from 'lucide-react';
 
-export default function StudentManagement() {
+const STATUS_FILTERS = [
+  { value: 'all', label: 'All statuses' },
+  { value: 'applicant', label: 'Applicants' },
+  { value: 'fee_paid', label: 'Fee verified' },
+  { value: 'approved', label: 'Admitted' },
+  { value: 'conditional', label: 'Conditional' },
+  { value: 'active', label: 'Active' },
+  { value: 'graduated', label: 'Graduated' },
+  { value: 'suspended', label: 'Suspended' },
+];
+
+export default function StudentManagement({ onNavigate }: { onNavigate?: (v: ViewType) => void } = {}) {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [idCardStudent, setIdCardStudent] = useState<any>(null);
   const [showImport, setShowImport] = useState(false);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [selected, setSelected] = useState<Student | null>(null);
 
-  // Form state
-  const [form, setForm] = useState({
-    first_name: '', last_name: '', middle_name: '', email: '', phone: '',
-    date_of_birth: '', gender: 'Male', state_of_origin: '', program: 'Computer Science',
-    degree_type: 'B.Sc.', admission_year: 2026,
-  });
-
-  useEffect(() => {
-    fetchStudents();
-  }, []);
-
-  async function fetchStudents() {
+  const fetchStudents = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('students')
       .select('*, departments(name, code)')
       .order('created_at', { ascending: false });
-    if (data) setStudents(data);
+    setStudents((data ?? []) as Student[]);
     setLoading(false);
+  }, []);
+
+  useEffect(() => { fetchStudents(); }, [fetchStudents]);
+
+  const q = query.trim().toLowerCase();
+  const filtered = useMemo(
+    () =>
+      students.filter((s) => {
+        const hay = `${s.first_name} ${s.last_name} ${s.matric_no} ${s.email ?? ''} ${(s as any).student_number ?? ''}`.toLowerCase();
+        return (!q || hay.includes(q)) && (statusFilter === 'all' || s.status === statusFilter);
+      }),
+    [students, q, statusFilter],
+  );
+
+  /**
+   * Export what is on screen, not the whole table.
+   *
+   * The button had no handler at all before. Exporting the filtered set rather
+   * than everything is the behaviour that matches what the user is looking at —
+   * someone who has filtered to graduates and pressed Export wants graduates.
+   */
+  function exportCsv() {
+    const cols: Array<[string, (s: any) => string]> = [
+      ['Student number', (s) => s.student_number ?? ''],
+      ['Matric number', (s) => s.matric_no ?? ''],
+      ['First name', (s) => s.first_name ?? ''],
+      ['Middle name', (s) => s.middle_name ?? ''],
+      ['Last name', (s) => s.last_name ?? ''],
+      ['Email', (s) => s.email ?? ''],
+      ['Phone', (s) => s.phone ?? ''],
+      ['Programme', (s) => [s.degree_type, s.program].filter(Boolean).join(' ')],
+      ['Faculty', (s) => s.faculty ?? ''],
+      ['Intake', (s) => s.intake ?? ''],
+      ['Admission year', (s) => String(s.admission_year ?? '')],
+      ['Status', (s) => statusMeta(toUniversal(s.status)).label],
+    ];
+    // A field containing a comma, quote or newline must be quoted, and inner
+    // quotes doubled — otherwise one address with a comma in it shifts every
+    // subsequent column of that row by one.
+    const esc = (v: string) => (/[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
+    const csv = [
+      cols.map(([h]) => esc(h)).join(','),
+      ...filtered.map((s) => cols.map(([, get]) => esc(get(s))).join(',')),
+    ].join('\r\n');
+
+    // BOM so Excel opens UTF-8 correctly. Without it, any name with an accent
+    // in it arrives mangled, which for this university is most of them.
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `icof-students-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
-
-  async function handleAddStudent(e: React.FormEvent) {
-    e.preventDefault();
-    const deptRes = await supabase.from('departments').select('id').eq('code', 'CS').single();
-    if (!deptRes.data) return;
-
-    const count = students.length + 1;
-    const matric_no = `UNI/${form.admission_year}/CS/${String(count).padStart(3, '0')}`;
-
-    const { error } = await supabase.from('students').insert({
-      ...form,
-      matric_no,
-      department_id: deptRes.data.id,
-      status: 'active',
-      photo_url: IMAGES.students[count % 4],
-    });
-
-    if (!error) {
-      setShowAddModal(false);
-      setForm({ first_name: '', last_name: '', middle_name: '', email: '', phone: '', date_of_birth: '', gender: 'Male', state_of_origin: '', program: 'Computer Science', degree_type: 'B.Sc.', admission_year: 2026 });
-      fetchStudents();
-    }
-  }
-
-  const filtered = students.filter((s) => {
-    const matchesSearch =
-      s.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.last_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.matric_no.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || s.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
-
-  const statusColors: Record<string, string> = {
-    applicant: 'bg-purple-50 text-purple-700',
-    active: 'bg-emerald-50 text-emerald-700',
-    graduated: 'bg-blue-50 text-blue-700',
-    suspended: 'bg-red-50 text-red-700',
-    withdrawn: 'bg-gray-100 text-gray-700',
-    deferred: 'bg-amber-50 text-amber-700',
-  };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-gray-800">Student Management</h2>
-          <p className="text-sm text-gray-500">Manage student records, registration, and status</p>
-        </div>
-        <div className="flex items-center">
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-[#422e59] text-white rounded-xl text-sm font-medium hover:bg-[#322244] transition-colors shadow-lg shadow-purple-900/20"
-        >
-          <UserPlus size={16} /> Register Student
-        </button>
-        <button
-          onClick={() => setShowImport(true)}
-          className="ml-2 flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
-        >
-          <Upload size={16} /> Bulk Import
-        </button>
-        </div>
+      <PageHeader
+        title="Students"
+        subtitle={loading ? 'Loading the register…' : `${students.length} on the register`}
+        action={
+          <div className="flex flex-wrap gap-2">
+            <button onClick={exportCsv} disabled={filtered.length === 0} className={BTN_SECONDARY}>
+              <Download size={15} /> Export {filtered.length !== students.length ? 'these' : 'all'}
+            </button>
+            <button onClick={() => setShowImport(true)} className={BTN_SECONDARY}>
+              <Upload size={15} /> Bulk import
+            </button>
+          </div>
+        }
+      />
+
+      {/* Where a student record actually comes from. */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#e8dcc0] bg-[#faf6ee] px-4 py-3 dark:border-[#3d3349] dark:bg-[#241f2c]">
+        <p className="text-sm text-[#6b5a2f] dark:text-[#c3b48f]">
+          Students are admitted, not added. A record appears here when the Registrar approves a
+          paid application — which is what puts a fee and a decision behind every enrolment.
+        </p>
+        {onNavigate && (
+          <button onClick={() => onNavigate('admissions-registrar')} className={BTN_SECONDARY}>
+            <Stamp size={15} /> Registrar&apos;s desk
+          </button>
+        )}
       </div>
 
-      {/* Filters */}
-      <div className="bg-white rounded-xl border border-gray-100 p-4">
+      <Card className="p-4">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="relative flex-1 min-w-[250px]">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <div className="relative min-w-[240px] flex-1">
+            <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#a49bb0]" />
             <input
-              type="text"
-              placeholder="Search by name or matric number..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search by name, student number or email"
+              aria-label="Search students"
+              className={`${INPUT} pl-9`}
             />
           </div>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30"
+            aria-label="Filter by status"
+            className={`${INPUT} w-auto`}
           >
-            <option value="all">All Status</option>
-            <option value="applicant">Applicants (pending review)</option>
-            <option value="active">Active</option>
-            <option value="graduated">Graduated</option>
-            <option value="suspended">Suspended</option>
+            {STATUS_FILTERS.map((f) => (
+              <option key={f.value} value={f.value}>{f.label}</option>
+            ))}
           </select>
-          <button className="flex items-center gap-1.5 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition-colors">
-            <Download size={14} /> Export
-          </button>
+          {(q || statusFilter !== 'all') && (
+            <button onClick={() => { setQuery(''); setStatusFilter('all'); }} className={BTN_GHOST}>
+              Clear
+            </button>
+          )}
         </div>
-      </div>
+      </Card>
 
-      {/* Table */}
-      <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gray-50 border-b border-gray-100">
-                <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Student</th>
-                <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Matric No</th>
-                <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Program</th>
-                <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Year</th>
-                <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+      <Card className="overflow-hidden">
+        {loading ? (
+          <SkeletonRows rows={6} cols={5} />
+        ) : filtered.length === 0 ? (
+          q || statusFilter !== 'all' ? (
+            <EmptyState
+              icon={<Search size={20} />}
+              title="Nothing matches those filters"
+              description={`${students.length} students are on the register; none of them match what you have selected.`}
+              action={
+                <button onClick={() => { setQuery(''); setStatusFilter('all'); }} className={BTN_SECONDARY}>
+                  Show all students
+                </button>
+              }
+            />
+          ) : (
+            <EmptyState
+              icon={<Users size={20} />}
+              title="No students on the register yet"
+              description="Approved applications appear here automatically. To bring an existing cohort across from the old system, use Bulk import."
+              action={
+                onNavigate && (
+                  <button onClick={() => onNavigate('admissions-registrar')} className={BTN_SECONDARY}>
+                    <Stamp size={15} /> Go to the Registrar&apos;s desk
+                  </button>
+                )
+              }
+            />
+          )
+        ) : (
+          <TableShell>
+            <THead>
+              <tr>
+                <Th>Student</Th>
+                <Th>Number</Th>
+                <Th>Programme</Th>
+                <Th>Intake</Th>
+                <Th>Status</Th>
+                <Th align="right">·</Th>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {loading ? (
-                <tr><td colSpan={6} className="px-5 py-8 text-center text-gray-400">Loading…</td></tr>
-              ) : filtered.length === 0 ? (
-                <tr><td colSpan={6} className="px-5 py-8 text-center text-gray-400">No students found</td></tr>
-              ) : (
-                filtered.map((student) => (
-                  <tr key={student.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-5 py-3">
+            </THead>
+            <TBody>
+              {filtered.map((s) => {
+                const meta = statusMeta(toUniversal(s.status));
+                return (
+                  <tr key={s.id} className="transition-colors hover:bg-[#faf8f4] dark:hover:bg-[#241f2c]">
+                    <Td>
                       <div className="flex items-center gap-3">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                          src={student.photo_url || IMAGES.students[0]}
+                          src={s.photo_url || IMAGES.students[0]}
                           alt=""
-                          className="w-9 h-9 rounded-full object-cover"
+                          className="h-8 w-8 flex-shrink-0 rounded-full object-cover ring-1 ring-[#ece7de]"
                         />
-                        <div>
-                          <p className="text-sm font-medium text-gray-800">
-                            {student.first_name} {student.middle_name ? student.middle_name.charAt(0) + '.' : ''} {student.last_name}
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-[#33234a] dark:text-[#e4dcf0]">
+                            {[s.first_name, s.middle_name?.charAt(0) ? `${s.middle_name.charAt(0)}.` : '', s.last_name]
+                              .filter(Boolean).join(' ')}
                           </p>
-                          <p className="text-xs text-gray-400">{student.email}</p>
+                          <p className="truncate text-xs text-[#a49bb0]">{s.email}</p>
                         </div>
                       </div>
-                    </td>
-                    <td className="px-5 py-3 text-sm text-gray-600 font-mono">{student.matric_no}</td>
-                    <td className="px-5 py-3 text-sm text-gray-600">{student.degree_type} {student.program}</td>
-                    <td className="px-5 py-3 text-sm text-gray-600">{student.admission_year}</td>
-                    <td className="px-5 py-3">
-                      <span className={`text-xs font-medium px-2.5 py-1 rounded-full capitalize ${statusColors[student.status] || 'bg-gray-100 text-gray-600'}`}>
-                        {student.status}
+                    </Td>
+                    <Td numeric className="font-mono text-xs text-[#6b6076] dark:text-[#9c93ad]">
+                      {(s as any).student_number || s.matric_no}
+                    </Td>
+                    <Td className="text-[#6b6076] dark:text-[#9c93ad]">
+                      {[s.degree_type, s.program].filter(Boolean).join(' ') || '—'}
+                    </Td>
+                    <Td numeric className="text-[#6b6076] dark:text-[#9c93ad]">
+                      {(s as any).intake || s.admission_year || '—'}
+                    </Td>
+                    <Td>
+                      <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-medium ${meta.chip}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} aria-hidden="true" />
+                        {meta.label}
                       </span>
-                    </td>
-                    <td className="px-5 py-3">
-                      <div className="flex items-center justify-end gap-1">
-                        <button
-                          onClick={() => setSelectedStudent(student)}
-                          className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        >
-                          <Eye size={14} />
-                        </button>
-                        <button className="p-1.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors">
-                          <Edit2 size={14} />
-                        </button>
-                      </div>
-                    </td>
+                    </Td>
+                    <Td align="right">
+                      {/* One action, and it works. The pencil beside it opened
+                          nothing — an edit control that edits nothing is a
+                          promise the screen cannot keep. */}
+                      <button
+                        onClick={() => setSelected(s)}
+                        aria-label={`Open ${s.first_name} ${s.last_name}`}
+                        className={BTN_GHOST}
+                      >
+                        <Eye size={13} /> Open
+                      </button>
+                    </Td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                );
+              })}
+            </TBody>
+          </TableShell>
+        )}
+      </Card>
 
-      {/* Add Student Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowAddModal(false)}>
-          <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-gray-800">Register New Student</h3>
-              <button onClick={() => setShowAddModal(false)} className="p-1 hover:bg-gray-100 rounded-lg"><X size={18} /></button>
-            </div>
-            <form onSubmit={handleAddStudent} className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">First Name *</label>
-                  <input required value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Last Name *</label>
-                  <input required value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Middle Name</label>
-                <input value={form.middle_name} onChange={(e) => setForm({ ...form, middle_name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Email *</label>
-                  <input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Phone</label>
-                  <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Date of Birth</label>
-                  <input type="date" value={form.date_of_birth} onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Gender</label>
-                  <select value={form.gender} onChange={(e) => setForm({ ...form, gender: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30">
-                    <option>Male</option>
-                    <option>Female</option>
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">State of Origin</label>
-                <input value={form.state_of_origin} onChange={(e) => setForm({ ...form, state_of_origin: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Program</label>
-                  <select value={form.program} onChange={(e) => setForm({ ...form, program: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30">
-                    <option>Computer Science</option>
-                    <option>Software Engineering</option>
-                    <option>Business Information Systems</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Admission Year</label>
-                  <input type="number" value={form.admission_year} onChange={(e) => setForm({ ...form, admission_year: parseInt(e.target.value) })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
-                </div>
-              </div>
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowAddModal(false)}
-                  className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
-                  Cancel
-                </button>
-                <button type="submit"
-                  className="flex-1 px-4 py-2.5 bg-[#422e59] text-white rounded-xl text-sm font-medium hover:bg-[#322244] transition-colors">
-                  Register Student
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+      {filtered.length > 0 && (
+        <p className="text-xs text-[#a49bb0]">
+          Showing {filtered.length} of {students.length}.
+        </p>
       )}
 
-      {/* Student Detail Modal */}
-      {selectedStudent && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedStudent(null)}>
-          <div className="bg-white rounded-2xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
-            <div className="p-6 text-center border-b border-gray-100">
-              <img src={selectedStudent.photo_url || IMAGES.students[0]} alt="" className="w-20 h-20 rounded-full object-cover mx-auto border-4 border-[#ece7f4]" />
-              <h3 className="text-lg font-bold text-gray-800 mt-3">
-                {selectedStudent.first_name} {selectedStudent.middle_name} {selectedStudent.last_name}
-              </h3>
-              <p className="text-sm text-gray-500 font-mono">{selectedStudent.matric_no}</p>
-            </div>
-            <div className="p-6 space-y-3">
-              {[
-                ['Program', `${selectedStudent.degree_type} ${selectedStudent.program}`],
-                ['Email', selectedStudent.email],
-                ['Phone', selectedStudent.phone || 'N/A'],
-                ['Gender', selectedStudent.gender || 'N/A'],
-                ['Admission Year', selectedStudent.admission_year],
-                ['Status', selectedStudent.status],
-              ].map(([label, value], i) => (
-                <div key={i} className="flex justify-between text-sm">
-                  <span className="text-gray-500">{label}</span>
-                  <span className="font-medium text-gray-800 capitalize">{String(value)}</span>
-                </div>
-              ))}
-            </div>
-            <div className="px-6 pb-6 flex gap-3">
+      {/* Detail */}
+      {selected && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setSelected(null)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white dark:bg-[#1f1a27]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="relative border-b border-[#f0ece4] p-6 text-center dark:border-[#2a2333]">
               <button
-                onClick={() => { setIdCardStudent(selectedStudent); }}
-                className="flex-1 px-4 py-2.5 bg-[#422e59] text-[#f7dc79] rounded-xl text-sm font-semibold hover:bg-[#322244] transition-colors">
-                🪪 ID Card
+                onClick={() => setSelected(null)}
+                aria-label="Close"
+                className={`absolute right-4 top-4 rounded-lg p-1.5 text-[#a49bb0] hover:bg-[#f2eee6] dark:hover:bg-[#2a2333] ${FOCUS}`}
+              >
+                <X size={16} />
               </button>
-              <button onClick={() => setSelectedStudent(null)}
-                className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={selected.photo_url || IMAGES.students[0]}
+                alt=""
+                className="mx-auto h-20 w-20 rounded-full object-cover ring-2 ring-[#e8dcc0]"
+              />
+              <h2 className="mt-3 font-heading text-lg font-bold text-[#33234a] dark:text-[#e4dcf0]">
+                {[selected.first_name, selected.middle_name, selected.last_name].filter(Boolean).join(' ')}
+              </h2>
+              <p className="font-mono text-sm tabular-nums text-[#a49bb0]">
+                {(selected as any).student_number || selected.matric_no}
+              </p>
+            </div>
+            <dl className="divide-y divide-[#f0ece4] py-2 dark:divide-[#2a2333]">
+              <Detail label="Programme">{[selected.degree_type, selected.program].filter(Boolean).join(' ') || '—'}</Detail>
+              <Detail label="Faculty">{(selected as any).faculty || '—'}</Detail>
+              <Detail label="Email">{selected.email || '—'}</Detail>
+              <Detail label="Phone">{selected.phone || '—'}</Detail>
+              <Detail label="Intake">{(selected as any).intake || selected.admission_year || '—'}</Detail>
+              <Detail label="Status">{statusMeta(toUniversal(selected.status)).label}</Detail>
+            </dl>
+            <div className="flex gap-3 p-6 pt-4">
+              <button onClick={() => setIdCardStudent(selected)} className={`${BTN_SECONDARY} flex-1`}>
+                <IdCard size={15} /> ID card
+              </button>
+              <button onClick={() => setSelected(null)} className={`${BTN_SECONDARY} flex-1`}>
                 Close
               </button>
             </div>
           </div>
         </div>
       )}
+
       {showImport && <BulkImport onClose={() => setShowImport(false)} onDone={fetchStudents} />}
       {idCardStudent && <StudentIDCard student={idCardStudent} onClose={() => setIdCardStudent(null)} />}
     </div>
