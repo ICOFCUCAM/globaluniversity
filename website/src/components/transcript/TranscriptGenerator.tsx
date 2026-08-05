@@ -42,8 +42,8 @@ export default function TranscriptGenerator() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-800">Transcript Generator</h2>
-          <p className="text-sm text-gray-500">Generate official academic transcripts</p>
+          <h2 className="font-heading text-xl font-bold text-[#422e59] dark:text-[#e4dcf0]">Transcript Generator</h2>
+          <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">Generate official academic transcripts</p>
         </div>
         <div className="flex gap-2">
           <button onClick={() => setShowPreview(!showPreview)}
@@ -58,19 +58,19 @@ export default function TranscriptGenerator() {
       </div>
 
       {/* Student Info Card */}
-      <div className="bg-white rounded-xl border border-gray-100 p-5">
+      <div className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] p-5">
         <div className="flex items-center gap-4">
           <img src={data.student.photo_url || IMAGES.students[0]} alt="" className="w-16 h-16 rounded-full object-cover border-2 border-[#ece7f4]" />
           <div className="flex-1">
-            <h3 className="font-bold text-gray-800">{data.student.last_name} {data.student.first_name} {data.student.middle_name}</h3>
-            <p className="text-sm text-gray-500 font-mono">{data.student.matric_no}</p>
+            <h3 className="font-bold text-[#33234a] dark:text-[#e4dcf0]">{data.student.last_name} {data.student.first_name} {data.student.middle_name}</h3>
+            <p className="text-sm text-[#6b6076] dark:text-[#9c93ad] font-mono">{data.student.matric_no}</p>
           </div>
           <div className="text-right">
-            <p className="text-sm text-gray-500">{data.student.degree_type} {data.student.program}</p>
-            <p className="text-sm text-gray-500">{data.department.faculty}</p>
+            <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">{data.student.degree_type} {data.student.program}</p>
+            <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">{data.department.faculty}</p>
             <div className="mt-1">
               <span className="text-lg font-bold text-[#422e59]">CGPA: {data.cgpa}</span>
-              <span className="text-xs text-gray-400 ml-2">({getClassification(data.cgpa)})</span>
+              <span className="text-xs text-[#a49bb0] dark:text-[#7b7289] ml-2">({getClassification(data.cgpa)})</span>
             </div>
           </div>
         </div>

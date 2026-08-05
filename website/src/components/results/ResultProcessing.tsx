@@ -120,8 +120,8 @@ export default function ResultProcessing() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-800">Result Processing</h2>
-          <p className="text-sm text-gray-500">Enter CA and exam scores, grades are calculated automatically</p>
+          <h2 className="font-heading text-xl font-bold text-[#422e59] dark:text-[#e4dcf0]">Result Processing</h2>
+          <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">Enter CA and exam scores, grades are calculated automatically</p>
         </div>
         <button onClick={() => setShowGradingScale(!showGradingScale)}
           className="flex items-center gap-2 px-3 py-2 bg-amber-50 text-amber-700 rounded-lg text-sm font-medium hover:bg-amber-100 transition-colors">
@@ -132,7 +132,7 @@ export default function ResultProcessing() {
       {/* Grading Scale Panel */}
       {showGradingScale && (
         <div className="bg-white rounded-xl border border-amber-200 p-5">
-          <h3 className="font-semibold text-gray-800 mb-3">Grading Scale</h3>
+          <h3 className="font-semibold text-[#33234a] dark:text-[#e4dcf0] mb-3">Grading Scale</h3>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {GRADING_SCALE.map((g) => (
               <div key={g.grade} className={`p-3 rounded-lg text-center ${getGradeColor(g.grade)}`}>
@@ -147,12 +147,12 @@ export default function ResultProcessing() {
       )}
 
       {/* Course Selection */}
-      <div className="bg-white rounded-xl border border-gray-100 p-5">
+      <div className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] p-5">
         <label className="block text-sm font-medium text-gray-700 mb-2">Select Course</label>
         <select
           value={selectedCourse}
           onChange={(e) => setSelectedCourse(e.target.value)}
-          className="w-full max-w-md px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30"
+          className="w-full max-w-md px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35"
         >
           <option value="">-- Select a course --</option>
           {courses.map((c) => (
@@ -166,26 +166,26 @@ export default function ResultProcessing() {
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-white rounded-xl p-4 border border-gray-100">
-              <p className="text-xs text-gray-500">Course</p>
-              <p className="text-lg font-bold text-gray-800">{selectedCourseData?.code}</p>
+              <p className="text-xs text-[#6b6076] dark:text-[#9c93ad]">Course</p>
+              <p className="font-heading text-lg font-bold text-[#422e59] dark:text-[#e4dcf0]">{selectedCourseData?.code}</p>
             </div>
             <div className="bg-white rounded-xl p-4 border border-gray-100">
-              <p className="text-xs text-gray-500">Class Average</p>
+              <p className="text-xs text-[#6b6076] dark:text-[#9c93ad]">Class Average</p>
               <p className="text-lg font-bold text-blue-600">{classAvg}%</p>
             </div>
             <div className="bg-white rounded-xl p-4 border border-gray-100">
-              <p className="text-xs text-gray-500">Pass</p>
+              <p className="text-xs text-[#6b6076] dark:text-[#9c93ad]">Pass</p>
               <p className="text-lg font-bold text-emerald-600">{passCount}</p>
             </div>
             <div className="bg-white rounded-xl p-4 border border-gray-100">
-              <p className="text-xs text-gray-500">Fail</p>
+              <p className="text-xs text-[#6b6076] dark:text-[#9c93ad]">Fail</p>
               <p className="text-lg font-bold text-red-600">{failCount}</p>
             </div>
           </div>
 
           {/* Results Table */}
-          <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-            <div className="px-5 py-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+          <div className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] overflow-hidden">
+            <div className="px-5 py-3 border-b border-[#ece7de] bg-[#faf8f4] dark:border-[#2e2637] dark:bg-[#241f2c] flex items-center justify-between">
               <h3 className="font-semibold text-gray-700 text-sm">Score Entry</h3>
               <div className="flex items-center gap-2">
                 {saved && (
@@ -205,7 +205,7 @@ export default function ResultProcessing() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-100">
+                  <tr className="border-b border-[#f0ece4] dark:border-[#2a2333]">
                     <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase">S/N</th>
                     <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Matric No</th>
                     <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Student Name</th>
@@ -216,12 +216,12 @@ export default function ResultProcessing() {
                     <th className="text-center px-5 py-3 text-xs font-semibold text-gray-500 uppercase">GP</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50">
+                <tbody className="divide-y divide-[#f0ece4] dark:divide-[#2a2333]">
                   {results.map((entry, i) => (
-                    <tr key={entry.studentId} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-5 py-2.5 text-sm text-gray-500">{i + 1}</td>
+                    <tr key={entry.studentId} className="transition-colors hover:bg-[#faf8f4] dark:hover:bg-[#241f2c]">
+                      <td className="px-5 py-2.5 text-sm text-[#6b6076] dark:text-[#9c93ad]">{i + 1}</td>
                       <td className="px-5 py-2.5 text-sm text-gray-600 font-mono">{entry.matricNo}</td>
-                      <td className="px-5 py-2.5 text-sm text-gray-800 font-medium">{entry.studentName}</td>
+                      <td className="px-5 py-2.5 text-sm text-[#33234a] dark:text-[#e4dcf0] font-medium">{entry.studentName}</td>
                       <td className="px-5 py-2.5">
                         <input
                           type="number"
@@ -229,7 +229,7 @@ export default function ResultProcessing() {
                           max={40}
                           value={entry.caScore || ''}
                           onChange={(e) => updateScore(i, 'caScore', Math.min(40, Math.max(0, Number(e.target.value))))}
-                          className="w-16 px-2 py-1.5 border border-gray-200 rounded-lg text-sm text-center focus:outline-none focus:ring-2 focus:ring-[#422e59]/30"
+                          className="w-16 px-2 py-1.5 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35"
                         />
                       </td>
                       <td className="px-5 py-2.5">
@@ -239,11 +239,11 @@ export default function ResultProcessing() {
                           max={60}
                           value={entry.examScore || ''}
                           onChange={(e) => updateScore(i, 'examScore', Math.min(60, Math.max(0, Number(e.target.value))))}
-                          className="w-16 px-2 py-1.5 border border-gray-200 rounded-lg text-sm text-center focus:outline-none focus:ring-2 focus:ring-[#422e59]/30"
+                          className="w-16 px-2 py-1.5 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35"
                         />
                       </td>
                       <td className="px-5 py-2.5 text-center">
-                        <span className="text-sm font-bold text-gray-800">{entry.totalScore}</span>
+                        <span className="text-sm font-bold text-[#33234a] dark:text-[#e4dcf0]">{entry.totalScore}</span>
                       </td>
                       <td className="px-5 py-2.5 text-center">
                         <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${getGradeColor(entry.grade)}`}>

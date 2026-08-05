@@ -77,8 +77,8 @@ export default function LMSModule() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-800">Learning Management System</h2>
-          <p className="text-sm text-gray-500">Course materials, live classes, and progress tracking</p>
+          <h2 className="font-heading text-xl font-bold text-[#422e59] dark:text-[#e4dcf0]">Learning Management System</h2>
+          <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">Course materials, live classes, and progress tracking</p>
         </div>
         <button onClick={() => setShowUploadModal(true)}
           className="flex items-center gap-2 px-4 py-2.5 bg-[#422e59] text-white rounded-xl text-sm font-medium hover:bg-[#322244] transition-colors shadow-lg shadow-purple-900/20">
@@ -108,19 +108,19 @@ export default function LMSModule() {
           <div className="relative">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input type="text" placeholder="Search materials..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full max-w-md pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
+              className="w-full max-w-md pl-9 pr-4 py-2 bg-white rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35" />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredMaterials.map((material) => (
-              <div key={material.id} className="bg-white rounded-xl border border-gray-100 p-4 hover:shadow-lg transition-all duration-300 group">
+              <div key={material.id} className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] p-4 hover:shadow-lg transition-all duration-300 group">
                 <div className="flex items-start justify-between">
                   <div className={`p-2.5 rounded-xl ${material.type === 'video' ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-500'}`}>
                     {material.type === 'video' ? <Video size={20} /> : <FileText size={20} />}
                   </div>
                   <span className="text-[10px] font-medium text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full">{material.courseCode}</span>
                 </div>
-                <h4 className="text-sm font-semibold text-gray-800 mt-3 group-hover:text-blue-600 transition-colors">{material.title}</h4>
-                <div className="flex items-center justify-between mt-3 text-xs text-gray-400">
+                <h4 className="text-sm font-semibold text-[#33234a] dark:text-[#e4dcf0] mt-3 group-hover:text-blue-600 transition-colors">{material.title}</h4>
+                <div className="flex items-center justify-between mt-3 text-xs text-[#a49bb0] dark:text-[#7b7289]">
                   <span>{material.size}</span>
                   <span>{material.downloads} downloads</span>
                 </div>
@@ -140,7 +140,7 @@ export default function LMSModule() {
       {activeTab === 'classes' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-500">Live sessions and recorded lectures for your courses</p>
+            <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">Live sessions and recorded lectures for your courses</p>
             <button
               onClick={() => setShowSchedule(true)}
               className="flex items-center gap-2 rounded-xl bg-[#422e59] px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-purple-900/20 hover:bg-[#322244]"
@@ -156,19 +156,19 @@ export default function LMSModule() {
           {showSchedule && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowSchedule(false)}>
               <form onSubmit={scheduleClass} onClick={(e) => e.stopPropagation()} className="w-full max-w-md space-y-3 rounded-2xl bg-white p-6">
-                <h3 className="text-lg font-bold text-gray-800">Schedule Class / Add Recording</h3>
+                <h3 className="font-heading text-lg font-bold text-[#422e59] dark:text-[#e4dcf0]">Schedule Class / Add Recording</h3>
                 {([['course','Course code'],['title','Session title'],['lecturer','Lecturer'],['time','When (e.g. Mon 14:00)'],['link','Meeting or recording URL']] as const).map(([k,label]) => (
                   <input
                     key={k}
                     required={k !== 'link'}
                     placeholder={label}
-                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30"
+                    className="w-full px-3 py-2 bg-gray-50 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35"
                     value={(sched as any)[k]}
                     onChange={(e) => setSched({ ...sched, [k]: e.target.value })}
                   />
                 ))}
                 <select
-                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30"
+                  className="w-full px-3 py-2 bg-gray-50 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35"
                   value={sched.status}
                   onChange={(e) => setSched({ ...sched, status: e.target.value })}
                 >
@@ -183,7 +183,7 @@ export default function LMSModule() {
             </div>
           )}
           {liveClasses.map((cls) => (
-            <div key={cls.id} className="bg-white rounded-xl border border-gray-100 p-5 flex items-center justify-between hover:shadow-md transition-all">
+            <div key={cls.id} className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] p-5 flex items-center justify-between hover:shadow-md transition-all">
               <div className="flex items-center gap-4">
                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
                   cls.status === 'live' ? 'bg-red-500 text-white animate-pulse' :
@@ -193,14 +193,14 @@ export default function LMSModule() {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h4 className="text-sm font-semibold text-gray-800">{cls.course}: {cls.title}</h4>
+                    <h4 className="text-sm font-semibold text-[#33234a] dark:text-[#e4dcf0]">{cls.course}: {cls.title}</h4>
                     {cls.status === 'live' && (
                       <span className="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full uppercase animate-pulse">Live</span>
                     )}
                   </div>
-                  <p className="text-xs text-gray-400 mt-0.5">{cls.lecturer} · {cls.time}</p>
+                  <p className="text-xs text-[#a49bb0] dark:text-[#7b7289] mt-0.5">{cls.lecturer} · {cls.time}</p>
                   {cls.attendees > 0 && (
-                    <p className="text-xs text-gray-400 flex items-center gap-1 mt-0.5"><Users size={10} /> {cls.attendees} attendees</p>
+                    <p className="text-xs text-[#a49bb0] dark:text-[#7b7289] flex items-center gap-1 mt-0.5"><Users size={10} /> {cls.attendees} attendees</p>
                   )}
                 </div>
               </div>
@@ -222,11 +222,11 @@ export default function LMSModule() {
       {activeTab === 'progress' && (
         <div className="space-y-4">
           {courseProgress.map((course) => (
-            <div key={course.code} className="bg-white rounded-xl border border-gray-100 p-5">
+            <div key={course.code} className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] p-5">
               <div className="flex items-center justify-between mb-3">
                 <div>
-                  <h4 className="text-sm font-semibold text-gray-800">{course.code} - {course.title}</h4>
-                  <p className="text-xs text-gray-400">{course.completed}/{course.materials} materials completed</p>
+                  <h4 className="text-sm font-semibold text-[#33234a] dark:text-[#e4dcf0]">{course.code} - {course.title}</h4>
+                  <p className="text-xs text-[#a49bb0] dark:text-[#7b7289]">{course.completed}/{course.materials} materials completed</p>
                 </div>
                 <span className={`text-lg font-bold ${course.progress >= 80 ? 'text-emerald-600' : course.progress >= 50 ? 'text-blue-600' : 'text-amber-600'}`}>
                   {course.progress}%
@@ -251,25 +251,25 @@ export default function LMSModule() {
       {showUploadModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowUploadModal(false)}>
           <div className="bg-white rounded-2xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-gray-800">Upload Material</h3>
+            <div className="px-6 py-4 border-b border-[#f0ece4] dark:border-[#2a2333] flex items-center justify-between">
+              <h3 className="font-heading text-lg font-bold text-[#422e59] dark:text-[#e4dcf0]">Upload Material</h3>
               <button onClick={() => setShowUploadModal(false)} className="p-1 hover:bg-gray-100 rounded-lg"><X size={18} /></button>
             </div>
             <form onSubmit={handleUpload} className="p-6 space-y-4">
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Course Code</label>
                 <input value={uploadForm.courseCode} onChange={(e) => setUploadForm({ ...uploadForm, courseCode: e.target.value })}
-                  placeholder="e.g. CSC 301" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
+                  placeholder="e.g. CSC 301" className="w-full px-3 py-2 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Title</label>
                 <input value={uploadForm.title} onChange={(e) => setUploadForm({ ...uploadForm, title: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
+                  className="w-full px-3 py-2 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Type</label>
                 <select value={uploadForm.type} onChange={(e) => setUploadForm({ ...uploadForm, type: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
+                  className="w-full px-3 py-2 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm">
                   <option value="pdf">PDF Document</option>
                   <option value="video">Video</option>
                 </select>
@@ -278,8 +278,8 @@ export default function LMSModule() {
                 <label className="block text-xs font-medium text-gray-600 mb-1">File</label>
                 <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-blue-400 transition-colors cursor-pointer">
                   <Upload size={24} className="mx-auto text-gray-400 mb-2" />
-                  <p className="text-sm text-gray-500">Click to upload or drag and drop</p>
-                  <p className="text-xs text-gray-400 mt-1">PDF, MP4, DOCX up to 500MB</p>
+                  <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">Click to upload or drag and drop</p>
+                  <p className="text-xs text-[#a49bb0] dark:text-[#7b7289] mt-1">PDF, MP4, DOCX up to 500MB</p>
                 </div>
               </div>
               <div className="flex gap-3 pt-2">

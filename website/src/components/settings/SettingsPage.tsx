@@ -69,13 +69,13 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-gray-800">Settings</h2>
-        <p className="text-sm text-gray-500">Manage your account and system preferences</p>
+        <h2 className="font-heading text-xl font-bold text-[#422e59] dark:text-[#e4dcf0]">Settings</h2>
+        <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">Manage your account and system preferences</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Sidebar */}
-        <div className="bg-white rounded-xl border border-gray-100 p-3 h-fit">
+        <div className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] p-3 h-fit">
           {tabs.map((tab) => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm transition-all ${
@@ -87,15 +87,15 @@ export default function SettingsPage() {
         </div>
 
         {/* Content */}
-        <div className="lg:col-span-3 bg-white rounded-xl border border-gray-100 p-6">
+        <div className="lg:col-span-3 rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] p-6">
           {activeTab === 'profile' && (
             <div className="space-y-4">
-              <h3 className="font-semibold text-gray-800">Profile Settings</h3>
+              <h3 className="font-semibold text-[#33234a] dark:text-[#e4dcf0]">Profile Settings</h3>
               <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
                 <img src={user?.avatar} alt="" className="w-16 h-16 rounded-full object-cover border-2 border-[#ece7f4]" />
                 <div>
-                  <p className="font-semibold text-gray-800">{user?.name}</p>
-                  <p className="text-sm text-gray-500 capitalize">{user?.role}</p>
+                  <p className="font-semibold text-[#33234a] dark:text-[#e4dcf0]">{user?.name}</p>
+                  <p className="text-sm text-[#6b6076] dark:text-[#9c93ad] capitalize">{user?.role}</p>
 
                 </div>
               </div>
@@ -103,12 +103,12 @@ export default function SettingsPage() {
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Full Name</label>
                   <input value={profile.name} onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
+                    className="w-full px-3 py-2 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Email</label>
                   <input value={profile.email} readOnly
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 text-gray-500" />
+                    className="w-full px-3 py-2 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm bg-gray-50 text-gray-500" />
                   <p className="mt-1 text-[11px] text-gray-400">
                     Your sign-in address. Only the Superadministrator can change it.
                   </p>
@@ -116,7 +116,7 @@ export default function SettingsPage() {
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Role</label>
                   <input value={roleLabels[user?.role ?? 'student'] ?? ''} readOnly
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 text-gray-500" />
+                    className="w-full px-3 py-2 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm bg-gray-50 text-gray-500" />
                   <p className="mt-1 text-[11px] text-gray-400">
                     Assigned by the Superadministrator and recorded in the audit log.
                   </p>
@@ -138,24 +138,24 @@ export default function SettingsPage() {
 
           {activeTab === 'grading' && (
             <div className="space-y-4">
-              <h3 className="font-semibold text-gray-800">Grading Scale Configuration</h3>
-              <p className="text-sm text-gray-500">Current grading scale used for all result processing</p>
+              <h3 className="font-semibold text-[#33234a] dark:text-[#e4dcf0]">Grading Scale Configuration</h3>
+              <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">Current grading scale used for all result processing</p>
               <table className="w-full">
                 <thead>
-                  <tr className="bg-gray-50 border-b border-gray-100">
+                  <tr className="border-b border-[#ece7de] bg-[#faf8f4] dark:border-[#2e2637] dark:bg-[#241f2c]">
                     <th className="text-left px-4 py-2 text-xs font-semibold text-gray-500">Score Range</th>
                     <th className="text-center px-4 py-2 text-xs font-semibold text-gray-500">Grade</th>
                     <th className="text-center px-4 py-2 text-xs font-semibold text-gray-500">Grade Point</th>
                     <th className="text-left px-4 py-2 text-xs font-semibold text-gray-500">Remark</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50">
+                <tbody className="divide-y divide-[#f0ece4] dark:divide-[#2a2333]">
                   {GRADING_SCALE.map((g) => (
                     <tr key={g.grade} className="hover:bg-gray-50">
                       <td className="px-4 py-2 text-sm">{g.minScore} - {g.maxScore}</td>
                       <td className="px-4 py-2 text-sm text-center font-bold">{g.grade}</td>
                       <td className="px-4 py-2 text-sm text-center">{g.gradePoint}</td>
-                      <td className="px-4 py-2 text-sm text-gray-500">{g.remark}</td>
+                      <td className="px-4 py-2 text-sm text-[#6b6076] dark:text-[#9c93ad]">{g.remark}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -180,7 +180,7 @@ export default function SettingsPage() {
 
           {activeTab === 'notifications' && (
             <div className="space-y-4">
-              <h3 className="font-semibold text-gray-800">Notification Preferences</h3>
+              <h3 className="font-semibold text-[#33234a] dark:text-[#e4dcf0]">Notification Preferences</h3>
               {[
                 { label: 'Result Notifications', desc: 'Get notified when results are submitted or approved' },
                 { label: 'Exam Reminders', desc: 'Receive reminders before scheduled exams' },
@@ -191,7 +191,7 @@ export default function SettingsPage() {
                 <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                   <div>
                     <p className="text-sm font-medium text-gray-700">{item.label}</p>
-                    <p className="text-xs text-gray-400">{item.desc}</p>
+                    <p className="text-xs text-[#a49bb0] dark:text-[#7b7289]">{item.desc}</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" defaultChecked={i < 3} className="sr-only peer" />
@@ -204,22 +204,22 @@ export default function SettingsPage() {
 
           {activeTab === 'security' && (
             <div className="space-y-4">
-              <h3 className="font-semibold text-gray-800">Security Settings</h3>
+              <h3 className="font-semibold text-[#33234a] dark:text-[#e4dcf0]">Security Settings</h3>
               <div className="p-4 bg-gray-50 rounded-xl space-y-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Current Password</label>
                   <input type="password" placeholder="Enter current password"
-                    className="w-full max-w-md px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
+                    className="w-full max-w-md px-3 py-2 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">New Password</label>
                   <input type="password" placeholder="Enter new password"
-                    className="w-full max-w-md px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
+                    className="w-full max-w-md px-3 py-2 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Confirm Password</label>
                   <input type="password" placeholder="Confirm new password"
-                    className="w-full max-w-md px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
+                    className="w-full max-w-md px-3 py-2 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35" />
                 </div>
                 <button className="px-4 py-2 bg-[#422e59] text-white rounded-lg text-sm font-medium hover:bg-[#322244] transition-colors">
                   Update Password
@@ -227,7 +227,7 @@ export default function SettingsPage() {
               </div>
               <div className="p-4 bg-gray-50 rounded-xl">
                 <h4 className="text-sm font-medium text-gray-700 mb-2">Two-Factor Authentication</h4>
-                <p className="text-xs text-gray-500 mb-3">Add an extra layer of security to your account</p>
+                <p className="text-xs text-[#6b6076] dark:text-[#9c93ad] mb-3">Add an extra layer of security to your account</p>
                 <button className="px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-medium hover:bg-emerald-600 transition-colors">
                   Enable 2FA
                 </button>

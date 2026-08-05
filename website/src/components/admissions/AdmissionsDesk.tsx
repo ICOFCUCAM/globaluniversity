@@ -297,24 +297,24 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
         {/* Queue */}
         <div className="rounded-xl border border-gray-200 bg-white">
-          <div className="border-b border-gray-100 px-4 py-3">
+          <div className="border-b border-[#f0ece4] dark:border-[#2a2333] px-4 py-3">
             <p className="text-xs font-bold uppercase tracking-wide text-gray-500">
               {isFinance ? 'Awaiting fee' : 'Awaiting examination'}
             </p>
             <p className="mt-0.5 text-2xl font-bold text-[#422e59]">{queue.length}</p>
           </div>
           {loading ? (
-            <p className="flex items-center gap-2 px-4 py-6 text-sm text-gray-500">
+            <p className="flex items-center gap-2 px-4 py-6 text-sm text-[#6b6076] dark:text-[#9c93ad]">
               <Loader2 size={14} className="animate-spin" /> Loading…
             </p>
           ) : queue.length === 0 ? (
-            <p className="px-4 py-6 text-sm text-gray-500">
+            <p className="px-4 py-6 text-sm text-[#6b6076] dark:text-[#9c93ad]">
               {isFinance
                 ? 'No applications are waiting for a fee to be registered.'
                 : 'No applications are waiting. Applications appear here once Finance registers the application fee.'}
             </p>
           ) : (
-            <ul className="max-h-[32rem] divide-y divide-gray-100 overflow-y-auto">
+            <ul className="max-h-[32rem] divide-y divide-[#f0ece4] dark:divide-[#2a2333] overflow-y-auto">
               {queue.map((s) => (
                 <li key={s.id}>
                   <button
@@ -344,7 +344,7 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
         {/* Record */}
         <div className="rounded-xl border border-gray-200 bg-white">
           {!selected ? (
-            <p className="px-6 py-16 text-center text-sm text-gray-500">
+            <p className="px-6 py-16 text-center text-sm text-[#6b6076] dark:text-[#9c93ad]">
               Select an application from the queue.
             </p>
           ) : (
@@ -354,7 +354,7 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
                   <h2 className="text-xl font-bold text-[#422e59]">
                     {selected.first_name} {selected.middle_name} {selected.last_name}
                   </h2>
-                  <p className="mt-1 font-mono text-xs text-gray-500">{selected.matric_no}</p>
+                  <p className="mt-1 font-mono text-xs text-[#6b6076] dark:text-[#9c93ad]">{selected.matric_no}</p>
                 </div>
                 <StageChip student={selected} />
               </div>
@@ -370,7 +370,7 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
                 ].map(([k, v]) => (
                   <div key={k}>
                     <dt className="text-[10px] font-bold uppercase tracking-wide text-gray-500">{k}</dt>
-                    <dd className="mt-0.5 text-sm text-gray-800">{v}</dd>
+                    <dd className="mt-0.5 text-sm text-[#33234a] dark:text-[#e4dcf0]">{v}</dd>
                   </div>
                 ))}
               </dl>
@@ -625,7 +625,7 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
 
                   {mayReject && (
                   <div className="rounded-xl bg-gray-50 p-5 ring-1 ring-gray-200">
-                    <h3 className="flex items-center gap-2 font-bold text-gray-800">
+                    <h3 className="flex items-center gap-2 font-bold text-[#33234a] dark:text-[#e4dcf0]">
                       <XCircle size={18} /> Reject
                     </h3>
                     <label className="mt-3 block">
@@ -658,10 +658,10 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
       {/* Recently processed */}
       {processed.length > 0 && (
         <div className="rounded-xl border border-gray-200 bg-white">
-          <div className="border-b border-gray-100 px-5 py-3">
+          <div className="border-b border-[#f0ece4] dark:border-[#2a2333] px-5 py-3">
             <p className="text-xs font-bold uppercase tracking-wide text-gray-500">Recently decided</p>
           </div>
-          <ul className="max-h-72 divide-y divide-gray-100 overflow-y-auto">
+          <ul className="max-h-72 divide-y divide-[#f0ece4] dark:divide-[#2a2333] overflow-y-auto">
             {processed.map((s) => (
               <li key={s.id} className="flex flex-wrap items-center gap-3 px-5 py-3 text-sm">
                 <span className="font-mono text-[11px] text-gray-500">{s.matric_no}</span>

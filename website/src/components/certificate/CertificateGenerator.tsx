@@ -41,8 +41,8 @@ export default function CertificateGenerator() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-800">Certificate Generator</h2>
-          <p className="text-sm text-gray-500">Generate official degree certificates</p>
+          <h2 className="font-heading text-xl font-bold text-[#422e59] dark:text-[#e4dcf0]">Certificate Generator</h2>
+          <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">Generate official degree certificates</p>
         </div>
         <div className="flex gap-2">
           <button onClick={() => setShowPreview(!showPreview)}
@@ -78,8 +78,8 @@ export default function CertificateGenerator() {
       </div>
 
       {/* Eligibility Check */}
-      <div className="bg-white rounded-xl border border-gray-100 p-5">
-        <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2"><Award size={18} className="text-amber-500" /> Graduation Eligibility</h3>
+      <div className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] p-5">
+        <h3 className="font-semibold text-[#33234a] dark:text-[#e4dcf0] mb-3 flex items-center gap-2"><Award size={18} className="text-amber-500" /> Graduation Eligibility</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="p-3 bg-emerald-50 rounded-lg">
             <p className="text-xs text-emerald-600 font-medium">Credits Completed</p>

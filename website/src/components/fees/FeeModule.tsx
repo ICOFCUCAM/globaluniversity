@@ -79,7 +79,7 @@ export default function FeeModule() {
   }
 
   const input =
-    'w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30';
+    'w-full px-3 py-2 bg-gray-50 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35';
   const totals: Record<string, number> = {};
   for (const r of receipts) {
     const m = r.file_name.match(/· ([\d,]+) (FCFA|USD|EUR|GBP|NGN)/);
@@ -90,8 +90,8 @@ export default function FeeModule() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-800">Fees & Receipts</h2>
-          <p className="text-sm text-gray-500">Record tuition payments and issue receipts</p>
+          <h2 className="font-heading text-xl font-bold text-[#422e59] dark:text-[#e4dcf0]">Fees & Receipts</h2>
+          <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">Record tuition payments and issue receipts</p>
         </div>
         <button
           onClick={() => setShowNew(true)}
@@ -102,11 +102,11 @@ export default function FeeModule() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="rounded-xl border border-gray-100 bg-white p-5">
+        <div className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] p-5">
           <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Payments recorded</p>
-          <p className="mt-1 text-2xl font-bold text-gray-800">{receipts.length}</p>
+          <p className="mt-1 text-2xl font-bold text-[#33234a] dark:text-[#e4dcf0]">{receipts.length}</p>
         </div>
-        <div className="rounded-xl border border-gray-100 bg-white p-5">
+        <div className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] p-5">
           <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Total collected</p>
           <p className="mt-1 text-xl font-bold text-emerald-600">
             {Object.keys(totals).length === 0
@@ -118,8 +118,8 @@ export default function FeeModule() {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-gray-100 bg-white">
-        <div className="divide-y divide-gray-50">
+      <div className="overflow-hidden rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27]">
+        <div className="divide-y divide-[#f0ece4] dark:divide-[#2a2333]">
           {receipts.length === 0 && (
             <p className="p-10 text-center text-sm text-gray-400">No payments recorded yet.</p>
           )}
@@ -129,7 +129,7 @@ export default function FeeModule() {
                 <Banknote size={16} />
               </span>
               <span className="min-w-0 flex-1 truncate text-sm text-gray-700">{r.file_name}</span>
-              <span className="text-xs text-gray-400">{new Date(r.uploaded_at).toLocaleDateString()}</span>
+              <span className="text-xs text-[#a49bb0] dark:text-[#7b7289]">{new Date(r.uploaded_at).toLocaleDateString()}</span>
             </button>
           ))}
         </div>
@@ -138,7 +138,7 @@ export default function FeeModule() {
       {showNew && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowNew(false)}>
           <form onSubmit={record} onClick={(e) => e.stopPropagation()} className="w-full max-w-md space-y-3 rounded-2xl bg-white p-6">
-            <h3 className="text-lg font-bold text-gray-800">Record Payment</h3>
+            <h3 className="font-heading text-lg font-bold text-[#422e59] dark:text-[#e4dcf0]">Record Payment</h3>
             <select required className={input} value={form.student_id} onChange={(e) => setForm({ ...form, student_id: e.target.value })}>
               <option value="">Select student…</option>
               {students.map((s) => (
@@ -184,9 +184,9 @@ export default function FeeModule() {
               </div>
               <div className="space-y-2 p-6 text-sm">
                 {Object.entries(view).map(([k, v]) => (
-                  <div key={k} className="flex justify-between border-b border-gray-100 pb-1.5">
+                  <div key={k} className="flex justify-between border-b border-[#f0ece4] dark:border-[#2a2333] pb-1.5">
                     <span className="capitalize text-gray-500">{k.replace(/_/g, ' ')}</span>
-                    <span className="font-medium text-gray-800">{String(v)}</span>
+                    <span className="font-medium text-[#33234a] dark:text-[#e4dcf0]">{String(v)}</span>
                   </div>
                 ))}
                 <p className="pt-2 text-center text-[10px] text-gray-400">Thank you. Keep this receipt for your records.</p>

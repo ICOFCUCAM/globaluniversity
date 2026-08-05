@@ -75,8 +75,8 @@ export default function StudentDashboard({ onNavigate }: StudentDashboardProps) 
             <div className={`p-2.5 rounded-xl bg-gradient-to-br ${action.color} text-white shadow-lg w-fit`}>
               {action.icon}
             </div>
-            <p className="text-sm font-semibold text-gray-800 mt-3">{action.label}</p>
-            <div className="flex items-center gap-1 text-xs text-gray-400 mt-1 group-hover:text-blue-500 transition-colors">
+            <p className="text-sm font-semibold text-[#33234a] dark:text-[#e4dcf0] mt-3">{action.label}</p>
+            <div className="flex items-center gap-1 text-xs text-[#a49bb0] dark:text-[#7b7289] mt-1 group-hover:text-blue-500 transition-colors">
               <span>Open</span>
               <ArrowRight size={12} />
             </div>
@@ -87,7 +87,7 @@ export default function StudentDashboard({ onNavigate }: StudentDashboardProps) 
       {/* GPA Progress */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl p-5 border border-gray-100">
-          <h3 className="font-semibold text-gray-800 mb-4">GPA Progress</h3>
+          <h3 className="font-semibold text-[#33234a] dark:text-[#e4dcf0] mb-4">GPA Progress</h3>
           <div className="flex items-end gap-2 h-32">
             {semesterGPAs.map((s, i) => (
               <div key={i} className="flex-1 flex flex-col items-center gap-1">
@@ -103,17 +103,17 @@ export default function StudentDashboard({ onNavigate }: StudentDashboardProps) 
         </div>
 
         {/* Current Semester Courses */}
-        <div className="bg-white rounded-xl border border-gray-100">
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-            <h3 className="font-semibold text-gray-800">Current Semester</h3>
-            <span className="text-xs text-gray-400">Year 4, Semester 2</span>
+        <div className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27]">
+          <div className="px-5 py-4 border-b border-[#f0ece4] dark:border-[#2a2333] flex items-center justify-between">
+            <h3 className="font-semibold text-[#33234a] dark:text-[#e4dcf0]">Current Semester</h3>
+            <span className="text-xs text-[#a49bb0] dark:text-[#7b7289]">Year 4, Semester 2</span>
           </div>
-          <div className="divide-y divide-gray-50">
+          <div className="divide-y divide-[#f0ece4] dark:divide-[#2a2333]">
             {currentSem?.courses.map((course, i) => (
               <div key={i} className="px-5 py-3 flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-700">{course.code}</p>
-                  <p className="text-xs text-gray-400">{course.title}</p>
+                  <p className="text-xs text-[#a49bb0] dark:text-[#7b7289]">{course.title}</p>
                 </div>
                 <div className="text-right">
                   <span className={`text-sm font-bold ${getGPAColor(course.gradePoint)}`}>{course.grade}</span>
@@ -126,8 +126,8 @@ export default function StudentDashboard({ onNavigate }: StudentDashboardProps) 
       </div>
 
       {/* Upcoming */}
-      <div className="bg-white rounded-xl border border-gray-100 p-5">
-        <h3 className="font-semibold text-gray-800 mb-3">Upcoming Schedule</h3>
+      <div className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] p-5">
+        <h3 className="font-semibold text-[#33234a] dark:text-[#e4dcf0] mb-3">Upcoming Schedule</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {[
             { title: 'CSC 412 Lecture', time: 'Today, 2:00 PM', type: 'Live Class', color: 'border-l-blue-500' },
@@ -136,7 +136,7 @@ export default function StudentDashboard({ onNavigate }: StudentDashboardProps) 
           ].map((item, i) => (
             <div key={i} className={`p-3 bg-gray-50 rounded-lg border-l-4 ${item.color}`}>
               <p className="text-sm font-medium text-gray-700">{item.title}</p>
-              <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+              <p className="text-xs text-[#a49bb0] dark:text-[#7b7289] mt-1 flex items-center gap-1">
                 <Clock size={10} /> {item.time}
               </p>
               <span className="text-[10px] font-medium text-gray-500 mt-1 inline-block">{item.type}</span>

@@ -93,7 +93,7 @@ export default function QuestionBank() {
   }
 
   const input =
-    'w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30';
+    'w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35';
   const tone: Record<Question['difficulty'], string> = {
     easy: 'bg-emerald-50 text-emerald-700',
     medium: 'bg-amber-50 text-amber-700',
@@ -104,8 +104,8 @@ export default function QuestionBank() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-800">Question Bank</h2>
-          <p className="text-sm text-gray-500">Build reusable question sets and generate randomized examination papers</p>
+          <h2 className="font-heading text-xl font-bold text-[#422e59] dark:text-[#e4dcf0]">Question Bank</h2>
+          <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">Build reusable question sets and generate randomized examination papers</p>
         </div>
         <button
           onClick={() => setShowNew(true)}
@@ -115,7 +115,7 @@ export default function QuestionBank() {
         </button>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-gray-100 bg-white p-4">
+      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] p-4">
         <span className="flex items-center gap-2 text-sm font-medium text-gray-700">
           <Database size={15} /> Bank
         </span>
@@ -160,12 +160,12 @@ export default function QuestionBank() {
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-mono text-xs font-bold text-[#422e59]">{q.course}</span>
-                  {q.topic && <span className="text-xs text-gray-400">· {q.topic}</span>}
+                  {q.topic && <span className="text-xs text-[#a49bb0] dark:text-[#7b7289]">· {q.topic}</span>}
                   <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${tone[q.difficulty]}`}>
                     {q.difficulty}
                   </span>
                 </div>
-                <p className="mt-2 text-sm font-medium text-gray-800">
+                <p className="mt-2 text-sm font-medium text-[#33234a] dark:text-[#e4dcf0]">
                   {i + 1}. {q.text}
                 </p>
                 <ol className="mt-2 grid gap-1 sm:grid-cols-2">
@@ -201,7 +201,7 @@ export default function QuestionBank() {
       {showNew && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowNew(false)}>
           <form onSubmit={addQuestion} onClick={(e) => e.stopPropagation()} className="max-h-[85vh] w-full max-w-lg space-y-3 overflow-y-auto rounded-2xl bg-white p-6">
-            <h3 className="text-lg font-bold text-gray-800">Add Question</h3>
+            <h3 className="font-heading text-lg font-bold text-[#422e59] dark:text-[#e4dcf0]">Add Question</h3>
             <div className="flex gap-2">
               <input required placeholder="Course code" className={input} value={form.course} onChange={(e) => setForm({ ...form, course: e.target.value })} />
               <input placeholder="Topic (optional)" className={input} value={form.topic} onChange={(e) => setForm({ ...form, topic: e.target.value })} />
@@ -249,16 +249,16 @@ export default function QuestionBank() {
             <div className="mb-6 border-b border-gray-200 pb-4 text-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/images/site-icon.png" alt="" className="mx-auto h-12 w-12" />
-              <h3 className="mt-2 font-bold text-gray-800">ICOF GLOBAL UNIVERSITY</h3>
-              <p className="text-sm text-gray-500">
+              <h3 className="mt-2 font-bold text-[#33234a] dark:text-[#e4dcf0]">ICOF GLOBAL UNIVERSITY</h3>
+              <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">
                 Examination Paper · {course === 'all' ? 'Mixed' : course} · {paper.length} questions
               </p>
-              <p className="mt-1 text-xs text-gray-400">Name: ____________________ Matric No: ____________ Date: __________</p>
+              <p className="mt-1 text-xs text-[#a49bb0] dark:text-[#7b7289]">Name: ____________________ Matric No: ____________ Date: __________</p>
             </div>
             <ol className="space-y-5">
               {paper.map((q, i) => (
                 <li key={q.id}>
-                  <p className="text-sm font-medium text-gray-800">
+                  <p className="text-sm font-medium text-[#33234a] dark:text-[#e4dcf0]">
                     {i + 1}. {q.text}
                   </p>
                   <div className="mt-1.5 grid gap-1 sm:grid-cols-2">

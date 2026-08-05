@@ -29,7 +29,7 @@ function ReadingSection({
     <section className="rounded-2xl border border-gray-100 bg-white p-6">
       <div className="flex items-center gap-2.5">
         <BookMarked size={17} className="text-[#422e59]" />
-        <h3 className="font-semibold text-gray-800">{title}</h3>
+        <h3 className="font-semibold text-[#33234a] dark:text-[#e4dcf0]">{title}</h3>
       </div>
       <p className="mt-1.5 text-xs leading-relaxed text-gray-500">{note}</p>
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
@@ -39,7 +39,7 @@ function ReadingSection({
             <ul className="mt-2.5 space-y-2">
               {g.works.map((w) => (
                 <li key={w.title + (w.author ?? '')} className="text-sm leading-snug text-gray-700">
-                  {w.author && <span className="font-medium text-gray-800">{w.author} </span>}
+                  {w.author && <span className="font-medium text-[#33234a] dark:text-[#e4dcf0]">{w.author} </span>}
                   <span>{w.title}</span>
                 </li>
               ))}
@@ -55,8 +55,8 @@ export default function ProgrammeResources() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-gray-800">Programme Resources</h2>
-        <p className="text-sm text-gray-500">
+        <h2 className="font-heading text-xl font-bold text-[#422e59] dark:text-[#e4dcf0]">Programme Resources</h2>
+        <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">
           Reading lists and study materials for your programme
         </p>
       </div>
@@ -73,9 +73,9 @@ export default function ProgrammeResources() {
       <section className="rounded-2xl border border-gray-100 bg-white p-6">
         <div className="flex items-center gap-2.5">
           <GraduationCap size={17} className="text-[#422e59]" />
-          <h3 className="font-semibold text-gray-800">{bltProgramme.award}</h3>
+          <h3 className="font-semibold text-[#33234a] dark:text-[#e4dcf0]">{bltProgramme.award}</h3>
         </div>
-        <p className="mt-1 text-xs text-gray-500">
+        <p className="mt-1 text-xs text-[#6b6076] dark:text-[#9c93ad]">
           {bltProgramme.duration} · {bltProgramme.structure} · {bltProgramme.credits}
         </p>
 
@@ -85,7 +85,7 @@ export default function ProgrammeResources() {
               <p className="text-[10px] font-bold uppercase tracking-wider text-[#e9c14a]">
                 {sem.year}
               </p>
-              <p className="text-sm font-semibold text-gray-800">{sem.label}</p>
+              <p className="text-sm font-semibold text-[#33234a] dark:text-[#e4dcf0]">{sem.label}</p>
               <ul className="mt-2 space-y-1">
                 {sem.modules.map((m) => (
                   <li key={m.code} className="text-xs text-gray-600">
@@ -103,10 +103,10 @@ export default function ProgrammeResources() {
         <section key={m.code} className="rounded-2xl border border-gray-100 bg-white p-6">
           <div className="flex items-center gap-2.5">
             <FileText size={17} className="text-[#422e59]" />
-            <h3 className="font-semibold text-gray-800">
+            <h3 className="font-semibold text-[#33234a] dark:text-[#e4dcf0]">
               <span className="font-mono text-[#e9c14a]">{m.code}</span> {m.title}
             </h3>
-            <span className="ml-auto text-xs text-gray-400">{m.ects} ECTS</span>
+            <span className="ml-auto text-xs text-[#a49bb0] dark:text-[#7b7289]">{m.ects} ECTS</span>
           </div>
           {m.subtitle && <p className="mt-1 text-xs italic text-gray-500">{m.subtitle}</p>}
 
@@ -123,8 +123,8 @@ export default function ProgrammeResources() {
                   <span className="font-mono text-xs font-bold text-[#e9c14a]">
                     {String(u.number).padStart(2, '0')}
                   </span>
-                  <span className="flex-1 text-sm font-semibold text-gray-800">{u.title}</span>
-                  <span aria-hidden="true" className="text-xs text-gray-400 transition group-open:rotate-180">▾</span>
+                  <span className="flex-1 text-sm font-semibold text-[#33234a] dark:text-[#e4dcf0]">{u.title}</span>
+                  <span aria-hidden="true" className="text-xs text-[#a49bb0] dark:text-[#7b7289] transition group-open:rotate-180">▾</span>
                 </summary>
                 <div className="space-y-4 px-4 pb-5 pt-1">
                   {u.sections.map((s) => (
@@ -155,7 +155,7 @@ export default function ProgrammeResources() {
                   <li key={a.label} className="text-sm text-gray-700">
                     <span className="font-medium">{a.label}</span>
                     <span className="ml-2 font-mono text-xs font-bold text-[#422e59]">{a.weight}</span>
-                    {a.detail && <span className="block text-xs text-gray-500">{a.detail.join(' · ')}</span>}
+                    {a.detail && <span className="block text-xs text-[#6b6076] dark:text-[#9c93ad]">{a.detail.join(' · ')}</span>}
                   </li>
                 ))}
               </ul>

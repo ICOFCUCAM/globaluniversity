@@ -167,10 +167,10 @@ export default function CredentialStudio() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="flex items-center gap-2 text-xl font-bold text-gray-800">
+          <h2 className="flex items-center gap-2 font-heading text-xl font-bold text-[#422e59] dark:text-[#e4dcf0]">
             <Palette size={20} className="text-[#422e59]" /> Credential Studio
           </h2>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">
             Design the award certificate and transcript. Publishing creates a new version — nothing already issued changes.
           </p>
         </div>
@@ -218,7 +218,7 @@ export default function CredentialStudio() {
             <Row label="Border width">
               <input type="range" min={0} max={10} step={0.5} value={design.borderWidthMm}
                 onChange={(e) => set('borderWidthMm', Number(e.target.value))} className="w-full" />
-              <span className="w-12 text-right text-xs text-gray-500">{design.borderWidthMm}mm</span>
+              <span className="w-12 text-right text-xs text-[#6b6076] dark:text-[#9c93ad]">{design.borderWidthMm}mm</span>
             </Row>
           </Panel>
 
@@ -236,7 +236,7 @@ export default function CredentialStudio() {
             <Row label="Watermark">
               <input type="range" min={0} max={0.4} step={0.01} value={design.sealOpacity}
                 onChange={(e) => set('sealOpacity', Number(e.target.value))} className="w-full" disabled={!design.showSeal} />
-              <span className="w-12 text-right text-xs text-gray-500">{Math.round(design.sealOpacity * 100)}%</span>
+              <span className="w-12 text-right text-xs text-[#6b6076] dark:text-[#9c93ad]">{Math.round(design.sealOpacity * 100)}%</span>
             </Row>
           </Panel>
 
@@ -290,7 +290,7 @@ export default function CredentialStudio() {
 
           <button
             onClick={() => setDesign(defaultDesign(kind))}
-            className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700"
+            className="flex items-center gap-1.5 text-xs text-[#6b6076] dark:text-[#9c93ad] hover:text-gray-700"
           >
             <RotateCcw size={13} /> Reset to the built-in default
           </button>
@@ -334,31 +334,31 @@ export default function CredentialStudio() {
                 {publishing ? <><Loader2 size={15} className="animate-spin" /> Publishing…</> : <><Upload size={15} /> Publish new version</>}
               </button>
             </div>
-            <p className="mt-2 text-xs text-gray-500">
+            <p className="mt-2 text-xs text-[#6b6076] dark:text-[#9c93ad]">
               Publishing makes this the design for credentials issued from now on. Versions already
               issued keep their own design — nothing in a graduate&apos;s hand changes.
             </p>
           </div>
 
           <div className="rounded-xl border border-gray-200 bg-white p-4">
-            <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-800">
+            <h3 className="flex items-center gap-2 text-sm font-semibold text-[#33234a] dark:text-[#e4dcf0]">
               <History size={15} /> Published versions
             </h3>
             {loading ? (
               <p className="mt-3 text-sm text-gray-400">Loading…</p>
             ) : versions.length === 0 ? (
-              <p className="mt-3 text-sm text-gray-500">
+              <p className="mt-3 text-sm text-[#6b6076] dark:text-[#9c93ad]">
                 None yet. Until you publish one, credentials print under the built-in default.
               </p>
             ) : (
-              <ul className="mt-3 divide-y divide-gray-100">
+              <ul className="mt-3 divide-y divide-[#f0ece4] dark:divide-[#2a2333]">
                 {versions.map((v) => (
                   <li key={v.id} className="flex items-center justify-between gap-3 py-2">
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-gray-800">
+                      <p className="truncate text-sm font-medium text-[#33234a] dark:text-[#e4dcf0]">
                         v{v.version} · {v.name}
                       </p>
-                      <p className="text-xs text-gray-400">
+                      <p className="text-xs text-[#a49bb0] dark:text-[#7b7289]">
                         {v.published_at ? new Date(v.published_at).toLocaleString('en-GB') : 'not published'}
                       </p>
                     </div>
@@ -391,8 +391,8 @@ export default function CredentialStudio() {
 function Panel({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-4">
-      <h3 className="text-sm font-semibold text-gray-800">{title}</h3>
-      {hint && <p className="mt-0.5 text-xs text-gray-400">{hint}</p>}
+      <h3 className="text-sm font-semibold text-[#33234a] dark:text-[#e4dcf0]">{title}</h3>
+      {hint && <p className="mt-0.5 text-xs text-[#a49bb0] dark:text-[#7b7289]">{hint}</p>}
       <div className="mt-3 space-y-2.5">{children}</div>
     </div>
   );

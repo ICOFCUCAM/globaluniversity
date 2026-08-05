@@ -109,14 +109,14 @@ export default function TimetableModule() {
   }, [records]);
 
   const input =
-    'w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30';
+    'w-full px-3 py-2 bg-gray-50 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35';
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-800">Timetable &amp; Attendance</h2>
-          <p className="text-sm text-gray-500">Weekly class schedule and attendance records</p>
+          <h2 className="font-heading text-xl font-bold text-[#422e59] dark:text-[#e4dcf0]">Timetable &amp; Attendance</h2>
+          <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">Weekly class schedule and attendance records</p>
         </div>
         {isStaff && (
           <button
@@ -134,9 +134,9 @@ export default function TimetableModule() {
           ['Attendance records', String(records.length)],
           ['Attendance rate', rate === null ? '—' : `${rate}%`],
         ].map(([label, value]) => (
-          <div key={label} className="rounded-xl border border-gray-100 bg-white p-5">
+          <div key={label} className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] p-5">
             <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">{label}</p>
-            <p className="mt-1 text-2xl font-bold text-gray-800">{value}</p>
+            <p className="mt-1 text-2xl font-bold text-[#33234a] dark:text-[#e4dcf0]">{value}</p>
           </div>
         ))}
       </div>
@@ -151,7 +151,7 @@ export default function TimetableModule() {
             .filter((d) => d.items.length > 0)
             .map((d) => (
               <div key={d.day} className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-                <p className="flex items-center gap-2 border-b border-gray-100 pb-3 text-sm font-bold text-[#422e59]">
+                <p className="flex items-center gap-2 border-b border-[#f0ece4] dark:border-[#2a2333] pb-3 text-sm font-bold text-[#422e59]">
                   <CalendarDays size={15} /> {d.day}
                 </p>
                 <div className="mt-3 space-y-3">
@@ -162,8 +162,8 @@ export default function TimetableModule() {
                         <p className="text-xs font-mono font-bold text-[#422e59]">
                           {s.start}–{s.end}
                         </p>
-                        <p className="mt-0.5 text-sm font-semibold text-gray-800">{s.course}</p>
-                        <p className="text-xs text-gray-500">
+                        <p className="mt-0.5 text-sm font-semibold text-[#33234a] dark:text-[#e4dcf0]">{s.course}</p>
+                        <p className="text-xs text-[#6b6076] dark:text-[#9c93ad]">
                           {s.lecturer}
                           {s.room ? ` · ${s.room}` : ''}
                         </p>
@@ -199,7 +199,7 @@ export default function TimetableModule() {
       {showNew && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowNew(false)}>
           <form onSubmit={addSlot} onClick={(e) => e.stopPropagation()} className="w-full max-w-md space-y-3 rounded-2xl bg-white p-6">
-            <h3 className="text-lg font-bold text-gray-800">Add Class to Timetable</h3>
+            <h3 className="font-heading text-lg font-bold text-[#422e59] dark:text-[#e4dcf0]">Add Class to Timetable</h3>
             <select className={input} value={form.day} onChange={(e) => setForm({ ...form, day: e.target.value })}>
               {DAYS.map((d) => (
                 <option key={d}>{d}</option>
@@ -222,8 +222,8 @@ export default function TimetableModule() {
       {markFor && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setMarkFor(null)}>
           <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md space-y-3 rounded-2xl bg-white p-6">
-            <h3 className="text-lg font-bold text-gray-800">Attendance — {markFor.course}</h3>
-            <p className="text-xs text-gray-500">
+            <h3 className="font-heading text-lg font-bold text-[#422e59] dark:text-[#e4dcf0]">Attendance — {markFor.course}</h3>
+            <p className="text-xs text-[#6b6076] dark:text-[#9c93ad]">
               {markFor.day} {markFor.start}–{markFor.end}
             </p>
             <input

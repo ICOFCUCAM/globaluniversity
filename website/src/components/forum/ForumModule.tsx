@@ -105,14 +105,14 @@ export default function ForumModule() {
   }
 
   const input =
-    'w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30';
+    'w-full px-3 py-2 bg-gray-50 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35';
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-800">Discussion Forum</h2>
-          <p className="text-sm text-gray-500">Ask questions and discuss your courses with classmates and lecturers</p>
+          <h2 className="font-heading text-xl font-bold text-[#422e59] dark:text-[#e4dcf0]">Discussion Forum</h2>
+          <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">Ask questions and discuss your courses with classmates and lecturers</p>
         </div>
         <button
           onClick={() => setShowNew(true)}
@@ -143,14 +143,14 @@ export default function ForumModule() {
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="flex flex-wrap items-center gap-2">
-                    <span className="font-semibold text-gray-800">{t.title}</span>
+                    <span className="font-semibold text-[#33234a] dark:text-[#e4dcf0]">{t.title}</span>
                     {t.course && (
                       <span className="rounded-full bg-[#f6f4fa] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#422e59]">
                         {t.course}
                       </span>
                     )}
                   </span>
-                  <span className="mt-1 block text-xs text-gray-400">
+                  <span className="mt-1 block text-xs text-[#a49bb0] dark:text-[#7b7289]">
                     {t.author} · {new Date(t.posted).toLocaleDateString('en-GB', { dateStyle: 'medium' })} ·{' '}
                     {tReplies.length} {tReplies.length === 1 ? 'reply' : 'replies'}
                   </span>
@@ -166,7 +166,7 @@ export default function ForumModule() {
                         <CornerDownRight size={15} className="mt-0.5 shrink-0 text-[#422e59]" />
                         <div>
                           <p className="text-sm text-gray-700">{r.body}</p>
-                          <p className="mt-1 text-xs text-gray-400">
+                          <p className="mt-1 text-xs text-[#a49bb0] dark:text-[#7b7289]">
                             {r.author} · {new Date(r.posted).toLocaleDateString('en-GB', { dateStyle: 'medium' })}
                           </p>
                         </div>
@@ -201,7 +201,7 @@ export default function ForumModule() {
       {showNew && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowNew(false)}>
           <form onSubmit={createThread} onClick={(e) => e.stopPropagation()} className="w-full max-w-md space-y-3 rounded-2xl bg-white p-6">
-            <h3 className="text-lg font-bold text-gray-800">New Discussion Topic</h3>
+            <h3 className="font-heading text-lg font-bold text-[#422e59] dark:text-[#e4dcf0]">New Discussion Topic</h3>
             <input placeholder="Course code (optional)" className={input} value={form.course} onChange={(e) => setForm({ ...form, course: e.target.value })} />
             <input required placeholder="Topic title" className={input} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
             <textarea required rows={5} placeholder="Your question or comment" className={input} value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} />

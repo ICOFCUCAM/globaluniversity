@@ -54,30 +54,30 @@ export default function LecturerDashboard({ onNavigate }: LecturerDashboardProps
             <div className={`p-2.5 rounded-xl bg-gradient-to-br ${stat.color} text-white shadow-lg w-fit`}>
               {stat.icon}
             </div>
-            <p className="text-2xl font-bold text-gray-800 mt-3">{stat.value}</p>
-            <p className="text-xs text-gray-500">{stat.label}</p>
+            <p className="text-2xl font-bold text-[#33234a] dark:text-[#e4dcf0] mt-3">{stat.value}</p>
+            <p className="text-xs text-[#6b6076] dark:text-[#9c93ad]">{stat.label}</p>
           </div>
         ))}
       </div>
 
       {/* Assigned Courses */}
-      <div className="bg-white rounded-xl border border-gray-100">
-        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-          <h3 className="font-semibold text-gray-800">My Courses</h3>
+      <div className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27]">
+        <div className="px-5 py-4 border-b border-[#f0ece4] dark:border-[#2a2333] flex items-center justify-between">
+          <h3 className="font-semibold text-[#33234a] dark:text-[#e4dcf0]">My Courses</h3>
           <button onClick={() => onNavigate('courses')} className="text-xs text-blue-600 hover:underline flex items-center gap-1">
             View All <ArrowRight size={12} />
           </button>
         </div>
-        <div className="divide-y divide-gray-50">
+        <div className="divide-y divide-[#f0ece4] dark:divide-[#2a2333]">
           {assignedCourses.map((course, i) => (
-            <div key={i} className="px-5 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+            <div key={i} className="px-5 py-4 flex items-center justify-between transition-colors hover:bg-[#faf8f4] dark:hover:bg-[#241f2c]">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center font-bold text-xs">
                   {course.code.split(' ')[1]}
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-gray-800">{course.code} - {course.title}</p>
-                  <p className="text-xs text-gray-400">{course.students} students · Level {course.level}</p>
+                  <p className="text-sm font-semibold text-[#33234a] dark:text-[#e4dcf0]">{course.code} - {course.title}</p>
+                  <p className="text-xs text-[#a49bb0] dark:text-[#7b7289]">{course.students} students · Level {course.level}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -101,8 +101,8 @@ export default function LecturerDashboard({ onNavigate }: LecturerDashboardProps
 
       {/* Schedule */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl border border-gray-100 p-5">
-          <h3 className="font-semibold text-gray-800 mb-3">Today's Schedule</h3>
+        <div className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] p-5">
+          <h3 className="font-semibold text-[#33234a] dark:text-[#e4dcf0] mb-3">Today's Schedule</h3>
           <div className="space-y-3">
             {[
               { time: '9:00 AM', course: 'CSC 301', type: 'Lecture', room: 'Hall A' },
@@ -115,7 +115,7 @@ export default function LecturerDashboard({ onNavigate }: LecturerDashboardProps
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-700">{item.course} - {item.type}</p>
-                  <p className="text-xs text-gray-400">{item.room}</p>
+                  <p className="text-xs text-[#a49bb0] dark:text-[#7b7289]">{item.room}</p>
                 </div>
                 <button className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors">
                   <Video size={14} />
@@ -125,8 +125,8 @@ export default function LecturerDashboard({ onNavigate }: LecturerDashboardProps
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-100 p-5">
-          <h3 className="font-semibold text-gray-800 mb-3">Performance Overview</h3>
+        <div className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] p-5">
+          <h3 className="font-semibold text-[#33234a] dark:text-[#e4dcf0] mb-3">Performance Overview</h3>
           <div className="space-y-3">
             {assignedCourses.map((course, i) => {
               const avgScore = [72, 65, 78][i];
@@ -135,7 +135,7 @@ export default function LecturerDashboard({ onNavigate }: LecturerDashboardProps
                 <div key={i} className="p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-sm font-medium text-gray-700">{course.code}</p>
-                    <span className="text-xs text-gray-400">Avg: {avgScore}%</span>
+                    <span className="text-xs text-[#a49bb0] dark:text-[#7b7289]">Avg: {avgScore}%</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div

@@ -92,14 +92,14 @@ export default function AssignmentModule() {
   }
 
   const input =
-    'w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30';
+    'w-full px-3 py-2 bg-gray-50 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35';
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-800">Assignments</h2>
-          <p className="text-sm text-gray-500">
+          <h2 className="font-heading text-xl font-bold text-[#422e59] dark:text-[#e4dcf0]">Assignments</h2>
+          <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">
             {isStaff ? 'Publish assignments and review submissions' : 'View assignments and submit your work'}
           </p>
         </div>
@@ -123,15 +123,15 @@ export default function AssignmentModule() {
         {briefs.map((b) => {
           const count = subs.filter((s) => s.file_name.includes(b.file_name)).length;
           return (
-            <div key={b.id} className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+            <div key={b.id} className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] p-5 shadow-sm">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f6f4fa] text-[#422e59]">
                     <ClipboardList size={18} />
                   </span>
                   <div>
-                    <p className="text-sm font-semibold text-gray-800">{b.file_name}</p>
-                    <p className="mt-0.5 flex items-center gap-1 text-xs text-gray-400">
+                    <p className="text-sm font-semibold text-[#33234a] dark:text-[#e4dcf0]">{b.file_name}</p>
+                    <p className="mt-0.5 flex items-center gap-1 text-xs text-[#a49bb0] dark:text-[#7b7289]">
                       <Clock size={12} /> Posted {new Date(b.uploaded_at).toLocaleDateString()}
                       {isStaff && ` · ${count} submission${count === 1 ? '' : 's'}`}
                     </p>
@@ -153,11 +153,11 @@ export default function AssignmentModule() {
 
       {/* Submissions (staff) */}
       {isStaff && subs.length > 0 && (
-        <div className="overflow-hidden rounded-xl border border-gray-100 bg-white">
-          <p className="border-b border-gray-100 bg-gray-50 px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+        <div className="overflow-hidden rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27]">
+          <p className="border-b border-[#f0ece4] dark:border-[#2a2333] bg-gray-50 px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
             Submissions
           </p>
-          <div className="divide-y divide-gray-50">
+          <div className="divide-y divide-[#f0ece4] dark:divide-[#2a2333]">
             {subs.map((s) => (
               <div key={s.id} className="flex items-center justify-between gap-3 px-5 py-3">
                 <p className="min-w-0 flex-1 truncate text-sm text-gray-700">{s.file_name}</p>
@@ -189,7 +189,7 @@ export default function AssignmentModule() {
       {showNew && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowNew(false)}>
           <form onSubmit={createBrief} onClick={(e) => e.stopPropagation()} className="w-full max-w-md space-y-3 rounded-2xl bg-white p-6">
-            <h3 className="text-lg font-bold text-gray-800">New Assignment</h3>
+            <h3 className="font-heading text-lg font-bold text-[#422e59] dark:text-[#e4dcf0]">New Assignment</h3>
             <input required placeholder="Course code (e.g. THE201)" className={input} value={brief.course} onChange={(e) => setBrief({ ...brief, course: e.target.value })} />
             <input required placeholder="Title" className={input} value={brief.title} onChange={(e) => setBrief({ ...brief, title: e.target.value })} />
             <input required type="date" className={input} value={brief.due} onChange={(e) => setBrief({ ...brief, due: e.target.value })} />
@@ -205,11 +205,11 @@ export default function AssignmentModule() {
       {submitFor && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setSubmitFor(null)}>
           <form onSubmit={submitWork} onClick={(e) => e.stopPropagation()} className="w-full max-w-md space-y-3 rounded-2xl bg-white p-6">
-            <h3 className="text-lg font-bold text-gray-800">Submit Work</h3>
-            <p className="text-xs text-gray-500">{submitFor.file_name}</p>
+            <h3 className="font-heading text-lg font-bold text-[#422e59] dark:text-[#e4dcf0]">Submit Work</h3>
+            <p className="text-xs text-[#6b6076] dark:text-[#9c93ad]">{submitFor.file_name}</p>
             <input required placeholder="Your matric number" className={input} value={matric} onChange={(e) => setMatric(e.target.value)} />
             <input required type="file" accept=".pdf,.doc,.docx,.txt,.zip,.jpg,.png" className={input} onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-            <p className="text-xs text-gray-400">PDF/DOC/TXT/ZIP/JPG/PNG · max 2 MB</p>
+            <p className="text-xs text-[#a49bb0] dark:text-[#7b7289]">PDF/DOC/TXT/ZIP/JPG/PNG · max 2 MB</p>
             <button disabled={busy} className="w-full rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60">
               {busy ? 'Uploading…' : 'Submit Assignment'}
             </button>

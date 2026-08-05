@@ -128,15 +128,15 @@ export default function BulkImport({ onClose, onDone }: { onClose: () => void; o
   }
 
   const field =
-    'w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30';
+    'w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35';
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
       <div onClick={(e) => e.stopPropagation()} className="w-full max-w-2xl rounded-2xl bg-white p-6">
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-bold text-gray-800">Bulk Import Students</h3>
-            <p className="text-sm text-gray-500">Paste CSV or upload a file to register many students at once</p>
+            <h3 className="font-heading text-lg font-bold text-[#422e59] dark:text-[#e4dcf0]">Bulk Import Students</h3>
+            <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">Paste CSV or upload a file to register many students at once</p>
           </div>
           <button aria-label="Close" onClick={onClose} className="rounded-full bg-gray-100 p-2 text-gray-500">
             <X size={16} />
@@ -202,7 +202,7 @@ export default function BulkImport({ onClose, onDone }: { onClose: () => void; o
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-[#f0ece4] dark:divide-[#2a2333]">
                 {preview.slice(0, 20).map((r, i) => (
                   <tr key={i}>
                     <td className="px-3 py-1.5 font-mono">{r.matric_no}</td>
@@ -225,7 +225,7 @@ export default function BulkImport({ onClose, onDone }: { onClose: () => void; o
         )}
 
         <div className="mt-5 flex items-center justify-between">
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-[#a49bb0] dark:text-[#7b7289]">
             {preview.length > 0 ? `${preview.length} record${preview.length === 1 ? '' : 's'} ready` : 'Required: matric_no, first_name, last_name'}
           </p>
           <button

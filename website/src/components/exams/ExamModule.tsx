@@ -76,16 +76,16 @@ export default function ExamModule() {
     return (
       <div className="space-y-4">
         {/* Exam Header */}
-        <div className="bg-white rounded-xl border border-gray-100 p-4 flex items-center justify-between sticky top-0 z-10">
+        <div className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] p-4 flex items-center justify-between sticky top-0 z-10">
           <div>
-            <h3 className="font-bold text-gray-800">{activeExam.courseCode}: {activeExam.title}</h3>
-            <p className="text-xs text-gray-400">Question {currentQuestion + 1} of {sampleQuestions.length}</p>
+            <h3 className="font-bold text-[#33234a] dark:text-[#e4dcf0]">{activeExam.courseCode}: {activeExam.title}</h3>
+            <p className="text-xs text-[#a49bb0] dark:text-[#7b7289]">Question {currentQuestion + 1} of {sampleQuestions.length}</p>
           </div>
           <div className="flex items-center gap-4">
             <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold ${isLowTime ? 'bg-red-50 text-red-600 animate-pulse' : 'bg-blue-50 text-blue-600'}`}>
               <Clock size={14} /> {formatTime(timeLeft)}
             </div>
-            <div className="flex items-center gap-1 text-xs text-gray-400">
+            <div className="flex items-center gap-1 text-xs text-[#a49bb0] dark:text-[#7b7289]">
               <Shield size={12} /> Proctored
             </div>
             <button onClick={handleSubmit}
@@ -97,9 +97,9 @@ export default function ExamModule() {
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
           {/* Question */}
-          <div className="lg:col-span-3 bg-white rounded-xl border border-gray-100 p-6">
+          <div className="lg:col-span-3 rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] p-6">
             <div className="flex items-start justify-between mb-4">
-              <h4 className="text-lg font-semibold text-gray-800">
+              <h4 className="text-lg font-semibold text-[#33234a] dark:text-[#e4dcf0]">
                 Q{currentQuestion + 1}. {q.text}
               </h4>
               <button onClick={() => {
@@ -145,8 +145,8 @@ export default function ExamModule() {
           </div>
 
           {/* Question Navigator */}
-          <div className="bg-white rounded-xl border border-gray-100 p-4">
-            <h4 className="font-semibold text-gray-800 text-sm mb-3">Questions</h4>
+          <div className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] p-4">
+            <h4 className="font-semibold text-[#33234a] dark:text-[#e4dcf0] text-sm mb-3">Questions</h4>
             <div className="grid grid-cols-5 gap-2">
               {sampleQuestions.map((_, i) => (
                 <button key={i} onClick={() => setCurrentQuestion(i)}
@@ -165,7 +165,7 @@ export default function ExamModule() {
               <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-amber-100" /> Flagged</div>
               <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-gray-100" /> Unanswered</div>
             </div>
-            <p className="text-xs text-gray-400 mt-3">
+            <p className="text-xs text-[#a49bb0] dark:text-[#7b7289] mt-3">
               {Object.keys(answers).length}/{sampleQuestions.length} answered
             </p>
           </div>
@@ -177,20 +177,20 @@ export default function ExamModule() {
   if (showResults) {
     return (
       <div className="space-y-6">
-        <div className="bg-white rounded-xl border border-gray-100 p-8 text-center">
+        <div className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] p-8 text-center">
           <div className={`w-20 h-20 rounded-full mx-auto flex items-center justify-center ${score >= 7 ? 'bg-emerald-100' : score >= 5 ? 'bg-blue-100' : 'bg-red-100'}`}>
             <CheckCircle2 size={40} className={score >= 7 ? 'text-emerald-600' : score >= 5 ? 'text-blue-600' : 'text-red-600'} />
           </div>
-          <h2 className="text-2xl font-bold text-gray-800 mt-4">Exam Completed!</h2>
+          <h2 className="text-2xl font-bold text-[#33234a] dark:text-[#e4dcf0] mt-4">Exam Completed!</h2>
           <p className="text-gray-500 mt-1">{activeExam?.courseCode}: {activeExam?.title}</p>
           <div className="flex justify-center gap-8 mt-6">
             <div>
               <p className="text-3xl font-bold text-[#422e59]">{score}/{sampleQuestions.length}</p>
-              <p className="text-xs text-gray-400">Score</p>
+              <p className="text-xs text-[#a49bb0] dark:text-[#7b7289]">Score</p>
             </div>
             <div>
               <p className="text-3xl font-bold text-emerald-600">{((score / sampleQuestions.length) * 100).toFixed(0)}%</p>
-              <p className="text-xs text-gray-400">Percentage</p>
+              <p className="text-xs text-[#a49bb0] dark:text-[#7b7289]">Percentage</p>
             </div>
           </div>
           <button onClick={() => { setActiveExam(null); setShowResults(false); }}
@@ -205,13 +205,13 @@ export default function ExamModule() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-gray-800">Examination System</h2>
-        <p className="text-sm text-gray-500">Computer-Based Testing (CBT) with proctoring</p>
+        <h2 className="font-heading text-xl font-bold text-[#422e59] dark:text-[#e4dcf0]">Examination System</h2>
+        <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">Computer-Based Testing (CBT) with proctoring</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {examData.map((exam) => (
-          <div key={exam.id} className="bg-white rounded-xl border border-gray-100 p-5 hover:shadow-lg transition-all">
+          <div key={exam.id} className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] p-5 hover:shadow-lg transition-all">
             <div className="flex items-start justify-between">
               <div className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
                 exam.status === 'ongoing' ? 'bg-red-50 text-red-600' :
@@ -220,10 +220,10 @@ export default function ExamModule() {
               }`}>
                 {exam.status.toUpperCase()}
               </div>
-              <span className="text-xs text-gray-400">{exam.date}</span>
+              <span className="text-xs text-[#a49bb0] dark:text-[#7b7289]">{exam.date}</span>
             </div>
-            <h4 className="text-sm font-semibold text-gray-800 mt-3">{exam.courseCode}: {exam.title}</h4>
-            <div className="flex items-center gap-4 mt-2 text-xs text-gray-400">
+            <h4 className="text-sm font-semibold text-[#33234a] dark:text-[#e4dcf0] mt-3">{exam.courseCode}: {exam.title}</h4>
+            <div className="flex items-center gap-4 mt-2 text-xs text-[#a49bb0] dark:text-[#7b7289]">
               <span className="flex items-center gap-1"><Clock size={10} /> {exam.duration} min</span>
               <span>{exam.questions} questions</span>
               <span>{exam.enrolled} enrolled</span>

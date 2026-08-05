@@ -69,8 +69,8 @@ export default function MyWeek() {
   return (
     <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
       <div className="flex items-center justify-between">
-        <h3 className="font-bold text-gray-800">My Week</h3>
-        <span className="text-xs text-gray-400">Deadlines, classes and notices</span>
+        <h3 className="font-bold text-[#33234a] dark:text-[#e4dcf0]">My Week</h3>
+        <span className="text-xs text-[#a49bb0] dark:text-[#7b7289]">Deadlines, classes and notices</span>
       </div>
 
       <div className="mt-5 space-y-3">
@@ -87,8 +87,8 @@ export default function MyWeek() {
             <div key={`${it.kind}-${i}`} className="flex items-start gap-3 rounded-xl bg-gray-50 p-3">
               <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${st.chip}`}>{st.icon}</span>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-gray-800">{it.title}</p>
-                <p className="truncate text-xs text-gray-500">
+                <p className="truncate text-sm font-medium text-[#33234a] dark:text-[#e4dcf0]">{it.title}</p>
+                <p className="truncate text-xs text-[#6b6076] dark:text-[#9c93ad]">
                   {st.label}
                   {it.meta ? ` · ${it.meta}` : ''}
                 </p>

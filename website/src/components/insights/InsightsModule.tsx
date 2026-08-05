@@ -113,20 +113,20 @@ export default function InsightsModule() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-gray-800">Learning Analytics</h2>
-        <p className="text-sm text-gray-500">
+        <h2 className="font-heading text-xl font-bold text-[#422e59] dark:text-[#e4dcf0]">Learning Analytics</h2>
+        <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">
           Early-warning insights combining attendance, results and fee status for active students
         </p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          { label: 'Active students', value: counts.total, icon: <Users size={16} />, tone: 'text-gray-800' },
+          { label: 'Active students', value: counts.total, icon: <Users size={16} />, tone: 'text-[#33234a] dark:text-[#e4dcf0]' },
           { label: 'High risk', value: counts.high, icon: <AlertTriangle size={16} />, tone: 'text-red-600' },
           { label: 'Watch list', value: counts.watch, icon: <TrendingUp size={16} />, tone: 'text-amber-600' },
           { label: 'Fees recorded', value: counts.paid, icon: <Wallet size={16} />, tone: 'text-emerald-600' },
         ].map((c) => (
-          <div key={c.label} className="rounded-xl border border-gray-100 bg-white p-5">
+          <div key={c.label} className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] p-5">
             <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
               {c.icon} {c.label}
             </p>
@@ -139,7 +139,7 @@ export default function InsightsModule() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-gray-100 bg-gray-50">
+              <tr className="border-b border-[#f0ece4] dark:border-[#2a2333] bg-gray-50">
                 {['Student', 'Programme', 'Attendance', 'Avg. score', 'Fees', 'Status'].map((h) => (
                   <th key={h} className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
                     {h}
@@ -147,7 +147,7 @@ export default function InsightsModule() {
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-[#f0ece4] dark:divide-[#2a2333]">
               {loading && (
                 <tr>
                   <td colSpan={6} className="px-5 py-10 text-center text-gray-400">
@@ -165,10 +165,10 @@ export default function InsightsModule() {
               {signals.map((s) => (
                 <tr key={s.student.id} className="hover:bg-gray-50">
                   <td className="px-5 py-3">
-                    <p className="text-sm font-medium text-gray-800">
+                    <p className="text-sm font-medium text-[#33234a] dark:text-[#e4dcf0]">
                       {s.student.first_name} {s.student.last_name}
                     </p>
-                    <p className="font-mono text-xs text-gray-400">{s.student.matric_no}</p>
+                    <p className="font-mono text-xs text-[#a49bb0] dark:text-[#7b7289]">{s.student.matric_no}</p>
                   </td>
                   <td className="px-5 py-3 text-sm text-gray-600">{s.student.program || '—'}</td>
                   <td className="px-5 py-3 text-sm">
@@ -176,7 +176,7 @@ export default function InsightsModule() {
                       <span className="text-gray-400">no records</span>
                     ) : (
                       <span className={s.attendanceRate < 60 ? 'font-semibold text-red-600' : 'text-gray-700'}>
-                        {s.attendanceRate}% <span className="text-xs text-gray-400">({s.sessions})</span>
+                        {s.attendanceRate}% <span className="text-xs text-[#a49bb0] dark:text-[#7b7289]">({s.sessions})</span>
                       </span>
                     )}
                   </td>
@@ -205,7 +205,7 @@ export default function InsightsModule() {
         </div>
       </div>
 
-      <p className="text-xs text-gray-400">
+      <p className="text-xs text-[#a49bb0] dark:text-[#7b7289]">
         Risk is indicative, not disciplinary: two or more signals (attendance below 60%, average score below 50%,
         or no fee payment recorded) flag a student as high risk so that academic advisers can reach out early.
       </p>

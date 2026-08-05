@@ -55,12 +55,12 @@ export default function AnalyticsDashboard() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-800">Analytics & Reports</h2>
-          <p className="text-sm text-gray-500">Comprehensive academic performance analytics</p>
+          <h2 className="font-heading text-xl font-bold text-[#422e59] dark:text-[#e4dcf0]">Analytics & Reports</h2>
+          <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">Comprehensive academic performance analytics</p>
         </div>
         <div className="flex gap-2">
           <select value={period} onChange={(e) => setPeriod(e.target.value)}
-            className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm">
+            className="px-3 py-2 bg-white rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm">
             <option>2025/2026</option>
             <option>2024/2025</option>
             <option>2023/2024</option>
@@ -83,9 +83,9 @@ export default function AnalyticsDashboard() {
             <div className={`p-2.5 rounded-xl bg-gradient-to-br ${metric.color} text-white shadow-lg w-fit`}>
               {metric.icon}
             </div>
-            <p className="text-2xl font-bold text-gray-800 mt-3">{metric.value}</p>
+            <p className="text-2xl font-bold text-[#33234a] dark:text-[#e4dcf0] mt-3">{metric.value}</p>
             <div className="flex items-center justify-between mt-0.5">
-              <p className="text-xs text-gray-500">{metric.label}</p>
+              <p className="text-xs text-[#6b6076] dark:text-[#9c93ad]">{metric.label}</p>
               <span className="text-xs font-medium text-emerald-600">{metric.change}</span>
             </div>
           </div>
@@ -95,7 +95,7 @@ export default function AnalyticsDashboard() {
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl p-5 border border-gray-100">
-          <h3 className="font-semibold text-gray-800 mb-4">Enrollment by Year</h3>
+          <h3 className="font-semibold text-[#33234a] dark:text-[#e4dcf0] mb-4">Enrollment by Year</h3>
           <BarChart
             data={[520, 680, 750, 820, 890, 950]}
             labels={['2020', '2021', '2022', '2023', '2024', '2025']}
@@ -104,7 +104,7 @@ export default function AnalyticsDashboard() {
         </div>
 
         <div className="bg-white rounded-xl p-5 border border-gray-100">
-          <h3 className="font-semibold text-gray-800 mb-4">Grade Distribution</h3>
+          <h3 className="font-semibold text-[#33234a] dark:text-[#e4dcf0] mb-4">Grade Distribution</h3>
           <BarChart
             data={[156, 420, 680, 520, 180, 45]}
             labels={['A', 'B', 'C', 'D', 'E', 'F']}
@@ -115,7 +115,7 @@ export default function AnalyticsDashboard() {
 
       {/* Donut Charts */}
       <div className="bg-white rounded-xl p-5 border border-gray-100">
-        <h3 className="font-semibold text-gray-800 mb-4">Classification Distribution</h3>
+        <h3 className="font-semibold text-[#33234a] dark:text-[#e4dcf0] mb-4">Classification Distribution</h3>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <DonutChart value={156} max={2847} color="#10b981" label="1st Class" />
           <DonutChart value={890} max={2847} color="#3b82f6" label="2nd Upper" />
@@ -126,14 +126,14 @@ export default function AnalyticsDashboard() {
       </div>
 
       {/* Department Performance */}
-      <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100">
-          <h3 className="font-semibold text-gray-800">Department Performance</h3>
+      <div className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] overflow-hidden">
+        <div className="px-5 py-4 border-b border-[#f0ece4] dark:border-[#2a2333]">
+          <h3 className="font-semibold text-[#33234a] dark:text-[#e4dcf0]">Department Performance</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-100">
+              <tr className="border-b border-[#ece7de] bg-[#faf8f4] dark:border-[#2e2637] dark:bg-[#241f2c]">
                 <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Department</th>
                 <th className="text-center px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Students</th>
                 <th className="text-center px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Avg GPA</th>
@@ -141,10 +141,10 @@ export default function AnalyticsDashboard() {
                 <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Performance</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-[#f0ece4] dark:divide-[#2a2333]">
               {deptPerformance.map((dept, i) => (
-                <tr key={i} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-5 py-3 text-sm font-medium text-gray-800">{dept.name}</td>
+                <tr key={i} className="transition-colors hover:bg-[#faf8f4] dark:hover:bg-[#241f2c]">
+                  <td className="px-5 py-3 text-sm font-medium text-[#33234a] dark:text-[#e4dcf0]">{dept.name}</td>
                   <td className="px-5 py-3 text-sm text-gray-600 text-center">{dept.students}</td>
                   <td className="px-5 py-3 text-center">
                     <span className="text-sm font-bold text-blue-600">{dept.avgGPA}</span>

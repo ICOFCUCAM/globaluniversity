@@ -124,18 +124,18 @@ export default function GradeBook() {
     setSaved(count);
   }
 
-  const cell = 'w-20 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30';
+  const cell = 'w-20 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35';
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-gray-800">Grade Book</h2>
-        <p className="text-sm text-gray-500">
+        <h2 className="font-heading text-xl font-bold text-[#422e59] dark:text-[#e4dcf0]">Grade Book</h2>
+        <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">
           Enter continuous assessment and examination marks; grades, points and GPA follow automatically
         </p>
       </div>
 
-      <div className="rounded-xl border border-gray-100 bg-white p-4">
+      <div className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] p-4">
         <label className="flex flex-wrap items-center gap-3">
           <span className="flex items-center gap-2 text-sm font-medium text-gray-700">
             <BookOpen size={15} /> Course
@@ -143,7 +143,7 @@ export default function GradeBook() {
           <select
             value={courseId}
             onChange={(e) => setCourseId(e.target.value)}
-            className="min-w-[280px] rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30"
+            className="min-w-[280px] rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35"
           >
             <option value="">Select a course…</option>
             {courses.map((c) => (
@@ -153,12 +153,12 @@ export default function GradeBook() {
             ))}
           </select>
           {stats && (
-            <span className="ml-auto flex gap-4 text-xs text-gray-500">
+            <span className="ml-auto flex gap-4 text-xs text-[#6b6076] dark:text-[#9c93ad]">
               <span>
-                <strong className="text-gray-800">{stats.entered}</strong> entered
+                <strong className="text-[#33234a] dark:text-[#e4dcf0]">{stats.entered}</strong> entered
               </span>
               <span>
-                avg <strong className="text-gray-800">{stats.avg}%</strong>
+                avg <strong className="text-[#33234a] dark:text-[#e4dcf0]">{stats.avg}%</strong>
               </span>
               <span>
                 pass rate <strong className="text-emerald-600">{stats.passRate}%</strong>
@@ -179,7 +179,7 @@ export default function GradeBook() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-100 bg-gray-50">
+                <tr className="border-b border-[#f0ece4] dark:border-[#2a2333] bg-gray-50">
                   {['Student', 'Matric', 'CA (30)', 'Exam (70)', 'Total', 'Grade', 'Point'].map((h) => (
                     <th key={h} className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
                       {h}
@@ -187,7 +187,7 @@ export default function GradeBook() {
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-[#f0ece4] dark:divide-[#2a2333]">
                 {loading && (
                   <tr>
                     <td colSpan={7} className="px-5 py-10 text-center text-gray-400">
@@ -204,15 +204,15 @@ export default function GradeBook() {
                 )}
                 {computed.map((r, i) => (
                   <tr key={r.studentId} className="hover:bg-gray-50">
-                    <td className="px-5 py-2.5 text-sm font-medium text-gray-800">{r.name}</td>
-                    <td className="px-5 py-2.5 font-mono text-xs text-gray-400">{r.matric}</td>
+                    <td className="px-5 py-2.5 text-sm font-medium text-[#33234a] dark:text-[#e4dcf0]">{r.name}</td>
+                    <td className="px-5 py-2.5 font-mono text-xs text-[#a49bb0] dark:text-[#7b7289]">{r.matric}</td>
                     <td className="px-5 py-2.5">
                       <input inputMode="decimal" value={rows[i].ca} onChange={(e) => update(i, 'ca', e.target.value)} className={cell} />
                     </td>
                     <td className="px-5 py-2.5">
                       <input inputMode="decimal" value={rows[i].exam} onChange={(e) => update(i, 'exam', e.target.value)} className={cell} />
                     </td>
-                    <td className="px-5 py-2.5 text-sm font-semibold text-gray-800">{r.entered ? `${r.total}%` : '—'}</td>
+                    <td className="px-5 py-2.5 text-sm font-semibold text-[#33234a] dark:text-[#e4dcf0]">{r.entered ? `${r.total}%` : '—'}</td>
                     <td className="px-5 py-2.5">
                       {r.entered && (
                         <span
@@ -238,7 +238,7 @@ export default function GradeBook() {
                   <CheckCircle2 size={15} /> Saved {saved} result{saved === 1 ? '' : 's'} — GPA and transcripts updated.
                 </p>
               ) : (
-                <p className="text-xs text-gray-400">Marks are saved as “submitted” and await approval in Result Processing.</p>
+                <p className="text-xs text-[#a49bb0] dark:text-[#7b7289]">Marks are saved as “submitted” and await approval in Result Processing.</p>
               )}
               <button
                 disabled={busy}

@@ -77,14 +77,14 @@ export default function AnnouncementModule() {
   }
 
   const input =
-    'w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30';
+    'w-full px-3 py-2 bg-gray-50 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35';
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-800">Announcements</h2>
-          <p className="text-sm text-gray-500">
+          <h2 className="font-heading text-xl font-bold text-[#422e59] dark:text-[#e4dcf0]">Announcements</h2>
+          <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">
             {isStaff ? 'Publish notices to the university community' : 'Notices from the university and your faculty'}
           </p>
         </div>
@@ -117,7 +117,7 @@ export default function AnnouncementModule() {
               </span>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="font-semibold text-gray-800">{n.title}</h3>
+                  <h3 className="font-semibold text-[#33234a] dark:text-[#e4dcf0]">{n.title}</h3>
                   {n.pinned && (
                     <span className="rounded-full bg-[#f7dc79] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#422e59]">
                       Pinned
@@ -128,7 +128,7 @@ export default function AnnouncementModule() {
                   </span>
                 </div>
                 <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-gray-600">{n.body}</p>
-                <p className="mt-3 text-xs text-gray-400">
+                <p className="mt-3 text-xs text-[#a49bb0] dark:text-[#7b7289]">
                   Posted {new Date(n.posted).toLocaleDateString('en-GB', { dateStyle: 'medium' })}
                 </p>
               </div>
@@ -164,7 +164,7 @@ export default function AnnouncementModule() {
       {showNew && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowNew(false)}>
           <form onSubmit={post} onClick={(e) => e.stopPropagation()} className="w-full max-w-md space-y-3 rounded-2xl bg-white p-6">
-            <h3 className="text-lg font-bold text-gray-800">New Announcement</h3>
+            <h3 className="font-heading text-lg font-bold text-[#422e59] dark:text-[#e4dcf0]">New Announcement</h3>
             <input required placeholder="Title" className={input} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
             <textarea required rows={5} placeholder="Message" className={input} value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} />
             <select className={input} value={form.audience} onChange={(e) => setForm({ ...form, audience: e.target.value })}>

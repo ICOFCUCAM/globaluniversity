@@ -64,8 +64,8 @@ export default function CourseManagement() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-800">Course Management</h2>
-          <p className="text-sm text-gray-500">{courses.length} courses across 4 years</p>
+          <h2 className="font-heading text-xl font-bold text-[#422e59] dark:text-[#e4dcf0]">Course Management</h2>
+          <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">{courses.length} courses across 4 years</p>
         </div>
         <button onClick={() => setShowAddModal(true)}
           className="flex items-center gap-2 px-4 py-2.5 bg-[#422e59] text-white rounded-xl text-sm font-medium hover:bg-[#322244] transition-colors shadow-lg shadow-purple-900/20">
@@ -74,15 +74,15 @@ export default function CourseManagement() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl border border-gray-100 p-4">
+      <div className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] p-4">
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative flex-1 min-w-[250px]">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input type="text" placeholder="Search courses..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
+              className="w-full pl-9 pr-4 py-2 bg-gray-50 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35" />
           </div>
           <select value={yearFilter} onChange={(e) => setYearFilter(Number(e.target.value))}
-            className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
+            className="px-3 py-2 bg-gray-50 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm">
             <option value={0}>All Years</option>
             <option value={1}>Year 1</option>
             <option value={2}>Year 2</option>
@@ -90,7 +90,7 @@ export default function CourseManagement() {
             <option value={4}>Year 4</option>
           </select>
           <select value={semesterFilter} onChange={(e) => setSemesterFilter(Number(e.target.value))}
-            className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
+            className="px-3 py-2 bg-gray-50 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm">
             <option value={0}>All Semesters</option>
             <option value={1}>First Semester</option>
             <option value={2}>Second Semester</option>
@@ -111,10 +111,10 @@ export default function CourseManagement() {
         </Card>
       ) : (
         Object.entries(grouped).map(([group, groupCourses]) => (
-          <div key={group} className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-            <div className="px-5 py-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+          <div key={group} className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] overflow-hidden">
+            <div className="px-5 py-3 border-b border-[#ece7de] bg-[#faf8f4] dark:border-[#2e2637] dark:bg-[#241f2c] flex items-center justify-between">
               <h3 className="font-semibold text-gray-700 text-sm">{group}</h3>
-              <span className="text-xs text-gray-400">{groupCourses.length} courses · {groupCourses.reduce((s, c) => s + c.credit_unit, 0)} credits</span>
+              <span className="text-xs text-[#a49bb0] dark:text-[#7b7289]">{groupCourses.length} courses · {groupCourses.reduce((s, c) => s + c.credit_unit, 0)} credits</span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
               {groupCourses.map((course) => (
@@ -126,10 +126,10 @@ export default function CourseManagement() {
                     <div className="rounded-lg bg-[#422e59] px-2.5 py-1 font-mono text-xs font-bold tabular-nums text-white">
                       {course.code}
                     </div>
-                    <span className="text-xs text-gray-400 font-medium">{course.credit_unit} CU</span>
+                    <span className="text-xs text-[#a49bb0] dark:text-[#7b7289] font-medium">{course.credit_unit} CU</span>
                   </div>
-                  <h4 className="text-sm font-semibold text-gray-800 mt-3 transition-colors">{course.title}</h4>
-                  <p className="text-xs text-gray-400 mt-1 line-clamp-2">{course.description}</p>
+                  <h4 className="text-sm font-semibold text-[#33234a] dark:text-[#e4dcf0] mt-3 transition-colors">{course.title}</h4>
+                  <p className="text-xs text-[#a49bb0] dark:text-[#7b7289] mt-1 line-clamp-2">{course.description}</p>
                   <div className="flex items-center gap-3 mt-3 text-[10px] text-gray-400">
                     <span className="flex items-center gap-1"><Clock size={10} /> Level {course.level}</span>
                     <span>Sem {course.semester}</span>
@@ -145,8 +145,8 @@ export default function CourseManagement() {
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowAddModal(false)}>
           <div className="bg-white rounded-2xl w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-gray-800">Add New Course</h3>
+            <div className="px-6 py-4 border-b border-[#f0ece4] dark:border-[#2a2333] flex items-center justify-between">
+              <h3 className="font-heading text-lg font-bold text-[#422e59] dark:text-[#e4dcf0]">Add New Course</h3>
               <button onClick={() => setShowAddModal(false)} className="p-1 hover:bg-gray-100 rounded-lg"><X size={18} /></button>
             </div>
             <form onSubmit={handleAddCourse} className="p-6 space-y-4">
@@ -154,38 +154,38 @@ export default function CourseManagement() {
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Course Code *</label>
                   <input required value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })}
-                    placeholder="e.g. BTH101" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
+                    placeholder="e.g. BTH101" className="w-full px-3 py-2 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Credit Units *</label>
                   <input required type="number" min={1} max={6} value={form.credit_unit} onChange={(e) => setForm({ ...form, credit_unit: parseInt(e.target.value) })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
+                    className="w-full px-3 py-2 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35" />
                 </div>
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Course Title *</label>
                 <input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
+                  className="w-full px-3 py-2 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35" />
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Level</label>
                   <select value={form.level} onChange={(e) => setForm({ ...form, level: parseInt(e.target.value) })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
+                    className="w-full px-3 py-2 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm">
                     <option value={100}>100</option><option value={200}>200</option><option value={300}>300</option><option value={400}>400</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Semester</label>
                   <select value={form.semester} onChange={(e) => setForm({ ...form, semester: parseInt(e.target.value) })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
+                    className="w-full px-3 py-2 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm">
                     <option value={1}>First</option><option value={2}>Second</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Year</label>
                   <select value={form.year} onChange={(e) => setForm({ ...form, year: parseInt(e.target.value) })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
+                    className="w-full px-3 py-2 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm">
                     <option value={1}>1</option><option value={2}>2</option><option value={3}>3</option><option value={4}>4</option>
                   </select>
                 </div>
@@ -193,7 +193,7 @@ export default function CourseManagement() {
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
                 <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30" />
+                  className="w-full px-3 py-2 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35" />
               </div>
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => setShowAddModal(false)}

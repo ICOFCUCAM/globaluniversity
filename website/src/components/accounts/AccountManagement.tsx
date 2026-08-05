@@ -162,8 +162,8 @@ export default function AccountManagement() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-gray-800">Accounts</h2>
-        <p className="text-sm text-gray-500">
+        <h2 className="font-heading text-xl font-bold text-[#422e59] dark:text-[#e4dcf0]">Accounts</h2>
+        <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">
           Create staff accounts, and suspend or reinstate anyone below your own rank.
         </p>
       </div>
@@ -202,10 +202,10 @@ export default function AccountManagement() {
 
       {/* Create ------------------------------------------------------- */}
       <form onSubmit={createAccount} className="rounded-xl border border-gray-200 bg-white p-5">
-        <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-800">
+        <h3 className="flex items-center gap-2 text-sm font-semibold text-[#33234a] dark:text-[#e4dcf0]">
           <UserPlus size={16} /> Create a staff account
         </h3>
-        <p className="mt-1 text-xs text-gray-500">
+        <p className="mt-1 text-xs text-[#6b6076] dark:text-[#9c93ad]">
           A temporary password is generated on the server and emailed. It is never chosen here and
           never passes through this browser.
         </p>
@@ -267,8 +267,8 @@ export default function AccountManagement() {
 
       {/* List --------------------------------------------------------- */}
       <div className="rounded-xl border border-gray-200 bg-white">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 p-4">
-          <h3 className="text-sm font-semibold text-gray-800">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#f0ece4] dark:border-[#2a2333] p-4">
+          <h3 className="text-sm font-semibold text-[#33234a] dark:text-[#e4dcf0]">
             All accounts <span className="font-normal text-gray-400">({rows.length})</span>
           </h3>
           <div className="relative">
@@ -292,13 +292,13 @@ export default function AccountManagement() {
                   <th className="px-4 py-2.5" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-[#f0ece4] dark:divide-[#2a2333]">
                 {filtered.map((r) => {
                   const isSelf = r.id === user?.id;
                   const mayAct = !isSelf && canActOn(user?.role, r.role);
                   return (
                     <tr key={r.id} className={r.suspended_at ? 'bg-red-50/40' : undefined}>
-                      <td className="px-4 py-2.5 text-gray-800">
+                      <td className="px-4 py-2.5 text-[#33234a] dark:text-[#e4dcf0]">
                         {r.full_name ?? '—'}
                         {isSelf && <span className="ml-2 text-[11px] text-gray-400">(you)</span>}
                       </td>

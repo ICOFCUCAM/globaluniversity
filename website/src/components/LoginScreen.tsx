@@ -154,7 +154,7 @@ export default function LoginScreen() {
 
               <div className="mb-6">
                 <h3 className="font-heading text-lg font-bold text-[#422e59]">Sign in</h3>
-                <p className="mt-0.5 text-xs text-gray-500">Students, faculty and staff</p>
+                <p className="mt-0.5 text-xs text-[#6b6076] dark:text-[#9c93ad]">Students, faculty and staff</p>
               </div>
 
               {/* Error / Success Messages */}
@@ -183,7 +183,7 @@ export default function LoginScreen() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="your.email@uni.edu"
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30 focus:border-blue-400 transition-all"
+                        className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35 focus:border-blue-400 transition-all"
                       />
                     </div>
                   </div>
@@ -196,7 +196,7 @@ export default function LoginScreen() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="Enter your password"
-                        className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30 focus:border-blue-400 transition-all"
+                        className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35 focus:border-blue-400 transition-all"
                       />
                       <button type="button" onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
@@ -233,7 +233,7 @@ export default function LoginScreen() {
                 <>
                   <div className="relative my-5">
                     <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200" /></div>
-                    <div className="relative flex justify-center"><span className="bg-white px-3 text-xs text-gray-400">or try demo access</span></div>
+                    <div className="relative flex justify-center"><span className="bg-white px-3 text-xs text-[#a49bb0] dark:text-[#7b7289]">or try demo access</span></div>
                   </div>
                   <div className="grid grid-cols-3 gap-2">
                     {roleOptions.map((opt) => (
@@ -274,7 +274,7 @@ export default function LoginScreen() {
       {/* Features Section */}
       <div id="features" className="max-w-7xl mx-auto px-6 py-16">
         <div className="text-center mb-12">
-          <h3 className="text-2xl font-bold text-gray-800">What the portal does</h3>
+          <h3 className="text-2xl font-bold text-[#33234a] dark:text-[#e4dcf0]">What the portal does</h3>
           <p className="text-gray-500 mt-2">One system, from application through to graduation and credential verification</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -283,8 +283,8 @@ export default function LoginScreen() {
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#422e59] to-[#3949ab] text-white flex items-center justify-center">
                 {feature.icon}
               </div>
-              <h4 className="text-sm font-bold text-gray-800 mt-3">{feature.title}</h4>
-              <p className="text-xs text-gray-500 mt-1">{feature.desc}</p>
+              <h4 className="text-sm font-bold text-[#33234a] dark:text-[#e4dcf0] mt-3">{feature.title}</h4>
+              <p className="text-xs text-[#6b6076] dark:text-[#9c93ad] mt-1">{feature.desc}</p>
             </div>
           ))}
         </div>
