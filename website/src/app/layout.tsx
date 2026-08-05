@@ -43,9 +43,12 @@ export const viewport: Viewport = {
 
 // schema.org structured data so search engines show the university as an
 // organization with address, contacts and logo.
+// The canonical organization node for the whole site. Every page emits this;
+// page-level graphs reference it by @id rather than redeclaring the university.
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'CollegeOrUniversity',
+  '@id': `${site.url}/#organization`,
   name: site.name,
   alternateName: site.shortName,
   url: site.url,
@@ -54,12 +57,15 @@ const jsonLd = {
   telephone: site.phone,
   slogan: site.tagline,
   foundingDate: '2007',
+  description: site.description,
   address: {
     '@type': 'PostalAddress',
     streetAddress: 'Opposite Bulu Blind Junction',
     addressLocality: 'Buea',
     addressCountry: 'CM',
   },
+  areaServed: ['CM', 'NG', 'Worldwide'],
+  member: { '@type': 'Organization', name: 'International Circle of Faith' },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

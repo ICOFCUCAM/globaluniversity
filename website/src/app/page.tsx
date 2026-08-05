@@ -5,7 +5,7 @@ import Cta from '@/components/Cta';
 import HeroSlider from '@/components/HeroSlider';
 import Reveal from '@/components/Reveal';
 import { getHomePage, getPrograms } from '@/lib/data';
-import { partners } from '@/content/site';
+import { partners, site } from '@/content/site';
 import { chancellor, welcomeExcerpt } from '@/content/welcome';
 import { quickIconMap } from '@/components/Icons';
 import CountUp from '@/components/CountUp';
@@ -31,19 +31,61 @@ export default async function HomePage() {
     await getHomePage();
   const programs = (await getPrograms()).slice(0, 4);
 
-  const faqLd = {
+  // One @graph rather than three separate script tags: the university, the
+  // questions and the featured programs, cross-referenced by @id so search
+  // engines resolve them as one entity instead of three unrelated blobs.
+  const homeLd = {
     '@context': 'https://schema.org',
-    '@type': 'FAQPage',
-    mainEntity: homeFaqs.map((f) => ({
-      '@type': 'Question',
-      name: f.question,
-      acceptedAnswer: { '@type': 'Answer', text: f.answer },
-    })),
+    '@graph': [
+      // The university itself is declared once in the root layout; this graph
+      // references it by @id instead of emitting a second, competing node.
+      {
+        '@type': 'WebSite',
+        '@id': `${site.url}/#website`,
+        url: site.url,
+        name: site.name,
+        publisher: { '@id': `${site.url}/#organization` },
+        inLanguage: 'en',
+      },
+      {
+        '@type': 'FAQPage',
+        '@id': `${site.url}/#faq`,
+        mainEntity: homeFaqs.map((f) => ({
+          '@type': 'Question',
+          name: f.question,
+          acceptedAnswer: { '@type': 'Answer', text: f.answer },
+        })),
+      },
+      {
+        '@type': 'ItemList',
+        '@id': `${site.url}/#featured-programs`,
+        name: 'Featured programs',
+        itemListElement: programs.map((p, i) => ({
+          '@type': 'ListItem',
+          position: i + 1,
+          item: {
+            '@type': 'Course',
+            name: p.title,
+            description: p.summary,
+            url: `${site.url}/programs/${p.slug}`,
+            provider: { '@id': `${site.url}/#organization` },
+          },
+        })),
+      },
+      ...events.map((ev) => ({
+        '@type': 'Event',
+        name: ev.title,
+        startDate: ev.date,
+        location: { '@type': 'Place', name: ev.location },
+        organizer: { '@id': `${site.url}/#organization` },
+        eventStatus: 'https://schema.org/EventScheduled',
+      })),
+    ],
   };
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(homeLd) }} />
       {/* Hero */}
       <HeroSlider slides={heroSlides} />
 
