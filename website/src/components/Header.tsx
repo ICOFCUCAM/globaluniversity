@@ -94,19 +94,44 @@ export default function Header() {
   const langHref = isFr ? '/' : '/fr';
   const langLabel = isFr ? 'EN' : 'FR';
 
+  const [progress, setProgress] = useState(0);
+
   useEffect(() => {
-    const onScroll = () => setElevated(window.scrollY > 8);
+    let frame = 0;
+    const onScroll = () => {
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        setElevated(window.scrollY > 8);
+        const max = document.documentElement.scrollHeight - window.innerHeight;
+        setProgress(max > 0 ? Math.min(1, window.scrollY / max) : 0);
+      });
+    };
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    window.addEventListener('resize', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+      if (frame) cancelAnimationFrame(frame);
+    };
   }, []);
 
   return (
     <header
-      className={`sticky top-0 z-50 bg-brand-purple text-white transition-shadow ${
-        elevated ? 'shadow-2xl shadow-brand-purple-dark/40' : 'shadow-md'
+      className={`sticky top-0 z-50 text-white transition-all duration-500 ${
+        elevated
+          ? 'bg-brand-purple-dark/90 shadow-2xl shadow-brand-purple-dark/40 backdrop-blur-xl supports-[backdrop-filter]:bg-brand-purple-dark/75'
+          : 'bg-brand-purple shadow-md'
       }`}
     >
+      {/* Reading progress — a single scaled element, written from the same
+          rAF that drives the elevation state. */}
+      <span
+        aria-hidden="true"
+        className="absolute inset-x-0 bottom-0 h-[2px] origin-left bg-gradient-to-r from-brand-gold-deep via-brand-gold to-brand-gold-deep transition-transform duration-150"
+        style={{ transform: `scaleX(${progress})` }}
+      />
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:absolute focus:z-[60] focus:bg-brand-gold focus:px-4 focus:py-2 focus:text-brand-purple"
