@@ -659,20 +659,41 @@ export default async function HomePage() {
       {/* FAQ */}
       <Section>
         <SectionHeading eyebrow="Questions, Answered">Frequently asked questions</SectionHeading>
-        <div className="mx-auto max-w-3xl space-y-3">
+        <div className="mx-auto max-w-3xl divide-y divide-brand-sand overflow-hidden rounded-2xl border border-brand-sand bg-white">
           {homeFaqs.map((faq) => (
-            <details
-              key={faq.question}
-              className="group rounded-xl border border-brand-sand bg-white px-5 py-4 open:shadow-md"
-            >
-              <summary className="cursor-pointer list-none font-heading font-semibold text-brand-purple">
-                {faq.question}
-                <span aria-hidden="true" className="float-right text-brand-gold-deep transition group-open:rotate-180">⌄</span>
+            <details key={faq.question} className="group">
+              <summary className="flex cursor-pointer list-none items-start gap-4 px-6 py-5 transition hover:bg-brand-cream">
+                <span className="flex-1 font-heading text-[17px] font-semibold leading-snug text-brand-purple">
+                  {faq.question}
+                </span>
+                {/* Plus that becomes a minus — two rules, no icon font, no glyph
+                    that renders differently between platforms. */}
+                <span
+                  aria-hidden="true"
+                  className="relative mt-1 h-5 w-5 shrink-0 rounded-full border border-brand-gold-deep/40 text-brand-gold-deep transition duration-300 group-open:rotate-180 group-open:bg-brand-gold-deep"
+                >
+                  <span className="absolute left-1/2 top-1/2 h-[1.5px] w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-current transition group-open:bg-white" />
+                  <span className="absolute left-1/2 top-1/2 h-2.5 w-[1.5px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-current transition duration-300 group-open:scale-y-0" />
+                </span>
               </summary>
-              <p className="mt-3 text-sm leading-relaxed text-brand-muted">{faq.answer}</p>
+              <div className="px-6 pb-6 pr-14">
+                <p className="text-[15px] leading-relaxed text-brand-muted">{faq.answer}</p>
+              </div>
             </details>
           ))}
         </div>
+
+        <p className="mt-8 text-center text-sm text-brand-muted">
+          Still deciding?{' '}
+          <Link href="/contact" className="font-semibold text-brand-purple underline underline-offset-4 hover:text-brand-gold-deep">
+            Talk to an enrollment representative
+          </Link>
+          {' '}or{' '}
+          <Link href="/admissions" className="font-semibold text-brand-purple underline underline-offset-4 hover:text-brand-gold-deep">
+            read the admission requirements
+          </Link>
+          .
+        </p>
       </Section>
 
       <Cta />
