@@ -280,7 +280,7 @@ export default function Header() {
               onClick={() => setOpen(false)}
               className="mt-2 block rounded-full border border-white/30 px-4 py-2 text-center text-sm font-semibold text-white/90"
             >
-              🌐 {isFr ? 'English' : 'Français'}
+              {isFr ? 'English' : 'Français'}
             </Link>
             <div className="mt-3 border-t border-white/10 pt-3">
               <p className="py-1 text-xs uppercase tracking-wide text-white/50">Student Portals</p>

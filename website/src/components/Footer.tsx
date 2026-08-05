@@ -102,7 +102,7 @@ export default function Footer() {
           <Link href="/verify" className="hover:text-brand-gold">Verify a Credential</Link>
           <Link href="/news" className="hover:text-brand-gold">News</Link>
           <Link href="/careers" className="hover:text-brand-gold">Careers</Link>
-          <Link href="/fr" hrefLang="fr" className="hover:text-brand-gold">🌐 Français</Link>
+          <Link href="/fr" hrefLang="fr" className="hover:text-brand-gold">Français</Link>
           <Link href="/privacy-policy" className="hover:text-brand-gold">Privacy Policy</Link>
         </div>
         <p>© {new Date().getFullYear()} {site.name} · A Global University · Buea · Douala · Nigeria · Online Worldwide</p>

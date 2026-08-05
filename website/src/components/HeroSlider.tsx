@@ -111,9 +111,17 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
             aria-hidden={i !== current}
             {...(i !== current ? { inert: '' as unknown as boolean } : {})}
           >
-            <h1 className="font-heading text-display-xl font-bold text-white [text-wrap:balance]">
-              {slide.title}
-            </h1>
+            {/* Only the visible slide is the document's h1; the rest are plain
+                text so the page never ships four competing top-level headings. */}
+            {i === current ? (
+              <h1 className="font-heading text-display-xl font-bold text-white [text-wrap:balance]">
+                {slide.title}
+              </h1>
+            ) : (
+              <p className="font-heading text-display-xl font-bold text-white [text-wrap:balance]">
+                {slide.title}
+              </p>
+            )}
             <p className="mx-auto mt-5 max-w-2xl text-balance leading-relaxed text-white/85 sm:mt-6 sm:text-xl">
               {slide.text}
             </p>

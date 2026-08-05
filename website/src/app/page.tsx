@@ -564,9 +564,11 @@ export default async function HomePage() {
                 <li key={f} className="flex items-start gap-2.5 text-sm text-brand-muted">
                   <span
                     aria-hidden="true"
-                    className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-brand-gold text-[9px] font-bold text-brand-purple"
+                    className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-brand-gold text-brand-purple"
                   >
-                    ✓
+                    <svg viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth={3.5} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="m5 12.5 4.5 4.5L19 7" />
+                    </svg>
                   </span>
                   {f}
                 </li>

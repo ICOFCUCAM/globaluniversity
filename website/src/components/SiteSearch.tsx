@@ -52,7 +52,7 @@ export default function SiteSearch() {
         aria-label="Search the site"
         className="whitespace-nowrap rounded-full border border-white/30 px-3 py-2 text-[12px] font-semibold text-white/90 transition hover:border-brand-gold hover:text-brand-gold"
       >
-        🔍 Search
+        Search
       </button>
 
       {open && (
@@ -65,7 +65,7 @@ export default function SiteSearch() {
         >
           <div onClick={(e) => e.stopPropagation()} className="w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-2xl">
             <div className="flex items-center gap-3 border-b border-brand-sand px-5 py-4">
-              <span aria-hidden="true" className="text-brand-muted">🔍</span>
+              <span aria-hidden="true" className="text-brand-muted"></span>
               <input
                 ref={inputRef}
                 type="search"
