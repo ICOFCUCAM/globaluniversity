@@ -387,9 +387,20 @@ export default async function HomePage() {
               },
             ].map((r, i) => (
               <Reveal key={r.t} delay={i * 120}>
-                <Link href={r.href} className="block h-full rounded-2xl border border-white/15 bg-white/5 p-8 backdrop-blur transition hover:border-brand-gold/60 hover:bg-white/10">
-                  <h3 className="font-heading text-xl font-bold text-brand-gold">{r.t}</h3>
-                  <p className="mt-3 text-sm leading-relaxed text-white/85">{r.b}</p>
+                <Link
+                  href={r.href}
+                  className="group flex h-full flex-col rounded-2xl border border-white/15 bg-white/5 p-8 backdrop-blur transition duration-500 hover:-translate-y-1 hover:border-brand-gold/60 hover:bg-white/10"
+                >
+                  <span
+                    aria-hidden="true"
+                    className="mb-5 block h-[3px] w-9 origin-left rounded-full bg-brand-gold transition-transform duration-500 group-hover:scale-x-[2]"
+                  />
+                  <h3 className="font-heading text-xl font-bold text-brand-gold [text-wrap:balance]">{r.t}</h3>
+                  <p className="mt-3 flex-1 text-sm leading-relaxed text-white/80">{r.b}</p>
+                  <span className="mt-6 flex items-center gap-1.5 font-sans text-[10px] font-bold uppercase tracking-[0.16em] text-white/50 transition group-hover:text-brand-gold">
+                    Read more
+                    <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">→</span>
+                  </span>
                 </Link>
               </Reveal>
             ))}
@@ -539,6 +550,29 @@ export default async function HomePage() {
               materials, assignments and examinations in one student portal — and your results,
               GPA and transcript building automatically as you study.
             </p>
+
+            {/* What the portal actually does, stated as a checklist */}
+            <ul className="mt-7 grid gap-x-6 gap-y-3 sm:grid-cols-2">
+              {[
+                'Live and recorded classes',
+                'Assignments and submissions',
+                'Computer-based examinations',
+                'Automatic GPA and transcripts',
+                'Fees and payment records',
+                'QR-verifiable credentials',
+              ].map((f) => (
+                <li key={f} className="flex items-start gap-2.5 text-sm text-brand-muted">
+                  <span
+                    aria-hidden="true"
+                    className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-brand-gold text-[9px] font-bold text-brand-purple"
+                  >
+                    ✓
+                  </span>
+                  {f}
+                </li>
+              ))}
+            </ul>
+
             <div className="mt-8 flex flex-wrap gap-4">
               <Link href="/online-learning" className="rounded-full bg-brand-gold px-7 py-3 font-heading text-sm font-semibold text-brand-purple transition hover:bg-brand-gold-deep">
                 How Online Study Works
