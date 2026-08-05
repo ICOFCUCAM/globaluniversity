@@ -183,3 +183,68 @@ course covers. Verified each build: no teaching text in any public page.
 
 Still to be written: BTH101 units 1–7 text, BTH102 units 6–15 text, and all of
 BTH103–BTH312.
+
+---
+
+# BLOCKING: three incompatible specifications for the same six codes
+
+A third batch of course documents arrived. It contradicts the 36-course table
+that is currently published, which itself contradicted the first specification.
+**The public course titles have NOT been changed a third time.** Changing them
+again on contradictory sources would be worse than holding.
+
+| Code | v1 first spec | v2 TABLE — published now | v3 course documents |
+|---|---|---|---|
+| BTH102 | Bible Survey I: The Old Testament | Biblical Studies I: Old Testament Survey | **Bible Survey I** |
+| BTH103 | Bible Survey II: The New Testament | Biblical Studies II: New Testament Survey | **Bible Survey II** |
+| BTH104 | Church History I | Church History I | **Bible Doctrine I** |
+| BTH105 | Introduction to Evangelism | Introduction to Christian Doctrine | **Introduction to Evangelism and Missions** |
+| BTH106 | Christology I | Academic Writing and Study Skills | not supplied |
+
+## The prerequisite chains prove the table is wrong, not the documents
+
+The v3 documents state:
+
+- **BTH103** — Semester: "First Year – Second Semester". Prerequisite: BTH102.
+- **BTH104** — Semester: "First Year – Second Semester". Prerequisites: BTH102 *and* BTH103.
+
+The published table places BTH102, BTH103 and BTH104 **all in Year 1 Semester
+One**. A course cannot require a prerequisite taken in the same semester. Either
+the table's semester assignments are wrong, or the documents' prerequisites are.
+They cannot both stand.
+
+This is not a labelling quibble. If a student enrols under the published table
+and is later examined under the document, the prerequisite chain they were never
+told about becomes an academic-appeals problem.
+
+## Content collisions, now larger
+
+- **BTH104 "Bible Doctrine I"** covers Yahuah, Scripture, creation, humanity,
+  sin, covenant and redemption. The table separately lists **BTH105 Introduction
+  to Christian Doctrine**, **BTH208 Systematic Theology I** and **BTH303
+  Systematic Theology II**. Four courses, one body of material.
+- **BTH103 "Bible Survey II"** covers the Prophets, Wisdom Literature, the
+  Gospels and Acts. The table separately lists **BTH202 Synoptic Gospels** and
+  **BTH301 Johannine Literature**.
+- **BTH102/BTH107/BTH108** — the Pentateuch and Historical Books overlap raised
+  previously is now confirmed: BTH102's completed units 1–14 run Genesis to
+  exile in full.
+
+## What has been done
+
+All teaching material is filed in `src/content/courseMaterial.ts` under the
+titles its own documents carry, and each conflicting course renders a red
+**"Not yet reconciled"** banner in the portal stating the conflict, so no member
+of staff teaches from a syllabus whose code may be reassigned.
+
+Complete and filed: BTH101 units 8–15; BTH102 units 1–14 with assessment and
+bibliography; BTH103 units 1–15 with assessment and bibliography; BTH104 units
+1–15 with assessment and bibliography.
+
+## Decision required before any further course is written
+
+1. Is the **36-course table** or are the **course documents** authoritative for
+   codes, titles and semester placement? One must win.
+2. Fix the prerequisite chain against whichever wins.
+3. Resolve BTH102/107/108 and BTH104/105/208/303 before drafting them, or the
+   same material will be written three and four times.

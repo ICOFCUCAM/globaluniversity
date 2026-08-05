@@ -110,6 +110,12 @@ export default function ProgrammeResources() {
           </div>
           {m.subtitle && <p className="mt-1 text-xs italic text-gray-500">{m.subtitle}</p>}
 
+          {m.conflictNote && (
+            <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-[11px] leading-relaxed text-red-800">
+              <strong className="font-semibold">Not yet reconciled.</strong> {m.conflictNote}
+            </p>
+          )}
+
           <div className="mt-5 space-y-2">
             {m.units.map((u) => (
               <details key={u.number} className="group rounded-xl border border-gray-100">
