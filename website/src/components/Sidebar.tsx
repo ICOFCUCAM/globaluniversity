@@ -21,6 +21,7 @@ const menuItems: MenuItem[] = [
   { id: 'lecturers', label: 'Lecturers', icon: <GraduationCap size={20} />, roles: ['admin'] },
   { id: 'courses', label: 'Courses', icon: <BookOpen size={20} />, roles: ['admin', 'student', 'lecturer'] },
   { id: 'results', label: 'Results', icon: <ClipboardList size={20} />, roles: ['admin', 'lecturer', 'student'] },
+  { id: 'gradebook', label: 'Grade Book', icon: <ClipboardList size={20} />, roles: ['admin', 'lecturer'] },
   { id: 'transcript', label: 'Transcript', icon: <FileText size={20} />, roles: ['admin', 'student'] },
   { id: 'certificate', label: 'Certificate', icon: <Award size={20} />, roles: ['admin', 'student'] },
   { id: 'lms', label: 'Learning (LMS)', icon: <Monitor size={20} />, roles: ['admin', 'student', 'lecturer'] },

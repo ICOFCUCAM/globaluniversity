@@ -11,6 +11,7 @@ import StudentManagement from './students/StudentManagement';
 import LecturerManagement from './lecturers/LecturerManagement';
 import CourseManagement from './courses/CourseManagement';
 import ResultProcessing from './results/ResultProcessing';
+import GradeBook from './results/GradeBook';
 import TranscriptGenerator from './transcript/TranscriptGenerator';
 import CertificateGenerator from './certificate/CertificateGenerator';
 import LMSModule from './lms/LMSModule';
@@ -51,6 +52,8 @@ export default function AppLayout() {
         return <CourseManagement />;
       case 'results':
         return <ResultProcessing />;
+      case 'gradebook':
+        return <GradeBook />;
       case 'transcript':
         return <TranscriptGenerator />;
       case 'certificate':
