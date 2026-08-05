@@ -132,6 +132,38 @@ create unique index if not exists students_student_number_key
 The list is also held in code as `requiredColumns` in `src/lib/admissions.ts`,
 so the migration and the code that depends on it cannot drift apart.
 
+## 5a. Pointing at a different Supabase project
+
+The URL and publishable key were hardcoded in `src/lib/supabase.ts`, so moving
+the university to a different project meant editing code. They now come from
+the environment — see `.env.example`:
+
+```
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+SUPABASE_SERVICE_ROLE_KEY      # server-side only, never NEXT_PUBLIC_
+```
+
+The approval route imports the URL from `src/lib/supabase.ts` rather than
+holding its own copy, so the browser client and the server route cannot end up
+pointing at different databases — which would create an account in one project
+and update a status in another.
+
+**A project `bhpsftesricwotkziokd.supabase.co` was supplied.** Two things are
+true about it and both need resolving before it can be used:
+
+1. **It is unreachable from this environment.** The network policy answers 403
+   to CONNECT for that host, exactly as it does for the original databasepad
+   host. So the migration cannot be run from here and nothing can be tested
+   against it here.
+2. **It is not in the Supabase account connected over MCP.** That account holds
+   seventeen projects and none has this reference, so it cannot be administered
+   through the tooling available here either.
+
+Neither is a fault in the project. They mean the migration in §5 has to be run
+by someone with access — through the Supabase SQL editor is simplest — and the
+first real test has to happen from a machine that can reach it.
+
 ## 6. Environment variables
 
 | Variable | Needed for | If absent |

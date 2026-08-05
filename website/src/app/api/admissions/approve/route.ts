@@ -22,10 +22,13 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { randomBytes } from 'crypto';
 import nodemailer from 'nodemailer';
+// Same project as the browser client, read from the same variable so the two
+// can never point at different databases — which would produce an account
+// created in one project and a status updated in another.
+import { supabaseUrl as SUPABASE_URL } from '@/lib/supabase';
 
+// nodemailer and crypto are Node APIs — this route cannot run on the edge.
 export const runtime = 'nodejs';
-
-const SUPABASE_URL = 'https://djotoapomhlavxknwsxw.databasepad.com';
 
 /**
  * Student number in the university's format: ICOF + intake year + a five-digit
