@@ -42,7 +42,7 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
   return (
     <section
       ref={regionRef}
-      className="relative isolate min-h-[clamp(30rem,80vh,46rem)] overflow-hidden bg-brand-purple-dark text-white"
+      className="relative isolate min-h-[clamp(26rem,78vh,46rem)] overflow-hidden bg-brand-purple-dark text-white"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onFocusCapture={() => setPaused(true)}
@@ -91,8 +91,8 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
 
       {/* Copy is rendered once, outside the fading frames, so the headline
           never cross-fades against itself. */}
-      <div className="relative z-[2] mx-auto flex min-h-[clamp(30rem,80vh,46rem)] max-w-5xl flex-col items-center justify-center px-4 py-28 text-center">
-        <p className="mb-5 inline-flex items-center gap-2.5 rounded-full border border-brand-gold/30 bg-brand-gold/10 px-4 py-1.5 font-sans text-[11px] font-semibold uppercase tracking-[0.22em] text-brand-gold backdrop-blur-sm">
+      <div className="relative z-[2] mx-auto flex min-h-[clamp(26rem,78vh,46rem)] max-w-5xl flex-col items-center justify-center px-4 py-20 text-center sm:py-28">
+        <p className="mb-5 inline-flex items-center gap-2.5 rounded-full border border-brand-gold/30 bg-brand-gold/10 px-3.5 py-1.5 font-sans text-[10px] font-semibold uppercase tracking-[0.18em] text-brand-gold backdrop-blur-sm sm:px-4 sm:text-[11px] sm:tracking-[0.22em]">
           <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-brand-gold" />
           Accredited since 2007
         </p>
@@ -114,14 +114,14 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
             <h1 className="font-heading text-display-xl font-bold text-white [text-wrap:balance]">
               {slide.title}
             </h1>
-            <p className="mx-auto mt-6 max-w-2xl text-balance text-lg leading-relaxed text-white/85 sm:text-xl">
+            <p className="mx-auto mt-5 max-w-2xl text-balance leading-relaxed text-white/85 sm:mt-6 sm:text-xl">
               {slide.text}
             </p>
-            <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+            <div className="mt-8 flex flex-col items-stretch justify-center gap-3 sm:mt-10 sm:flex-row sm:items-center sm:gap-4">
               <Link
                 href={slide.cta.href}
                 tabIndex={i === current ? 0 : -1}
-                className="group relative overflow-hidden rounded-full bg-brand-gold px-9 py-4 font-heading text-base font-semibold text-brand-purple shadow-gold transition hover:bg-brand-gold-deep"
+                className="group relative overflow-hidden rounded-full bg-brand-gold px-7 py-3.5 font-heading text-[15px] font-semibold text-brand-purple shadow-gold transition hover:bg-brand-gold-deep sm:px-9 sm:py-4 sm:text-base"
               >
                 <span className="relative z-10">{slide.cta.label}</span>
                 <span
@@ -132,7 +132,7 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
               <Link
                 href="/apply"
                 tabIndex={i === current ? 0 : -1}
-                className="rounded-full border-2 border-white/40 px-9 py-4 font-heading text-base font-semibold text-white backdrop-blur-sm transition hover:border-brand-gold hover:text-brand-gold"
+                className="rounded-full border-2 border-white/40 px-7 py-3.5 font-heading text-[15px] font-semibold text-white backdrop-blur-sm transition hover:border-brand-gold hover:text-brand-gold sm:px-9 sm:py-4 sm:text-base"
               >
                 Start an Application
               </Link>

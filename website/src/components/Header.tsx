@@ -136,6 +136,7 @@ export default function Header() {
             height={44}
             className="rounded-full bg-white/90 p-0.5"
           />
+          <span className="font-heading text-sm font-bold leading-tight md:hidden">ICOF Global</span>
           <span className="hidden font-heading text-base font-bold leading-tight md:block xl:text-lg">
             {site.name}
           </span>

@@ -82,9 +82,9 @@ const config: Config = {
       // bounds without breakpoint jumps, so the home page reads as one system.
       fontSize: {
         'display-sm': ['clamp(1.75rem, 1.25rem + 2vw, 2.35rem)', { lineHeight: '1.15', letterSpacing: '-0.015em' }],
-        'display': ['clamp(2.1rem, 1.4rem + 3vw, 3.1rem)', { lineHeight: '1.08', letterSpacing: '-0.02em' }],
-        'display-lg': ['clamp(2.6rem, 1.6rem + 4.4vw, 4.25rem)', { lineHeight: '1.03', letterSpacing: '-0.025em' }],
-        'display-xl': ['clamp(3rem, 1.6rem + 6vw, 5.5rem)', { lineHeight: '0.98', letterSpacing: '-0.03em' }],
+        'display': ['clamp(1.9rem, 1.25rem + 2.8vw, 3.1rem)', { lineHeight: '1.1', letterSpacing: '-0.02em' }],
+        'display-lg': ['clamp(2.25rem, 1.4rem + 3.8vw, 4.25rem)', { lineHeight: '1.05', letterSpacing: '-0.025em' }],
+        'display-xl': ['clamp(2.35rem, 1.1rem + 5.6vw, 5.25rem)', { lineHeight: '1.02', letterSpacing: '-0.03em' }],
       },
       boxShadow: {
         'lift': '0 1px 2px rgba(36,26,48,0.04), 0 12px 32px -12px rgba(66,46,89,0.20)',
