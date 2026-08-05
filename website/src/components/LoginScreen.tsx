@@ -148,16 +148,25 @@ export default function LoginScreen() {
               <div className="mb-6 rounded-xl bg-[#faf6ee] p-4 ring-1 ring-[#e8dcc0]">
                 <p className="text-sm font-semibold text-[#422e59]">Applying to study here?</p>
                 <p className="mt-1 text-xs leading-relaxed text-gray-600">
-                  Accounts are not created here. Complete the application form and pay the
-                  application fee; once the Office of the Registrar approves your application, your
-                  account is created for you and your login details are emailed to you.
+                  This is the Student Portal, for enrolled students. Applications are made in the
+                  Admissions Portal. Once the Office of the Registrar approves your application your
+                  student account is created for you, and your student number, username and
+                  temporary password are emailed to you.
                 </p>
-                <a
-                  href="/apply"
-                  className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-[#422e59] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#33234a]"
-                >
-                  Apply now <ArrowRight size={13} />
-                </a>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <a
+                    href="/admissions-portal"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#422e59] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#33234a]"
+                  >
+                    Admissions Portal <ArrowRight size={13} />
+                  </a>
+                  <a
+                    href="/apply"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-[#422e59] px-4 py-2 text-xs font-semibold text-[#422e59] transition hover:bg-[#422e59] hover:text-white"
+                  >
+                    Apply now
+                  </a>
+                </div>
               </div>
 
               {/* Error / Success Messages */}

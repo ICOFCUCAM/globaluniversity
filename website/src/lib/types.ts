@@ -6,7 +6,15 @@
 // roles rather than flavours of 'admin' because the whole control in the
 // admissions process is that the desk registering the fee is not the desk
 // that admits the student.
-export type UserRole = 'admin' | 'student' | 'lecturer' | 'finance' | 'registrar';
+export type UserRole =
+  | 'admin'
+  | 'applicant'
+  | 'student'
+  | 'lecturer'
+  | 'finance'
+  | 'registrar'
+  | 'academic-office'
+  | 'dean';
 
 export interface Department {
   id: string;

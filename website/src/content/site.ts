@@ -149,6 +149,7 @@ export const site = {
           items: [
             { label: 'Admission Requirements', href: '/admissions' },
             { label: 'Apply Now', href: '/apply' },
+            { label: 'Admissions Portal', href: '/admissions-portal' },
             { label: 'Registration', href: '/registration' },
           ],
         },

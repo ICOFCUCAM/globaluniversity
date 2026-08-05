@@ -28,6 +28,7 @@ const pages: SearchEntry[] = [
   { title: 'Study Online', href: '/online-learning', section: 'Academics', text: 'Online learning, live classes, course materials, assignments, exams, transcripts, distance study.' },
   { title: 'Lifelong Learning', href: '/lifelong-learning', section: 'Academics', text: 'Short courses, professional development, certificates, extension courses, training for organisations.' },
   { title: 'Admission Requirements', href: '/admissions', section: 'Admissions', text: 'Entry requirements for certificate, diploma, HND, bachelor, master and doctoral programs, GPA, A-Level, transcripts.' },
+  { title: 'Admissions Portal', href: '/admissions-portal', section: 'Admissions', text: 'Admissions portal applicant account track application status payment verification finance office registrar approve reject request documents student number welcome email, not the student portal, applicants cannot register courses or view grades.' },
   { title: 'Apply Now', href: '/apply', section: 'Admissions', text: 'Free online application form, six steps, personal, academic, program, uploads, review, declaration.' },
   { title: 'International Students', href: '/international', section: 'Admissions', text: 'International admissions, visa, English proficiency, studying from abroad, living in Buea.' },
   { title: 'Scholarships & Financial Aid', href: '/scholarships', section: 'Admissions', text: 'Scholarships, ministry scholarships, sponsorship, financial aid, flexible payment.' },

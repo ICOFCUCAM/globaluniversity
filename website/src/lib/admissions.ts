@@ -38,17 +38,26 @@ import type { Student } from './types';
  * existing Student Management view continues to work unchanged.
  */
 export type AdmissionStage =
-  | 'applicant' // submitted, fee not yet confirmed — RED
-  | 'fee_paid' // Finance has confirmed the fee — BLUE, visible to the Registrar
+  | 'applicant' // submitted, payment not yet verified — RED
+  | 'fee_paid' // Finance verified the payment — BLUE, visible to the Registrar
+  | 'documents_required' // Registrar asked for more documents; back with the applicant
   | 'approved' // Registrar approved; account created and credentials sent
-  | 'declined' // Registrar declined
+  | 'declined' // Registrar rejected
   | 'active'; // enrolled and studying
+
+/**
+ * Payment status is tracked separately from application status because the two
+ * genuinely differ: an application can be rejected on academic grounds with the
+ * fee correctly paid, and it must still be possible to see that the money was
+ * received. Collapsing them would lose that.
+ */
+export type PaymentStatus = 'pending' | 'verified' | 'refunded';
 
 export interface StageMeta {
   label: string;
   /** What the record looks like in a list. Red and blue are the university's
    *  own terms for unpaid and paid, so they are used literally. */
-  tone: 'red' | 'blue' | 'green' | 'grey';
+  tone: 'red' | 'blue' | 'amber' | 'green' | 'grey';
   description: string;
   /** Who may move a record OUT of this stage. */
   actionableBy: 'finance' | 'registrar' | null;
@@ -82,6 +91,13 @@ export const stages: Record<AdmissionStage, StageMeta> = {
     description: 'The Registrar declined the application. No account was created.',
     actionableBy: null,
   },
+  documents_required: {
+    label: 'Documents required',
+    tone: 'amber',
+    description:
+      'The Registrar has asked the applicant for further documents. The record returns for examination once they are uploaded.',
+    actionableBy: 'registrar',
+  },
   active: {
     label: 'Active student',
     tone: 'green',
@@ -100,6 +116,7 @@ export const stageChipClass: Record<StageMeta['tone'], string> = {
   red: 'bg-red-50 text-red-700 ring-1 ring-red-200',
   blue: 'bg-blue-50 text-blue-700 ring-1 ring-blue-200',
   green: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200',
+  amber: 'bg-amber-50 text-amber-800 ring-1 ring-amber-200',
   grey: 'bg-gray-100 text-gray-600 ring-1 ring-gray-200',
 };
 
@@ -127,10 +144,32 @@ export async function registrarQueue(): Promise<Student[]> {
   const { data, error } = await supabase
     .from('students')
     .select('*')
-    .eq('status', 'fee_paid')
+    .in('status', ['fee_paid', 'documents_required'])
     .order('created_at', { ascending: true });
   if (error) throw new Error(error.message);
   return (data ?? []) as Student[];
+}
+
+/**
+ * Registrar's third option: ask for more documents. The record stays with the
+ * Registrar's queue rather than disappearing, so an applicant who never
+ * responds is visible rather than silently lost.
+ */
+export async function requestDocuments(
+  studentId: string,
+  opts: { message: string; byUserId: string },
+): Promise<void> {
+  const { error } = await supabase
+    .from('students')
+    .update({
+      status: 'documents_required',
+      decision_reason: opts.message,
+      decided_by: opts.byUserId,
+      decided_at: new Date().toISOString(),
+    })
+    .eq('id', studentId)
+    .in('status', ['fee_paid', 'documents_required']);
+  if (error) throw new Error(error.message);
 }
 
 /** Everything the two desks have already dealt with, newest first. */
@@ -156,12 +195,14 @@ export async function processedApplications(): Promise<Student[]> {
  */
 export async function registerFeePayment(
   studentId: string,
-  opts: { reference: string; amount: string; byUserId: string },
+  opts: { reference: string; amount: string; currency: string; byUserId: string },
 ): Promise<void> {
   const { error } = await supabase
     .from('students')
     .update({
       status: 'fee_paid',
+      payment_status: 'verified',
+      fee_currency: opts.currency,
       fee_reference: opts.reference,
       fee_amount: opts.amount,
       fee_registered_by: opts.byUserId,
@@ -189,7 +230,7 @@ export async function declineApplication(
       decided_at: new Date().toISOString(),
     })
     .eq('id', studentId)
-    .eq('status', 'fee_paid');
+    .in('status', ['fee_paid', 'documents_required']);
   if (error) throw new Error(error.message);
 }
 
@@ -218,6 +259,9 @@ export async function approveApplication(
  * for the SQL, which must be run before the two desks will work.
  */
 export const requiredColumns = [
+  "payment_status text default 'pending'",
+  'fee_currency text',
+  'student_number text',
   'fee_reference text',
   'fee_amount text',
   'fee_registered_by uuid',

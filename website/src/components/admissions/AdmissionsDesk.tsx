@@ -15,8 +15,9 @@
 // ---------------------------------------------------------------------------
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, XCircle, Wallet, Loader2, AlertTriangle, Mail, RefreshCw } from 'lucide-react';
+import { CheckCircle2, XCircle, Wallet, Loader2, AlertTriangle, Mail, RefreshCw, FileQuestion, Lock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { can } from '@/lib/roles';
 import type { Student } from '@/lib/types';
 import {
   financeQueue,
@@ -25,6 +26,7 @@ import {
   registerFeePayment,
   declineApplication,
   approveApplication,
+  requestDocuments,
   stageOf,
   stages,
   stageChipClass,
@@ -64,9 +66,11 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
   // Finance form
   const [reference, setReference] = useState('');
   const [amount, setAmount] = useState('');
+  const [currency, setCurrency] = useState('FCFA');
   // Registrar form
   const [note, setNote] = useState('');
   const [declineReason, setDeclineReason] = useState('');
+  const [docsMessage, setDocsMessage] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -99,6 +103,7 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
       await registerFeePayment(selected.id, {
         reference: reference.trim(),
         amount: amount.trim(),
+        currency,
         byUserId: user?.id ?? '',
       });
       setFlash({
@@ -159,7 +164,34 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
     }
   }
 
+  async function onRequestDocuments() {
+    if (!selected || !docsMessage.trim()) return;
+    setBusy(true);
+    try {
+      await requestDocuments(selected.id, { message: docsMessage.trim(), byUserId: user?.id ?? '' });
+      setFlash({
+        tone: 'ok',
+        message: `Documents requested from ${selected.first_name} ${selected.last_name}. The record stays in this queue until they respond.`,
+      });
+      setDocsMessage('');
+      setSelected(null);
+      await load();
+    } catch (e) {
+      setFlash({ tone: 'bad', message: (e as Error).message });
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const isFinance = desk === 'finance';
+  // The role matrix decides, not the desk prop. Finance cannot admit and the
+  // Registrar cannot verify payments — those two absences are the separation of
+  // duties, so they are checked here rather than assumed from which screen the
+  // user happens to be looking at.
+  const mayVerifyPayment = can(user?.role, 'verify-payment');
+  const mayAdmit = can(user?.role, 'admit-student');
+  const mayRequestDocs = can(user?.role, 'request-documents');
+  const mayReject = can(user?.role, 'reject-application');
 
   return (
     <div className="space-y-6">
@@ -299,7 +331,13 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
               )}
 
               {/* Finance action */}
-              {isFinance && (
+              {isFinance && !mayVerifyPayment && (
+                <p className="mt-7 flex items-start gap-2 rounded-xl bg-gray-50 p-5 text-sm text-gray-600 ring-1 ring-gray-200">
+                  <Lock size={16} className="mt-0.5 shrink-0" />
+                  Your role cannot verify payments. Only the Finance Administrator may do so.
+                </p>
+              )}
+              {isFinance && mayVerifyPayment && (
                 <div className="mt-7 rounded-xl bg-[#faf6ee] p-5">
                   <h3 className="flex items-center gap-2 font-bold text-[#422e59]">
                     <Wallet size={18} /> Register the application fee
@@ -344,7 +382,14 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
               )}
 
               {/* Registrar actions */}
-              {!isFinance && (
+              {!isFinance && !mayAdmit && (
+                <p className="mt-7 flex items-start gap-2 rounded-xl bg-gray-50 p-5 text-sm text-gray-600 ring-1 ring-gray-200">
+                  <Lock size={16} className="mt-0.5 shrink-0" />
+                  Your role cannot admit students. Only the Registrar Administrator may approve,
+                  reject or request documents.
+                </p>
+              )}
+              {!isFinance && mayAdmit && (
                 <div className="mt-7 space-y-4">
                   <div className="rounded-xl bg-emerald-50 p-5 ring-1 ring-emerald-200">
                     <h3 className="flex items-center gap-2 font-bold text-emerald-900">
@@ -377,13 +422,46 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
                     </button>
                   </div>
 
+                  {mayRequestDocs && (
+                    <div className="rounded-xl bg-amber-50 p-5 ring-1 ring-amber-200">
+                      <h3 className="flex items-center gap-2 font-bold text-amber-900">
+                        <FileQuestion size={18} /> Request more documents
+                      </h3>
+                      <p className="mt-1.5 text-xs text-amber-800">
+                        The application returns to the applicant. It stays in this queue rather than
+                        disappearing, so an applicant who never responds stays visible.
+                      </p>
+                      <label className="mt-3 block">
+                        <span className="text-[10px] font-bold uppercase tracking-wide text-amber-800">
+                          What is needed * — name the documents precisely
+                        </span>
+                        <textarea
+                          value={docsMessage}
+                          onChange={(e) => setDocsMessage(e.target.value)}
+                          rows={2}
+                          placeholder="e.g. Certified copy of your A-Level certificate and a clear scan of your passport data page."
+                          className="mt-1 w-full rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
+                        />
+                      </label>
+                      <button
+                        onClick={() => void onRequestDocuments()}
+                        disabled={busy || !docsMessage.trim()}
+                        className="mt-3 inline-flex items-center gap-2 rounded-lg bg-amber-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-800 disabled:opacity-40"
+                      >
+                        {busy ? <Loader2 size={15} className="animate-spin" /> : <FileQuestion size={15} />}
+                        Request documents
+                      </button>
+                    </div>
+                  )}
+
+                  {mayReject && (
                   <div className="rounded-xl bg-gray-50 p-5 ring-1 ring-gray-200">
                     <h3 className="flex items-center gap-2 font-bold text-gray-800">
-                      <XCircle size={18} /> Decline
+                      <XCircle size={18} /> Reject
                     </h3>
                     <label className="mt-3 block">
                       <span className="text-[10px] font-bold uppercase tracking-wide text-gray-500">
-                        Reason * — a declined applicant with no reason has no route to reapply
+                        Reason * — a rejected applicant with no reason has no route to reapply
                       </span>
                       <textarea
                         value={declineReason}
@@ -397,9 +475,10 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
                       disabled={busy || !declineReason.trim()}
                       className="mt-3 inline-flex items-center gap-2 rounded-lg border border-gray-400 px-5 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-100 disabled:opacity-40"
                     >
-                      Decline application
+                      Reject application
                     </button>
                   </div>
+                  )}
                 </div>
               )}
             </div>

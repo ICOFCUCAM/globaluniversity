@@ -78,6 +78,27 @@ const demoUsers: Record<UserRole, AuthUser> = {
     role: 'registrar',
     avatar: 'RG',
   },
+  applicant: {
+    id: 'demo-applicant',
+    name: 'Demo Applicant',
+    email: 'applicant@example.com',
+    role: 'applicant',
+    avatar: 'AP',
+  },
+  'academic-office': {
+    id: 'demo-academic-office',
+    name: 'Demo Academic Office',
+    email: 'academic@iguc.net',
+    role: 'academic-office',
+    avatar: 'AO',
+  },
+  dean: {
+    id: 'demo-dean',
+    name: 'Demo Faculty Dean',
+    email: 'dean@iguc.net',
+    role: 'dean',
+    avatar: 'FD',
+  },
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);

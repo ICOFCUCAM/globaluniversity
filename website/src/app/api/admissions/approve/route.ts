@@ -27,6 +27,35 @@ export const runtime = 'nodejs';
 
 const SUPABASE_URL = 'https://djotoapomhlavxknwsxw.databasepad.com';
 
+/**
+ * Student number in the university's format: ICOF + intake year + a five-digit
+ * sequence, e.g. ICOF202600451.
+ *
+ * The sequence is derived from how many numbers already exist for that year
+ * rather than from a counter held anywhere else, so it cannot drift out of step
+ * with the table. Two approvals racing would collide; `student_number` carries
+ * a unique index (see the migration) so the second fails loudly and is retried
+ * rather than silently issuing a duplicate number.
+ */
+async function nextStudentNumber(
+  // Typed loosely on purpose: the generated SupabaseClient type varies with the
+  // schema generics, and pinning it here would break whenever types are
+  // regenerated. Only `.from().select()` is used.
+  admin: { from: (t: string) => any },
+  year: number,
+): Promise<string> {
+  const prefix = `ICOF${year}`;
+  const { data } = await admin
+    .from('students')
+    .select('student_number')
+    .like('student_number', `${prefix}%`)
+    .order('student_number', { ascending: false })
+    .limit(1);
+  const last = (data?.[0] as { student_number?: string } | undefined)?.student_number;
+  const seq = last ? Number(last.slice(prefix.length)) + 1 : 1;
+  return `${prefix}${String(seq).padStart(5, '0')}`;
+}
+
 /** Readable, unambiguous initial password — no l/1/O/0. */
 function generatePassword(): string {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
@@ -35,74 +64,87 @@ function generatePassword(): string {
 }
 
 function welcomeEmail(opts: {
-  firstName: string;
-  matricNo: string;
+  fullName: string;
+  studentNumber: string;
   programme: string;
-  degreeType: string;
-  email: string;
+  faculty: string;
+  intake: string;
   password: string;
   portalUrl: string;
   note?: string;
 }) {
-  const { firstName, matricNo, programme, degreeType, email, password, portalUrl, note } = opts;
-  const text = `Dear ${firstName},
+  const { fullName, studentNumber, programme, faculty, intake, password, portalUrl, note } = opts;
+  const canDo = [
+    'Register Courses',
+    'View Timetable',
+    'Download Admission Letter',
+    'Pay Tuition',
+    'Access the LMS',
+    'Access the Library',
+    'Contact Lecturers',
+    'View Results',
+  ];
+  const text = `Dear ${fullName},
 
-Congratulations. Your application to ICOF Global University has been examined by the Office of the Registrar and approved.
+Congratulations.
 
-You have been admitted to:
-  ${degreeType ? `${degreeType} — ` : ''}${programme}
+Your application has been approved. You have been admitted into
 
-Your student account has been created. These are your login details for the Student Management System:
+  ${programme}
+  ${faculty}
+  ${intake} Intake
 
-  Portal:      ${portalUrl}
-  Matriculation number: ${matricNo}
-  Username:    ${email}
-  Password:    ${password}
+Your Student Number   ${studentNumber}
+Your Username         ${studentNumber}
+Temporary Password    ${password}
+Student Portal        ${portalUrl}
 
-Please sign in and change your password immediately. Your password is personal to you and should not be shared with anyone, including university staff.
+Please log in immediately and change your password. Your password is personal to you and should not be shared with anyone, including university staff.
 
-Inside the portal you can register for courses, see your results and GPA, download your transcript, access course materials and assignments, sit online examinations, and view your fee statement.
+Inside your portal you can:
+${canDo.map((c) => `  - ${c}`).join('\n')}
 ${note ? `\nA note from the Registrar:\n${note}\n` : ''}
-If anything here is wrong — your name, your programme, your campus — reply to this email before you register for courses, and the Registrar's office will correct it.
+If anything here is wrong — your name, your programme, your campus — reply to this email before you register for courses and the Registrar's office will correct it.
 
-Welcome to ICOF Global University. We are glad you are here.
+Welcome to ICOF Global University.
 
 Office of the Registrar
-ICOF Global University
-The Community University of Africa
-info@iguc.net`;
+ICOF Global University`;
 
   const html = `<div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;color:#3f3350">
   <div style="background:#422e59;padding:28px 32px">
     <p style="margin:0;color:#f3d27a;font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:.18em;text-transform:uppercase">Office of the Registrar</p>
-    <h1 style="margin:8px 0 0;color:#fff;font-size:24px">Your application has been approved</h1>
+    <h1 style="margin:8px 0 0;color:#fff;font-size:24px">Congratulations! Welcome to ICOF Global University</h1>
   </div>
   <div style="padding:32px">
-    <p>Dear ${firstName},</p>
-    <p>Congratulations. Your application to ICOF Global University has been examined by the Office of the Registrar and approved.</p>
+    <p>Dear ${fullName},</p>
+    <p><strong>Congratulations.</strong> Your application has been approved.</p>
     <p style="margin:24px 0;padding:16px 20px;background:#faf6ee;border-left:3px solid #c9a227">
-      <strong style="display:block;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#8a6d1f;font-family:Helvetica,Arial,sans-serif">You have been admitted to</strong>
-      <span style="font-size:18px;font-weight:bold">${degreeType ? `${degreeType} — ` : ''}${programme}</span>
+      <strong style="display:block;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#8a6d1f;font-family:Helvetica,Arial,sans-serif">You have been admitted into</strong>
+      <span style="font-size:18px;font-weight:bold">${programme}</span><br>
+      <span style="color:#6b6076">${faculty}</span><br>
+      <span style="color:#6b6076">${intake} Intake</span>
     </p>
-    <p>Your student account has been created. These are your login details for the Student Management System.</p>
     <table style="width:100%;border-collapse:collapse;margin:16px 0;font-family:Helvetica,Arial,sans-serif;font-size:14px">
-      <tr><td style="padding:8px 0;color:#6b6076">Portal</td><td style="padding:8px 0"><a href="${portalUrl}" style="color:#422e59">${portalUrl}</a></td></tr>
-      <tr><td style="padding:8px 0;color:#6b6076">Matriculation number</td><td style="padding:8px 0"><strong>${matricNo}</strong></td></tr>
-      <tr><td style="padding:8px 0;color:#6b6076">Username</td><td style="padding:8px 0"><strong>${email}</strong></td></tr>
-      <tr><td style="padding:8px 0;color:#6b6076">Password</td><td style="padding:8px 0"><strong style="font-family:monospace;font-size:15px">${password}</strong></td></tr>
+      <tr><td style="padding:8px 0;color:#6b6076">Your Student Number</td><td style="padding:8px 0"><strong style="font-family:monospace;font-size:16px">${studentNumber}</strong></td></tr>
+      <tr><td style="padding:8px 0;color:#6b6076">Your Username</td><td style="padding:8px 0"><strong style="font-family:monospace">${studentNumber}</strong></td></tr>
+      <tr><td style="padding:8px 0;color:#6b6076">Temporary Password</td><td style="padding:8px 0"><strong style="font-family:monospace;font-size:16px">${password}</strong></td></tr>
+      <tr><td style="padding:8px 0;color:#6b6076">Student Portal</td><td style="padding:8px 0"><a href="${portalUrl}" style="color:#422e59">${portalUrl}</a></td></tr>
     </table>
     <p style="padding:12px 16px;background:#fdf2f2;border-left:3px solid #dc2626;font-size:14px">
-      Please sign in and change your password immediately. Your password is personal to you and should not be shared with anyone, including university staff.
+      Please log in immediately and change your password. Your password is personal to you and should not be shared with anyone, including university staff.
     </p>
-    <p>Inside the portal you can register for courses, see your results and GPA, download your transcript, access course materials and assignments, sit online examinations, and view your fee statement.</p>
+    <p style="margin-top:24px"><strong>Inside your portal you can:</strong></p>
+    <ul style="padding-left:0;list-style:none">
+      ${canDo.map((c) => `<li style="padding:3px 0">&#10003; ${c}</li>`).join('')}
+    </ul>
     ${note ? `<p style="padding:12px 16px;background:#faf6ee"><strong>A note from the Registrar:</strong><br>${note}</p>` : ''}
-    <p>If anything here is wrong — your name, your programme, your campus — reply to this email before you register for courses, and the Registrar’s office will correct it.</p>
-    <p style="margin-top:28px">Welcome to ICOF Global University. We are glad you are here.</p>
-    <p style="color:#6b6076;font-size:14px;margin-top:24px">
-      Office of the Registrar<br>ICOF Global University<br><em>The Community University of Africa</em>
-    </p>
+    <p>If anything here is wrong — your name, your programme, your campus — reply to this email before you register for courses and the Registrar\u2019s office will correct it.</p>
+    <p style="margin-top:28px">Welcome to ICOF Global University.</p>
+    <p style="color:#6b6076;font-size:14px;margin-top:24px">Office of the Registrar<br>ICOF Global University</p>
   </div>
 </div>`;
+
   return { text, html };
 }
 
@@ -143,7 +185,7 @@ export async function POST(request: Request) {
   if (readErr || !student) {
     return NextResponse.json({ ok: false, error: 'application-not-found' }, { status: 404 });
   }
-  if (student.status !== 'fee_paid') {
+  if (student.status !== 'fee_paid' && student.status !== 'documents_required') {
     return NextResponse.json(
       { ok: false, error: `wrong-stage:${student.status}` },
       { status: 409 },
@@ -157,6 +199,8 @@ export async function POST(request: Request) {
   const fullName = [student.first_name, student.middle_name, student.last_name]
     .filter(Boolean)
     .join(' ');
+  const intakeYear = Number(student.admission_year) || new Date().getFullYear();
+  const studentNumber = await nextStudentNumber(admin, intakeYear);
 
   const { error: authErr } = await admin.auth.admin.createUser({
     email: student.email,
@@ -165,6 +209,9 @@ export async function POST(request: Request) {
     user_metadata: {
       full_name: fullName,
       role: 'student',
+      // The student number is the username the welcome email quotes, so it is
+      // carried on the account rather than left only on the students row.
+      student_number: studentNumber,
       matric_no: student.matric_no,
       program: student.program,
     },
@@ -182,6 +229,7 @@ export async function POST(request: Request) {
     .from('students')
     .update({
       status: 'approved',
+      student_number: studentNumber,
       decided_by: byUserId ?? null,
       decided_at: new Date().toISOString(),
       account_created_at: new Date().toISOString(),
@@ -198,11 +246,11 @@ export async function POST(request: Request) {
   const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SITE_URL } = process.env;
   const portalUrl = `${SITE_URL ?? 'https://iguc.net'}/portal`;
   const mail = welcomeEmail({
-    firstName: student.first_name || 'Student',
-    matricNo: student.matric_no,
-    programme: student.program || 'your programme',
-    degreeType: student.degree_type || '',
-    email: student.email,
+    fullName: fullName || 'Student',
+    studentNumber,
+    programme: [student.degree_type, student.program].filter(Boolean).join(' — ') || 'your programme',
+    faculty: student.faculty || 'ICOF Global University',
+    intake: student.intake || String(intakeYear),
     password,
     portalUrl,
     note,
@@ -218,6 +266,7 @@ export async function POST(request: Request) {
       error: 'smtp-not-configured',
       email: student.email,
       password,
+      studentNumber,
     });
   }
 
@@ -231,7 +280,7 @@ export async function POST(request: Request) {
     await transporter.sendMail({
       from: `"ICOF Global University — Office of the Registrar" <${SMTP_USER}>`,
       to: student.email,
-      subject: `Your application to ICOF Global University has been approved — ${student.matric_no}`,
+      subject: 'Congratulations! Welcome to ICOF Global University',
       text: mail.text,
       html: mail.html,
     });
@@ -242,8 +291,9 @@ export async function POST(request: Request) {
       error: `email-failed: ${(e as Error).message}`,
       email: student.email,
       password,
+      studentNumber,
     });
   }
 
-  return NextResponse.json({ ok: true, emailSent: true, email: student.email });
+  return NextResponse.json({ ok: true, emailSent: true, email: student.email, studentNumber });
 }

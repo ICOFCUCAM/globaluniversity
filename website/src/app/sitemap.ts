@@ -29,6 +29,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/academic-regulations',
     '/student-handbook',
     '/prospectus',
+    '/admissions-portal',
     '/graduate-school-handbook',
     '/fr',
     '/fr/a-propos',

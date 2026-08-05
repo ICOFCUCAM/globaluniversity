@@ -23,11 +23,12 @@ before it works, and the one thing I could not test.
         ▼
   REGISTRAR DESK      Office of the Registrar examines the application
         │             /portal → Admissions — Registrar
-        ├─ Decline → status 'declined', reason recorded, no account created
-        └─ Approve → account created on the programme chosen at application
-                     tailored welcome email sent with matric no, username,
-                     password and a welcome into that programme
-                     status 'approved'
+        ├─ Request documents → status 'documents_required', stays in the queue
+        ├─ Reject   → status 'declined', reason recorded, no account created
+        └─ Approve  → student number issued (ICOF{year}{00000})
+                      auth account created, status 'approved'
+                      welcome email: student number, username, temporary
+                      password, programme, faculty, intake
 ```
 
 ## 2. The gate is a filter, not a badge
@@ -43,29 +44,52 @@ only a student id, so the fee gate is verified against the database at the
 moment of approval rather than against whatever the page believed when it
 loaded. A stale tab cannot approve a record that has since changed.
 
-## 3. Self-signup has been removed from the portal
+## 3. Two portals, and what each one is for
 
-**A student cannot create their own account.** The sign-up tab, the sign-up
-form and the `handleSignup` handler are deleted from `LoginScreen.tsx`, not
-hidden behind a flag. In their place the login card carries a short note
-directing applicants to `/apply`.
+| | Admissions Portal `/admissions-portal` | Student Portal `/portal` |
+|---|---|---|
+| Who | Applicants | Enrolled students and staff |
+| Account | Applicant account | Student account |
+| Created by | The applicant | The Registrar, automatically, on approval |
+| Carries application forms | Yes | **No** |
 
-This follows from the specification rather than being a separate decision: if
-an applicant can create an account themselves, they bypass both the fee gate
-and the Registrar's examination, which are the only two controls in the
-process.
+**A student cannot create their own student account.** The sign-up tab, form and
+`handleSignup` handler are deleted from the Student Portal's login screen — not
+hidden behind a flag. A student account is created only by the Registrar
+approving an application, because an applicant who could create one would bypass
+both the fee gate and the Registrar's examination.
 
-`signup()` remains in `AuthContext` and is now unused by any UI. It was left in
-place rather than deleted so that reinstating a sign-up route is a deliberate
-act, but nothing calls it.
+An applicant who signs in at `/portal` is turned away with an explanation and
+sent to the Admissions Portal, rather than shown an empty student dashboard.
+`isEnrolledRole()` in `src/lib/roles.ts` is that check.
 
-## 4. Two new roles
+## 4. The role matrix is code, not prose
 
-`UserRole` gains `finance` and `registrar`. They are separate roles rather than
-flavours of `admin` because the control this process depends on is that the
-desk registering the fee is **not** the desk that admits the student. `admin`
-sees both desks; `finance` sees only its own; `registrar` sees its own and the
-student register.
+`src/lib/roles.ts` holds the university's role table as a capability matrix.
+The specification's **"cannot"** lines are the load-bearing part, and they are
+represented as the *absence* of a capability rather than as a UI condition:
+
+| Role | Notably cannot |
+|---|---|
+| Finance Administrator | `admit-student` — absent from the matrix |
+| Registrar Administrator | `verify-payment`, `approve-refund` — absent |
+| Applicant | `register-courses`, `view-results`, `access-lms` — absent |
+
+That is the separation of duties: the officer who confirms the money is not the
+officer who confers the place, and neither can do the other's job. Both desks
+check `can(role, capability)` rather than testing `role === 'admin'`, so the
+matrix is the only place a permission is decided.
+
+Eight roles: `admin`, `applicant`, `finance`, `registrar`, `academic-office`,
+`dean`, `lecturer`, `student`.
+
+## 4a. Student numbers
+
+Issued at approval in the university's format — `ICOF` + intake year + a
+five-digit sequence, e.g. `ICOF202600451`. The sequence is derived from the
+highest existing number for that year rather than from a separate counter, so
+it cannot drift out of step with the table. The student number is also the
+username quoted in the welcome email.
 
 ## 5. Database migration — MUST BE RUN BEFORE THE DESKS WORK
 
@@ -73,6 +97,11 @@ The pipeline adds columns to `students`. Run this against the project database:
 
 ```sql
 alter table students
+  add column if not exists payment_status     text default 'pending',
+  add column if not exists fee_currency       text,
+  add column if not exists student_number     text,
+  add column if not exists faculty            text,
+  add column if not exists intake             text,
   add column if not exists fee_reference      text,
   add column if not exists fee_amount         text,
   add column if not exists fee_registered_by  uuid,
@@ -85,6 +114,13 @@ alter table students
 -- The two queues are read on every page load of the desks.
 create index if not exists students_status_created_idx
   on students (status, created_at);
+
+-- Student numbers must be unique. nextStudentNumber() derives the sequence
+-- from the highest existing number for the year, so two approvals racing would
+-- both compute the same one; this index makes the second fail loudly instead of
+-- issuing a duplicate.
+create unique index if not exists students_student_number_key
+  on students (student_number) where student_number is not null;
 ```
 
 The list is also held in code as `requiredColumns` in `src/lib/admissions.ts`,
@@ -109,14 +145,17 @@ connection to `djotoapomhlavxknwsxw.databasepad.com` — the proxy refuses
 CONNECT, as it has throughout this project. Everything here compiles and the
 site builds, but the following are unverified against a live database:
 
-- that `students` accepts the eight new columns after the migration;
+- that `students` accepts the new columns after the migration;
+- that `nextStudentNumber` issues `ICOF202600001` on an empty year and
+  increments correctly thereafter;
 - that `auth.admin.createUser` succeeds with the service-role key;
 - that the status transitions apply, including the `.eq('status', …)` guards;
 - that the welcome email renders correctly in a mail client.
 
 Run one application through the whole path on a staging database before using
 this for a real intake. The first thing to check is that approving a record
-whose status is not `fee_paid` returns `409 wrong-stage`.
+whose status is neither `fee_paid` nor `documents_required` returns
+`409 wrong-stage`.
 
 ## 8. Still to be decided
 
@@ -124,12 +163,21 @@ whose status is not `fee_paid` returns `409 wrong-stage`.
   as free text, because the fee itself is not in the published schedule. The
   miscellaneous fee schedule lists a late *application* fee of 5,000 FCFA but
   no standard application fee.
-- **Whether a declined applicant is emailed.** Decline records a reason and
-  requires one, but sends nothing. If applicants should be told, say so and I
-  will add it — it is the same route with a different template.
-- **Matriculation numbers.** The application currently generates an
-  application number and reuses it as `matric_no`. Whether an approved student
-  should receive a new, properly formatted matriculation number at approval is
-  a decision for the Registrar.
+- **Whether a rejected applicant, or one asked for documents, is emailed.**
+  Both record a message and require one, but neither sends anything yet. The
+  specification says the applicant receives an email in both cases; that is the
+  same route with two more templates and is the next thing to build.
+- **Applicant accounts are not yet backed by auth.** `/admissions-portal`
+  explains the process, the statuses and the applicant's rights, and sends
+  applicants to `/apply`. The account that lets an applicant sign back in to
+  save a part-finished form, re-upload documents and watch their own status
+  change is designed for but not built.
+- **Document upload on request.** `documents_required` is a real status the
+  Registrar can set, but there is no applicant-facing upload against it yet.
+- **What the application currently records.** Faculty and intake are now
+  columns, but the application form does not yet capture faculty as a separate
+  field or intake as a structured value — it collects level, field, campus,
+  mode and an intended start. Those need mapping before the welcome email can
+  quote a real intake rather than the admission year.
 - **Who may reverse an approval.** Nothing in the desks can undo one. That is
   probably right, but it means a mistaken approval needs a documented route.
