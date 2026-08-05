@@ -1,70 +1,214 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { HeroSlide } from '@/content/site';
+import { Aurora, Grain, LightShaft } from './Atmosphere';
+import Magnetic from './Magnetic';
+
+const DURATION = 7000;
 
 export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
   const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [reduced, setReduced] = useState(false);
+  const regionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    if (paused) return;
-    const timer = setInterval(() => setCurrent((c) => (c + 1) % slides.length), 6000);
+    setReduced(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }, []);
+
+  useEffect(() => {
+    if (paused || reduced || slides.length < 2) return;
+    const timer = setInterval(() => setCurrent((c) => (c + 1) % slides.length), DURATION);
     return () => clearInterval(timer);
-  }, [slides.length, paused]);
+  }, [slides.length, paused, reduced]);
+
+  const go = useCallback(
+    (dir: 1 | -1) => setCurrent((c) => (c + dir + slides.length) % slides.length),
+    [slides.length],
+  );
+
+  // Arrow keys move the carousel while it has focus, per the APG carousel pattern.
+  function onKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      go(1);
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      go(-1);
+    }
+  }
 
   return (
     <section
-      className="relative overflow-hidden bg-brand-purple text-white"
+      ref={regionRef}
+      className="relative isolate min-h-[clamp(26rem,78vh,46rem)] overflow-hidden bg-brand-purple-dark text-white"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
+      onFocusCapture={() => setPaused(true)}
+      onBlurCapture={() => setPaused(false)}
+      onKeyDown={onKeyDown}
+      role="region"
       aria-roledescription="carousel"
+      aria-label="University highlights"
+      tabIndex={-1}
     >
-      {slides.map((slide, i) => (
-        <div
-          key={slide.title}
-          className={`transition-opacity duration-1000 ${
-            i === current ? 'opacity-100' : 'pointer-events-none absolute inset-0 opacity-0'
-          }`}
-          aria-hidden={i !== current}
-        >
-          <Image
-            src={slide.image}
-            alt=""
-            fill
-            priority={i === 0}
-            className="object-cover opacity-40"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-brand-purple/70 via-brand-purple/55 to-brand-purple-dark/90" />
-          <div className="relative mx-auto max-w-4xl px-4 py-32 text-center sm:py-44">
-            <h1 className="font-heading text-4xl font-bold leading-[1.05] tracking-tight text-white sm:text-6xl [text-wrap:balance]">
-              {slide.title}
-            </h1>
-            <p className="mx-auto mt-6 max-w-2xl text-lg text-brand-gold/95">{slide.text}</p>
-            <Link
-              href={slide.cta.href}
-              className="mt-10 inline-block rounded-full bg-brand-gold px-8 py-3 font-heading font-semibold text-brand-purple transition hover:bg-brand-gold-deep"
-              tabIndex={i === current ? 0 : -1}
-            >
-              🎓 {slide.cta.label}
-            </Link>
-          </div>
-        </div>
-      ))}
-      <div className="absolute bottom-6 left-1/2 z-10 flex -translate-x-1/2 gap-2">
-        {slides.map((s, i) => (
-          <button
-            key={s.title}
-            aria-label={`Go to slide ${i + 1}`}
-            onClick={() => setCurrent(i)}
-            className={`h-2.5 rounded-full transition-all ${
-              i === current ? 'w-8 bg-brand-gold' : 'w-2.5 bg-white/50 hover:bg-white/80'
+      {slides.map((slide, i) => {
+        const active = i === current;
+        return (
+          <div
+            key={slide.title}
+            className={`absolute inset-0 transition-opacity duration-[1200ms] ease-out ${
+              active ? 'z-[1] opacity-100' : 'pointer-events-none opacity-0'
             }`}
-          />
+            aria-hidden={!active}
+            role="group"
+            aria-roledescription="slide"
+            aria-label={`${i + 1} of ${slides.length}`}
+          >
+            {/* Slow push-in on the active frame gives the still photography life
+                without asking the browser to composite anything but a transform. */}
+            <div className={`absolute inset-0 ${active && !reduced ? 'animate-ken-burns' : 'scale-[1.06]'}`}>
+              <Image
+                src={slide.image}
+                alt=""
+                fill
+                priority={i === 0}
+                loading={i === 0 ? undefined : 'lazy'}
+                quality={i === 0 ? 85 : 72}
+                sizes="100vw"
+                className="object-cover"
+              />
+            </div>
+
+            {/* Three-part scrim: darkens the top for the sticky header, holds the
+                centre readable, and grounds the base into the next section. */}
+            <div className="absolute inset-0 bg-gradient-to-b from-brand-purple-dark/85 via-brand-purple/60 to-brand-purple-dark/95" />
+            <div className="absolute inset-0 bg-[radial-gradient(70%_60%_at_50%_45%,transparent,rgba(29,20,40,0.55))]" />
+          </div>
+        );
+      })}
+
+      {/* Atmosphere: shafts from a clerestory, aurora beneath, grain over all.
+          z-[1] puts it above the photographic frames, below the copy. */}
+      <div className="pointer-events-none absolute inset-0 z-[1]">
+        <Aurora tone="dual" intensity={0.85} />
+        <LightShaft />
+        <Grain opacity={0.06} />
+      </div>
+
+      {/* Copy is rendered once, outside the fading frames, so the headline
+          never cross-fades against itself. */}
+      <div className="relative z-[2] mx-auto flex min-h-[clamp(26rem,78vh,46rem)] max-w-5xl flex-col items-center justify-center px-4 py-20 text-center sm:py-28">
+        <p className="mb-5 inline-flex items-center gap-2.5 rounded-full border border-brand-gold/30 bg-brand-gold/10 px-3.5 py-1.5 font-sans text-[10px] font-semibold uppercase tracking-[0.18em] text-brand-gold backdrop-blur-sm sm:px-4 sm:text-[11px] sm:tracking-[0.22em]">
+          <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-brand-gold" />
+          Accredited since 2007
+        </p>
+
+        {slides.map((slide, i) => (
+          <div
+            key={slide.title}
+            // Inactive copy is pulled out of flow AND made `invisible`. Opacity
+            // alone left it painting for a frame before hydration settled, which
+            // showed as ghost text stacked under the live headline.
+            className={`w-full transition-opacity duration-700 ${
+              i === current
+                ? 'opacity-100'
+                : 'pointer-events-none invisible absolute inset-x-0 top-0 opacity-0'
+            }`}
+            aria-hidden={i !== current}
+            {...(i !== current ? { inert: '' as unknown as boolean } : {})}
+          >
+            {/* Only the visible slide is the document's h1; the rest are plain
+                text so the page never ships four competing top-level headings. */}
+            {i === current ? (
+              <h1 className="font-heading text-display-xl font-bold text-transparent [text-wrap:balance] [background-image:linear-gradient(175deg,#ffffff_38%,#f7e6b4_78%,#e9c14a_100%)] [background-clip:text] [-webkit-background-clip:text] drop-shadow-[0_2px_24px_rgba(29,20,40,0.45)]">
+                {slide.title}
+              </h1>
+            ) : (
+              <p className="font-heading text-display-xl font-bold text-transparent [text-wrap:balance] [background-image:linear-gradient(175deg,#ffffff_38%,#f7e6b4_78%,#e9c14a_100%)] [background-clip:text] [-webkit-background-clip:text]">
+                {slide.title}
+              </p>
+            )}
+            <p className="mx-auto mt-5 max-w-2xl text-balance leading-relaxed text-white/85 sm:mt-6 sm:text-xl">
+              {slide.text}
+            </p>
+            <div className="mt-8 flex flex-col items-stretch justify-center gap-3 sm:mt-10 sm:flex-row sm:items-center sm:gap-4">
+              <Magnetic strength={9}>
+              <Link
+                href={slide.cta.href}
+                tabIndex={i === current ? 0 : -1}
+                className="group relative block overflow-hidden rounded-full bg-brand-gold px-7 py-3.5 font-heading text-[15px] font-semibold text-brand-purple shadow-gold transition hover:bg-brand-gold-deep sm:px-9 sm:py-4 sm:text-base"
+              >
+                <span className="relative z-10">{slide.cta.label}</span>
+                <span
+                  aria-hidden="true"
+                  className="absolute inset-y-0 -left-1/3 w-1/3 bg-white/40 blur-md transition-transform duration-700 group-hover:translate-x-[420%]"
+                />
+              </Link>
+              </Magnetic>
+              <Magnetic strength={9}>
+              <Link
+                href="/apply"
+                tabIndex={i === current ? 0 : -1}
+                className="rounded-full border-2 border-white/40 px-7 py-3.5 font-heading text-[15px] font-semibold text-white backdrop-blur-sm transition hover:border-brand-gold hover:text-brand-gold sm:px-9 sm:py-4 sm:text-base"
+              >
+                Start an Application
+              </Link>
+              </Magnetic>
+            </div>
+          </div>
         ))}
       </div>
+
+      {/* The hero dissolves downward into the quick-links card instead of
+          terminating on a hard edge. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-24 bg-gradient-to-b from-transparent to-brand-purple-dark/85"
+      />
+
+      {/* Controls */}
+      <div className="absolute inset-x-0 bottom-0 z-[3]">
+        <div className="mx-auto flex max-w-5xl items-center justify-center gap-3 px-4 pb-10">
+          <button
+            onClick={() => go(-1)}
+            aria-label="Previous slide"
+            className="hidden h-9 w-9 items-center justify-center rounded-full border border-white/25 text-white/70 transition hover:border-brand-gold hover:text-brand-gold sm:flex"
+          >
+            ‹
+          </button>
+          {slides.map((s, i) => (
+            <button
+              key={s.title}
+              aria-label={`Show slide ${i + 1}: ${s.title}`}
+              aria-current={i === current}
+              onClick={() => setCurrent(i)}
+              className="group relative h-1 overflow-hidden rounded-full bg-white/25 transition-all"
+              style={{ width: i === current ? '4.5rem' : '1.75rem' }}
+            >
+              <span
+                className={`absolute inset-y-0 left-0 rounded-full bg-brand-gold ${
+                  i === current ? 'w-full' : 'w-0 group-hover:w-full'
+                } transition-[width] duration-300`}
+              />
+            </button>
+          ))}
+          <button
+            onClick={() => go(1)}
+            aria-label="Next slide"
+            className="hidden h-9 w-9 items-center justify-center rounded-full border border-white/25 text-white/70 transition hover:border-brand-gold hover:text-brand-gold sm:flex"
+          >
+            ›
+          </button>
+        </div>
+      </div>
+
+      <span className="sr-only" aria-live="polite">
+        Slide {current + 1} of {slides.length}: {slides[current]?.title}
+      </span>
     </section>
   );
 }

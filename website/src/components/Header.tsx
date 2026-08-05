@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation';
 import { site, type NavItem } from '@/content/site';
 import { fr } from '@/content/fr';
 import SiteSearch from './SiteSearch';
+import Crest from './Crest';
 
 function DesktopItem({ item }: { item: NavItem }) {
   const hasMenu = Boolean(item.groups?.length || item.children?.length);
@@ -26,12 +27,14 @@ function DesktopItem({ item }: { item: NavItem }) {
     <div className="group relative">
       <Link
         href={item.href}
-        className="whitespace-nowrap px-1 py-2 text-sm font-medium text-white/90 transition group-hover:text-brand-gold"
+        className="whitespace-nowrap px-1 py-2 text-sm font-medium text-white/90 transition group-hover:text-brand-gold group-focus-within:text-brand-gold"
       >
         {item.label} <span aria-hidden="true" className="text-[10px]">▾</span>
       </Link>
       <div
-        className={`invisible absolute left-1/2 top-full z-50 -translate-x-1/2 pt-3 opacity-0 transition group-hover:visible group-hover:opacity-100 ${
+        // focus-within as well as hover: without it a keyboard user tabbing
+        // through the bar can never open a mega-menu.
+        className={`invisible absolute left-1/2 top-full z-50 -translate-x-1/2 pt-3 opacity-0 transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 ${
           cols >= 3 ? 'w-[46rem]' : cols === 2 ? 'w-[34rem]' : 'w-64'
         }`}
       >
@@ -91,19 +94,44 @@ export default function Header() {
   const langHref = isFr ? '/' : '/fr';
   const langLabel = isFr ? 'EN' : 'FR';
 
+  const [progress, setProgress] = useState(0);
+
   useEffect(() => {
-    const onScroll = () => setElevated(window.scrollY > 8);
+    let frame = 0;
+    const onScroll = () => {
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        setElevated(window.scrollY > 8);
+        const max = document.documentElement.scrollHeight - window.innerHeight;
+        setProgress(max > 0 ? Math.min(1, window.scrollY / max) : 0);
+      });
+    };
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    window.addEventListener('resize', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+      if (frame) cancelAnimationFrame(frame);
+    };
   }, []);
 
   return (
     <header
-      className={`sticky top-0 z-50 bg-brand-purple text-white transition-shadow ${
-        elevated ? 'shadow-2xl shadow-brand-purple-dark/40' : 'shadow-md'
+      className={`sticky top-0 z-50 text-white transition-all duration-500 ${
+        elevated
+          ? 'bg-brand-purple-dark/90 shadow-2xl shadow-brand-purple-dark/40 backdrop-blur-xl supports-[backdrop-filter]:bg-brand-purple-dark/75'
+          : 'bg-brand-purple shadow-md'
       }`}
     >
+      {/* Reading progress — a single scaled element, written from the same
+          rAF that drives the elevation state. */}
+      <span
+        aria-hidden="true"
+        className="absolute inset-x-0 bottom-0 h-[2px] origin-left bg-gradient-to-r from-brand-gold-deep via-brand-gold to-brand-gold-deep transition-transform duration-150"
+        style={{ transform: `scaleX(${progress})` }}
+      />
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:absolute focus:z-[60] focus:bg-brand-gold focus:px-4 focus:py-2 focus:text-brand-purple"
@@ -127,13 +155,8 @@ export default function Header() {
 
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-4 py-3">
         <Link href={isFr ? '/fr' : '/'} className="flex shrink-0 items-center gap-3">
-          <Image
-            src="/images/site-icon.png"
-            alt={`${site.name} crest`}
-            width={44}
-            height={44}
-            className="rounded-full bg-white/90 p-0.5"
-          />
+          <Crest size={44} priority />
+          <span className="font-heading text-sm font-bold leading-tight md:hidden">ICOF Global</span>
           <span className="hidden font-heading text-base font-bold leading-tight md:block xl:text-lg">
             {site.name}
           </span>
@@ -277,7 +300,7 @@ export default function Header() {
               onClick={() => setOpen(false)}
               className="mt-2 block rounded-full border border-white/30 px-4 py-2 text-center text-sm font-semibold text-white/90"
             >
-              🌐 {isFr ? 'English' : 'Français'}
+              {isFr ? 'English' : 'Français'}
             </Link>
             <div className="mt-3 border-t border-white/10 pt-3">
               <p className="py-1 text-xs uppercase tracking-wide text-white/50">Student Portals</p>

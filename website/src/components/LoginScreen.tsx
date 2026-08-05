@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { UNIVERSITY, IMAGES } from '@/lib/constants';
+import { Aurora, Grain, LightShaft, Seam } from './Atmosphere';
 import type { UserRole } from '@/lib/types';
 import {
   Shield, Users, GraduationCap, BookOpen, Award,
@@ -8,14 +9,18 @@ import {
   Eye, EyeOff, AlertCircle, CheckCircle2, Loader2, ArrowRight
 } from 'lucide-react';
 
+// Demo quick-login is a development affordance, not a feature of the live portal.
+const DEMO_ENABLED = process.env.NEXT_PUBLIC_ENABLE_DEMO === 'true';
+
 export default function LoginScreen() {
-  const { login, signup, demoLogin, isLoading } = useAuth();
-  const [mode, setMode] = useState<'login' | 'signup'>('login');
+  const { login, demoLogin, isLoading } = useAuth();
+  // Sign-up is not reachable from the portal — see the note by the auth card.
+  // `mode` is retained as a constant so the existing conditional blocks below
+  // continue to read naturally, and so that reinstating a sign-up route later
+  // is a deliberate change rather than a one-character edit.
+  const mode: 'login' | 'signup' = 'login';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [selectedRole, setSelectedRole] = useState<UserRole>('student');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -40,38 +45,9 @@ export default function LoginScreen() {
     }
   }
 
-  async function handleSignup(e: React.FormEvent) {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-
-    if (!fullName.trim()) {
-      setError('Please enter your full name.');
-      return;
-    }
-    if (!email.trim()) {
-      setError('Please enter your email address.');
-      return;
-    }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters.');
-      return;
-    }
-    if (password !== confirmPassword) {
-      setError('Passwords do not match.');
-      return;
-    }
-
-    setSubmitting(true);
-    const result = await signup(email, password, fullName, selectedRole);
-    setSubmitting(false);
-
-    if (result.error) {
-      setError(result.error);
-    } else {
-      setSuccess('Account created successfully! You are now signed in.');
-    }
-  }
+  // handleSignup removed. The portal has no sign-up route: a student account is
+  // created by the Office of the Registrar on approving an application, and the
+  // credentials are emailed from the server. See src/lib/admissions.ts.
 
   function handleDemoLogin(role: UserRole) {
     setError('');
@@ -81,7 +57,7 @@ export default function LoginScreen() {
   const features = [
     { icon: <Users size={20} />, title: 'Student Management', desc: 'Complete lifecycle from admission to graduation' },
     { icon: <GraduationCap size={20} />, title: 'Lecturer Portal', desc: 'Course management and result processing' },
-    { icon: <BookOpen size={20} />, title: 'Course Catalog', desc: '340+ courses across 6 departments' },
+    { icon: <BookOpen size={20} />, title: 'Course Catalog', desc: 'Courses across four faculties, on campus and online' },
     { icon: <FileText size={20} />, title: 'Transcript Generation', desc: 'Pixel-perfect official transcripts with QR codes' },
     { icon: <Award size={20} />, title: 'Certificate Issuance', desc: 'Automated degree certificate generation' },
     { icon: <Monitor size={20} />, title: 'Online Learning', desc: 'LMS with materials, live classes, and CBT exams' },
@@ -96,87 +72,101 @@ export default function LoginScreen() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <div className="min-h-screen bg-brand-cream">
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0">
-          <img src={IMAGES.hero} alt="Campus" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#0f1a3c]/95 via-[#422e59]/90 to-[#422e59]/80" />
+          <img src={IMAGES.hero} alt="" className="h-full w-full object-cover" />
+          <Aurora tone="dual" intensity={0.5} fields={2} />
+          <LightShaft />
+          <div className="absolute inset-0 bg-gradient-to-br from-[#241a30]/95 via-[#422e59]/88 to-[#57549a]/70" />
+          <Grain />
+          <Seam flip />
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 py-8">
           {/* Nav */}
           <div className="flex items-center justify-between mb-12">
             <div className="flex items-center gap-3">
-              <img src={IMAGES.logo} alt="Logo" className="w-12 h-12 rounded-full object-cover border-2 border-amber-400" />
+              <img src={IMAGES.logo} alt="" className="w-12 h-12 rounded-full object-cover border-2 border-brand-gold" />
               <div>
                 <h1 className="text-white font-bold text-lg">{UNIVERSITY.shortName}</h1>
-                <p className="text-blue-200 text-[10px]">University Management System</p>
+                <p className="text-[10px] tracking-wide text-brand-gold/80">University Management System</p>
               </div>
             </div>
-            <div className="hidden md:flex items-center gap-6 text-sm text-blue-200">
+            <div className="hidden items-center gap-6 text-sm text-white/70 md:flex">
               <a href="#features" className="hover:text-white transition-colors">Features</a>
-              <a href="#about" className="hover:text-white transition-colors">About</a>
-              <a href="#contact" className="hover:text-white transition-colors">Contact</a>
+              <a href="/about" className="hover:text-white transition-colors">About</a>
+              <a href="/contact" className="hover:text-white transition-colors">Contact</a>
             </div>
           </div>
 
           {/* Hero Content */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center pb-16">
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-500/20 rounded-full text-amber-300 text-xs font-medium mb-4">
-                <span className="w-2 h-2 bg-amber-400 rounded-full animate-pulse" />
-                Next-Generation Academic Platform
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-brand-gold/30 bg-brand-gold/10 px-4 py-1.5 font-sans text-[10px] font-semibold uppercase tracking-[0.2em] text-brand-gold backdrop-blur-sm">
+                <span className="h-1.5 w-1.5 rounded-full bg-brand-gold" />
+                The ICOF Global University portal
               </div>
-              <h2 className="text-4xl lg:text-5xl font-bold text-white leading-tight">
-                ICOF Global <span className="text-amber-400">University</span> Portal
+              <h2 className="font-heading text-4xl font-bold leading-tight text-transparent lg:text-5xl [background-image:linear-gradient(175deg,#ffffff_38%,#f7e6b4_80%,#e9c14a_100%)] [background-clip:text] [-webkit-background-clip:text]">
+                ICOF Global <span className="text-brand-gold">University</span> Portal
               </h2>
-              <p className="text-blue-200 mt-4 text-lg leading-relaxed">
+              <p className="mt-4 text-lg leading-relaxed text-white/85">
                 One portal for the whole academic journey — admission to graduation — with automated GPA calculation, verified transcript generation and integrated online learning, serving students on campus in Cameroon and online worldwide.
               </p>
               <div className="flex flex-wrap gap-4 mt-8">
                 <div className="text-center">
                   <p className="text-3xl font-bold text-white">7,228</p>
-                  <p className="text-xs text-blue-300">Success Stories</p>
+                  <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-white/60">Success Stories</p>
                 </div>
-                <div className="w-px bg-blue-400/30" />
+                <div className="w-px bg-white/20" />
                 <div className="text-center">
                   <p className="text-3xl font-bold text-white">213</p>
-                  <p className="text-xs text-blue-300">Courses</p>
+                  <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-white/60">Courses</p>
                 </div>
-                <div className="w-px bg-blue-400/30" />
+                <div className="w-px bg-white/20" />
                 <div className="text-center">
                   <p className="text-3xl font-bold text-white">1,742</p>
-                  <p className="text-xs text-blue-300">Happy Students</p>
+                  <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-white/60">Happy Students</p>
                 </div>
-                <div className="w-px bg-blue-400/30" />
+                <div className="w-px bg-white/20" />
                 <div className="text-center">
                   <p className="text-3xl font-bold text-white">15+</p>
-                  <p className="text-xs text-blue-300">Years of Excellence</p>
+                  <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-white/60">Years of Excellence</p>
                 </div>
               </div>
             </div>
 
             {/* Auth Card */}
             <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md mx-auto w-full">
-              {/* Tab Toggle */}
-              <div className="flex bg-gray-100 rounded-xl p-1 mb-6">
-                <button
-                  onClick={() => { setMode('login'); setError(''); setSuccess(''); }}
-                  className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${
-                    mode === 'login' ? 'bg-[#422e59] text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  Sign In
-                </button>
-                <button
-                  onClick={() => { setMode('signup'); setError(''); setSuccess(''); }}
-                  className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${
-                    mode === 'signup' ? 'bg-[#422e59] text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  Sign Up
-                </button>
+              {/* No sign-up tab. A student account exists only because the
+                  Office of the Registrar approved an application, and an
+                  account created here would bypass both the application fee
+                  and the Registrar's examination — the two controls the
+                  admissions process exists to apply. Applicants are sent to
+                  the public application form instead. */}
+              <div className="mb-6 rounded-xl bg-[#faf6ee] p-4 ring-1 ring-[#e8dcc0]">
+                <p className="text-sm font-semibold text-[#422e59]">Applying to study here?</p>
+                <p className="mt-1 text-xs leading-relaxed text-gray-600">
+                  This is the Student Portal, for enrolled students. Applications are made in the
+                  Admissions Portal. Once the Office of the Registrar approves your application your
+                  student account is created for you, and your student number, username and
+                  temporary password are emailed to you.
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <a
+                    href="/admissions-portal"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#422e59] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#33234a]"
+                  >
+                    Admissions Portal <ArrowRight size={13} />
+                  </a>
+                  <a
+                    href="/apply"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-[#422e59] px-4 py-2 text-xs font-semibold text-[#422e59] transition hover:bg-[#422e59] hover:text-white"
+                  >
+                    Apply now
+                  </a>
+                </div>
               </div>
 
               {/* Error / Success Messages */}
@@ -244,138 +234,41 @@ export default function LoginScreen() {
               )}
 
               {/* SIGNUP FORM */}
-              {mode === 'signup' && (
-                <form onSubmit={handleSignup} className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1.5">Full Name</label>
-                    <div className="relative">
-                      <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                      <input
-                        type="text"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        placeholder="Enter your full name"
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30 focus:border-blue-400 transition-all"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1.5">Email Address</label>
-                    <div className="relative">
-                      <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                      <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="your.email@uni.edu"
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30 focus:border-blue-400 transition-all"
-                      />
-                    </div>
-                  </div>
+              {/* The sign-up form is gone, not hidden. It is reinstated only by
+                  deciding that applicants may create their own accounts, which
+                  would bypass the fee gate and the Registrar's examination. */}
 
-                  {/* Role Selection */}
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1.5">Account Type</label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {roleOptions.map((opt) => (
-                        <button
-                          key={opt.role}
-                          type="button"
-                          onClick={() => setSelectedRole(opt.role)}
-                          className={`p-2.5 rounded-xl text-center transition-all duration-200 border-2 ${
-                            selectedRole === opt.role
-                              ? `bg-gradient-to-br ${opt.color} text-white border-transparent shadow-lg`
-                              : 'bg-gray-50 text-gray-600 border-gray-100 hover:border-gray-300'
-                          }`}
-                        >
-                          <div className="flex justify-center mb-1">{opt.icon}</div>
-                          <p className="text-xs font-semibold">{opt.label}</p>
-                        </button>
-                      ))}
-                    </div>
-                    <p className="text-[10px] text-gray-400 mt-1.5">
-                      {roleOptions.find(r => r.role === selectedRole)?.desc}
-                    </p>
+              {/* Demo quick-login — one click into an administrator console, so it is
+                  compiled out unless NEXT_PUBLIC_ENABLE_DEMO is explicitly set. Never
+                  enable it on the production deployment. */}
+              {DEMO_ENABLED && (
+                <>
+                  <div className="relative my-5">
+                    <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200" /></div>
+                    <div className="relative flex justify-center"><span className="bg-white px-3 text-xs text-gray-400">or try demo access</span></div>
                   </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1.5">Password</label>
-                    <div className="relative">
-                      <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Min. 6 characters"
-                        className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30 focus:border-blue-400 transition-all"
-                      />
-                      <button type="button" onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  <div className="grid grid-cols-3 gap-2">
+                    {roleOptions.map((opt) => (
+                      <button
+                        key={opt.role}
+                        onClick={() => handleDemoLogin(opt.role)}
+                        disabled={isLoading}
+                        className="p-2 rounded-xl bg-gray-50 hover:bg-gray-100 text-center transition-all duration-200 border border-gray-100 hover:border-gray-200 group"
+                      >
+                        <div className="flex justify-center mb-0.5 text-gray-400 group-hover:text-gray-600">{opt.icon}</div>
+                        <p className="text-[10px] font-semibold text-gray-500 group-hover:text-gray-700">Demo {opt.label}</p>
                       </button>
-                    </div>
-                    {password.length > 0 && (
-                      <div className="flex gap-1 mt-1.5">
-                        {[1, 2, 3, 4].map((i) => (
-                          <div key={i} className={`h-1 flex-1 rounded-full transition-colors ${
-                            password.length >= i * 3
-                              ? password.length >= 12 ? 'bg-emerald-500' : password.length >= 8 ? 'bg-blue-500' : 'bg-amber-500'
-                              : 'bg-gray-200'
-                          }`} />
-                        ))}
-                      </div>
-                    )}
+                    ))}
                   </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1.5">Confirm Password</label>
-                    <div className="relative">
-                      <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                      <input
-                        type="password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="Re-enter your password"
-                        className={`w-full pl-10 pr-10 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30 transition-all ${
-                          confirmPassword && confirmPassword !== password ? 'border-red-300 bg-red-50/50' : 'border-gray-200'
-                        }`}
-                      />
-                      {confirmPassword && confirmPassword === password && (
-                        <CheckCircle2 size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500" />
-                      )}
-                    </div>
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={submitting || isLoading}
-                    className="w-full py-2.5 bg-[#422e59] text-white rounded-xl text-sm font-semibold hover:bg-[#322244] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                  >
-                    {submitting ? <><Loader2 size={16} className="animate-spin" /> Creating account...</> : <>Create Account <ArrowRight size={14} /></>}
-                  </button>
-                </form>
+                  <p className="text-[9px] text-gray-400 text-center mt-2">
+                    Demo mode uses sample data — no account required
+                  </p>
+                </>
               )}
 
-              {/* Divider */}
-              <div className="relative my-5">
-                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200" /></div>
-                <div className="relative flex justify-center"><span className="bg-white px-3 text-xs text-gray-400">or try demo access</span></div>
-              </div>
-
-              {/* Demo Quick Login */}
-              <div className="grid grid-cols-3 gap-2">
-                {roleOptions.map((opt) => (
-                  <button
-                    key={opt.role}
-                    onClick={() => handleDemoLogin(opt.role)}
-                    disabled={isLoading}
-                    className="p-2 rounded-xl bg-gray-50 hover:bg-gray-100 text-center transition-all duration-200 border border-gray-100 hover:border-gray-200 group"
-                  >
-                    <div className="flex justify-center mb-0.5 text-gray-400 group-hover:text-gray-600">{opt.icon}</div>
-                    <p className="text-[10px] font-semibold text-gray-500 group-hover:text-gray-700">Demo {opt.label}</p>
-                  </button>
-                ))}
-              </div>
-              <p className="text-[9px] text-gray-400 text-center mt-2">
-                Demo mode uses sample data — no account required
+              <p className="mt-5 text-center text-[11px] text-gray-400">
+                Trouble signing in? Contact the Registrar&apos;s office at{' '}
+                <a href="mailto:registrar@iguc.net" className="underline hover:text-gray-600">registrar@iguc.net</a>
               </p>
             </div>
           </div>
@@ -385,8 +278,8 @@ export default function LoginScreen() {
       {/* Features Section */}
       <div id="features" className="max-w-7xl mx-auto px-6 py-16">
         <div className="text-center mb-12">
-          <h3 className="text-2xl font-bold text-gray-800">Enterprise-Grade Features</h3>
-          <p className="text-gray-500 mt-2">Everything you need to manage a modern university</p>
+          <h3 className="text-2xl font-bold text-gray-800">What the portal does</h3>
+          <p className="text-gray-500 mt-2">One system, from application through to graduation and credential verification</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {features.map((feature, i) => (

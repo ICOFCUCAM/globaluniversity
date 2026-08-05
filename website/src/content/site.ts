@@ -42,6 +42,10 @@ export interface NewsItem {
   category: string;
   image: string;
   excerpt: string;
+  // Where the initiative is described in full. These three are the university's
+  // standing appeals rather than dated bulletins, so each resolves to the page
+  // that carries the detail rather than to a stub article.
+  href: string;
 }
 
 export const site = {
@@ -75,12 +79,17 @@ export const site = {
       href: '/about',
       groups: [
         {
+          // Five items per column is the ceiling these menus hold without
+          // wrapping. "Leadership & Administration" pointed at /faculty, which
+          // Academics already lists as "Schools & Faculties", so the two new
+          // institutional entries take its place rather than adding a sixth.
           heading: 'The University',
           items: [
+            { label: "Chancellor's Welcome", href: '/welcome' },
             { label: 'About Us', href: '/about' },
             { label: 'Governance & Accreditation', href: '/governance' },
-            { label: 'Leadership & Administration', href: '/faculty' },
-            { label: 'Policies', href: '/policies' },
+            { label: 'Academic Catalog', href: '/academic-catalog' },
+            { label: 'Academic Regulations', href: '/academic-regulations' },
           ],
         },
         {
@@ -89,7 +98,8 @@ export const site = {
             { label: 'Alumni', href: '/alumni' },
             { label: 'Careers at IGUC', href: '/careers' },
             { label: 'Contact', href: '/contact' },
-            { label: 'Privacy Policy', href: '/privacy-policy' },
+            { label: 'Institutional Documents', href: '/documents' },
+            { label: 'Policies', href: '/policies' },
           ],
         },
       ],
@@ -101,6 +111,7 @@ export const site = {
         {
           heading: 'Study',
           items: [
+            { label: 'Schools & Faculties', href: '/faculty' },
             { label: 'Course Catalogue', href: '/courses' },
             { label: 'All Programs', href: '/programs' },
             { label: 'Study Online', href: '/online-learning' },
@@ -110,6 +121,7 @@ export const site = {
         {
           heading: 'Degree Levels',
           items: [
+            { label: 'Bachelor of Theology', href: '/bachelor-of-theology' },
             { label: "Bachelor's Degrees", href: '/degrees/bachelors-degrees' },
             { label: "Master's Degrees", href: '/degrees/masters-degrees' },
             { label: 'Doctoral', href: '/degrees/doctoral' },
@@ -117,12 +129,13 @@ export const site = {
           ],
         },
         {
-          heading: 'Faculty & Research',
+          heading: 'Theology & Research',
           items: [
-            { label: 'Schools & Faculties', href: '/faculty' },
+            { label: 'Faculty of Theology', href: '/faculty/theology-buea' },
+            { label: 'M.A. Black Liberation Theology', href: '/black-liberation-theology' },
+            { label: 'Master of Theology', href: '/master-of-theology' },
             { label: 'Research & Innovation', href: '/research' },
             { label: 'PPDI-RC', href: '/ppdirc' },
-            { label: 'PPDI-RC Application', href: '/ppdi-rc-application' },
           ],
         },
       ],
@@ -136,6 +149,7 @@ export const site = {
           items: [
             { label: 'Admission Requirements', href: '/admissions' },
             { label: 'Apply Now', href: '/apply' },
+            { label: 'Admissions Portal', href: '/admissions-portal' },
             { label: 'Registration', href: '/registration' },
           ],
         },
@@ -377,7 +391,7 @@ export const faculty: FacultyMember[] = [
   {
     name: 'Kamgang Marcel',
     role: 'Director, School of Technology and Engineering',
-    image: '/images/faculty-marcel.jpg',
+    image: '/images/wp/kamgang-marcel.jpg',
     bio: 'Director of the School of Technology and Engineering. Email: kamgang.marcel@iguc.net',
   },
   {
@@ -389,7 +403,7 @@ export const faculty: FacultyMember[] = [
   {
     name: 'Hoffman Betika Ayuk',
     role: 'Director, School of Business and Management Sciences',
-    image: '/images/faculty-ayuk.jpg',
+    image: '/images/wp/hoffman-ayuk.jpg',
     bio: 'Director of the School of Business and Management Sciences. Email: hoffman@iguc.net',
   },
 ];
@@ -405,7 +419,7 @@ export const administration: FacultyMember[] = [
   {
     name: 'Dr. Raymond L Young',
     role: 'President',
-    image: '',
+    image: '/images/wp/president-young.jpg',
     bio: 'Founder and Global Coordinator of the Global Revival Network. A professional educator and tenured university faculty member for 18 years, teaching computer science and business. Email: president@iguc.net',
   },
   {
@@ -489,36 +503,36 @@ export const administration: FacultyMember[] = [
   {
     name: 'Prof Sunday Ayah',
     role: 'Theology and Criminology',
-    image: '',
+    image: '/images/wp/sunday-ayah.jpg',
     bio: 'ICOF Global University, USA. Email: profachi@iguc.net',
   },
   {
     name: 'Hoffman Betika Ayuk',
     role: 'Director of School of Business and Management Sciences',
-    image: '/images/faculty-ayuk.jpg',
+    image: '/images/wp/hoffman-ayuk.jpg',
     bio: 'Director of the School of Business and Management Sciences. Email: hoffman@iguc.net',
   },
   {
     name: 'Kamgang Marcel',
     role: 'Director of School of Technology and Engineering',
-    image: '/images/faculty-marcel.jpg',
+    image: '/images/wp/kamgang-marcel.jpg',
     bio: 'Director of the School of Technology and Engineering. Email: kamgang.marcel@iguc.net',
   },
   {
     name: 'Forchu Venelda',
     role: 'Secretary',
-    image: '',
+    image: '/images/wp/forchu-venelda.png',
     bio: 'Holder of both advanced and A-level, and a National Diploma in Secretarial Duties. Email: info@iguc.net',
   },
 ];
 
 // "Our Lecturers" section from the live About page.
 export const lecturers: FacultyMember[] = [
-  { name: 'Rev Dr Gerald Mukwelle', role: 'Lecturer', image: '', bio: '' },
-  { name: 'Rev Momfor Phillip', role: 'Lecturer', image: '', bio: '' },
-  { name: 'Prof Bishop Lawrence Luba', role: 'Lecturer', image: '', bio: '' },
-  { name: 'Pastor Solomon Njie', role: 'Lecturer', image: '', bio: '' },
-  { name: 'Rev Sama Raphael Ndaghu', role: 'Lecturer', image: '', bio: '' },
+  { name: 'Rev Dr Gerald Mukwelle', role: 'Lecturer', image: '/images/wp/gerald-mukwelle.png', bio: '' },
+  { name: 'Rev Momfor Phillip', role: 'Lecturer', image: '/images/wp/momfor.jpg', bio: '' },
+  { name: 'Prof Bishop Lawrence Luba', role: 'Lecturer', image: '/images/wp/lawrence-luba.jpg', bio: '' },
+  { name: 'Pastor Solomon Njie', role: 'Lecturer', image: '/images/wp/solomon-njie.png', bio: '' },
+  { name: 'Rev Sama Raphael Ndaghu', role: 'Lecturer', image: '/images/wp/sama-raphael.jpg', bio: '' },
 ];
 
 // Schools & Faculties as listed on the live Faculties page.
@@ -553,36 +567,214 @@ export const faculties = {
 // Faculty of Theology (Buea) · School of Theology (Douala) · Faculty of
 // Education · Faculty of Engineering and Technology · Global Institute of
 // Business and Management Science (GIBMAS).
+// Theology is listed in ascending order of award — certificate, diploma,
+// bachelor, master, doctorate — because it is the one faculty that teaches at
+// every level, and a prospective student needs to see the ladder, not a
+// shuffled list.
+//
+// ONE AWARD PER ENTRY. Two entries here were umbrellas: "Ministry" stood for
+// the M.Div and the Masters in Evangelism and Mission at once, and "Theology"
+// stood for the Ph.D., the D.Th. and the D.Min. That collapsed distinct awards
+// into a single card, so the faculty's own award list could not be shown
+// without the same degree appearing twice — once by name and once inside its
+// umbrella. The university confirmed the awards are separate; both umbrellas
+// are now split, and their old routes redirect (see next.config.mjs).
+//
+// Divinity and Ministry are deliberately NOT the same degree at any level.
+// Divinity is the theological route — languages, exegesis, systematic doctrine
+// — for ordained ministry and further scholarship. Ministry is the practical
+// route — preaching, pastoral care, administration, evangelism — for those
+// already serving. Every pair below keeps that distinction.
 export const programs: Program[] = [
   {
+    slug: 'certificate-in-theology',
+    title: 'Certificate of Theology',
+    level: 'Certificate',
+    school: 'Faculty of Theology',
+    image: '/images/students.jpg',
+    summary:
+      'The first rung of theological study: a foundational survey of the Scriptures, of Christian belief and of the practice of ministry, for lay leaders, church workers and anyone beginning ministerial training. No prior theological study is assumed.',
+    outcomes: ['Old and New Testament survey', 'Foundations of Christian doctrine', 'Introduction to church history', 'Basic ministry practice'],
+  },
+  {
+    slug: 'certificate-in-christian-education',
+    title: 'Certificate of Christian Education',
+    level: 'Certificate',
+    school: 'Faculty of Theology',
+    image: '/images/wp/fac-education.png',
+    summary:
+      'Introductory training for those who teach within the local church — Sunday school teachers, youth workers, small-group leaders and church educators — combining biblical foundations with practical teaching method.',
+    outcomes: ['Teaching the Bible to all ages', 'Lesson planning and delivery', 'Discipleship and formation', 'Safeguarding and pastoral care of learners'],
+  },
+  {
+    slug: 'diploma-in-theology',
+    title: 'Diploma in Theology',
+    level: 'Diploma',
+    school: 'Faculty of Theology',
+    image: '/images/wp/fac-theology.jpg',
+    summary:
+      'A condensed theological education giving a solid grounding in key theological concepts, biblical interpretation, church history and practical ministry skills — for personal enrichment, for ministry preparation, or as a foundation for further theological study.',
+    outcomes: ['Biblical interpretation', 'Church history', 'Practical ministry skills', 'Foundation for the B.Th.'],
+  },
+  {
+    slug: 'diploma-in-ministry',
+    title: 'Diploma in Ministry',
+    level: 'Diploma',
+    school: 'Faculty of Theology',
+    image: '/images/ceremonial.jpg',
+    summary:
+      'Practical ministerial formation at diploma level for those already serving in local churches — preaching, pastoral care, church administration and evangelism — leading on to the Bachelor of Ministry or the Bachelor of Theology.',
+    outcomes: ['Preaching and teaching', 'Pastoral care', 'Church administration', 'Evangelism and mission'],
+  },
+  {
+    slug: 'diploma-in-christian-leadership',
+    title: 'Diploma in Christian Leadership',
+    level: 'Diploma',
+    school: 'Faculty of Theology',
+    image: '/images/grand-ceremony.jpg',
+    summary:
+      'Leadership formation for those carrying responsibility in churches, ministries and Christian organisations. Where the Diploma in Ministry forms the pastor, this diploma forms the leader — governance, stewardship, team building and the handling of conflict, grounded in a biblical understanding of servant leadership.',
+    outcomes: ['Servant leadership and character', 'Governance and accountability', 'Team building and delegation', 'Stewardship, conflict and change'],
+  },
+  {
     slug: 'divinity',
-    title: 'Divinity',
+    title: 'Bachelor of Divinity',
     level: 'Bachelor',
     school: 'Faculty of Theology',
     image: '/images/ceremonial.jpg',
     summary:
-      'A comprehensive grounding in biblical studies, doctrine and pastoral practice, preparing graduates for ordained ministry and Christian leadership.',
-    outcomes: ['Biblical interpretation', 'Systematic theology', 'Pastoral care', 'Homiletics'],
+      'The theological route to ordained ministry. Divinity is the more academically weighted of the two ministry bachelors: biblical languages, exegesis and systematic doctrine are studied in depth, and the degree is the natural preparation for the Master of Divinity and for further scholarship.',
+    outcomes: ['Biblical languages and exegesis', 'Systematic theology', 'Homiletics', 'Preparation for ordination'],
   },
   {
-    slug: 'ministry',
-    title: 'Ministry',
+    slug: 'bachelor-of-theology',
+    title: 'Bachelor of Theology',
+    level: 'Bachelor',
+    school: 'Faculty of Theology',
+    image: '/images/wp/fac-theology.jpg',
+    summary:
+      'A three-year, 180-ECTS undergraduate degree combining rigorous academic study with spiritual formation and practical ministry, available full-time, part-time, online and by distance learning.',
+    outcomes: ['Biblical interpretation', 'Christian doctrine', 'Church history', 'Pastoral ministry'],
+  },
+  {
+    slug: 'bachelor-of-ministry',
+    title: 'Bachelor of Ministry',
+    level: 'Bachelor',
+    school: 'Faculty of Theology',
+    image: '/images/wp/g-hall.jpg',
+    summary:
+      'The practical route to ministry, and a distinct award from the Bachelor of Divinity. The B.Min. is built for those already serving: supervised placement runs throughout, and the emphasis falls on preaching, pastoral care, discipleship, church administration and mission rather than on the biblical languages.',
+    outcomes: ['Preaching and worship leading', 'Pastoral care and counselling', 'Church administration and finance', 'Supervised ministry placement'],
+  },
+  {
+    slug: 'bachelor-of-christian-education',
+    title: 'Bachelor of Christian Education',
+    level: 'Bachelor',
+    school: 'Faculty of Theology',
+    image: '/images/wp/fac-education.png',
+    summary:
+      'Teaching and discipleship within the local church, taken to degree level: curriculum design for every age group, the theology of formation, and supervised teaching practice in a church setting.',
+    outcomes: ['Christian curriculum design', 'Teaching across the age range', 'Theology of discipleship', 'Supervised teaching practice'],
+  },
+  {
+    slug: 'master-of-theology',
+    title: 'Master of Theology',
     level: 'Master',
     school: 'Faculty of Theology',
     image: '/images/grand-ceremony.jpg',
     summary:
-      'Advanced ministerial formation for serving leaders — Master of Divinity and Masters in Evangelism and Mission tracks covering leadership, missions, church administration and practical theology.',
-    outcomes: ['Ministry leadership', 'Missiology', 'Church administration', 'Ethics'],
+      'An advanced theological degree emphasising African and Black Hebrew theology, contextual theology and ecotheology, feminist and queer theologies, and disability theology, completed with a thesis.',
+    outcomes: ['Contextual theology', 'African Christian history', 'Research methodologies', 'Thesis'],
   },
   {
-    slug: 'theology',
-    title: 'Theology',
+    // Formerly the "Ministry" umbrella. /programs/ministry redirects here.
+    slug: 'master-of-divinity',
+    title: 'Master of Divinity',
+    level: 'Master',
+    school: 'Faculty of Theology',
+    image: '/images/grand-ceremony.jpg',
+    summary:
+      'The comprehensive professional degree for ordained ministry — preaching, pastoral care, liturgy, church administration and practical theology, built on the doctrinal and biblical foundation of the Bachelor of Divinity or the Bachelor of Theology.',
+    outcomes: ['Homiletics and worship', 'Pastoral theology and care', 'Church administration', 'Ministerial ethics'],
+  },
+  {
+    slug: 'masters-evangelism-mission',
+    title: 'Masters in Evangelism and Mission',
+    level: 'Master',
+    school: 'Faculty of Theology',
+    image: '/images/ceremonial.jpg',
+    summary:
+      'Missiology and the practice of evangelism for those sent to plant, to cross cultures and to reach communities that the church has not yet reached — with particular attention to mission within and from Africa.',
+    outcomes: ['Missiology and mission history', 'Cross-cultural communication', 'Church planting', 'Contemporary evangelism'],
+  },
+  {
+    slug: 'master-of-arts-christian-leadership',
+    title: 'Master of Arts in Christian Leadership',
+    level: 'Master',
+    school: 'Faculty of Theology',
+    image: '/images/graduation.jpg',
+    summary:
+      'Advanced leadership study for those directing churches, denominations, Christian organisations and NGOs. The degree treats leadership itself as the object of study — organisational strategy, change, governance and ethics — and concludes with a supervised leadership research project.',
+    outcomes: ['Organisational strategy and change', 'Governance and financial stewardship', 'Leadership ethics and supervision', 'Leadership research project'],
+  },
+  {
+    slug: 'black-liberation-theology',
+    title: 'Master of Arts in Black Liberation Theology',
+    level: 'Master',
+    school: 'Faculty of Theology',
+    image: '/images/wp/fac-theology.jpg',
+    summary:
+      'A theology for the liberation of all humanity. Pioneered at ICOF Global University as an academic discipline, integrating biblical revelation, history, archaeology, anthropology, culture and social justice.',
+    outcomes: [
+      'Biblical interpretation in African context',
+      'Historical and archaeological method',
+      'Theology, justice and reconciliation',
+      'Original research and dissertation',
+    ],
+  },
+  {
+    // Formerly the "Theology" umbrella. /programs/theology redirects here.
+    slug: 'doctor-of-philosophy-theology',
+    title: 'Doctor of Philosophy (Ph.D.) in Theology',
     level: 'Doctorate',
     school: 'Faculty of Theology',
     image: '/images/graduation.jpg',
     summary:
-      'Doctoral research in theology — Doctor of Philosophy, Doctor of Theology and Doctor of Ministry (Christian Counseling & Administration) — culminating in an original dissertation.',
-    outcomes: ['Research methods', 'Advanced doctrine', 'Original dissertation', 'Academic publishing'],
+      'The university’s research doctorate. Candidates produce an original contribution to theological scholarship under supervision, examined by the Dissertation Council and defended orally.',
+    outcomes: ['Advanced research methods', 'Original contribution to knowledge', 'Dissertation and oral defence', 'Academic publishing'],
+  },
+  {
+    slug: 'doctor-of-theology',
+    title: 'Doctor of Theology',
+    level: 'Doctorate',
+    school: 'Faculty of Theology',
+    image: '/images/wp/fac-theology.jpg',
+    summary:
+      'Advanced doctrinal scholarship for those who teach and lead within the church. The D.Th. is weighted toward systematic and biblical theology rather than toward research method for its own sake, and is examined by dissertation.',
+    outcomes: ['Advanced systematic theology', 'Biblical theology and exegesis', 'Theological teaching', 'Dissertation'],
+  },
+  {
+    // A fourth doctorate, specified by the university with its own core
+    // courses, electives and dissertation. It was absent from the faculty's
+    // declared award list, which named only the Ph.D., D.Th. and D.Min.
+    slug: 'doctor-of-systematic-theology',
+    title: 'Doctor of Systematic Theology',
+    level: 'Doctorate',
+    school: 'Faculty of Theology',
+    image: '/images/ceremonial.jpg',
+    summary:
+      'A specialised doctorate in the foundational doctrines of the Christian faith — their historical development, theological implications and contemporary relevance. Where the D.Th. ranges across the discipline, the DSTh stays within systematics: God, Christ, Spirit, humanity, salvation and last things.',
+    outcomes: ['Trinitarian theology', 'Christology and soteriology', 'Theological method and hermeneutics', 'Dissertation in systematic theology'],
+  },
+  {
+    slug: 'doctor-of-ministry',
+    title: 'Doctor of Ministry',
+    level: 'Doctorate',
+    school: 'Faculty of Theology',
+    image: '/images/grand-ceremony.jpg',
+    summary:
+      'The professional doctorate for practising ministers, in Christian Counseling and Administration. Study is grounded in the candidate’s own ministry context, and the final project addresses a problem in that context rather than a question in the literature alone.',
+    outcomes: ['Christian counselling', 'Church and organisational administration', 'Reflective ministry practice', 'Applied doctoral project'],
   },
   {
     slug: 'primary-education',
@@ -685,6 +877,7 @@ export const tuition = {
     { program: 'Student housing (single room, toilet & kitchen)', fee: '35,000 – 50,000 FCFA per month' },
     { program: 'Extension courses', fee: 'Varies by program — email admissions@iguc.net' },
   ],
+  bands: 'ICOF operates two fee bands. Students from Africa and the Global South pay a subsidised rate, funded as scholarship — the university carries the difference so that cost is not what keeps a called student out of higher education. Students from Europe and North America pay a higher rate, set at approximately European levels and slightly below them; those fees help fund the scholarship band. Which band applies is determined by nationality and residence, not by mode of study.',
   note: 'We provide financial aid through scholarships — follow our announcements and newsletters to know when a scholarship program is published. Online courses are offered for master’s and doctoral programs.',
 };
 
@@ -740,6 +933,7 @@ export const events: EventItem[] = [
 export const news: NewsItem[] = [
   {
     slug: 'university-construction-project',
+    href: '/support',
     title: 'University Construction Project',
     category: 'Support IGUC',
     image: '/images/hall.jpg',
@@ -748,6 +942,7 @@ export const news: NewsItem[] = [
   },
   {
     slug: 'missions-and-evangelism',
+    href: '/support',
     title: 'Missions & Evangelism',
     category: 'Support IGUC',
     image: '/images/global.jpg',
@@ -756,6 +951,7 @@ export const news: NewsItem[] = [
   },
   {
     slug: 'scholarships-for-the-called',
+    href: '/scholarships',
     title: 'Support the Called Through Biblical & Theological Training',
     category: 'Support IGUC',
     image: '/images/graduates.jpg',

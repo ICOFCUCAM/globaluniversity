@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import KineticText from './KineticText';
 
 export function Eyebrow({ children, light = false }: { children: ReactNode; light?: boolean }) {
   return (
@@ -25,16 +26,32 @@ export function SectionHeading({
 }) {
   const centered = align === 'center';
   return (
-    <div className={`mb-12 ${centered ? 'text-center' : 'text-left'}`}>
+    <div className={`mb-10 ${centered ? 'text-center' : 'text-left'}`}>
       {eyebrow && <Eyebrow light={light}>{eyebrow}</Eyebrow>}
-      <h2
-        className={`font-heading text-3xl font-bold leading-tight tracking-tight sm:text-[2.6rem] ${
-          light ? 'text-white' : 'text-brand-purple'
+      {/* Strings get the kinetic treatment; rich nodes (headings that carry
+          markup) fall back to a plain h2 so nothing is silently dropped. */}
+      {typeof children === 'string' ? (
+        <KineticText
+          className={`font-heading text-display font-bold [text-wrap:balance] ${
+            light ? 'text-white' : 'text-brand-purple'
+          }`}
+        >
+          {children}
+        </KineticText>
+      ) : (
+        <h2
+          className={`font-heading text-display font-bold [text-wrap:balance] ${
+            light ? 'text-white' : 'text-brand-purple'
+          }`}
+        >
+          {children}
+        </h2>
+      )}
+      <div
+        className={`mt-5 h-[3px] w-16 rounded-full bg-gradient-to-r from-brand-gold-deep to-brand-gold ${
+          centered ? 'mx-auto' : ''
         }`}
-      >
-        {children}
-      </h2>
-      <div className={`mt-4 h-[3px] w-16 rounded bg-brand-gold ${centered ? 'mx-auto' : ''}`} />
+      />
     </div>
   );
 }
@@ -43,13 +60,16 @@ export function Section({
   children,
   className = '',
   id,
+  chapter,
 }: {
   children: ReactNode;
   className?: string;
   id?: string;
+  /** Label picked up by ScrollRail to build the page index. */
+  chapter?: string;
 }) {
   return (
-    <section id={id} className={`py-16 sm:py-24 ${className}`}>
+    <section id={id} data-chapter={chapter} className={`py-14 sm:py-20 ${className}`}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6">{children}</div>
     </section>
   );

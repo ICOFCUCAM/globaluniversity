@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { IconAward, IconBook, IconCalendar, IconLibrary, IconMail, IconSignal } from '@/components/Icons';
 import Link from 'next/link';
 import Image from 'next/image';
 import PageBanner from '@/components/PageBanner';
@@ -31,12 +32,12 @@ const STEPS = [
 ];
 
 const FEATURES = [
-  { icon: '📚', title: 'Course Materials', body: 'Lecture notes, readings and resources for every enrolled course, available for download anytime.' },
-  { icon: '🎥', title: 'Live Classes', body: 'Scheduled live sessions with your lecturers — attend from anywhere with an internet connection.' },
-  { icon: '📈', title: 'Progress Tracking', body: 'See your completion and performance per course, semester GPA and cumulative GPA in real time.' },
-  { icon: '📝', title: 'Assignments & Exams', body: 'Submit work and sit assessments online; results flow straight into your academic record.' },
-  { icon: '🎓', title: 'Transcripts & Certificates', body: 'Official transcripts generated from the same system that recorded every result.' },
-  { icon: '💬', title: 'Direct Lecturer Access', body: 'Raise your virtual hand any time — you get a personal reply from your instructor, not an assistant.' },
+  { Icon: IconBook, title: 'Course Materials', body: 'Lecture notes, readings and resources for every enrolled course, available for download anytime.' },
+  { Icon: IconSignal, title: 'Live Classes', body: 'Scheduled live sessions with your lecturers — attend from anywhere with an internet connection.' },
+  { Icon: IconAward, title: 'Progress Tracking', body: 'See your completion and performance per course, semester GPA and cumulative GPA in real time.' },
+  { Icon: IconCalendar, title: 'Assignments & Exams', body: 'Submit work and sit assessments online; results flow straight into your academic record.' },
+  { Icon: IconLibrary, title: 'Transcripts & Certificates', body: 'Official transcripts generated from the same system that recorded every result.' },
+  { Icon: IconMail, title: 'Direct Lecturer Access', body: 'Raise your virtual hand any time — you get a personal reply from your instructor, not an assistant.' },
 ];
 
 export default function OnlineLearningPage() {
@@ -71,7 +72,7 @@ export default function OnlineLearningPage() {
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map((f) => (
             <div key={f.title} className="rounded-xl bg-brand-cream p-6">
-              <span className="text-3xl">{f.icon}</span>
+              <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-cream text-brand-purple ring-1 ring-brand-sand"><f.Icon className="h-6 w-6" /></span>
               <h3 className="mt-3 font-heading font-bold text-brand-purple">{f.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-brand-muted">{f.body}</p>
             </div>

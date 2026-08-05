@@ -1,4 +1,6 @@
 import Image from 'next/image';
+import Reveal from '@/components/Reveal';
+import { SpotlightGroup, SpotlightCard } from '@/components/Spotlight';
 import { Section, SectionHeading } from '@/components/Section';
 import PageBanner from '@/components/PageBanner';
 import { getAdmissions } from '@/lib/data';
@@ -15,14 +17,15 @@ export default async function AdmissionsPage() {
         <SectionHeading>{admissions.heading}</SectionHeading>
         <p className="mx-auto mb-12 max-w-3xl text-center text-brand-muted">{admissions.intro}</p>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <SpotlightGroup className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {admissions.steps.map((step) => (
-            <div key={step.title} className="rounded-xl border-t-4 border-brand-gold bg-white p-6 shadow-sm">
-              <h3 className="font-heading font-semibold text-brand-purple">{step.title}</h3>
-              <p className="mt-3 text-sm text-brand-muted">{step.body}</p>
-            </div>
+            <SpotlightCard key={step.title} className="h-full overflow-hidden rounded-2xl border border-brand-sand bg-white p-7 transition duration-500 hover:shadow-lift" tone="light">
+              <span aria-hidden="true" className="absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 bg-gradient-to-r from-brand-gold-deep to-brand-gold transition-transform duration-500 group-hover/sc:scale-x-100" />
+              <h3 className="font-heading text-lg font-bold leading-snug text-brand-purple [text-wrap:balance]">{step.title}</h3>
+              <p className="mt-3 text-sm leading-relaxed text-brand-muted">{step.body}</p>
+            </SpotlightCard>
           ))}
-        </div>
+        </SpotlightGroup>
 
         <div className="mt-14 grid items-center gap-10 lg:grid-cols-2">
           <div className="relative h-72 overflow-hidden rounded-xl shadow-lg">

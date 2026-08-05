@@ -50,7 +50,7 @@ export default function DegreeLevelPage({ params }: { params: { slug: string } }
               <ul className="mt-4 space-y-2">
                 {fp.programs.map((p) => (
                   <li key={p} className="flex gap-3 text-sm text-brand-muted">
-                    <span className="text-brand-gold-deep">◆</span>
+                    <span aria-hidden="true" className="mt-[7px] h-1.5 w-1.5 shrink-0 rotate-45 rounded-[1px] bg-brand-gold-deep" />
                     <span>{p}</span>
                   </li>
                 ))}
@@ -74,7 +74,20 @@ export default function DegreeLevelPage({ params }: { params: { slug: string } }
           <ul className="space-y-3">
             {level.requirements.map((r) => (
               <li key={r.slice(0, 40)} className="flex gap-3 text-brand-muted">
-                <span className="mt-1 text-brand-gold-deep">✓</span>
+                {/* Drawn, not typed: U+2713 renders as an emoji-styled tick on
+                    some platforms. The rest of the site uses this same path. */}
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  className="mt-[7px] h-3 w-3 shrink-0 text-brand-gold-deep"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={3.5}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="m5 12.5 4.5 4.5L19 7" />
+                </svg>
                 <span>{r}</span>
               </li>
             ))}
@@ -87,7 +100,7 @@ export default function DegreeLevelPage({ params }: { params: { slug: string } }
               href="/apply"
               className="inline-block rounded-full bg-brand-gold px-8 py-3 font-heading font-semibold text-brand-purple transition hover:bg-brand-gold-deep"
             >
-              🎓 Apply Now
+              Apply Now
             </Link>
           </div>
         </div>

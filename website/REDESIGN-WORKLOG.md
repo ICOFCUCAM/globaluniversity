@@ -87,3 +87,37 @@ accreditation + ICOF global network.
 - [ ] Portal dashboard chart palette alignment
 
 Keep commits small; build must pass before each commit.
+
+
+---
+
+## 2036 direction — commits 39–77
+
+A second pass over the home page, moving it from "well-built university site"
+to a distinct visual language. Full documentation in `DESIGN-SYSTEM.md`.
+
+**Foundations** — fluid `clamp()` display scale, lift/gold shadow tokens,
+tabular figures, one site-wide gold focus ring, global reduced-motion guard.
+
+**The atmosphere layer** — `Aurora` (drifting colour fields on 26/32/38s offset
+cycles), `Grain` (300-byte inline SVG noise), `LightShaft` (volumetric beams),
+`Seam` (luminous band joins). Applied to every dark band.
+
+**Signature interactions** — cursor-tracked `Spotlight` across nine card grids,
+one listener per group coalesced to a frame; `Magnetic` controls; `KineticText`
+headings assembling word by word; the `Crest` in a 60s conic ring.
+
+**New bands** — statistics rebuilt as conic progress rings with orbiting nodes;
+a counter-travelling ribbon of real program names; a live chapter rail tracking
+fourteen sections; the diary threaded on a gradient timeline.
+
+**Corrections found by screenshotting the built page, not by the build**
+— hero ghost text, four competing `h1`s, a ragged pull-quote, an accreditation
+panel that wrapped and orphaned a divider, aurora washing out the entire lower
+page, and a CTA heading rendering as empty space. Each is written up in
+DESIGN-SYSTEM.md under "Rules learned the hard way".
+
+**Measured, not assumed** — 32 blurred compositing layers reduced to 26 and 41
+animations to 35 via `content-visibility`, reduced blur radii and per-band field
+counts, with no visible change. Reduced-motion: zero animations running, all 56
+kinetic words settled. No horizontal overflow at 390, 768 or 1440.

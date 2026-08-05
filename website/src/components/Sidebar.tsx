@@ -5,7 +5,7 @@ import type { ViewType, UserRole } from '@/lib/types';
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen, ClipboardList,
   FileText, Award, Monitor, PenTool, FolderOpen, BarChart3,
-  Settings, Shield, LogOut, ChevronLeft, ChevronRight
+  Settings, Shield, LogOut, ChevronLeft, ChevronRight, BookMarked, Wallet, Stamp
 } from 'lucide-react';
 
 interface MenuItem {
@@ -17,7 +17,10 @@ interface MenuItem {
 
 const menuItems: MenuItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} />, roles: ['admin', 'student', 'lecturer'] },
-  { id: 'students', label: 'Students', icon: <Users size={20} />, roles: ['admin'] },
+  { id: 'programme-resources', label: 'Programme Resources', icon: <BookMarked size={20} />, roles: ['admin', 'student', 'lecturer'] },
+  { id: 'admissions-finance', label: 'Admissions — Finance', icon: <Wallet size={20} />, roles: ['admin', 'finance'] },
+  { id: 'admissions-registrar', label: 'Admissions — Registrar', icon: <Stamp size={20} />, roles: ['admin', 'registrar'] },
+  { id: 'students', label: 'Students', icon: <Users size={20} />, roles: ['admin', 'registrar'] },
   { id: 'lecturers', label: 'Lecturers', icon: <GraduationCap size={20} />, roles: ['admin'] },
   { id: 'courses', label: 'Courses', icon: <BookOpen size={20} />, roles: ['admin', 'student', 'lecturer'] },
   { id: 'results', label: 'Results', icon: <ClipboardList size={20} />, roles: ['admin', 'lecturer', 'student'] },

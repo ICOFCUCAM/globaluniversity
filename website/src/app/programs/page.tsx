@@ -1,4 +1,6 @@
 import Image from 'next/image';
+import Reveal from '@/components/Reveal';
+import { SpotlightGroup, SpotlightCard } from '@/components/Spotlight';
 import Link from 'next/link';
 import { Section, SectionHeading } from '@/components/Section';
 import PageBanner from '@/components/PageBanner';
@@ -44,29 +46,29 @@ export default async function ProgramsPage() {
             <h3 className="mb-6 border-l-4 border-brand-gold pl-4 font-heading text-2xl font-bold text-brand-purple">
               {school}
             </h3>
-            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            <SpotlightGroup className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {programs
                 .filter((p) => p.school === school)
                 .map((p) => (
                   <Link
                     key={p.slug}
                     href={`/programs/${p.slug}`}
-                    className="group overflow-hidden rounded-2xl bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl"
+                    className="group flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-lift ring-1 ring-brand-sand/70 transition duration-500 hover:-translate-y-1.5 hover:shadow-lift-lg hover:ring-brand-gold"
                   >
                     <div className="relative h-44">
-                      <Image src={p.image} alt={p.title} fill className="object-cover transition group-hover:scale-105" />
-                      <span className="absolute left-3 top-3 rounded bg-brand-gold px-2 py-1 text-xs font-bold text-brand-purple">
+                      <Image src={p.image} alt={p.title} fill loading="lazy" sizes="(min-width:1024px) 33vw, (min-width:640px) 50vw, 100vw" className="object-cover transition duration-[900ms] ease-out group-hover:scale-110" />
+                      <span className="absolute left-4 top-4 rounded-full bg-brand-gold px-3 py-1 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-brand-purple shadow-sm">
                         {p.level}
                       </span>
                     </div>
-                    <div className="p-5">
-                      <h4 className="font-heading font-semibold text-brand-purple">{p.title}</h4>
-                      <p className="mt-2 line-clamp-3 text-sm text-brand-muted">{p.summary}</p>
-                      <p className="mt-3 text-sm font-semibold text-brand-gold-deep">Learn more →</p>
+                    <div className="flex flex-1 flex-col p-6">
+                      <h4 className="font-heading text-lg font-bold leading-snug text-brand-purple [text-wrap:balance]">{p.title}</h4>
+                      <p className="mt-2 flex-1 line-clamp-3 text-sm leading-relaxed text-brand-muted">{p.summary}</p>
+                      <span className="mt-4 flex items-center gap-1.5 font-heading text-sm font-semibold text-brand-purple">Learn more<span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1.5">→</span></span>
                     </div>
                   </Link>
                 ))}
-            </div>
+            </SpotlightGroup>
           </div>
         ))}
       </Section>

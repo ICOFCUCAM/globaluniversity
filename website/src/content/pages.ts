@@ -645,12 +645,19 @@ export const degreeLevels: DegreeLevel[] = [
       paragraphs: [
         'Having a bachelor’s degree has become increasingly important. Even if you’re already working in your chosen field, not having a college education can stand between you and advancement opportunities. ICOF Global University has degree programs designed with the needs of working adults in mind.',
         'We put higher education within reach of working adults like you with convenient and flexible programs. You can earn a BS or BA online, on-campus at selected locations and according to your schedule. With a wide range of offerings, we can help you meet your next challenge and rise to your full potential.',
+        // Bachelor of Theology introduction, supplied by the university.
+        'Welcome to the Bachelor of Theology program at ICOF Global University, where passion for theological inquiry meets academic excellence. This program offers a comprehensive and enriching educational experience for individuals seeking to deepen their understanding of theology and pursue a range of ministry and leadership roles within the Christian community.',
+        'The Bachelor of Theology program is designed to provide students with a robust foundation in theological studies, equipping them with the knowledge, skills, and values necessary for effective ministry and service. Whether you are called to pastoral leadership, missions, counseling, or theological education, this program will empower you to engage thoughtfully and critically with the rich theological traditions of the Christian faith.',
+        'At the heart of the Bachelor of Theology program is a commitment to holistic education that integrates rigorous academic inquiry with spiritual formation and practical application. Through a diverse range of courses spanning biblical studies, church history, systematic theology, and practical ministry, students will explore the breadth and depth of Christian theology while nurturing their own spiritual growth and maturity.',
+        'One of the distinguishing features of the Bachelor of Theology program is its emphasis on experiential learning and hands-on ministry training. Through internships, practicums, and service-learning opportunities, students will have the chance to apply their theological knowledge in real-world contexts, gaining valuable practical experience and developing essential ministry skills.',
+        'Moreover, the Bachelor of Theology program at ICOF Global University is designed to be accessible and flexible, accommodating the needs of students from diverse backgrounds and life situations. Whether you are a recent high school graduate, a working professional, or a busy parent, our flexible learning options and supportive academic environment ensure that you can pursue your theological education on your own terms.',
+        'Join us on a journey of discovery, exploration, and transformation as we delve into the profound mysteries of theology and seek to understand God\u2019s redemptive work in the world. Enroll in the Bachelor of Theology program at ICOF Global University and prepare yourself for a lifetime of faithful service, ministry, and leadership in the church and beyond.',
       ],
     },
     facultyPrograms: [
       {
         faculty: 'Faculty of Theology',
-        programs: ['Bachelor of Christian Education', 'Bachelor of Arts', 'Bachelor of Theology', 'Bachelor of Science'],
+        programs: ['Bachelor of Theology (B.Th.)', 'Bachelor of Divinity (B.D.)', 'Bachelor of Ministry (B.Min.)', 'Bachelor of Christian Education', 'Bachelor of Arts', 'Bachelor of Science'],
       },
       { faculty: 'Engineering and Technology', programs: TECH_PROGRAMS.map((p) => `Bachelor’s of ${p}`) },
       { faculty: 'Business Management Science and Administration', programs: BUSINESS_PROGRAMS.map((p) => `Bachelor’s in ${p}`) },
@@ -673,7 +680,16 @@ export const degreeLevels: DegreeLevel[] = [
       ],
     },
     facultyPrograms: [
-      { faculty: 'Faculty of Theology', programs: ['Master of Theology', 'Master of Divinity', 'Masters in Evangelism and Mission'] },
+      {
+        faculty: 'Faculty of Theology',
+        programs: [
+          'Master of Theology (M.Th.)',
+          'Master of Divinity (M.Div.)',
+          'Masters in Evangelism and Mission',
+          'Master of Arts in Christian Leadership',
+          'Master of Arts in Black Liberation Theology',
+        ],
+      },
       { faculty: 'Faculty of Engineering and Technology', programs: ['Contact admissions for current offerings'] },
       { faculty: 'Business Management Science and Administration', programs: ['Project Management', 'Business Management'] },
     ],
@@ -702,7 +718,15 @@ export const degreeLevels: DegreeLevel[] = [
       ],
     },
     facultyPrograms: [
-      { faculty: 'Faculty of Theology', programs: ['Doctor of Philosophy', 'Doctor of Theology', 'Doctor of Ministry (Christian Counseling & Administration)'] },
+      {
+        faculty: 'Faculty of Theology',
+        programs: [
+          'Doctor of Philosophy (Ph.D.) in Theology',
+          'Doctor of Theology (D.Th.)',
+          'Doctor of Systematic Theology (DSTh)',
+          'Doctor of Ministry (D.Min.) — Christian Counseling & Administration',
+        ],
+      },
     ],
     requirements: [
       'You must have a graduate degree from an approved, regionally or nationally accredited college or university, or hold a comparable degree from a recognized foreign institution.',
@@ -748,9 +772,20 @@ export const degreeLevels: DegreeLevel[] = [
       heading: 'Why choose a Diploma',
       paragraphs: [
         'Our Diploma programs offer practical, focused training across engineering, technology and business disciplines — a fast route into employment or a stepping stone to a full degree.',
+        // Diploma in Theology introduction, supplied by the university.
+        'Embark on a transformative journey of faith and learning with the Diploma in Theology offered by ICOF Global University. This program serves as a foundational stepping stone for individuals passionate about deepening their understanding of theology and exploring the rich tapestry of Christian thought and practice.',
+        'The Diploma in Theology is meticulously crafted to provide students with a solid grounding in key theological concepts, biblical interpretation, church history, and practical ministry skills. Whether you are pursuing personal enrichment, preparing for ministry roles, or seeking to lay a strong foundation for further theological studies, this program offers a dynamic and enriching educational experience.',
+        'Through engaging coursework, interactive learning activities, and supportive faculty guidance, students will delve into the depths of theological inquiry and discover the relevance of faith in today\u2019s world. From exploring the sacred texts of Scripture to grappling with complex theological questions, students will be equipped with the tools and knowledge needed to navigate the diverse landscapes of contemporary theology.',
+        'One of the hallmarks of the Diploma in Theology is its emphasis on practical application. Beyond theoretical learning, students will have the opportunity to apply their theological insights to real-world contexts, preparing them to serve effectively in ministry, leadership, and community engagement.',
+        'At ICOF Global University, we believe that theological education should be accessible to all who seek it. That\u2019s why our Diploma in Theology is designed to accommodate the needs of students from diverse backgrounds and walks of life. Whether you are a full-time student, a working professional, or a busy parent, our flexible learning options allow you to pursue your theological studies at your own pace and convenience.',
+        'Join us on this transformative educational journey as we explore the depths of theology, cultivate spiritual growth, and equip ourselves to make a positive impact in the world. Enroll in the Diploma in Theology at ICOF Global University and embark on a path of discovery, inspiration, and transformation.',
       ],
     },
+    // The original site carried a "Faculty of Theology" tab on this page with
+    // no content behind it, which is why the Diploma in Theology introduction
+    // above had no awards to point at. The tab is now filled.
     facultyPrograms: [
+      { faculty: 'Faculty of Theology', programs: ['Diploma in Theology', 'Diploma in Ministry', 'Diploma in Christian Leadership'] },
       { faculty: 'Engineering and Technology', programs: TECH_PROGRAMS },
       { faculty: 'Business Management Science and Administration', programs: BUSINESS_PROGRAMS },
     ],
@@ -769,7 +804,16 @@ export const degreeLevels: DegreeLevel[] = [
         'The University offers certificate programs, as well as individual, test-preparation and non-credit professional development courses — practical credentials you can earn quickly.',
       ],
     },
+    // Theology's four certificate awards are recovered verbatim from the
+    // original site — where they appeared, evidently in error, on the Higher
+    // National Diploma page rather than this one. They are listed here as
+    // well, on the page whose name they carry; the HND page is left as
+    // recovered rather than silently rewritten.
     facultyPrograms: [
+      {
+        faculty: 'Faculty of Theology',
+        programs: ['Certificate of Theology', 'Certificate of Christian Education', 'Certificate of Arts', 'Certificate of Science'],
+      },
       { faculty: 'Engineering and Technology', programs: TECH_PROGRAMS },
       { faculty: 'Business Management Science and Administration', programs: BUSINESS_PROGRAMS },
     ],

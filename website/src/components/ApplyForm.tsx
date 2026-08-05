@@ -18,7 +18,18 @@ const LEVELS = [
 ];
 
 const FIELDS: Record<string, string[]> = {
-  Theology: ['Divinity', 'Ministry', 'Theology'],
+  // Fields of study, not award titles — the level is chosen separately above.
+  // Theology now teaches seven distinct fields, so an applicant is no longer
+  // forced to pick "Ministry" when they mean Christian Leadership or Mission.
+  Theology: [
+    'Theology',
+    'Divinity',
+    'Ministry',
+    'Christian Leadership',
+    'Christian Education',
+    'Evangelism and Mission',
+    'Black Liberation Theology',
+  ],
   Education: ['Primary Education', 'Special Education'],
   Engineering: ['Software Engineering', 'Networking'],
   Business: ['Business Management', 'Project Management'],
@@ -207,7 +218,7 @@ export default function ApplyForm() {
   if (status === 'sent') {
     return (
       <div className="rounded-xl border border-brand-sand bg-white p-10 text-center shadow-sm">
-        <p className="text-4xl">🎓</p>
+        <svg aria-hidden="true" viewBox="0 0 24 24" className="mx-auto h-10 w-10 text-brand-gold-deep" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5 12 4l9 5.5-9 5.5Z" /><path d="M7 11.8V17c0 1.1 2.2 2 5 2s5-.9 5-2v-5.2M21 9.5V15" /></svg>
         <h2 className="mt-4 font-heading text-2xl font-bold text-brand-purple">Application received!</h2>
         {appNo && (
           <div className="mx-auto mt-5 max-w-sm rounded-lg bg-brand-cream p-4">
@@ -464,10 +475,10 @@ export default function ApplyForm() {
           {(status === 'error' || status === 'unconfigured') && (
             <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
               {status === 'unconfigured'
-                ? 'Online submission is being set up. Please use our application portal instead: '
-                : 'Something went wrong sending your application. Please try again, or use our application portal: '}
-              <a href="https://iguc.net/forms/" className="font-semibold underline">iguc.net/forms</a> — or email{' '}
-              <a href="mailto:admission@iguc.net" className="font-semibold underline">admission@iguc.net</a>.
+                ? 'Online submission is being set up. Your answers are saved in this browser — please email them to us, or call the admissions office and we will complete your application with you: '
+                : 'Something went wrong sending your application. Your answers are saved in this browser, so you can try again — or send them to us directly: '}
+              <a href="mailto:admission@iguc.net" className="font-semibold underline">admission@iguc.net</a> ·{' '}
+              <a href="tel:+237675133426" className="font-semibold underline">+237 675 133 426</a>.
             </div>
           )}
         </div>
@@ -496,7 +507,7 @@ export default function ApplyForm() {
               disabled={status === 'sending'}
               className="rounded-full bg-brand-gold px-8 py-3 font-heading text-lg font-bold text-brand-purple transition hover:bg-brand-gold-deep disabled:opacity-60"
             >
-              {status === 'sending' ? 'Submitting…' : '🎓 Submit Application'}
+              {status === 'sending' ? 'Submitting…' : 'Submit Application'}
             </button>
           )}
         </div>

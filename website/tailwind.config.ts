@@ -78,6 +78,19 @@ const config: Config = {
           ring: 'hsl(var(--sidebar-ring))',
         },
       },
+      // Fluid display scale — headlines resolve between the mobile and desktop
+      // bounds without breakpoint jumps, so the home page reads as one system.
+      fontSize: {
+        'display-sm': ['clamp(1.75rem, 1.25rem + 2vw, 2.35rem)', { lineHeight: '1.15', letterSpacing: '-0.015em' }],
+        'display': ['clamp(1.9rem, 1.25rem + 2.8vw, 3.1rem)', { lineHeight: '1.1', letterSpacing: '-0.02em' }],
+        'display-lg': ['clamp(2.25rem, 1.4rem + 3.8vw, 4.25rem)', { lineHeight: '1.05', letterSpacing: '-0.025em' }],
+        'display-xl': ['clamp(2.35rem, 1.1rem + 5.6vw, 5.25rem)', { lineHeight: '1.02', letterSpacing: '-0.03em' }],
+      },
+      boxShadow: {
+        'lift': '0 1px 2px rgba(36,26,48,0.04), 0 12px 32px -12px rgba(66,46,89,0.20)',
+        'lift-lg': '0 2px 4px rgba(36,26,48,0.05), 0 28px 60px -20px rgba(66,46,89,0.32)',
+        'gold': '0 10px 30px -10px rgba(233,193,74,0.55)',
+      },
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
@@ -97,10 +110,67 @@ const config: Config = {
           from: { height: 'var(--radix-accordion-content-height)' },
           to: { height: '0' },
         },
+        'ken-burns': {
+          '0%': { transform: 'scale(1.06) translate3d(0,0,0)' },
+          '100%': { transform: 'scale(1.16) translate3d(-1.2%, -1.2%, 0)' },
+        },
+        'marquee': {
+          from: { transform: 'translateX(0)' },
+          to: { transform: 'translateX(-50%)' },
+        },
+        'marquee-rev': {
+          from: { transform: 'translateX(-50%)' },
+          to: { transform: 'translateX(0)' },
+        },
+        'aurora-a': {
+          '0%,100%': { transform: 'translate3d(0,0,0) scale(1)' },
+          '33%': { transform: 'translate3d(12%, 8%, 0) scale(1.18)' },
+          '66%': { transform: 'translate3d(-6%, 14%, 0) scale(0.94)' },
+        },
+        'aurora-b': {
+          '0%,100%': { transform: 'translate3d(0,0,0) scale(1.05)' },
+          '40%': { transform: 'translate3d(-14%, 12%, 0) scale(0.9)' },
+          '75%': { transform: 'translate3d(8%, -10%, 0) scale(1.22)' },
+        },
+        'aurora-c': {
+          '0%,100%': { transform: 'translate3d(0,0,0) scale(0.96)' },
+          '50%': { transform: 'translate3d(10%, -14%, 0) scale(1.2)' },
+        },
+        'crest': {
+          from: { transform: 'rotate(0deg)' },
+          to: { transform: 'rotate(360deg)' },
+        },
+        'orbit': {
+          from: { transform: 'rotate(0deg)' },
+          to: { transform: 'rotate(360deg)' },
+        },
+        'ring-in': {
+          from: { transform: 'rotate(-120deg)', opacity: '0' },
+          to: { transform: 'rotate(0deg)', opacity: '1' },
+        },
+        'shaft': {
+          '0%,100%': { opacity: '0.55', transform: 'rotate(14deg) translateY(0)' },
+          '50%': { opacity: '1', transform: 'rotate(14deg) translateY(-3%)' },
+        },
+        'sheen': {
+          '0%': { transform: 'translateX(-120%) skewX(-18deg)' },
+          '60%,100%': { transform: 'translateX(220%) skewX(-18deg)' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        'ken-burns': 'ken-burns 12s ease-out forwards',
+        'marquee': 'marquee var(--dur,38s) linear infinite',
+        'marquee-rev': 'marquee-rev var(--dur,38s) linear infinite',
+        'sheen': 'sheen 2.4s ease-in-out infinite',
+        'aurora-a': 'aurora-a 26s ease-in-out infinite',
+        'aurora-b': 'aurora-b 32s ease-in-out infinite',
+        'aurora-c': 'aurora-c 38s ease-in-out infinite',
+        'shaft': 'shaft 14s ease-in-out infinite',
+        'orbit': 'orbit 18s linear infinite',
+        'crest': 'crest 60s linear infinite',
+        'ring-in': 'ring-in 1.1s cubic-bezier(0.22,1,0.36,1) both',
       },
     },
   },

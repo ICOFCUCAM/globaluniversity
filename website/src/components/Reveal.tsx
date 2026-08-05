@@ -42,6 +42,11 @@ export default function Reveal({
   return (
     <div
       ref={ref}
+      // Hook for the print stylesheet. Reveal starts at opacity 0 inline, so
+      // anything still below the fold when the user prints comes out blank
+      // unless a rule can force it visible — and only an attribute selector
+      // with !important outranks an inline style.
+      data-reveal=""
       className={className}
       style={{
         opacity: 0,

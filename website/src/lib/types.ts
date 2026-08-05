@@ -2,7 +2,35 @@
 // University Management System - Type Definitions
 // ============================================
 
-export type UserRole = 'admin' | 'student' | 'lecturer';
+// 'finance' and 'registrar' are the two admissions desks. They are separate
+// roles rather than flavours of 'admin' because the whole control in the
+// admissions process is that the desk registering the fee is not the desk
+// that admits the student.
+/**
+ * The university's role hierarchy, top to bottom. Kept in the order the
+ * institution states it, because that order IS the hierarchy — `rank()` in
+ * roles.ts reads position from this list rather than from a separate number
+ * that could drift out of step with it.
+ */
+export type UserRole =
+  | 'admin'
+  | 'chancellor'
+  | 'vice-chancellor'
+  | 'registrar'
+  | 'finance-director'
+  | 'dean'
+  | 'hod'
+  | 'programme-coordinator'
+  | 'lecturer'
+  | 'finance'
+  | 'admissions-officer'
+  | 'library-staff'
+  | 'student-affairs'
+  | 'student'
+  | 'applicant'
+  // Retained: 'academic-office' is used by the timetable and course-allocation
+  // screens built before the hierarchy was specified.
+  | 'academic-office';
 
 export interface Department {
   id: string;
@@ -170,6 +198,7 @@ export interface TranscriptCourse {
 }
 
 export type ViewType = 
+  | 'programme-resources'
   | 'dashboard' 
   | 'students' 
   | 'lecturers' 
@@ -182,4 +211,5 @@ export type ViewType =
   | 'documents'
   | 'analytics'
   | 'settings'
+  | 'admissions-finance' | 'admissions-registrar'
   | 'audit' | 'assignments' | 'fees' | 'announcements' | 'forum' | 'timetable' | 'insights' | 'gradebook' | 'questionbank';
