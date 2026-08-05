@@ -100,6 +100,7 @@ export const site = {
       href: '/programs',
       children: [
         { label: 'All Programs', href: '/programs' },
+        { label: 'Course Catalogue', href: '/courses' },
         { label: 'Study Online', href: '/online-learning' },
         { label: "Bachelor's Degrees", href: '/degrees/bachelors-degrees' },
         { label: "Master's Degrees", href: '/degrees/masters-degrees' },
