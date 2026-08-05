@@ -6,6 +6,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import WhatsAppButton from '@/components/WhatsAppButton';
 import PageChrome from '@/components/PageChrome';
+import SiteChrome, { SiteMain } from '@/components/SiteChrome';
 import { site } from '@/content/site';
 
 const display = Fraunces({ subsets: ['latin'], variable: '--font-display', weight: ['400', '600', '700', '900'] });
@@ -76,11 +77,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        <Header />
-        <main id="main">{children}</main>
-        <Footer />
-        <WhatsAppButton />
-        <PageChrome />
+        {/* Suppressed on /portal, which owns the whole viewport. See
+            src/components/SiteChrome.tsx. */}
+        <SiteChrome><Header /></SiteChrome>
+        <SiteMain>{children}</SiteMain>
+        <SiteChrome>
+          <Footer />
+          <WhatsAppButton />
+          <PageChrome />
+        </SiteChrome>
         <Analytics />
       </body>
     </html>
