@@ -77,6 +77,7 @@ export const site = {
         {
           heading: 'The University',
           items: [
+            { label: "Chancellor's Welcome", href: '/welcome' },
             { label: 'About Us', href: '/about' },
             { label: 'Governance & Accreditation', href: '/governance' },
             { label: 'Leadership & Administration', href: '/faculty' },

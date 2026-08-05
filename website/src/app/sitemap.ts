@@ -5,6 +5,7 @@ import { contentPages, degreeLevels } from '@/content/pages';
 export default function sitemap(): MetadataRoute.Sitemap {
   const staticRoutes = [
     '',
+    '/welcome',
     '/about',
     '/programs',
     '/admissions',

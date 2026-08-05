@@ -6,6 +6,7 @@ import HeroSlider from '@/components/HeroSlider';
 import Reveal from '@/components/Reveal';
 import { getHomePage, getPrograms } from '@/lib/data';
 import { partners } from '@/content/site';
+import { chancellor, welcomeExcerpt } from '@/content/welcome';
 
 const quickIcons: Record<string, string> = {
   calendar: '📅',
@@ -69,6 +70,41 @@ export default async function HomePage() {
           ))}
         </div>
       </div>
+
+      {/* Chancellor's welcome — the site opened with this on the original iguc.net */}
+      <section className="bg-brand-cream py-16 sm:py-20">
+        <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 sm:px-6 lg:grid-cols-[minmax(0,240px)_minmax(0,1fr)] lg:gap-14">
+          <Reveal>
+            <div className="relative mx-auto aspect-[4/5] w-48 overflow-hidden rounded-2xl shadow-xl lg:w-full">
+              <Image
+                src={chancellor.image}
+                alt={`${chancellor.name}, Chancellor`}
+                fill
+                className="object-cover"
+                sizes="(min-width:1024px) 240px, 192px"
+              />
+            </div>
+          </Reveal>
+          <Reveal delay={120}>
+            <Eyebrow>Welcome</Eyebrow>
+            <h2 className="font-heading text-3xl font-bold leading-tight tracking-tight text-brand-purple sm:text-[2.4rem]">
+              A word from our Chancellor
+            </h2>
+            <div className="mt-4 h-[3px] w-16 rounded bg-brand-gold" />
+            <blockquote className="mt-6 border-l-[3px] border-brand-gold pl-5 text-lg leading-relaxed text-brand-ink">
+              “{welcomeExcerpt}”
+            </blockquote>
+            <p className="mt-5 font-heading font-bold text-brand-purple">{chancellor.name}</p>
+            <p className="text-sm text-brand-muted">Chancellor · Presiding Bishop, International Circle of Faith</p>
+            <Link
+              href="/welcome"
+              className="mt-6 inline-block rounded-full bg-brand-purple px-7 py-3 font-heading text-sm font-semibold text-white transition hover:bg-brand-purple-dark"
+            >
+              Read the Full Welcome
+            </Link>
+          </Reveal>
+        </div>
+      </section>
 
       {/* University overview */}
       <Section>
