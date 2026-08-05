@@ -11,6 +11,7 @@ import LecturerDashboard from './dashboard/LecturerDashboard';
 import StudentManagement from './students/StudentManagement';
 import AdmissionsDesk from './admissions/AdmissionsDesk';
 import { isEnrolledRole } from '@/lib/roles';
+import { labelForView } from '@/lib/portalNav';
 import LecturerManagement from './lecturers/LecturerManagement';
 import CourseManagement from './courses/CourseManagement';
 import ResultProcessing from './results/ResultProcessing';
@@ -30,6 +31,7 @@ import AnalyticsDashboard from './analytics/AnalyticsDashboard';
 import InsightsModule from './insights/InsightsModule';
 import SettingsPage from './settings/SettingsPage';
 import AuditLogs from './audit/AuditLogs';
+import ScreenBoundary from './ScreenBoundary';
 import AccountManagement from './accounts/AccountManagement';
 import CredentialStudio from './studio/CredentialStudio';
 
@@ -214,7 +216,11 @@ export default function AppLayout() {
         }`}
       >
         <div className="p-4 sm:p-6">
-          {renderView()}
+          {/* Keyed on the view so moving to another screen resets the boundary
+              rather than leaving the last failure on display. */}
+          <ScreenBoundary key={currentView} screen={labelForView(currentView)}>
+            {renderView()}
+          </ScreenBoundary>
         </div>
       </main>
     </div>
