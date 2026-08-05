@@ -8,6 +8,9 @@ import {
   Eye, EyeOff, AlertCircle, CheckCircle2, Loader2, ArrowRight
 } from 'lucide-react';
 
+// Demo quick-login is a development affordance, not a feature of the live portal.
+const DEMO_ENABLED = process.env.NEXT_PUBLIC_ENABLE_DEMO === 'true';
+
 export default function LoginScreen() {
   const { login, signup, demoLogin, isLoading } = useAuth();
   const [mode, setMode] = useState<'login' | 'signup'>('login');
@@ -15,7 +18,6 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  const [selectedRole, setSelectedRole] = useState<UserRole>('student');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -63,7 +65,7 @@ export default function LoginScreen() {
     }
 
     setSubmitting(true);
-    const result = await signup(email, password, fullName, selectedRole);
+    const result = await signup(email, password, fullName, 'student');
     setSubmitting(false);
 
     if (result.error) {
@@ -81,7 +83,7 @@ export default function LoginScreen() {
   const features = [
     { icon: <Users size={20} />, title: 'Student Management', desc: 'Complete lifecycle from admission to graduation' },
     { icon: <GraduationCap size={20} />, title: 'Lecturer Portal', desc: 'Course management and result processing' },
-    { icon: <BookOpen size={20} />, title: 'Course Catalog', desc: '340+ courses across 6 departments' },
+    { icon: <BookOpen size={20} />, title: 'Course Catalog', desc: 'Courses across four faculties, on campus and online' },
     { icon: <FileText size={20} />, title: 'Transcript Generation', desc: 'Pixel-perfect official transcripts with QR codes' },
     { icon: <Award size={20} />, title: 'Certificate Issuance', desc: 'Automated degree certificate generation' },
     { icon: <Monitor size={20} />, title: 'Online Learning', desc: 'LMS with materials, live classes, and CBT exams' },
@@ -116,8 +118,8 @@ export default function LoginScreen() {
             </div>
             <div className="hidden md:flex items-center gap-6 text-sm text-blue-200">
               <a href="#features" className="hover:text-white transition-colors">Features</a>
-              <a href="#about" className="hover:text-white transition-colors">About</a>
-              <a href="#contact" className="hover:text-white transition-colors">Contact</a>
+              <a href="/about" className="hover:text-white transition-colors">About</a>
+              <a href="/contact" className="hover:text-white transition-colors">Contact</a>
             </div>
           </div>
 
@@ -273,28 +275,18 @@ export default function LoginScreen() {
                     </div>
                   </div>
 
-                  {/* Role Selection */}
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1.5">Account Type</label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {roleOptions.map((opt) => (
-                        <button
-                          key={opt.role}
-                          type="button"
-                          onClick={() => setSelectedRole(opt.role)}
-                          className={`p-2.5 rounded-xl text-center transition-all duration-200 border-2 ${
-                            selectedRole === opt.role
-                              ? `bg-gradient-to-br ${opt.color} text-white border-transparent shadow-lg`
-                              : 'bg-gray-50 text-gray-600 border-gray-100 hover:border-gray-300'
-                          }`}
-                        >
-                          <div className="flex justify-center mb-1">{opt.icon}</div>
-                          <p className="text-xs font-semibold">{opt.label}</p>
-                        </button>
-                      ))}
+                  {/* Account type — self-service registration creates STUDENT accounts only.
+                      Lecturer and administrator accounts are provisioned by the Registrar; a
+                      public role picker here would let anyone grant themselves admin rights. */}
+                  <div className="rounded-xl border border-gray-100 bg-gray-50 p-3">
+                    <div className="flex items-center gap-2">
+                      <GraduationCap size={16} className="text-[#422e59]" />
+                      <p className="text-xs font-semibold text-gray-700">Student account</p>
                     </div>
-                    <p className="text-[10px] text-gray-400 mt-1.5">
-                      {roleOptions.find(r => r.role === selectedRole)?.desc}
+                    <p className="mt-1 text-[10px] leading-relaxed text-gray-500">
+                      Registering here creates a student account. Staff and lecturer accounts are
+                      issued by the Registrar&apos;s office — contact{' '}
+                      <a href="mailto:registrar@iguc.net" className="underline">registrar@iguc.net</a>.
                     </p>
                   </div>
 
@@ -354,28 +346,37 @@ export default function LoginScreen() {
                 </form>
               )}
 
-              {/* Divider */}
-              <div className="relative my-5">
-                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200" /></div>
-                <div className="relative flex justify-center"><span className="bg-white px-3 text-xs text-gray-400">or try demo access</span></div>
-              </div>
+              {/* Demo quick-login — one click into an administrator console, so it is
+                  compiled out unless NEXT_PUBLIC_ENABLE_DEMO is explicitly set. Never
+                  enable it on the production deployment. */}
+              {DEMO_ENABLED && (
+                <>
+                  <div className="relative my-5">
+                    <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200" /></div>
+                    <div className="relative flex justify-center"><span className="bg-white px-3 text-xs text-gray-400">or try demo access</span></div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {roleOptions.map((opt) => (
+                      <button
+                        key={opt.role}
+                        onClick={() => handleDemoLogin(opt.role)}
+                        disabled={isLoading}
+                        className="p-2 rounded-xl bg-gray-50 hover:bg-gray-100 text-center transition-all duration-200 border border-gray-100 hover:border-gray-200 group"
+                      >
+                        <div className="flex justify-center mb-0.5 text-gray-400 group-hover:text-gray-600">{opt.icon}</div>
+                        <p className="text-[10px] font-semibold text-gray-500 group-hover:text-gray-700">Demo {opt.label}</p>
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[9px] text-gray-400 text-center mt-2">
+                    Demo mode uses sample data — no account required
+                  </p>
+                </>
+              )}
 
-              {/* Demo Quick Login */}
-              <div className="grid grid-cols-3 gap-2">
-                {roleOptions.map((opt) => (
-                  <button
-                    key={opt.role}
-                    onClick={() => handleDemoLogin(opt.role)}
-                    disabled={isLoading}
-                    className="p-2 rounded-xl bg-gray-50 hover:bg-gray-100 text-center transition-all duration-200 border border-gray-100 hover:border-gray-200 group"
-                  >
-                    <div className="flex justify-center mb-0.5 text-gray-400 group-hover:text-gray-600">{opt.icon}</div>
-                    <p className="text-[10px] font-semibold text-gray-500 group-hover:text-gray-700">Demo {opt.label}</p>
-                  </button>
-                ))}
-              </div>
-              <p className="text-[9px] text-gray-400 text-center mt-2">
-                Demo mode uses sample data — no account required
+              <p className="mt-5 text-center text-[11px] text-gray-400">
+                Trouble signing in? Contact the Registrar&apos;s office at{' '}
+                <a href="mailto:registrar@iguc.net" className="underline hover:text-gray-600">registrar@iguc.net</a>
               </p>
             </div>
           </div>

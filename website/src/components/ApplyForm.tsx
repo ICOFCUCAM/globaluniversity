@@ -464,10 +464,10 @@ export default function ApplyForm() {
           {(status === 'error' || status === 'unconfigured') && (
             <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
               {status === 'unconfigured'
-                ? 'Online submission is being set up. Please use our application portal instead: '
-                : 'Something went wrong sending your application. Please try again, or use our application portal: '}
-              <a href="https://iguc.net/forms/" className="font-semibold underline">iguc.net/forms</a> — or email{' '}
-              <a href="mailto:admission@iguc.net" className="font-semibold underline">admission@iguc.net</a>.
+                ? 'Online submission is being set up. Your answers are saved in this browser — please email them to us, or call the admissions office and we will complete your application with you: '
+                : 'Something went wrong sending your application. Your answers are saved in this browser, so you can try again — or send them to us directly: '}
+              <a href="mailto:admission@iguc.net" className="font-semibold underline">admission@iguc.net</a> ·{' '}
+              <a href="tel:+237675133426" className="font-semibold underline">+237 675 133 426</a>.
             </div>
           )}
         </div>
