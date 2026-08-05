@@ -143,30 +143,18 @@ export default function LoginScreen() {
                   Office of the Registrar approved an application, and an
                   account created here would bypass both the application fee
                   and the Registrar's examination — the two controls the
-                  admissions process exists to apply. Applicants are sent to
-                  the public application form instead. */}
-              <div className="mb-6 rounded-xl bg-[#faf6ee] p-4 ring-1 ring-[#e8dcc0]">
-                <p className="text-sm font-semibold text-[#422e59]">Applying to study here?</p>
-                <p className="mt-1 text-xs leading-relaxed text-gray-600">
-                  This is the Student Portal, for enrolled students. Applications are made in the
-                  Admissions Portal. Once the Office of the Registrar approves your application your
-                  student account is created for you, and your student number, username and
-                  temporary password are emailed to you.
-                </p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <a
-                    href="/admissions-portal"
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#422e59] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#33234a]"
-                  >
-                    Admissions Portal <ArrowRight size={13} />
-                  </a>
-                  <a
-                    href="/apply"
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-[#422e59] px-4 py-2 text-xs font-semibold text-[#422e59] transition hover:bg-[#422e59] hover:text-white"
-                  >
-                    Apply now
-                  </a>
-                </div>
+                  admissions process exists to apply.
+
+                  The panel that used to explain all of that has gone. A sign-in
+                  screen that opens by explaining what it is not reads as an
+                  apology; the university's own systems do not need to justify
+                  themselves to the person signing in. The route for applicants
+                  is a single line beneath the form, where a misdirected visitor
+                  will look for it and nobody else has to read it. */}
+
+              <div className="mb-6">
+                <h3 className="font-heading text-lg font-bold text-[#422e59]">Sign in</h3>
+                <p className="mt-0.5 text-xs text-gray-500">Students, faculty and staff</p>
               </div>
 
               {/* Error / Success Messages */}
@@ -266,10 +254,18 @@ export default function LoginScreen() {
                 </>
               )}
 
-              <p className="mt-5 text-center text-[11px] text-gray-400">
-                Trouble signing in? Contact the Registrar&apos;s office at{' '}
-                <a href="mailto:registrar@iguc.net" className="underline hover:text-gray-600">registrar@iguc.net</a>
-              </p>
+              <div className="mt-5 space-y-1.5 border-t border-gray-100 pt-4 text-center text-[11px] text-gray-400">
+                <p>
+                  Applying to study?{' '}
+                  <a href="/admissions-portal" className="font-medium text-[#422e59] hover:underline">
+                    Admissions Portal <ArrowRight size={11} className="inline" />
+                  </a>
+                </p>
+                <p>
+                  Trouble signing in? Contact the Registrar&apos;s office at{' '}
+                  <a href="mailto:registrar@iguc.net" className="underline hover:text-gray-600">registrar@iguc.net</a>
+                </p>
+              </div>
             </div>
           </div>
         </div>

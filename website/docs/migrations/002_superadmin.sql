@@ -12,6 +12,26 @@
 
 
 -- ---------------------------------------------------------------------------
+-- 0. Clear the guard triggers first
+--
+-- Recreated correctly in sections 3 and 5. Dropped here because an earlier
+-- version of this file installed a guard that refused any change to
+-- profiles.role unless the connection was the service role — and the SQL editor
+-- is `postgres`, not the service role. That version blocked its own section 9
+-- with "role may only be changed by the Superadministrator", and would block a
+-- re-run before the corrected version could replace it.
+-- ---------------------------------------------------------------------------
+
+do $$
+begin
+  if to_regclass('public.profiles') is not null then
+    drop trigger if exists profiles_guard_privileges      on profiles;
+    drop trigger if exists profiles_guard_last_superadmin on profiles;
+  end if;
+end $$;
+
+
+-- ---------------------------------------------------------------------------
 -- 1. Columns
 -- ---------------------------------------------------------------------------
 
@@ -102,11 +122,13 @@ security definer
 set search_path = public
 as $$
 begin
-  -- current_setting('role') is 'service_role' for the server routes and
-  -- 'authenticated' for a browser session. Only the former may change these.
-  if current_setting('request.jwt.claim.role', true) is distinct from 'service_role'
-     and current_setting('role', true) is distinct from 'service_role'
-  then
+  -- Block the browser roles specifically, rather than allowing only the service
+  -- role. PostgREST switches to 'authenticated' or 'anon' for a request carrying
+  -- the publishable key, and to 'service_role' for one carrying the secret key;
+  -- the SQL editor runs as 'postgres'. Testing for "not service_role" would
+  -- therefore also block the SQL editor — including the appointment statements
+  -- in section 9 of this very file, which is how this was found.
+  if current_user in ('authenticated', 'anon') then
     if new.role is distinct from old.role then
       raise exception 'role may only be changed by the Superadministrator, through /api/admin/staff';
     end if;
