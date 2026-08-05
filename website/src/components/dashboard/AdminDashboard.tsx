@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { dashboardStats, recentActivities } from '@/lib/sampleData';
-import { IMAGES } from '@/lib/constants';
+import { IMAGES, UNIVERSITY } from '@/lib/constants';
 import {
   Users, GraduationCap, BookOpen, Building2, ClipboardList,
   Clock, Award, Monitor, TrendingUp, TrendingDown, ArrowUpRight,
@@ -69,7 +69,10 @@ export default function AdminDashboard() {
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#422e59] via-[#322244] to-[#3949ab] p-6 text-white">
         <div className="relative z-10">
           <h1 className="text-2xl font-bold">Welcome back, Administrator</h1>
-          <p className="text-blue-200 mt-1">Here's what's happening at Federal University of Technology today.</p>
+          {/* The university's own name, from constants. This read "Federal
+              University of Technology" — the name of the template this portal
+              was built from — and said so on the live deployment. */}
+          <p className="mt-1 text-white/70">Here&apos;s what&apos;s happening at {UNIVERSITY.name} today.</p>
           <div className="flex gap-3 mt-4">
             <button className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black font-semibold rounded-lg text-sm transition-colors">
               View Reports

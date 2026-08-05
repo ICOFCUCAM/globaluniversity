@@ -70,8 +70,8 @@ const demoUsers: Record<UserRole, AuthUser> = {
   },
   admin: {
     id: 'demo-admin',
-    name: 'Prof. Aisha Mohammed',
-    email: 'registrar@futech.edu.ng',
+    name: 'Demo Administrator',
+    email: 'admin@iguc.net',
     role: 'admin',
     avatar: '/images/site-icon.png',
   },
