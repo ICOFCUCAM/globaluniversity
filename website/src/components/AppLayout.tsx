@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import ProgrammeResources from './programme/ProgrammeResources';
 import { useAuth } from '@/contexts/AuthContext';
 import type { ViewType } from '@/lib/types';
@@ -40,6 +40,30 @@ export default function AppLayout() {
   const { isAuthenticated, user } = useAuth();
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  // Separate from `collapsed`, which is the desktop rail width. On a phone the
+  // rail is not narrow — it is absent, and slides over the content when opened.
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  // Choosing a destination closes the drawer. Leaving it open over the screen
+  // the user just asked for is the most common way a mobile nav goes wrong.
+  const navigate = useCallback((v: ViewType) => {
+    setCurrentView(v);
+    setMobileNavOpen(false);
+  }, []);
+
+  // Escape closes it, and the body stops scrolling underneath while it is open
+  // — without that, a swipe on the drawer scrolls the page behind it.
+  useEffect(() => {
+    if (!mobileNavOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMobileNavOpen(false); };
+    window.addEventListener('keydown', onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [mobileNavOpen]);
 
   // Show login screen if not authenticated
   if (!isAuthenticated) {
@@ -150,24 +174,34 @@ export default function AppLayout() {
 
   return (
     <div className="min-h-screen bg-[#f7f5f0] dark:bg-[#17131d]">
+      {/* Scrim. Only on small screens, and only while the drawer is open. */}
+      {mobileNavOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          onClick={() => setMobileNavOpen(false)}
+          aria-hidden="true"
+        />
+      )}
       <Sidebar
         currentView={currentView}
-        onViewChange={setCurrentView}
+        onViewChange={navigate}
         collapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+        mobileOpen={mobileNavOpen}
+        onMobileClose={() => setMobileNavOpen(false)}
       />
       <TopBar
         sidebarCollapsed={sidebarCollapsed}
-        onMenuToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+        onMenuToggle={() => setMobileNavOpen((o) => !o)}
         currentView={currentView}
-        onViewChange={setCurrentView}
+        onViewChange={navigate}
       />
       <main
-        className={`pt-16 transition-all duration-300 ${
-          sidebarCollapsed ? 'ml-[68px]' : 'ml-64'
+        className={`pt-16 transition-[margin] duration-200 ${
+          sidebarCollapsed ? 'lg:ml-[68px]' : 'lg:ml-64'
         }`}
       >
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {renderView()}
         </div>
       </main>

@@ -26,16 +26,21 @@ import type { ViewType } from '@/lib/types';
 import { menuGroups } from '@/lib/portalNav';
 import { roleLabels, SYSTEM_ROLES } from '@/lib/roles';
 import { FOCUS } from '@/lib/portalTheme';
-import { LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LogOut, ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 interface SidebarProps {
   currentView: ViewType;
   onViewChange: (view: ViewType) => void;
   collapsed: boolean;
   onToggle: () => void;
+  /** Small screens only: the rail is off-canvas until opened. */
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
 }
 
-export default function Sidebar({ currentView, onViewChange, collapsed, onToggle }: SidebarProps) {
+export default function Sidebar({
+  currentView, onViewChange, collapsed, onToggle, mobileOpen = false, onMobileClose,
+}: SidebarProps) {
   const { user, logout } = useAuth();
 
   const groups = menuGroups
@@ -46,21 +51,35 @@ export default function Sidebar({ currentView, onViewChange, collapsed, onToggle
     .split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
 
   return (
+    // Below lg the rail is a drawer: full-width nav slid off-canvas, over the
+    // content rather than beside it. It used to be a fixed 256px column with the
+    // page margin-left'd behind it, which on a 390px phone left 134px of usable
+    // width — the portal was unusable on the device most students own.
     <aside
-      className={`fixed left-0 top-0 z-40 flex h-full flex-col bg-[#241a30] text-white transition-[width] duration-200 ${
-        collapsed ? 'w-[68px]' : 'w-64'
-      }`}
+      aria-label="Portal navigation"
+      className={`fixed left-0 top-0 z-50 flex h-full flex-col bg-[#241a30] text-white transition-transform duration-200 lg:z-40 lg:translate-x-0 lg:transition-[width] ${
+        mobileOpen ? 'translate-x-0' : '-translate-x-full'
+      } w-64 ${collapsed ? 'lg:w-[68px]' : 'lg:w-64'}`}
     >
       {/* Masthead */}
       <div className={`flex flex-shrink-0 items-center gap-3 border-b border-white/10 px-4 py-4 ${collapsed ? 'justify-center px-0' : ''}`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={IMAGES.logo} alt="" className="h-9 w-9 flex-shrink-0 rounded-full object-cover ring-1 ring-[#c5a55a]/50" />
         {!collapsed && (
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <p className="truncate font-heading text-sm font-bold leading-tight">{UNIVERSITY.shortName}</p>
             <p className="truncate text-[10px] uppercase tracking-[0.12em] text-[#c5a55a]">Management System</p>
           </div>
         )}
+        {/* The drawer needs a way out that is not the scrim — a scrim tap is
+            invisible to anyone who has not learned the convention. */}
+        <button
+          onClick={onMobileClose}
+          aria-label="Close navigation"
+          className={`rounded-lg p-1.5 text-white/60 hover:bg-white/10 hover:text-white lg:hidden ${FOCUS}`}
+        >
+          <X size={18} />
+        </button>
       </div>
 
       {/* Who is signed in. The role label is the university's own wording —
@@ -138,7 +157,7 @@ export default function Sidebar({ currentView, onViewChange, collapsed, onToggle
         <button
           onClick={onToggle}
           aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}
-          className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-white/45 transition-colors hover:bg-white/[0.06] hover:text-white ${FOCUS} ${collapsed ? 'justify-center px-0' : ''}`}
+          className={`hidden w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-white/45 transition-colors hover:bg-white/[0.06] hover:text-white lg:flex ${FOCUS} ${collapsed ? 'justify-center px-0' : ''}`}
         >
           {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
           {!collapsed && <span>Collapse</span>}
