@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
 import { Search, Bell, MessageSquare, Sun, Moon, Menu } from 'lucide-react';
 import type { UserRole } from '@/lib/types';
 
@@ -16,12 +17,44 @@ export default function TopBar({ sidebarCollapsed, onMenuToggle }: TopBarProps) 
 
   const isDemoMode = !session && !!user;
 
-  const notifications = [
-    { id: 1, text: 'Results for CSC 301 have been approved', time: '2h ago', read: false },
-    { id: 2, text: 'New course material uploaded: ML Lecture 5', time: '4h ago', read: false },
-    { id: 3, text: 'Exam scheduled: CSC 404 on April 20', time: '1d ago', read: true },
-    { id: 4, text: 'Your transcript is ready for download', time: '2d ago', read: true },
-  ];
+  const [notifications, setNotifications] = useState<{ id: string; text: string; time: string; read: boolean }[]>([]);
+
+  // Live notifications assembled from announcements, assignments and classes.
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from('documents')
+        .select('id, file_name, file_url, document_type, uploaded_at')
+        .in('document_type', ['announcement', 'assignment-brief', 'live-class'])
+        .order('uploaded_at', { ascending: false })
+        .limit(8);
+      const ago = (iso: string) => {
+        const h = Math.round((Date.now() - new Date(iso).getTime()) / 36e5);
+        if (h < 1) return 'just now';
+        if (h < 24) return `${h}h ago`;
+        return `${Math.round(h / 24)}d ago`;
+      };
+      setNotifications(
+        (data ?? []).map((d: any) => {
+          let text = d.file_name as string;
+          try {
+            const j = JSON.parse(decodeURIComponent(escape(atob(d.file_url.split('base64,')[1]))));
+            if (d.document_type === 'announcement') text = `Announcement: ${j.title}`;
+            else if (d.document_type === 'assignment-brief') text = `New assignment: ${j.title}${j.due ? ` (due ${j.due})` : ''}`;
+            else text = `Class: ${j.title} — ${j.time ?? ''}`;
+          } catch {
+            /* fall back to file name */
+          }
+          return {
+            id: d.id,
+            text,
+            time: ago(d.uploaded_at),
+            read: (Date.now() - new Date(d.uploaded_at).getTime()) / 36e5 > 24,
+          };
+        }),
+      );
+    })();
+  }, []);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
@@ -109,6 +142,9 @@ export default function TopBar({ sidebarCollapsed, onMenuToggle }: TopBarProps) 
                   <span className="text-xs text-blue-600 cursor-pointer hover:underline">Mark all read</span>
                 </div>
                 <div className="max-h-72 overflow-y-auto">
+                  {notifications.length === 0 && (
+                    <p className="px-4 py-8 text-center text-sm text-gray-400">No notifications yet.</p>
+                  )}
                   {notifications.map((n) => (
                     <div
                       key={n.id}
