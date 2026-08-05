@@ -24,6 +24,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/news',
     '/courses',
     '/verify',
+    '/documents',
+    '/academic-catalog',
     '/fr',
     '/fr/a-propos',
     '/fr/admission',

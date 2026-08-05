@@ -44,6 +44,8 @@ const pages: SearchEntry[] = [
   { title: 'Donate', href: '/donate', section: 'Community', text: 'Donate to build, pastoral training, evangelism, prisoners, food and clean water.' },
   { title: 'Charity', href: '/charity', section: 'Community', text: 'Schools, food, clothes, health, sanitation, sponsorship, causes.' },
   { title: 'PPDI-RC', href: '/ppdirc', section: 'Academics', text: 'Personal Professional Development Industry and Resource Center Nigeria, professional courses, certification.' },
+  { title: 'Institutional Documents', href: '/documents', section: 'University', text: 'Register of institutional documents, academic catalog, prospectus, quality assurance manual, student handbook, research handbook, graduate school handbook, university statutes, strategic plan, research journals, university press, research centres, international office, digital campus, alumni association, accreditation.' },
+  { title: 'Academic Catalog', href: '/academic-catalog', section: 'University', text: 'Official academic handbook, chancellor welcome, vice chancellor, history, vision mission core values, governance, faculties, academic calendar, admission requirements, tuition fees, scholarships, student regulations, examination regulations, graduation requirements, degree classifications, academic integrity, research ethics, student services, library, ICT, quality assurance, programmes and course descriptions, download PDF.' },
   { title: 'Policies', href: '/policies', section: 'University', text: 'Code of conduct, academic integrity, disciplinary process, due process, appeals.' },
   { title: 'Contact', href: '/contact', section: 'University', text: 'Phone, email, WhatsApp, address, Buea Cameroon, admissions office.' },
 ];

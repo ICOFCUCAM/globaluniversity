@@ -195,4 +195,38 @@ html {
   body {
     background: #fff;
   }
+
+  /* The Academic Catalog is meant to be saved as a PDF — that is how a student
+     downloads it and how a reviewer files it. Printing is the export route, so
+     it has to produce a document rather than a screenshot of a web page. */
+  @page {
+    margin: 18mm 16mm;
+  }
+  .catalog-part {
+    break-before: page;
+    border-top: 0;
+    padding-top: 0;
+  }
+  .catalog-part:first-of-type {
+    break-before: avoid;
+  }
+  /* A heading stranded at the foot of a page, or a table split across two,
+     is the usual giveaway that a PDF was printed rather than typeset. */
+  h2, h3, h4 {
+    break-after: avoid;
+  }
+  table, figure, blockquote, li {
+    break-inside: avoid;
+  }
+  /* Reveal animates from opacity 0; without this, anything still below the
+     fold when print is invoked comes out blank. */
+  [data-reveal],
+  .reveal {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  a {
+    text-decoration: none;
+    color: inherit;
+  }
 }

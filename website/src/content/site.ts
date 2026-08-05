@@ -79,13 +79,17 @@ export const site = {
       href: '/about',
       groups: [
         {
+          // Five items per column is the ceiling these menus hold without
+          // wrapping. "Leadership & Administration" pointed at /faculty, which
+          // Academics already lists as "Schools & Faculties", so the two new
+          // institutional entries take its place rather than adding a sixth.
           heading: 'The University',
           items: [
             { label: "Chancellor's Welcome", href: '/welcome' },
             { label: 'About Us', href: '/about' },
             { label: 'Governance & Accreditation', href: '/governance' },
-            { label: 'Leadership & Administration', href: '/faculty' },
-            { label: 'Policies', href: '/policies' },
+            { label: 'Academic Catalog', href: '/academic-catalog' },
+            { label: 'Institutional Documents', href: '/documents' },
           ],
         },
         {
@@ -94,6 +98,7 @@ export const site = {
             { label: 'Alumni', href: '/alumni' },
             { label: 'Careers at IGUC', href: '/careers' },
             { label: 'Contact', href: '/contact' },
+            { label: 'Policies', href: '/policies' },
             { label: 'Privacy Policy', href: '/privacy-policy' },
           ],
         },
