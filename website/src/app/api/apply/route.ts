@@ -100,7 +100,7 @@ async function recordApplicant(form: FormData, appNo: string): Promise<boolean> 
 }
 
 export async function POST(request: Request) {
-  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, APPLY_TO } = process.env;
+  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, APPLY_TO, MAIL_FROM } = process.env;
 
   const form = await request.formData();
 
@@ -152,7 +152,7 @@ export async function POST(request: Request) {
     });
     try {
       await transporter.sendMail({
-        from: `"IGUC Online Application" <${SMTP_USER}>`,
+        from: `"IGUC Online Application" <${MAIL_FROM || SMTP_USER}>`,
         to: APPLY_TO ?? 'admission@iguc.net',
         replyTo: applicantEmail,
         subject: `New application ${appNo}: ${surname} ${firstname} — ${String(form.get('level') ?? '')} ${String(form.get('field') ?? '')}`,

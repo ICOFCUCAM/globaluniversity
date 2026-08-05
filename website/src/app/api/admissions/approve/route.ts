@@ -262,7 +262,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SITE_URL } = process.env;
+  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SITE_URL, MAIL_FROM } = process.env;
   const portalUrl = `${SITE_URL ?? 'https://iguc.net'}/portal`;
   const mail = welcomeEmail({
     fullName: fullName || 'Student',
@@ -298,7 +298,16 @@ export async function POST(request: Request) {
       auth: { user: SMTP_USER, pass: SMTP_PASS },
     });
     await transporter.sendMail({
-      from: `"ICOF Global University — Office of the Registrar" <${SMTP_USER}>`,
+      // The mailbox that authenticates and the address students see need not
+      // be the same. MAIL_FROM lets the university send as its own domain even
+      // where the SMTP account sits elsewhere — a student receiving their
+      // password from an unfamiliar personal address has been handed something
+      // that looks exactly like phishing.
+      //
+      // It must still be a domain whose SPF authorises this mail server, or
+      // receiving servers will treat it as forged. Same domain as SMTP_USER is
+      // always safe; a different one needs the DNS to say so.
+      from: `"ICOF Global University — Office of the Registrar" <${MAIL_FROM || SMTP_USER}>`,
       to: student.email,
       subject: isConditional
         ? 'Welcome to ICOF Global University — conditional admission'
