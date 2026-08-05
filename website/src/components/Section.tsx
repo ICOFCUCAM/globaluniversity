@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import KineticText from './KineticText';
 
 export function Eyebrow({ children, light = false }: { children: ReactNode; light?: boolean }) {
   return (
@@ -27,13 +28,25 @@ export function SectionHeading({
   return (
     <div className={`mb-10 ${centered ? 'text-center' : 'text-left'}`}>
       {eyebrow && <Eyebrow light={light}>{eyebrow}</Eyebrow>}
-      <h2
-        className={`font-heading text-display font-bold [text-wrap:balance] ${
-          light ? 'text-white' : 'text-brand-purple'
-        }`}
-      >
-        {children}
-      </h2>
+      {/* Strings get the kinetic treatment; rich nodes (headings that carry
+          markup) fall back to a plain h2 so nothing is silently dropped. */}
+      {typeof children === 'string' ? (
+        <KineticText
+          className={`font-heading text-display font-bold [text-wrap:balance] ${
+            light ? 'text-white' : 'text-brand-purple'
+          }`}
+        >
+          {children}
+        </KineticText>
+      ) : (
+        <h2
+          className={`font-heading text-display font-bold [text-wrap:balance] ${
+            light ? 'text-white' : 'text-brand-purple'
+          }`}
+        >
+          {children}
+        </h2>
+      )}
       <div
         className={`mt-5 h-[3px] w-16 rounded-full bg-gradient-to-r from-brand-gold-deep to-brand-gold ${
           centered ? 'mx-auto' : ''

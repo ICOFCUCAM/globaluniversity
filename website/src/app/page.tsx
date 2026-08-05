@@ -10,6 +10,7 @@ import { chancellor, welcomeExcerpt } from '@/content/welcome';
 import { quickIconMap } from '@/components/Icons';
 import CountUp from '@/components/CountUp';
 import { Aurora, Grain, Seam } from '@/components/Atmosphere';
+import KineticText from '@/components/KineticText';
 import { IconCampus, IconChapel, IconGlobe, IconLaptop } from '@/components/Icons';
 
 const PILLARS = [
@@ -161,9 +162,9 @@ export default async function HomePage() {
             <p className="mb-3 font-sans text-xs font-semibold uppercase tracking-[0.25em] text-brand-gold">
               Welcome
             </p>
-            <h2 className="font-heading text-display font-bold text-white [text-wrap:balance]">
+            <KineticText className="font-heading text-display font-bold text-white [text-wrap:balance]">
               A word from our Chancellor
-            </h2>
+            </KineticText>
             <div className="mt-5 h-[3px] w-16 rounded bg-brand-gold" />
 
             {/* The quotation mark is positioned, not floated: a float re-flows
@@ -204,9 +205,9 @@ export default async function HomePage() {
         <div className="grid items-center gap-12 lg:grid-cols-2">
           <Reveal>
             <Eyebrow>About the University</Eyebrow>
-            <h2 className="font-heading text-display font-bold text-brand-purple [text-wrap:balance]">
+            <KineticText className="font-heading text-display font-bold text-brand-purple [text-wrap:balance]">
               A university in pursuit of a brighter future
-            </h2>
+            </KineticText>
             <div className="mt-5 h-[3px] w-16 rounded-full bg-gradient-to-r from-brand-gold-deep to-brand-gold" />
             <p className="mt-6 leading-relaxed text-brand-muted">{about.intro}</p>
             <div className="mt-8 flex flex-wrap gap-4">
@@ -552,9 +553,9 @@ export default async function HomePage() {
           </Reveal>
           <Reveal delay={120}>
             <Eyebrow>Online Learning</Eyebrow>
-            <h2 className="font-heading text-display font-bold text-brand-purple [text-wrap:balance]">
+            <KineticText className="font-heading text-display font-bold text-brand-purple [text-wrap:balance]">
               Your classroom, wherever you are
-            </h2>
+            </KineticText>
             <div className="mt-5 h-[3px] w-16 rounded-full bg-gradient-to-r from-brand-gold-deep to-brand-gold" />
             <p className="mt-6 leading-relaxed text-brand-muted">
               Master&apos;s and doctoral programs delivered fully online, with live classes, course
