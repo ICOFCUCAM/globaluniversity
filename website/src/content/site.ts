@@ -79,6 +79,7 @@ export const site = {
         { label: 'Governance & Accreditation', href: '/governance' },
         { label: 'Policies', href: '/policies' },
         { label: 'Alumni', href: '/alumni' },
+        { label: 'Careers', href: '/careers' },
         { label: 'Privacy Policy', href: '/privacy-policy' },
       ],
     },

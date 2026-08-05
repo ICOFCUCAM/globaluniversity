@@ -18,7 +18,10 @@ export interface ContentPage {
   sections: ContentSection[];
 }
 
+import { careers } from './careers';
+
 export const contentPages: ContentPage[] = [
+  careers,
   {
     slug: 'donate',
     title: 'Donate',

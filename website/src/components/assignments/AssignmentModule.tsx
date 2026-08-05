@@ -116,7 +116,7 @@ export default function AssignmentModule() {
       {/* Briefs */}
       <div className="grid gap-4 md:grid-cols-2">
         {briefs.length === 0 && (
-          <p className="col-span-2 rounded-xl border border-dashed border-gray-200 bg-white p-8 text-center text-sm text-gray-400">
+          <p className="col-span-2 rounded-2xl border-2 border-dashed border-[#ece7f4] bg-white p-10 text-center text-sm text-gray-400">
             No assignments published yet.
           </p>
         )}

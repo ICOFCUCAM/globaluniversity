@@ -17,6 +17,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/portal',
     '/news',
     '/verify',
+    '/fr',
+    '/fr/a-propos',
+    '/fr/admission',
+    '/fr/programmes',
+    '/fr/contact',
   ];
   return [
     ...staticRoutes.map((path) => ({

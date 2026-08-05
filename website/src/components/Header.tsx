@@ -3,7 +3,9 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { site, type NavItem } from '@/content/site';
+import { fr } from '@/content/fr';
 
 function DesktopItem({ item }: { item: NavItem }) {
   if (!item.children) {
@@ -42,7 +44,13 @@ export default function Header() {
   const [portalsOpen, setPortalsOpen] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [elevated, setElevated] = useState(false);
-  const nav = site.nav as NavItem[];
+  const pathname = usePathname() ?? '/';
+  const isFr = pathname === '/fr' || pathname.startsWith('/fr/');
+  const nav = (isFr ? fr.nav : site.nav) as NavItem[];
+  const applyLabel = isFr ? fr.common.applyNow : 'Apply Now';
+  const portalsLabel = isFr ? fr.common.studentPortal : 'Student Portals';
+  const langHref = isFr ? '/' : '/fr';
+  const langLabel = isFr ? 'English' : 'Français';
 
   useEffect(() => {
     const onScroll = () => setElevated(window.scrollY > 8);
@@ -86,7 +94,7 @@ export default function Header() {
             href="/apply"
             className="whitespace-nowrap rounded-full bg-brand-gold px-3 py-2 text-[13px] font-semibold text-brand-purple transition hover:bg-brand-gold-deep"
           >
-            Apply Now
+            {applyLabel}
           </Link>
           <div className="relative">
             <button
@@ -95,7 +103,7 @@ export default function Header() {
               aria-haspopup="true"
               className="whitespace-nowrap rounded-full border border-brand-gold px-3 py-2 text-[13px] font-semibold text-brand-gold transition hover:bg-brand-gold hover:text-brand-purple"
             >
-              Student Portals ▾
+              {portalsLabel} ▾
             </button>
             {portalsOpen && (
               <div className="absolute right-0 mt-2 w-56 overflow-hidden rounded-lg bg-white text-brand-ink shadow-xl">
@@ -107,6 +115,13 @@ export default function Header() {
               </div>
             )}
           </div>
+          <Link
+            href={langHref}
+            hrefLang={isFr ? 'en' : 'fr'}
+            className="whitespace-nowrap rounded-full border border-white/30 px-3 py-2 text-[12px] font-semibold text-white/90 transition hover:border-brand-gold hover:text-brand-gold"
+          >
+            🌐 {langLabel}
+          </Link>
         </nav>
 
         <button className="lg:hidden" aria-label="Toggle menu" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
@@ -171,7 +186,15 @@ export default function Header() {
             onClick={() => setOpen(false)}
             className="mt-3 block rounded-full bg-brand-gold px-4 py-2 text-center text-sm font-semibold text-brand-purple"
           >
-            Apply Now
+            {applyLabel}
+          </Link>
+          <Link
+            href={langHref}
+            hrefLang={isFr ? 'en' : 'fr'}
+            onClick={() => setOpen(false)}
+            className="mt-2 block rounded-full border border-white/30 px-4 py-2 text-center text-sm font-semibold text-white/90"
+          >
+            🌐 {langLabel}
           </Link>
           <div className="mt-2 border-t border-white/10 pt-2">
             <p className="py-1 text-xs uppercase tracking-wide text-white/50">Student Portals</p>
