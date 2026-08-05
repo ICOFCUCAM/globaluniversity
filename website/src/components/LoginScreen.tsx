@@ -13,12 +13,14 @@ import {
 const DEMO_ENABLED = process.env.NEXT_PUBLIC_ENABLE_DEMO === 'true';
 
 export default function LoginScreen() {
-  const { login, signup, demoLogin, isLoading } = useAuth();
-  const [mode, setMode] = useState<'login' | 'signup'>('login');
+  const { login, demoLogin, isLoading } = useAuth();
+  // Sign-up is not reachable from the portal — see the note by the auth card.
+  // `mode` is retained as a constant so the existing conditional blocks below
+  // continue to read naturally, and so that reinstating a sign-up route later
+  // is a deliberate change rather than a one-character edit.
+  const mode: 'login' | 'signup' = 'login';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [fullName, setFullName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -43,38 +45,9 @@ export default function LoginScreen() {
     }
   }
 
-  async function handleSignup(e: React.FormEvent) {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-
-    if (!fullName.trim()) {
-      setError('Please enter your full name.');
-      return;
-    }
-    if (!email.trim()) {
-      setError('Please enter your email address.');
-      return;
-    }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters.');
-      return;
-    }
-    if (password !== confirmPassword) {
-      setError('Passwords do not match.');
-      return;
-    }
-
-    setSubmitting(true);
-    const result = await signup(email, password, fullName, 'student');
-    setSubmitting(false);
-
-    if (result.error) {
-      setError(result.error);
-    } else {
-      setSuccess('Account created successfully! You are now signed in.');
-    }
-  }
+  // handleSignup removed. The portal has no sign-up route: a student account is
+  // created by the Office of the Registrar on approving an application, and the
+  // credentials are emailed from the server. See src/lib/admissions.ts.
 
   function handleDemoLogin(role: UserRole) {
     setError('');
@@ -166,24 +139,25 @@ export default function LoginScreen() {
 
             {/* Auth Card */}
             <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md mx-auto w-full">
-              {/* Tab Toggle */}
-              <div className="flex bg-gray-100 rounded-xl p-1 mb-6">
-                <button
-                  onClick={() => { setMode('login'); setError(''); setSuccess(''); }}
-                  className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${
-                    mode === 'login' ? 'bg-[#422e59] text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'
-                  }`}
+              {/* No sign-up tab. A student account exists only because the
+                  Office of the Registrar approved an application, and an
+                  account created here would bypass both the application fee
+                  and the Registrar's examination — the two controls the
+                  admissions process exists to apply. Applicants are sent to
+                  the public application form instead. */}
+              <div className="mb-6 rounded-xl bg-[#faf6ee] p-4 ring-1 ring-[#e8dcc0]">
+                <p className="text-sm font-semibold text-[#422e59]">Applying to study here?</p>
+                <p className="mt-1 text-xs leading-relaxed text-gray-600">
+                  Accounts are not created here. Complete the application form and pay the
+                  application fee; once the Office of the Registrar approves your application, your
+                  account is created for you and your login details are emailed to you.
+                </p>
+                <a
+                  href="/apply"
+                  className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-[#422e59] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#33234a]"
                 >
-                  Sign In
-                </button>
-                <button
-                  onClick={() => { setMode('signup'); setError(''); setSuccess(''); }}
-                  className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${
-                    mode === 'signup' ? 'bg-[#422e59] text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  Sign Up
-                </button>
+                  Apply now <ArrowRight size={13} />
+                </a>
               </div>
 
               {/* Error / Success Messages */}
@@ -251,105 +225,9 @@ export default function LoginScreen() {
               )}
 
               {/* SIGNUP FORM */}
-              {mode === 'signup' && (
-                <form onSubmit={handleSignup} className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1.5">Full Name</label>
-                    <div className="relative">
-                      <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                      <input
-                        type="text"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        placeholder="Enter your full name"
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30 focus:border-blue-400 transition-all"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1.5">Email Address</label>
-                    <div className="relative">
-                      <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                      <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="your.email@uni.edu"
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30 focus:border-blue-400 transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Account type — self-service registration creates STUDENT accounts only.
-                      Lecturer and administrator accounts are provisioned by the Registrar; a
-                      public role picker here would let anyone grant themselves admin rights. */}
-                  <div className="rounded-xl border border-gray-100 bg-gray-50 p-3">
-                    <div className="flex items-center gap-2">
-                      <GraduationCap size={16} className="text-[#422e59]" />
-                      <p className="text-xs font-semibold text-gray-700">Student account</p>
-                    </div>
-                    <p className="mt-1 text-[10px] leading-relaxed text-gray-500">
-                      Registering here creates a student account. Staff and lecturer accounts are
-                      issued by the Registrar&apos;s office — contact{' '}
-                      <a href="mailto:registrar@iguc.net" className="underline">registrar@iguc.net</a>.
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1.5">Password</label>
-                    <div className="relative">
-                      <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Min. 6 characters"
-                        className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30 focus:border-blue-400 transition-all"
-                      />
-                      <button type="button" onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                      </button>
-                    </div>
-                    {password.length > 0 && (
-                      <div className="flex gap-1 mt-1.5">
-                        {[1, 2, 3, 4].map((i) => (
-                          <div key={i} className={`h-1 flex-1 rounded-full transition-colors ${
-                            password.length >= i * 3
-                              ? password.length >= 12 ? 'bg-emerald-500' : password.length >= 8 ? 'bg-brand-gold-deep' : 'bg-amber-500'
-                              : 'bg-gray-200'
-                          }`} />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1.5">Confirm Password</label>
-                    <div className="relative">
-                      <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                      <input
-                        type="password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="Re-enter your password"
-                        className={`w-full pl-10 pr-10 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#422e59]/30 transition-all ${
-                          confirmPassword && confirmPassword !== password ? 'border-red-300 bg-red-50/50' : 'border-gray-200'
-                        }`}
-                      />
-                      {confirmPassword && confirmPassword === password && (
-                        <CheckCircle2 size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500" />
-                      )}
-                    </div>
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={submitting || isLoading}
-                    className="w-full py-2.5 bg-[#422e59] text-white rounded-xl text-sm font-semibold hover:bg-[#322244] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                  >
-                    {submitting ? <><Loader2 size={16} className="animate-spin" /> Creating account...</> : <>Create Account <ArrowRight size={14} /></>}
-                  </button>
-                </form>
-              )}
+              {/* The sign-up form is gone, not hidden. It is reinstated only by
+                  deciding that applicants may create their own accounts, which
+                  would bypass the fee gate and the Registrar's examination. */}
 
               {/* Demo quick-login — one click into an administrator console, so it is
                   compiled out unless NEXT_PUBLIC_ENABLE_DEMO is explicitly set. Never

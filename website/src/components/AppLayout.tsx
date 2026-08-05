@@ -9,6 +9,7 @@ import AdminDashboard from './dashboard/AdminDashboard';
 import StudentDashboard from './dashboard/StudentDashboard';
 import LecturerDashboard from './dashboard/LecturerDashboard';
 import StudentManagement from './students/StudentManagement';
+import AdmissionsDesk from './admissions/AdmissionsDesk';
 import LecturerManagement from './lecturers/LecturerManagement';
 import CourseManagement from './courses/CourseManagement';
 import ResultProcessing from './results/ResultProcessing';
@@ -48,6 +49,10 @@ export default function AppLayout() {
         if (user?.role === 'student') return <StudentDashboard onNavigate={setCurrentView} />;
         if (user?.role === 'lecturer') return <LecturerDashboard onNavigate={setCurrentView} />;
         return <AdminDashboard />;
+      case 'admissions-finance':
+        return <AdmissionsDesk desk="finance" />;
+      case 'admissions-registrar':
+        return <AdmissionsDesk desk="registrar" />;
       case 'students':
         return <StudentManagement />;
       case 'lecturers':

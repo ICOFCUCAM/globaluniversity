@@ -2,7 +2,11 @@
 // University Management System - Type Definitions
 // ============================================
 
-export type UserRole = 'admin' | 'student' | 'lecturer';
+// 'finance' and 'registrar' are the two admissions desks. They are separate
+// roles rather than flavours of 'admin' because the whole control in the
+// admissions process is that the desk registering the fee is not the desk
+// that admits the student.
+export type UserRole = 'admin' | 'student' | 'lecturer' | 'finance' | 'registrar';
 
 export interface Department {
   id: string;
@@ -183,4 +187,5 @@ export type ViewType =
   | 'documents'
   | 'analytics'
   | 'settings'
+  | 'admissions-finance' | 'admissions-registrar'
   | 'audit' | 'assignments' | 'fees' | 'announcements' | 'forum' | 'timetable' | 'insights' | 'gradebook' | 'questionbank';

@@ -64,6 +64,20 @@ const demoUsers: Record<UserRole, AuthUser> = {
     staffId: 'STF/2020/001',
     avatar: '/images/site-icon.png',
   },
+  finance: {
+    id: 'demo-finance',
+    name: 'Demo Finance Officer',
+    email: 'finance@iguc.net',
+    role: 'finance',
+    avatar: 'FO',
+  },
+  registrar: {
+    id: 'demo-registrar',
+    name: 'Demo Registrar',
+    email: 'registrar@iguc.net',
+    role: 'registrar',
+    avatar: 'RG',
+  },
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
