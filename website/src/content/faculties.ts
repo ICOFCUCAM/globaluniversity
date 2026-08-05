@@ -49,6 +49,15 @@ export interface Faculty {
   leadName?: string;
   /** Degree pages belonging to this faculty. */
   degrees?: { label: string; href: string }[];
+  /**
+   * Slug of the faculty whose programmes and courses this one also delivers.
+   * Set where a school is a second campus teaching the same provision rather
+   * than a separate body of study — the university confirmed Buea and Douala
+   * share their materials. Both pages then show the same programmes and
+   * courses, and each says plainly that it does, so a prospective student is
+   * never left wondering whether the two lists differ.
+   */
+  sharesProvisionWith?: string;
 }
 
 export const facultyList: Faculty[] = [
@@ -67,6 +76,7 @@ export const facultyList: Faculty[] = [
     ],
     programSchool: 'Faculty of Theology',
     courseFaculty: 'Faculty of Theology',
+    sharesProvisionWith: 'theology-douala',
     leadName: 'Rev Momfor Phillip, M.Th',
     degrees: [
       { label: 'Bachelor of Theology', href: '/bachelor-of-theology' },
@@ -82,12 +92,21 @@ export const facultyList: Faculty[] = [
     campus: 'Douala, Cameroon',
     image: '/images/wp/g-hall.jpg',
     standsFor:
-      'The university’s Douala campus for theological study, extending the Faculty of Theology’s provision into Cameroon’s largest city.',
+      'The Faculty of Theology’s second campus — the same programmes, courses and awards as Buea, taught in Cameroon’s largest city.',
     description: [
-      'The School of Theology in Douala extends the university’s theological teaching into Cameroon’s largest city and commercial centre, serving students who cannot relocate to Buea.',
-      'It operates under the direction of Dr Bongbuen Alando.',
+      'The School of Theology in Douala teaches the Faculty of Theology’s programmes in Cameroon’s largest city and commercial centre, for students who cannot relocate to Buea.',
+      'The two campuses share their materials. A student in Douala studies the same courses, sits the same assessments and receives the same award as a student in Buea; only the location differs.',
+      'The Douala campus operates under the direction of Dr Bongbuen Alando.',
     ],
+    programSchool: 'Faculty of Theology',
+    courseFaculty: 'Faculty of Theology',
+    sharesProvisionWith: 'theology-buea',
     leadName: 'Dr Bongbuen Alando',
+    degrees: [
+      { label: 'Bachelor of Theology', href: '/bachelor-of-theology' },
+      { label: 'Master of Theology', href: '/master-of-theology' },
+      { label: 'M.A. Black Liberation Theology', href: '/black-liberation-theology' },
+    ],
   },
   {
     slug: 'education',

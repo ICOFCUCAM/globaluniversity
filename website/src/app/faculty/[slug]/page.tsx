@@ -8,6 +8,7 @@ import Reveal from '@/components/Reveal';
 import KineticText from '@/components/KineticText';
 import Cta from '@/components/Cta';
 import { Aurora, Grain, Seam } from '@/components/Atmosphere';
+import { IconCampus } from '@/components/Icons';
 import { SpotlightGroup, SpotlightCard } from '@/components/Spotlight';
 import { facultyList, getFaculty } from '@/content/faculties';
 import { administration, lecturers, programs, site } from '@/content/site';
@@ -45,6 +46,7 @@ export default function FacultyDetailPage({ params }: { params: { slug: string }
         )
       : undefined;
   const onlineCount = facultyCourses.filter((c) => c.online).length;
+  const sibling = f.sharesProvisionWith ? getFaculty(f.sharesProvisionWith) : undefined;
 
   const ld = {
     '@context': 'https://schema.org',
@@ -93,6 +95,32 @@ export default function FacultyDetailPage({ params }: { params: { slug: string }
               </div>
             ))}
           </dl>
+        </div>
+      )}
+
+      {/* Shared provision, stated plainly. Two campuses teaching the same
+          programmes must say so, or a prospective student cannot tell whether
+          the two course lists differ. */}
+      {sibling && (
+        <div className="border-b border-brand-sand bg-brand-cream">
+          <div className="mx-auto flex max-w-5xl flex-col items-start gap-4 px-4 py-6 sm:flex-row sm:items-center sm:px-6">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-brand-purple ring-1 ring-brand-sand">
+              <IconCampus className="h-5 w-5" />
+            </span>
+            <p className="flex-1 text-sm leading-relaxed text-brand-muted">
+              <strong className="font-semibold text-brand-purple">Two campuses, one faculty.</strong>{' '}
+              {f.shortName} and {sibling.shortName} share the same programmes, courses and awards.
+              A student at either campus studies the same material and receives the same
+              qualification; only the location differs.
+            </p>
+            <Link
+              href={`/faculty/${sibling.slug}`}
+              className="group inline-flex shrink-0 items-center gap-1.5 rounded-full border-2 border-brand-purple px-5 py-2.5 font-heading text-sm font-semibold text-brand-purple transition hover:bg-brand-purple hover:text-white"
+            >
+              {sibling.campus.split(',')[0]} campus
+              <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">→</span>
+            </Link>
+          </div>
         </div>
       )}
 
@@ -168,7 +196,9 @@ export default function FacultyDetailPage({ params }: { params: { slug: string }
       {/* Programmes, pulled live */}
       {facultyPrograms.length > 0 && (
         <Section className="bg-white" chapter="Programmes">
-          <SectionHeading eyebrow="Programmes">What you can study here</SectionHeading>
+          <SectionHeading eyebrow="Programmes">
+            {sibling ? 'What you can study at either campus' : 'What you can study here'}
+          </SectionHeading>
           <SpotlightGroup className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {facultyPrograms.map((p, i) => (
               <Reveal key={p.slug} delay={i * 80}>
