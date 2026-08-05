@@ -81,6 +81,7 @@ export default async function HomePage() {
           alt=""
           fill
           className="object-cover opacity-[0.14]"
+          quality={60}
           sizes="100vw"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-brand-purple-dark via-brand-purple-dark/95 to-brand-purple/85" />
@@ -178,7 +179,15 @@ export default async function HomePage() {
           </Reveal>
           <Reveal delay={150}>
             <div className="relative h-80 overflow-hidden rounded-2xl shadow-xl lg:h-[420px]">
-              <Image src={about.image} alt="ICOF Global University ceremony" fill className="object-cover" sizes="(min-width:1024px) 50vw, 100vw" />
+              <Image
+                src={about.image}
+                alt="Graduands at an ICOF Global University ceremony"
+                fill
+                loading="lazy"
+                quality={82}
+                className="object-cover transition duration-[900ms] ease-out hover:scale-105"
+                sizes="(min-width:1024px) 45vw, 100vw"
+              />
             </div>
           </Reveal>
         </div>
@@ -312,7 +321,7 @@ export default async function HomePage() {
 
       {/* Research & Innovation */}
       <section className="relative overflow-hidden bg-brand-purple py-20 text-white sm:py-24">
-        <Image src="/images/wp/g-decor.jpg" alt="" fill className="object-cover opacity-10" sizes="100vw" />
+        <Image src="/images/wp/g-decor.jpg" alt="" fill loading="lazy" quality={55} className="object-cover opacity-10" sizes="100vw" />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
           <SectionHeading light eyebrow="Research & Innovation">
             Scholarship in service of society
@@ -378,6 +387,8 @@ export default async function HomePage() {
                   src={c.image}
                   alt=""
                   fill
+                  loading="lazy"
+                  quality={55}
                   className="object-cover opacity-[0.07] transition duration-700 group-hover:opacity-[0.13] group-hover:scale-105"
                   sizes="(min-width:1024px) 50vw, 100vw"
                 />
@@ -464,7 +475,15 @@ export default async function HomePage() {
         <div className="grid items-center gap-12 lg:grid-cols-2">
           <Reveal>
             <div className="relative h-72 overflow-hidden rounded-2xl shadow-xl lg:h-96">
-              <Image src="/images/banner.jpg" alt="Online learning at ICOF Global University" fill className="object-cover" sizes="(min-width:1024px) 50vw, 100vw" />
+              <Image
+                src="/images/banner.jpg"
+                alt="A student studying online with ICOF Global University"
+                fill
+                loading="lazy"
+                quality={82}
+                className="object-cover"
+                sizes="(min-width:1024px) 45vw, 100vw"
+              />
             </div>
           </Reveal>
           <Reveal delay={120}>

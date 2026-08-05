@@ -74,6 +74,8 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
                 alt=""
                 fill
                 priority={i === 0}
+                loading={i === 0 ? undefined : 'lazy'}
+                quality={i === 0 ? 85 : 72}
                 sizes="100vw"
                 className="object-cover"
               />
