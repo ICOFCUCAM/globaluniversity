@@ -19,6 +19,7 @@ export const metadata: Metadata = {
   },
   description: site.description,
   manifest: '/manifest.json',
+  alternates: { canonical: '/', languages: { en: '/', fr: '/fr' } },
   icons: { icon: '/images/site-icon.png', apple: '/images/site-icon.png' },
   openGraph: {
     title: site.name,
