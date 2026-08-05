@@ -74,36 +74,77 @@ export default async function HomePage() {
       </nav>
 
       {/* Chancellor's welcome — the site opened with this on the original iguc.net */}
-      <section className="bg-brand-cream py-16 sm:py-20">
-        <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 sm:px-6 lg:grid-cols-[minmax(0,240px)_minmax(0,1fr)] lg:gap-14">
+      <section className="relative overflow-hidden bg-brand-purple-dark py-20 text-white sm:py-24">
+        <Image
+          src="/images/wp/g-hall.jpg"
+          alt=""
+          fill
+          className="object-cover opacity-[0.14]"
+          sizes="100vw"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-brand-purple-dark via-brand-purple-dark/95 to-brand-purple/85" />
+
+        <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-[minmax(0,300px)_minmax(0,1fr)] lg:gap-16">
           <Reveal>
-            <div className="relative mx-auto aspect-[4/5] w-48 overflow-hidden rounded-2xl shadow-xl lg:w-full">
-              <Image
-                src={chancellor.image}
-                alt={`${chancellor.name}, Chancellor`}
-                fill
-                className="object-cover"
-                sizes="(min-width:1024px) 240px, 192px"
-              />
-            </div>
+            <figure className="relative mx-auto w-56 lg:w-full">
+              <div className="relative aspect-[4/5] overflow-hidden rounded-2xl shadow-lift-lg ring-1 ring-brand-gold/25">
+                <Image
+                  src={chancellor.image}
+                  alt={`${chancellor.name}, Chancellor of ICOF Global University`}
+                  fill
+                  className="object-cover object-top"
+                  sizes="(min-width:1024px) 300px, 224px"
+                />
+              </div>
+              {/* Gold plate, as an inscribed portrait would carry */}
+              <figcaption className="absolute -bottom-4 left-1/2 w-[88%] -translate-x-1/2 rounded-lg bg-brand-gold px-4 py-2 text-center shadow-gold">
+                <p className="font-heading text-[13px] font-bold leading-tight text-brand-purple">
+                  {chancellor.name}
+                </p>
+                <p className="font-sans text-[9px] font-semibold uppercase tracking-[0.16em] text-brand-purple/75">
+                  Chancellor
+                </p>
+              </figcaption>
+            </figure>
           </Reveal>
+
           <Reveal delay={120}>
-            <Eyebrow>Welcome</Eyebrow>
-            <h2 className="font-heading text-3xl font-bold leading-tight tracking-tight text-brand-purple sm:text-[2.4rem]">
+            <p className="mb-3 font-sans text-xs font-semibold uppercase tracking-[0.25em] text-brand-gold">
+              Welcome
+            </p>
+            <h2 className="font-heading text-display font-bold text-white [text-wrap:balance]">
               A word from our Chancellor
             </h2>
-            <div className="mt-4 h-[3px] w-16 rounded bg-brand-gold" />
-            <blockquote className="mt-6 border-l-[3px] border-brand-gold pl-5 text-lg leading-relaxed text-brand-ink">
-              “{welcomeExcerpt}”
+            <div className="mt-5 h-[3px] w-16 rounded bg-brand-gold" />
+
+            <blockquote className="mt-8">
+              {/* Oversized opening quotation set as decoration, not content */}
+              <span
+                aria-hidden="true"
+                className="float-left -mt-4 mr-3 font-heading text-7xl leading-[0.7] text-brand-gold/40"
+              >
+                &ldquo;
+              </span>
+              <p className="text-lg leading-relaxed text-white/90 sm:text-xl">{welcomeExcerpt}</p>
             </blockquote>
-            <p className="mt-5 font-heading font-bold text-brand-purple">{chancellor.name}</p>
-            <p className="text-sm text-brand-muted">Chancellor · Presiding Bishop, International Circle of Faith</p>
-            <Link
-              href="/welcome"
-              className="mt-6 inline-block rounded-full bg-brand-purple px-7 py-3 font-heading text-sm font-semibold text-white transition hover:bg-brand-purple-dark"
-            >
-              Read the Full Welcome
-            </Link>
+
+            <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-4">
+              <div>
+                <p className="font-heading text-lg font-bold text-brand-gold">{chancellor.name}</p>
+                <p className="text-sm text-white/65">
+                  Presiding Bishop, International Circle of Faith
+                </p>
+              </div>
+              <Link
+                href="/welcome"
+                className="group inline-flex items-center gap-2 rounded-full border-2 border-brand-gold px-7 py-3 font-heading text-sm font-semibold text-brand-gold transition hover:bg-brand-gold hover:text-brand-purple"
+              >
+                Read the Full Welcome
+                <span aria-hidden="true" className="transition-transform group-hover:translate-x-1">
+                  →
+                </span>
+              </Link>
+            </div>
           </Reveal>
         </div>
       </section>
