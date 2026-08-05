@@ -15,7 +15,7 @@ export default function ProgramRibbon({ items }: { items: { label: string; href:
   const row = (reverse: boolean, dur: string) => (
     <div className="group flex overflow-hidden" style={{ ['--dur' as string]: dur }}>
       <div
-        className={`flex shrink-0 items-center gap-10 pr-10 ${
+        className={`flex shrink-0 items-center gap-6 pr-6 sm:gap-10 sm:pr-10 ${
           reverse ? 'animate-marquee-rev' : 'animate-marquee'
         } group-hover:[animation-play-state:paused]`}
       >
@@ -25,7 +25,7 @@ export default function ProgramRibbon({ items }: { items: { label: string; href:
             href={it.href}
             aria-hidden={i >= items.length}
             tabIndex={i >= items.length ? -1 : 0}
-            className="flex shrink-0 items-center gap-10 font-heading text-2xl font-bold text-white/25 transition-colors duration-300 hover:text-brand-gold sm:text-[2rem]"
+            className="flex shrink-0 items-center gap-6 font-heading text-lg font-bold text-white/25 transition-colors duration-300 hover:text-brand-gold sm:gap-10 sm:text-[2rem]"
           >
             {it.label}
             <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-brand-gold/40" />
@@ -38,7 +38,7 @@ export default function ProgramRibbon({ items }: { items: { label: string; href:
   return (
     <section
       aria-label="Fields of study"
-      className="relative overflow-hidden bg-brand-purple-dark py-12"
+      className="relative overflow-hidden bg-brand-purple-dark py-8 sm:py-12"
       // Feather both ends so names dissolve rather than clip at the edge.
       style={{
         WebkitMaskImage: 'linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent)',

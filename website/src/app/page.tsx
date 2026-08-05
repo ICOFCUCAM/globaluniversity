@@ -692,7 +692,7 @@ export default async function HomePage() {
             {stats.map((s, i) => (
               <Reveal key={s.label} delay={i * 110}>
                 <div className="flex flex-col items-center text-center">
-                  <div className="relative h-[168px] w-[168px]">
+                  <div className="relative h-[132px] w-[132px] sm:h-[168px] sm:w-[168px]">
                     {/* Ring: a conic sweep clipped to an annulus. No SVG, no
                         library — one element, one gradient, one mask. */}
                     <div
@@ -717,7 +717,7 @@ export default async function HomePage() {
                       <span className="absolute left-1/2 top-0 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-gold shadow-gold" />
                     </div>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <p className="font-heading text-[2.6rem] font-bold leading-none text-brand-gold">
+                      <p className="font-heading text-[2rem] font-bold leading-none text-brand-gold sm:text-[2.6rem]">
                         <CountUp value={s.value} />
                       </p>
                     </div>
