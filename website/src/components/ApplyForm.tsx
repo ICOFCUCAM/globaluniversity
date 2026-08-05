@@ -92,34 +92,127 @@ function Radios({ label, name, options, required = false }: { label: string; nam
   );
 }
 
-// Labels for the review step, in display order.
-const REVIEW_LABELS: Array<[string, string]> = [
-  ['firstname', 'First name'], ['middlename', 'Middle name'], ['surname', 'Last name'],
-  ['gender', 'Gender'], ['dob', 'Date of birth'], ['email', 'Email'], ['phone_mobile', 'Phone'],
-  ['address_line1', 'Address'], ['city', 'City'], ['state', 'State/Region'], ['country', 'Country'],
-  ['religion', 'Religion'], ['birth_place', 'City & country of birth'], ['citizenship', 'Nation of citizenship'],
-  ['native_language', 'Native language'], ['marital_status', 'Marital status'], ['spouse_name', 'Spouse'],
-  ['em_name', 'Emergency contact'], ['em_mobile', 'Emergency phone'],
-  ['sec_school', 'Secondary school'], ['sec_level', 'Secondary level'], ['sec_year', 'Secondary year'],
-  ['post_inst1', 'Institution 1'], ['post_qual1', 'Certification 1'], ['post_year1', 'Graduation year 1'],
-  ['post_inst2', 'Institution 2'], ['post_qual2', 'Certification 2'], ['post_year2', 'Graduation year 2'],
-  ['extracurricular', 'Extracurricular activities'], ['talents', 'Talents and awards'],
-  ['community_service', 'Community service'], ['employment', 'Employment'],
-  ['level', 'Level'], ['field', 'Field'], ['field_other', 'Specialization'], ['planned_major', 'Planned major'],
-  ['campus', 'Campus'], ['mode', 'Mode of study'], ['start_when', 'Intended start'],
-  ['financing', 'Financing'], ['financing_explain', 'Financing details'],
-  ['illness', 'Serious illness'], ['illness_desc', 'Illness details'],
-  ['ref1_name', 'Reference 1'], ['ref1_phone', 'Reference 1 phone'],
-  ['ref2_name', 'Reference 2'], ['ref2_phone', 'Reference 2 phone'],
+// The review step, grouped the way the form itself is grouped.
+//
+// It was one undifferentiated list of forty-odd rows, which is how a form dump
+// looks rather than how an application looks: no hierarchy, so "Date of birth"
+// carried the same weight as "Intended start", and an applicant checking their
+// own submission had to read all of it to find one field. Sections mean the eye
+// can go straight to the part being checked — and an empty section disappears
+// entirely rather than leaving a gap.
+const REVIEW_SECTIONS: Array<{ title: string; fields: Array<[string, string]> }> = [
+  {
+    title: 'Personal details',
+    fields: [
+      ['gender', 'Gender'], ['dob', 'Date of birth'], ['birth_place', 'Place of birth'],
+      ['citizenship', 'Citizenship'], ['native_language', 'Native language'],
+      ['religion', 'Religion'], ['marital_status', 'Marital status'], ['spouse_name', 'Spouse'],
+    ],
+  },
+  {
+    title: 'Contact',
+    fields: [
+      ['email', 'Email'], ['phone_mobile', 'Phone'],
+      ['address_line1', 'Address'], ['city', 'City'], ['state', 'State / Region'], ['country', 'Country'],
+      ['em_name', 'Emergency contact'], ['em_mobile', 'Emergency phone'],
+    ],
+  },
+  {
+    title: 'Education',
+    fields: [
+      ['sec_school', 'Secondary school'], ['sec_level', 'Secondary level'], ['sec_year', 'Year completed'],
+      ['post_inst1', 'Institution'], ['post_qual1', 'Qualification'], ['post_year1', 'Graduated'],
+      ['post_inst2', 'Institution (2)'], ['post_qual2', 'Qualification (2)'], ['post_year2', 'Graduated (2)'],
+    ],
+  },
+  {
+    title: 'Programme applied for',
+    fields: [
+      ['level', 'Level'], ['field', 'Field'], ['field_other', 'Specialisation'],
+      ['planned_major', 'Planned major'], ['campus', 'Campus'], ['mode', 'Mode of study'],
+      ['start_when', 'Intended start'], ['financing', 'Financing'], ['financing_explain', 'Financing details'],
+    ],
+  },
+  {
+    title: 'Experience and interests',
+    fields: [
+      ['employment', 'Employment'], ['extracurricular', 'Extracurricular activities'],
+      ['talents', 'Talents and awards'], ['community_service', 'Community service'],
+    ],
+  },
+  {
+    title: 'Health and circumstances',
+    fields: [
+      ['illness', 'Serious illness'], ['illness_desc', 'Details'], ['obligations', 'Family or work obligations'],
+    ],
+  },
+  {
+    title: 'References',
+    fields: [
+      ['ref1_name', 'First referee'], ['ref1_phone', 'Phone'],
+      ['ref2_name', 'Second referee'], ['ref2_phone', 'Phone'],
+    ],
+  },
 ];
+
+interface ReviewSection {
+  title: string;
+  rows: Array<[string, string]>;
+}
+
+// Fields the browser stores as ISO. `2007-08-14` is the date input's storage
+// format, not a way of writing a birthday, and printing it back unchanged is
+// what makes a summary look like a database row rather than a document.
+const DATE_FIELDS = new Set(['dob']);
+
+function formatValue(name: string, value: string): string {
+  if (!DATE_FIELDS.has(name)) return value;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!m) return value;
+  // Constructed as UTC on purpose: `new Date('2007-08-14')` is midnight UTC,
+  // which in any timezone west of Greenwich renders as the 13th.
+  const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+  return d.toLocaleDateString('en-GB', {
+    day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
+  });
+}
+
+/** Human-readable file size. 1.4 MB says more than 1468006 does. */
+function fileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 export default function ApplyForm() {
   const [step, setStep] = useState(0);
   const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error' | 'unconfigured'>('idle');
-  const [review, setReview] = useState<Array<[string, string]>>([]);
+  const [review, setReview] = useState<ReviewSection[]>([]);
+  const [reviewName, setReviewName] = useState('');
+  const [reviewProgramme, setReviewProgramme] = useState('');
   const [appNo, setAppNo] = useState<string | null>(null);
   const [draftSaved, setDraftSaved] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+
+  // The photo the applicant attached, shown back to them rather than left as a
+  // filename. A 4x4 photograph goes on a student card and an admission letter;
+  // "Alice.jpg" tells them nothing about whether they picked the right file, or
+  // whether it is upside down.
+  const [photo, setPhoto] = useState<{ url: string; name: string; size: number } | null>(null);
+  const [docFile, setDocFile] = useState<{ name: string; size: number } | null>(null);
+
+  // Object URLs are held by the browser until revoked. Without this, every
+  // reselection leaks the previous image for the life of the page.
+  useEffect(() => () => { if (photo) URL.revokeObjectURL(photo.url); }, [photo]);
+
+  function onPhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    setPhoto((prev) => {
+      if (prev) URL.revokeObjectURL(prev.url);
+      if (!file || !file.type.startsWith('image/')) return null;
+      return { url: URL.createObjectURL(file), name: file.name, size: file.size };
+    });
+  }
 
   // Restore a saved draft so applicants can leave and come back.
   useEffect(() => {
@@ -183,10 +276,24 @@ export default function ApplyForm() {
     if (next > step && !validateVisible()) return;
     if (STEPS[next] === 'Review' && formRef.current) {
       const data = new FormData(formRef.current);
+      const get = (n: string) => String(data.get(n) ?? '').trim();
+
+      // The name and the programme head the summary rather than sitting in a
+      // row of their own — they are what identifies the application.
+      setReviewName(
+        [get('firstname'), get('middlename'), get('surname')].filter(Boolean).join(' '),
+      );
+      setReviewProgramme(
+        [get('level'), get('field_other') || get('field')].filter(Boolean).join(' in '),
+      );
+
       setReview(
-        REVIEW_LABELS.map(([name, label]) => [label, String(data.get(name) ?? '').trim()] as [string, string]).filter(
-          ([, v]) => v,
-        ),
+        REVIEW_SECTIONS.map((section) => ({
+          title: section.title,
+          rows: section.fields
+            .map(([name, label]) => [label, formatValue(name, get(name))] as [string, string])
+            .filter(([, v]) => v),
+        })).filter((s) => s.rows.length > 0),
       );
     }
     setStep(next);
@@ -415,15 +522,65 @@ export default function ApplyForm() {
 
         {/* Step 4 — Uploads */}
         <div data-step={3} style={show(3)} className="space-y-5">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="block space-y-1.5">
-              <span className={labelCls}>Please attach a 4x4 photo of yourself</span>
-              <input type="file" name="filePhoto" accept=".pdf,.jpg,.jpeg,.png" className={inputCls} />
-            </label>
-            <label className="block space-y-1.5">
-              <span className={labelCls}>Attach certificates and other required documents</span>
-              <input type="file" name="fileID" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.zip" className={inputCls} />
-            </label>
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div className="space-y-2">
+              <span className={labelCls}>Passport photograph</span>
+              <div className="flex items-start gap-4">
+                {/* The 4x4 frame is the proportion the photo will be printed
+                    at, so an applicant sees the crop rather than guessing. */}
+                <div className="flex h-28 w-28 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-brand-sand bg-white">
+                  {photo ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={photo.url} alt="Your passport photograph" className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="px-2 text-center text-[10px] uppercase tracking-wide text-brand-muted/70">
+                      4&nbsp;&times;&nbsp;4 photo
+                    </span>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1 space-y-1.5">
+                  <input
+                    type="file"
+                    name="filePhoto"
+                    accept=".jpg,.jpeg,.png"
+                    onChange={onPhotoChange}
+                    className={`${inputCls} file:mr-3 file:rounded file:border-0 file:bg-brand-purple file:px-3 file:py-1 file:text-xs file:font-semibold file:text-white`}
+                  />
+                  {photo ? (
+                    <p className="truncate text-xs text-brand-muted">
+                      {photo.name} · {fileSize(photo.size)}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-brand-muted">
+                      A head-and-shoulders photograph on a plain background. JPG or PNG.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <span className={labelCls}>Certificates and supporting documents</span>
+              <input
+                type="file"
+                name="fileID"
+                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.zip"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  setDocFile(f ? { name: f.name, size: f.size } : null);
+                }}
+                className={`${inputCls} file:mr-3 file:rounded file:border-0 file:bg-brand-purple file:px-3 file:py-1 file:text-xs file:font-semibold file:text-white`}
+              />
+              {docFile ? (
+                <p className="truncate text-xs text-brand-muted">
+                  {docFile.name} · {fileSize(docFile.size)}
+                </p>
+              ) : (
+                <p className="text-xs text-brand-muted">
+                  Transcripts, certificates and identification. Combine several into one PDF or ZIP.
+                </p>
+              )}
+            </div>
           </div>
           <p className="text-xs text-brand-muted">
             Accepted: PDF/JPG/PNG/DOC/DOCX/ZIP · max 4&nbsp;MB total. Larger documents can be emailed
@@ -439,16 +596,73 @@ export default function ApplyForm() {
         <div data-step={4} style={show(4)}>
           <h2 className={groupCls}>Review your application</h2>
           <p className="mt-2 text-sm text-brand-muted">
-            Please check the information below. Use the Back button to correct anything.
+            Please check every section. Use Back to correct anything before you continue.
           </p>
-          <dl className="mt-6 divide-y divide-brand-sand rounded-lg border border-brand-sand">
-            {review.map(([label, value]) => (
-              <div key={label} className="grid grid-cols-2 gap-4 px-4 py-2.5 text-sm">
-                <dt className="font-semibold text-brand-purple">{label}</dt>
-                <dd className="text-brand-muted">{value}</dd>
+
+          {/* Identity band. The photograph, the name and the programme are what
+              the application IS; everything below is detail supporting them. */}
+          <div className="mt-6 flex flex-wrap items-center gap-5 rounded-xl border border-brand-sand bg-white p-5">
+            <div className="flex h-24 w-24 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg bg-brand-cream ring-1 ring-brand-sand">
+              {photo ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={photo.url} alt="Your passport photograph" className="h-full w-full object-cover" />
+              ) : (
+                <span className="px-2 text-center text-[10px] uppercase tracking-wide text-brand-muted/70">
+                  No photo
+                </span>
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-brand-gold-deep">
+                Application for admission
+              </p>
+              <p className="mt-1 font-heading text-xl font-bold text-brand-purple">
+                {reviewName || 'Your name'}
+              </p>
+              {reviewProgramme && (
+                <p className="mt-0.5 text-sm text-brand-muted">{reviewProgramme}</p>
+              )}
+              <div className="mt-2 flex flex-wrap gap-3 text-xs text-brand-muted">
+                <span>
+                  Photograph:{' '}
+                  {photo
+                    ? <span className="font-medium text-brand-purple">attached</span>
+                    : <span className="font-medium text-red-600">not attached</span>}
+                </span>
+                <span>
+                  Documents:{' '}
+                  {docFile
+                    ? <span className="font-medium text-brand-purple">{docFile.name}</span>
+                    : <span className="font-medium text-red-600">none attached</span>}
+                </span>
               </div>
+            </div>
+          </div>
+
+          {(!photo || !docFile) && (
+            <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs text-amber-900">
+              You can submit without these, but the Registrar cannot decide your application until
+              they arrive. Go back to Uploads, or email them to admission@iguc.net afterwards.
+            </p>
+          )}
+
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
+            {review.map((section) => (
+              <section key={section.title} className="rounded-xl border border-brand-sand bg-white">
+                <h3 className="border-b border-brand-sand px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-purple">
+                  {section.title}
+                </h3>
+                <dl className="divide-y divide-brand-sand/60">
+                  {section.rows.map(([label, value]) => (
+                    <div key={label} className="grid grid-cols-[minmax(0,7rem)_1fr] gap-4 px-4 py-2">
+                      <dt className="text-xs text-brand-muted">{label}</dt>
+                      <dd className="break-words text-sm text-brand-purple">{value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </section>
             ))}
-          </dl>
+          </div>
         </div>
 
         {/* Step 6 — Declaration */}
