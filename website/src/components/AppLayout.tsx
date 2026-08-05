@@ -88,10 +88,10 @@ export default function AppLayout() {
       case 'programme-resources':
         return <ProgrammeResources />;
       case 'dashboard':
-        if (user?.role === 'admin' || user?.role === 'superadmin') return <AdminDashboard />;
+        if (user?.role === 'admin' || user?.role === 'superadmin') return <AdminDashboard onNavigate={setCurrentView} />;
         if (user?.role === 'student') return <StudentDashboard onNavigate={setCurrentView} />;
         if (user?.role === 'lecturer') return <LecturerDashboard onNavigate={setCurrentView} />;
-        return <AdminDashboard />;
+        return <AdminDashboard onNavigate={setCurrentView} />;
       case 'admissions-finance':
         return <AdmissionsDesk desk="finance" />;
       case 'admissions-registrar':
@@ -144,7 +144,7 @@ export default function AppLayout() {
       case 'studio':
         return <CredentialStudio />;
       default:
-        return <AdminDashboard />;
+        return <AdminDashboard onNavigate={setCurrentView} />;
     }
   }
 
