@@ -182,4 +182,4 @@ export type ViewType =
   | 'documents'
   | 'analytics'
   | 'settings'
-  | 'audit' | 'assignments' | 'fees' | 'announcements' | 'forum' | 'timetable' | 'insights' | 'gradebook';
+  | 'audit' | 'assignments' | 'fees' | 'announcements' | 'forum' | 'timetable' | 'insights' | 'gradebook' | 'questionbank';
