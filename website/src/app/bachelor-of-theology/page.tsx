@@ -202,7 +202,7 @@ export default function BachelorOfTheologyPage() {
           <table className="w-full">
             <thead>
               <tr className="bg-brand-cream">
-                {['Year', 'Semester', 'Courses'].map((h) => (
+                {['Year', 'Semester', 'Courses', 'Credits'].map((h) => (
                   <th key={h} className="px-6 py-4 text-left font-sans text-[10px] font-bold uppercase tracking-[0.16em] text-brand-gold-deep">{h}</th>
                 ))}
               </tr>
@@ -213,11 +213,13 @@ export default function BachelorOfTheologyPage() {
                   <td className="px-6 py-4 font-heading text-sm font-bold text-brand-purple">{r.year}</td>
                   <td className="px-6 py-4 text-sm text-brand-muted">{r.semester}</td>
                   <td className="px-6 py-4 font-heading text-sm font-bold tabular text-brand-purple">{r.courses}</td>
+                  <td className="px-6 py-4 font-heading text-sm font-bold tabular text-brand-purple">{r.credits}</td>
                 </tr>
               ))}
               <tr className="bg-brand-cream">
                 <td className="px-6 py-4 font-heading text-sm font-bold text-brand-purple" colSpan={2}>Total</td>
-                <td className="px-6 py-4 font-heading text-sm font-bold tabular text-brand-purple">32</td>
+                <td className="px-6 py-4 font-heading text-sm font-bold tabular text-brand-purple">36</td>
+                <td className="px-6 py-4 font-heading text-sm font-bold tabular text-brand-purple">180</td>
               </tr>
             </tbody>
           </table>
@@ -226,10 +228,10 @@ export default function BachelorOfTheologyPage() {
 
       {/* Full curriculum — all six semesters */}
       <Section className="bg-white" id="semester-one" chapter="Courses">
-        <SectionHeading eyebrow="Course Listing">Thirty-two courses</SectionHeading>
+        <SectionHeading eyebrow="Course Listing">Thirty-six courses</SectionHeading>
         <p className="mx-auto -mt-5 mb-12 max-w-2xl text-center leading-relaxed text-brand-muted">
-          The programme carries 180 ECTS in total. Per-course credit weightings are being
-          finalised by the Faculty of Theology. Full syllabi — unit-by-unit teaching material,
+          Six courses per semester, 5 ECTS each — 30 ECTS a semester, 180 across the degree.
+          Full syllabi — unit-by-unit teaching material,
           assessment strategy and reading lists — are issued to enrolled students through the
           student portal.
         </p>
@@ -244,7 +246,7 @@ export default function BachelorOfTheologyPage() {
                   </span>
                   <h3 className="font-heading text-xl font-bold text-brand-purple">{sem.label}</h3>
                   <span className="ml-auto font-sans text-[11px] font-bold tabular text-brand-muted">
-                    {sem.courses.length} courses
+                    {sem.courses.length} courses · 30 ECTS
                   </span>
                 </div>
                 <div className="mt-4 divide-y divide-brand-sand overflow-hidden rounded-2xl border border-brand-sand bg-brand-cream">
@@ -254,7 +256,7 @@ export default function BachelorOfTheologyPage() {
                         <summary className="flex cursor-pointer list-none items-center gap-4 px-6 py-4 transition hover:bg-white">
                           <span className="w-20 shrink-0 font-mono text-xs font-bold text-brand-gold-deep">{c.code}</span>
                           <span className="flex-1 font-heading text-[15px] font-semibold text-brand-purple">{c.title}</span>
-                          {c.ects && <span className="shrink-0 font-sans text-[11px] font-bold tabular text-brand-muted">{c.ects} ECTS</span>}
+                          <span className="shrink-0 font-sans text-[11px] font-bold tabular text-brand-muted">5 ECTS</span>
                           <span aria-hidden="true" className="relative h-4 w-4 shrink-0 text-brand-gold-deep transition duration-300 group-open:rotate-180">
                             <span className="absolute left-1/2 top-1/2 h-[1.5px] w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-current" />
                             <span className="absolute left-1/2 top-1/2 h-2.5 w-[1.5px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-current transition duration-300 group-open:scale-y-0" />
@@ -279,6 +281,7 @@ export default function BachelorOfTheologyPage() {
                         <div className="flex items-center gap-4">
                           <span className="w-20 shrink-0 font-mono text-xs font-bold text-brand-gold-deep">{c.code}</span>
                           <span className="flex-1 font-heading text-[15px] font-semibold text-brand-purple">{c.title}</span>
+                          <span className="shrink-0 font-sans text-[11px] font-bold tabular text-brand-muted">5 ECTS</span>
                         </div>
                         {c.contents && (
                           <ul className="mt-2.5 flex flex-wrap gap-1.5 pl-[6.5rem]">

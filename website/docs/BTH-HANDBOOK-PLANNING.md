@@ -323,3 +323,54 @@ once and every semester evens out at six courses.
 - BTH201 Hermeneutics / BTH301 Advanced Hermeneutics, and BTH202 Homiletics I /
   BTH306 Advanced Homiletics — defensible as progression, but each pair needs a
   stated relationship.
+
+---
+
+# FOUR COURSES ADDED — arithmetic and curriculum gap closed together
+
+Implemented at the university's instruction. The brief's 32 courses gave 160
+ECTS against a stated 180, with uneven semesters; and ten subjects had gone
+missing between specifications. Four additions fix both:
+
+| New code | Course | Semester |
+|---|---|---|
+| BTH111 | Church History I | Year One, Semester One |
+| BTH112 | Church History II | Year One, Semester Two |
+| BTH211 | Introduction to Biblical Hebrew | Year Two, Semester Three |
+| BTH212 | Introduction to New Testament Greek | Year Two, Semester Four |
+
+**BTH306 Advanced Homiletics moved from Semester Six to Semester Five**, which
+had five courses while Six had seven.
+
+Result: **36 courses · six per semester · 5 ECTS each · 30 ECTS per semester ·
+180 ECTS total.** Verified against the built page.
+
+Church history is restored, so the programme description's promise of "the
+historical development of Christianity from the apostolic period to the
+contemporary Church" is now kept by the course list. Both biblical languages
+are back, as the university's own earlier list of additions had asked.
+
+## Known cosmetic issue: non-sequential codes
+
+BTH111 sits in Semester One while BTH110 sits in Semester Two; the same for
+BTH211/BTH212 against BTH210. Renumbering the existing courses to restore a
+clean block-per-semester sequence would be the **fifth** renaming of these codes
+in this project. Code churn on a live prospectus is worse than a gap in the
+numbering, so the existing codes were left alone.
+
+If the faculty wants a clean sequence it should be done **once**, before any
+student enrols, and every syllabus, transcript template and portal record
+updated in the same pass.
+
+## Still outstanding
+
+1. **Prerequisite chain.** BTH103 and BTH104 documents state Semester Two with
+   BTH102/BTH103 as prerequisites; the structure places them in Semester One.
+2. **Doctrine overlap.** BTH104 Bible Doctrine I / BTH106 Bible Doctrine II /
+   BTH206 Systematic Theology I / BTH309 Systematic Theology II.
+3. **Pentateuch overlap.** BTH102 Bible Survey I / BTH107 Old Testament History
+   and Theology / BTH109 Pentateuch Studies.
+4. Six subjects from the superseded table are still absent: Philosophy of
+   Religion, Christian Apologetics, Synoptic Gospels, Johannine Literature,
+   Pastoral Care and Counseling, Academic Writing and Study Skills. Several are
+   partly covered elsewhere; Apologetics and Academic Writing are not.
