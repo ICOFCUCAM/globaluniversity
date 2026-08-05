@@ -26,6 +26,7 @@ const menuItems: MenuItem[] = [
   { id: 'lms', label: 'Learning (LMS)', icon: <Monitor size={20} />, roles: ['admin', 'student', 'lecturer'] },
   { id: 'exams', label: 'Examinations', icon: <PenTool size={20} />, roles: ['admin', 'student', 'lecturer'] },
   { id: 'assignments', label: 'Assignments', icon: <ClipboardList size={20} />, roles: ['admin', 'student', 'lecturer'] },
+  { id: 'timetable', label: 'Timetable', icon: <ClipboardList size={20} />, roles: ['admin', 'student', 'lecturer'] },
   { id: 'announcements', label: 'Announcements', icon: <ClipboardList size={20} />, roles: ['admin', 'student', 'lecturer'] },
   { id: 'forum', label: 'Discussion Forum', icon: <ClipboardList size={20} />, roles: ['admin', 'student', 'lecturer'] },
   { id: 'fees', label: 'Fees & Receipts', icon: <ClipboardList size={20} />, roles: ['admin'] },
