@@ -649,16 +649,26 @@ export default async function HomePage() {
       <Section chapter="Training">
         <SectionHeading eyebrow="Professional Formation">{homeFeatures.heading}</SectionHeading>
         <p className="mx-auto -mt-5 mb-12 max-w-2xl text-center leading-relaxed text-brand-muted">{homeFeatures.intro}</p>
-        <div className="grid gap-8 md:grid-cols-3">
+        <SpotlightGroup className="grid gap-6 md:grid-cols-3">
           {homeFeatures.items.map((f, i) => (
             <Reveal key={f.title} delay={i * 120}>
-              <div className="h-full rounded-2xl border border-brand-sand bg-white p-8 shadow-sm">
-                <h3 className="font-heading text-lg font-bold text-brand-purple">{f.title}</h3>
-                <p className="mt-3 text-sm leading-relaxed text-brand-muted">{f.body}</p>
-              </div>
+              <SpotlightCard
+                className="h-full overflow-hidden rounded-2xl border border-brand-sand bg-white p-8 shadow-sm transition duration-500 hover:shadow-lift"
+                tone="light"
+              >
+                {/* Gold rule ignites along the top edge on hover */}
+                <span
+                  aria-hidden="true"
+                  className="absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 bg-gradient-to-r from-brand-gold-deep to-brand-gold transition-transform duration-500 group-hover/sc:scale-x-100"
+                />
+                <h3 className="font-heading text-lg font-bold leading-snug text-brand-purple [text-wrap:balance]">
+                  {f.title}
+                </h3>
+                <p className="mt-3.5 text-sm leading-relaxed text-brand-muted">{f.body}</p>
+              </SpotlightCard>
             </Reveal>
           ))}
-        </div>
+        </SpotlightGroup>
       </Section>
 
       {/* Success in numbers — each figure sits inside its own progress ring,
@@ -831,7 +841,7 @@ export default async function HomePage() {
             <SectionHeading eyebrow="Support the Work" align="left">
               Our initiatives
             </SectionHeading>
-            <div className="-mt-4 grid gap-5 sm:grid-cols-3">
+            <SpotlightGroup className="-mt-4 grid gap-5 sm:grid-cols-3">
               {news.map((n, i) => (
                 <Reveal key={n.slug} delay={i * 100}>
                   <Link
@@ -868,7 +878,7 @@ export default async function HomePage() {
                   </Link>
                 </Reveal>
               ))}
-            </div>
+            </SpotlightGroup>
           </div>
         </div>
       </Section>
