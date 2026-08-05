@@ -1,4 +1,5 @@
 import React from 'react';
+import MyWeek from './MyWeek';
 import { useAuth } from '@/contexts/AuthContext';
 import { sampleTranscriptData } from '@/lib/sampleData';
 import { getGPAColor, getClassificationShort } from '@/lib/grading';
@@ -54,6 +55,9 @@ export default function StudentDashboard({ onNavigate }: StudentDashboardProps) 
           <img src={user?.avatar} alt="" className="w-16 h-16 rounded-full object-cover" />
         </div>
       </div>
+
+      <MyWeek />
+
 
       {/* Quick Actions */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
