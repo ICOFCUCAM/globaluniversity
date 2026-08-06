@@ -5,17 +5,9 @@
 // (reply file_name carries the parent thread id).
 import React, { useEffect, useState } from 'react';
 import { write } from '@/lib/write';
-import { supabase } from '@/lib/supabase';
+import { listRecords, saveRecord } from '@/lib/moduleStore';
 import { useAuth } from '@/contexts/AuthContext';
 import { MessageSquare, Plus, CornerDownRight, Send } from 'lucide-react';
-
-interface Row {
-  id: string;
-  file_name: string;
-  file_url: string;
-  document_type: string;
-  uploaded_at: string;
-}
 
 interface Thread {
   id: string;
@@ -34,8 +26,6 @@ interface Reply {
   posted: string;
 }
 
-const enc = (o: unknown) => `data:application/json;base64,${btoa(unescape(encodeURIComponent(JSON.stringify(o))))}`;
-const dec = (u: string) => JSON.parse(decodeURIComponent(escape(atob(u.split('base64,')[1]))));
 
 export default function ForumModule() {
   const { user } = useAuth();
@@ -49,28 +39,26 @@ export default function ForumModule() {
   const [busy, setBusy] = useState(false);
 
   async function load() {
-    const { data } = await supabase
-      .from('documents')
-      .select('*')
-      .in('document_type', ['forum-thread', 'forum-reply'])
-      .order('uploaded_at', { ascending: true });
-    if (!data) return;
-    const t: Thread[] = [];
-    const r: Reply[] = [];
-    for (const row of data as Row[]) {
-      try {
-        const j = dec(row.file_url);
-        if (row.document_type === 'forum-thread') {
-          t.push({ id: row.id, posted: row.uploaded_at, ...j });
-        } else {
-          r.push({ id: row.id, threadId: row.file_name.split('::')[0], posted: row.uploaded_at, ...j });
-        }
-      } catch {
-        /* skip malformed */
-      }
-    }
-    setThreads(t.reverse());
-    setReplies(r);
+    // A reply's thread used to be recovered by splitting the file_name on
+    // '::' — a foreign key held as a substring of a display label. It is now
+    // parent_id, an actual reference, so a reply cannot point at a thread that
+    // does not exist and deleting a thread takes its replies with it.
+    const rows = await listRecords('forum', ['forum-thread', 'forum-reply']);
+    setThreads(
+      rows.filter((r) => r.kind === 'forum-thread')
+        .map((r) => ({ id: r.id, posted: r.created_at, ...(r.body as Record<string, unknown>) }) as unknown as Thread),
+    );
+    setReplies(
+      rows.filter((r) => r.kind === 'forum-reply')
+        .map((r) => ({
+          id: r.id,
+          threadId: r.parent_id ?? '',
+          posted: r.created_at,
+          ...(r.body as Record<string, unknown>),
+        }) as unknown as Reply)
+        // Oldest first within a thread: a conversation reads downwards.
+        .reverse(),
+    );
   }
   useEffect(() => {
     load();
@@ -79,13 +67,14 @@ export default function ForumModule() {
   async function createThread(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
-    await write(supabase.from('documents').insert({
-      file_name: `${form.course} :: ${form.title}`,
-      file_url: enc({ ...form, author }),
-      file_type: 'application/json',
-      document_type: 'forum-thread',
+    const ok = await write(saveRecord({
+      module: 'forum',
+      kind: 'forum-thread',
+      title: `${form.course} :: ${form.title}`,
+      body: { ...form, author },
     }), 'post to the forum');
     setBusy(false);
+    if (!ok) return;
     setShowNew(false);
     setForm({ course: '', title: '', body: '' });
     load();
@@ -94,13 +83,15 @@ export default function ForumModule() {
   async function postReply(threadId: string) {
     if (!replyText.trim()) return;
     setBusy(true);
-    await write(supabase.from('documents').insert({
-      file_name: `${threadId}::reply`,
-      file_url: enc({ body: replyText, author }),
-      file_type: 'application/json',
-      document_type: 'forum-reply',
-    }), 'post to the forum');
+    const ok = await write(saveRecord({
+      module: 'forum',
+      kind: 'forum-reply',
+      title: 'Reply',
+      body: { body: replyText, author },
+      parentId: threadId,
+    }), 'post your reply');
     setBusy(false);
+    if (!ok) return;
     setReplyText('');
     load();
   }

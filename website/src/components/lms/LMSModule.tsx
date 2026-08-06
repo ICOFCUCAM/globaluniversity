@@ -1,7 +1,7 @@
 import { SampleDataNotice } from '@/components/ui/portal';
 import React, { useEffect, useState } from 'react';
 import { write } from '@/lib/write';
-import { supabase } from '@/lib/supabase';
+import { listRecords, saveRecord } from '@/lib/moduleStore';
 import { lmsMaterials } from '@/lib/sampleData';
 import {
   FileText, Video, Upload, Download, Play, Search,
@@ -24,24 +24,12 @@ export default function LMSModule() {
   const [sched, setSched] = useState({ course: '', title: '', lecturer: '', time: '', link: '', status: 'upcoming', attendees: 0 });
 
   async function loadClasses() {
-    const { data } = await supabase
-      .from('documents')
-      .select('*')
-      .eq('document_type', 'live-class')
-      .order('uploaded_at', { ascending: false });
-    if (data) {
-      setLiveClasses(
-        (data as any[])
-          .map((d) => {
-            try {
-              return { id: d.id, ...JSON.parse(decodeURIComponent(escape(atob(d.file_url.split('base64,')[1])))) };
-            } catch {
-              return null;
-            }
-          })
-          .filter(Boolean),
-      );
-    }
+    // Was `documents`, decoding base64 JSON out of the file_url column and
+    // dropping any row that failed to parse. See src/lib/moduleStore.ts: those
+    // writes never succeeded, because documents.student_id is NOT NULL and this
+    // module never set it.
+    const rows = await listRecords('lms', 'live-class');
+    setLiveClasses(rows.map((r) => ({ id: r.id, ...(r.body as Record<string, unknown>) })));
   }
 
   useEffect(() => {
@@ -50,12 +38,12 @@ export default function LMSModule() {
 
   async function scheduleClass(e: React.FormEvent) {
     e.preventDefault();
-    await write(supabase.from('documents').insert({
-      file_name: `${sched.course} · ${sched.title} · ${sched.time}`,
-      file_url: `data:application/json;base64,${btoa(unescape(encodeURIComponent(JSON.stringify(sched))))}`,
-      file_type: 'application/json',
-      document_type: 'live-class',
-    }), 'upload the material');
+    if (!(await write(saveRecord({
+      module: 'lms',
+      kind: 'live-class',
+      title: `${sched.course} · ${sched.title} · ${sched.time}`,
+      body: { ...sched },
+    }), 'schedule the class'))) return;
     setShowSchedule(false);
     setSched({ course: '', title: '', lecturer: '', time: '', link: '', status: 'upcoming', attendees: 0 });
     loadClasses();

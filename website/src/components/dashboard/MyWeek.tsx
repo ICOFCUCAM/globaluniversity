@@ -5,6 +5,7 @@
 // and announcements.
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { listByKind } from '@/lib/moduleStore';
 import { CalendarClock, ClipboardList, Video, Megaphone } from 'lucide-react';
 
 interface Item {
@@ -14,7 +15,6 @@ interface Item {
   due?: string;
 }
 
-const dec = (u: string) => JSON.parse(decodeURIComponent(escape(atob(u.split('base64,')[1]))));
 
 const STYLES: Record<Item['kind'], { icon: React.ReactNode; chip: string; label: string }> = {
   assignment: { icon: <ClipboardList size={15} />, chip: 'bg-amber-50 text-amber-700', label: 'Assignment' },
@@ -29,17 +29,14 @@ export default function MyWeek() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
-        .from('documents')
-        .select('file_name, file_url, document_type, uploaded_at')
-        .in('document_type', ['assignment-brief', 'timetable-slot', 'live-class', 'announcement'])
-        .order('uploaded_at', { ascending: false })
-        .limit(40);
+      const rows = (await listByKind<Record<string, any>>([
+        'assignment-brief', 'timetable-slot', 'live-class', 'announcement',
+      ])).slice(0, 40);
 
       const list: Item[] = [];
-      for (const d of (data ?? []) as any[]) {
-        try {
-          const j = dec(d.file_url);
+      for (const d of rows.map((r: any) => ({ ...r, document_type: r.kind }))) {
+        {
+          const j = d.body ?? {};
           if (d.document_type === 'assignment-brief') {
             list.push({ kind: 'assignment', title: `${j.title}`, meta: j.course ?? '', due: j.due });
           } else if (d.document_type === 'timetable-slot') {
@@ -49,8 +46,6 @@ export default function MyWeek() {
           } else {
             list.push({ kind: 'notice', title: j.title, meta: j.audience ?? 'All' });
           }
-        } catch {
-          /* skip malformed */
         }
       }
 

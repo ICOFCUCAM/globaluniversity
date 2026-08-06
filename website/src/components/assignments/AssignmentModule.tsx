@@ -1,24 +1,47 @@
 'use client';
 
-// Assignments — built on the shared documents table until a dedicated
-// assignments table is provisioned (see ROADMAP: database ownership).
-//   brief:      document_type 'assignment-brief', file_url = data-URL JSON
-//   submission: document_type 'assignment-sub',   file_url = data-URL of work
+// Assignments.
+//
+// This used to be "built on the shared documents table until a dedicated
+// assignments table is provisioned". It could never have worked:
+// documents.student_id is NOT NULL and neither write here set it, so every
+// brief and every submission was rejected by the database. It now uses
+// module_records — see src/lib/moduleStore.ts.
+//
+//   brief:      kind 'assignment-brief', body = the brief
+//   submission: kind 'assignment-sub',   body.file = data-URL of the work,
+//               parent_id = the brief it answers
 import React, { useEffect, useState } from 'react';
 import { write } from '@/lib/write';
-import { supabase } from '@/lib/supabase';
+import { listRecords, saveRecord, updateRecord, type ModuleRecord } from '@/lib/moduleStore';
 import { useAuth } from '@/contexts/AuthContext';
 import { ClipboardList, Plus, Download, CheckCircle2, Clock } from 'lucide-react';
 
+/** A brief or a submission, flattened for the markup below. */
 interface Doc {
   id: string;
-  student_id: string | null;
   file_name: string;
   file_url: string;
   file_type: string | null;
-  document_type: string;
   verified: boolean;
   uploaded_at: string;
+  parent_id: string | null;
+}
+
+function flatten(r: ModuleRecord<Record<string, unknown>>): Doc {
+  const b = r.body as Record<string, unknown>;
+  return {
+    id: r.id,
+    file_name: r.title,
+    file_url: String(b.file ?? ''),
+    file_type: (b.fileType as string | null) ?? null,
+    // Was documents.verified, a column meaning "the Registry confirmed this
+    // document is genuine". Marking a submission as reviewed is a different
+    // claim, so it lives in the record's own body now.
+    verified: b.reviewed === true,
+    uploaded_at: r.created_at,
+    parent_id: r.parent_id,
+  };
 }
 
 const toDataUrl = (file: File) =>
@@ -42,15 +65,9 @@ export default function AssignmentModule() {
   const [busy, setBusy] = useState(false);
 
   async function load() {
-    const { data } = await supabase
-      .from('documents')
-      .select('*')
-      .in('document_type', ['assignment-brief', 'assignment-sub'])
-      .order('uploaded_at', { ascending: false });
-    if (data) {
-      setBriefs(data.filter((d: Doc) => d.document_type === 'assignment-brief'));
-      setSubs(data.filter((d: Doc) => d.document_type === 'assignment-sub'));
-    }
+    const rows = await listRecords('assignments', ['assignment-brief', 'assignment-sub']);
+    setBriefs(rows.filter((r) => r.kind === 'assignment-brief').map(flatten));
+    setSubs(rows.filter((r) => r.kind === 'assignment-sub').map(flatten));
   }
   useEffect(() => {
     load();
@@ -59,14 +76,14 @@ export default function AssignmentModule() {
   async function createBrief(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
-    const payload = btoa(unescape(encodeURIComponent(JSON.stringify(brief))));
-    await write(supabase.from('documents').insert({
-      file_name: `${brief.course} — ${brief.title} — due ${brief.due}`,
-      file_url: `data:application/json;base64,${payload}`,
-      file_type: 'application/json',
-      document_type: 'assignment-brief',
-    }), 'save the assignment');
+    const ok = await write(saveRecord({
+      module: 'assignments',
+      kind: 'assignment-brief',
+      title: `${brief.course} — ${brief.title} — due ${brief.due}`,
+      body: { ...brief },
+    }), 'post the assignment');
     setBusy(false);
+    if (!ok) return;
     setShowNew(false);
     setBrief({ course: '', title: '', due: '', instructions: '' });
     load();
@@ -80,13 +97,19 @@ export default function AssignmentModule() {
       return;
     }
     setBusy(true);
-    await write(supabase.from('documents').insert({
-      file_name: `${matric} ⟶ ${submitFor.file_name} ⟶ ${file.name}`,
-      file_url: await toDataUrl(file),
-      file_type: file.type,
-      document_type: 'assignment-sub',
-    }), 'save the assignment');
+    const ok = await write(saveRecord({
+      module: 'assignments',
+      kind: 'assignment-sub',
+      title: `${matric} ⟶ ${submitFor.file_name} ⟶ ${file.name}`,
+      body: { file: await toDataUrl(file), fileType: file.type, matric, reviewed: false },
+      // A real reference, so a submission cannot point at a brief that has been
+      // removed. It used to be recovered by substring-matching the brief's
+      // title inside the submission's, which counted every submission whose
+      // filename happened to contain the same words.
+      parentId: submitFor.id,
+    }), 'submit your work');
     setBusy(false);
+    if (!ok) return;
     setSubmitFor(null);
     setFile(null);
     load();
@@ -122,7 +145,7 @@ export default function AssignmentModule() {
           </p>
         )}
         {briefs.map((b) => {
-          const count = subs.filter((s) => s.file_name.includes(b.file_name)).length;
+          const count = subs.filter((s) => s.parent_id === b.id).length;
           return (
             <div key={b.id} className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] p-5 shadow-sm">
               <div className="flex items-start justify-between gap-3">
@@ -171,7 +194,9 @@ export default function AssignmentModule() {
                 </a>
                 <button
                   onClick={async () => {
-                    await write(supabase.from('documents').update({ verified: !s.verified }).eq('id', s.id), 'save the assignment');
+                    await write(updateRecord(s.id, {
+                      body: { file: s.file_url, fileType: s.file_type, reviewed: !s.verified },
+                    }), s.verified ? 'unmark the submission' : 'mark the submission as reviewed');
                     load();
                   }}
                   className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold ${

@@ -5,7 +5,7 @@
 // table (document_type 'exam-question') until a dedicated table exists.
 import React, { useEffect, useMemo, useState } from 'react';
 import { write } from '@/lib/write';
-import { supabase } from '@/lib/supabase';
+import { listRecords, saveRecord, deleteRecord } from '@/lib/moduleStore';
 import { Database, Plus, Shuffle, Trash2, Printer } from 'lucide-react';
 
 interface Question {
@@ -18,8 +18,6 @@ interface Question {
   difficulty: 'easy' | 'medium' | 'hard';
 }
 
-const enc = (o: unknown) => `data:application/json;base64,${btoa(unescape(encodeURIComponent(JSON.stringify(o))))}`;
-const dec = (u: string) => JSON.parse(decodeURIComponent(escape(atob(u.split('base64,')[1]))));
 
 export default function QuestionBank() {
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -38,24 +36,10 @@ export default function QuestionBank() {
   });
 
   async function load() {
-    const { data } = await supabase
-      .from('documents')
-      .select('id, file_url')
-      .eq('document_type', 'exam-question')
-      .order('uploaded_at', { ascending: false });
-    if (data) {
-      setQuestions(
-        (data as any[])
-          .map((d) => {
-            try {
-              return { id: d.id, ...dec(d.file_url) } as Question;
-            } catch {
-              return null;
-            }
-          })
-          .filter(Boolean) as Question[],
-      );
-    }
+    const rows = await listRecords('exams', 'exam-question');
+    setQuestions(
+      rows.map((r) => ({ id: r.id, ...(r.body as Record<string, unknown>) }) as unknown as Question),
+    );
   }
   useEffect(() => {
     load();
@@ -71,13 +55,14 @@ export default function QuestionBank() {
     e.preventDefault();
     if (form.options.filter((o) => o.trim()).length < 2) return;
     setBusy(true);
-    await write(supabase.from('documents').insert({
-      file_name: `${form.course} · ${form.topic || 'General'} · ${form.text.slice(0, 60)}`,
-      file_url: enc(form),
-      file_type: 'application/json',
-      document_type: 'exam-question',
+    const ok = await write(saveRecord({
+      module: 'exams',
+      kind: 'exam-question',
+      title: `${form.course} · ${form.topic || 'General'} · ${form.text.slice(0, 60)}`,
+      body: { ...form },
     }), 'save the question');
     setBusy(false);
+    if (!ok) return;
     setShowNew(false);
     setForm({ course: form.course, topic: '', text: '', options: ['', '', '', ''], answer: 0, difficulty: 'medium' });
     load();
@@ -186,7 +171,7 @@ export default function QuestionBank() {
               <button
                 aria-label="Delete question"
                 onClick={async () => {
-                  await write(supabase.from('documents').delete().eq('id', q.id), 'save the question');
+                  await write(deleteRecord(q.id), 'remove the question');
                   load();
                 }}
                 className="shrink-0 rounded-lg bg-red-50 p-2 text-red-600"

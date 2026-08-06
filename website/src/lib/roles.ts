@@ -140,6 +140,33 @@ export const OPERATIONAL_CAPABILITIES = [
   'moderate-results',
   'approve-results',
   'publish-results',
+  // ---------------------------------------------------------------------
+  // ISSUING A CERTIFICATE TO A GRADUATE.
+  //
+  // OPERATIONAL, and it was not. /api/credential/issue was guarded by
+  // 'publish-credential-template' — a SYSTEM capability, so the
+  // Superadministrator alone. The reasoning given was that the office which
+  // designs credentials answers for them, and for the DESIGN that is right.
+  // For an individual award it is not, and it broke the pipeline: after four
+  // offices had approved a class and the Registrar had written the marks to
+  // the record, nobody in the university could confer the degree. The person
+  // who administers the servers had to.
+  //
+  // That also contradicts the university's own published governance.
+  // lifecycle.ts puts conferral with Senate — "The award is conferred here and
+  // nowhere else" — and step 7, issuing the certificate, is administrative
+  // work downstream of that decision. And roles.ts already says the
+  // Superadministrator is custody of the SYSTEM rather than an office of the
+  // university: "The Chancellor is not junior to the Superadministrator; they
+  // are answerable for different things." Conferring a degree is the most
+  // institutional act there is and cannot be the sysadmin's.
+  //
+  // 'revoke-credential' stays a system capability, deliberately. Withdrawing a
+  // degree already conferred is rarer and graver than issuing one, and the
+  // original comment's principle holds: an institution that can withdraw a
+  // degree more easily than it can confer one has the balance the wrong way
+  // round. This change makes issuing easier, not revoking.
+  'issue-credential',
   // Which programmes the university is currently admitting to. An academic
   // decision — what the faculty is ready to teach this year — not an
   // administrative one, which is why it is not in the Admissions Officer's set.
@@ -297,6 +324,9 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
     // with the Registrar because the academic record is the Registry's, and
     // because publication is what a degree is later conferred on.
     'publish-results',
+    // And issuing the certificate itself. The Registry keeps the academic
+    // record and produces the instrument that attests to it.
+    'issue-credential',
     'set-admission-openings',
   ],
 
@@ -315,6 +345,7 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
     // or approve for a faculty, so it cannot walk a class through the chain
     // alone.
     'publish-results',
+    'issue-credential',
     'set-admission-openings',
   ],
 

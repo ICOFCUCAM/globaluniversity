@@ -22,13 +22,23 @@
 // register was built to prevent, and it is better to fail with nothing issued
 // than to succeed with something unverifiable.
 //
-// WHO MAY DO IT. Issuing an award certificate is 'publish-credential-template'
-// — a system capability, so the Superadministrator alone. That is deliberately
-// tighter than printing one: a certificate is the university's most consequential
-// statement about a person, and the office that designs credentials is the
-// office that answers for them. Revocation is the same capability, because an
-// institution that can withdraw a degree more easily than it can confer one has
-// the balance the wrong way round.
+// WHO MAY DO IT. 'issue-credential' — the Registrar and the Head of Academic
+// Affairs.
+//
+// IT USED TO BE 'publish-credential-template', a SYSTEM capability held only by
+// the Superadministrator, and that was a fault rather than a strictness. It
+// meant that after four offices had approved a class and the Registrar had
+// written the marks to the academic record, nobody in the university could
+// confer the degree — the person who administers the servers had to. It also
+// contradicted the university's own governance: lifecycle.ts puts conferral
+// with Senate and makes issuing the certificate administrative work downstream
+// of that, and roles.ts holds that the Superadministrator has custody of the
+// system rather than office within the university.
+//
+// REVOCATION IS STILL A SYSTEM CAPABILITY, and that asymmetry is deliberate:
+// an institution that can withdraw a degree more easily than it can confer one
+// has the balance the wrong way round. This change made conferring easier. It
+// did not touch withdrawing.
 // ---------------------------------------------------------------------------
 
 import { NextResponse } from 'next/server';
@@ -45,7 +55,7 @@ export const runtime = 'nodejs';
 const SITE = process.env.SITE_URL ?? `https://${UNIVERSITY.website.replace(/^www\./, '')}`;
 
 export async function POST(request: Request) {
-  const g = await guard(request, 'publish-credential-template');
+  const g = await guard(request, 'issue-credential');
   if (!g.ok) return NextResponse.json({ ok: false, error: g.error }, { status: g.status });
   const { admin, caller } = g;
 

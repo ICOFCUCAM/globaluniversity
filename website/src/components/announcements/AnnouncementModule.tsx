@@ -5,17 +5,9 @@
 // until a dedicated table is provisioned; payload is a data-URL JSON.
 import React, { useEffect, useState } from 'react';
 import { write } from '@/lib/write';
-import { supabase } from '@/lib/supabase';
+import { listRecords, saveRecord, updateRecord, deleteRecord, type ModuleRecord } from '@/lib/moduleStore';
 import { useAuth } from '@/contexts/AuthContext';
 import { Megaphone, Plus, Pin, Trash2 } from 'lucide-react';
-
-interface Row {
-  id: string;
-  file_name: string;
-  file_url: string;
-  verified: boolean;
-  uploaded_at: string;
-}
 
 interface Notice {
   id: string;
@@ -28,13 +20,21 @@ interface Notice {
 
 const AUDIENCES = ['All', 'Students', 'Lecturers', 'Faculty of Theology', 'Faculty of Education', 'Engineering & Technology', 'GIBMAS'];
 
-function decode(r: Row): Notice | null {
-  try {
-    const json = JSON.parse(decodeURIComponent(escape(atob(r.file_url.split('base64,')[1]))));
-    return { id: r.id, pinned: r.verified, posted: r.uploaded_at, ...json };
-  } catch {
-    return null;
-  }
+// `pinned` used to be carried in documents.verified — a column that means "the
+// Registry has confirmed this document is genuine". Borrowing it to mean
+// "pinned to the top of the noticeboard" is the kind of reuse that is fine
+// until somebody writes a query about verified documents. It now lives in the
+// record's own body.
+function decode(r: ModuleRecord<Record<string, unknown>>): Notice {
+  const body = r.body as Record<string, unknown>;
+  return {
+    id: r.id,
+    posted: r.created_at,
+    title: String(body.title ?? r.title),
+    body: String(body.body ?? ''),
+    audience: String(body.audience ?? 'All'),
+    pinned: body.pinned === true,
+  };
 }
 
 export default function AnnouncementModule() {
@@ -46,16 +46,9 @@ export default function AnnouncementModule() {
   const [form, setForm] = useState({ title: '', body: '', audience: 'All' });
 
   async function load() {
-    const { data } = await supabase
-      .from('documents')
-      .select('*')
-      .eq('document_type', 'announcement')
-      .order('uploaded_at', { ascending: false });
-    if (data) {
-      const list = (data as Row[]).map(decode).filter(Boolean) as Notice[];
-      list.sort((a, b) => Number(b.pinned) - Number(a.pinned));
-      setNotices(list);
-    }
+    const list = (await listRecords('announcements', 'announcement')).map(decode);
+    list.sort((a, b) => Number(b.pinned) - Number(a.pinned));
+    setNotices(list);
   }
   useEffect(() => {
     load();
@@ -64,14 +57,14 @@ export default function AnnouncementModule() {
   async function post(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
-    const payload = btoa(unescape(encodeURIComponent(JSON.stringify(form))));
-    await write(supabase.from('documents').insert({
-      file_name: `${form.audience} · ${form.title}`,
-      file_url: `data:application/json;base64,${payload}`,
-      file_type: 'application/json',
-      document_type: 'announcement',
-    }), 'save the announcement');
+    const ok = await write(saveRecord({
+      module: 'announcements',
+      kind: 'announcement',
+      title: `${form.audience} · ${form.title}`,
+      body: { ...form, pinned: false },
+    }), 'post the announcement');
     setBusy(false);
+    if (!ok) return;
     setShowNew(false);
     setForm({ title: '', body: '', audience: 'All' });
     load();
@@ -138,7 +131,9 @@ export default function AnnouncementModule() {
                   <button
                     aria-label={n.pinned ? 'Unpin' : 'Pin'}
                     onClick={async () => {
-                      await write(supabase.from('documents').update({ verified: !n.pinned }).eq('id', n.id), 'save the announcement');
+                      await write(updateRecord(n.id, {
+                        body: { title: n.title, body: n.body, audience: n.audience, pinned: !n.pinned },
+                      }), n.pinned ? 'unpin the announcement' : 'pin the announcement');
                       load();
                     }}
                     className={`rounded-lg p-2 ${n.pinned ? 'bg-[#f7dc79] text-[#422e59]' : 'bg-gray-100 text-[#6b6076] dark:text-[#9c93ad]'}`}
@@ -148,7 +143,7 @@ export default function AnnouncementModule() {
                   <button
                     aria-label="Delete announcement"
                     onClick={async () => {
-                      await write(supabase.from('documents').delete().eq('id', n.id), 'save the announcement');
+                      await write(deleteRecord(n.id), 'remove the announcement');
                       load();
                     }}
                     className="rounded-lg bg-red-50 p-2 text-red-600"

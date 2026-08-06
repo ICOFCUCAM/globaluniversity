@@ -6,7 +6,7 @@
 //   'attendance'      — one attendance record (slot id + matric + status)
 import React, { useEffect, useMemo, useState } from 'react';
 import { write } from '@/lib/write';
-import { supabase } from '@/lib/supabase';
+import { listRecords, saveRecord, deleteRecord } from '@/lib/moduleStore';
 import { useAuth } from '@/contexts/AuthContext';
 import { CalendarDays, Plus, UserCheck, Trash2 } from 'lucide-react';
 
@@ -30,8 +30,6 @@ interface Attendance {
   date: string;
 }
 
-const enc = (o: unknown) => `data:application/json;base64,${btoa(unescape(encodeURIComponent(JSON.stringify(o))))}`;
-const dec = (u: string) => JSON.parse(decodeURIComponent(escape(atob(u.split('base64,')[1]))));
 
 export default function TimetableModule() {
   const { user } = useAuth();
@@ -45,25 +43,19 @@ export default function TimetableModule() {
   const [form, setForm] = useState({ day: 'Monday', start: '08:00', end: '10:00', course: '', lecturer: '', room: '' });
 
   async function load() {
-    const { data } = await supabase
-      .from('documents')
-      .select('*')
-      .in('document_type', ['timetable-slot', 'attendance'])
-      .order('uploaded_at', { ascending: true });
-    if (!data) return;
-    const s: Slot[] = [];
-    const a: Attendance[] = [];
-    for (const row of data as any[]) {
-      try {
-        const j = dec(row.file_url);
-        if (row.document_type === 'timetable-slot') s.push({ id: row.id, ...j });
-        else a.push({ id: row.id, date: row.uploaded_at, ...j });
-      } catch {
-        /* skip */
-      }
-    }
-    setSlots(s);
-    setRecords(a);
+    // Was `documents`, with the slot base64-encoded into the file_url column
+    // and any row that failed to decode silently dropped. Those inserts never
+    // succeeded — documents.student_id is NOT NULL and this module never set
+    // it — so the screen has always been empty. See src/lib/moduleStore.ts.
+    const rows = await listRecords('timetable', ['timetable-slot', 'attendance']);
+    setSlots(
+      rows.filter((r) => r.kind === 'timetable-slot')
+        .map((r) => ({ id: r.id, ...(r.body as Record<string, unknown>) }) as unknown as Slot),
+    );
+    setRecords(
+      rows.filter((r) => r.kind === 'attendance')
+        .map((r) => ({ id: r.id, date: r.created_at, ...(r.body as Record<string, unknown>) }) as unknown as Attendance),
+    );
   }
   useEffect(() => {
     load();
@@ -72,13 +64,14 @@ export default function TimetableModule() {
   async function addSlot(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
-    await write(supabase.from('documents').insert({
-      file_name: `${form.day} ${form.start} · ${form.course}`,
-      file_url: enc(form),
-      file_type: 'application/json',
-      document_type: 'timetable-slot',
+    const ok = await write(saveRecord({
+      module: 'timetable',
+      kind: 'timetable-slot',
+      title: `${form.day} ${form.start} · ${form.course}`,
+      body: { ...form },
     }), 'save the timetable entry');
     setBusy(false);
+    if (!ok) return;
     setShowNew(false);
     setForm({ day: 'Monday', start: '08:00', end: '10:00', course: '', lecturer: '', room: '' });
     load();
@@ -87,12 +80,12 @@ export default function TimetableModule() {
   async function mark(status: 'present' | 'absent') {
     if (!markFor || !matric.trim()) return;
     setBusy(true);
-    await write(supabase.from('documents').insert({
-      file_name: `${markFor.course} · ${matric} · ${status}`,
-      file_url: enc({ slotId: markFor.id, matric: matric.trim().toUpperCase(), status }),
-      file_type: 'application/json',
-      document_type: 'attendance',
-    }), 'save the timetable entry');
+    await write(saveRecord({
+      module: 'timetable',
+      kind: 'attendance',
+      title: `${markFor.course} · ${matric} · ${status}`,
+      body: { slotId: markFor.id, matric: matric.trim().toUpperCase(), status },
+    }), 'record the attendance');
     setBusy(false);
     setMatric('');
     load();
@@ -179,7 +172,7 @@ export default function TimetableModule() {
                             <button
                               aria-label="Remove class"
                               onClick={async () => {
-                                await write(supabase.from('documents').delete().eq('id', s.id), 'save the timetable entry');
+                                await write(deleteRecord(s.id), 'remove the timetable entry');
                                 load();
                               }}
                               className="rounded-lg bg-red-50 p-1.5 text-red-600"

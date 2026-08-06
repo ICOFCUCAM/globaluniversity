@@ -25,6 +25,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/components/theme-provider';
 import { supabase } from '@/lib/supabase';
+import { listByKind } from '@/lib/moduleStore';
 import { navItemsFor, labelForView, groupForView } from '@/lib/portalNav';
 import { FOCUS, INPUT } from '@/lib/portalTheme';
 import type { ViewType, UserRole } from '@/lib/types';
@@ -99,12 +100,9 @@ export default function TopBar({
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
-        .from('documents')
-        .select('id, file_name, file_url, document_type, uploaded_at')
-        .in('document_type', ['announcement', 'assignment-brief', 'live-class'])
-        .order('uploaded_at', { ascending: false })
-        .limit(8);
+      const rows = (await listByKind<Record<string, any>>([
+        'announcement', 'assignment-brief', 'live-class',
+      ])).slice(0, 8);
       const ago = (iso: string) => {
         const h = Math.round((Date.now() - new Date(iso).getTime()) / 36e5);
         if (h < 1) return 'just now';
@@ -112,15 +110,14 @@ export default function TopBar({
         return `${Math.round(h / 24)}d ago`;
       };
       setNotifications(
-        (data ?? []).map((d: any) => {
-          let text = d.file_name as string;
-          try {
-            const j = JSON.parse(decodeURIComponent(escape(atob(d.file_url.split('base64,')[1]))));
+        rows.map((r: any) => {
+          const d = { ...r, document_type: r.kind, uploaded_at: r.created_at };
+          let text = d.title as string;
+          {
+            const j = d.body ?? {};
             if (d.document_type === 'announcement') text = `Announcement: ${j.title}`;
             else if (d.document_type === 'assignment-brief') text = `New assignment: ${j.title}${j.due ? ` (due ${j.due})` : ''}`;
             else text = `Class: ${j.title} — ${j.time ?? ''}`;
-          } catch {
-            /* fall back to file name */
           }
           return {
             id: d.id,

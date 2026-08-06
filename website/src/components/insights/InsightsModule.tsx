@@ -8,6 +8,7 @@
 // Every student is scored and flagged so intervention happens early.
 import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { listByKind } from '@/lib/moduleStore';
 import { AlertTriangle, TrendingUp, Users, Wallet } from 'lucide-react';
 
 interface Student {
@@ -29,7 +30,6 @@ interface Signal {
   reasons: string[];
 }
 
-const dec = (u: string) => JSON.parse(decodeURIComponent(escape(atob(u.split('base64,')[1]))));
 
 export default function InsightsModule() {
   const [students, setStudents] = useState<Student[]>([]);
@@ -40,30 +40,25 @@ export default function InsightsModule() {
 
   useEffect(() => {
     (async () => {
-      const [studRes, docRes, resRes] = await Promise.all([
+      // Attendance moved to module_records; fee receipts are real rows in
+      // `payments` and were being read out of documents.file_name by string
+      // matching, which is why a receipt for a student whose name contains a
+      // digit was silently missed.
+      const [studRes, att, payRes, resRes] = await Promise.all([
         supabase.from('students').select('id, matric_no, first_name, last_name, program, status'),
-        supabase.from('documents').select('file_name, file_url, document_type').in('document_type', ['attendance', 'fee-receipt']),
+        listByKind<{ matric?: string; status?: string }>(['attendance']),
+        supabase.from('payments').select('student_id, reference'),
         supabase.from('results').select('student_id, score').limit(2000),
       ]);
       if (studRes.data) setStudents(studRes.data as Student[]);
-      if (docRes.data) {
-        const att: { matric: string; status: string }[] = [];
-        const rcp: string[] = [];
-        for (const d of docRes.data as any[]) {
-          if (d.document_type === 'attendance') {
-            try {
-              const j = dec(d.file_url);
-              att.push({ matric: String(j.matric ?? '').toUpperCase(), status: j.status });
-            } catch {
-              /* skip */
-            }
-          } else {
-            rcp.push(String(d.file_name ?? ''));
-          }
-        }
-        setAttendance(att);
-        setReceipts(rcp);
-      }
+      setAttendance(
+        att.map((r) => ({
+          matric: String(r.body?.matric ?? '').toUpperCase(),
+          status: String(r.body?.status ?? ''),
+        })),
+      );
+      setReceipts(((payRes.data ?? []) as { student_id: string | null }[])
+        .map((p) => String(p.student_id ?? '')));
       if (resRes.data) setResults(resRes.data as any[]);
       setLoading(false);
     })();
