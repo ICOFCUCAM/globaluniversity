@@ -377,6 +377,38 @@ html {
 
 
 /* ---------------------------------------------------------------------------
+   SAVE-DATA.
+
+   A browser sends Save-Data: on when the reader has asked their operating
+   system or browser to use less of their data allowance. On the connections
+   most of this university's applicants are actually on, that is not a niche
+   setting — it is somebody deciding between a page and the rest of their
+   bundle for the week.
+
+   What it costs them here is the atmosphere: the aurora fields, the grain, the
+   light shafts, the slow zoom on the hero. All of it is decoration layered over
+   photographs and type that carry the meaning, and none of it is load-bearing.
+   The page still looks like itself; it just stops animating gradients nobody
+   asked to pay for.
+
+   The photographs stay. Removing those would be removing the content.
+   --------------------------------------------------------------------------- */
+@media (prefers-reduced-data: reduce) {
+  .animate-ken-burns, .animate-crest {
+    animation: none !important;
+  }
+  /* The atmosphere layers are all aria-hidden decoration. */
+  [aria-hidden='true'][class*='aurora'],
+  [aria-hidden='true'][class*='grain'],
+  [aria-hidden='true'][class*='shaft'] {
+    display: none !important;
+  }
+  * {
+    backdrop-filter: none !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
    PRINT.
 
    A university homepage gets printed more than anyone designing it expects:
