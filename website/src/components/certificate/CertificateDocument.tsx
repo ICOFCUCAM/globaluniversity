@@ -805,19 +805,46 @@ backgroundImage: `url("${art.micro}")`,
           </div>
         </div>
 
-        <p style={{
-          fontSize: '7.5px',
-          letterSpacing: '0.06em',
+        {/* The foot, wrapping rather than overrunning.
+            Five values were concatenated onto one line with no width limit: a
+            footnote, the registration reference, the credential number, the
+            seal and the design version. With the footnote left empty — as it is
+            by default — that fits. Set a footnote of any length and the line
+            runs off the sheet, silently, because nothing here was ever measured.
+
+            The identifiers are grouped and set to wrap, and the footnote is
+            given its own line: it is a sentence, and the codes are not. */}
+        <div style={{
           margin: '3mm 0 0',
-          opacity: 0.7,
+          maxWidth: '100%',
           fontFamily: 'Helvetica, Arial, sans-serif',
+          opacity: 0.7,
         }}>
-          {design.footnote ? `${design.footnote} · ` : ''}
-          {data.registrationNo ? `REG. NO. ${data.registrationNo} · ` : ''}
-          CREDENTIAL {data.credentialId}
-          {data.sealCode ? ` · SEAL ${data.sealCode}` : ''}
-          {version ? ` · DESIGN v${version}` : ''}
-        </p>
+          {design.footnote && (
+            <p style={{
+              fontSize: '7.5px',
+              letterSpacing: '0.04em',
+              margin: '0 0 1mm',
+              lineHeight: 1.4,
+            }}>
+              {design.footnote}
+            </p>
+          )}
+          <p style={{
+            fontSize: '7.5px',
+            letterSpacing: '0.06em',
+            margin: 0,
+            lineHeight: 1.5,
+            wordBreak: 'break-word',
+          }}>
+            {[
+              data.registrationNo ? `REG. NO. ${data.registrationNo}` : null,
+              `CREDENTIAL ${data.credentialId}`,
+              data.sealCode ? `SEAL ${data.sealCode}` : null,
+              version ? `DESIGN v${version}` : null,
+            ].filter(Boolean).join(' · ')}
+          </p>
+        </div>
       </div>
     </div>
     </>
