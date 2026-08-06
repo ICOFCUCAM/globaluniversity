@@ -64,6 +64,20 @@ export interface CertificateData {
   /** Verification QR, as SVG markup. Rendered by the server that signed it. */
   qrSvg?: string | null;
   issuedOn?: Date;
+  /**
+   * A replacement for a lost or damaged original.
+   *
+   * The register has always allowed a credential to be superseded — 'replaced'
+   * is one of its three statuses — but the document produced was identical to
+   * the one it replaced, so two indistinguishable certificates for one award
+   * could be in circulation with nothing on either to say which was which. A
+   * university that cannot tell its own duplicate from its own original has
+   * lost control of the count.
+   *
+   * Carries the original's number, because the point of a duplicate is that it
+   * refers back.
+   */
+  duplicateOf?: string | null;
 }
 
 /**
@@ -458,6 +472,22 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
         <p style={{ ...body(design), margin: '5mm 0 0', fontSize: '12.5px', fontStyle: 'italic' }}>
           {given}
         </p>
+
+        {/* A duplicate says so on its face, and names what it replaces.
+            Set plainly rather than as a stamp: it is a statement of fact about
+            this copy, not an accusation about the holder, and most duplicates
+            are issued because an original was lost in a house fire. */}
+        {data.duplicateOf && (
+          <p style={{
+            ...small(design),
+            margin: '3.5mm 0 0',
+            letterSpacing: '0.2em',
+            color: design.brand,
+            opacity: 0.9,
+          }}>
+            Duplicate — issued in place of {data.duplicateOf}
+          </p>
+        )}
 
       </div>
 
