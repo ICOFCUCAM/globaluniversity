@@ -163,8 +163,47 @@ export default function FeeModule() {
 
       <div className="overflow-hidden rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27]">
         <div className="divide-y divide-[#f0ece4] dark:divide-[#2a2333]">
-          {receipts.length === 0 && (
-            <p className="p-10 text-center text-sm text-[#a49bb0] dark:text-[#7b7289]">No payments recorded yet.</p>
+          {payments.length === 0 && receipts.length === 0 && (
+            <p className="p-10 text-center text-sm text-[#a49bb0] dark:text-[#7b7289]">
+              No payments recorded yet. Recording one here writes a row to the payments ledger and
+              issues a numbered receipt.
+            </p>
+          )}
+
+          {/* The ledger. These are the rows a finance officer reconciles. */}
+          {payments.map((p) => {
+            const st = students.find((x) => x.id === p.student_id);
+            return (
+              <div key={p.id} className="flex items-center gap-3 px-5 py-3">
+                <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                  <Banknote size={16} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm text-[#33234a] dark:text-[#e4dcf0]">
+                    {st ? `${st.last_name} ${st.first_name}` : 'Unattached payment'} — {p.purpose}
+                  </span>
+                  <span className="block truncate font-mono text-[11px] tabular-nums text-[#a49bb0]">
+                    {p.reference}{p.method ? ` · ${p.method}` : ''}
+                  </span>
+                </span>
+                <span className="flex-shrink-0 text-right">
+                  <span className="block text-sm font-semibold tabular-nums text-[#33234a] dark:text-[#e4dcf0]">
+                    {Number(p.amount).toLocaleString()} {p.currency}
+                  </span>
+                  <span className="block text-xs tabular-nums text-[#a49bb0]">
+                    {new Date(p.received_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </span>
+                </span>
+              </div>
+            );
+          })}
+
+          {/* Legacy receipts, marked as such so nobody reconciles against a
+              format the finance office is no longer writing to. */}
+          {receipts.length > 0 && (
+            <p className="bg-[#faf8f4] px-5 py-2 text-[11px] font-semibold uppercase tracking-wide text-[#a49bb0] dark:bg-[#241f2c]">
+              Recorded under the old document format
+            </p>
           )}
           {receipts.map((r) => (
             <button key={r.id} onClick={() => open(r)} className="flex w-full items-center gap-3 px-5 py-3 text-left hover:bg-[#faf8f4] dark:hover:bg-[#241f2c]">
