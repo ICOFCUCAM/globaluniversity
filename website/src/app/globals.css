@@ -62,11 +62,36 @@ body {
   font-feature-settings: 'tnum' 1;
 }
 
-/* One consistent focus ring across the public site. */
-:where(a, button, [tabindex]):focus-visible {
-  outline: 2px solid theme('colors.brand.gold');
-  outline-offset: 3px;
+/* ---------------------------------------------------------------------------
+   THE FOCUS RING.
+
+   There were two of these, in one stylesheet, disagreeing: a 2px gold ring at
+   3px offset here, and a 3px #e9c14a ring at 2px offset two hundred lines
+   below. The lower one won, so the rule written first was decorative.
+
+   Both had the same real defect. A gold ring is close to invisible on the
+   cream and gold surfaces this site is built from — the proof band, the
+   faculty cards, the hero's gold button — which is precisely where a keyboard
+   user needs it most.
+
+   This is a TWO-TONE ring: a dark inner edge and a light outer one, drawn with
+   a stacked box-shadow so one of the two always contrasts with whatever is
+   behind it. Dark surfaces get the light half; light surfaces get the dark
+   half. It is the same technique used for cursors and selection handles, and
+   for the same reason — the background is not known in advance.
+   --------------------------------------------------------------------------- */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid #1d1428;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 5px rgba(247, 220, 121, 0.9);
   border-radius: 4px;
+}
+
+/* On a dark ground the order inverts: gold against the surface, ink outside. */
+.dark :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible,
+:where(.bg-brand-purple, .bg-brand-purple-dark, [data-on-dark]) :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline-color: #f7dc79;
+  box-shadow: 0 0 0 5px rgba(29, 20, 40, 0.85);
 }
 
 /* Hairline gold rule used to open sections. */
@@ -211,11 +236,9 @@ body {
   @apply my-4 ml-6;
 }
 
-/* ---- Accessibility & motion ---- */
-:focus-visible {
-  outline: 3px solid #e9c14a;
-  outline-offset: 2px;
-}
+/* ---- Accessibility & motion ----
+   The focus ring lives at the top of this file, in one place. The duplicate
+   that used to sit here is gone; see the note there. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
