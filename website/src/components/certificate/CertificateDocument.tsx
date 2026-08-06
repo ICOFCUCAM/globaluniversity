@@ -112,6 +112,25 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
   const blackletter = /unifraktur|fraktur|blackletter|old english|cloister/i
     .test(design.titleFont ?? '');
 
+  // The name is set to fit, not to a fixed size.
+  //
+  // 40px suits "Grace Nalova Meyembi". It does not suit "Emmanuella Chiamaka
+  // Nwachukwu-Adeyemi Oluwatosin", which at 40px is 300mm wide on a 297mm sheet
+  // — so the one name on the document that must be legible was the one certain
+  // to break it. Wrapping is worse than shrinking here: a conferral reads as one
+  // line, and a name split across two on a degree certificate looks like a
+  // mistake rather than a layout.
+  //
+  // The steps are coarse on purpose. Continuous scaling would give every
+  // graduate a slightly different size, and a stack of certificates from one
+  // ceremony should look like a set.
+  const nameLength = data.fullName.trim().length;
+  const nameSize = nameLength <= 22 ? 42
+    : nameLength <= 30 ? 36
+    : nameLength <= 40 ? 30
+    : nameLength <= 52 ? 25
+    : 21;
+
   const given = `${design.wording.given} ${ordinalDay(issued.getDate())} Day of ` +
     `${issued.toLocaleDateString('en-GB', { month: 'long' })}, ${yearInWords(issued.getFullYear())}`;
 
@@ -307,7 +326,7 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
             the one fact the document exists to state. */}
         <p style={{
           margin: '3mm 0 0',
-          fontSize: '40px',
+          fontSize: `${nameSize}px`,
           lineHeight: 1.12,
           fontWeight: 400,
           letterSpacing: '0.05em',
