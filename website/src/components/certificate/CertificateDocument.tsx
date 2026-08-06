@@ -45,7 +45,6 @@ import {
   africanGlobeOfKnowledgeUri, deviceInRosetteUri,
 } from '@/lib/credentialArt';
 import { wordingForAward, deviceTierFor, emblemFor, awardTitleAfterLead } from '@/lib/awards';
-import { borderById } from '@/lib/borderCatalogue';
 
 export interface CertificateData {
   fullName: string;
@@ -180,10 +179,7 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
   const half = Math.ceil(design.signatories.length / 2);
   const leftSigs = design.signatories.slice(0, half);
   const rightSigs = design.signatories.slice(half);
-  // The effective border width. A traced frame carries its own band and the
-  // content must be inset by THAT, not by borderWidthMm — otherwise the
-  // ornament prints over the QR and the credential number.
-  const borderMm = borderById(design.borderCourse)?.bandMm ?? design.borderWidthMm;
+  const borderMm = design.borderWidthMm;
 
   const reserved = design.sealPlacement !== 'printed';
   // The seal set inside the device rather than in a circle of its own.
@@ -278,11 +274,7 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
           : globeInRosetteUri(seed, 560, design.brand, 1),
     // Sheet size and a band widened by the bleed, so the trim falls through
     // the gilt rather than beside it.
-    // A traced border is whole artwork served from /public; a carved course is
-    // generated here. See borderCatalogue — the difference is that a course has
-    // a repeat and a traced frame does not.
-    frame: borderById(design.borderCourse)?.asset
-      ?? ornateFrameUri(sheetW, sheetH, design.accent, '#8a6d1f', design.borderWidthMm + bleed, design.borderCourse),
+    frame: ornateFrameUri(sheetW, sheetH, design.accent, '#8a6d1f', design.borderWidthMm + bleed, design.borderCourse),
     band: guillocheBandUri(seed ^ 0x51, 300, 14, design.accent, 0.9),
     // The microtext course now carries the university's own words as well as
     // the credential number. Under a loupe it reads as the institution; on a

@@ -26,13 +26,18 @@
 // scan of one certificate and dropped onto a forgery. Geometry drawn from an
 // equation cannot be, which is the argument behind every other layer on the
 // sheet.
+// TWO TRACED FRAMES WERE TRIED HERE AND REJECTED. Supplied artwork was traced
+// to vector and re-gilded — technically it worked, and the machinery is in
+// git history if it is ever wanted again. The university looked at both on a
+// real certificate and did not want either. The source artwork is kept in
+// assets/borders/; nothing traced is served or selectable.
+//
+// Recorded because the alternative is somebody trying it a third time.
 // ---------------------------------------------------------------------------
 
 /** The carved run. Selects which ornament ornateFrame() cuts into the section. */
 export type BorderCourse =
   | 'classic'
-  | 'rococo'
-  | 'classic-corners'
   | 'acanthus'
   | 'laurel'
   | 'guilloche'
@@ -51,10 +56,6 @@ export type BorderCourse =
  */
 export const COURSE_RUN: Record<BorderCourse, number> = {
   classic: 1.27,
-  // Traced frames are whole artwork, not a repeating tile — the run is unused
-  // for them and is present only so the record stays total.
-  rococo: 1,
-  'classic-corners': 1,
   acanthus: 1.55,
   laurel: 1.30,
   guilloche: 1.60,
@@ -72,33 +73,6 @@ export interface BorderStyle {
   what: string;
   /** Where it belongs, and where it does not. */
   use: string;
-  /**
-   * A finished frame served from /public, for the traced borders.
-   *
-   * WHY THESE ARE NOT COURSES. A course is a repeating tile cut into the shared
-   * moulding section. A traced frame is not a tile — it is the whole border at
-   * once, including its corners, and it has no repeat to run. Forcing one into
-   * the tile machinery would mean chopping it into a length and losing exactly
-   * the corner cartouches that make it worth having.
-   *
-   * So they are whole artwork, and the certificate points an <img> at the file
-   * instead of inlining it. A 540kB frame as a data URI would be carried in
-   * every render of every certificate; as a file it is fetched once and cached.
-   */
-  asset?: string;
-  /** Where the artwork came from, because provenance on a certificate matters. */
-  origin?: string;
-  /**
-   * How wide the traced frame's band actually is, in millimetres on an A4
-   * landscape sheet.
-   *
-   * The content is inset by the border's width. A carved course is drawn to
-   * whatever `borderWidthMm` says, so the two agree by construction; a TRACED
-   * frame has whatever band the artwork happens to have, and if the layout
-   * keeps insetting by 11mm the ornament prints over the QR and the credential
-   * number. Measured from the artwork rather than guessed.
-   */
-  bandMm?: number;
 }
 
 export const BORDER_CATALOGUE: BorderStyle[] = [
@@ -112,33 +86,6 @@ export const BORDER_CATALOGUE: BorderStyle[] = [
       'Everything, for now. The seven carved courses below are NOT yet close enough to the 2011 ' +
       'certificate to replace it, and the university has said so. A design that is merely newer ' +
       'is not an improvement; none of them is in force until one of them is better.',
-  },
-  {
-    id: 'rococo',
-    name: 'ICOF Rococo Gilt',
-    what:
-      'A deep-carved rococo frame: undercut acanthus running the full length, scrolled cartouches ' +
-      'turning each corner, and a fillet at the sight edge. Supplied as artwork, traced to vector, ' +
-      'and re-gilded in the university’s own gold with the lit and shaded relief passes applied.',
-    use:
-      'The heaviest frame available and the closest to the 2011 certificate. It carries the ' +
-      'undercutting and the corner cartouches the hand-drawn courses do not.',
-    asset: '/borders/rococo.svg',
-    bandMm: 19,
-    origin: 'Generated artwork supplied by the university, traced to vector and re-gilded here.',
-  },
-  {
-    id: 'classic-corners',
-    name: 'ICOF Classic Corners',
-    what:
-      'A fine double rule with a scrolled cartouche at each corner and a palmette at the centre of ' +
-      'each side. Traced from supplied artwork and re-gilded.',
-    use:
-      'Lighter than the rococo and quieter than the acanthus. Suits a transcript, a letter or a ' +
-      'certificate of attendance — anywhere a heavy carved frame would overstate the document.',
-    asset: '/borders/classic-corners.svg',
-    bandMm: 14,
-    origin: 'Generated artwork supplied by the university, traced to vector and re-gilded here.',
   },
   {
     id: 'acanthus',
