@@ -57,7 +57,7 @@ import { WORDING_KEYS } from '@/lib/credentialTemplate';
 import {
   Palette, Upload, AlertTriangle, CheckCircle2, History, Award, FileText,
   Loader2, Plus, Trash2, RotateCcw, ShieldAlert, ShieldCheck, PenLine,
-  Stamp, Download, ListChecks, Construction,
+  Stamp, Download, ListChecks, Construction, Printer,
 } from 'lucide-react';
 
 /**
@@ -654,17 +654,63 @@ export default function CredentialStudio() {
  * silently crops is worse than one that is visibly small.
  */
 function PreviewFrame({ kind, children }: { kind: CredentialKind; children: React.ReactNode }) {
-  const scale = kind === 'transcript' ? 0.55 : 0.5;
+  // Fit, or true size.
+  //
+  // Fit is the useful default — the whole document at once, which is how a
+  // designer judges balance. But a certificate is a printed object and some
+  // decisions cannot be made at half size: whether the microtext resolves,
+  // whether the seal code can be read, whether the frame's scroll course is
+  // too busy at 11mm. Those are exactly the decisions that get made wrongly
+  // and then discovered on paper.
+  const [trueSize, setTrueSize] = React.useState(false);
+  const fit = kind === 'transcript' ? 0.55 : 0.5;
+  const scale = trueSize ? 1 : fit;
+
   return (
     <div>
+      <div className="mb-2 flex flex-wrap items-center gap-2">
+        <div className="inline-flex rounded-lg border border-[#ded6c8] p-0.5 dark:border-[#3d3349]">
+          {([['Fit', false], ['Actual size', true]] as [string, boolean][]).map(([label, v]) => (
+            <button
+              key={label}
+              onClick={() => setTrueSize(v)}
+              className={`rounded-md px-3 py-1 text-[11px] font-medium transition-colors ${FOCUS} ${
+                trueSize === v
+                  ? 'bg-[#422e59] text-white'
+                  : 'text-[#6b6076] hover:bg-[#f2eee6] dark:text-[#9c93ad] dark:hover:bg-[#2a2333]'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={() => window.print()}
+          className={`inline-flex items-center gap-1.5 rounded-lg border border-[#ded6c8] px-3 py-1.5 text-[11px] font-medium text-[#422e59] transition-colors hover:bg-[#f2eee6] dark:border-[#3d3349] dark:text-[#c8c1d4] ${FOCUS}`}
+        >
+          <Printer size={13} /> Print this proof
+        </button>
+      </div>
+
       <div className="overflow-auto rounded-xl bg-[#f2eee6] p-5 dark:bg-[#2a2333]">
-        <div style={{ transform: `scale(${scale})`, transformOrigin: 'top left', width: `${100 / scale}%` }}>
+        <div style={{
+          transform: `scale(${scale})`,
+          transformOrigin: 'top left',
+          width: `${100 / scale}%`,
+          // At actual size the sheet is wider than any pane on this screen, so
+          // the container has to be told it is — otherwise the transform
+          // overflows silently and the right-hand third of the document is
+          // simply unreachable.
+          height: trueSize ? undefined : 'auto',
+        }}>
           {children}
         </div>
       </div>
-      <p className="mt-1.5 text-[11px] text-[#a49bb0]">
-        Shown at {Math.round(scale * 100)}% of printed size. Sample data — no real credential is
-        issued from this screen.
+      <p className="mt-1.5 text-[11px] leading-relaxed text-[#a49bb0]">
+        {trueSize
+          ? 'Actual printed size — scroll to see the whole sheet. This is what the microtext and the seal code look like on paper.'
+          : `Shown at ${Math.round(fit * 100)}% of printed size.`}
+        {' '}Sample data, overprinted SPECIMEN — no real credential is issued from this screen.
       </p>
     </div>
   );
