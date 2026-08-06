@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { roleLabels } from '@/lib/roles';
-import { GRADING_SCALE } from '@/lib/grading';
+import { GRADING_SCALE, CLASSIFICATION_BANDS, MAX_GRADE_POINT } from '@/lib/grading';
 import { UNIVERSITY } from '@/lib/constants';
 import {
   User, Shield, Bell, Palette, Database, Save, CheckCircle2
@@ -199,14 +199,25 @@ export default function SettingsPage() {
               </div>
               <div className="p-4 bg-amber-50 rounded-xl">
                 <p className="text-sm text-amber-700 font-medium">Degree Classification</p>
-                <div className="grid grid-cols-2 gap-2 mt-2 text-xs text-amber-600">
-                  <p>4.50 - 5.00: First Class Honours</p>
-                  <p>3.50 - 4.49: Second Class Upper</p>
-                  <p>2.40 - 3.49: Second Class Lower</p>
-                  <p>1.50 - 2.39: Third Class</p>
-                  <p>1.00 - 1.49: Pass</p>
-                  <p>Below 1.00: Fail</p>
+                {/* From CLASSIFICATION_BANDS, not retyped. This block stated
+                    bands for a 5.00 scale — "4.50 – 5.00: First Class" — while
+                    the function that actually classifies a degree required 3.60
+                    on the university's 4.00 scale. Two statements of one rule,
+                    disagreeing, and this was the one a student would read. */}
+                <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-amber-600">
+                  {CLASSIFICATION_BANDS.map((b, i) => (
+                    <p key={b.label} className="tabular-nums">
+                      {b.min.toFixed(2)}
+                      {i === 0 ? ` – ${MAX_GRADE_POINT.toFixed(2)}` : ` – ${(CLASSIFICATION_BANDS[i - 1].min - 0.01).toFixed(2)}`}
+                      : {b.label}
+                    </p>
+                  ))}
+                  <p className="tabular-nums">0.00: Fail</p>
                 </div>
+                <p className="mt-2 text-[11px] text-amber-700">
+                  The university publishes a grading scale but has not adopted classification
+                  bands. These are the bands the system applies and should be confirmed formally.
+                </p>
               </div>
             </div>
           )}

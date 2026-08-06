@@ -1,7 +1,7 @@
 import { SampleDataNotice } from '@/components/ui/portal';
 import React, { useRef, useState } from 'react';
 import { sampleTranscriptData } from '@/lib/sampleData';
-import { getClassification } from '@/lib/grading';
+import { getClassification, MAX_GRADE_POINT } from '@/lib/grading';
 import { useCredentialTemplate } from '@/lib/useCredentialTemplate';
 import CertificateDocument from './CertificateDocument';
 import { Download, Eye, Award, Palette } from 'lucide-react';
@@ -89,7 +89,7 @@ export default function CertificateGenerator() {
           </div>
           <div className="p-3 bg-blue-50 rounded-lg">
             <p className="text-xs text-blue-600 font-medium">Final CGPA</p>
-            <p className="text-lg font-bold text-blue-700">{data.cgpa} / 5.00</p>
+            <p className="text-lg font-bold text-blue-700">{data.cgpa} / {MAX_GRADE_POINT.toFixed(2)}</p>
           </div>
           <div className="p-3 bg-purple-50 rounded-lg">
             <p className="text-xs text-purple-600 font-medium">Classification</p>

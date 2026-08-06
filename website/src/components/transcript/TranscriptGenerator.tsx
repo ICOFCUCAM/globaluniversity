@@ -4,7 +4,7 @@ import React, { useRef, useState } from 'react';
 import TranscriptQR from './TranscriptQR';
 import { sampleTranscriptData } from '@/lib/sampleData';
 import { UNIVERSITY, IMAGES } from '@/lib/constants';
-import { getClassification } from '@/lib/grading';
+import { getClassification, MAX_GRADE_POINT } from '@/lib/grading';
 import type { TranscriptData } from '@/lib/types';
 import { Download, Printer, Eye, FileText, QrCode } from 'lucide-react';
 
@@ -194,7 +194,7 @@ export default function TranscriptGenerator() {
               <div style={{ marginTop: '15px', padding: '10px', border: '2px solid #422e59', backgroundColor: '#e8eaf6' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', fontSize: '12px' }}>
                   <div><strong>Total Credits Earned:</strong> {data.totalCredits}</div>
-                  <div><strong>Final CGPA:</strong> {data.cgpa.toFixed(2)}/5.00</div>
+                  <div><strong>Final CGPA:</strong> {data.cgpa.toFixed(2)}/{MAX_GRADE_POINT.toFixed(2)}</div>
                   <div><strong>Classification:</strong> {data.classification}</div>
                 </div>
               </div>

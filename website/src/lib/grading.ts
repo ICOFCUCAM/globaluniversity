@@ -169,6 +169,22 @@ export function getClassificationShort(cgpa: number): string {
   return 'Fail';
 }
 
+/**
+ * The classification bands, as data, so a screen can print them without
+ * retyping them.
+ *
+ * Settings printed "4.50 – 5.00: First Class Honours" while getClassification
+ * required 3.60 on a 4.00 scale. Two statements of the same rule, in different
+ * files, disagreeing — and the one a student would read was the wrong one.
+ */
+export const CLASSIFICATION_BANDS: { min: number; label: string }[] = [
+  { min: 3.60, label: 'First Class Honours' },
+  { min: 3.00, label: 'Second Class Honours (Upper Division)' },
+  { min: 2.00, label: 'Second Class Honours (Lower Division)' },
+  { min: 1.00, label: 'Third Class Honours' },
+  { min: 0.01, label: 'Pass' },
+];
+
 /** Whether a mark earns credit. Read from the published pass mark, not 40. */
 export function isPass(totalScore: number): boolean {
   return totalScore >= PASS_MARK;
