@@ -447,7 +447,7 @@ export const administration: FacultyMember[] = [
     bio: 'Teacher, Counselor, Motivational Speaker, President and Chancellor at Ambassador Seminary & University. Email: godfrey@iguc.net',
   },
   {
-    name: 'Prof Lyonga Divine',
+    name: 'Dr Divine Lyonga',
     role: 'Registrar',
     image: '/images/wp/lyonga-divine.png',
     bio: 'Master’s in Religious Studies and Theology from the Nation’s University; PhD in Theology from ICOF Global University. Lecturer at the Apostolic Bible Institute. Email: registrar@iguc.net',

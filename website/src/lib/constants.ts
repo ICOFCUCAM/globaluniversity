@@ -19,7 +19,12 @@ export const UNIVERSITY = {
   email: 'registrar@iguc.net',
   website: 'www.iguc.net',
   established: 2007,
-  registrar: 'Dr. Divine Lyonga',
+  // One form, everywhere. The About page published 'Prof Lyonga Divine' and
+  // the certificate printed 'Dr. Divine Lyonga' — the same person under two
+  // names, which is exactly the kind of disagreement a credential evaluator
+  // checking a graduate's paperwork against the university's own site will
+  // find and hold against the document.
+  registrar: 'Dr Divine Lyonga',
   // Signs every admission letter. The office is Head of Academic Affairs; the
   // holder is named here so the letter is signed by a person rather than by
   // whichever account happened to press the button.

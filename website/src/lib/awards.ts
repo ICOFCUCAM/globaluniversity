@@ -72,8 +72,17 @@ const WORDING: Record<AwardKind, AwardWording> = {
   doctorate: {
     // The older form. A doctorate is not "awarded" like a prize; the candidate
     // is admitted to the degree, which is what the ceremony actually does.
-    lead: 'admitted to the Degree of',
-    confers: 'has admitted to the said Degree',
+    // "has admitted" then "to the Degree of" — ONE sentence across the two
+    // lines, with the holder's name between them:
+    //
+    //     has admitted / GRACE NALOVA MEYEMBI / to the Degree of / DOCTOR OF…
+    //
+    // It read "has admitted to the said Degree / NAME / admitted to the Degree
+    // of / DOCTOR OF PHILOSOPHY": the instrument named twice, and "the said
+    // Degree" pointing FORWARD to a degree the sentence has not reached yet.
+    // "The said" can only refer back.
+    lead: 'to the Degree of',
+    confers: 'has admitted',
     classified: false,
     namesThesis: true,
     recognition:
@@ -81,7 +90,9 @@ const WORDING: Record<AwardKind, AwardWording> = {
       'and the defence of a thesis before the Dissertation Council',
   },
   masters: {
-    lead: 'admitted to the Degree of',
+    // Same fault, same fix: "confers upon / NAME / admitted to the Degree of"
+    // put two different conferring verbs into one sentence.
+    lead: 'the Degree of',
     confers: 'confers upon',
     classified: true,
     namesThesis: false,

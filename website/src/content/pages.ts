@@ -529,7 +529,7 @@ export const contentPages: ContentPage[] = [
           'President \u2014 Dr. Raymond L Young: institutional strategy and global coordination.',
           'Vice Chancellor \u2014 Prof Chamayah Meyembi: academic administration and institutional development.',
           'Academic Director General \u2014 Prof Aaron Ndenka: academic quality across all faculties.',
-          'Registrar \u2014 Prof Lyonga Divine: records, registration and certification.',
+          'Registrar \u2014 Dr Divine Lyonga: records, registration and certification.',
           'Dissertation Council \u2014 presided by Professor Emeritus Arch Bishop Godfred Anyere Tah: examination of all doctoral research.',
         ],
       },

@@ -130,6 +130,19 @@ check(
   false,
 );
 
+// --- The conferral is one sentence, not two halves of two. ------------------
+// It read "has admitted to the said Degree / NAME / admitted to the Degree of /
+// DOCTOR OF PHILOSOPHY": the instrument named twice, and "the said Degree"
+// pointing forward to a degree the sentence had not reached.
+const phdWords = text(render({ degree: 'Doctor of Philosophy', classification: '' }));
+check('the doctorate reads as one sentence', /has admitted .*Grace Nalova Meyembi .*to the Degree of .*Doctor of Philosophy/.test(phdWords), true);
+check('and does not say "the said Degree"', phdWords.includes('the said Degree'), false);
+const maWords = text(render({ degree: 'Master of Divinity' }));
+check("the master's does not carry two conferring verbs", /confers upon .*admitted to the Degree/.test(maWords), false);
+
+// --- One name for one officer. ----------------------------------------------
+check('the Registrar is named as published', text(render()).includes('Dr Divine Lyonga'), true);
+
 // --- Long names are set to fit rather than overflowing. ---------------------
 const longName = 'Emmanuella Chiamaka Nwachukwu-Adeyemi Oluwatosin';
 const longHtml = render({ fullName: longName });
