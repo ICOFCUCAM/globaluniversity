@@ -74,6 +74,7 @@ const SECTIONS = [
   { id: 'approvals', label: 'Senate approval', icon: ShieldCheck },
   { id: 'versions', label: 'Version control', icon: History },
   { id: 'print', label: 'Printing', icon: Download },
+  { id: 'readiness', label: 'Readiness', icon: ListChecks },
   { id: 'gaps', label: 'Not built yet', icon: Construction },
 ] as const;
 
@@ -669,6 +670,8 @@ export default function CredentialStudio() {
             </div>
           )}
 
+          {section === 'readiness' && <Readiness />}
+
           {section === 'gaps' && (
             <div className="space-y-4">
               <div className="rounded-xl border border-[#ded6c8] bg-white p-5 dark:border-[#3d3349] dark:bg-[#241d30]">
@@ -935,3 +938,86 @@ const NOT_BUILT: { title: string; needs: string }[] = [
       'and the interface must not claim it does.',
   },
 ];
+
+/**
+ * Whether this university can actually issue a credential today.
+ *
+ * Four things have to hold, and every one of them has been communicated so far
+ * as a sentence in a handover note. A note is not a control: somebody reads it
+ * once, does three of the four, and the system carries on looking finished —
+ * because a missing environment variable does not announce itself, it makes one
+ * button quietly refuse six weeks later.
+ *
+ * Each item carries its own remedy, because "not ready" is the beginning of the
+ * question rather than the answer to it.
+ */
+function Readiness() {
+  const [items, setItems] = React.useState<
+    { id: string; label: string; state: string; detail: string; remedy?: string }[] | null
+  >(null);
+  const [problem, setProblem] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    (async () => {
+      const { data: session } = await supabase.auth.getSession();
+      const token = session.session?.access_token;
+      if (!token) { setProblem('Your session has expired.'); return; }
+      const res = await fetch('/api/admin/readiness', {
+        headers: { authorization: `Bearer ${token}` },
+      }).then((r) => r.json()).catch(() => null);
+      if (res?.ok) setItems(res.items);
+      else setProblem(res?.error ?? 'The readiness check could not be run.');
+    })();
+  }, []);
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-xl border border-[#ded6c8] bg-white p-4 dark:border-[#3d3349] dark:bg-[#241d30]">
+        <h3 className="flex items-center gap-2 text-sm font-semibold text-[#33234a] dark:text-[#e4dcf0]">
+          <ListChecks size={15} /> Can the university issue a credential today?
+        </h3>
+        <p className="mt-1 text-xs leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">
+          Four things have to be true, and none of them announces itself when it is not. A missing
+          signing key does not error — it makes one button refuse, weeks after somebody read the
+          setup note and did three of the four.
+        </p>
+      </div>
+
+      {problem && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{problem}</div>
+      )}
+
+      {items === null ? (
+        <p className="text-sm text-[#a49bb0]">Checking…</p>
+      ) : (
+        <ul className="space-y-3">
+          {items.map((i) => (
+            <li
+              key={i.id}
+              className={`rounded-xl border p-4 ${
+                i.state === 'ready' ? 'border-emerald-200 bg-emerald-50/60'
+                  : i.state === 'missing' ? 'border-red-200 bg-red-50'
+                    : 'border-amber-200 bg-amber-50'
+              }`}
+            >
+              <p className="flex items-center gap-2 text-sm font-semibold text-[#2f2838]">
+                <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
+                  i.state === 'ready' ? 'bg-emerald-100 text-emerald-700'
+                    : i.state === 'missing' ? 'bg-red-100 text-red-700'
+                      : 'bg-amber-100 text-amber-700'
+                }`}>
+                  {i.state === 'ready' ? <CheckCircle2 size={12} /> : <AlertTriangle size={12} />}
+                </span>
+                {i.label}
+              </p>
+              <p className="mt-1.5 text-sm leading-relaxed text-[#4a4155]">{i.detail}</p>
+              {i.remedy && (
+                <p className="mt-2 text-xs leading-relaxed text-[#6b6076]">{i.remedy}</p>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
