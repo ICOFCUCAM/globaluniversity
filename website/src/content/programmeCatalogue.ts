@@ -85,6 +85,16 @@ export interface Programme {
   icon: string;
 }
 
+// EACH MISSION SAYS HOW FAR ITS GRADUATES GO.
+//
+// These read as statements about a department. This is A Global University —
+// two campuses, a centre in Nigeria, every programme delivered worldwide — and
+// a faculty whose stated purpose stops at the campus gate quietly contradicts
+// the identity every other part of the site is building.
+//
+// A mission is a statement of intent, not a count, so saying that graduates
+// serve regionally and internationally claims nothing the registry has to
+// evidence. The numbers stay in institutionalFacts.ts, where they are counted.
 export const FACULTIES: FacultyProfile[] = [
   {
     id: 'theology',
@@ -98,7 +108,7 @@ export const FACULTIES: FacultyProfile[] = [
     id: 'engineering',
     name: 'Faculty of Engineering and Technology',
     mission:
-      'Building practitioners who can design, install, maintain and secure the systems that modern work depends on.',
+      'Building practitioners who can design, install, maintain and secure the systems modern work depends on — in African economies and in the international market their skills travel to.',
     blurb:
       'The Faculty of Engineering and Technology teaches by doing. Its diploma programmes are short, practical and directed at employment, covering software, networks, databases, hardware and the technical trades that keep an economy running.',
   },
@@ -106,7 +116,7 @@ export const FACULTIES: FacultyProfile[] = [
     id: 'business',
     name: 'Faculty of Business Management Science and Administration',
     mission:
-      'Training ethical administrators, accountants and managers for enterprise, government and the not-for-profit sector.',
+      'Training ethical administrators, accountants and managers for enterprise, government and the not-for-profit sector, in Africa and wherever our graduates are called to serve.',
     blurb:
       'The Faculty of Business Management Science and Administration prepares students for the offices where organisations are actually run — finance, administration, project delivery and management — with an emphasis on integrity as well as competence.',
   },
@@ -116,7 +126,8 @@ FACULTIES.push(
   {
     id: 'education',
     name: 'Faculty of Education',
-    mission: 'Forming teachers who can hold a classroom and reach the child in it.',
+    mission:
+      'Forming teachers who can hold a classroom and reach the child in it — for schools across Africa and for the diaspora communities that share them.',
     blurb:
       'The Faculty of Education prepares classroom practitioners for primary and special education, with the pedagogy, the subject grounding and the practical placement the work requires.',
   },

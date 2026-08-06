@@ -23,6 +23,26 @@ import { FACULTIES, programmesByFaculty } from '@/content/programmeCatalogue';
 // aliveness and the type never moves.
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// A NOTE ON ACADEMIC TITLES.
+//
+// This site used to say, in four places, that "our professors are called
+// instructors because rather than professing knowledge, they have lived it."
+// It was meant as a compliment to practitioners and it did the opposite of what
+// it intended.
+//
+// It is also contradicted by the university's own roster. Of twenty-five named
+// academic and administrative staff on this site, EIGHT already hold the title
+// Professor and nine more are Doctors or Bishops. The sentence apologised for
+// an absence that is not there.
+//
+// The point worth keeping — that the people teaching here have practised what
+// they teach — is now made as a positive claim about experience, without
+// declining a rank the faculty actually hold. Recognised academic ranks are
+// used where they apply: Professor, Associate Professor, Senior Lecturer,
+// Lecturer, Instructor.
+// ---------------------------------------------------------------------------
+
 // THE UNIVERSITY'S OWN PHOTOGRAPHS, NOT STOCK.
 //
 // These four cards carried the images the WordPress theme shipped with: word
@@ -68,9 +88,9 @@ export default function FacultyShowcase() {
               Four faculties. One standard.
             </h2>
             <p className="mt-6 text-lg leading-relaxed text-brand-muted">
-              Our instructors are called instructors rather than professors because they have
-              practised what they teach. Every faculty is built around that: theory that has already
-              been tested somewhere real.
+              Our faculty teach what they have practised — in pulpits, classrooms, laboratories and
+              boardrooms — and hold the qualifications to examine it. Every faculty is built on that
+              double standard: scholarship that has been tested somewhere real.
             </p>
           </div>
         </Reveal>

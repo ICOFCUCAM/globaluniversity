@@ -28,7 +28,7 @@ const YESHIVA = [
 
 const WHY = [
   { t: 'A global community', b: 'Students and faculty from around the world engage in collaborative learning and cross-cultural exchange. Wherever you study with us, you are a full member of this university.' },
-  { t: 'Instructors who practise what they teach', b: 'Our professors are called instructors because rather than professing knowledge, they have lived it. You receive a personal reply from your instructor, not a teaching assistant.' },
+  { t: 'A faculty who have practised what they teach', b: 'Our professors, doctors and senior practitioners have worked in the fields they examine. You receive a personal reply from the member of faculty teaching the course, not from a teaching assistant.' },
   { t: 'Accredited since 2007', b: 'Continuously accredited by the Ministry of Higher Education of Cameroon, and part of the International Circle of Faith.' },
   { t: 'Built for working adults', b: 'Full-time, part-time, online and distance routes, so a working professional, a minister in post or a parent can study without stopping everything else.' },
   { t: 'Certificate through to doctorate', b: 'A clear ladder in every faculty that offers one, so the first award you take is a step toward the next rather than a dead end.' },

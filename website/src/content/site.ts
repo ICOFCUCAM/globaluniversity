@@ -244,8 +244,8 @@ export const heroSlides: HeroSlide[] = [
   {
     title: 'Educating Leaders for Africa and the World',
     text:
-      'Accredited degrees in theology, education, technology and business — taught by practitioners, '
-      + 'open to working adults, and recognised beyond our borders.',
+      'Two campuses in Cameroon, a professional development centre in Nigeria, and every programme '
+      + 'delivered online worldwide — accredited, and recognised beyond our borders.',
     cta: { label: 'Begin Your Application', href: '/apply' },
     image: '/images/graduation-2024/grad-2024-platform-party.jpg',
   },
@@ -291,9 +291,16 @@ export const stats = [
   { value: '15', label: 'Years Experience' },
 ];
 
-// "Be in Demand with Our Professional Training" section from the live homepage.
+// EXECUTIVE & PROFESSIONAL STUDIES.
+//
+// Headed "Professional Formation" on the homepage and "Be in Demand with Our
+// Professional Training" here. Both read as a training centre rather than a
+// university, and arriving immediately after the faculties, the pathways and
+// the research they undid the impression the preceding six screens had built.
+// Universities call this Executive and Professional Studies, or Continuing
+// Professional Education, and so does this one now.
 export const homeFeatures = {
-  heading: 'Be in Demand with Our Professional Training',
+  heading: 'Executive & Professional Studies',
   intro:
     'We offer the best professional trainings with well designed courses to prepare you for the job market. We train top level management and entrepreneurs.',
   items: [
@@ -575,11 +582,11 @@ export const faculties = {
     'Global Institute of Business and Management Science (GIBMAS)',
   ],
   instructors: {
-    heading: 'Instructors who practice what they teach!',
+    heading: 'A faculty who have practised what they teach',
     paragraphs: [
-      'At ICOF Global University, our professors are called instructors because rather than professing knowledge, they’ve lived it. Our instructors are skilled professionals with advanced education.',
-      'Raise your virtual hand when you have a question, even if it’s after hours. You’ll receive a personal reply from your instructor — not a teacher’s assistant. If you need a little one-on-one help, we also offer tutoring services in math or reading 7 days a week.',
-      'Confidence isn’t something you get from textbooks or theory. Our instructors turn theory into skills you can put into practice right away — after all, they know firsthand what works and what doesn’t.',
+      'At ICOF Global University our faculty are scholars who have practised what they teach. They hold professorships, doctorates and senior professional qualifications, and they have earned them in pulpits, classrooms, laboratories, boardrooms and communities before bringing that experience into the lecture hall.',
+      'Raise your virtual hand when you have a question, even if it is after hours. You will receive a personal reply from the member of faculty teaching the course — not from a teaching assistant. Where you need one-to-one help, tutoring in mathematics and reading is available seven days a week.',
+      'Confidence does not come from textbooks alone. Our faculty turn theory into skills you can apply immediately, because they know at first hand what works and what does not.',
     ],
   },
   fastFacts: [

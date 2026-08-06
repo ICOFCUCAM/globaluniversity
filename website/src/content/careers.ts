@@ -8,7 +8,7 @@ export const careers = {
   sections: [
     {
       paragraphs: [
-        'ICOF Global University is built by people who practice what they teach. Our instructors are called instructors precisely because they have lived their disciplines — in pulpits, classrooms, laboratories, boardrooms and communities — before bringing that experience into our lecture halls and online classrooms.',
+        'ICOF Global University is built by people who practise what they teach. Our faculty have lived their disciplines — in pulpits, classrooms, laboratories, boardrooms and communities — before bringing that experience into our lecture halls and online classrooms, and they hold the professorships, doctorates and professional qualifications to examine what they have practised.',
       ],
     },
     {

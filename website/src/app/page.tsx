@@ -19,6 +19,9 @@ import PathwayLadder from '@/components/home/PathwayLadder';
 import FacultyShowcase from '@/components/home/FacultyShowcase';
 import StandingBand from '@/components/home/StandingBand';
 import StudentExperience from '@/components/home/StudentExperience';
+import CampusBand from '@/components/home/CampusBand';
+import Voices from '@/components/home/Voices';
+import GlobalNetwork from '@/components/home/GlobalNetwork';
 
 const PILLARS = [
   {
@@ -323,6 +326,11 @@ export default async function HomePage() {
           whether a working adult with a family applies. */}
       <StudentExperience />
 
+      {/* Student voices and alumni. This renders NOTHING until
+          src/content/voices.ts has real, consented, attributable people in it —
+          see that file for why no placeholder quotes were written. */}
+      <Voices />
+
 
       {/* Programs */}
       <Section chapter="Programs" className="bg-white">
@@ -519,43 +527,17 @@ export default async function HomePage() {
           university asked for. */}
       <StandingBand />
 
-      {/* Global footprint */}
-      <section data-chapter="Global" className="relative overflow-hidden bg-brand-purple-dark py-20 text-white sm:py-24">
-        <Aurora tone="dual" intensity={0.75} fields={2} />
-        <Grain />
-        <Seam />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
-          <p className="mb-10 text-center font-sans text-xs font-semibold uppercase tracking-[0.25em] text-brand-gold">
-            A Global University
-          </p>
-          <SpotlightGroup className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              { Icon: IconCampus, place: 'Buea, Cameroon', tag: 'Main campus', desc: 'Faculties of Theology, Education, Engineering & Technology, and GIBMAS' },
-              { Icon: IconChapel, place: 'Douala, Cameroon', tag: 'School of Theology', desc: 'Led by Dr Bongbuen Alando, Director of the School of Theology' },
-              { Icon: IconGlobe, place: 'Nigeria', tag: 'PPDI-RC', desc: 'Professional development, applied research and training centre' },
-              { Icon: IconLaptop, place: 'Online Worldwide', tag: 'Distance study', desc: 'Full master’s and doctoral programs delivered on every continent' },
-            ].map(({ Icon, place, tag, desc }, i) => (
-              <Reveal key={place} delay={i * 90}>
-                <SpotlightCard className="group h-full rounded-2xl border border-white/10 bg-white/[0.04] p-7 transition duration-500 hover:bg-white/[0.08]" tone="dark">
-                  <span className="flex h-12 w-12 items-center justify-center rounded-xl border border-brand-gold/25 bg-brand-gold/10 text-brand-gold transition duration-500 group-hover:bg-brand-gold group-hover:text-brand-purple">
-                    <Icon className="h-6 w-6" />
-                  </span>
-                  <p className="mt-5 font-sans text-[10px] font-semibold uppercase tracking-[0.18em] text-brand-gold/70">
-                    {tag}
-                  </p>
-                  <h3 className="mt-1 font-heading text-lg font-bold text-white">{place}</h3>
-                  <p className="mt-2.5 text-sm leading-relaxed text-white/70">{desc}</p>
-                </SpotlightCard>
-              </Reveal>
-            ))}
-          </SpotlightGroup>
-          <p className="mx-auto mt-8 max-w-2xl text-center text-sm text-white/70">
-            Connected through the International Circle of Faith — a worldwide fellowship of colleges,
-            seminaries and ministries across Africa, the Americas, Europe and Asia — with faculty
-            serving from Cameroon, Nigeria and the United States.
-          </p>
-        </div>
-      </section>
+      {/* Where the university physically is. */}
+      <CampusBand />
+
+      {/* THE GLOBAL NETWORK — the signature section.
+          This replaced four tiles listing the same places in words. A drawn map
+          says "global" in the half-second before anybody reads, which four
+          cards cannot; and it is drawn from the same coastline data engraved on
+          every certificate this university issues, so it costs no third-party
+          connection and matches the brand exactly. See the component for what
+          the map may and may not show. */}
+      <GlobalNetwork />
 
       {/* Online learning */}
       <Section chapter="Online" className="bg-white">
@@ -622,8 +604,8 @@ export default async function HomePage() {
       </Section>
 
       {/* Professional training features */}
-      <Section chapter="Training">
-        <SectionHeading eyebrow="Professional Formation">{homeFeatures.heading}</SectionHeading>
+      <Section chapter="Executive studies">
+        <SectionHeading eyebrow="Executive & Professional Studies">{homeFeatures.heading}</SectionHeading>
         <p className="mx-auto -mt-5 mb-12 max-w-2xl text-center leading-relaxed text-brand-muted">{homeFeatures.intro}</p>
         <SpotlightGroup className="grid gap-6 md:grid-cols-3">
           {homeFeatures.items.map((f, i) => (

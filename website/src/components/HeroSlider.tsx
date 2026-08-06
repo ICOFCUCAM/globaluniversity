@@ -7,6 +7,7 @@ import type { HeroSlide } from '@/content/site';
 import { Aurora, Grain, LightShaft } from './Atmosphere';
 import Magnetic from './Magnetic';
 import { HERO_ASSURANCES } from '@/content/institutionalFacts';
+import { UNIVERSITY } from '@/lib/constants';
 
 const DURATION = 7000;
 
@@ -127,9 +128,32 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
       {/* Copy is rendered once, outside the fading frames, so the headline
           never cross-fades against itself. */}
       <div className="relative z-[2] mx-auto flex min-h-[clamp(34rem,88vh,54rem)] max-w-5xl flex-col items-center justify-center px-4 py-24 text-center sm:py-32">
-        <p className="mb-6 inline-flex items-center gap-2.5 rounded-full border border-brand-gold/30 bg-brand-gold/10 px-4 py-1.5 font-sans text-[10px] font-semibold uppercase tracking-[0.2em] text-brand-gold backdrop-blur-sm sm:text-[11px] sm:tracking-[0.24em]">
-          <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-brand-gold" />
-          ICOF Global University
+        {/* THE MOTTO, AND WHY IT IS THE CONSTANT.
+            The headlines below rotate; this does not. That is how an
+            established university's front page is built — the crest and the
+            motto hold still while the news moves underneath them — and it is
+            what turns four separate slides into one institution speaking.
+
+            The words are the university's own, from constants.ts, and were
+            already carried on the certificate. They are more distinctive than
+            anything that could be written for the purpose: "Knowledge.
+            Character. Service." belongs to nobody, and this belongs to ICOF. */}
+        {/* A GLOBAL UNIVERSITY — the identity, above the motto and above the
+            rotating headline, because it is the thing a visitor must leave
+            with. It was buried in the top bar and the footer; those are the
+            two places a first-time visitor reads last. */}
+        <p className="mb-4 font-heading text-[13px] font-bold uppercase tracking-[0.42em] text-white/85 [text-shadow:0_1px_14px_rgba(29,20,40,0.85)] sm:text-[15px] sm:tracking-[0.5em]">
+          A Global University
+        </p>
+        <p className="mb-7 flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 rounded-full border border-brand-gold/35 bg-brand-purple-dark/25 px-5 py-2 font-sans text-[10px] font-semibold uppercase tracking-[0.22em] text-brand-gold backdrop-blur-md sm:text-[11px] sm:tracking-[0.26em]">
+          {UNIVERSITY.motto.replace(/&/g, '·').split(/[,·]/).map((word, wi) => (
+            <span key={word} className="flex items-center gap-3">
+              {wi > 0 && (
+                <span aria-hidden="true" className="h-1 w-1 rounded-full bg-brand-gold/70" />
+              )}
+              {word.trim()}
+            </span>
+          ))}
         </p>
 
         {slides.map((slide, i) => (

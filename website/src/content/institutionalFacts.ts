@@ -39,7 +39,19 @@
 
 import { UNIVERSITY } from '@/lib/constants';
 import { ALL_PROGRAMMES } from '@/content/programmeCatalogue';
-import { faculties } from '@/content/site';
+import { faculties, leadership, faculty, administration } from '@/content/site';
+
+/**
+ * Named academic and administrative staff, counted from the rosters this site
+ * already publishes with photographs, roles and biographies.
+ *
+ * This is the answer to "how many academic staff" that the university can
+ * actually defend: every one of these people is on the site with a name and a
+ * face. A larger figure taken from a payroll nobody can see would impress more
+ * and evidence less.
+ */
+export const namedStaff = [...leadership, ...faculty, ...administration]
+  .filter((m, i, all) => all.findIndex((x) => x.name === m.name) === i);
 
 /** Whole years since the university was founded. */
 export function yearsEstablished(now: Date = new Date()): number {
@@ -81,14 +93,9 @@ export function institutionalFacts(): Fact[] {
       source: 'The faculties listed on the Faculties page.',
     },
     {
-      // NOT the award-level count, which is also five. Two identical figures
-      // side by side in a row of four reads as a mistake, and the reader stops
-      // to work out whether it is one — which is the opposite of what a band of
-      // statistics is for. The ladder from certificate to doctorate is made at
-      // length in its own section a screen further down, where it belongs.
-      value: '3',
-      label: 'Ways to study — online, on campus, blended',
-      source: 'The study modes offered on every programme.',
+      value: String(namedStaff.length),
+      label: 'Academic and administrative staff',
+      source: 'Counted from the rosters published on this site, each with a name and a face.',
     },
   ];
 }
@@ -103,8 +110,8 @@ export function institutionalFacts(): Fact[] {
  */
 export const HERO_ASSURANCES: string[] = [
   `Accredited by the Ministry of Higher Education since ${UNIVERSITY.established}`,
-  'Campuses in Buea and Douala, Cameroon',
-  'Study online, on campus or blended',
+  'Campuses in Buea and Douala · Centre in Nigeria',
+  'Every programme online, worldwide',
 ];
 
 /**
@@ -159,6 +166,33 @@ export const PATHWAY = [
  * "20,000+ alumni" before the register can produce the list is making a claim
  * an accreditor will ask to see evidenced.
  */
+export const CAMPUSES = [
+  {
+    city: 'Buea',
+    country: 'Cameroon',
+    address: 'Opposite Bulu Blind Junction, Buea, South West Region',
+    role: 'Principal campus and the Faculty of Theology',
+    map: 'https://www.google.com/maps/search/?api=1&query=Bulu+Blind+Junction+Buea+Cameroon',
+    image: '/images/graduation-2024/grad-2024-procession-hall.jpg',
+  },
+  {
+    city: 'Douala',
+    country: 'Cameroon',
+    address: 'Littoral Region',
+    role: 'School of Theology, Douala',
+    map: 'https://www.google.com/maps/search/?api=1&query=Douala+Cameroon',
+    image: '/images/graduation-2024/grad-2024-congregation-full.jpg',
+  },
+  {
+    city: 'Online',
+    country: 'Worldwide',
+    address: 'Every programme, from anywhere',
+    role: 'The student portal, the library and your faculty',
+    map: null,
+    image: '/images/global.jpg',
+  },
+] as const;
+
 export const PENDING_MEASURES = [
   {
     figure: 'Graduates to date',
@@ -180,5 +214,17 @@ export const PENDING_MEASURES = [
     figure: 'Graduate satisfaction',
     from: 'A survey the university runs and can produce the instrument for.',
     blocked: 'Nothing in this system measures it, and it cannot be inferred.',
+  },
+  {
+    figure: 'Graduate outcomes — employment, ministry, further study',
+    from: 'A destinations survey of each graduating cohort, six and twelve months on.',
+    blocked: 'There is no graduating cohort yet. This is the figure employers weigh most.',
+  },
+  {
+    figure: 'Research centres and publications',
+    from: 'A register of centres, and a publications list maintained by the Research Office.',
+    blocked:
+      'Neither exists in this system. The Research section of the homepage describes intent and '
+      + 'must not be given a count until there is something to count.',
   },
 ] as const;
