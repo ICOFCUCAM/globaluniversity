@@ -10,7 +10,8 @@
     "test:grading": "node src/lib/grading.test.mjs",
     "test:fees": "node src/lib/fees.test.mjs",
     "test:seal": "node src/lib/documentSecurity.test.mjs",
-    "test": "npm run test:grading && npm run test:fees && npm run test:seal"
+    "test:certificate": "node src/lib/certificate.test.mjs",
+    "test": "npm run test:grading && npm run test:fees && npm run test:seal && npm run test:certificate"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
