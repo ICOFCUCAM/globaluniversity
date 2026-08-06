@@ -28,14 +28,31 @@ export default function FeeModule() {
   const [showNew, setShowNew] = useState(false);
   const [view, setView] = useState<Record<string, string> | null>(null);
   const [busy, setBusy] = useState(false);
+  const [payments, setPayments] = useState<any[]>([]);
+  const [tableMissing, setTableMissing] = useState(false);
+  const [recordError, setRecordError] = useState<string | null>(null);
   const [form, setForm] = useState({ student_id: '', amount: '', currency: 'FCFA', purpose: 'Tuition', method: 'MTN Mobile Money' });
 
+  /**
+   * Payments come from `payments` now, with the old document-blob receipts read
+   * alongside so nothing recorded before the table existed disappears.
+   *
+   * The legacy rows are shown, not migrated. Rewriting historic financial
+   * records in place is not something to do quietly in a page load — a finance
+   * office needs to migrate them deliberately, with someone answerable for the
+   * result. They are marked so the two are distinguishable.
+   */
   async function load() {
-    const [{ data: r }, { data: s }] = await Promise.all([
+    const [{ data: pay, error: payErr }, { data: legacy }, { data: s }] = await Promise.all([
+      supabase.from('payments').select('*').order('received_at', { ascending: false }),
       supabase.from('documents').select('*').eq('document_type', 'fee-receipt').order('uploaded_at', { ascending: false }),
       supabase.from('students').select('id, matric_no, first_name, last_name').order('last_name'),
     ]);
-    if (r) setReceipts(r);
+    // The table is absent until the migration is run; say so rather than
+    // showing an empty ledger as though no money had been taken.
+    setTableMissing(!!payErr);
+    setPayments((pay ?? []) as any[]);
+    setReceipts(legacy ?? []);
     if (s) setStudents(s);
   }
   useEffect(() => {
@@ -47,23 +64,25 @@ export default function FeeModule() {
     setBusy(true);
     const student = students.find((s) => s.id === form.student_id);
     const no = `RCPT-${Date.now().toString(36).toUpperCase()}`;
-    const payload = {
-      receipt_no: no,
-      student: student ? `${student.last_name} ${student.first_name}` : '',
-      matric_no: student?.matric_no ?? '',
-      amount: `${Number(form.amount).toLocaleString()} ${form.currency}`,
+    const { error } = await supabase.from('payments').insert({
+      student_id: form.student_id || null,
+      reference: no,
+      amount: Number(form.amount),
+      currency: form.currency,
       purpose: form.purpose,
       method: form.method,
-      date: new Date().toISOString().slice(0, 10),
-    };
-    await supabase.from('documents').insert({
-      student_id: form.student_id || null,
-      file_name: `${no} · ${payload.matric_no} · ${Number(form.amount).toLocaleString()} ${form.currency} · ${form.purpose} (${form.method})`,
-      file_url: `data:application/json;base64,${btoa(unescape(encodeURIComponent(JSON.stringify(payload))))}`,
-      file_type: 'application/json',
-      document_type: 'fee-receipt',
     });
+
     setBusy(false);
+    if (error) {
+      // A payment that failed to record must never look recorded. The finance
+      // officer has the student in front of them and has taken the money.
+      setRecordError(
+        `Not recorded: ${error.message}. The payment has NOT been saved — do not issue a receipt.`,
+      );
+      return;
+    }
+    setRecordError(null);
     setShowNew(false);
     setForm({ student_id: '', amount: '', currency: 'FCFA', purpose: 'Tuition', method: 'MTN Mobile Money' });
     load();
@@ -80,40 +99,13 @@ export default function FeeModule() {
 
   const input =
     'w-full px-3 py-2 bg-gray-50 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35';
-  /**
-   * Totals, read from the stored record rather than from its filename.
-   *
-   * These were parsed with a regex over `file_name` — the human-readable label
-   * that also contains the student's name. A student called "Ngwa Ndip-Agbor
-   * 2000" or any name with a middle dot in it shifted the match, and the
-   * payment was then silently dropped from the total. A finance figure that
-   * depends on how somebody's name is spelled is not a figure.
-   *
-   * The payload is already stored as JSON in file_url; this reads that.
-   *
-   * NOTE: receipts live in `documents` as base64 JSON. That is the wrong home
-   * for a financial record — it cannot be queried, summed or reconciled in SQL,
-   * and it is invisible to any audit that does not know the encoding. A
-   * `payments` table is the fix, and it is a schema change rather than a
-   * component change, so it is recorded here and in PORTAL-DESIGN.md rather
-   * than half-done.
-   */
+  // Totals per currency. Currencies are never added together: the university
+  // charges an ICOF scholarship rate and a European rate, and one combined
+  // figure across both would be a number the finance office could not explain.
   const totals: Record<string, number> = {};
-  for (const r of receipts) {
-    try {
-      const json = JSON.parse(decodeURIComponent(escape(atob(String(r.file_url).split('base64,')[1]))));
-      // "150,000 FCFA" — split the number from the currency once, here.
-      const m = String(json.amount ?? '').match(/^([\d,.]+)\s*(\w+)$/);
-      if (!m) continue;
-      const value = Number(m[1].replace(/,/g, ''));
-      if (!Number.isFinite(value)) continue;
-      // Currencies are never added together. 150,000 FCFA + 200 EUR is not a
-      // number, and a single "total collected" would be a fiction the finance
-      // office would be asked to explain.
-      totals[m[2]] = (totals[m[2]] ?? 0) + value;
-    } catch {
-      /* A receipt that cannot be read is skipped rather than mis-counted. */
-    }
+  for (const p of payments) {
+    const v = Number(p.amount);
+    if (Number.isFinite(v)) totals[p.currency] = (totals[p.currency] ?? 0) + v;
   }
 
   return (
@@ -131,10 +123,31 @@ export default function FeeModule() {
         </button>
       </div>
 
+      {tableMissing && (
+        <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200">
+          <strong>The payments table does not exist yet.</strong> Run
+          <code className="mx-1 rounded bg-white/60 px-1 dark:bg-black/20">000_complete.sql</code>
+          before taking any payment. Until then nothing can be recorded, and the figures below
+          cover only receipts kept under the old document format.
+        </div>
+      )}
+
+      {recordError && (
+        <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200">
+          {recordError}
+        </p>
+      )}
+
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] p-5">
           <p className="text-xs font-semibold uppercase tracking-wider text-[#a49bb0] dark:text-[#7b7289]">Payments recorded</p>
-          <p className="mt-1 text-2xl font-bold text-[#33234a] dark:text-[#e4dcf0]">{receipts.length}</p>
+          <p className="mt-1 text-2xl font-bold tabular-nums text-[#33234a] dark:text-[#e4dcf0]">{payments.length}</p>
+          {receipts.length > 0 && (
+            <p className="mt-1 text-xs text-[#a49bb0]">
+              plus {receipts.length} under the old document format, shown below but not counted in
+              the totals
+            </p>
+          )}
         </div>
         <div className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] p-5">
           <p className="text-xs font-semibold uppercase tracking-wider text-[#a49bb0] dark:text-[#7b7289]">Total collected</p>
