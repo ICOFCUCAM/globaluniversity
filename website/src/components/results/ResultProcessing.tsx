@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { calculateGrade, calculateGPA, getGradeColor, GRADING_SCALE } from '@/lib/grading';
+import { calculateGrade, calculateGPA, getGradeColor, GRADING_SCALE, PASS_MARK } from '@/lib/grading';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Course, Student } from '@/lib/types';
 import {
@@ -113,8 +113,11 @@ export default function ResultProcessing() {
   const classAvg = results.filter((r) => r.totalScore > 0).length > 0
     ? (results.filter((r) => r.totalScore > 0).reduce((s, r) => s + r.totalScore, 0) / results.filter((r) => r.totalScore > 0).length).toFixed(1)
     : '0';
-  const passCount = results.filter((r) => r.totalScore >= 40).length;
-  const failCount = results.filter((r) => r.totalScore > 0 && r.totalScore < 40).length;
+  // PASS_MARK, not 40. This screen counted a pass at 40 while the university
+  // publishes 65% — so a lecturer reviewing a class saw a pass rate computed
+  // against a threshold their own regulations do not use.
+  const passCount = results.filter((r) => r.totalScore >= PASS_MARK).length;
+  const failCount = results.filter((r) => r.totalScore > 0 && r.totalScore < PASS_MARK).length;
 
   return (
     <div className="space-y-6">
