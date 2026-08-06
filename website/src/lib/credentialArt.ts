@@ -93,6 +93,13 @@ export function guillocheRosette(
   size: number,
   colour: string,
   opacity = 0.5,
+  /**
+   * How many nested bands to draw. Three is the full figure; one is the outer
+   * band alone, which is what you want when something else — the globe — is
+   * going to sit in the middle of it. Drawing all three under a globe puts a
+   * second rosette inside the sphere and the graticule becomes unreadable.
+   */
+  bandCount = 3,
 ): string {
   const r = rng(seed);
   const R = size / 2;
@@ -123,7 +130,7 @@ export function guillocheRosette(
     { scale: 0.98, petals: 7 + Math.floor(r() * 5), curves: 14, phase: 0 },
     { scale: 0.72, petals: 11 + Math.floor(r() * 6), curves: 12, phase: Math.PI / 5 },
     { scale: 0.46, petals: 5 + Math.floor(r() * 4), curves: 10, phase: Math.PI / 3 },
-  ];
+  ].slice(0, Math.max(1, Math.min(3, bandCount)));
 
   // The ground: a fine radial engine-turn, the plain lathe work that sits under
   // the figures on a banknote. Cheap to draw, very tedious to fake by hand.
@@ -138,10 +145,12 @@ export function guillocheRosette(
       `L${(R + Math.cos(a) * r1).toFixed(2)},${(R + Math.sin(a) * r1).toFixed(2)}`,
     );
   }
-  paths.push(
-    `<path d="${groundPts.join(' ')}" fill="none" stroke="${colour}" stroke-width="0.18" ` +
-    `stroke-opacity="${(opacity * 0.34).toFixed(3)}"/>`,
-  );
+  if (bandCount >= 3) {
+    paths.push(
+      `<path d="${groundPts.join(' ')}" fill="none" stroke="${colour}" stroke-width="0.18" ` +
+      `stroke-opacity="${(opacity * 0.34).toFixed(3)}"/>`,
+    );
+  }
 
   for (const band of bands) {
     const A = R * band.scale;
@@ -346,19 +355,51 @@ export function securityGround(
   opacity = 0.055,
 ): string {
   const r = rng(seed);
-  const lines: string[] = [];
+  const parts: string[] = [];
+
+  // The ground was five wavy lines and the university's initials set at an
+  // angle. That is a texture, and it did the photocopier job — fine regular
+  // pattern, dithers badly on a copy — but it said nothing, and a certificate
+  // has only two surfaces that can speak without spending words: the watermark
+  // and the paper.
+  //
+  // The paper now carries the same motif as the watermark, at a twentieth of
+  // the size: a small graticule beside the initials, repeated across the whole
+  // sheet. Standing back it reads as texture; under a loupe it is hundreds of
+  // little globes, which is a thing a forger has to reproduce and a photocopier
+  // turns to mud.
+  const g = tile * 0.17;
+  const gx = tile * 0.20;
+  const gy = tile * 0.24;
+  parts.push(
+    `<g fill="none" stroke="${colour}" stroke-opacity="${(opacity * 1.5).toFixed(3)}" stroke-width="0.22">
+      <circle cx="${(gx + g).toFixed(1)}" cy="${(gy + g).toFixed(1)}" r="${g.toFixed(1)}"/>
+      <ellipse cx="${(gx + g).toFixed(1)}" cy="${(gy + g).toFixed(1)}" rx="${(g * 0.42).toFixed(1)}" ry="${g.toFixed(1)}"/>
+      <ellipse cx="${(gx + g).toFixed(1)}" cy="${(gy + g).toFixed(1)}" rx="${(g * 0.82).toFixed(1)}" ry="${g.toFixed(1)}"/>
+      <line x1="${gx.toFixed(1)}" y1="${(gy + g).toFixed(1)}" x2="${(gx + 2 * g).toFixed(1)}" y2="${(gy + g).toFixed(1)}"/>
+      <ellipse cx="${(gx + g).toFixed(1)}" cy="${(gy + g).toFixed(1)}" rx="${g.toFixed(1)}" ry="${(g * 0.45).toFixed(1)}"/>
+    </g>`,
+  );
+
+  // The lathe lines stay. They are what makes the ground read as an even tone
+  // at arm's length rather than as a field of separate marks.
   for (let i = 0; i < 5; i += 1) {
     const y = (i / 5) * tile + r() * 2;
-    lines.push(
+    parts.push(
       `<path d="M0,${y.toFixed(1)} Q${(tile / 4).toFixed(1)},${(y - 3).toFixed(1)} ${(tile / 2).toFixed(1)},${y.toFixed(1)} T${tile},${y.toFixed(1)}" ` +
-      `fill="none" stroke="${colour}" stroke-width="0.25" stroke-opacity="${opacity * 6}"/>`,
+      `fill="none" stroke="${colour}" stroke-width="0.25" stroke-opacity="${(opacity * 6).toFixed(3)}"/>`,
     );
   }
+
+  parts.push(
+    `<text x="${(tile * 0.66).toFixed(1)}" y="${(tile * 0.72).toFixed(1)}" text-anchor="middle" ` +
+    `transform="rotate(-30 ${(tile * 0.66).toFixed(1)} ${(tile * 0.72).toFixed(1)})" ` +
+    `font-family="Georgia,serif" font-size="${(tile * 0.15).toFixed(1)}" letter-spacing="1" ` +
+    `fill="${colour}" fill-opacity="${opacity}">${escapeXml(mark)}</text>`,
+  );
+
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${tile}" height="${tile}" viewBox="0 0 ${tile} ${tile}">
-    ${lines.join('')}
-    <text x="${tile / 2}" y="${tile / 2}" text-anchor="middle" transform="rotate(-30 ${tile / 2} ${tile / 2})"
-      font-family="Georgia,serif" font-size="${(tile * 0.16).toFixed(1)}" letter-spacing="1"
-      fill="${colour}" fill-opacity="${opacity}">${escapeXml(mark)}</text>
+    ${parts.join('')}
   </svg>`;
 }
 
@@ -614,3 +655,173 @@ export function waferSeal(
 
 export const waferSealUri = (seed: number, size: number, colour: string, legend: string, centre: string) =>
   enc(waferSeal(seed, size, colour, legend, centre));
+
+/* ------------------------------------------------------------------ */
+/* Layer: the guilloché globe                                           */
+/* ------------------------------------------------------------------ */
+
+/**
+ * A wireframe globe, engine-turned, for a university whose name is Global.
+ *
+ * WHY A GLOBE AND NOT MORE ROSETTE. The rosette is a beautiful abstraction and
+ * it says nothing. This university is the International Circle of Faith's
+ * global university — it teaches in Cameroon, admits from a dozen countries and
+ * sends its awards to be read on other continents — and its most-photographed
+ * document had no mark of that anywhere on it. A watermark is the one place a
+ * document can say what an institution is without spending words on it.
+ *
+ * WHY IT IS ALSO A BETTER SECURITY FIGURE. A graticule is the same kind of
+ * object as a guilloché: every line is determined by an equation, so a hand
+ * copy goes wrong everywhere at once rather than in one visible place. It is
+ * strictly harder than the rosette, because the meridians are not concentric —
+ * their spacing follows a cosine, and getting that wrong is obvious to anyone
+ * who has ever looked at a map.
+ *
+ * HOW IT IS DRAWN. Properly, in three dimensions and projected, rather than as
+ * a stack of ellipses that approximate the look. Points on the sphere are
+ * rotated about the polar axis to tilt it toward the viewer and projected
+ * orthographically; the far hemisphere is drawn at a lower weight, which is how
+ * an engraver renders a transparent sphere and is what makes it read as round
+ * rather than as a flat target.
+ */
+export function guillocheGlobe(
+  seed: number,
+  size: number,
+  colour: string,
+  opacity = 0.5,
+): string {
+  const r = rng(seed);
+  const R = size / 2;
+  const radius = R * 0.86;
+
+  // Axial tilt, so the pole leans toward the reader. 23.4° is the earth's, and
+  // using it rather than a round number is the sort of thing that costs nothing
+  // and is right.
+  const tilt = (23.4 * Math.PI) / 180;
+  const spin = r() * Math.PI * 2;
+
+  // Strokes scale with the figure.
+  //
+  // They were fixed at a third of a unit, which was legible at the size this
+  // was first drawn at and vanished on the certificate — a rosette survives
+  // being set faint because sixteen overlapping curves read as one mass, and a
+  // graticule does not, because its lines are separate by construction. Scaled,
+  // and roughly twice as heavy as the rosette's, so the two figures carry
+  // similar weight when they are laid over one another.
+  const sw = (base: number) => (base * size) / 400;
+
+  const project = (latDeg: number, lonDeg: number) => {
+    const la = (latDeg * Math.PI) / 180;
+    const lo = (lonDeg * Math.PI) / 180 + spin;
+    const x = Math.cos(la) * Math.cos(lo);
+    const y = Math.cos(la) * Math.sin(lo);
+    const z = Math.sin(la);
+    // Rotate about the x-axis to tilt the pole toward the viewer.
+    const yt = y * Math.cos(tilt) - z * Math.sin(tilt);
+    const zt = y * Math.sin(tilt) + z * Math.cos(tilt);
+    return {
+      x: R + x * radius,
+      y: R - zt * radius,
+      // Positive is the near hemisphere. The far side is drawn lighter.
+      front: yt >= 0,
+    };
+  };
+
+  const strokes: string[] = [];
+  const emit = (pts: { x: number; y: number; front: boolean }[], width: number) => {
+    // Split the curve wherever it crosses the limb, so the near and far halves
+    // can carry different weights without one polyline spanning both.
+    let run: string[] = [];
+    let runFront = pts[0]?.front ?? true;
+    const flush = () => {
+      if (run.length > 1) {
+        strokes.push(
+          `<polyline points="${run.join(' ')}" fill="none" stroke="${colour}" ` +
+          `stroke-width="${width.toFixed(2)}" ` +
+          `stroke-opacity="${(opacity * (runFront ? 0.85 : 0.32)).toFixed(3)}"/>`,
+        );
+      }
+      run = [];
+    };
+    for (const p of pts) {
+      if (p.front !== runFront) { flush(); runFront = p.front; }
+      run.push(`${p.x.toFixed(2)},${p.y.toFixed(2)}`);
+    }
+    flush();
+  };
+
+  // Meridians every 15°, which is one hour of longitude.
+  for (let lon = 0; lon < 180; lon += 15) {
+    const pts = [];
+    for (let lat = -90; lat <= 90; lat += 2) pts.push(project(lat, lon));
+    for (let lat = 90; lat >= -90; lat -= 2) pts.push(project(lat, lon + 180));
+    emit(pts, sw(lon === 0 ? 1.0 : 0.66));
+  }
+
+  // Parallels every 15°, and the tropics and circles at their true latitudes —
+  // 23.4 and 66.6 — because a globe with evenly spaced parallels is a diagram
+  // and one with the real ones is a globe.
+  const parallels = [-66.6, -45, -23.4, 0, 23.4, 45, 66.6];
+  for (const lat of parallels) {
+    const pts = [];
+    for (let lon = 0; lon <= 360; lon += 2) pts.push(project(lat, lon));
+    emit(pts, sw(Math.abs(lat) < 0.01 ? 1.05 : 0.62));
+  }
+
+  // The limb, and a fine engine-turned ground inside it — the plain lathe work
+  // that sits under the figures on a banknote.
+  const spokes = 144;
+  const ground: string[] = [];
+  for (let i = 0; i < spokes; i += 1) {
+    const a = (i / spokes) * Math.PI * 2;
+    ground.push(
+      `M${(R + Math.cos(a) * radius * 0.14).toFixed(2)},${(R + Math.sin(a) * radius * 0.14).toFixed(2)} ` +
+      `L${(R + Math.cos(a) * radius * 0.995).toFixed(2)},${(R + Math.sin(a) * radius * 0.995).toFixed(2)}`,
+    );
+  }
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+  <path d="${ground.join(' ')}" fill="none" stroke="${colour}" stroke-width="${sw(0.3).toFixed(2)}"
+        stroke-opacity="${(opacity * 0.20).toFixed(3)}"/>
+  ${strokes.join('')}
+  <circle cx="${R}" cy="${R}" r="${radius.toFixed(2)}" fill="none" stroke="${colour}"
+          stroke-width="${sw(1.3).toFixed(2)}" stroke-opacity="${(opacity * 0.95).toFixed(3)}"/>
+  <circle cx="${R}" cy="${R}" r="${(radius * 1.045).toFixed(2)}" fill="none" stroke="${colour}"
+          stroke-width="${sw(0.5).toFixed(2)}" stroke-opacity="${(opacity * 0.55).toFixed(3)}"/>
+</svg>`;
+}
+
+export const guillocheGlobeUri = (seed: number, size: number, colour: string, opacity?: number) =>
+  enc(guillocheGlobe(seed, size, colour, opacity));
+
+/**
+ * The globe set within the rosette — the mark this university's certificate
+ * carries by default.
+ *
+ * The rosette is the security figure and the globe is the institution; laying
+ * one inside the other means the watermark does both jobs at once instead of
+ * choosing. The rosette is held back to about a third of the globe's weight so
+ * it reads as the ground rather than competing with it.
+ */
+export function globeInRosette(
+  seed: number,
+  size: number,
+  colour: string,
+  opacity = 0.5,
+): string {
+  const inner = size * 0.58;
+  // The outer band only. The full three-band figure would put a second rosette
+  // inside the sphere and make the graticule unreadable — which is what it did.
+  const rosette = guillocheRosette(seed, size, colour, opacity * 0.55, 1)
+    .replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '');
+  const globe = guillocheGlobe(seed ^ 0x5bf03635, inner, colour, opacity)
+    .replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '');
+  const off = ((size - inner) / 2).toFixed(2);
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+  ${rosette}
+  <g transform="translate(${off},${off})">${globe}</g>
+</svg>`;
+}
+
+export const globeInRosetteUri = (seed: number, size: number, colour: string, opacity?: number) =>
+  enc(globeInRosette(seed, size, colour, opacity));

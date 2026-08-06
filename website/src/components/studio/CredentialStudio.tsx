@@ -472,6 +472,20 @@ export default function CredentialStudio() {
                   checked={design.security.guilloche}
                   onChange={(v) => setSecurity('guilloche', v)}
                 />
+                <Row label="Figure">
+                  <Select
+                    value={design.security.watermark}
+                    onChange={(v) => setSecurity('watermark', v as CredentialDesign['security']['watermark'])}
+                    options={['globe-in-rosette', 'globe', 'rosette']}
+                  />
+                </Row>
+                <p className="text-[11px] leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">
+                  {design.security.watermark === 'rosette'
+                    ? 'The guilloché alone. Beautiful, and it says nothing about the institution.'
+                    : design.security.watermark === 'globe'
+                      ? 'A wireframe graticule. Harder to redraw than a rosette — the meridians are not evenly spaced, their spacing follows a cosine, and getting that wrong is obvious to anyone who has looked at a map.'
+                      : 'The university’s own mark: a graticule inside a guilloché ring. The rosette is the security figure and the globe is the institution — this is the International Circle of Faith’s global university, and its most-photographed document carried no sign of that anywhere.'}
+                </p>
                 <Row label="Strength">
                   <input type="range" min={0.1} max={1} step={0.05} value={design.security.guillocheOpacity}
                     onChange={(e) => setSecurity('guillocheOpacity', Number(e.target.value))}

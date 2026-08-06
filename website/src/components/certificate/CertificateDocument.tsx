@@ -41,7 +41,7 @@ import type { CredentialDesign, Signatory } from '@/lib/credentialTemplate';
 import {
   seedFrom, guillocheRosetteUri, guillocheBandUri, microtextBandUri,
   securityGroundUri, ordinalDay, yearInWords,
-  ornateFrameUri, waferSealUri,
+  ornateFrameUri, waferSealUri, guillocheGlobeUri, globeInRosetteUri,
 } from '@/lib/credentialArt';
 import { wordingForAward } from '@/lib/awards';
 
@@ -237,7 +237,14 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
   // be the bug this list prevents.
   const art = useMemo(() => ({
     ground: securityGroundUri(seed, 72, design.brand, UNIVERSITY.shortName, 0.05),
-    rosette: guillocheRosetteUri(seed, 520, design.brand, 1),
+    // The watermark figure. 'globe-in-rosette' is the university's own mark;
+    // see CredentialDesign.security.watermark for why a globe and not more
+    // rosette.
+    rosette: sec.watermark === 'globe'
+      ? guillocheGlobeUri(seed, 520, design.brand, 1)
+      : sec.watermark === 'rosette'
+        ? guillocheRosetteUri(seed, 520, design.brand, 1)
+        : globeInRosetteUri(seed, 560, design.brand, 1),
     // Sheet size and a band widened by the bleed, so the trim falls through
     // the gilt rather than beside it.
     frame: ornateFrameUri(sheetW, sheetH, design.accent, '#8a6d1f', design.borderWidthMm + bleed),
@@ -249,7 +256,7 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
       `${UNIVERSITY.name.toUpperCase()} · `, UNIVERSITY.shortName),
   }), [
     seed, sheetW, sheetH, bleed, design.brand, design.accent, design.borderWidthMm,
-    design.sealColour, data.credentialId,
+    design.sealColour, data.credentialId, sec.watermark,
   ]);
 
   if (missingId && !specimen) {
@@ -392,7 +399,10 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
           // Visible as texture, not as decoration competing with the text. Below
           // about 0.2 it disappears entirely on a laser printer, which is where
           // it matters most — a watermark nobody can see is not a watermark.
-          opacity: sec.guillocheOpacity * 0.19,
+          // A graticule needs more weight than a rosette to read at the same
+          // distance: sixteen overlapping curves make a mass, seven separate
+          // meridians do not.
+          opacity: sec.guillocheOpacity * (sec.watermark === 'rosette' ? 0.19 : 0.30),
         }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
