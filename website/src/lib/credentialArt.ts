@@ -485,6 +485,99 @@ export function yearInWords(year: number): string {
 /* ------------------------------------------------------------------ */
 
 /**
+ * The frame the university has been using, kept as the default.
+ *
+ * WHY THIS IS STILL HERE AFTER THE CATALOGUE WAS BUILT. The seven carved
+ * courses in borderCatalogue.ts are not yet close enough to the 2011
+ * certificate to replace this, and the university has said so. A design that is
+ * merely NEWER is not an improvement, and swapping the frame on the strength of
+ * having rewritten it would be changing the university's document to suit the
+ * code.
+ *
+ * So this stays as `borderCourse: 'classic'` and stays the default. The seven
+ * are selectable, and none of them is in force until one of them is better.
+ */
+export function classicFrame(
+  widthMm: number,
+  heightMm: number,
+  gold: string,
+  deep: string,
+  bandMm = 11,
+): string {
+  const w = widthMm;
+  const h = heightMm;
+  const b = bandMm;
+  const id = `c${Math.round(w)}x${Math.round(h)}x${Math.round(b)}`;
+
+  // One tile of the scroll course. A C-scroll, a leaf springing from it, and a
+  // lozenge between — the motif that repeats all the way round.
+  const tile = 14;
+  const motif = `
+    <g fill="none" stroke="${deep}" stroke-width="0.55" stroke-linecap="round">
+      <path d="M1,${b / 2} C1,${b * 0.18} ${tile * 0.28},${b * 0.16} ${tile * 0.30},${b / 2}
+               C${tile * 0.32},${b * 0.84} ${tile * 0.06},${b * 0.82} ${tile * 0.10},${b / 2}"/>
+      <path d="M${tile * 0.34},${b / 2} C${tile * 0.44},${b * 0.14} ${tile * 0.60},${b * 0.20} ${tile * 0.64},${b / 2}
+               C${tile * 0.60},${b * 0.80} ${tile * 0.44},${b * 0.86} ${tile * 0.34},${b / 2}"/>
+      <path d="M${tile * 0.66},${b * 0.30} L${tile * 0.82},${b / 2} L${tile * 0.66},${b * 0.70}
+               L${tile * 0.50},${b / 2} Z" stroke-width="0.45"/>
+      <circle cx="${tile * 0.92}" cy="${b / 2}" r="0.9" fill="${deep}" stroke="none"/>
+    </g>`;
+
+  // A corner medallion: a rosette in a lobed frame, of the kind cast into the
+  // corners of an engraved border.
+  const medallion = (cx: number, cy: number, r: number) => {
+    const petals: string[] = [];
+    for (let i = 0; i < 8; i += 1) {
+      const a = (i / 8) * Math.PI * 2;
+      petals.push(
+        `<ellipse cx="${(cx + Math.cos(a) * r * 0.42).toFixed(2)}" cy="${(cy + Math.sin(a) * r * 0.42).toFixed(2)}" ` +
+        `rx="${(r * 0.30).toFixed(2)}" ry="${(r * 0.16).toFixed(2)}" ` +
+        `transform="rotate(${((a * 180) / Math.PI).toFixed(1)} ${(cx + Math.cos(a) * r * 0.42).toFixed(2)} ${(cy + Math.sin(a) * r * 0.42).toFixed(2)})" ` +
+        `fill="none" stroke="${deep}" stroke-width="0.4"/>`,
+      );
+    }
+    return `<g>
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#${id}-gold)" stroke="${deep}" stroke-width="0.5"/>
+      <circle cx="${cx}" cy="${cy}" r="${(r * 0.80).toFixed(2)}" fill="none" stroke="${deep}" stroke-width="0.35"/>
+      ${petals.join('')}
+      <circle cx="${cx}" cy="${cy}" r="${(r * 0.16).toFixed(2)}" fill="${deep}"/>
+    </g>`;
+  };
+
+  const m = b * 0.92;
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}mm" height="${h}mm" viewBox="0 0 ${w} ${h}">
+  <defs>
+    <linearGradient id="${id}-gold" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0%"   stop-color="${gold}" stop-opacity="0.35"/>
+      <stop offset="38%"  stop-color="${gold}" stop-opacity="0.95"/>
+      <stop offset="62%"  stop-color="${deep}" stop-opacity="0.75"/>
+      <stop offset="100%" stop-color="${gold}" stop-opacity="0.45"/>
+    </linearGradient>
+    <pattern id="${id}-scroll" width="${tile}" height="${b}" patternUnits="userSpaceOnUse">${motif}</pattern>
+  </defs>
+
+  <!-- the gilt field, as a frame: a filled rect with the middle cut out by
+       fill-rule evenodd, so nothing is painted over the paper. -->
+  <path fill="url(#${id}-gold)" fill-rule="evenodd"
+        d="M0,0 H${w} V${h} H0 Z M${b},${b} H${w - b} V${h - b} H${b} Z"/>
+  <path fill="url(#${id}-scroll)" fill-rule="evenodd"
+        d="M0,0 H${w} V${h} H0 Z M${b},${b} H${w - b} V${h - b} H${b} Z"/>
+
+  <!-- fillets: a fine rule either side of the field, and a bead course inside -->
+  <rect x="0.6" y="0.6" width="${w - 1.2}" height="${h - 1.2}" fill="none" stroke="${deep}" stroke-width="0.7"/>
+  <rect x="${b - 0.5}" y="${b - 0.5}" width="${w - 2 * b + 1}" height="${h - 2 * b + 1}" fill="none" stroke="${deep}" stroke-width="0.7"/>
+  <rect x="${b + 1.6}" y="${b + 1.6}" width="${w - 2 * b - 3.2}" height="${h - 2 * b - 3.2}" fill="none" stroke="${deep}" stroke-width="0.35"/>
+
+  ${medallion(m, m, b * 0.62)}
+  ${medallion(w - m, m, b * 0.62)}
+  ${medallion(m, h - m, b * 0.62)}
+  ${medallion(w - m, h - m, b * 0.62)}
+</svg>`;
+}
+
+
+/**
  * The engraved gilt frame, redrawn from the university's own certificate.
  *
  * WHAT THE FIRST VERSION GOT WRONG. It was a flat band with a repeating
@@ -524,6 +617,10 @@ export function ornateFrame(
   bandMm = 11,
   course: BorderCourse = 'acanthus',
 ): string {
+  // The frame in force. See classicFrame — the carved courses are not yet good
+  // enough to displace it and are not pretended to be.
+  if (course === 'classic') return classicFrame(widthMm, heightMm, gold, deep, bandMm);
+
   const w = widthMm;
   const h = heightMm;
   const b = bandMm;

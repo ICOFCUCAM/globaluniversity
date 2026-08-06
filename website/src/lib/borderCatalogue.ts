@@ -30,6 +30,7 @@
 
 /** The carved run. Selects which ornament ornateFrame() cuts into the section. */
 export type BorderCourse =
+  | 'classic'
   | 'acanthus'
   | 'laurel'
   | 'guilloche'
@@ -47,6 +48,7 @@ export type BorderCourse =
  * length — the join shows.
  */
 export const COURSE_RUN: Record<BorderCourse, number> = {
+  classic: 1.27,
   acanthus: 1.55,
   laurel: 1.30,
   guilloche: 1.60,
@@ -67,6 +69,17 @@ export interface BorderStyle {
 }
 
 export const BORDER_CATALOGUE: BorderStyle[] = [
+  {
+    id: 'classic',
+    name: 'ICOF Classic Border — IN FORCE',
+    what:
+      'The frame the university has been issuing under: a scroll-and-leaf course over a gilt ' +
+      'gradient, with a rosette medallion at each corner.',
+    use:
+      'Everything, for now. The seven carved courses below are NOT yet close enough to the 2011 ' +
+      'certificate to replace it, and the university has said so. A design that is merely newer ' +
+      'is not an improvement; none of them is in force until one of them is better.',
+  },
   {
     id: 'acanthus',
     name: 'The ICOF Acanthus Course™',

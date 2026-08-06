@@ -358,7 +358,7 @@ export const DEFAULT_CERTIFICATE_DESIGN: CredentialDesign = {
   bleedMm: 0,
   border: 'ornate',
   borderWidthMm: 11,
-  borderCourse: 'acanthus',
+  borderCourse: 'classic',
   sealOpacity: 0.05,
   showSeal: true,
   // The conferral, in the form the older universities use: the body that
