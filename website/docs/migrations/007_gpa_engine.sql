@@ -108,7 +108,11 @@ alter table semester_gpas enable row level security;
 drop policy if exists semester_gpas_own_read on semester_gpas;
 create policy semester_gpas_own_read on semester_gpas
   for select using (
-    student_id in (select id from students where user_id = auth.uid())
+    -- auth_user_id, NOT user_id. The students table links to auth.users through
+    -- auth_user_id (see 000_complete.sql); a policy naming a column that does
+    -- not exist fails at CREATE POLICY, so this would have stopped the
+    -- migration on its first line of RLS.
+    student_id in (select id from students where auth_user_id = auth.uid())
   );
 
 drop policy if exists semester_gpas_staff_read on semester_gpas;
@@ -146,17 +150,11 @@ begin
     and (g.academic_year, g.semester) < (new.academic_year, new.semester);
 
   if earlier = 0 and abs(new.cgpa - new.gpa) > 0.005 then
-    raise exception
-      'semester_gpas: on a student''s first recorded semester the cumulative average must equal '
-      'the semester average (got gpa=%, cgpa=%). This is arithmetically impossible and means the '
-      'two were computed in the wrong order or written to the wrong columns.',
-      new.gpa, new.cgpa;
+    raise exception 'semester_gpas: on a student''s first recorded semester the cumulative average must equal the semester average (got gpa=%, cgpa=%). This is arithmetically impossible and means the two were computed in the wrong order or written to the wrong columns.', new.gpa, new.cgpa;
   end if;
 
   if new.credits_earned > new.credits_attempted then
-    raise exception
-      'semester_gpas: credits_earned (%) exceeds credits_attempted (%). A student cannot pass '
-      'more credits than they sat.', new.credits_earned, new.credits_attempted;
+    raise exception 'semester_gpas: credits_earned (%) exceeds credits_attempted (%). A student cannot pass more credits than they sat.', new.credits_earned, new.credits_attempted;
   end if;
 
   return new;
