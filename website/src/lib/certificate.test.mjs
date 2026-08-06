@@ -285,6 +285,17 @@ check(
   true,
 );
 
+// --- The right office under the right signature. ----------------------------
+// These were reversed: Dr Raymond L Young was printed as Chancellor and a
+// President who does not exist was invented under his name. A certificate that
+// misstates who conferred it is wrong in the one place the university is most
+// formally on the record.
+const officers = text(render());
+check('the Chancellor is named', officers.includes('Bishop Bernie L Wade, PhD'), true);
+check('and carries the Presiding Bishopric', officers.includes('ICOF International Presiding Bishop'), true);
+check('the President is named', officers.includes('Dr. Raymond L Young'), true);
+check('and no invented officer remains', officers.includes('Bonnie'), false);
+
 // --- It is announced to assistive technology. -------------------------------
 const html = render();
 check('the document declares itself an article', html.includes('role="article"'), true);

@@ -39,6 +39,8 @@
 //   can use rather than a screen effect that mimics the look.
 // ---------------------------------------------------------------------------
 
+import { WORLD, AFRICA } from './worldCoastlines';
+
 /**
  * A tiny deterministic PRNG (mulberry32).
  *
@@ -905,109 +907,42 @@ const COASTLINES: [number, number][][] = [
 ];
 
 /**
- * The rest of the world, for the flat map only.
- *
- * COASTLINES above is the hemisphere a globe turned to 20°E actually shows —
- * everything past the limb is hidden, so drawing it would have been wasted
- * geometry. A FLAT map has no limb: every longitude is on the sheet at once,
- * and a world map with one hemisphere blank is not a world map.
- *
- * Coarse on purpose. At 100mm the whole map is the size of a coffee cup and a
- * fjord is a hair's breadth; what has to survive is the SHAPE a reader
- * recognises — the taper of South America, the hook of Alaska, the Gulf, the
- * bulge of Australia. Detail below that is ink for nobody.
- */
-const WORLD_EXTRA: [number, number][][] = [
-  // North America: Alaska round to Panama, up the eastern seaboard, back along
-  // the Arctic coast.
-  [
-    [-168, 65], [-165, 60], [-153, 58], [-145, 60], [-135, 58], [-130, 54], [-125, 49],
-    [-124, 42], [-121, 35], [-117, 32], [-110, 24], [-105, 20], [-97, 16], [-92, 15],
-    [-87, 13], [-83, 9], [-79, 9], [-83, 15], [-88, 18], [-91, 19], [-95, 19], [-97, 26],
-    [-94, 29], [-89, 29], [-85, 30], [-82, 27], [-80, 25], [-81, 31], [-76, 35], [-74, 39],
-    [-70, 42], [-67, 45], [-64, 45], [-60, 47], [-56, 51], [-64, 60], [-78, 62], [-85, 66],
-    [-95, 68], [-105, 69], [-115, 70], [-130, 70], [-141, 70], [-156, 71], [-165, 68],
-    [-168, 65],
-  ],
-  // Greenland.
-  [
-    [-45, 60], [-42, 63], [-38, 66], [-30, 68], [-22, 70], [-20, 74], [-25, 78], [-35, 82],
-    [-45, 83], [-55, 82], [-62, 78], [-68, 75], [-72, 70], [-65, 65], [-53, 60], [-45, 60],
-  ],
-  // South America, complete. The Brazilian bulge in COASTLINES is only the part
-  // a globe turned to Africa can see.
-  [
-    [-81, 0], [-79, -5], [-76, -14], [-71, -18], [-71, -24], [-73, -37], [-75, -47],
-    [-74, -53], [-68, -55], [-65, -52], [-62, -48], [-62, -41], [-57, -38], [-57, -34],
-    [-53, -33], [-48, -26], [-44, -23], [-39, -18], [-35, -8], [-38, -4], [-44, -2],
-    [-50, 0], [-52, 5], [-60, 8], [-66, 10], [-72, 12], [-77, 8], [-79, 2], [-81, 0],
-  ],
-  // Asia: the Arctic coast east to the Bering Strait, then the Pacific seaboard
-  // down to the Bay of Bengal. Left open where it meets the Indian and Arabian
-  // outlines already in COASTLINES.
-  [
-    [60, 70], [75, 73], [90, 75], [105, 77], [115, 74], [130, 73], [145, 72], [160, 70],
-    [172, 67], [180, 64], [170, 60], [160, 58], [155, 52], [143, 54], [140, 45], [130, 43],
-    [126, 37], [122, 31], [121, 23], [109, 21], [105, 9], [104, 1], [100, 7], [98, 13],
-    [95, 17], [92, 21], [89, 22],
-  ],
-  // Australia.
-  [
-    [113, -22], [114, -27], [118, -34], [125, -32], [132, -32], [138, -35], [141, -38],
-    [147, -38], [150, -37], [153, -32], [153, -27], [146, -19], [142, -11], [136, -12],
-    [130, -12], [125, -14], [121, -19], [113, -22],
-  ],
-  // New Zealand.
-  [
-    [173, -35], [178, -38], [177, -41], [174, -41], [171, -44], [167, -46], [166, -45],
-    [171, -42], [173, -38], [173, -35],
-  ],
-  // Japan.
-  [
-    [130, 31], [132, 34], [136, 35], [140, 36], [141, 41], [145, 44], [142, 42], [139, 38],
-    [135, 34], [131, 32], [130, 31],
-  ],
-  // Sumatra, Java and the lesser Sundas.
-  [
-    [95, 5], [100, 2], [104, -2], [106, -6], [112, -8], [116, -9], [120, -9], [125, -9],
-    [131, -8],
-  ],
-  // Borneo.
-  [
-    [109, 2], [114, 4], [118, 5], [117, 0], [114, -3], [110, -3], [109, 2],
-  ],
-];
-
-/**
  * The world as a flat map, drawn on the azimuthal equidistant projection.
  *
  * WHY THIS PROJECTION AND NOT A RECTANGLE. The device is a roundel. A
  * rectangular world map cropped into a circle loses the corners, which are
  * Alaska and New Zealand — and a map that cuts off land to fit its frame looks
  * like a mistake. The azimuthal equidistant is circular BY CONSTRUCTION: the
- * North Pole is the centre, every meridian is a straight radius, and every
- * parallel is a concentric circle. It is the projection on the United Nations
- * emblem, and it is what "a flat map of the world" means to almost everybody
- * who has seen one.
+ * North Pole is the centre, every meridian a straight radius, every parallel a
+ * concentric circle. It is the projection on the United Nations emblem.
  *
- * IT IS CUT AT 60°S, as the UN emblem is. On this projection the South Pole is
- * not a point but the entire outer rim, so Antarctica can only be drawn as a
- * smear round the edge of the disc. Cutting the map above it is the honest
- * choice and the conventional one.
+ * IT IS CUT AT 60°S, as that emblem is. On this projection the South Pole is
+ * not a point but the entire outer rim, so Antarctica could only be drawn as a
+ * smear round the edge of the disc.
  *
  * THE ROTATION IS FIXED, not seeded: 20°E runs straight DOWN from the pole, so
- * Africa sits at the foot of the map, centred, on every certificate the
- * university issues. The globe it replaces put 20°E at the centre of the
- * visible face for the same reason — the face of the earth is a constant of the
- * document, and only the guilloché round it varies.
+ * Africa sits at the foot of the map, centred, on every certificate.
  *
- * Every parallel on this projection is a true circle centred on the pole, so
- * the graticule doubles as engine-turning: concentric circles at even spacing,
- * cut by radial meridians. That is a guilloché in everything but name, and it
- * is why the flat map carries more security weight than the globe did — a
- * sphere's meridians are ellipses of varying eccentricity and a hand copy goes
- * wrong slowly; these are circles and radii, and a hand copy goes wrong at
- * every crossing at once.
+ * WHY THE FIRST VERSION OF THIS READ AS A LOCAL MAP, and what was changed.
+ *
+ *   The coastlines were the GLOBE's. That data stops at the limb of a sphere
+ *   turned to 20°E, because a globe cannot show the other hemisphere — so the
+ *   flat map had Africa and Europe in detail and the rest of the world as four
+ *   fragments. A world map carrying one hemisphere properly and the other in
+ *   pieces does not read as a world. See worldCoastlines.ts.
+ *
+ *   The land was wire outline over a graticule of almost the same weight, so
+ *   the eye could not separate land from sea and the whole disc read as a
+ *   target. The land is now FILLED — very lightly — and the graticule is
+ *   quieter than the coast at every level.
+ *
+ *   The meridians converged on the exact centre, which put a black starburst at
+ *   the pole. They now stop short of it and the pole is a small open circle,
+ *   which is what an engraver would have done.
+ *
+ * Africa is still drawn heaviest. That is not an accident of the data: it is
+ * where this university stands, and the rest of the world is at full strength
+ * around it because that is where it teaches.
  */
 export function flatWorld(
   seed: number,
@@ -1019,20 +954,21 @@ export function flatWorld(
   const radius = R * 0.86;
   const CUT = -60;          // the southern limit of the map
   const SPAN = 90 - CUT;    // degrees of latitude from pole to rim
+  const HUB = 0.055;        // where the meridians stop, as a fraction of radius
 
   // 20°E points straight down, so Africa is at the foot and centred.
   const project = (latDeg: number, lonDeg: number) => {
     const r = ((90 - latDeg) / SPAN) * radius;
     const a = ((lonDeg - 20) * Math.PI) / 180;
-    return { x: R + r * Math.sin(a), y: R + r * Math.cos(a), front: latDeg >= CUT };
+    return { x: R + r * Math.sin(a), y: R + r * Math.cos(a), on: latDeg >= CUT };
   };
 
   const sw = (base: number) => (base * size) / 400;
   const out: string[] = [];
 
-  // Anything south of the cut is off the map. Dropped rather than clamped: a
-  // clamped point sits ON the rim and draws a false coastline round the edge.
-  const emit = (pts: { x: number; y: number; front: boolean }[], width: number, o: number) => {
+  // Anything south of the cut is off the map. DROPPED rather than clamped: a
+  // clamped point sits on the rim and draws a false coastline round the edge.
+  const line = (pts: { x: number; y: number; on: boolean }[], width: number, o: number) => {
     let run: string[] = [];
     const flush = () => {
       if (run.length > 1) {
@@ -1045,32 +981,160 @@ export function flatWorld(
       run = [];
     };
     for (const p of pts) {
-      if (!p.front) { flush(); continue; }
+      if (!p.on) { flush(); continue; }
       run.push(`${p.x.toFixed(2)},${p.y.toFixed(2)}`);
     }
     flush();
   };
 
-  // The graticule. Meridians every 20°, parallels every 15°, the equator and
-  // the tropics picked out.
-  for (let lon = 0; lon < 360; lon += 20) {
-    emit([project(88, lon), project(CUT, lon)], sw(0.5), 0.5);
+  // --- the graticule, under everything and quieter than everything ---------
+  for (let lon = 0; lon < 360; lon += 15) {
+    const a = ((lon - 20) * Math.PI) / 180;
+    out.push(
+      `<path d="M${(R + Math.sin(a) * radius * HUB).toFixed(2)},${(R + Math.cos(a) * radius * HUB).toFixed(2)} ` +
+      `L${(R + Math.sin(a) * radius).toFixed(2)},${(R + Math.cos(a) * radius).toFixed(2)}" ` +
+      `stroke="${colour}" stroke-width="${sw(0.42).toFixed(2)}" ` +
+      `stroke-opacity="${(opacity * 0.30).toFixed(3)}"/>`,
+    );
   }
   for (let lat = 75; lat >= CUT; lat -= 15) {
-    const pts = [];
-    for (let lon = 0; lon <= 360; lon += 3) pts.push(project(lat, lon));
-    emit(pts, sw(lat === 0 ? 0.85 : 0.46), lat === 0 ? 0.6 : 0.42);
+    const r = ((90 - lat) / SPAN) * radius;
+    out.push(
+      `<circle cx="${R}" cy="${R}" r="${r.toFixed(2)}" fill="none" stroke="${colour}" ` +
+      `stroke-width="${sw(lat === 0 ? 0.75 : 0.42).toFixed(2)}" ` +
+      `stroke-opacity="${(opacity * (lat === 0 ? 0.44 : 0.28)).toFixed(3)}"/>`,
+    );
   }
   for (const lat of [23.4, -23.4]) {
-    const pts = [];
-    for (let lon = 0; lon <= 360; lon += 3) pts.push(project(lat, lon));
-    emit(pts, sw(0.4), 0.3);
+    const r = ((90 - lat) / SPAN) * radius;
+    out.push(
+      `<circle cx="${R}" cy="${R}" r="${r.toFixed(2)}" fill="none" stroke="${colour}" ` +
+      `stroke-width="${sw(0.36).toFixed(2)}" stroke-dasharray="${sw(2).toFixed(2)} ${sw(2).toFixed(2)}" ` +
+      `stroke-opacity="${(opacity * 0.24).toFixed(3)}"/>`,
+    );
   }
+  // The pole itself, as an open circle rather than a knot of meridians.
+  out.push(
+    `<circle cx="${R}" cy="${R}" r="${(radius * HUB).toFixed(2)}" fill="none" stroke="${colour}" ` +
+    `stroke-width="${sw(0.42).toFixed(2)}" stroke-opacity="${(opacity * 0.35).toFixed(3)}"/>`,
+  );
 
-  // The land. Africa heaviest — it is at the foot of the map and at the centre
-  // of the university's description of itself.
-  [...COASTLINES, ...WORLD_EXTRA].forEach((shape, i) => {
-    emit(shape.map(([lon, lat]) => project(lat, lon)), sw(i === 0 ? 1.6 : 1.0), i === 0 ? 1 : 0.72);
+  // --- the land ------------------------------------------------------------
+  //
+  // WHY THIS IS HATCHED AND WATER-LINED RATHER THAN FILLED FLAT.
+  //
+  // A flat tint inside an outline reads as a diagram. Nobody has ever drawn a
+  // map that way with a burin, and the eye knows it. The two things that make
+  // an engraved map look like a map are older than printing:
+  //
+  //   HATCHING. The land is not a colour, it is a texture — close parallel
+  //   lines cut at a constant angle, dense enough to read as tone from across a
+  //   room and separable into lines under a loupe. That is exactly the property
+  //   a security ground needs, so it is not decoration bought at a cost.
+  //
+  //   WATER-LINES. The engraver's convention for sea: two or three lines
+  //   following the coast a little way out, each fainter than the last. It is
+  //   what makes a coastline read as a shore rather than as a border, and it is
+  //   the single strongest signal that a map was drawn rather than generated.
+  //
+  // The offsets are TRUE VERTEX-NORMAL OFFSETS, not the ring scaled about its
+  // centroid. Scaling looks right on a circle and wrong on everything else: on
+  // Eurasia it would push the Atlantic coast out by a centimetre and the
+  // Kamchatka coast by a millimetre, because those vertices are at wildly
+  // different distances from the middle.
+  const ringPts = (ring: readonly (readonly [number, number])[]) =>
+    ring.map(([lon, lat]) => project(lat, lon)).filter((p) => p.on);
+
+  // Which way is out. Positive shoelace area means one winding, negative the
+  // other, and the normal has to be flipped for one of them or the water-lines
+  // are drawn INSIDE the land.
+  const outward = (pts: { x: number; y: number }[]) => {
+    let a = 0;
+    for (let i = 0; i < pts.length; i += 1) {
+      const q = pts[(i + 1) % pts.length];
+      a += pts[i].x * q.y - q.x * pts[i].y;
+    }
+    return a > 0 ? 1 : -1;
+  };
+
+  const offsetRing = (pts: { x: number; y: number }[], d: number) => {
+    const sign = outward(pts);
+    const n = pts.length;
+    return pts.map((p, i) => {
+      const a = pts[(i - 1 + n) % n];
+      const b = pts[(i + 1) % n];
+      // The bisector of the two adjacent edge normals.
+      let nx = (b.y - a.y);
+      let ny = -(b.x - a.x);
+      const len = Math.hypot(nx, ny) || 1;
+      nx = (nx / len) * d * sign;
+      ny = (ny / len) * d * sign;
+      return { x: p.x + nx, y: p.y + ny };
+    });
+  };
+
+  const clipId = `w${seed.toString(36)}land`;
+  const landShapes: string[] = [];
+
+  WORLD.forEach((ring) => {
+    const pts = ringPts(ring);
+    if (pts.length < 3) return;
+    const poly = pts.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ');
+    landShapes.push(`<polygon points="${poly}"/>`);
+
+    // Water-lines, outside in, each fainter than the one before it.
+    [1.6, 3.4, 5.6].forEach((d, k) => {
+      const o = offsetRing(pts, sw(d));
+      out.push(
+        `<polygon points="${o.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ')}" ` +
+        `fill="none" stroke="${colour}" stroke-width="${sw(0.34).toFixed(2)}" ` +
+        `stroke-linejoin="round" ` +
+        `stroke-opacity="${(opacity * [0.30, 0.20, 0.12][k]).toFixed(3)}"/>`,
+      );
+    });
+
+    // A whisper of tone under the hatching, so the land does not go pale where
+    // the hatch lines happen to fall wide.
+    out.push(
+      `<polygon points="${poly}" fill="${colour}" ` +
+      `fill-opacity="${(opacity * 0.05).toFixed(3)}" stroke="none"/>`,
+    );
+  });
+
+  // The hatch. ONE family of lines across the whole disc, clipped to every
+  // landmass at once — not a set per continent. A clip per landmass would mean
+  // eighteen clip paths and eighteen line families for an identical result, and
+  // it would let the angle drift between continents, which is the one thing an
+  // engraver would never allow.
+  const hatch: string[] = [];
+  const step = size / 96;
+  for (let y = R - radius * 1.5; y <= R + radius * 1.5; y += step) {
+    hatch.push(
+      `M${(R - radius * 1.5).toFixed(2)},${y.toFixed(2)} L${(R + radius * 1.5).toFixed(2)},${y.toFixed(2)}`,
+    );
+  }
+  out.push(
+    `<clipPath id="${clipId}">${landShapes.join('')}</clipPath>` +
+    // THE ROTATION GOES INSIDE THE CLIP, in its own group. With both on one
+    // element the clip path resolves in that element's user space AFTER its
+    // transform — so the land shapes were rotated -32° along with the hatch and
+    // the lines came out over open ocean, thirty degrees away from the
+    // continent they belonged to.
+    `<g clip-path="url(#${clipId})">` +
+    `<g transform="rotate(-32 ${R} ${R})">` +
+    `<path d="${hatch.join(' ')}" fill="none" stroke="${colour}" ` +
+    `stroke-width="${sw(0.34).toFixed(2)}" stroke-opacity="${(opacity * 0.34).toFixed(3)}"/>` +
+    `</g></g>`,
+  );
+
+  // The coasts last, over the hatch and the water-lines, so the shore is the
+  // hardest line on the map. Africa heaviest: it is where this university
+  // stands, and the rest of the world is at full strength around it because
+  // that is where it teaches.
+  WORLD.forEach((ring) => {
+    const pts = ring.map(([lon, lat]) => project(lat, lon));
+    const africa = ring === AFRICA;
+    line(pts, sw(africa ? 1.6 : 1.05), africa ? 1 : 0.85);
   });
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">

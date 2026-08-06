@@ -77,6 +77,25 @@ copy of it goes wrong at every crossing at once. A sphere's meridians are
 ellipses of continuously varying eccentricity, and a hand copy of those drifts
 slowly and forgivingly.
 
+### How it is engraved
+
+A flat tint inside an outline reads as a diagram — nobody has ever drawn a map
+that way with a burin, and the eye knows it. Two conventions older than printing
+are what make an engraved map look like a map:
+
+**Hatching.** The land is not a colour but a texture: close parallel lines cut
+at one constant angle, dense enough to read as tone across a room and separable
+into lines under a loupe. That is precisely the property a security ground
+needs, so it is not decoration bought at a cost.
+
+**Water-lines.** Two or three lines following each coast a little way out, each
+fainter than the last. It is what makes a coastline read as a shore rather than
+a border, and it is the strongest single signal that a map was drawn rather than
+generated. The offsets are true vertex-normal offsets, not the ring scaled about
+its centroid — scaling looks right on a circle and wrong on everything else, and
+on Eurasia it would push the Atlantic coast out by a centimetre and the
+Kamchatka coast by a millimetre.
+
 It is **cut at 60°S**, as the UN emblem is, because on this projection the South
 Pole is not a point but the entire outer rim — Antarctica can only be drawn as a
 smear round the edge of the disc.

@@ -39,6 +39,8 @@
 // what the university has already attested to.
 // ---------------------------------------------------------------------------
 
+import { UNIVERSITY } from './constants';
+
 export type CredentialKind = 'certificate' | 'transcript';
 
 export interface Signatory {
@@ -319,12 +321,14 @@ export const DEFAULT_CERTIFICATE_DESIGN: CredentialDesign = {
       'placed our names and the seal of the University',
     given: 'Given this',
   },
-  // Four, as on the university's own first certificate. Two were missing: the
-  // Chancellor, who is also the International Presiding Bishop, and the
-  // President — and a degree certificate that omits the offices that actually
-  // confer it is not the university's certificate.
+  // Four, as on the university's own first certificate. Two were missing — the
+  // Chancellor and the President — and a degree certificate that omits the
+  // offices that actually confer it is not the university's certificate.
+  //
+  // The office titles are held here and the NAMES come from constants.ts, so
+  // correcting who holds an office is one edit in one place rather than four.
   signatories: [
-    { name: '', office: 'ICOF Chancellor & International Presiding Bishop' },
+    { name: '', office: UNIVERSITY.chancellorOffice },
     { name: '', office: 'President' },
     { name: '', office: 'Vice Chancellor' },
     { name: '', office: 'Registrar' },

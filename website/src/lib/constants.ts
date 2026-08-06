@@ -39,9 +39,23 @@ export const UNIVERSITY = {
   viceChancellor: 'Prof Chamayah Meyembi',
   // The two offices above the Vice Chancellor, from the university's own first
   // certificate. Both sign a degree certificate; neither was in this system.
-  chancellor: 'Dr. Raymond L. Young',
-  chancellorOffice: 'ICOF Chancellor & International Presiding Bishop',
-  president: 'Bonnie L. Walo',
+  //
+  // CORRECTED ON THE UNIVERSITY'S OWN INSTRUCTION. Bishop Bernie L Wade holds
+  // the Chancellorship and Dr Raymond L Young the Presidency. This file had
+  // them the other way round and invented a President who does not exist, so
+  // every certificate the system could produce carried the wrong office under
+  // the wrong signature.
+  //
+  // The published roster in src/content/site.ts was right the whole time. These
+  // constants should have been read from it rather than typed again — that is
+  // the actual defect, and it is why the names are now taken verbatim from what
+  // the About page publishes.
+  //
+  // The Presiding Bishopric goes with the Chancellorship, not the Presidency:
+  // it is Wade who is Presiding Bishop of the International Circle of Faith.
+  chancellor: 'Bishop Bernie L Wade, PhD',
+  chancellorOffice: 'Chancellor & ICOF International Presiding Bishop',
+  president: 'Dr. Raymond L Young',
 };
 
 // Portal imagery. Previously eleven URLs on the original template's
