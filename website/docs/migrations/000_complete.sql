@@ -213,6 +213,35 @@ create table if not exists credential_templates (
 );
 
 
+-- Payments. Receipts were being written into `documents` as base64-encoded
+-- JSON, with the amount readable only by regex over the filename — which also
+-- contains the student's name, so a name with a digit in it silently dropped
+-- that payment from the totals. A financial record has to be a row: queryable,
+-- summable, and visible to an audit that does not know an encoding.
+--
+-- `amount` is numeric, not text. Money held as text sorts "9,000" above
+-- "10,000" and cannot be summed in SQL at all.
+--
+-- Currency is stored per row and never converted. The university charges two
+-- bands — the ICOF scholarship rate for African and Global South students, and
+-- a European rate for everyone else — so a single figure across both would be
+-- meaningless. Reports group by currency.
+create table if not exists payments (
+  id            uuid primary key default gen_random_uuid(),
+  student_id    uuid references students (id) on delete set null,
+  reference     text not null unique,
+  amount        numeric(14,2) not null check (amount > 0),
+  currency      text not null check (currency in ('FCFA','USD','EUR','GBP','NGN')),
+  purpose       text not null,
+  method        text,
+  -- Who took the money. Finance verifies payments; nobody else may.
+  received_by   uuid references auth.users (id) on delete set null,
+  received_at   timestamptz not null default now(),
+  note          text,
+  created_at    timestamptz not null default now()
+);
+
+
 -- ===========================================================================
 -- 3. ADMISSIONS PIPELINE COLUMNS
 --
@@ -267,6 +296,18 @@ create index if not exists students_auth_user_idx      on students (auth_user_id
 create index if not exists enrollments_student_idx     on enrollments (student_id);
 create index if not exists results_student_idx         on results (student_id);
 create index if not exists documents_student_idx       on documents (student_id);
+-- One result per student per course.
+--
+-- Both mark-entry screens upsert with `onConflict: 'student_id,course_id'`, and
+-- Postgres requires a unique index matching that target — without one every
+-- upsert fails with "there is no unique or exclusion constraint matching the ON
+-- CONFLICT specification". There was no such index, so saving marks had never
+-- worked at all; the error was discarded by the caller, so nobody found out.
+create unique index if not exists results_student_course_key
+  on results (student_id, course_id);
+
+create index if not exists payments_student_idx        on payments (student_id);
+create index if not exists payments_received_idx       on payments (received_at);
 create index if not exists profiles_role_idx           on profiles (role);
 create index if not exists profiles_suspended_idx      on profiles (suspended_at);
 create index if not exists lecturers_auth_user_idx     on lecturers (auth_user_id);
@@ -407,6 +448,7 @@ alter table enrollments          enable row level security;
 alter table results              enable row level security;
 alter table documents            enable row level security;
 alter table audit_logs           enable row level security;
+alter table payments             enable row level security;
 alter table credential_templates enable row level security;
 
 -- A policy on `profiles` that reads `profiles` recurses infinitely. The way out
@@ -479,6 +521,17 @@ create policy documents_own on documents for select using (
 drop policy if exists students_public_apply on students;
 create policy students_public_apply on students
   for insert with check (status = 'applicant');
+
+-- A student may read their own payments and nothing else. Finance reads and
+-- writes through the service role, which bypasses RLS.
+drop policy if exists payments_own on payments;
+create policy payments_own on payments for select using (
+  student_id in (select id from students where auth_user_id = auth.uid())
+);
+
+drop policy if exists payments_system_read on payments;
+create policy payments_system_read on payments
+  for select using (auth_role() in ('superadmin', 'admin', 'finance', 'finance-director'));
 
 -- audit_logs and credential_templates get NO write policy and audit_logs gets
 -- no read policy either. With RLS on and no policy, only the service role
@@ -666,7 +719,7 @@ where lower(email) = 'tchamer@aol.com';
 -- 15. VERIFY — READ THE OUTPUT OF ALL FIVE
 -- ===========================================================================
 
--- (a) Ten tables, every one with rowsecurity = true.
+-- (a) Eleven tables, every one with rowsecurity = true.
 select tablename, rowsecurity
 from pg_tables
 where schemaname = 'public'
