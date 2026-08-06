@@ -79,27 +79,31 @@ export default function CertificateGenerator() {
         )}
       </div>
 
-      {/* Eligibility Check */}
-      <div className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] p-5">
-        <h3 className="font-semibold text-[#33234a] dark:text-[#e4dcf0] mb-3 flex items-center gap-2"><Award size={18} className="text-amber-500" /> Graduation Eligibility</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="p-3 bg-emerald-50 rounded-lg">
-            <p className="text-xs text-emerald-600 font-medium">Credits Completed</p>
-            <p className="text-lg font-bold text-emerald-700">{data.totalCredits} / 111</p>
-          </div>
-          <div className="p-3 bg-blue-50 rounded-lg">
-            <p className="text-xs text-blue-600 font-medium">Final CGPA</p>
-            <p className="text-lg font-bold text-blue-700">{data.cgpa} / {MAX_GRADE_POINT.toFixed(2)}</p>
-          </div>
-          <div className="p-3 bg-purple-50 rounded-lg">
-            <p className="text-xs text-purple-600 font-medium">Classification</p>
-            <p className="text-sm font-bold text-purple-700">{classification}</p>
-          </div>
-          <div className="p-3 bg-amber-50 rounded-lg">
-            <p className="text-xs text-amber-600 font-medium">Status</p>
-            <p className="text-lg font-bold text-amber-700">Eligible</p>
-          </div>
-        </div>
+      {/* Eligibility.
+          This panel read "Status: Eligible" as a fixed string — it said
+          Eligible for every student, always, including one who had completed
+          nothing. Beside it, "Credits Completed: 111 / 111" measured against a
+          requirement typed into this file; the B.Th. is a 180-credit degree, so
+          the number was wrong as well as hardcoded.
+
+          A graduation check is a decision with a rule behind it: credits
+          required for the specific programme, a minimum CGPA, outstanding
+          conditions, fees cleared. None of those are available here yet, and
+          inventing a verdict is worse than declining to give one — this is the
+          screen from which a certificate gets printed. */}
+      <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 dark:border-amber-900/50 dark:bg-amber-950/30">
+        <h3 className="mb-2 flex items-center gap-2 font-semibold text-amber-900 dark:text-amber-200">
+          <Award size={18} /> Graduation eligibility is not checked here
+        </h3>
+        <p className="max-w-3xl text-sm leading-relaxed text-amber-900/90 dark:text-amber-200/90">
+          This panel used to read <strong>Eligible</strong> for every student, unconditionally, and
+          measured credits against a requirement of 111 that was typed into this file — the
+          Bachelor of Theology is 180 credits, so it was wrong as well as fixed. A graduation
+          decision needs the credit requirement for the specific programme, a minimum CGPA,
+          any outstanding admission conditions and confirmation that fees are cleared. None of
+          those are wired yet, and a certificate should not be printed on the strength of a word
+          that was always going to say Eligible.
+        </p>
       </div>
 
       {/* Certificate Preview */}
