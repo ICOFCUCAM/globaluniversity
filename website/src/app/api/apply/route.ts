@@ -95,6 +95,14 @@ async function recordApplicant(form: FormData, appNo: string): Promise<boolean> 
     program: get('planned_major') ?? get('field') ?? '',
     degree_type: get('level') ?? '',
     admission_year: year,
+    // Stored as columns, not only inside the free-text summary. The admission
+    // letter, the fee band and the terms of study all depend on these, and
+    // reading them out of a paragraph is not something a letter can do.
+    mode: get('mode'),
+    attendance: get('attendance'),
+    campus: get('campus'),
+    intake: get('start_when'),
+    faculty: get('field'),
     status: 'applicant',
   });
   return !error;

@@ -185,6 +185,7 @@ export async function POST(request: Request) {
     level: student.degree_type || '—',
     campus: (student as any).campus || 'Buea (Main Campus)',
     mode: (student as any).mode || 'On campus',
+    attendance: (student as any).attendance || 'Full time',
     intake: student.intake || String(intakeYear),
     applicationNumber: student.matric_no,
     conditions: isConditional ? conditions : undefined,
@@ -194,6 +195,7 @@ export async function POST(request: Request) {
     // button, which would put an administrator's name under a decision they
     // did not make.
     headOfAdmissions: headOfAdmissions?.trim() || UNIVERSITY.headOfAcademicAffairs,
+    postNominals: UNIVERSITY.headOfAcademicAffairsPostNominals,
     registrar: UNIVERSITY.registrar,
     portalUrl,
     temporaryPassword: password,

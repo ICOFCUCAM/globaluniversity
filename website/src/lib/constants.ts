@@ -15,7 +15,15 @@ export const UNIVERSITY = {
   // Signs every admission letter. The office is Head of Academic Affairs; the
   // holder is named here so the letter is signed by a person rather than by
   // whichever account happened to press the button.
+  //
+  // The post-nominals are affixed to the name because the letter is the
+  // university's formal attestation of an academic decision, and the standing
+  // of the person making it is part of what the reader — an employer, another
+  // university, an immigration officer — is being asked to accept. Both
+  // doctorates are named rather than abbreviated to "PhD, PhD", which states
+  // less and reads as a typing error.
   headOfAcademicAffairs: 'Prof Aaron Ndenka',
+  headOfAcademicAffairsPostNominals: 'PhD (Finance), PhD (Systematic Theology)',
   admissionsEmail: 'admissions@iguc.net',
   viceChancellor: 'Prof Chamayah Meyembi',
 };

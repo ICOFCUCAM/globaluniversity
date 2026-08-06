@@ -35,6 +35,7 @@
 // ---------------------------------------------------------------------------
 
 import { UNIVERSITY } from './constants';
+import { CREST_DATA_URI } from './crest';
 
 /**
  * The public site, for the links printed in the letter.
@@ -61,8 +62,10 @@ export interface AdmissionPackageInput {
   faculty: string;
   level: string;
   campus: string;
-  /** 'online' | 'campus' — decides which terms are given first. */
+  /** 'On campus' | 'Online' | 'Campus and online'. Decides which terms apply. */
   mode: string;
+  /** 'Full time' | 'Part time'. Separate from mode — where and how often. */
+  attendance?: string;
   intake: string;
   applicationNumber: string;
   conditions?: { requirement: string; dueBy: string }[];
@@ -72,6 +75,8 @@ export interface AdmissionPackageInput {
    * Affairs; the office is fixed, the holder is not, so only the name is passed.
    */
   headOfAdmissions: string;
+  /** Affixed to the name on the signature line, e.g. "PhD (Finance), PhD …". */
+  postNominals?: string;
   registrar: string;
   issuedOn?: Date;
   portalUrl: string;
@@ -85,9 +90,18 @@ const esc = (v: string) =>
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 
-/** True when the applicant is studying online rather than on a campus. */
-function isOnline(mode: string): boolean {
-  return /online|distance|odl/i.test(mode ?? '');
+/**
+ * Which sets of terms apply.
+ *
+ * Three answers, not two. A student admitted for "Campus and online" is bound
+ * by both sets, and telling them one set "does not apply to you" would be
+ * false — which is what happened while this returned a boolean.
+ */
+function modeOf(mode: string): 'campus' | 'online' | 'both' {
+  const m = (mode ?? '').toLowerCase();
+  if (/both|and online|blend|hybrid/.test(m)) return 'both';
+  if (/online|distance|odl/.test(m)) return 'online';
+  return 'campus';
 }
 
 /* ------------------------------------------------------------------ */
@@ -139,12 +153,19 @@ export function admissionPackageHtml(input: AdmissionPackageInput): string {
   const issuedLong = issued.toLocaleDateString('en-GB', {
     day: 'numeric', month: 'long', year: 'numeric',
   });
-  const online = isOnline(input.mode);
+  const where = modeOf(input.mode);
+  const online = where === 'online';
+  const both = where === 'both';
   const conditional = (input.conditions?.length ?? 0) > 0;
 
-  const ownTerms = online ? ONLINE_TERMS : CAMPUS_TERMS;
-  const otherTerms = online ? CAMPUS_TERMS : ONLINE_TERMS;
-  const ownLabel = online ? 'online study' : 'study on campus';
+  // For a student admitted to both, every term applies and nothing is marked
+  // as not applying. For the other two, their own terms come first in full and
+  // the other set follows, marked.
+  const ownTerms = both ? [...CAMPUS_TERMS, ...ONLINE_TERMS] : online ? ONLINE_TERMS : CAMPUS_TERMS;
+  const otherTerms = both ? [] : online ? CAMPUS_TERMS : ONLINE_TERMS;
+  const ownLabel = both
+    ? 'study on campus and online'
+    : online ? 'online study' : 'study on campus';
   const otherLabel = online ? 'study on campus' : 'online study';
 
   return `<!doctype html>
@@ -178,13 +199,14 @@ export function admissionPackageHtml(input: AdmissionPackageInput): string {
     padding: 0 0 10px; border-bottom: 2.5px solid #422e59; margin-bottom: 3px;
   }
   .letterhead .crest { width: 78px; height: 78px; flex: 0 0 78px; object-fit: contain; }
-  .letterhead .lockup { flex: 1; min-width: 0; padding-top: 2px; }
+  .letterhead .lockup { flex: 1 1 auto; min-width: 0; padding-top: 2px; padding-right: 8px; }
   .letterhead .name {
-    /* Sized to sit on one line at A4. A university's name broken across two
-       lines in its own letterhead is the first thing a reader notices. */
-    margin: 0; font-size: 17pt; line-height: 1.1; font-weight: bold;
-    letter-spacing: 1px; color: #422e59; text-transform: uppercase;
-    white-space: nowrap;
+    /* No nowrap. It sat the name on one line by pushing it straight through
+       the contact block on its right — the two overlapped and both became
+       unreadable. The lockup is allowed to wrap; the contact column has a
+       fixed width so it cannot be encroached on. */
+    margin: 0; font-size: 16pt; line-height: 1.12; font-weight: bold;
+    letter-spacing: .8px; color: #422e59; text-transform: uppercase;
   }
   .letterhead .sub {
     margin: 2px 0 0; font-size: 10.5pt; letter-spacing: 3px;
@@ -195,7 +217,7 @@ export function admissionPackageHtml(input: AdmissionPackageInput): string {
     letter-spacing: .3px;
   }
   .letterhead .contact {
-    flex: 0 0 auto; text-align: right; font-size: 8.5pt; line-height: 1.5; color: #6b6076;
+    flex: 0 0 48mm; text-align: right; font-size: 8.5pt; line-height: 1.5; color: #6b6076;
     font-family: Helvetica, Arial, sans-serif; padding-top: 4px;
   }
   /* The thin gold rule under the main one — the university's two colours, in
@@ -226,7 +248,8 @@ export function admissionPackageHtml(input: AdmissionPackageInput): string {
   .callout.warn { border-left-color: #b45309; background: #fffbeb; }
   .muted-block { border: 1px solid #e8dcc0; background: #fbfaf7; padding: 10px 14px; margin-top: 10px; font-size: 10pt; color: #554c60; }
   .sig { margin-top: 26px; }
-  .sig .rule { border-top: 1px solid #33234a; width: 62mm; padding-top: 5px; }
+  /* Wide enough for a name carrying two doctorates without wrapping mid-title. */
+  .sig .rule { border-top: 1px solid #33234a; width: 105mm; padding-top: 5px; }
   .sig .name { font-weight: bold; }
   .sig .office { color: #6b6076; font-size: 10pt; }
   .grade-table { width: 100%; border-collapse: collapse; font-size: 10pt; margin-top: 8px; }
@@ -240,7 +263,7 @@ export function admissionPackageHtml(input: AdmissionPackageInput): string {
 <div class="sheet">
 
   <header class="letterhead">
-    <img class="crest" src="${esc(SITE)}/images/site-icon.png" alt="">
+    <img class="crest" src="${CREST_DATA_URI}" alt="${esc(UNIVERSITY.name)} crest">
     <div class="lockup">
       <h1 class="name">${esc(UNIVERSITY.name)}</h1>
       <p class="motto">${esc(UNIVERSITY.motto)}</p>
@@ -277,7 +300,8 @@ export function admissionPackageHtml(input: AdmissionPackageInput): string {
         <tr><td class="k">Programme</td><td class="v">${esc(input.programme)}</td></tr>
         <tr><td class="k">Faculty</td><td class="v">${esc(input.faculty)}</td></tr>
         <tr><td class="k">Level</td><td class="v">${esc(input.level)}</td></tr>
-        <tr><td class="k">Mode of study</td><td class="v">${esc(input.mode)}</td></tr>
+        <tr><td class="k">Where you will study</td><td class="v">${esc(input.mode)}</td></tr>
+        <tr><td class="k">Attendance</td><td class="v">${esc(input.attendance || 'Full time')}</td></tr>
         <tr><td class="k">Campus</td><td class="v">${esc(input.campus)}</td></tr>
         <tr><td class="k">Intake</td><td class="v">${esc(input.intake)}</td></tr>
         <tr><td class="k">Student number</td><td class="v">${esc(input.studentNumber)}</td></tr>
@@ -318,8 +342,10 @@ export function admissionPackageHtml(input: AdmissionPackageInput): string {
     ${section(
       `Terms of study — ${ownLabel}`,
       `
-      <p>These are the terms that apply to you, as a student admitted for
-      <strong>${esc(input.mode)}</strong> study.</p>
+      <p>These are the terms that apply to you, as a student admitted to study
+      <strong>${esc(input.mode.toLowerCase())}</strong>${
+        input.attendance ? `, ${esc(input.attendance.toLowerCase())}` : ''
+      }.${both ? ' You are bound by the campus terms and the online terms, because you will study both ways.' : ''}</p>
       ${list(ownTerms)}
       <h3>General terms, applying to every student</h3>
       ${list(COMMON_TERMS)}
@@ -327,7 +353,7 @@ export function admissionPackageHtml(input: AdmissionPackageInput): string {
       { pageBreak: true },
     )}
 
-    ${section(
+    ${both ? '' : section(
       `Terms for ${otherLabel}`,
       `
       <div class="muted-block">
@@ -446,7 +472,9 @@ export function admissionPackageHtml(input: AdmissionPackageInput): string {
       <p>We look forward to welcoming you to ${esc(UNIVERSITY.name)}.</p>
       <p>Yours sincerely,</p>
       <div class="rule">
-        <div class="name">${esc(input.headOfAdmissions)}</div>
+        <div class="name">${esc(input.headOfAdmissions)}${
+          input.postNominals ? `, ${esc(input.postNominals)}` : ''
+        }</div>
         <div class="office">Head of Academic Affairs</div>
         <div class="office">${esc(UNIVERSITY.name)}</div>
       </div>
@@ -499,7 +527,7 @@ study — reply to this email before you register and we will correct it.
 
 We look forward to welcoming you.
 
-${input.headOfAdmissions}
+${input.headOfAdmissions}${input.postNominals ? `, ${input.postNominals}` : ''}
 Head of Academic Affairs
 ${UNIVERSITY.name}
 ${UNIVERSITY.address}`;

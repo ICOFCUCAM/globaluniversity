@@ -290,6 +290,15 @@ alter table students
   add column if not exists student_number       text,
   add column if not exists faculty              text,
   add column if not exists intake               text,
+  -- Where and how often the student studies. Neither was stored: the
+  -- application collected them, buried them in the free-text summary, and the
+  -- admission letter then had nothing to read — so every letter said whatever
+  -- the code's fallback happened to be. `mode` is on campus / online / both;
+  -- `attendance` is full or part time. They are two questions because they are
+  -- two questions: a part-time student on campus could not previously say so.
+  add column if not exists mode                 text,
+  add column if not exists attendance           text,
+  add column if not exists campus               text,
   -- Links a student row to its auth account. Without it the students_own_row
   -- policy in section 9 matches nothing and a student signs in to an empty
   -- portal — no programme, no results, no transcript.
