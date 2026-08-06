@@ -140,6 +140,7 @@ check('the QR needs no external request', /https?:\/\/(?!www\.w3\.org)/.test(qr.
 // letter's payload and vice versa — so a withdrawn student could present an old
 // admission letter's code on a current-looking card.
 const card = sealCard({
+  credentialId: 'IGUC-SC-26B4-J7QP-T2XN',
   fullName: base.fullName,
   dateOfBirth: base.dateOfBirth,
   studentNumber: base.studentNumber,
@@ -157,6 +158,7 @@ check(
 
 // The expiry is inside the seal — the one field a card is worth forging.
 const extended = sealCard({
+  credentialId: 'IGUC-SC-26B4-J7QP-T2XN',
   fullName: base.fullName,
   dateOfBirth: base.dateOfBirth,
   studentNumber: base.studentNumber,
@@ -189,8 +191,17 @@ check('and is coarse enough to scan at 24mm printed (0.5mm a module)',
 check('the short form resolves by credential number',
   new URL(award.shortVerifyUrl).searchParams.get('id'), 'IGUC-BA-26A9-F8K2-P19D');
 
+// A card is registered too, so it also gets a short QR — and it must, because
+// the long one is 0.23mm a module at the 19mm a card can spare.
+check('a card is on the register and gets a short QR',
+  new URL(card.shortVerifyUrl).searchParams.get('id'), 'IGUC-SC-26B4-J7QP-T2XN');
+check('and the card QR is coarse enough to scan at 19mm',
+  19 / (await modulesOf(card.shortVerifyUrl)) >= 0.5, true);
+
 // A document that is NOT on the register has nothing to look up, so it keeps
-// the long form. An admission letter is sealed but never registered.
+// the long form. An admission letter is sealed but never registered — and a
+// short URL for one would resolve to "not issued", so a genuine letter would
+// scan as a forgery.
 check('an unregistered document keeps the signed payload in its QR',
   seal.shortVerifyUrl, seal.verifyUrl);
 

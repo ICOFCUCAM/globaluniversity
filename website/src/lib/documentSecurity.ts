@@ -186,12 +186,16 @@ export function sealDocument(
   // the register; absent on a student card or an admission letter, which are
   // sealed but not registered — those keep the long form, because there is
   // nothing to look them up by.
-  // Anything a reader can look the document up by. The credential number for a
-  // registered credential; the student number for a card, which is printed on
-  // its face and is what a gate officer would type. A document with neither
-  // keeps the long form, because there is nothing to resolve.
+  // The credential number, and nothing else.
+  //
+  // This briefly also accepted the student number, so a card could carry a
+  // short QR. That was wrong: /verify?id= resolves against the credential
+  // register, and a document that is not ON the register resolves to "no
+  // credential with this number has been issued" — so a genuine card would have
+  // scanned as a forgery. A short URL is only correct for a document the
+  // register can actually answer for.
   const parsed = JSON.parse(data) as Record<string, string>;
-  const registered = parsed.credential_id || parsed.student_number;
+  const registered = parsed.credential_id;
 
   return {
     code: grouped,
@@ -347,6 +351,8 @@ export function sealParticulars(p: SealedParticulars, siteUrl: string): Document
 }
 
 export interface SealedCard {
+  /** The register key. A card is a registered credential like any other. */
+  credentialId: string;
   fullName: string;
   dateOfBirth?: string;
   studentNumber: string;
@@ -372,6 +378,7 @@ export function sealCard(c: SealedCard, siteUrl: string): DocumentSeal {
       name: c.fullName,
       date_of_birth: c.dateOfBirth,
       student_number: c.studentNumber,
+      credential_id: c.credentialId,
       programme: c.programme,
       issued: c.issuedOn,
       expires: c.expiresOn,

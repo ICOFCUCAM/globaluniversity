@@ -32,7 +32,7 @@
 
 import { NextResponse } from 'next/server';
 import { guard } from '@/lib/adminAuth';
-import { sealCard, verificationQrSvg } from '@/lib/documentSecurity';
+import { sealCard, verificationQrSvg, newCredentialId, contentHash } from '@/lib/documentSecurity';
 import { UNIVERSITY } from '@/lib/constants';
 
 export const runtime = 'nodejs';
@@ -129,8 +129,32 @@ export async function POST(request: Request) {
       }).toUpperCase()
     : undefined;
 
+  // ---------------------------------------------------------------------
+  // THE CARD GOES ON THE REGISTER.
+  //
+  // It did not, and that broke the scan. The QR carried the full signed
+  // payload, which encodes as an 83-module symbol — 0.23mm a module at the
+  // 19mm a card can spare, against the ~0.5mm a phone camera needs off card
+  // stock. Unreadable at the gate, the library desk and the examination hall
+  // the card exists for, and unreadable in a way that looks exactly like a
+  // working QR.
+  //
+  // Shortening the URL to the student number seemed to fix it and was worse: a
+  // short URL resolves against the credential register, and a card that is not
+  // ON the register resolves to "no credential with this number has been
+  // issued". A genuine card would have scanned as a forgery.
+  //
+  // So the card is registered, like every other credential. The register's kind
+  // enum has allowed 'student-card' since it was written. Three things follow
+  // that are worth having in their own right: a scan resolves to the
+  // university's record rather than to the card's own copy of it, a lost card
+  // can be REVOKED, and the university can say how many are in circulation.
+  // ---------------------------------------------------------------------
+  const credentialId = newCredentialId('Student Card', issued.getFullYear());
+
   const seal = sealCard(
     {
+      credentialId,
       fullName,
       dateOfBirth,
       studentNumber: idNumber,
@@ -141,8 +165,50 @@ export async function POST(request: Request) {
     SITE,
   );
 
+  if (seal.sealed) {
+    // Superseding rather than duplicating: a student holds one current card, so
+    // reissuing marks the previous one replaced. Without this the register
+    // would fill with every card a student had ever been given, all of them
+    // reading as current.
+    await admin
+      .from('credentials_issued')
+      .update({ status: 'replaced' })
+      .eq('student_id', student.id)
+      .eq('kind', 'student-card')
+      .eq('status', 'issued');
+
+    const { error: regErr } = await admin.from('credentials_issued').insert({
+      credential_id: credentialId,
+      kind: 'student-card',
+      student_id: student.id,
+      student_number: idNumber,
+      holder_name: fullName,
+      programme,
+      facts: {
+        name: fullName, date_of_birth: dateOfBirth ?? '', student_number: idNumber,
+        programme, issued: iso(issued), expires: iso(expires),
+      },
+      content_hash: contentHash('ICOFGU-CARD-V1', 'Student Identity Card', {
+        name: fullName, date_of_birth: dateOfBirth, student_number: idNumber,
+        programme, issued: iso(issued), expires: iso(expires),
+      }),
+      seal_code: seal.code,
+    });
+    if (regErr) {
+      // Refuse rather than hand over a card the register has no row for — it
+      // would scan as "not issued", which is the failure this whole change
+      // exists to prevent.
+      return NextResponse.json({
+        ok: false,
+        error: `not-registered: ${regErr.message}`,
+        detail: 'No card was issued. The credential register refused the entry.',
+      }, { status: 500 });
+    }
+  }
+
   return NextResponse.json({
     ok: true,
+    credentialId,
     card: {
       fullName,
       idNumber,
