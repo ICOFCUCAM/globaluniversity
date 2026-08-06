@@ -44,7 +44,7 @@ import {
   ornateFrameUri, waferSealUri, guillocheGlobeUri, globeInRosetteUri,
   africanGlobeOfKnowledgeUri,
 } from '@/lib/credentialArt';
-import { wordingForAward, deviceTierFor, emblemFor } from '@/lib/awards';
+import { wordingForAward, deviceTierFor, emblemFor, awardTitleAfterLead } from '@/lib/awards';
 
 export interface CertificateData {
   fullName: string;
@@ -256,6 +256,7 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
           founded: romanYear(UNIVERSITY.established),
           // The device grows with the award, and carries the faculty's emblem.
           tier: deviceTierFor(data.degree),
+          style: sec.deviceStyle,
           emblem: emblemFor(data.faculty),
         })
       : sec.watermark === 'globe'
@@ -283,7 +284,7 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
       `${UNIVERSITY.name.toUpperCase()} · `, UNIVERSITY.shortName),
   }), [
     seed, sheetW, sheetH, bleed, design.brand, design.accent, design.borderWidthMm,
-    design.sealColour, data.credentialId, sec.watermark, data.degree, data.faculty,
+    design.sealColour, data.credentialId, sec.watermark, sec.deviceStyle, data.degree, data.faculty,
   ]);
 
   if (missingId && !specimen) {
@@ -421,7 +422,7 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
           position: 'absolute',
           // Raised off centre. The lower middle is kept clear for the wafer, and
           // a watermark under it would show as a halo round the seal's edge.
-          top: '40%', left: '50%',
+          top: '43%', left: '50%',
           transform: 'translate(-50%, -50%)',
           // Visible as texture, not as decoration competing with the text. Below
           // about 0.2 it disappears entirely on a laser printer, which is where
@@ -429,7 +430,13 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
           // A graticule needs more weight than a rosette to read at the same
           // distance: sixteen overlapping curves make a mass, seven separate
           // meridians do not.
-          opacity: sec.guillocheOpacity * (sec.watermark === 'rosette' ? 0.19 : 0.30),
+          // The device is the institution's own figure and it was reading as a
+          // smudge — at 0.30 × 50% strength it printed at 15%, which a laser
+          // printer renders as almost nothing and which made the lowest award
+          // look like a blank sheet with type on it. The rosette stays lower:
+          // sixteen overlapping curves make a mass at a weight seven meridians
+          // and a coastline do not.
+          opacity: sec.guillocheOpacity * (sec.watermark === 'rosette' ? 0.19 : 0.42),
         }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -438,7 +445,17 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
             // Sized and placed to clear the foot. The wafer is affixed in the
             // middle of that row, and a watermark reaching under it would show
             // as a halo round the seal's edge.
-            style={{ width: `${Math.min(w, h) * 0.62}mm`, height: `${Math.min(w, h) * 0.62}mm` }}
+            // 0.62 of the short edge put the figure inside the measure of the
+            // type, so it read as an ornament behind the words rather than as
+            // the ground they are printed on. The device now spans most of the
+            // sheet's height, which is what a security vignette does — the two
+            // silhouettes that are not roundels ('panel', 'cartouche') use the
+            // width it gains rather than leaving the margins idle.
+            // 0.76 of the short edge, centred at 43%. At 0.80 and 40% the top
+            // of the figure landed exactly on the sheet edge and the microtext
+            // ring was trimmed — a legend cut off by the paper is worse than a
+            // smaller device, because it reads as a printing fault.
+            style={{ width: `${Math.min(w, h) * 0.76}mm`, height: `${Math.min(w, h) * 0.76}mm` }}
           />
         </div>
       )}
@@ -672,7 +689,7 @@ backgroundImage: `url("${art.micro}")`,
           textTransform: 'uppercase',
           lineHeight: 1.2,
         }}>
-          {data.degree}
+          {awardTitleAfterLead(data.degree)}
         </p>
 
         {/* The field of study.

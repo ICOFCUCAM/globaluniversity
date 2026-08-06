@@ -65,14 +65,42 @@ Seeded from the credential number, so no two documents carry the same figure.
 
 | Award | Tier | What is added |
 |---|---|---|
-| Diploma, certificate | `simple` | Ring, register, globe |
-| Bachelor's | `standard` | + the twelve nodes and their chords |
-| Master's | `elaborate` | + an inner guilloché collar |
-| Doctorate | `full` | + radiating rays behind the whole figure |
+| Diploma, certificate | `standard` | Ring, register, globe, the twelve nodes and their chords |
+| Bachelor's | `elaborate` | + an inner guilloché collar |
+| Master's | `full` | + radiating rays behind the whole figure |
+| Doctorate | `supreme` | + a second register of ornament outside the first |
 
 The university's highest award is recognisable as its highest award from across
 a room, before a word of it is read. It is the same device throughout, so the
 identity holds and only the elaboration changes.
+
+**The ladder starts at the certificate, not below it.** There was a fifth tier
+under this one — a bare ring round a globe — and it was removed. The lowest
+award the university confers is still one of its awards, and a plain ring is
+what every certificate generator on the internet produces: starting there meant
+the diploma looked like a template and only the doctorate looked like an
+instrument. The floor is now what used to be the middle.
+
+### Five silhouettes
+
+The tier says how much is worked into the figure. The **silhouette** says what
+shape it is struck in, and the two are independent — a certificate and a
+doctorate in the same silhouette are one figure at two levels of work.
+
+| Style | What it is |
+|---|---|
+| `seal` | A struck medallion. The classical answer, and the one that reads most like a stamp. |
+| `cartouche` | An engraved oval, as on a bookplate or a share certificate. |
+| `shield` | An escutcheon with a chief. The most heraldic, and read as arms before anything on it is legible. |
+| `radiant` | Open rather than closed — the rays run past any boundary, so there is no edge for the eye to stop at. |
+| `panel` | A banknote vignette: a lozenge of interlace across the width, not a roundel in the middle. |
+
+A closed circle is the obvious form and not automatically the best one. It reads
+as a rubber stamp, it repeats the roundness of the QR at the other end of the
+sheet, and on a landscape certificate it sits in the middle while both wide
+margins do nothing.
+
+*Set in Studio → Security features → Silhouette. `CredentialDesign.security.deviceStyle`.*
 
 ### On the African ornament, and what it deliberately is not
 

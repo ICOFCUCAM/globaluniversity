@@ -127,6 +127,37 @@ export function wordingForAward(award: string): AwardWording {
   return awardWording(awardKindOf(award));
 }
 
+/**
+ * The award's title as it should be printed UNDER the lead-in.
+ *
+ * WHY. The lead-in already names the instrument — "the Certificate of", "the
+ * Diploma of" — and registrars type the instrument into the title as well,
+ * because that is how the award is written everywhere else. Printed straight,
+ * the certificate read:
+ *
+ *     THE CERTIFICATE OF
+ *     CERTIFICATE IN CHRISTIAN MINISTRY
+ *
+ * which is the university stammering on its own document. Stripping the
+ * repeated word gives "THE CERTIFICATE OF / CHRISTIAN MINISTRY", which is what
+ * the sentence was written to say.
+ *
+ * Only ever strips a leading instrument word, and only for the kinds whose
+ * lead-in names one. "Bachelor of Theology" is untouched — the lead-in there is
+ * "the Degree of", and "Bachelor" is part of the award's name, not a repeat of
+ * the instrument.
+ */
+export function awardTitleAfterLead(award: string): string {
+  const kind = awardKindOf(award);
+  if (kind !== 'certificate' && kind !== 'diploma') return award;
+  const stripped = (award ?? '')
+    .replace(/^\s*(?:the\s+)?(?:postgraduate\s+|higher\s+national\s+|advanced\s+)?(certificate|diploma)\s+(?:of|in)\s+/i, '')
+    .trim();
+  // If stripping leaves nothing — the award is called just "Diploma" — keep the
+  // original rather than printing an empty line where the award should be.
+  return stripped.length > 0 ? stripped : award;
+}
+
 /* ------------------------------------------------------------------ */
 /* How the security device varies by award and faculty                  */
 /* ------------------------------------------------------------------ */
@@ -140,12 +171,19 @@ export function wordingForAward(award: string): AwardWording {
  * nothing because it is the same device throughout. Only the elaboration
  * changes, so the identity holds and the hierarchy shows.
  */
-export function deviceTierFor(award: string): 'simple' | 'standard' | 'elaborate' | 'full' {
+export function deviceTierFor(award: string): 'standard' | 'elaborate' | 'full' | 'supreme' {
   switch (awardKindOf(award)) {
-    case 'doctorate': return 'full';
-    case 'masters': return 'elaborate';
-    case 'bachelors': return 'standard';
-    default: return 'simple';
+    case 'doctorate': return 'supreme';
+    case 'masters': return 'full';
+    case 'bachelors': return 'elaborate';
+    // A certificate and a diploma START at 'standard', which is what the
+    // bachelor's used to get. The lowest award the university confers is still
+    // one of its awards, and a plain ring round a globe is what every
+    // certificate generator on the internet produces — beginning the ladder
+    // there meant the diploma looked like a template and only the doctorate
+    // looked like an instrument. The floor moved up; the ceiling moved to meet
+    // it.
+    default: return 'standard';
   }
 }
 

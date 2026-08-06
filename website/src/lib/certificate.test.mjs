@@ -202,6 +202,47 @@ check(
 );
 check('and nothing is printed when it is absent', basic.includes('REG. NO.'), false);
 
+// --- The university does not stammer on its own document. -------------------
+// The lead-in already names the instrument. A registrar typing the award the
+// way it is written everywhere else — "Certificate in Christian Ministry" —
+// produced "THE CERTIFICATE OF / CERTIFICATE IN CHRISTIAN MINISTRY".
+const certAward = text(render({ degree: 'Certificate in Christian Ministry', classification: '' }));
+check(
+  'a certificate names its instrument once',
+  (certAward.match(/CERTIFICATE/gi) ?? []).length >= 1 &&
+    !/CERTIFICATE OF\s*CERTIFICATE/i.test(certAward.replace(/\s+/g, ' ')),
+  true,
+);
+check('and still names the subject', certAward.includes('Christian Ministry'), true);
+const dipAward = text(render({ degree: 'Diploma in Theology' }));
+check(
+  'a diploma names its instrument once',
+  !/DIPLOMA OF\s*DIPLOMA/i.test(dipAward.replace(/\s+/g, ' ')),
+  true,
+);
+// A degree is NOT stripped: "Bachelor" is part of the award's name, not a
+// repeat of the lead-in, which reads "the Degree of".
+check(
+  'a degree keeps its full title',
+  text(render({ degree: 'Bachelor of Arts' })).includes('Bachelor of Arts'),
+  true,
+);
+
+// --- Two devices on one page must not share element ids. --------------------
+// 'seal' and 'shield' were keyed on the style's first letter, so a page showing
+// both minted the same id and the shield's legend resolved onto the seal's
+// circle. Anything scoped per-figure has to be unique per figure.
+const seal = render({ credentialId: 'IGUC-BA-0000-0000-000A' });
+const idsOf = (h) => (h.match(/id%3D%22([^%]+)%22/g) ?? []).concat(h.match(/id="([^"]+)"/g) ?? []);
+check(
+  'the device mints no duplicate element id',
+  (() => {
+    const ids = idsOf(seal);
+    return ids.length === new Set(ids).size;
+  })(),
+  true,
+);
+
 // --- It is announced to assistive technology. -------------------------------
 const html = render();
 check('the document declares itself an article', html.includes('role="article"'), true);

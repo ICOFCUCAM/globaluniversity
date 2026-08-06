@@ -52,7 +52,8 @@ export const SECURITY_PATTERNS: SecurityPattern[] = [
       'The university’s composed device: a microtext ring carrying the name, descriptor and ' +
       'motto; a register of Central African geometric ornament; twelve nodes joined by chords; ' +
       'laurel at the cardinal points; the world turned so Africa is at its centre with the ' +
-      'coastlines engraved; the year of foundation; and the faculty’s emblem. Drawn at four ' +
+      'coastlines engraved; the year of foundation; and the faculty’s emblem. Struck in one of ' +
+      'five silhouettes — medallion, cartouche, escutcheon, radiant or banknote panel — at four ' +
       'levels of elaboration, one for each level of award.',
     defends:
       'Casual copying and template substitution. Every element is derived from this ' +

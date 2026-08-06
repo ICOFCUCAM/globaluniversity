@@ -1121,7 +1121,35 @@ export const institutionalDeviceUri = (
 /* The African Globe of Knowledge                                       */
 /* ------------------------------------------------------------------ */
 
-export type DeviceTier = 'simple' | 'standard' | 'elaborate' | 'full';
+/**
+ * How elaborate the device is.
+ *
+ * There is no 'simple' any more, deliberately. The lowest award the university
+ * confers is still one of its awards, and a plain ring round a globe is what
+ * every certificate generator on the internet produces — starting the ladder
+ * there meant the university's diploma looked like a template and only its
+ * doctorate looked like an instrument. The floor is now what used to be the
+ * middle, and the ceiling has moved up to meet it.
+ */
+export type DeviceTier = 'standard' | 'elaborate' | 'full' | 'supreme';
+
+/**
+ * The silhouette of the device.
+ *
+ * A closed circle is the obvious form and not always the best one — it reads as
+ * a stamp, it repeats the QR's roundness at the other end of the sheet, and on
+ * a landscape certificate it leaves the wide margins doing nothing. These are
+ * five genuinely different shapes, not five skins:
+ *
+ *   seal       a struck medallion. The classical answer.
+ *   cartouche  an engraved oval, as on a bookplate or a share certificate.
+ *   shield     an escutcheon. The most heraldic and the most institutional.
+ *   radiant    open rather than closed — rays run off past any boundary, so the
+ *              figure has no edge for the eye to stop at.
+ *   panel      a banknote vignette: a lozenge panel of interlace, filling the
+ *              width rather than sitting as a roundel in the middle.
+ */
+export type DeviceStyle = 'seal' | 'cartouche' | 'shield' | 'radiant' | 'panel';
 export type DeviceEmblem = 'book' | 'gear' | 'compass' | 'torch' | 'none';
 
 /**
@@ -1261,9 +1289,15 @@ function emblemPath(kind: DeviceEmblem, cx: number, cy: number, r: number, colou
  *
  * TIERS. A diploma and a doctorate should not carry the same device — the
  * university's highest award ought to be recognisable as its highest award
- * across a room. `simple` drops the network and the emblem; `full` adds
- * radiating rays behind the whole figure. It is the same device throughout, so
- * the identity holds; only the elaboration changes.
+ * across a room. `standard` is the floor and already carries the network and
+ * the emblem; `elaborate` adds a guilloché collar, `full` adds radiating rays,
+ * `supreme` adds a second register of ornament outside the first. It is the
+ * same device throughout, so the identity holds; only the elaboration changes.
+ *
+ * STYLES. The tier says how much is worked into the figure. The style says what
+ * shape it is struck in, and the two are independent: a certificate in `shield`
+ * and a doctorate in `shield` are the same silhouette at two levels of work.
+ * See DeviceStyle for why a closed circle is not automatically the right answer.
  */
 export function africanGlobeOfKnowledge(opts: {
   seed: number;
@@ -1272,141 +1306,332 @@ export function africanGlobeOfKnowledge(opts: {
   legend: string[];
   founded: string;
   tier?: DeviceTier;
+  style?: DeviceStyle;
   emblem?: DeviceEmblem;
   opacity?: number;
 }): string {
   const { seed, size, colour, legend, founded } = opts;
   const tier = opts.tier ?? 'standard';
+  const style = opts.style ?? 'seal';
   const emblem = opts.emblem ?? 'none';
   const opacity = opts.opacity ?? 1;
   const R = size / 2;
-  const id = `k${seed.toString(36)}`;
-  const layers: string[] = [];
+  // The whole style name, not its initial. 'seal' and 'shield' both begin with
+  // s, so two devices on one page — a Studio preview beside a gallery, a sheet
+  // of specimens — minted the same element id, and the shield's <textPath>
+  // resolved to the FIRST match in the document: the seal's circle. The legend
+  // came out running down the side of the wrong figure. An id that is unique
+  // "in practice" is not unique.
+  const id = `k${seed.toString(36)}${style}${tier}`;
+  const f = tierFlags(tier);
+  const L: string[] = [];
+  const sw = (v: number) => (size * v).toFixed(2);
 
-  // Layer 6 (bottom): rays, on the highest award only.
-  if (tier === 'full') {
+  // --- rays -------------------------------------------------------------
+  // On 'radiant' they run past the outer boundary, which is the whole point of
+  // that style: the figure has no edge for the eye to stop at.
+  if (f.rays || style === 'radiant') {
+    const reach = style === 'radiant' ? 1.30 : 0.99;
     const rays: string[] = [];
-    for (let i = 0; i < 72; i += 1) {
-      const a = (i / 72) * Math.PI * 2;
+    const n = style === 'radiant' ? 96 : 72;
+    for (let i = 0; i < n; i += 1) {
+      const a = (i / n) * Math.PI * 2;
       const long = i % 6 === 0;
+      const r1 = R * (long ? reach : reach * 0.86);
       rays.push(
         `M${(R + Math.cos(a) * R * 0.30).toFixed(2)},${(R + Math.sin(a) * R * 0.30).toFixed(2)} ` +
-        `L${(R + Math.cos(a) * R * (long ? 0.99 : 0.86)).toFixed(2)},${(R + Math.sin(a) * R * (long ? 0.99 : 0.86)).toFixed(2)}`,
+        `L${(R + Math.cos(a) * r1).toFixed(2)},${(R + Math.sin(a) * r1).toFixed(2)}`,
       );
     }
-    layers.push(
-      `<path d="${rays.join(' ')}" fill="none" stroke="${colour}" ` +
-      `stroke-width="${(size * 0.0013).toFixed(2)}" stroke-opacity="${(opacity * 0.34).toFixed(3)}"/>`,
+    L.push(
+      `<path d="${rays.join(' ')}" fill="none" stroke="${colour}" stroke-width="${sw(0.0013)}" ` +
+      `stroke-opacity="${(opacity * (style === 'radiant' ? 0.28 : 0.34)).toFixed(3)}"/>`,
     );
   }
 
-  // Layer 5: the microtext ring.
+  // --- the outer frame, which is what makes the five styles different -----
   const ringR = R * 0.955;
-  layers.push(
-    `<path id="${id}-ring" fill="none" d="M ${R},${R} m -${ringR.toFixed(2)},0 ` +
-    `a ${ringR.toFixed(2)},${ringR.toFixed(2)} 0 1,1 ${(ringR * 2).toFixed(2)},0 ` +
-    `a ${ringR.toFixed(2)},${ringR.toFixed(2)} 0 1,1 -${(ringR * 2).toFixed(2)},0"/>`,
-    `<text font-family="Helvetica,Arial,sans-serif" font-size="${(size * 0.023).toFixed(2)}" ` +
-    `letter-spacing="${(size * 0.005).toFixed(2)}" fill="${colour}" ` +
+  const ringText = legend.join('   ·   ');
+  const microRing = (pathD: string) =>
+    `<path id="${id}-ring" fill="none" d="${pathD}"/>` +
+    `<text font-family="Helvetica,Arial,sans-serif" font-size="${sw(0.022)}" ` +
+    `letter-spacing="${sw(0.0048)}" fill="${colour}" fill-opacity="${(opacity * 0.85).toFixed(3)}">` +
+    `<textPath href="#${id}-ring" startOffset="9%">${escapeXml(ringText)}</textPath></text>`;
+
+  // A legend on an open path — an arc or a straight rule — rather than round a
+  // closed circle. Set centred at the middle of the path and two-thirds the
+  // ring size, because an open path has a finite measure: overflow is not
+  // wrapped by SVG, it is silently discarded, so text that does not fit simply
+  // vanishes off the end.
+  const arcLegend = (pathD: string) =>
+    `<path id="${id}-ring" fill="none" d="${pathD}"/>` +
+    `<text font-family="Helvetica,Arial,sans-serif" font-size="${sw(0.0135)}" ` +
+    `letter-spacing="${sw(0.0021)}" text-anchor="middle" fill="${colour}" ` +
     `fill-opacity="${(opacity * 0.85).toFixed(3)}">` +
-    `<textPath href="#${id}-ring" startOffset="9%">${escapeXml(legend.join('   ·   '))}</textPath></text>`,
-  );
+    `<textPath href="#${id}-ring" startOffset="50%">${escapeXml(ringText)}</textPath></text>`;
 
-  // Layer 4: the African geometric register.
-  layers.push(africanBand(seed, size, colour, tier === 'simple' ? 16 : 24, R * 0.905, R * 0.795, opacity));
+  const circleD = (r: number) =>
+    `M ${R},${R} m -${r.toFixed(2)},0 a ${r.toFixed(2)},${r.toFixed(2)} 0 1,1 ${(r * 2).toFixed(2)},0 ` +
+    `a ${r.toFixed(2)},${r.toFixed(2)} 0 1,1 -${(r * 2).toFixed(2)},0`;
 
-  // Layer 3: twelve nodes, joined. The faculties and the network between them —
-  // a university that teaches on four continents is a set of places connected,
-  // not a single point, and this is the one element that says so.
-  if (tier !== 'simple') {
+  if (style === 'seal' || style === 'radiant') {
+    if (style === 'seal') L.push(microRing(circleD(ringR)));
+    L.push(africanBand(seed, size, colour, f.sectors, R * 0.905, R * 0.795, opacity));
+    if (f.doubleRegister) {
+      L.push(africanBand(seed ^ 0x9d, size, colour, Math.round(f.sectors * 1.4), R * 0.985, R * 0.925, opacity * 0.75));
+    }
+  }
+
+  if (style === 'cartouche') {
+    // An engraved oval. Wider than tall, which suits a landscape sheet — a
+    // circle in the middle of a 297mm page leaves both margins idle.
+    const rx = R * 0.96;
+    const ry = R * 0.70;
+    L.push(microRing(
+      `M ${(R - rx).toFixed(2)},${R} a ${rx.toFixed(2)},${ry.toFixed(2)} 0 1,1 ${(rx * 2).toFixed(2)},0 ` +
+      `a ${rx.toFixed(2)},${ry.toFixed(2)} 0 1,1 -${(rx * 2).toFixed(2)},0`,
+    ));
+    for (const k of [0.905, 0.80]) {
+      L.push(
+        `<polyline points="${ellipsePts(R, R, rx * k, ry * k).join(' ')}" fill="none" ` +
+        `stroke="${colour}" stroke-width="${sw(0.0018)}" stroke-opacity="${(opacity * 0.8).toFixed(3)}"/>`,
+      );
+    }
+    // Lozenges round the oval, in place of the radial register a circle takes.
+    const lz: string[] = [];
+    const count = f.sectors;
+    for (let i = 0; i < count; i += 1) {
+      const a = (i / count) * Math.PI * 2 - Math.PI / 2;
+      const cx = R + Math.cos(a) * rx * 0.8525;
+      const cy = R + Math.sin(a) * ry * 0.8525;
+      const d = size * 0.016;
+      lz.push(
+        `<polygon points="${(cx).toFixed(2)},${(cy - d).toFixed(2)} ${(cx + d * 0.55).toFixed(2)},${cy.toFixed(2)} ` +
+        `${(cx).toFixed(2)},${(cy + d).toFixed(2)} ${(cx - d * 0.55).toFixed(2)},${cy.toFixed(2)}" ` +
+        `fill="none" stroke="${colour}" stroke-width="${sw(0.0016)}" stroke-opacity="${(opacity * 0.8).toFixed(3)}"/>`,
+      );
+    }
+    L.push(lz.join(''));
+  }
+
+  if (style === 'shield') {
+    // Sized to clear the chief legend above it and the frame below. At 0.98 the
+    // shoulders ran off the top of the figure.
+    const w = size * 0.80;
+    const h = size * 0.88;
+    const cy = R * 1.10;
+    L.push(
+      `<path d="${shieldPath(R, cy, w, h)}" fill="none" stroke="${colour}" ` +
+      `stroke-width="${sw(0.005)}" stroke-opacity="${(opacity * 0.9).toFixed(3)}"/>`,
+      `<path d="${shieldPath(R, cy, w * 0.91, h * 0.91)}" fill="none" stroke="${colour}" ` +
+      `stroke-width="${sw(0.002)}" stroke-opacity="${(opacity * 0.6).toFixed(3)}"/>`,
+    );
+    // The chief: the band across the head of a shield, and the reason this
+    // silhouette reads as arms rather than as a box. Without the division line
+    // the outline is four straight sides at watermark opacity, which is a
+    // rectangle to anyone glancing at it.
+    const chiefY = cy - h / 2 + h * 0.155;
+    L.push(
+      `<path d="M${(R - w / 2).toFixed(2)},${chiefY.toFixed(2)} L${(R + w / 2).toFixed(2)},${chiefY.toFixed(2)}" ` +
+      `stroke="${colour}" stroke-width="${sw(0.0028)}" stroke-opacity="${(opacity * 0.75).toFixed(3)}"/>`,
+    );
+    // The legend rides a shallow arc above the shield rather than a ring round
+    // it. It CANNOT use microRing: that font is scaled to a full circumference
+    // of about 3× the figure's width, and on a half-arc a third of the legend
+    // ran off the end of the path and was dropped mid-word — which is how the
+    // first render came out reading "SIONALIS" in the top corner.
+    // A SHALLOW arc — radius 2.4R, not 1.3R. The tighter curve rose 0.40R above
+    // its own endpoints, which put the crown of the legend outside the figure's
+    // box entirely and the ends of it off the top of the sheet.
+    L.push(arcLegend(
+      `M ${(R - R * 0.94).toFixed(2)},${(R * 0.36).toFixed(2)} ` +
+      `A ${(R * 2.4).toFixed(2)},${(R * 2.4).toFixed(2)} 0 0 1 ${(R + R * 0.94).toFixed(2)},${(R * 0.36).toFixed(2)}`,
+    ));
+  }
+
+  if (style === 'panel') {
+    // A banknote vignette: a wide lozenge panel of interlace. It fills the
+    // measure instead of sitting as a roundel, which is what a central vignette
+    // on a security document actually does.
+    const hw = R * 0.98;
+    const hh = R * 0.56;
+    const pts = [
+      `${R},${(R - hh).toFixed(2)}`,
+      `${(R + hw * 0.66).toFixed(2)},${(R - hh).toFixed(2)}`,
+      `${(R + hw).toFixed(2)},${R}`,
+      `${(R + hw * 0.66).toFixed(2)},${(R + hh).toFixed(2)}`,
+      `${R},${(R + hh).toFixed(2)}`,
+      `${(R - hw * 0.66).toFixed(2)},${(R + hh).toFixed(2)}`,
+      `${(R - hw).toFixed(2)},${R}`,
+      `${(R - hw * 0.66).toFixed(2)},${(R - hh).toFixed(2)}`,
+    ].join(' ');
+    L.push(
+      `<polygon points="${pts}" fill="none" stroke="${colour}" stroke-width="${sw(0.004)}" ` +
+      `stroke-opacity="${(opacity * 0.85).toFixed(3)}"/>`,
+    );
+    // Interlace across the panel: two counter-running wave families.
+    const mesh: string[] = [];
+    for (let k = -6; k <= 6; k += 1) {
+      const pts2: string[] = [];
+      for (let x = -hw; x <= hw; x += 4) {
+        const y = Math.sin((x / hw) * Math.PI * 2 + k * 0.5) * hh * 0.34 + k * (hh / 9);
+        pts2.push(`${(R + x).toFixed(2)},${(R + y).toFixed(2)}`);
+      }
+      mesh.push(
+        `<polyline points="${pts2.join(' ')}" fill="none" stroke="${colour}" ` +
+        `stroke-width="${sw(0.0014)}" stroke-opacity="${(opacity * 0.55).toFixed(3)}"/>`,
+      );
+    }
+    L.push(`<g clip-path="url(#${id}-clip)">${mesh.join('')}</g>`,
+      `<clipPath id="${id}-clip"><polygon points="${pts}"/></clipPath>`);
+    // The legend runs UNDER the panel, not over it. Above, it landed on the
+    // same baseline as the certificate's own first line and read as a second
+    // heading in a lighter grey — a watermark may sit behind body text, but it
+    // must never look like type somebody left there by mistake. Below the panel
+    // it falls into the clear band above the signature row.
+    L.push(arcLegend(
+      `M ${(R - hw).toFixed(2)},${(R + hh + size * 0.045).toFixed(2)} ` +
+      `L ${(R + hw).toFixed(2)},${(R + hh + size * 0.045).toFixed(2)}`,
+    ));
+  }
+
+  // --- the network, on every tier now ------------------------------------
+  if (f.network) {
     const nodes = 12;
-    const nr = R * 0.735;
+    const nr = style === 'cartouche' ? R * 0.60 : style === 'panel' ? R * 0.48 : R * 0.735;
     const chords: string[] = [];
     for (let i = 0; i < nodes; i += 1) {
       const a = (i / nodes) * Math.PI * 2 - Math.PI / 2;
+      const ry = style === 'cartouche' ? nr * 0.74 : style === 'panel' ? nr * 0.66 : nr;
       const x = R + Math.cos(a) * nr;
-      const y = R + Math.sin(a) * nr;
-      layers.push(
-        `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${(size * 0.008).toFixed(2)}" ` +
-        `fill="none" stroke="${colour}" stroke-width="${(size * 0.0018).toFixed(2)}" ` +
-        `stroke-opacity="${(opacity * 0.85).toFixed(3)}"/>`,
+      const y = (style === 'shield' ? R * 1.0 : R) + Math.sin(a) * ry;
+      L.push(
+        `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${sw(0.0075)}" fill="none" ` +
+        `stroke="${colour}" stroke-width="${sw(0.0018)}" stroke-opacity="${(opacity * 0.85).toFixed(3)}"/>`,
       );
-      // Chords to the nodes five and seven places round: the step that produces
-      // a closed twelve-pointed figure rather than a mesh.
       for (const skip of [5, 7]) {
         const b = (((i + skip) % nodes) / nodes) * Math.PI * 2 - Math.PI / 2;
         chords.push(
-          `M${x.toFixed(2)},${y.toFixed(2)} L${(R + Math.cos(b) * nr).toFixed(2)},${(R + Math.sin(b) * nr).toFixed(2)}`,
+          `M${x.toFixed(2)},${y.toFixed(2)} L${(R + Math.cos(b) * nr).toFixed(2)},` +
+          `${((style === 'shield' ? R * 1.0 : R) + Math.sin(b) * ry).toFixed(2)}`,
         );
       }
     }
-    layers.push(
-      `<path d="${chords.join(' ')}" fill="none" stroke="${colour}" ` +
-      `stroke-width="${(size * 0.0011).toFixed(2)}" stroke-opacity="${(opacity * 0.30).toFixed(3)}"/>`,
+    L.push(
+      `<path d="${chords.join(' ')}" fill="none" stroke="${colour}" stroke-width="${sw(0.0011)}" ` +
+      `stroke-opacity="${(opacity * 0.30).toFixed(3)}"/>`,
     );
   }
 
-  // Layer 2: laurel sprigs at the cardinal points.
-  for (let c = 0; c < 4; c += 1) {
-    const a = (c / 4) * Math.PI * 2 + Math.PI / 2;
-    const bx = R + Math.cos(a) * R * 0.765;
-    const by = R + Math.sin(a) * R * 0.765;
-    const leaves: string[] = [];
-    for (let k = -2; k <= 2; k += 1) {
-      if (k === 0) continue;
-      const off = k * size * 0.021;
-      const lx = bx + Math.cos(a + Math.PI / 2) * off;
-      const ly = by + Math.sin(a + Math.PI / 2) * off;
-      leaves.push(
-        `<ellipse cx="${lx.toFixed(2)}" cy="${ly.toFixed(2)}" rx="${(size * 0.019).toFixed(2)}" ` +
-        `ry="${(size * 0.0075).toFixed(2)}" transform="rotate(${((a * 180) / Math.PI + (k > 0 ? 55 : -55)).toFixed(1)} ${lx.toFixed(2)} ${ly.toFixed(2)})" ` +
-        `fill="none" stroke="${colour}" stroke-width="${(size * 0.0018).toFixed(2)}" ` +
-        `stroke-opacity="${(opacity * 0.8).toFixed(3)}"/>`,
-      );
+  // --- laurel, at the cardinal points (not on the panel, which has no rim) --
+  if (style !== 'panel') {
+    for (let c = 0; c < 4; c += 1) {
+      const a = (c / 4) * Math.PI * 2 + Math.PI / 2;
+      const rr = style === 'cartouche' ? R * 0.66 : R * 0.765;
+      const bx = R + Math.cos(a) * rr;
+      const by = R + Math.sin(a) * (style === 'cartouche' ? rr * 0.72 : rr);
+      const leaves: string[] = [];
+      for (let k = -2; k <= 2; k += 1) {
+        if (k === 0) continue;
+        const off = k * size * 0.021;
+        const lx = bx + Math.cos(a + Math.PI / 2) * off;
+        const ly = by + Math.sin(a + Math.PI / 2) * off;
+        leaves.push(
+          `<ellipse cx="${lx.toFixed(2)}" cy="${ly.toFixed(2)}" rx="${sw(0.019)}" ry="${sw(0.0075)}" ` +
+          `transform="rotate(${((a * 180) / Math.PI + (k > 0 ? 55 : -55)).toFixed(1)} ${lx.toFixed(2)} ${ly.toFixed(2)})" ` +
+          `fill="none" stroke="${colour}" stroke-width="${sw(0.0018)}" stroke-opacity="${(opacity * 0.8).toFixed(3)}"/>`,
+        );
+      }
+      L.push(leaves.join(''));
     }
-    layers.push(leaves.join(''));
   }
 
-  // An inner guilloché collar, from 'elaborate' upward.
-  //
-  // This is what separates a master's from a bachelor's. Without it the two
-  // middle tiers were identical — the tier existed in the type and did nothing
-  // to the drawing, which is the same defect as a setting with no control.
-  if (tier === 'elaborate' || tier === 'full') {
-    layers.push(
-      // Very light. At half opacity fourteen overlapping curves came out as a
-      // dark ring that buried the globe — the collar is meant to be felt rather
-      // than seen, and the thing at the centre is the subject.
-      guillocheRosette(seed ^ 0x2f, size * 0.66, colour, opacity * 0.13, 1)
-        .replace(/^<svg[^>]*>/, `<g transform="translate(${(size * 0.17).toFixed(2)},${(size * 0.17).toFixed(2)})">`)
+  // --- the collar ---------------------------------------------------------
+  if (f.collar) {
+    L.push(
+      // Very light indeed. At 0.13 the fourteen overlapping curves compounded
+      // into a dark scalloped ring that buried the globe in all five styles —
+      // the collar is meant to be felt at the edge of vision, and the thing at
+      // the centre is the subject.
+      guillocheRosette(seed ^ 0x2f, size * 0.70, colour, opacity * 0.045, 1)
+        .replace(/^<svg[^>]*>/, `<g transform="translate(${sw(0.17)},${sw(0.17)})">`)
         .replace(/<\/svg>$/, '</g>'),
     );
   }
 
-  // Layer 1: the world, Africa at its centre.
-  const inner = size * 0.56;
-  const off = ((size - inner) / 2).toFixed(2);
-  layers.push(
-    `<g transform="translate(${off},${off})">` +
+  // --- the world ----------------------------------------------------------
+  // Bigger. The globe is the subject and it was reading as a detail inside the
+  // ornament rather than the thing the ornament surrounds.
+  const inner = size * (style === 'panel' ? 0.50 : style === 'shield' ? 0.54 : 0.60);
+  const gx = ((size - inner) / 2).toFixed(2);
+  const gy = (style === 'shield' ? size * 0.255 : (size - inner) / 2).toFixed(2);
+  L.push(
+    `<g transform="translate(${gx},${gy})">` +
     africaGlobe(seed, inner, colour, opacity).replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '') +
     `</g>`,
   );
 
-  // The year, and the faculty's emblem beneath it.
-  layers.push(
-    `<text x="${R}" y="${(R + R * 0.62).toFixed(2)}" text-anchor="middle" ` +
-    `font-family="Georgia,serif" font-size="${(size * 0.038).toFixed(2)}" ` +
-    `letter-spacing="${(size * 0.007).toFixed(2)}" fill="${colour}" ` +
+  // --- year and emblem ----------------------------------------------------
+  const yearY = style === 'shield' ? R * 1.56 : style === 'panel' ? R + R * 0.44 : R + R * 0.62;
+  L.push(
+    `<text x="${R}" y="${yearY.toFixed(2)}" text-anchor="middle" font-family="Georgia,serif" ` +
+    `font-size="${sw(0.038)}" letter-spacing="${sw(0.007)}" fill="${colour}" ` +
     `fill-opacity="${(opacity * 0.8).toFixed(3)}">${escapeXml(founded)}</text>`,
   );
-  // The emblem sits below the year with air between them. It was overlapping,
-  // which on a device reads as a printing fault rather than as two elements.
-  if (emblem !== 'none' && tier !== 'simple') {
-    layers.push(emblemPath(emblem, R, R + R * 0.735, size * 0.026, colour, opacity * 0.7));
+  if (emblem !== 'none') {
+    L.push(emblemPath(emblem, R, yearY + size * 0.055, size * 0.026, colour, opacity * 0.7));
   }
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${layers.join('')}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${L.join('')}</svg>`;
 }
 
 export const africanGlobeOfKnowledgeUri = (o: Parameters<typeof africanGlobeOfKnowledge>[0]) =>
   enc(africanGlobeOfKnowledge(o));
+
+/* ------------------------------------------------------------------ */
+/* Five silhouettes for the device                                      */
+/* ------------------------------------------------------------------ */
+
+/** Points on an ellipse, for the cartouche. */
+function ellipsePts(cx: number, cy: number, rx: number, ry: number, n = 180): string[] {
+  const pts: string[] = [];
+  for (let i = 0; i <= n; i += 1) {
+    const a = (i / n) * Math.PI * 2 - Math.PI / 2;
+    pts.push(`${(cx + Math.cos(a) * rx).toFixed(2)},${(cy + Math.sin(a) * ry).toFixed(2)}`);
+  }
+  return pts;
+}
+
+/**
+ * The outline of an escutcheon — a heraldic shield.
+ *
+ * Straight chief, straight flanks to two-thirds, then curved to a point. The
+ * proportions are the ones used on academic arms rather than the squatter
+ * shape used on sports crests; a shield too wide reads as a badge.
+ */
+function shieldPath(cx: number, cy: number, w: number, h: number): string {
+  const l = cx - w / 2;
+  const r = cx + w / 2;
+  const t = cy - h / 2;
+  const b = cy + h / 2;
+  const shoulder = t + h * 0.62;
+  return `M${l},${t} L${r},${t} L${r},${shoulder} ` +
+         `C${r},${b - h * 0.12} ${cx + w * 0.26},${b} ${cx},${b} ` +
+         `C${cx - w * 0.26},${b} ${l},${b - h * 0.12} ${l},${shoulder} Z`;
+}
+
+/**
+ * Which register a tier draws. Pulled out so the five styles agree about what
+ * "elaborate" means — otherwise each silhouette would drift into its own
+ * private idea of the hierarchy, and a master's would be busier than a
+ * doctorate on one style and quieter on another.
+ */
+function tierFlags(tier: DeviceTier) {
+  return {
+    network: true,                                        // every tier, now
+    collar: tier === 'elaborate' || tier === 'full' || tier === 'supreme',
+    rays: tier === 'full' || tier === 'supreme',
+    doubleRegister: tier === 'supreme',
+    sectors: tier === 'standard' ? 20 : tier === 'elaborate' ? 24 : 28,
+  };
+}

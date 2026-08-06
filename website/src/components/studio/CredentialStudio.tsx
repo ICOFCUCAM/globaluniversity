@@ -489,6 +489,36 @@ export default function CredentialStudio() {
                         ? 'A wireframe graticule. Harder to redraw than a rosette — the meridians are not evenly spaced, their spacing follows a cosine, and getting that wrong is obvious to anyone who has looked at a map. Still a stock motif.'
                         : 'A graticule inside a guilloché ring. Better than either alone, and still not specific to this university.'}
                 </p>
+                {design.security.watermark === 'device' && (
+                  <>
+                    <Row label="Silhouette">
+                      <Select
+                        value={design.security.deviceStyle}
+                        onChange={(v) => setSecurity('deviceStyle', v as CredentialDesign['security']['deviceStyle'])}
+                        options={['seal', 'cartouche', 'shield', 'radiant', 'panel']}
+                      />
+                    </Row>
+                    <p className="text-[11px] leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">
+                      {design.security.deviceStyle === 'seal'
+                        ? 'A struck medallion — a closed circle with a double register. The classical answer, and the one that reads most like a stamp. It also repeats the roundness of the QR at the other end of the sheet.'
+                        : design.security.deviceStyle === 'cartouche'
+                          ? 'An engraved oval, as on a bookplate or a share certificate. Taller than it is wide, so it carries a portrait-shaped field down the middle of a landscape sheet without filling it.'
+                          : design.security.deviceStyle === 'shield'
+                            ? 'An escutcheon with a chief. The most heraldic of the five and the most institutional — it is the shape a coat of arms is drawn in, and it is read as a coat of arms before anything on it is legible.'
+                            : design.security.deviceStyle === 'radiant'
+                              ? 'Open rather than closed: the rays run off past any boundary, so there is no edge for the eye to stop at and the figure sits in the sheet rather than on it. The least stamp-like of the five.'
+                              : 'A banknote vignette — a lozenge panel of interlace running across the width instead of a roundel in the middle. The one that uses the margins a landscape certificate otherwise wastes.'}
+                    </p>
+                    <p className="text-[11px] leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">
+                      The elaboration is not set here. It follows the award: a
+                      certificate or diploma is struck <em>standard</em>, a
+                      bachelor’s <em>elaborate</em>, a master’s <em>full</em>, a
+                      doctorate <em>supreme</em>. The silhouette stays the same
+                      down the whole ladder, so every document is recognisably
+                      this university’s; only how much is worked into it changes.
+                    </p>
+                  </>
+                )}
                 <Row label="Strength">
                   <input type="range" min={0.1} max={1} step={0.05} value={design.security.guillocheOpacity}
                     onChange={(e) => setSecurity('guillocheOpacity', Number(e.target.value))}

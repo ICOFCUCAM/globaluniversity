@@ -169,6 +169,17 @@ export interface CredentialDesign {
      * rosette.
      */
     watermark: 'device' | 'globe-in-rosette' | 'globe' | 'rosette';
+    /**
+     * The silhouette the device is struck in. Applies to 'device' only.
+     *
+     * A closed circle is the obvious form and not automatically the best one:
+     * it reads as a rubber stamp, it repeats the roundness of the QR at the
+     * other end of the sheet, and on a landscape certificate it sits as a
+     * roundel in the middle while the wide margins do nothing. These are five
+     * different shapes rather than five skins — 'panel' in particular is not a
+     * roundel at all but a banknote vignette running across the width.
+     */
+    deviceStyle: 'seal' | 'cartouche' | 'shield' | 'radiant' | 'panel';
     microtextBorder: boolean;
     securityGround: boolean;
     engravedSeal: boolean;
@@ -287,6 +298,7 @@ export const DEFAULT_CERTIFICATE_DESIGN: CredentialDesign = {
     guilloche: true,
     guillocheOpacity: 0.5,
     watermark: 'device',
+    deviceStyle: 'seal',
     microtextBorder: true,
     securityGround: true,
     engravedSeal: true,
