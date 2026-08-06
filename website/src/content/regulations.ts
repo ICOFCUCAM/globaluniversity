@@ -146,6 +146,115 @@ export const assessmentSchemes: AssessmentScheme[] = [
 ];
 
 
+// ---------------------------------------------------------------------------
+// ADOPTED BY THE UNIVERSITY — not reproduced from the source document.
+//
+// Everything above this line is quoted verbatim from what the university
+// supplied. The two blocks below are decisions the university took afterwards,
+// on being shown that its published documents did not settle them. They are
+// kept in this file so there is one place to look, and separated by this
+// heading so nobody later mistakes them for part of the original.
+// ---------------------------------------------------------------------------
+
+/**
+ * Degree classification bands.
+ *
+ * The university published a grading scale but no classification bands, so the
+ * one figure on a degree certificate that decides what class of degree a
+ * graduate holds was being inferred by the software. It is now adopted.
+ *
+ * Each boundary is a grade point that exists on the published scale, so every
+ * band states a requirement in the university's own vocabulary rather than an
+ * arbitrary decimal:
+ *
+ *   3.33  an A- average          First Class Honours
+ *   2.67  a B average            Second Class Honours (Upper Division)
+ *   2.00  a C+ average           Second Class Honours (Lower Division)
+ *   1.33  a C- average           Third Class Honours
+ *   0.67  a D average — the lowest passing grade on the scale
+ *
+ * A boundary set between two grade points would be indefensible in an appeal:
+ * a student asked why 2.40 divides an Upper from a Lower could not be told
+ * which grade average that represents, because it represents none.
+ */
+export const classificationBands: { min: number; label: string; basis: string }[] = [
+  { min: 3.33, label: 'First Class Honours', basis: 'an A- average or above' },
+  { min: 2.67, label: 'Second Class Honours (Upper Division)', basis: 'a B average or above' },
+  { min: 2.00, label: 'Second Class Honours (Lower Division)', basis: 'a C+ average or above' },
+  { min: 1.33, label: 'Third Class Honours', basis: 'a C- average or above' },
+  { min: 0.67, label: 'Pass', basis: 'a D average — the lowest passing grade' },
+];
+
+/**
+ * The assessment schemes, machine-readable.
+ *
+ * `assessmentSchemes` above is the published prose. This is the same thing with
+ * a key and a numeric weight per component, so a mark sheet can be built from
+ * the regulations rather than from whatever fields somebody happened to add.
+ *
+ * The mark sheet previously recorded two components — continuous assessment out
+ * of 40 and examination out of 60 — which weighted the examination at 60% where
+ * the regulations say 30%, and left participation and presentations with
+ * nowhere to go. The university has decided the four published components are
+ * the scheme, so the sheet follows the document.
+ *
+ * Every component is marked out of 100 and the total is the weighted sum. That
+ * is the only arrangement in which a lecturer marking a presentation thinks in
+ * marks rather than in "out of twenty".
+ */
+export interface SchemeComponent {
+  key: string;
+  label: string;
+  weight: number;
+}
+
+export interface MarkingScheme {
+  id: string;
+  applies: string;
+  components: SchemeComponent[];
+}
+
+export const markingSchemes: MarkingScheme[] = [
+  {
+    id: 'undergraduate',
+    applies: 'Diploma and undergraduate courses',
+    components: [
+      { key: 'participation', label: 'Participation', weight: 20 },
+      { key: 'assignments', label: 'Assignments', weight: 30 },
+      { key: 'examinations', label: 'Examinations', weight: 30 },
+      { key: 'presentations', label: 'Presentations', weight: 20 },
+    ],
+  },
+  {
+    id: 'masters',
+    applies: 'Master’s courses',
+    components: [
+      { key: 'participation', label: 'Participation', weight: 20 },
+      { key: 'research_paper', label: 'Research paper', weight: 30 },
+      { key: 'presentations', label: 'Presentations', weight: 20 },
+      { key: 'final_examination', label: 'Final examination', weight: 30 },
+    ],
+  },
+  {
+    id: 'thesis',
+    applies: 'Thesis preparation and research methodology',
+    components: [
+      { key: 'research_proposal', label: 'Research proposal', weight: 40 },
+      { key: 'methodology_assignment', label: 'Methodology assignment', weight: 30 },
+      { key: 'final_presentation', label: 'Final presentation', weight: 30 },
+    ],
+  },
+];
+
+/** The scheme a course is marked under, chosen by its level. */
+export function schemeForLevel(level: number | null | undefined): MarkingScheme {
+  // 700+ is doctoral research in this catalogue; 500–699 is master's.
+  if ((level ?? 0) >= 700) return markingSchemes[2];
+  if ((level ?? 0) >= 500) return markingSchemes[1];
+  return markingSchemes[0];
+}
+
+
 // --- Fee bands -------------------------------------------------------------
 // The two currencies on this site are not an inconsistency: they are two fee
 // bands. The university confirmed that the FCFA schedule is a subsidised rate,

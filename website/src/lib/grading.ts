@@ -44,7 +44,13 @@ export interface GradeScale {
   remark: string;
 }
 
-import { gradeScale as publishedScale, passMark as publishedPassMark } from '@/content/regulations';
+import {
+  gradeScale as publishedScale,
+  passMark as publishedPassMark,
+  classificationBands,
+  schemeForLevel,
+  type MarkingScheme,
+} from '@/content/regulations';
 
 /**
  * The scale the portal computes on, derived from what the university publishes.
@@ -140,34 +146,65 @@ export function calculateCGPA(
  * Get degree classification based on CGPA
  */
 export function getClassification(cgpa: number): string {
-  // Bands on the university's 4.00 scale. The previous set was written for a
-  // 5.00 scale — it required 4.50 for a First, which on this scale is a mark
-  // only the very top of the A band reaches, and it awarded a "Pass" at 1.00,
-  // which here is below the pass mark entirely.
-  //
-  // NOTE FOR THE UNIVERSITY: these bands are a reasonable reading of a 4.00
-  // scale, but the university has not published degree classification bands.
-  // Until it does, this is the one number on a certificate that is inferred
-  // rather than quoted. It should be adopted formally.
-  if (cgpa >= 3.60) return 'First Class Honours';
-  if (cgpa >= 3.00) return 'Second Class Honours (Upper Division)';
-  if (cgpa >= 2.00) return 'Second Class Honours (Lower Division)';
-  if (cgpa >= 1.00) return 'Third Class Honours';
-  if (cgpa > 0) return 'Pass';
-  return 'Fail';
+  // From the bands the university adopted, not restated here. Each boundary is
+  // a grade point that exists on the published scale, so a student asking why
+  // they fell one side of a line can be told which grade average it represents.
+  return classificationBands.find((b) => cgpa >= b.min)?.label ?? 'Fail';
 }
 
 /**
  * Get classification short form
  */
+const SHORT: Record<string, string> = {
+  'First Class Honours': '1st Class',
+  'Second Class Honours (Upper Division)': '2nd Class Upper',
+  'Second Class Honours (Lower Division)': '2nd Class Lower',
+  'Third Class Honours': '3rd Class',
+  Pass: 'Pass',
+};
+
 export function getClassificationShort(cgpa: number): string {
-  if (cgpa >= 3.60) return '1st Class';
-  if (cgpa >= 3.00) return '2nd Class Upper';
-  if (cgpa >= 2.00) return '2nd Class Lower';
-  if (cgpa >= 1.00) return '3rd Class';
-  if (cgpa > 0) return 'Pass';
-  return 'Fail';
+  const full = getClassification(cgpa);
+  return SHORT[full] ?? full;
 }
+
+/**
+ * The weighted total for a set of component marks.
+ *
+ * Every component is marked out of 100 and weighted per the scheme, so
+ * participation 80, assignments 70, examinations 60, presentations 90 under the
+ * undergraduate scheme gives 80×0.20 + 70×0.30 + 60×0.30 + 90×0.20 = 73.
+ *
+ * A component left blank counts as zero rather than being dropped from the
+ * weighting. Dropping it would silently re-weight everything else — a student
+ * with no presentation mark would have their examination quietly promoted from
+ * 30% to 37.5% of the total, and would be graded on a scheme the university
+ * never published. A missing mark is a missing mark, and the sheet shows which.
+ */
+export function weightedTotal(
+  components: Record<string, number | null | undefined>,
+  scheme: MarkingScheme,
+): number {
+  const total = scheme.components.reduce(
+    (sum, c) => sum + (Number(components[c.key]) || 0) * (c.weight / 100),
+    0,
+  );
+  return Number(total.toFixed(2));
+}
+
+/** Whether every component of the scheme carries a mark. */
+export function isComplete(
+  components: Record<string, number | null | undefined>,
+  scheme: MarkingScheme,
+): boolean {
+  return scheme.components.every((c) => {
+    const v = components[c.key];
+    return v !== null && v !== undefined && v !== ('' as unknown as number);
+  });
+}
+
+export { schemeForLevel };
+export type { MarkingScheme };
 
 /**
  * The classification bands, as data, so a screen can print them without
@@ -177,13 +214,7 @@ export function getClassificationShort(cgpa: number): string {
  * required 3.60 on a 4.00 scale. Two statements of the same rule, in different
  * files, disagreeing — and the one a student would read was the wrong one.
  */
-export const CLASSIFICATION_BANDS: { min: number; label: string }[] = [
-  { min: 3.60, label: 'First Class Honours' },
-  { min: 3.00, label: 'Second Class Honours (Upper Division)' },
-  { min: 2.00, label: 'Second Class Honours (Lower Division)' },
-  { min: 1.00, label: 'Third Class Honours' },
-  { min: 0.01, label: 'Pass' },
-];
+export const CLASSIFICATION_BANDS = classificationBands;
 
 /** Whether a mark earns credit. Read from the published pass mark, not 40. */
 export function isPass(totalScore: number): boolean {

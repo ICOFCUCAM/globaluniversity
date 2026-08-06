@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { calculateGrade, calculateGPA, getGradeColor, GRADING_SCALE, PASS_MARK } from '@/lib/grading';
+import {
+  calculateGrade, calculateGPA, getGradeColor, GRADING_SCALE, PASS_MARK,
+  weightedTotal, isComplete, schemeForLevel,
+} from '@/lib/grading';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Course, Student } from '@/lib/types';
 import {
@@ -12,8 +15,8 @@ interface ResultEntry {
   studentId: string;
   studentName: string;
   matricNo: string;
-  caScore: number;
-  examScore: number;
+  /** One mark out of 100 per component of the course's scheme. */
+  components: Record<string, number | null>;
   totalScore: number;
   grade: string;
   gradePoint: number;
@@ -65,7 +68,7 @@ export default function ResultProcessing() {
       // what was saved rather than a blank sheet inviting re-entry.
       const { data: existing } = await supabase
         .from('results')
-        .select('student_id, ca_score, exam_score, total_score, grade, grade_point')
+        .select('student_id, components, scheme, total_score, grade, grade_point')
         .eq('course_id', selectedCourse);
 
       if (!live) return;
@@ -78,12 +81,19 @@ export default function ResultProcessing() {
           .sort((a: any, b: any) => (a.last_name ?? '').localeCompare(b.last_name ?? ''))
           .map((st: any) => {
             const prior = priorBy.get(st.id);
+            // Components as stored; a result saved before the scheme changed
+            // has none, and is shown with the fields empty rather than with its
+            // old CA/exam marks reinterpreted as something they are not.
+            const comps: Record<string, number | null> = {};
+            for (const c of scheme.components) {
+              const v = prior?.components?.[c.key];
+              comps[c.key] = v === undefined || v === null ? null : Number(v);
+            }
             return {
               studentId: st.id,
               studentName: `${st.first_name} ${st.last_name}`,
               matricNo: st.student_number || st.matric_no,
-              caScore: prior?.ca_score ?? 0,
-              examScore: prior?.exam_score ?? 0,
+              components: comps,
               totalScore: prior?.total_score ?? 0,
               grade: prior?.grade ?? '—',
               gradePoint: prior?.grade_point ?? 0,
@@ -96,15 +106,19 @@ export default function ResultProcessing() {
     return () => { live = false; };
   }, [selectedCourse]);
 
-  function updateScore(index: number, field: 'caScore' | 'examScore', value: number) {
+  function updateScore(index: number, key: string, value: number | null) {
     setResults((prev) => {
       const updated = [...prev];
-      const entry = { ...updated[index] };
-      entry[field] = value;
-      entry.totalScore = entry.caScore + entry.examScore;
+      const entry = { ...updated[index], components: { ...updated[index].components } };
+      entry.components[key] = value;
+      entry.totalScore = weightedTotal(entry.components, scheme);
       const { grade, gradePoint } = calculateGrade(entry.totalScore);
-      entry.grade = grade;
-      entry.gradePoint = gradePoint;
+      // A grade is only shown once every component carries a mark. Grading a
+      // half-marked student treats their unmarked presentation as a zero and
+      // tells the lecturer they have failed.
+      const complete = isComplete(entry.components, scheme);
+      entry.grade = complete ? grade : '—';
+      entry.gradePoint = complete ? gradePoint : 0;
       updated[index] = entry;
       return updated;
     });
@@ -121,8 +135,12 @@ export default function ResultProcessing() {
       .map((r) => ({
         student_id: r.studentId,
         course_id: selectedCourse,
-        ca_score: r.caScore,
-        exam_score: r.examScore,
+        // The components as entered, and the scheme they were entered under.
+        // Storing the scheme is what lets a 2026 result still be read correctly
+        // after the regulations change — without it a later scheme would
+        // re-weight these marks and restate a grade the student never got.
+        components: r.components,
+        scheme: scheme.id,
         total_score: r.totalScore,
         grade: r.grade,
         grade_point: r.gradePoint,
@@ -186,6 +204,9 @@ export default function ResultProcessing() {
   }
 
   const selectedCourseData = courses.find((c) => c.id === selectedCourse);
+  // Which of the university's three published schemes this course is marked
+  // under, chosen by its level. Undergraduate, master's, or thesis.
+  const scheme = schemeForLevel(selectedCourseData?.level);
   const classAvg = results.filter((r) => r.totalScore > 0).length > 0
     ? (results.filter((r) => r.totalScore > 0).reduce((s, r) => s + r.totalScore, 0) / results.filter((r) => r.totalScore > 0).length).toFixed(1)
     : '0';
@@ -263,25 +284,19 @@ export default function ResultProcessing() {
           </div>
 
           {/* Results Table */}
-          {/* The published scheme and this sheet do not agree, and that is a
-              decision for the university rather than something to paper over
-              here. Stating it on the screen where marks are entered is the only
-              place a lecturer will actually see it. */}
-          <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
-            <AlertCircle size={16} className="mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="font-semibold">This sheet does not match the published assessment scheme.</p>
-              <p className="mt-1 leading-relaxed">
-                The regulations weight undergraduate courses as participation&nbsp;20%,
-                assignments&nbsp;30%, examinations&nbsp;30%, presentations&nbsp;20%. This sheet
-                records two components only — continuous assessment out of 40 and examination out
-                of&nbsp;60 — so it weights the examination at 60% and has nowhere to put
-                participation or presentations. Marks entered here are a total, not the four
-                components the regulations describe. Either the sheet needs the four fields or the
-                regulations need amending; the university decides which, and nothing here should be
-                treated as the scheme until it does.
-              </p>
-            </div>
+          {/* Which scheme this course is marked under, and what each
+              component is worth. The banner that stood here warned that the
+              sheet contradicted the published scheme; the university has since
+              adopted the four published components, and the sheet now follows
+              the document. */}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl border border-[#e8dcc0] bg-[#faf6ee] px-4 py-2.5 text-xs text-[#6b5a2f] dark:border-[#3d3349] dark:bg-[#241f2c] dark:text-[#c3b48f]">
+            <span className="font-semibold">{scheme.applies}</span>
+            {scheme.components.map((c) => (
+              <span key={c.key} className="tabular-nums">
+                {c.label} {c.weight}%
+              </span>
+            ))}
+            <span className="text-[#a49bb0]">· each marked out of 100</span>
           </div>
 
           <div className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] overflow-hidden">
@@ -320,8 +335,15 @@ export default function ResultProcessing() {
                     <th className="text-left px-5 py-3 text-xs font-semibold text-[#6b6076] dark:text-[#9c93ad] uppercase">S/N</th>
                     <th className="text-left px-5 py-3 text-xs font-semibold text-[#6b6076] dark:text-[#9c93ad] uppercase">Matric No</th>
                     <th className="text-left px-5 py-3 text-xs font-semibold text-[#6b6076] dark:text-[#9c93ad] uppercase">Student Name</th>
-                    <th className="text-center px-5 py-3 text-xs font-semibold text-[#6b6076] dark:text-[#9c93ad] uppercase">CA (40)</th>
-                    <th className="text-center px-5 py-3 text-xs font-semibold text-[#6b6076] dark:text-[#9c93ad] uppercase">Exam (60)</th>
+                    {/* A column per component of this course's scheme, each
+                        headed with its weight so a lecturer can see what the
+                        mark is worth without leaving the sheet. */}
+                    {scheme.components.map((c) => (
+                      <th key={c.key} className="px-3 py-3 text-center text-xs font-semibold uppercase text-[#6b6076] dark:text-[#9c93ad]">
+                        {c.label}
+                        <span className="ml-1 font-normal normal-case text-[#a49bb0]">({c.weight}%)</span>
+                      </th>
+                    ))}
                     <th className="text-center px-5 py-3 text-xs font-semibold text-[#6b6076] dark:text-[#9c93ad] uppercase">Total</th>
                     <th className="text-center px-5 py-3 text-xs font-semibold text-[#6b6076] dark:text-[#9c93ad] uppercase">Grade</th>
                     <th className="text-center px-5 py-3 text-xs font-semibold text-[#6b6076] dark:text-[#9c93ad] uppercase">GP</th>
@@ -345,26 +367,32 @@ export default function ResultProcessing() {
                       <td className="px-5 py-2.5 text-sm text-[#6b6076] dark:text-[#9c93ad]">{i + 1}</td>
                       <td className="px-5 py-2.5 text-sm text-[#6b6076] dark:text-[#9c93ad] font-mono">{entry.matricNo}</td>
                       <td className="px-5 py-2.5 text-sm text-[#33234a] dark:text-[#e4dcf0] font-medium">{entry.studentName}</td>
-                      <td className="px-5 py-2.5">
-                        <input
-                          type="number"
-                          min={0}
-                          max={40}
-                          value={entry.caScore || ''}
-                          onChange={(e) => updateScore(i, 'caScore', Math.min(40, Math.max(0, Number(e.target.value))))}
-                          className="w-16 px-2 py-1.5 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35"
-                        />
-                      </td>
-                      <td className="px-5 py-2.5">
-                        <input
-                          type="number"
-                          min={0}
-                          max={60}
-                          value={entry.examScore || ''}
-                          onChange={(e) => updateScore(i, 'examScore', Math.min(60, Math.max(0, Number(e.target.value))))}
-                          className="w-16 px-2 py-1.5 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35"
-                        />
-                      </td>
+                      {/* One input per component, each out of 100 and weighted
+                          per the regulations — replacing the fixed
+                          CA-out-of-40 and exam-out-of-60 pair, which weighted
+                          the examination at 60% where the university publishes
+                          30% and had nowhere to record participation or
+                          presentations at all. */}
+                      {scheme.components.map((c) => (
+                        <td key={c.key} className="px-3 py-2.5 text-center">
+                          <input
+                            type="number"
+                            min={0}
+                            max={100}
+                            aria-label={`${c.label} mark for ${entry.studentName}`}
+                            value={entry.components[c.key] ?? ''}
+                            onChange={(e) => {
+                              const raw = e.target.value;
+                              updateScore(
+                                i,
+                                c.key,
+                                raw === '' ? null : Math.min(100, Math.max(0, Number(raw))),
+                              );
+                            }}
+                            className="w-16 rounded-lg border border-[#ded6c8] px-2 py-1.5 text-center text-sm tabular-nums focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35 dark:border-[#3d3349] dark:bg-[#241f2c]"
+                          />
+                        </td>
+                      ))}
                       <td className="px-5 py-2.5 text-center">
                         <span className="text-sm font-bold text-[#33234a] dark:text-[#e4dcf0]">{entry.totalScore}</span>
                       </td>

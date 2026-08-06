@@ -213,6 +213,33 @@ create table if not exists credential_templates (
 );
 
 
+-- Component marks.
+--
+-- The university has adopted its published four-part assessment scheme, so a
+-- result is no longer a CA mark and an exam mark. `results` kept ca_score and
+-- exam_score, which weighted the examination at 60% where the regulations say
+-- 30% and had nowhere at all to record participation or presentations.
+--
+-- Stored as jsonb rather than as four columns because the scheme differs by
+-- level: undergraduate courses are marked on participation, assignments,
+-- examinations and presentations; master's courses on participation, research
+-- paper, presentations and final examination; thesis courses on proposal,
+-- methodology and final presentation. Four fixed columns would fit one of the
+-- three and mislabel the others.
+--
+-- `scheme` records WHICH scheme the marks were entered under, alongside the
+-- marks themselves. That is what makes an old result readable after the
+-- regulations change: without it, a 2026 result would be re-weighted by a 2030
+-- scheme and the transcript would quietly restate a grade the student was never
+-- given.
+--
+-- ca_score and exam_score are kept, not dropped. They hold every mark entered
+-- before this change and dropping them would destroy that record.
+alter table results
+  add column if not exists components jsonb,
+  add column if not exists scheme     text;
+
+
 -- Payments. Receipts were being written into `documents` as base64-encoded
 -- JSON, with the amount readable only by regex over the filename — which also
 -- contains the student's name, so a name with a digit in it silently dropped
