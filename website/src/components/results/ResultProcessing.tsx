@@ -249,6 +249,27 @@ export default function ResultProcessing() {
           </div>
 
           {/* Results Table */}
+          {/* The published scheme and this sheet do not agree, and that is a
+              decision for the university rather than something to paper over
+              here. Stating it on the screen where marks are entered is the only
+              place a lecturer will actually see it. */}
+          <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
+            <AlertCircle size={16} className="mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="font-semibold">This sheet does not match the published assessment scheme.</p>
+              <p className="mt-1 leading-relaxed">
+                The regulations weight undergraduate courses as participation&nbsp;20%,
+                assignments&nbsp;30%, examinations&nbsp;30%, presentations&nbsp;20%. This sheet
+                records two components only — continuous assessment out of 40 and examination out
+                of&nbsp;60 — so it weights the examination at 60% and has nowhere to put
+                participation or presentations. Marks entered here are a total, not the four
+                components the regulations describe. Either the sheet needs the four fields or the
+                regulations need amending; the university decides which, and nothing here should be
+                treated as the scheme until it does.
+              </p>
+            </div>
+          </div>
+
           <div className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] overflow-hidden">
             <div className="px-5 py-3 border-b border-[#ece7de] bg-[#faf8f4] dark:border-[#2e2637] dark:bg-[#241f2c] flex items-center justify-between">
               <h3 className="font-semibold text-[#4a4155] dark:text-[#c8c1d4] text-sm">Score Entry</h3>
