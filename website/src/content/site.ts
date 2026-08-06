@@ -591,7 +591,7 @@ export const programs: Program[] = [
     title: 'Certificate of Theology',
     level: 'Certificate',
     school: 'Faculty of Theology',
-    image: '/images/students.jpg',
+    image: '/images/graduation-2024/grad-2024-graduate-flowers.jpg',
     summary:
       'The first rung of theological study: a foundational survey of the Scriptures, of Christian belief and of the practice of ministry, for lay leaders, church workers and anyone beginning ministerial training. No prior theological study is assumed.',
     outcomes: ['Old and New Testament survey', 'Foundations of Christian doctrine', 'Introduction to church history', 'Basic ministry practice'],
@@ -601,7 +601,7 @@ export const programs: Program[] = [
     title: 'Certificate of Christian Education',
     level: 'Certificate',
     school: 'Faculty of Theology',
-    image: '/images/wp/fac-education.png',
+    image: '/images/graduation-2024/grad-2024-award-presentation.jpg',
     summary:
       'Introductory training for those who teach within the local church — Sunday school teachers, youth workers, small-group leaders and church educators — combining biblical foundations with practical teaching method.',
     outcomes: ['Teaching the Bible to all ages', 'Lesson planning and delivery', 'Discipleship and formation', 'Safeguarding and pastoral care of learners'],
@@ -611,7 +611,7 @@ export const programs: Program[] = [
     title: 'Diploma in Theology',
     level: 'Diploma',
     school: 'Faculty of Theology',
-    image: '/images/wp/fac-theology.jpg',
+    image: '/images/graduation-2024/grad-2024-graduands-celebrating.jpg',
     summary:
       'A condensed theological education giving a solid grounding in key theological concepts, biblical interpretation, church history and practical ministry skills — for personal enrichment, for ministry preparation, or as a foundation for further theological study.',
     outcomes: ['Biblical interpretation', 'Church history', 'Practical ministry skills', 'Foundation for the B.Th.'],
@@ -651,7 +651,7 @@ export const programs: Program[] = [
     title: 'Bachelor of Theology',
     level: 'Bachelor',
     school: 'Faculty of Theology',
-    image: '/images/wp/fac-theology.jpg',
+    image: '/images/graduation-2024/grad-2024-bachelors-robes.jpg',
     summary:
       'A three-year, 180-ECTS undergraduate degree combining rigorous academic study with spiritual formation and practical ministry, available full-time, part-time, online and by distance learning.',
     outcomes: ['Biblical interpretation', 'Christian doctrine', 'Church history', 'Pastoral ministry'],
@@ -661,7 +661,7 @@ export const programs: Program[] = [
     title: 'Bachelor of Ministry',
     level: 'Bachelor',
     school: 'Faculty of Theology',
-    image: '/images/wp/g-hall.jpg',
+    image: '/images/graduation-2024/grad-2024-procession-hall.jpg',
     summary:
       'The practical route to ministry, and a distinct award from the Bachelor of Divinity. The B.Min. is built for those already serving: supervised placement runs throughout, and the emphasis falls on preaching, pastoral care, discipleship, church administration and mission rather than on the biblical languages.',
     outcomes: ['Preaching and worship leading', 'Pastoral care and counselling', 'Church administration and finance', 'Supervised ministry placement'],
@@ -671,7 +671,7 @@ export const programs: Program[] = [
     title: 'Bachelor of Christian Education',
     level: 'Bachelor',
     school: 'Faculty of Theology',
-    image: '/images/wp/fac-education.png',
+    image: '/images/graduation-2024/grad-2024-graduates-group.jpg',
     summary:
       'Teaching and discipleship within the local church, taken to degree level: curriculum design for every age group, the theology of formation, and supervised teaching practice in a church setting.',
     outcomes: ['Christian curriculum design', 'Teaching across the age range', 'Theology of discipleship', 'Supervised teaching practice'],
@@ -722,7 +722,7 @@ export const programs: Program[] = [
     title: 'Master of Arts in Black Liberation Theology',
     level: 'Master',
     school: 'Faculty of Theology',
-    image: '/images/wp/fac-theology.jpg',
+    image: '/images/graduation-2024/grad-2024-masters-caps.jpg',
     summary:
       'A theology for the liberation of all humanity. Pioneered at ICOF Global University as an academic discipline, integrating biblical revelation, history, archaeology, anthropology, culture and social justice.',
     outcomes: [
@@ -748,7 +748,7 @@ export const programs: Program[] = [
     title: 'Doctor of Theology',
     level: 'Doctorate',
     school: 'Faculty of Theology',
-    image: '/images/wp/fac-theology.jpg',
+    image: '/images/graduation-2024/grad-2024-doctoral-seated.jpg',
     summary:
       'Advanced doctrinal scholarship for those who teach and lead within the church. The D.Th. is weighted toward systematic and biblical theology rather than toward research method for its own sake, and is examined by dissertation.',
     outcomes: ['Advanced systematic theology', 'Biblical theology and exegesis', 'Theological teaching', 'Dissertation'],

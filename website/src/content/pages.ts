@@ -116,7 +116,7 @@ export const contentPages: ContentPage[] = [
     slug: 'support',
     title: 'Support IGUC',
     subtitle: 'Empower change: support ICOF Global University’s vision.',
-    image: '/images/grand-ceremony.jpg',
+    image: '/images/graduation-2024/grad-2024-family-celebration.jpg',
     sections: [
       {
         heading: 'Our Support System',
@@ -259,7 +259,7 @@ export const contentPages: ContentPage[] = [
     slug: 'registration',
     title: 'Registration',
     subtitle: 'Why everyone desires the ICOFGU',
-    image: '/images/wp/g-students.jpg',
+    image: '/images/graduation-2024/grad-2024-graduates-selfie.jpg',
     sections: [
       {
         heading: 'Exceptional Academic Programs',
@@ -326,7 +326,7 @@ export const contentPages: ContentPage[] = [
     slug: 'research',
     title: 'Research & Innovation',
     subtitle: 'Scholarship in service of the church, the community and the continent.',
-    image: '/images/wp/g-decor.jpg',
+    image: '/images/graduation-2024/grad-2024-academics-seated.jpg',
     sections: [
       {
         paragraphs: [
@@ -477,7 +477,7 @@ export const contentPages: ContentPage[] = [
     slug: 'alumni',
     title: 'Alumni',
     subtitle: 'Once a member of this community, always a member \u2014 wherever in the world you serve.',
-    image: '/images/wp/g-graduates.jpg',
+    image: '/images/graduation-2024/grad-2024-alumni-group.jpg',
     sections: [
       {
         paragraphs: [
@@ -514,7 +514,7 @@ export const contentPages: ContentPage[] = [
     slug: 'governance',
     title: 'Governance & Accreditation',
     subtitle: 'How the university is led, and the recognition its degrees carry.',
-    image: '/images/wp/g-hall.jpg',
+    image: '/images/graduation-2024/grad-2024-leadership.jpg',
     sections: [
       {
         heading: 'Accreditation',
