@@ -89,6 +89,16 @@ export interface CertificateData {
    * carries one and this system had no field for it.
    */
   registrationNo?: string | null;
+  /**
+   * The title of the thesis, for a research degree.
+   *
+   * A doctorate is not conferred on a programme, it is conferred on a piece of
+   * work — and the certificate for one that does not name the work is missing
+   * the thing that distinguishes it from every other doctorate the university
+   * has awarded. Ignored for taught awards, where there is no thesis and a
+   * blank line would be a gap in the middle of the conferral.
+   */
+  thesisTitle?: string | null;
 }
 
 /**
@@ -572,6 +582,24 @@ backgroundImage: `url("${art.micro}")`,
         {data.programme && !awardNamesProgramme(data.degree, data.programme) && (
           <p style={{ ...body(design), margin: '2mm 0 0', fontSize: '15px' }}>
             in {data.programme}
+          </p>
+        )}
+
+        {/* The thesis, for a research degree.
+            A doctorate is conferred on a body of work, not on a programme, and
+            a doctoral certificate that does not name the work omits the one
+            thing that distinguishes it from every other doctorate the
+            university has awarded. Set in italic quotation, as a title is. */}
+        {aw.namesThesis && data.thesisTitle && (
+          <p style={{
+            ...body(design),
+            margin: '3mm 0 0',
+            fontSize: '12px',
+            fontStyle: 'italic',
+            maxWidth: '190mm',
+            lineHeight: 1.45,
+          }}>
+            for the thesis “{data.thesisTitle}”
           </p>
         )}
 

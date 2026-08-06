@@ -58,6 +58,14 @@ export interface AwardWording {
   classified: boolean;
   /** The recognition clause, which differs for a research degree. */
   recognition: string;
+  /**
+   * Whether the certificate names a thesis.
+   *
+   * True only for research degrees. A taught award has no thesis, and a line
+   * reserved for one would leave a gap in the middle of the conferral on every
+   * bachelor's certificate the university issues.
+   */
+  namesThesis: boolean;
 }
 
 const WORDING: Record<AwardKind, AwardWording> = {
@@ -67,6 +75,7 @@ const WORDING: Record<AwardKind, AwardWording> = {
     lead: 'admitted to the Degree of',
     confers: 'has admitted to the said Degree',
     classified: false,
+    namesThesis: true,
     recognition:
       'and in recognition of the successful completion of a programme of supervised research ' +
       'and the defence of a thesis before the Dissertation Council',
@@ -75,12 +84,14 @@ const WORDING: Record<AwardKind, AwardWording> = {
     lead: 'admitted to the Degree of',
     confers: 'confers upon',
     classified: true,
+    namesThesis: false,
     recognition: 'and in recognition of the successful completion of the prescribed course of study',
   },
   bachelors: {
     lead: 'the Degree of',
     confers: 'confers upon',
     classified: true,
+    namesThesis: false,
     recognition: 'and in recognition of the successful completion of the prescribed course of study',
   },
   diploma: {
@@ -88,18 +99,21 @@ const WORDING: Record<AwardKind, AwardWording> = {
     lead: 'the Diploma of',
     confers: 'awards to',
     classified: true,
+    namesThesis: false,
     recognition: 'and in recognition of the successful completion of the prescribed course of study',
   },
   certificate: {
     lead: 'the Certificate of',
     confers: 'awards to',
     classified: false,
+    namesThesis: false,
     recognition: 'and in recognition of the successful completion of the prescribed course of study',
   },
   other: {
     lead: 'the award of',
     confers: 'confers upon',
     classified: true,
+    namesThesis: false,
     recognition: 'and in recognition of the successful completion of the prescribed course of study',
   },
 };
