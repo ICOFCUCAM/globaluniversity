@@ -107,6 +107,41 @@ export async function GET(request: Request) {
         : 'No awards are defined, so no certificate can state what it confers.',
   });
 
+  // The GPA engine's input.
+  //
+  // The classification engine has been built and wired since the credential
+  // register went in — /api/credential/issue computes the class from the
+  // cumulative GPA and refuses without one. It reads semester_gpas, a table that
+  // was never created and that nothing ever wrote to. Two readers, no writer: a
+  // correct calculator with an empty input, which from outside is
+  // indistinguishable from no engine at all.
+  const { error: gpaErr, count: gpaCount } = await admin
+    .from('semester_gpas')
+    .select('id', { count: 'exact', head: true });
+  const { count: approvedCount } = await admin
+    .from('semester_gpas')
+    .select('id', { count: 'exact', head: true })
+    .eq('basis', 'approved');
+  items.push({
+    id: 'gpa',
+    label: 'Grade point averages',
+    state: gpaErr ? 'missing' : (approvedCount ?? 0) > 0 ? 'ready' : 'missing',
+    detail: gpaErr
+      ? `The semester_gpas table could not be read: ${gpaErr.message}`
+      : `${gpaCount ?? 0} average(s) computed, ${approvedCount ?? 0} on approved marks.`,
+    remedy: gpaErr
+      ? 'Run docs/migrations/007_gpa_engine.sql, then POST /api/results/recompute with { "all": true }.'
+      : (gpaCount ?? 0) === 0
+        ? 'No averages have been computed, so every certificate will be refused with "no-cgpa". '
+          + 'POST /api/results/recompute with { "all": true }.'
+        : (approvedCount ?? 0) === 0
+          ? 'Every average is provisional — computed from marks nobody has approved — and a '
+            + 'certificate cannot rest on those. The approval chain (lecturer → HOD → Dean → '
+            + 'Registrar) has no interface yet; marks are saved as drafts and stay there. That is '
+            + 'the remaining link between marks and a conferrable degree.'
+          : undefined,
+  });
+
   // The three approving offices. Without all three, no design can ever be
   // published again — which is a state worth surfacing before somebody spends
   // an afternoon designing one.

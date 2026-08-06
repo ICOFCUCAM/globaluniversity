@@ -850,6 +850,23 @@ export default function CredentialStudio() {
                   out is a registrar who needed one of them.
                 </p>
                 <ul className="mt-4 space-y-3">
+                  {/* First, and highlighted, because it is the one that stops a
+                      degree being conferred today. The others are conveniences. */}
+                  <li className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs leading-relaxed text-[#6b6076] dark:border-amber-700/50 dark:bg-amber-900/15 dark:text-[#9c93ad]">
+                    <span className="text-sm font-semibold text-[#33234a] dark:text-[#e4dcf0]">
+                      The results approval chain
+                    </span>
+                    <span className="mt-0.5 block">
+                      This is the one that currently stops a degree being conferred. Marks are
+                      saved by the mark sheet with status <code>draft</code> and nothing in this
+                      system advances them — the chain in lifecycle.ts is lecturer → HOD → Dean →
+                      Registrar and none of those four has a screen. So every average computed
+                      from them is provisional, and the issuing route declines a provisional
+                      average, correctly: a certificate states a class of degree and the
+                      university cannot attest to one on marks nobody has approved. Until this
+                      exists, no certificate can be issued to anybody.
+                    </span>
+                  </li>
                   {NOT_BUILT.map((g) => (
                     <li key={g.title} className="border-l-2 border-[#e8dcc0] pl-3">
                       <p className="text-sm font-semibold text-[#33234a] dark:text-[#e4dcf0]">{g.title}</p>

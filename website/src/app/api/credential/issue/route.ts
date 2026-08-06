@@ -105,7 +105,7 @@ export async function POST(request: Request) {
   // ---------------------------------------------------------------------
   const { data: gpaRow, error: gpaErr } = await admin
     .from('semester_gpas')
-    .select('cgpa, academic_year, semester')
+    .select('cgpa, basis, academic_year, semester')
     .eq('student_id', student.id)
     .order('academic_year', { ascending: false })
     .order('semester', { ascending: false })
@@ -130,6 +130,25 @@ export async function POST(request: Request) {
         'Post the results and recompute the GPA before issuing.',
     }, { status: 409 });
   }
+  // A PROVISIONAL average may not confer a degree.
+  //
+  // basis is 'approved' only when every mark counted has been through the
+  // lecturer → HOD → Dean → Registrar chain. Marks are saved as drafts and
+  // stay there until somebody approves them, so an average computed today is
+  // provisional — useful to the student and to their adviser, and not a thing
+  // the university may put its seal on. There is no such thing as a
+  // mostly-approved average.
+  if (gpaRow.basis !== 'approved') {
+    return NextResponse.json({
+      ok: false,
+      error: 'provisional-cgpa',
+      detail:
+        'This student\'s cumulative GPA was computed from marks that have not been approved. A ' +
+        'certificate states a class of degree and the university cannot attest to one on draft ' +
+        'marks. Take the results through the approval chain, recompute, and issue.',
+    }, { status: 409 });
+  }
+
   const classification = getClassification(cgpa);
 
   const holderName = [student.first_name, student.middle_name, student.last_name]

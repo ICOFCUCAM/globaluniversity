@@ -110,6 +110,13 @@ export const OPERATIONAL_CAPABILITIES = [
   'assign-lecturers',
   'build-timetable',
   'manage-courses',
+  // The Registry's academic record
+  //
+  // NOT the lecturer's 'upload-grades'. Posting a mark for one class and
+  // recomputing every average in the university are different acts with
+  // different blast radii, and a capability that covered both would mean any
+  // lecturer could rewrite the cumulative record of every student on the roll.
+  'recompute-gpa',
   // Dean
   'view-admitted-students',
   'approve-transfers',
@@ -255,9 +262,10 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
     'view-admitted-students',
     'process-applications',
     'approve-credential-design',
+    'recompute-gpa',
   ],
 
-  'academic-office': ['assign-lecturers', 'build-timetable', 'manage-courses', 'approve-credential-design'],
+  'academic-office': ['assign-lecturers', 'build-timetable', 'manage-courses', 'approve-credential-design', 'recompute-gpa'],
 
   dean: ['view-admitted-students', 'approve-transfers', 'monitor-progress'],
 
