@@ -1629,7 +1629,19 @@ export function africanGlobeOfKnowledge(opts: {
   }
 
   // --- the outer frame, which is what makes the five styles different -----
-  const ringR = R * 0.955;
+  // 0.895, not 0.955.
+  //
+  // TEXT ON A PATH IS DRAWN OUTWARD FROM IT. The legend at 0.955R with a
+  // 0.022-size face reached 0.986R, and the doctorate's second register ran
+  // from 0.965R to 0.995R — so on the university's highest award the ornament
+  // was printed straight through its own name. It is the one tier where that
+  // could happen and the one tier where it matters most.
+  //
+  // The whole stack moved inward to make room, with a clear gap between every
+  // course. Outward: nodes 0.700, laurel 0.720, holder's ring 0.765 (text to
+  // 0.792), African register 0.805–0.875, legend path 0.895 (text to 0.926),
+  // doctoral register 0.935–0.985, rim 0.998.
+  const ringR = R * 0.895;
   const ringText = legend.join('   ·   ');
   const microRing = (pathD: string) =>
     `<path id="${id}-ring" fill="none" d="${pathD}"/>` +
@@ -1654,10 +1666,18 @@ export function africanGlobeOfKnowledge(opts: {
     `a ${r.toFixed(2)},${r.toFixed(2)} 0 1,1 -${(r * 2).toFixed(2)},0`;
 
   if (style === 'seal' || style === 'radiant') {
+    // The rim. Every tier gets one, so the figure has a defined edge rather
+    // than trailing off into the paper — and so the doctoral register has
+    // something to sit inside instead of being the outermost thing on the
+    // sheet.
+    L.push(
+      `<circle cx="${R}" cy="${R}" r="${(R * 0.998).toFixed(2)}" fill="none" stroke="${colour}" ` +
+      `stroke-width="${sw(0.0026)}" stroke-opacity="${(opacity * 0.7).toFixed(3)}"/>`,
+    );
     if (style === 'seal') L.push(microRing(circleD(ringR)));
-    L.push(africanBand(seed, size, colour, f.sectors, R * 0.925, R * 0.855, opacity));
+    L.push(africanBand(seed, size, colour, f.sectors, R * 0.875, R * 0.805, opacity));
     if (f.doubleRegister) {
-      L.push(africanBand(seed ^ 0x9d, size, colour, Math.round(f.sectors * 1.4), R * 0.995, R * 0.965, opacity * 0.75));
+      L.push(africanBand(seed ^ 0x9d, size, colour, Math.round(f.sectors * 1.4), R * 0.985, R * 0.935, opacity * 0.75));
     }
   }
 
@@ -1785,7 +1805,7 @@ export function africanGlobeOfKnowledge(opts: {
   // would crowd at one diameter and leave a gap at another, and a gap in a
   // microtext course is exactly where a forger's join would be hidden.
   if (holder && holder.name.trim()) {
-    const hr = R * 0.825;
+    const hr = R * 0.765;
     const fs = size * 0.019;
     const ls = size * 0.004;
     const unit = `${holder.name.toUpperCase()}   ·   ${holder.credentialId}   ·   `;
@@ -1833,7 +1853,7 @@ export function africanGlobeOfKnowledge(opts: {
   if (style !== 'panel') {
     for (let c = 0; c < 4; c += 1) {
       const a = (c / 4) * Math.PI * 2 + Math.PI / 2;
-      const rr = style === 'cartouche' ? R * 0.64 : R * 0.750;
+      const rr = style === 'cartouche' ? R * 0.62 : R * 0.720;
       const bx = R + Math.cos(a) * rr;
       const by = R + Math.sin(a) * (style === 'cartouche' ? rr * 0.72 : rr);
       const leaves: string[] = [];
