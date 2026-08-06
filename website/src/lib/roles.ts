@@ -117,6 +117,29 @@ export const OPERATIONAL_CAPABILITIES = [
   // different blast radii, and a capability that covered both would mean any
   // lecturer could rewrite the cumulative record of every student on the roll.
   'recompute-gpa',
+  // ---------------------------------------------------------------------
+  // THE GRADE APPROVAL CHAIN — four steps, four capabilities, four people.
+  //
+  // These could have been one 'approve-results' held by four offices. They are
+  // not, and the reason is the whole point of a chain: with a single capability
+  // the Dean could perform the moderation step and the Registrar could perform
+  // all three, so a class could go from a lecturer's draft to the academic
+  // record having been read once. Separate capabilities make skipping a step
+  // impossible rather than merely discouraged.
+  //
+  // The chain is not invented here. lifecycle.ts publishes it — lecturer, Head
+  // of Department, Dean, Registrar — and says of it: "No step may be skipped,
+  // including by an administrator." These four capabilities are what makes that
+  // sentence true of the system and not only of the page it appears on.
+  //
+  // 'submit-results' is separate from the lecturer's 'upload-grades' for the
+  // same reason a save is separate from a signature: entering marks is work in
+  // progress and is done many times, whereas submitting declares the class
+  // finished and closes it to further editing.
+  'submit-results',
+  'moderate-results',
+  'approve-results',
+  'publish-results',
   // Which programmes the university is currently admitting to. An academic
   // decision — what the faculty is ready to teach this year — not an
   // administrative one, which is why it is not in the Admissions Officer's set.
@@ -225,7 +248,10 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // Directs Finance. Still cannot admit.
   'finance-director': ['verify-payment', 'approve-refund', 'generate-invoice', 'manage-student-accounts', 'view-institutional-finance'],
 
-  hod: ['assign-lecturers-to-courses', 'approve-course-allocation', 'monitor-teaching', 'department-reports', 'view-registered-students', 'view-admitted-students'],
+  // Moderates submitted marks — the department's attestation that the marking
+  // is consistent and the spread defensible. Cannot enter a mark and cannot
+  // publish one.
+  hod: ['assign-lecturers-to-courses', 'approve-course-allocation', 'monitor-teaching', 'department-reports', 'view-registered-students', 'view-admitted-students', 'moderate-results'],
   'programme-coordinator': ['monitor-teaching', 'department-reports', 'view-registered-students', 'manage-courses'],
 
   // The Admissions Office makes the final assessment and admits.
@@ -267,6 +293,10 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
     'process-applications',
     'approve-credential-design',
     'recompute-gpa',
+    // The last step: writing approved marks to the academic record. It sits
+    // with the Registrar because the academic record is the Registry's, and
+    // because publication is what a degree is later conferred on.
+    'publish-results',
     'set-admission-openings',
   ],
 
@@ -279,12 +309,25 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
     'assign-lecturers', 'build-timetable', 'manage-courses',
     'approve-credential-design', 'recompute-gpa',
     'admit-student', 'reject-application', 'request-documents',
+    // Publication, alongside the Registrar, for the same reason 'admit-student'
+    // is held by two offices: a term's results must not sit unpublished because
+    // one desk is unstaffed. It holds ONLY the last step — it cannot moderate
+    // or approve for a faculty, so it cannot walk a class through the chain
+    // alone.
+    'publish-results',
     'set-admission-openings',
   ],
 
-  dean: ['view-admitted-students', 'approve-transfers', 'monitor-progress'],
+  // Approves moderated marks on behalf of the faculty. Third of four.
+  dean: ['view-admitted-students', 'approve-transfers', 'monitor-progress', 'approve-results'],
 
-  lecturer: ['view-registered-students', 'upload-grades', 'take-attendance', 'access-lms'],
+  // Enters marks AND declares a class finished — but cannot approve one, not
+  // even their own. 'moderate-results' and everything after it are absent, and
+  // that absence is the first link of the chain.
+  lecturer: [
+    'view-registered-students', 'upload-grades', 'submit-results',
+    'take-attendance', 'access-lms',
+  ],
 
   student: [
     'register-courses',

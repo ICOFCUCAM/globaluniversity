@@ -7,7 +7,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { calculateGrade } from '@/lib/grading';
-import { BookOpen, Save, CheckCircle2 , AlertCircle} from 'lucide-react';
+import { BookOpen, Save, CheckCircle2, AlertCircle, Send, Lock } from 'lucide-react';
+import { STATUS_LABEL, isEditable, type ResultStatus } from '@/lib/resultsWorkflow';
 
 interface Course {
   id: string;
@@ -32,6 +33,10 @@ export default function GradeBook() {
   const [saved, setSaved] = useState<number | null>(null);
   const [failures, setFailures] = useState<{ name: string; reason: string }[]>([]);
   const [busy, setBusy] = useState(false);
+  // Where this class is in the approval chain. Marks may only be edited while
+  // it is a draft; after submission a correction means asking for it back.
+  const [status, setStatus] = useState<ResultStatus>('draft');
+  const [submitNote, setSubmitNote] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -50,7 +55,7 @@ export default function GradeBook() {
       setSaved(null);
       const [{ data: enrolments }, { data: results }] = await Promise.all([
         supabase.from('enrollments').select('student_id, students(id, matric_no, first_name, last_name)').eq('course_id', courseId),
-        supabase.from('results').select('id, student_id, ca_score, exam_score').eq('course_id', courseId),
+        supabase.from('results').select('id, student_id, ca_score, exam_score, status').eq('course_id', courseId),
       ]);
 
       const list: Enrolled[] = ((enrolments ?? []) as any[])
@@ -71,6 +76,12 @@ export default function GradeBook() {
 
       list.sort((a, b) => a.name.localeCompare(b.name));
       setRows(list);
+      // The earliest stage present. A class part-drafted and part-submitted is
+      // a fault the API refuses to act on; showing the earliest means the
+      // lecturer sees it as editable and can put it right.
+      const stages = (results ?? []).map((r: any) => (r.status ?? 'draft') as ResultStatus);
+      setStatus(stages.includes('draft') || stages.length === 0 ? 'draft' : stages[0]);
+      setSubmitNote(null);
       setLoading(false);
     })();
   }, [courseId]);
@@ -116,35 +127,98 @@ export default function GradeBook() {
   async function saveAll() {
     setBusy(true);
     setFailures([]);
-    let count = 0;
-    const failed: { name: string; reason: string }[] = [];
+    setSubmitNote(null);
 
-    for (const r of computed) {
-      if (!r.entered) continue;
-      const payload = {
-        student_id: r.studentId,
-        course_id: courseId,
-        ca_score: r.ca,
-        exam_score: r.exam,
-        total_score: r.total,
-        grade: r.grade,
-        grade_point: r.gradePoint,
-        // 'draft' until the lecturer submits deliberately. The approval chain
-        // is lecturer → HOD → Dean → Registrar, and writing 'submitted' on
-        // every save sent half-entered classes forward for approval.
-        status: 'draft',
-      };
-      const { error } = r.resultId
-        ? await supabase.from('results').update(payload).eq('id', r.resultId)
-        : await supabase.from('results').insert(payload);
-      if (error) failed.push({ name: r.name, reason: error.message });
-      else count++;
+    const entered = computed.filter((r) => r.entered);
+    if (entered.length === 0) {
+      setBusy(false);
+      setSaved(0);
+      setFailures([{ name: 'Nothing entered', reason: 'No marks were entered, so there was nothing to save.' }]);
+      return;
     }
 
+    const { data: session } = await supabase.auth.getSession();
+    const res = await fetch('/api/results/save', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${session.session?.access_token ?? ''}`,
+      },
+      body: JSON.stringify({
+        courseId,
+        marks: entered.map((r) => ({
+          studentId: r.studentId,
+          ca: r.ca,
+          exam: r.exam,
+          totalScore: r.total,
+          grade: r.grade,
+          gradePoint: r.gradePoint,
+        })),
+      }),
+    });
+    const out = await res.json();
     setBusy(false);
-    setSaved(count);
-    setFailures(failed);
+
+    if (!out.ok) {
+      setSaved(null);
+      // Named, not counted. The route returns which students are locked; a
+      // lecturer told "3 marks are locked" has to go looking for them.
+      const locked = (out.locked ?? []) as { studentId: string; status: string }[];
+      setFailures(
+        locked.length > 0
+          ? locked.map((l) => ({
+              name: rows.find((r) => r.studentId === l.studentId)?.name ?? l.studentId,
+              reason: `Already ${STATUS_LABEL[l.status as ResultStatus]?.toLowerCase() ?? l.status} — no longer editable.`,
+            }))
+          : [{ name: 'Not saved', reason: out.detail ?? out.error ?? 'The marks were not saved. Do not close this tab.' }],
+      );
+      return;
+    }
+
+    setSaved(out.saved);
   }
+
+  /**
+   * Submit the class for moderation.
+   *
+   * SEPARATE FROM SAVING, and the separation is the point. Saving is work in
+   * progress and happens many times; submitting declares the class finished,
+   * closes it to further editing and starts a chain that four offices have to
+   * sign. Writing 'submitted' on every save — which is what an earlier version
+   * of this screen did — sent half-entered classes forward for approval.
+   */
+  async function submitForModeration() {
+    setBusy(true);
+    setFailures([]);
+    setSubmitNote(null);
+    const { data: session } = await supabase.auth.getSession();
+    const res = await fetch('/api/results/advance', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${session.session?.access_token ?? ''}`,
+      },
+      body: JSON.stringify({ courseId, action: 'advance' }),
+    });
+    const out = await res.json();
+    setBusy(false);
+
+    if (!out.ok) {
+      setSubmitNote(
+        (out.detail ?? out.error ?? 'The class was not submitted.')
+        + (out.awaiting ? ` Waiting on: ${out.awaiting.step}.` : ''),
+      );
+      return;
+    }
+
+    setStatus('submitted');
+    setSubmitNote(
+      `Submitted. ${out.marks} mark${out.marks === 1 ? '' : 's'} are now with the `
+      + `${out.awaiting?.step ?? 'Head of Department'} and can no longer be edited here.`,
+    );
+  }
+
+  const editable = isEditable(status);
 
   const cell = 'w-20 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] bg-gray-50 px-2 py-1.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35';
 
@@ -229,10 +303,10 @@ export default function GradeBook() {
                     <td className="px-5 py-2.5 text-sm font-medium text-[#33234a] dark:text-[#e4dcf0]">{r.name}</td>
                     <td className="px-5 py-2.5 font-mono text-xs text-[#a49bb0] dark:text-[#7b7289]">{r.matric}</td>
                     <td className="px-5 py-2.5">
-                      <input inputMode="decimal" value={rows[i].ca} onChange={(e) => update(i, 'ca', e.target.value)} className={cell} />
+                      <input inputMode="decimal" value={rows[i].ca} onChange={(e) => update(i, 'ca', e.target.value)} readOnly={!editable} className={cell} />
                     </td>
                     <td className="px-5 py-2.5">
-                      <input inputMode="decimal" value={rows[i].exam} onChange={(e) => update(i, 'exam', e.target.value)} className={cell} />
+                      <input inputMode="decimal" value={rows[i].exam} onChange={(e) => update(i, 'exam', e.target.value)} readOnly={!editable} className={cell} />
                     </td>
                     <td className="px-5 py-2.5 text-sm font-semibold text-[#33234a] dark:text-[#e4dcf0]">{r.entered ? `${r.total}%` : '—'}</td>
                     <td className="px-5 py-2.5">
@@ -284,17 +358,55 @@ export default function GradeBook() {
                 </div>
               ) : (
                 <p className="text-xs text-[#a49bb0] dark:text-[#7b7289]">
-                  Marks save as draft. They go forward for approval only when submitted deliberately.
+                  {editable
+                    ? 'Marks save as draft. They go forward for approval only when you submit them.'
+                    : `This class is ${STATUS_LABEL[status].toLowerCase()} and can no longer be edited here. To correct a mark, ask for the class to be sent back \u2014 the return is recorded and the chain restarts.`}
                 </p>
               )}
-              <button
-                disabled={busy}
-                onClick={saveAll}
-                className="flex items-center gap-2 rounded-xl bg-[#422e59] px-6 py-2.5 text-sm font-medium text-white hover:bg-[#322244] disabled:opacity-60"
-              >
-                <Save size={15} /> {busy ? 'Saving…' : 'Save Grades'}
-              </button>
+              <div className="flex shrink-0 items-center gap-2">
+                {editable ? (
+                  <>
+                    <button
+                      disabled={busy}
+                      onClick={saveAll}
+                      className="flex items-center gap-2 rounded-xl border border-[#422e59] px-5 py-2.5 text-sm font-medium text-[#422e59] hover:bg-[#f3effa] disabled:opacity-60 dark:border-[#6d5a86] dark:text-[#c8b6e0]"
+                    >
+                      <Save size={15} /> {busy ? 'Saving\u2026' : 'Save draft'}
+                    </button>
+                    {/* Submitting is deliberate and one-way: it closes the class
+                        to editing and starts a chain four offices must sign.
+                        Enabled only once something has actually been saved, so a
+                        lecturer cannot submit a class they have not written
+                        down. */}
+                    <button
+                      disabled={busy || saved === null || saved === 0 || failures.length > 0}
+                      onClick={submitForModeration}
+                      title={
+                        saved === null
+                          ? 'Save the marks first.'
+                          : 'Declares the class finished and sends it to the Head of Department.'
+                      }
+                      className="flex items-center gap-2 rounded-xl bg-[#422e59] px-6 py-2.5 text-sm font-medium text-white hover:bg-[#322244] disabled:opacity-40"
+                    >
+                      <Send size={15} /> Submit for moderation
+                    </button>
+                  </>
+                ) : (
+                  <span className="flex items-center gap-2 rounded-xl bg-[#efeaf6] px-5 py-2.5 text-sm font-medium text-[#422e59] dark:bg-[#2a2333] dark:text-[#c8b6e0]">
+                    <Lock size={15} /> {STATUS_LABEL[status]}
+                  </span>
+                )}
+              </div>
             </div>
+          )}
+
+          {submitNote && (
+            <p
+              role="status"
+              className="border-t border-[#ece7de] bg-[#faf7f0] px-5 py-3 text-sm text-[#4a4155] dark:border-[#2e2637] dark:bg-[#1f1a27] dark:text-[#c8c1d4]"
+            >
+              {submitNote}
+            </p>
           )}
         </div>
       )}

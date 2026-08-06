@@ -877,21 +877,29 @@ export default function CredentialStudio() {
                   out is a registrar who needed one of them.
                 </p>
                 <ul className="mt-4 space-y-3">
-                  {/* First, and highlighted, because it is the one that stops a
-                      degree being conferred today. The others are conveniences. */}
-                  <li className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs leading-relaxed text-[#6b6076] dark:border-amber-700/50 dark:bg-amber-900/15 dark:text-[#9c93ad]">
+                  {/* This entry used to head the list as the one thing stopping
+                      a degree being conferred. It is built now, so it says so
+                      — and says what it needs instead of quietly disappearing,
+                      because the chain requires four appointed people and a
+                      university that has not appointed them is still stuck. */}
+                  <li className="rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-xs leading-relaxed text-[#6b6076] dark:border-emerald-700/50 dark:bg-emerald-900/15 dark:text-[#9c93ad]">
                     <span className="text-sm font-semibold text-[#33234a] dark:text-[#e4dcf0]">
-                      The results approval chain
+                      The results approval chain — built
                     </span>
                     <span className="mt-0.5 block">
-                      This is the one that currently stops a degree being conferred. Marks are
-                      saved by the mark sheet with status <code>draft</code> and nothing in this
-                      system advances them — the chain in lifecycle.ts is lecturer → HOD → Dean →
-                      Registrar and none of those four has a screen. So every average computed
-                      from them is provisional, and the issuing route declines a provisional
-                      average, correctly: a certificate states a class of degree and the
-                      university cannot attest to one on marks nobody has approved. Until this
-                      exists, no certificate can be issued to anybody.
+                      This was the one thing stopping a degree being conferred: marks were saved
+                      as <code>draft</code> and nothing advanced them, so every average was
+                      provisional and the issuing route declined every certificate. It is now in
+                      Records → Result approval — the lecturer submits, the Head of Department
+                      moderates, the Dean approves, the Registrar publishes, and averages
+                      recompute at publication.
+                    </span>
+                    <span className="mt-1.5 block font-medium text-[#33234a] dark:text-[#e4dcf0]">
+                      Two things are still needed from the university: run
+                      <code> docs/migrations/009_results_approval.sql</code>, and appoint four
+                      DIFFERENT people to the four offices. Nobody may sign the same class twice,
+                      so a university with one person covering two of these offices cannot get a
+                      class through.
                     </span>
                   </li>
                   {NOT_BUILT.map((g) => (

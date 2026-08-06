@@ -13,6 +13,7 @@ import {
   LayoutDashboard, Users, GraduationCap, BookOpen, ClipboardList,
   FileText, Award, Monitor, PenTool, FolderOpen, BarChart3,
   Settings, Shield, BookMarked, Wallet, Stamp, UserCog, Palette, Inbox, ShieldCheck,
+  ClipboardCheck,
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -96,6 +97,15 @@ export const menuGroups: MenuGroup[] = [
     title: 'Records',
     items: [
       { id: 'results', label: 'Results', icon: <ClipboardList size={18} />, roles: ALL },
+      // The four offices of the grade approval chain, and the two system roles.
+      // A student is absent: this board shows internal deliberation — which
+      // class was sent back and why — and that is not published to the class.
+      {
+        id: 'result-approval',
+        label: 'Result approval',
+        icon: <ClipboardCheck size={18} />,
+        roles: ['superadmin', 'admin', 'registrar', 'academic-office', 'dean', 'hod', 'lecturer'],
+      },
       { id: 'transcript', label: 'Transcript', icon: <FileText size={18} />, roles: ['superadmin', 'admin', 'student'] },
       { id: 'certificate', label: 'Certificate', icon: <Award size={18} />, roles: ['superadmin', 'admin', 'student'] },
       // The graduate's own wallet: what the university has issued them, and a

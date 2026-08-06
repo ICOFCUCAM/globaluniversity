@@ -224,4 +224,4 @@ export type ViewType =
   | 'analytics'
   | 'settings'
   | 'admissions-finance' | 'admissions-registrar'
-  | 'audit' | 'assignments' | 'fees' | 'announcements' | 'forum' | 'timetable' | 'insights' | 'gradebook' | 'questionbank';
+  | 'audit' | 'assignments' | 'fees' | 'announcements' | 'forum' | 'timetable' | 'insights' | 'gradebook' | 'questionbank' | 'result-approval';

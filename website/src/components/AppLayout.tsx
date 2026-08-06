@@ -21,6 +21,7 @@ import LecturerManagement from './lecturers/LecturerManagement';
 import CourseManagement from './courses/CourseManagement';
 import ResultProcessing from './results/ResultProcessing';
 import GradeBook from './results/GradeBook';
+import ResultsApproval from './results/ResultsApproval';
 import TranscriptGenerator from './transcript/TranscriptGenerator';
 import CertificateGenerator from './certificate/CertificateGenerator';
 import MyCredentials from './credentials/MyCredentials';
@@ -178,6 +179,8 @@ export default function AppLayout() {
         return <ResultProcessing />;
       case 'gradebook':
         return <GradeBook />;
+      case 'result-approval':
+        return <ResultsApproval role={user?.role} />;
       case 'transcript':
         return <TranscriptGenerator />;
       case 'certificate':

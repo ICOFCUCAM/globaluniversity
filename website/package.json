@@ -12,7 +12,8 @@
     "test:seal": "node src/lib/documentSecurity.test.mjs",
     "test:certificate": "node src/lib/certificate.test.mjs",
     "test:routes": "node src/lib/programmeRoutes.test.mjs",
-    "test": "npm run test:grading && npm run test:fees && npm run test:seal && npm run test:certificate && npm run test:routes"
+    "test:approval": "node src/lib/resultsWorkflow.test.mjs",
+    "test": "npm run test:grading && npm run test:fees && npm run test:seal && npm run test:certificate && npm run test:routes && npm run test:approval"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

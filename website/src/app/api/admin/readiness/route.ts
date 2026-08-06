@@ -136,9 +136,10 @@ export async function GET(request: Request) {
           + 'POST /api/results/recompute with { "all": true }.'
         : (approvedCount ?? 0) === 0
           ? 'Every average is provisional — computed from marks nobody has approved — and a '
-            + 'certificate cannot rest on those. The approval chain (lecturer → HOD → Dean → '
-            + 'Registrar) has no interface yet; marks are saved as drafts and stay there. That is '
-            + 'the remaining link between marks and a conferrable degree.'
+            + 'certificate cannot rest on those. Take a class through Records → Result approval: '
+            + 'the lecturer submits, the Head of Department moderates, the Dean approves, the '
+            + 'Registrar publishes. Averages recompute at publication. Four DIFFERENT people are '
+            + 'required, so check the four offices are appointed before a term’s marks are due.'
           : undefined,
   });
 

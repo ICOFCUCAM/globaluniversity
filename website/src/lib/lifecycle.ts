@@ -146,16 +146,17 @@ export const gradeApproval: Workflow = {
   purpose:
     'A mark becomes a result only after it has passed moderation and three approvals. Every action is timestamped and attributed.',
   steps: [
-    { n: 1, actor: 'Lecturer', role: 'lecturer', capability: 'upload-grades', action: 'Submits marks for the courses they teach.', requires: ['The lecturer is allocated to the course'], mandatory: true },
-    { n: 2, actor: 'Head of Department', role: 'hod', capability: 'monitor-teaching', action: 'Moderates the marks.', requires: ['All marks for the course are submitted'], mandatory: true },
-    { n: 3, actor: 'Dean', role: 'dean', capability: 'monitor-progress', action: 'Approves the moderated marks for the faculty.', mandatory: true },
-    { n: 4, actor: 'Registrar', role: 'registrar', capability: 'create-student-record', action: 'Approves for publication and writes the result to the academic record.', mandatory: true },
+    { n: 1, actor: 'Lecturer', role: 'lecturer', capability: 'submit-results', action: 'Submits marks for the courses they teach. Submitting closes the class to further editing.', requires: ['The lecturer is allocated to the course', 'Marks are saved'], mandatory: true },
+    { n: 2, actor: 'Head of Department', role: 'hod', capability: 'moderate-results', action: 'Moderates the marks.', requires: ['All marks for the course are submitted'], mandatory: true },
+    { n: 3, actor: 'Dean', role: 'dean', capability: 'approve-results', action: 'Approves the moderated marks for the faculty.', mandatory: true },
+    { n: 4, actor: 'Registrar', role: 'registrar', capability: 'publish-results', action: 'Approves for publication and writes the result to the academic record.', mandatory: true },
     { n: 5, actor: 'System', role: 'admin', action: 'Publishes results to students and recalculates GPA.', mandatory: true },
   ],
   writes: ['Course result', 'Semester GPA', 'Cumulative GPA', 'Audit entry per step'],
   notes: [
     'No step may be skipped, including by an administrator. A result published without moderation is a result the university cannot defend on appeal.',
-    'A lecturer may not alter a mark after step 2 without the chain being restarted, and the restart is itself recorded.',
+    'A lecturer may not alter a mark after step 1 without the chain being restarted, and the restart is itself recorded. A class is sent back by the office holding it, never recalled by the lecturer — the person prevented from editing cannot lift the prevention.',
+    'Four DIFFERENT people are required. One person may perform any one step; nobody may sign the same class twice, whatever offices they hold. This is enforced by the API and again by a database trigger, so it holds for anything using the service-role key.',
   ],
 };
 

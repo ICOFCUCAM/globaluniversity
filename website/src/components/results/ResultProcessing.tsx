@@ -4,7 +4,6 @@ import {
   calculateGrade, calculateGPA, getGradeColor, GRADING_SCALE, PASS_MARK,
   weightedTotal, isComplete, schemeForLevel,
 } from '@/lib/grading';
-import { useAuth } from '@/contexts/AuthContext';
 import type { Course, Student } from '@/lib/types';
 import {
   Search, Save, CheckCircle2, AlertCircle, Upload, Download,
@@ -23,7 +22,6 @@ interface ResultEntry {
 }
 
 export default function ResultProcessing() {
-  const { user } = useAuth();
   const [courses, setCourses] = useState<Course[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string>('');
@@ -158,49 +156,60 @@ export default function ResultProcessing() {
       return;
     }
 
-    const { error } = await supabase.from('results').upsert(resultsToInsert, {
-      onConflict: 'student_id,course_id',
+    // ROUTED, NOT WRITTEN DIRECTLY.
+    //
+    // This was `supabase.from('results').upsert(...)` from the browser, and it
+    // could never have worked: `results` has RLS enabled and, before migration
+    // 009, one policy on it — a student may read their own rows. No staff read,
+    // no write for anybody. Every save here was refused by the database.
+    //
+    // /api/results/save holds the service role, is guarded by 'upload-grades',
+    // and refuses to touch a class that has left draft. See that route for why
+    // writing is not simply opened up in RLS instead.
+    const { data: session } = await supabase.auth.getSession();
+    const res = await fetch('/api/results/save', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${session.session?.access_token ?? ''}`,
+      },
+      body: JSON.stringify({
+        courseId: selectedCourse,
+        marks: resultsToInsert.map((r) => ({
+          studentId: r.student_id,
+          components: r.components,
+          scheme: r.scheme,
+          totalScore: r.total_score,
+          grade: r.grade,
+          gradePoint: r.grade_point,
+        })),
+      }),
     });
+    const out = await res.json();
 
-    if (error) {
+    if (!out.ok) {
       // Previously `if (!error) { … }` with no else: a failed save left the
       // marks on screen, the Save button idle and no message anywhere. A
       // lecturer closed the tab believing a class of marks was recorded.
       setSaving(false);
       setSaveError(
-        `Not saved: ${error.message}. Your marks are still on this screen — do not close the tab.`,
+        `Not saved: ${out.detail ?? out.error}. Your marks are still on this screen — do not close the tab.`,
       );
       return;
     }
 
+    setSaving(false);
     setSaved(true);
 
-    // performed_by is a uuid column and this was passing user?.name, so every
-    // audit write for result entry failed on type — silently, because the
-    // result was never checked. The lecturer's identity is their id.
+    // THE AUDIT ENTRY IS WRITTEN BY THE ROUTE, NOT HERE.
     //
-    // And the result is checked now. The commit that fixed the type left this
-    // call unchecked while its own comment complained about exactly that, which
-    // is how the fault survived in the first place.
-    //
-    // A failed audit does not undo the save — the marks are recorded and
-    // pretending otherwise would be worse — but it is reported, because an
-    // action with no trace is one nobody can answer for later, and marks are
-    // the most disputed thing in this system.
-    const { error: auditErr } = await supabase.from('audit_logs').insert({
-      action: 'results.saved',
-      entity_type: 'results',
-      entity_id: selectedCourse,
-      performed_by: user?.id ?? null,
-      details: { course_id: selectedCourse, count: resultsToInsert.length },
-    });
-    if (auditErr) {
-      setSaveError(
-        `Marks saved, but the audit trail was not written (${auditErr.message}). Report this — the change is recorded without a record of who made it.`,
-      );
-    }
-
-    setSaving(false);
+    // There used to be a `supabase.from('audit_logs').insert(...)` at this
+    // point. It is gone for two reasons. /api/results/save already records the
+    // save, server-side, attributed to the caller it authenticated — which is a
+    // better record than one the browser asks for. And this one would now fail
+    // anyway: audit_logs is not writable from a browser, so the only thing it
+    // could still produce is the alarming message below it, telling a lecturer
+    // their marks were saved without a trace when in fact the trace exists.
   }
 
   const selectedCourseData = courses.find((c) => c.id === selectedCourse);
