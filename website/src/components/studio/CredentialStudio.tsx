@@ -54,7 +54,7 @@ import CertificateDocument from '@/components/certificate/CertificateDocument';
 import TranscriptDocument from '@/components/transcript/TranscriptDocument';
 import { uvLayerSvg } from '@/lib/credentialArt';
 import ApprovalQueue from './ApprovalQueue';
-import { WORDING_KEYS } from '@/lib/credentialTemplate';
+import { WORDING_KEYS, TITLE_FONTS } from '@/lib/credentialTemplate';
 import {
   Palette, Upload, AlertTriangle, CheckCircle2, History, Award, FileText,
   Loader2, Plus, Trash2, RotateCcw, ShieldAlert, ShieldCheck, PenLine,
@@ -391,6 +391,35 @@ export default function CredentialStudio() {
                   </Row>
                 </Panel>
 
+                <Panel
+                  title="Type"
+                  hint="The title takes its own face. A blackletter body would be unreadable; the face belongs on the university's name and nowhere else."
+                >
+                  {TITLE_FONTS.map((f) => (
+                    <label key={f.label} className="flex cursor-pointer items-start gap-2.5 rounded-lg p-1.5 hover:bg-[#faf8f4] dark:hover:bg-[#2a2333]">
+                      <input
+                        type="radio"
+                        name="titleFont"
+                        checked={design.titleFont === f.stack}
+                        onChange={() => set('titleFont', f.stack)}
+                        className="mt-1 h-3.5 w-3.5 shrink-0 accent-[#422e59]"
+                      />
+                      <span className="min-w-0">
+                        <span
+                          className="block text-[15px] text-[#33234a] dark:text-[#e4dcf0]"
+                          style={{ fontFamily: f.stack }}
+                        >
+                          ICOF Global University
+                        </span>
+                        <span className="block text-[11px] text-[#6b6076] dark:text-[#9c93ad]">{f.label}</span>
+                        {f.note && (
+                          <span className="mt-0.5 block text-[10px] leading-relaxed text-[#a49bb0]">{f.note}</span>
+                        )}
+                      </span>
+                    </label>
+                  ))}
+                </Panel>
+
                 <Panel title="Colour">
                   <Row label="Brand"><Colour value={design.brand} onChange={(v) => set('brand', v)} /></Row>
                   <Row label="Accent"><Colour value={design.accent} onChange={(v) => set('accent', v)} /></Row>
@@ -482,7 +511,25 @@ export default function CredentialStudio() {
 
           {section === 'signatories' && (
             <div className="space-y-4">
-              <Panel title="Seal">
+              <Panel
+                title="The seal"
+                hint="The university affixes a foil wafer to the hard copy by hand. The document leaves that area as clear paper, because a wafer pressed over printed artwork shows a halo of whatever was underneath."
+              >
+                <Row label="On the document">
+                  <Select
+                    value={design.sealPlacement}
+                    onChange={(v) => set('sealPlacement', v as CredentialDesign['sealPlacement'])}
+                    options={['reserved', 'printed']}
+                  />
+                </Row>
+                <p className="text-[11px] leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">
+                  {design.sealPlacement === 'printed'
+                    ? 'The wafer is printed. Use this only for a copy that will never be sealed by hand — an electronic duplicate, or a specimen.'
+                    : 'Space is left clear in the middle for a real wafer. This is the university’s practice, and it is what the hard copy expects.'}
+                </p>
+                <Row label="Wafer colour">
+                  <Colour value={design.sealColour} onChange={(v) => set('sealColour', v)} />
+                </Row>
                 <Row label="Show seal">
                   <input type="checkbox" checked={design.showSeal} onChange={(e) => set('showSeal', e.target.checked)} />
                 </Row>
