@@ -308,11 +308,27 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
               <Loader2 size={14} className="animate-spin" /> Loading…
             </p>
           ) : queue.length === 0 ? (
-            <p className="px-4 py-6 text-sm text-[#6b6076] dark:text-[#9c93ad]">
-              {isFinance
-                ? 'No applications are waiting for a fee to be registered.'
-                : 'No applications are waiting. Applications appear here once Finance registers the application fee.'}
-            </p>
+            <div className="px-4 py-6 text-sm text-[#6b6076] dark:text-[#9c93ad]">
+              <p>
+                {isFinance
+                  ? 'No applications are waiting for a fee to be registered.'
+                  : 'No applications are waiting. Applications appear here once Finance registers the application fee.'}
+              </p>
+              {/* An empty queue and a blocked queue look identical, and for a
+                  long time this desk was showing the second while claiming the
+                  first. A row-level-security policy that denies SELECT does not
+                  raise an error — it returns zero rows, successfully. So the
+                  screen said "no applications are waiting" while applications
+                  sat in the table, and there was nothing to suggest otherwise.
+                  Saying what else empty can mean is the only defence. */}
+              <p className="mt-3 rounded-lg bg-[#faf6ee] px-3 py-2 text-xs leading-relaxed text-[#6b5a2f] dark:bg-[#241f2c] dark:text-[#c3b48f]">
+                <strong>If you are expecting applications,</strong> an empty queue can also mean
+                the database is refusing to show them rather than that none have arrived — a
+                denied read returns no rows rather than an error. Run
+                <code className="mx-1 rounded bg-white px-1 dark:bg-black/20">003_pipeline_rls.sql</code>
+                if that has not been done since the site went live.
+              </p>
+            </div>
           ) : (
             <ul className="max-h-[32rem] divide-y divide-[#f0ece4] dark:divide-[#2a2333] overflow-y-auto">
               {queue.map((s) => (
