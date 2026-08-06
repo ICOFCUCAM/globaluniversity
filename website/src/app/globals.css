@@ -48,6 +48,11 @@
 
 body {
   @apply bg-brand-cream font-body text-brand-ink antialiased;
+  /* The page ground in dark. Set on body rather than per-section so that
+     overscroll, the area beyond the last section, and any page that does not
+     paint its own background all land on the right colour instead of flashing
+     cream. */
+  @apply dark:bg-[#120c1a] dark:text-[#e8e3f0];
 }
 
 /* Serif display face wants optical sizing and old-style joins where available. */
