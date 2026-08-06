@@ -24,10 +24,12 @@ import { MapPin, ExternalLink, Globe2 } from 'lucide-react';
 // visitor already has it does the same job, weighs nothing, and matches the
 // page it sits in.
 //
-// NIGERIA IS ABSENT ON PURPOSE. The top bar lists it, but the only Nigerian
-// entry anywhere in this system is a partner resource centre, PPDI-RC, and a
-// partner is not a campus. Listing it here would tell an applicant they could
-// attend somewhere they cannot.
+// NIGERIA IS LISTED AS A CENTRE, NOT A CAMPUS. It was left out of this section
+// entirely at first, on the grounds that a partner is not a campus — while the
+// globe two sections below plotted it. One of the two had to be wrong, and it
+// was the omission: PPDI-RC is part of the university's own network and this
+// site described it as such before the rebuild. What would mislead an applicant
+// is calling it a teaching campus, so the card says exactly what it is.
 // ---------------------------------------------------------------------------
 
 export default function CampusBand() {
@@ -47,7 +49,7 @@ export default function CampusBand() {
               id="campuses-heading"
               className="mt-4 font-heading text-display font-bold text-brand-purple dark:text-white [text-wrap:balance]"
             >
-              Two campuses, and one that travels with you
+              Two campuses, a centre, and one that travels with you
             </h2>
             <p className="mt-6 text-lg leading-relaxed text-brand-muted dark:text-white/65">
               Every programme runs on campus, online, or blended between the two. You are not

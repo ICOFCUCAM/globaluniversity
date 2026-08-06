@@ -184,6 +184,21 @@ export const CAMPUSES = [
     image: '/images/graduation-2024/grad-2024-congregation-full.jpg',
   },
   {
+    // A CENTRE, NOT A CAMPUS, and the distinction is the point of listing it.
+    // An earlier version of the campus section left Nigeria out on the grounds
+    // that a partner is not a campus — while the globe two sections below
+    // plotted it. One of the two was wrong, and it was the omission: PPDI-RC is
+    // part of the university's own network, described as such on this site
+    // since before this rebuild. What would be wrong is calling it a campus, so
+    // it says what it is.
+    city: 'Nigeria',
+    country: 'PPDI-RC',
+    address: 'Professional development, applied research and training',
+    role: 'Professional development centre — not a teaching campus',
+    map: null,
+    image: '/images/graduation-2024/grad-2024-registration-desk.jpg',
+  },
+  {
     city: 'Online',
     country: 'Worldwide',
     address: 'Every programme, from anywhere',
