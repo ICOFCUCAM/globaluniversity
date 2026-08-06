@@ -7,7 +7,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { calculateGrade } from '@/lib/grading';
-import { BookOpen, Save, CheckCircle2 } from 'lucide-react';
+import { BookOpen, Save, CheckCircle2 , AlertCircle} from 'lucide-react';
 
 interface Course {
   id: string;
@@ -30,6 +30,7 @@ export default function GradeBook() {
   const [rows, setRows] = useState<Enrolled[]>([]);
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState<number | null>(null);
+  const [failures, setFailures] = useState<{ name: string; reason: string }[]>([]);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -100,9 +101,24 @@ export default function GradeBook() {
     return { entered: done.length, avg, passRate: Math.round((passed / done.length) * 100) };
   }, [computed]);
 
+  /**
+   * Save every entered mark.
+   *
+   * This counted successes and discarded failures — `if (!error) count++` with
+   * no else — then reported the count as though it were the total. Save thirty
+   * marks with four rejected by the database and the screen said "26 saved",
+   * which reads as success. The four students whose marks vanished were never
+   * named, and the lecturer had no way to know which they were.
+   *
+   * Failures are now collected and reported with the student's name, because
+   * "four failed" is not actionable and "Ngwa, Bih and Tabi failed" is.
+   */
   async function saveAll() {
     setBusy(true);
+    setFailures([]);
     let count = 0;
+    const failed: { name: string; reason: string }[] = [];
+
     for (const r of computed) {
       if (!r.entered) continue;
       const payload = {
@@ -113,15 +129,21 @@ export default function GradeBook() {
         total_score: r.total,
         grade: r.grade,
         grade_point: r.gradePoint,
-        status: 'submitted',
+        // 'draft' until the lecturer submits deliberately. The approval chain
+        // is lecturer → HOD → Dean → Registrar, and writing 'submitted' on
+        // every save sent half-entered classes forward for approval.
+        status: 'draft',
       };
       const { error } = r.resultId
         ? await supabase.from('results').update(payload).eq('id', r.resultId)
         : await supabase.from('results').insert(payload);
-      if (!error) count++;
+      if (error) failed.push({ name: r.name, reason: error.message });
+      else count++;
     }
+
     setBusy(false);
     setSaved(count);
+    setFailures(failed);
   }
 
   const cell = 'w-20 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] bg-gray-50 px-2 py-1.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35';
@@ -234,11 +256,36 @@ export default function GradeBook() {
           {computed.length > 0 && (
             <div className="flex items-center justify-between gap-4 border-t border-[#ece7de] dark:border-[#2e2637] bg-gray-50 px-5 py-4">
               {saved !== null ? (
-                <p className="flex items-center gap-2 text-sm text-emerald-700">
-                  <CheckCircle2 size={15} /> Saved {saved} result{saved === 1 ? '' : 's'} — GPA and transcripts updated.
-                </p>
+                <div className="min-w-0 text-sm">
+                  {failures.length === 0 ? (
+                    <p className="flex items-center gap-2 text-emerald-700">
+                      <CheckCircle2 size={15} /> Saved {saved} mark{saved === 1 ? '' : 's'} as draft.
+                    </p>
+                  ) : (
+                    // Naming them matters. "4 failed" is not something a
+                    // lecturer can act on; a list of names is.
+                    <div role="alert" className="text-red-800 dark:text-red-300">
+                      <p className="flex items-center gap-2 font-medium">
+                        <AlertCircle size={15} />
+                        Saved {saved}; {failures.length} could not be saved.
+                      </p>
+                      <ul className="mt-1 space-y-0.5 text-xs">
+                        {failures.map((f) => (
+                          <li key={f.name}>
+                            <strong>{f.name}</strong> — {f.reason}
+                          </li>
+                        ))}
+                      </ul>
+                      <p className="mt-1 text-xs">
+                        Their marks are still on this screen. Do not close the tab.
+                      </p>
+                    </div>
+                  )}
+                </div>
               ) : (
-                <p className="text-xs text-[#a49bb0] dark:text-[#7b7289]">Marks are saved as “submitted” and await approval in Result Processing.</p>
+                <p className="text-xs text-[#a49bb0] dark:text-[#7b7289]">
+                  Marks save as draft. They go forward for approval only when submitted deliberately.
+                </p>
               )}
               <button
                 disabled={busy}
