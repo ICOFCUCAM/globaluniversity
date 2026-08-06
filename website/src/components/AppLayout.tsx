@@ -7,6 +7,8 @@ import Sidebar from './Sidebar';
 import TopBar from './TopBar';
 import AdminDashboard from './dashboard/AdminDashboard';
 import FinanceDashboard from './dashboard/FinanceDashboard';
+import RegistrarDashboard from './dashboard/RegistrarDashboard';
+import OfficeDashboard from './dashboard/OfficeDashboard';
 import StudentDashboard from './dashboard/StudentDashboard';
 import LecturerDashboard from './dashboard/LecturerDashboard';
 import StudentManagement from './students/StudentManagement';
@@ -125,16 +127,39 @@ export default function AppLayout() {
       case 'programme-resources':
         return <ProgrammeResources />;
       case 'dashboard':
-        // Finance gets a dashboard about money, not one counting lecturers and
-        // departments — and one that does not open with actions this desk is
-        // forbidden to take.
-        if (user?.role === 'finance' || user?.role === 'finance-director') {
-          return <FinanceDashboard onNavigate={setCurrentView} />;
+        // One dashboard per office, showing that office's own work.
+        //
+        // Everyone used to land on the administrator's dashboard, which put
+        // other people's queues on their screen: the Registrar was shown
+        // "Awaiting Finance 1" and a list of unpaid applications, a Dean saw
+        // the payment queue, and the Chancellor was offered a button opening
+        // the Registrar's desk — an action the Chancellor is forbidden to take.
+        //
+        // Displaying another office's queue undoes in the interface what the
+        // database enforces. An unpaid application is not the Registrar's to
+        // decide, and putting it in front of them invites "can you push that
+        // one through" — the question the two-desk design exists to make
+        // unaskable.
+        //
+        // Only admin and superadmin see everything.
+        switch (user?.role) {
+          case 'superadmin':
+          case 'admin':
+            return <AdminDashboard onNavigate={setCurrentView} />;
+          case 'registrar':
+            return <RegistrarDashboard onNavigate={setCurrentView} />;
+          case 'finance':
+          case 'finance-director':
+            return <FinanceDashboard onNavigate={setCurrentView} />;
+          case 'student':
+            return <StudentDashboard onNavigate={setCurrentView} />;
+          case 'lecturer':
+            return <LecturerDashboard onNavigate={setCurrentView} />;
+          default:
+            // Executive, faculty, admissions support and student services —
+            // one configurable screen rather than four that drift apart.
+            return <OfficeDashboard onNavigate={setCurrentView} />;
         }
-        if (user?.role === 'admin' || user?.role === 'superadmin') return <AdminDashboard onNavigate={setCurrentView} />;
-        if (user?.role === 'student') return <StudentDashboard onNavigate={setCurrentView} />;
-        if (user?.role === 'lecturer') return <LecturerDashboard onNavigate={setCurrentView} />;
-        return <AdminDashboard onNavigate={setCurrentView} />;
       case 'admissions-finance':
         return <AdmissionsDesk desk="finance" />;
       case 'admissions-registrar':
