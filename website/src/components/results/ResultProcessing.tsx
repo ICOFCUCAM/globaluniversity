@@ -160,13 +160,27 @@ export default function ResultProcessing() {
     // performed_by is a uuid column and this was passing user?.name, so every
     // audit write for result entry failed on type — silently, because the
     // result was never checked. The lecturer's identity is their id.
-    await supabase.from('audit_logs').insert({
+    //
+    // And the result is checked now. The commit that fixed the type left this
+    // call unchecked while its own comment complained about exactly that, which
+    // is how the fault survived in the first place.
+    //
+    // A failed audit does not undo the save — the marks are recorded and
+    // pretending otherwise would be worse — but it is reported, because an
+    // action with no trace is one nobody can answer for later, and marks are
+    // the most disputed thing in this system.
+    const { error: auditErr } = await supabase.from('audit_logs').insert({
       action: 'results.saved',
       entity_type: 'results',
       entity_id: selectedCourse,
       performed_by: user?.id ?? null,
       details: { course_id: selectedCourse, count: resultsToInsert.length },
     });
+    if (auditErr) {
+      setSaveError(
+        `Marks saved, but the audit trail was not written (${auditErr.message}). Report this — the change is recorded without a record of who made it.`,
+      );
+    }
 
     setSaving(false);
   }
