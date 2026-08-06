@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation';
 import { site, type NavItem } from '@/content/site';
 import { fr } from '@/content/fr';
 import SiteSearch from './SiteSearch';
+import ThemeToggle from './ThemeToggle';
 import Crest from './Crest';
 
 function DesktopItem({ item }: { item: NavItem }) {
@@ -203,6 +204,12 @@ export default function Header() {
           >
             {langLabel}
           </Link>
+          {/* Beside the language switch, because both are the same kind of
+              control: how you would like to read this, not where you would like
+              to go. Hidden below lg — on a phone it competes with the menu
+              button for the one bit of masthead a thumb can reach, and the
+              system default is right for almost everybody there. */}
+          <ThemeToggle className="hidden xl:inline-flex" />
         </div>
 
         <button className="lg:hidden" aria-label="Toggle menu" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
