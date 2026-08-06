@@ -507,6 +507,17 @@ backgroundImage: `url("${art.micro}")`,
         alignItems: 'center',
         textAlign: 'center',
       }}>
+      {/* The conferral, optically centred rather than mathematically.
+          `justify-content: center` puts the block in the middle of the space
+          left after the foot, which on a landscape sheet is close enough. On a
+          portrait sheet — 87mm taller and no wider — it left a hand's width of
+          empty paper between the date and the signatures, and the text sat high
+          with nothing under it.
+
+          Centring on the optical centre instead: slightly above the true middle,
+          which is where the eye expects the mass of a framed document to sit.
+          The extra space then falls above and below in the proportion a
+          typographer would have set it. */}
       <div style={{
         flex: '1 1 auto',
         display: 'flex',
@@ -514,6 +525,7 @@ backgroundImage: `url("${art.micro}")`,
         alignItems: 'center',
         justifyContent: 'center',
         width: '100%',
+        paddingBottom: h > w ? '6%' : '0',
       }}>
         <p style={{ ...small(design), margin: 0, letterSpacing: '0.28em' }}>
           {design.wording.senate}
