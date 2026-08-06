@@ -186,8 +186,12 @@ export function sealDocument(
   // the register; absent on a student card or an admission letter, which are
   // sealed but not registered — those keep the long form, because there is
   // nothing to look them up by.
+  // Anything a reader can look the document up by. The credential number for a
+  // registered credential; the student number for a card, which is printed on
+  // its face and is what a gate officer would type. A document with neither
+  // keeps the long form, because there is nothing to resolve.
   const parsed = JSON.parse(data) as Record<string, string>;
-  const registered = parsed.credential_id;
+  const registered = parsed.credential_id || parsed.student_number;
 
   return {
     code: grouped,

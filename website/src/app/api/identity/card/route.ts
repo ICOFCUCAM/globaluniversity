@@ -158,7 +158,11 @@ export async function POST(request: Request) {
       // Rendered here rather than in the browser: the QR must encode the link
       // this route computed, and a QR the page builds for itself is a QR the
       // page could build for anything.
-      qrSvg: seal.sealed ? await verificationQrSvg(seal.verifyUrl, 64) : null,
+      // The short form. The signed payload encodes as an 83-module symbol,
+      // which at the 19mm a card can spare is 0.23mm a module — well under the
+      // 0.5mm a phone camera needs off a printed card, so the QR on every card
+      // issued would have failed to scan at the gate it was made for.
+      qrSvg: seal.sealed ? await verificationQrSvg(seal.shortVerifyUrl, 64) : null,
     },
   });
 }

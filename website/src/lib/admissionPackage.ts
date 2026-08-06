@@ -197,7 +197,12 @@ export async function admissionPackageHtml(input: AdmissionPackageInput): Promis
   const watermark = watermarkDataUri(input.studentNumber, seal.code);
   // The QR carries the full-strength signature. The printed code beside it is
   // the same seal shortened for a human; this is the one a machine checks.
-  const qr = seal.sealed ? await verificationQrSvg(seal.verifyUrl, 84) : '';
+  // An admission letter is sealed but not on the credential register, so there
+  // is nothing to resolve a short URL against — it keeps the signed payload,
+  // and its QR is correspondingly dense. That is acceptable here and not on a
+  // certificate: this document is read on a screen far more often than off
+  // paper, and the seal code beside it is the check a paper reader uses.
+  const qr = seal.sealed ? await verificationQrSvg(seal.shortVerifyUrl, 84) : '';
   const micro = microtext(input.studentNumber, seal.code);
 
   const where = modeOf(input.mode);
