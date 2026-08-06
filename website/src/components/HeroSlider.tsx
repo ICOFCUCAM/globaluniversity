@@ -81,6 +81,16 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
                 loading={i === 0 ? undefined : 'lazy'}
                 quality={i === 0 ? 85 : 72}
                 sizes="100vw"
+                // The first frame is the Largest Contentful Paint of the entire
+                // site. fetchPriority tells the browser to pull it ahead of the
+                // stylesheet-discovered images below the fold, which it
+                // otherwise treats as equals — priority alone only preloads, it
+                // does not reorder against everything else in flight.
+                fetchPriority={i === 0 ? 'high' : 'auto'}
+                // Decoding the LCP image synchronously costs a few milliseconds
+                // of main thread and removes a frame where the scrim is painted
+                // over nothing, which reads as a flash of solid purple.
+                decoding={i === 0 ? 'sync' : 'async'}
                 className="object-cover"
               />
             </div>
