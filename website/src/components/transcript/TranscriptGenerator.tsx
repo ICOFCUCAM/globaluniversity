@@ -106,7 +106,12 @@ export default function TranscriptGenerator() {
                     <h1 style={{ fontSize: '22px', fontWeight: 'bold', color: '#422e59', margin: 0, textTransform: 'uppercase', letterSpacing: '2px' }}>
                       {UNIVERSITY.name}
                     </h1>
-                    <p style={{ fontSize: '11px', color: '#666', margin: '2px 0' }}>{UNIVERSITY.address}</p>
+                    {/* The seat of the institution, not the campus. A transcript
+                        is read abroad, by an admissions office or an employer
+                        deciding what the award is worth; it has to name the
+                        university that made it. */}
+                    <p style={{ fontSize: '11px', color: '#666', margin: '2px 0' }}>{UNIVERSITY.descriptor}</p>
+                    <p style={{ fontSize: '10px', color: '#888', margin: '1px 0' }}>{UNIVERSITY.headquarters}</p>
                   </div>
                   <img src={IMAGES.seal} alt="Seal" style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover' }} />
                 </div>
@@ -256,7 +261,7 @@ export default function TranscriptGenerator() {
               <div style={{ marginTop: '15px', textAlign: 'center', fontSize: '9px', color: '#999', borderTop: '1px solid #eee', paddingTop: '8px' }}>
                 <p>This transcript is issued without erasure or alteration. Any unauthorized modification renders it invalid.</p>
                 <p>Date of Issue: {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
-                <p>{UNIVERSITY.name} · {UNIVERSITY.address} · {UNIVERSITY.website}</p>
+                <p>{UNIVERSITY.name} · {UNIVERSITY.descriptor} · {UNIVERSITY.headquarters} · {UNIVERSITY.website}</p>
               </div>
             </div>
           </div>

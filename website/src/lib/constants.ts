@@ -7,6 +7,14 @@ export const UNIVERSITY = {
   shortName: 'IGUC',
   motto: 'Nobility, Professionalism & Godliness',
   address: 'Opposite Bulu Blind Junction, Buea-Cameroon',
+  // The seat of the International Circle of Faith, under which the university
+  // is constituted. It is what belongs on an identity card: a card is carried
+  // across borders and read by people who have never heard of Buea, and it
+  // should name the institution behind the holder rather than one of the places
+  // it teaches. The campus address stays on correspondence, where it is what
+  // the reader actually needs.
+  headquarters: 'ICOF Global Headquarters, USA',
+  descriptor: 'The Community University of Africa',
   phone: '+237 675 133 426',
   email: 'registrar@iguc.net',
   website: 'www.iguc.net',

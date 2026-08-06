@@ -79,8 +79,14 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
         <h1 style={{ fontSize: '28px', fontWeight: 'bold', color: design.brand, margin: 0, textTransform: 'uppercase', letterSpacing: '4px' }}>
           {UNIVERSITY.name}
         </h1>
-        <p style={{ fontSize: '12px', color: design.ink, opacity: 0.75, margin: '4px 0 15px', letterSpacing: '2px' }}>
-          {UNIVERSITY.address}
+        {/* The award is the document most likely to be read on another
+            continent, years from now. It names the institution and its seat,
+            not the campus the holder happened to attend. */}
+        <p style={{ fontSize: '12px', color: design.ink, opacity: 0.75, margin: '4px 0 2px', letterSpacing: '2px' }}>
+          {UNIVERSITY.descriptor}
+        </p>
+        <p style={{ fontSize: '10px', color: design.ink, opacity: 0.6, margin: '0 0 15px', letterSpacing: '1.5px' }}>
+          {UNIVERSITY.headquarters}
         </p>
 
         <div style={{ width: '60px', height: '2px', backgroundColor: design.accent, margin: '5px auto' }} />

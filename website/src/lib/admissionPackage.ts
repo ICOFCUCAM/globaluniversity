@@ -477,14 +477,26 @@ export async function admissionPackageHtml(input: AdmissionPackageInput): Promis
     margin: 2px 0 0; font-size: 10.5pt; letter-spacing: 3px;
     text-transform: uppercase; color: #6b6076;
   }
+  .letterhead .descriptor {
+    margin: 3px 0 0; font-family: Helvetica, Arial, sans-serif; font-size: 8pt;
+    letter-spacing: 2.4px; text-transform: uppercase; color: #6b6076;
+  }
   .letterhead .motto {
     margin: 4px 0 0; font-size: 10.5pt; font-style: italic; color: #8a6d1f;
     letter-spacing: .3px;
   }
-  /* Address, email, website. No telephone number: an admission letter is kept
-     for years and a number changes, a wrong one on a document a graduate is
-     still holding is worse than no number at all, and the reply the letter
-     actually wants is written — to the address that issued it. */
+  /* Headquarters, email, website.
+     The Buea campus address used to sit here. It is the wrong address for this
+     document: the letter goes to applicants in a dozen countries, most of whom
+     will never see Buea, and it is presented to embassies and employers who
+     need to know what institution stands behind it — not which of its campuses
+     happens to teach. It names the seat of the institution and its descriptor,
+     "The Community University of Africa", so the letterhead reads as what the
+     university is rather than where one of its buildings is.
+
+     No telephone number: an admission letter is kept for years, a number
+     changes, and a wrong one on a document a graduate is still holding is worse
+     than none — and the reply this letter wants is written anyway. */
   .letterhead .contact {
     flex: 0 0 48mm; text-align: right; font-size: 8.5pt; line-height: 1.5; color: #6b6076;
     font-family: Helvetica, Arial, sans-serif; padding-top: 4px;
@@ -612,10 +624,11 @@ export async function admissionPackageHtml(input: AdmissionPackageInput): Promis
       <img class="crest" src="${CREST_DATA_URI}" alt="${esc(UNIVERSITY.name)} crest">
       <div class="lockup">
         <h1 class="name">${esc(UNIVERSITY.name)}</h1>
+        <p class="descriptor">${esc(UNIVERSITY.descriptor)}</p>
         <p class="motto">${esc(UNIVERSITY.motto)}</p>
       </div>
       <div class="contact">
-        ${esc(UNIVERSITY.address)}<br>
+        ${esc(UNIVERSITY.headquarters)}<br>
         ${esc(ADMISSIONS_EMAIL)}<br>
         ${esc(UNIVERSITY.website)}
       </div>
@@ -808,6 +821,6 @@ We look forward to welcoming you.
 
 ${input.headOfAdmissions}${input.postNominals ? `, ${input.postNominals}` : ''}
 Head of Academic Affairs
-${UNIVERSITY.name}
-${UNIVERSITY.address}`;
+${UNIVERSITY.name} — ${UNIVERSITY.descriptor}
+${UNIVERSITY.headquarters}`;
 }

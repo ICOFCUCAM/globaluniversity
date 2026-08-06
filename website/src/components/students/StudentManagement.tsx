@@ -24,9 +24,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import StudentIDCard from './StudentIDCard';
 import BulkImport from './BulkImport';
+import StudentPhoto from './StudentPhoto';
 import { supabase } from '@/lib/supabase';
 import type { Student, ViewType } from '@/lib/types';
-import { IMAGES } from '@/lib/constants';
+
 import { statusMeta, toUniversal } from '@/lib/status';
 import {
   Card, PageHeader, EmptyState, SkeletonRows, TableShell, THead, TBody, Th, Td, Detail,
@@ -56,15 +57,41 @@ export default function StudentManagement({ onNavigate }: { onNavigate?: (v: Vie
 
   const fetchStudents = useCallback(async () => {
     setLoading(true);
+    // Columns named, not `*`.
+    //
+    // `photo_url` now holds the photograph itself as a data URI, about 25 KB a
+    // student. On `select *` a five-hundred-student register would pull twelve
+    // megabytes to draw five hundred thirty-two-pixel avatars. The list shows
+    // initials; the photograph is fetched for the one student who is opened.
     const { data } = await supabase
       .from('students')
-      .select('*, departments(name, code)')
+      .select('id, matric_no, student_number, first_name, middle_name, last_name, email, phone, date_of_birth, gender, nationality, department_id, program, degree_type, faculty, intake, admission_year, expected_graduation, status, created_at, updated_at, departments(name, code)')
       .order('created_at', { ascending: false });
-    setStudents((data ?? []) as Student[]);
+    setStudents((data ?? []) as unknown as Student[]);
     setLoading(false);
   }, []);
 
   useEffect(() => { fetchStudents(); }, [fetchStudents]);
+
+  /**
+   * Open one student, and fetch the photograph the list deliberately left out.
+   *
+   * The panel opens immediately on the row already in hand, so it never waits
+   * on the network; the photograph arrives a moment later. On a failed fetch
+   * the panel simply has no photograph, which is what StudentPhoto is built to
+   * show.
+   */
+  const openStudent = useCallback(async (s: Student) => {
+    setSelected(s);
+    const { data } = await supabase
+      .from('students')
+      .select('photo_url')
+      .eq('id', s.id)
+      .maybeSingle();
+    if (data?.photo_url) {
+      setSelected((cur) => (cur && cur.id === s.id ? { ...cur, photo_url: data.photo_url } : cur));
+    }
+  }, []);
 
   const q = query.trim().toLowerCase();
   const filtered = useMemo(
@@ -226,12 +253,18 @@ export default function StudentManagement({ onNavigate }: { onNavigate?: (v: Vie
                   <tr key={s.id} className="transition-colors hover:bg-[#faf8f4] dark:hover:bg-[#241f2c]">
                     <Td>
                       <div className="flex items-center gap-3">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={s.photo_url || IMAGES.students[0]}
-                          alt=""
-                          className="h-8 w-8 flex-shrink-0 rounded-full object-cover ring-1 ring-[#ece7de]"
-                        />
+                        {/* Initials, not a photograph, and never the stock one.
+                            This used to fall back to IMAGES.students[0], so every
+                            student without a photo showed the same stranger's
+                            face beside their real name — a register that looked
+                            complete when it was not. Initials are honestly a
+                            placeholder; the photograph is on the record. */}
+                        <span
+                          aria-hidden="true"
+                          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[#f2eee6] text-[10px] font-bold text-[#a49bb0] ring-1 ring-[#ece7de] dark:bg-[#2a2333]"
+                        >
+                          {(s.first_name?.[0] ?? '') + (s.last_name?.[0] ?? '')}
+                        </span>
                         <div className="min-w-0">
                           <p className="truncate text-sm font-medium text-[#33234a] dark:text-[#e4dcf0]">
                             {[s.first_name, s.middle_name?.charAt(0) ? `${s.middle_name.charAt(0)}.` : '', s.last_name]
@@ -261,7 +294,7 @@ export default function StudentManagement({ onNavigate }: { onNavigate?: (v: Vie
                           nothing — an edit control that edits nothing is a
                           promise the screen cannot keep. */}
                       <button
-                        onClick={() => setSelected(s)}
+                        onClick={() => void openStudent(s)}
                         aria-label={`Open ${s.first_name} ${s.last_name}`}
                         className={BTN_GHOST}
                       >
@@ -302,12 +335,19 @@ export default function StudentManagement({ onNavigate }: { onNavigate?: (v: Vie
               >
                 <X size={16} />
               </button>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={selected.photo_url || IMAGES.students[0]}
-                alt=""
-                className="mx-auto h-20 w-20 rounded-full object-cover ring-2 ring-[#e8dcc0]"
-              />
+              <div className="mx-auto w-fit">
+                <StudentPhoto
+                  studentId={selected.id}
+                  photoUrl={selected.photo_url}
+                  name={[selected.first_name, selected.last_name].filter(Boolean).join(' ')}
+                  onChange={(next) => {
+                    setSelected((cur) => (cur ? { ...cur, photo_url: next ?? undefined } : cur));
+                    setStudents((list) =>
+                      list.map((s) => (s.id === selected.id ? { ...s, photo_url: next ?? undefined } : s)),
+                    );
+                  }}
+                />
+              </div>
               <h2 className="mt-3 font-heading text-lg font-bold text-[#33234a] dark:text-[#e4dcf0]">
                 {[selected.first_name, selected.middle_name, selected.last_name].filter(Boolean).join(' ')}
               </h2>
