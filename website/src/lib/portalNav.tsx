@@ -12,7 +12,7 @@ import type { ViewType, UserRole } from './types';
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen, ClipboardList,
   FileText, Award, Monitor, PenTool, FolderOpen, BarChart3,
-  Settings, Shield, BookMarked, Wallet, Stamp, UserCog, Palette, Inbox,
+  Settings, Shield, BookMarked, Wallet, Stamp, UserCog, Palette, Inbox, ShieldCheck,
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -127,7 +127,12 @@ export const menuGroups: MenuGroup[] = [
     title: 'System',
     items: [
       { id: 'accounts', label: 'Accounts', icon: <UserCog size={18} />, roles: ['superadmin'] },
+      // The Superadministrator designs; the three approving offices sign. They
+      // reach the same screen and see different halves of it — an approver gets
+      // the queue and none of the design controls, because the whole point of
+      // the chain is that designing and approving are different people.
       { id: 'studio', label: 'Credential studio', icon: <Palette size={18} />, roles: ['superadmin'] },
+      { id: 'studio', label: 'Credential approvals', icon: <ShieldCheck size={18} />, roles: ['registrar', 'academic-office', 'vice-chancellor'] },
       { id: 'settings', label: 'Settings', icon: <Settings size={18} />, roles: EVERYONE },
     ],
   },

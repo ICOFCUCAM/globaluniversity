@@ -53,11 +53,12 @@ import {
 import CertificateDocument from '@/components/certificate/CertificateDocument';
 import TranscriptDocument from '@/components/transcript/TranscriptDocument';
 import { uvLayerSvg } from '@/lib/credentialArt';
+import ApprovalQueue from './ApprovalQueue';
 import { WORDING_KEYS } from '@/lib/credentialTemplate';
 import {
   Palette, Upload, AlertTriangle, CheckCircle2, History, Award, FileText,
   Loader2, Plus, Trash2, RotateCcw, ShieldAlert, ShieldCheck, PenLine,
-  Stamp, Download, ListChecks, Construction, Printer,
+  Stamp, Download, ListChecks, Construction, Printer, Lock,
 } from 'lucide-react';
 
 /**
@@ -70,6 +71,7 @@ const SECTIONS = [
   { id: 'security', label: 'Security features', icon: ShieldCheck },
   { id: 'signatories', label: 'Signatures & seal', icon: PenLine },
   { id: 'wording', label: 'Wording', icon: Stamp },
+  { id: 'approvals', label: 'Senate approval', icon: ShieldCheck },
   { id: 'versions', label: 'Version control', icon: History },
   { id: 'print', label: 'Printing', icon: Download },
   { id: 'gaps', label: 'Not built yet', icon: Construction },
@@ -135,6 +137,11 @@ const SAMPLE = {
 export default function CredentialStudio() {
   const { user } = useAuth();
   const allowed = can(user?.role, 'design-credentials');
+  // An approving office is not a designer and must not become one — but it has
+  // to be able to reach the queue, read what it is being asked to sign, and
+  // sign it. Without this the Registrar could not open the screen the approval
+  // chain was built for, and the governance would exist only in the database.
+  const approver = can(user?.role, 'approve-credential-design');
 
   const [section, setSection] = useState<SectionId>('certificate');
   const [kind, setKind] = useState<CredentialKind>('certificate');
@@ -245,6 +252,26 @@ export default function CredentialStudio() {
       .eq('kind', kind)
       .order('version', { ascending: false });
     setVersions((data ?? []) as VersionRow[]);
+  }
+
+  // An approver sees the queue and nothing else. The design controls, the
+  // wording, the security features and the publish button are the designer's,
+  // and showing them to an approver would blur the one line the chain draws.
+  if (!allowed && approver) {
+    return (
+      <div className="space-y-5">
+        <div>
+          <h2 className="flex items-center gap-2 font-heading text-xl font-bold text-[#422e59] dark:text-[#e4dcf0]">
+            <ShieldCheck size={20} /> Credential approvals
+          </h2>
+          <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">
+            Designs submitted for the university&apos;s approval. You are one of the three offices
+            that must sign before a design can be published.
+          </p>
+        </div>
+        <ApprovalQueue />
+      </div>
+    );
   }
 
   if (!allowed) {
@@ -537,6 +564,19 @@ export default function CredentialStudio() {
             </div>
           )}
 
+          {section === 'approvals' && (
+            <ApprovalQueue
+              onPreview={(k, d) => {
+                // Read it in the editor rather than in a modal. An approver
+                // signing off a certificate should see it the way it will be
+                // printed, at the size the preview offers, not as a thumbnail.
+                setKind(k);
+                setDesign(d);
+                setSection(k === 'transcript' ? 'transcript' : 'certificate');
+              }}
+            />
+          )}
+
           {section === 'versions' && (
             <div className="rounded-xl border border-[#ded6c8] bg-white p-4 dark:border-[#3d3349] dark:bg-[#241d30]">
               <h3 className="flex items-center gap-2 text-sm font-semibold text-[#33234a] dark:text-[#e4dcf0]">
@@ -569,11 +609,32 @@ export default function CredentialStudio() {
                         {v.is_active && (
                           <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700">Active</span>
                         )}
+                        <span
+                          className="inline-flex items-center gap-1 rounded-full bg-[#f2eee6] px-2.5 py-0.5 text-[11px] font-semibold text-[#6b6076] dark:bg-[#2a2333] dark:text-[#9c93ad]"
+                          title="A published design is immutable. Nothing can alter it — not this screen, not an administrator, not the service role."
+                        >
+                          <Lock size={10} /> Locked
+                        </span>
+                        {/* "Load into editor" read as though the published
+                            version were about to be edited. It never was — a
+                            published row is immutable in the database
+                            (000_complete.sql section 13) and submitting always
+                            writes a new version. The label described the wrong
+                            act, which is the kind of thing that makes a
+                            Superadministrator afraid to touch a control that is
+                            perfectly safe. */}
                         <button
-                          onClick={() => { setDesign(withDefaults(kind, v.design)); setMessage(null); setSection('certificate'); setKind(kind); }}
+                          onClick={() => {
+                            setDesign(withDefaults(kind, v.design));
+                            setMessage({
+                              tone: 'ok',
+                              text: `Copied v${v.version} into the editor as a new draft. v${v.version} itself is locked and cannot be altered; submitting from here creates a new version.`,
+                            });
+                            setSection(kind === 'transcript' ? 'transcript' : 'certificate');
+                          }}
                           className="text-xs font-medium text-[#422e59] hover:underline"
                         >
-                          Load into editor
+                          Duplicate as draft
                         </button>
                       </div>
                     </li>
