@@ -1,24 +1,25 @@
 import Link from 'next/link';
 import Reveal from '@/components/Reveal';
 import { Aurora, Grain, Seam } from '@/components/Atmosphere';
-import { WORLD } from '@/lib/worldCoastlines';
 import { NETWORK_NODES, NETWORK_KINDS } from '@/content/globalNetwork';
+import LivingGlobe from './LivingGlobe';
 
 // ---------------------------------------------------------------------------
 // The global network — the signature section.
 //
-// WHY A DRAWN MAP AND NOT AN EMBEDDED ONE. An interactive Google or Mapbox map
+// WHY A DRAWN GLOBE AND NOT AN EMBEDDED MAP. An interactive Google or Mapbox map
 // costs several hundred kilobytes and a third-party connection on the busiest
 // page of the site, cannot be styled to match a purple-and-gold brand, and sets
 // cookies from another origin before a visitor has agreed to anything — which,
 // for an institution taking applications from Europe, is a consent problem
 // rather than a design preference.
 //
-// This map is drawn from src/lib/worldCoastlines.ts, the same coastline data
-// engraved into the security artwork on every certificate this university
-// issues. It weighs a few kilobytes, works offline, matches the brand exactly,
-// and is quietly the right metaphor: the same world on the wall of a graduate's
-// office is the one on the homepage.
+// It began as a flat equirectangular map and is now a real rotating globe —
+// see LivingGlobe.tsx, which also records why it is drawn on a canvas rather
+// than in Three.js. Both draw src/lib/worldCoastlines.ts, the same coastline
+// data engraved into the security artwork on every certificate this university
+// issues: the world on a graduate's diploma and the world on the homepage are
+// the same drawing.
 //
 // WHAT THE MAP MAY AND MAY NOT SHOW.
 //
@@ -34,23 +35,6 @@ import { NETWORK_NODES, NETWORK_KINDS } from '@/content/globalNetwork';
 // can publish, because the first person to ask "which students in Brazil?" ends
 // the conversation.
 // ---------------------------------------------------------------------------
-
-// Equirectangular. Not the projection a cartographer would choose, and exactly
-// the one to use here: it is linear in both axes, so a latitude and longitude
-// become an x and a y with no trigonometry, and every node lands where the
-// reader expects it. Antarctica is cut at 60°S, as it is in the coastline data.
-const W = 1000;
-const H = 500;
-const LAT_TOP = 82;
-const LAT_BOTTOM = -58;
-
-const px = (lon: number) => ((lon + 180) / 360) * W;
-const py = (lat: number) => ((LAT_TOP - lat) / (LAT_TOP - LAT_BOTTOM)) * H;
-
-const ringPath = (ring: [number, number][]) =>
-  ring
-    .map(([lon, lat], i) => `${i === 0 ? 'M' : 'L'}${px(lon).toFixed(1)} ${py(lat).toFixed(1)}`)
-    .join('') + 'Z';
 
 export default function GlobalNetwork() {
   return (
@@ -85,106 +69,40 @@ export default function GlobalNetwork() {
         </Reveal>
 
         <Reveal delay={120}>
-          <figure className="mt-16 sm:mt-20">
-            <svg
-              viewBox={`0 0 ${W} ${H}`}
-              className="h-auto w-full"
-              role="img"
-              aria-labelledby="map-title map-desc"
-            >
-              <title id="map-title">Map of ICOF Global University&rsquo;s locations</title>
-              <desc id="map-desc">
-                {NETWORK_NODES.map((n) => `${n.name}, ${n.kindLabel}`).join('. ')}.
-              </desc>
+          <div className="mt-16 grid items-center gap-12 sm:mt-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)] lg:gap-16">
+            <LivingGlobe />
 
-              <defs>
-                {/* An engraved ground, as on the certificate: fine parallel
-                    rules rather than a flat fill, so the ocean has a surface. */}
-                <pattern id="gn-sea" width="7" height="7" patternUnits="userSpaceOnUse">
-                  <rect width="7" height="7" fill="transparent" />
-                  <path d="M0 7 L7 0" stroke="rgba(247,220,121,0.10)" strokeWidth="0.5" />
-                </pattern>
-                <radialGradient id="gn-glow" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stopColor="#f7dc79" stopOpacity="0.55" />
-                  <stop offset="100%" stopColor="#f7dc79" stopOpacity="0" />
-                </radialGradient>
-              </defs>
+            <div>
+              <h3 className="font-heading text-2xl font-bold text-white">
+                Where the university is
+              </h3>
+              <p className="mt-4 leading-relaxed text-white/70">
+                Two campuses in Cameroon, a professional development centre in Nigeria, every
+                programme delivered online, and a fellowship of colleges and seminaries across
+                three further continents. Turn the globe, or choose a place.
+              </p>
 
-              <rect width={W} height={H} fill="url(#gn-sea)" />
-
-              {/* Graticule: every 30° of longitude, 20° of latitude. */}
-              <g stroke="rgba(255,255,255,0.07)" strokeWidth="0.6">
-                {[-150, -120, -90, -60, -30, 0, 30, 60, 90, 120, 150].map((lon) => (
-                  <line key={lon} x1={px(lon)} y1={0} x2={px(lon)} y2={H} />
-                ))}
-                {[60, 40, 20, 0, -20, -40].map((lat) => (
-                  <line key={lat} x1={0} y1={py(lat)} x2={W} y2={py(lat)} />
-                ))}
-              </g>
-              {/* The equator, drawn a shade stronger — it runs a few degrees
-                  south of Buea and gives the African nodes their reference. */}
-              <line x1={0} y1={py(0)} x2={W} y2={py(0)} stroke="rgba(247,220,121,0.18)" strokeWidth="0.8" />
-
-              <g fill="rgba(255,255,255,0.10)" stroke="rgba(247,220,121,0.45)" strokeWidth="0.9">
-                {WORLD.map((ring, i) => (
-                  <path key={i} d={ringPath(ring)} fillRule="evenodd" />
-                ))}
-              </g>
-
-              {NETWORK_NODES.map((n) => {
-                const x = px(n.lon);
-                const y = py(n.lat);
-                const kind = NETWORK_KINDS[n.kind];
-                return (
-                  <g key={n.name}>
-                    <circle cx={x} cy={y} r={kind.halo} fill="url(#gn-glow)" />
-                    <circle
-                      cx={x}
-                      cy={y}
-                      r={kind.dot}
-                      fill={kind.fill}
-                      stroke="#1d1428"
-                      strokeWidth="1.2"
-                    />
-                    <text
-                      x={x + kind.dot + 6}
-                      y={y + 3.5}
-                      fill="rgba(255,255,255,0.92)"
-                      fontSize="11"
-                      fontWeight="600"
-                      style={{ fontFamily: 'system-ui, sans-serif' }}
-                    >
-                      {n.name}
-                    </text>
-                  </g>
-                );
-              })}
-            </svg>
-
-            {/* The legend is DERIVED from the nodes actually plotted, not from
-                the list of kinds that exist. Combining Buea and Douala into one
-                pin left 'Online, worldwide' in the legend with nothing on the
-                map to match it — a swatch for a thing that is not there, which
-                is exactly the kind of small incoherence that makes a reader
-                stop trusting the rest of the diagram. */}
-            <figcaption className="mt-8 flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
-              {Array.from(new Set(NETWORK_NODES.map((n) => n.kind)))
-                .map((key) => [key, NETWORK_KINDS[key]] as const)
-                .map(([key, k]) => (
-                <span
-                  key={key}
-                  className="flex items-center gap-2.5 font-sans text-[12px] text-white/70"
-                >
-                  <span
-                    aria-hidden="true"
-                    className="h-2.5 w-2.5 rounded-full ring-1 ring-brand-purple-dark"
-                    style={{ background: k.fill }}
-                  />
-                  {k.label}
-                </span>
-              ))}
-            </figcaption>
-          </figure>
+              <dl className="mt-9 space-y-5 border-t border-white/10 pt-8">
+                {Array.from(new Set(NETWORK_NODES.map((n) => n.kind))).map((kind) => {
+                  const k = NETWORK_KINDS[kind];
+                  const n = NETWORK_NODES.filter((x) => x.kind === kind).length;
+                  return (
+                    <div key={kind} className="flex items-baseline gap-4">
+                      <dt className="flex items-center gap-3 font-sans text-[12px] uppercase tracking-[0.14em] text-white/50">
+                        <span
+                          aria-hidden="true"
+                          className="h-2 w-2 rounded-full"
+                          style={{ background: k.fill }}
+                        />
+                        {k.label}
+                      </dt>
+                      <dd className="ml-auto font-heading text-xl font-bold text-brand-gold">{n}</dd>
+                    </div>
+                  );
+                })}
+              </dl>
+            </div>
+          </div>
         </Reveal>
 
         {/* The honest footnote. A university that says what its map does NOT

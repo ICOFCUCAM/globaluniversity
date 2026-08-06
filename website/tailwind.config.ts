@@ -102,6 +102,12 @@ const config: Config = {
         sans: ['var(--font-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
       keyframes: {
+        // Results entering the programme finder. Small distance, short
+        // duration: a card that flies in is a card the reader waits for.
+        rise: {
+          from: { opacity: '0', transform: 'translateY(10px)' },
+          to: { opacity: '1', transform: 'none' },
+        },
         'accordion-down': {
           from: { height: '0' },
           to: { height: 'var(--radix-accordion-content-height)' },
@@ -158,6 +164,7 @@ const config: Config = {
         },
       },
       animation: {
+        rise: 'rise 420ms cubic-bezier(0.22, 1, 0.36, 1) both',
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
         'ken-burns': 'ken-burns 12s ease-out forwards',

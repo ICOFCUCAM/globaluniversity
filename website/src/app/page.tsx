@@ -22,6 +22,8 @@ import StudentExperience from '@/components/home/StudentExperience';
 import CampusBand from '@/components/home/CampusBand';
 import Voices from '@/components/home/Voices';
 import GlobalNetwork from '@/components/home/GlobalNetwork';
+import ProgrammeFinder from '@/components/home/ProgrammeFinder';
+import VerificationDemo from '@/components/home/VerificationDemo';
 
 const PILLARS = [
   {
@@ -332,62 +334,12 @@ export default async function HomePage() {
       <Voices />
 
 
-      {/* Programs */}
-      <Section chapter="Programs" className="bg-white">
-        <SectionHeading eyebrow="Degrees & Programs">Programs that shape careers</SectionHeading>
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-          {programs.map((p, i) => (
-            <Reveal key={p.slug} delay={i * 100}>
-              <Link
-                href={`/programs/${p.slug}`}
-                className="group flex h-full flex-col overflow-hidden rounded-2xl bg-brand-cream shadow-lift ring-1 ring-brand-sand/70 transition duration-500 hover:-translate-y-1.5 hover:shadow-lift-lg hover:ring-brand-gold"
-              >
-                <div className="relative h-44 overflow-hidden">
-                  <Image
-                    src={p.image}
-                    alt=""
-                    fill
-                    className="object-cover transition duration-[900ms] ease-out group-hover:scale-110"
-                    sizes="(min-width:1024px) 25vw, (min-width:640px) 50vw, 100vw"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-brand-purple-dark/55 to-transparent" />
-                  {/* Level reads as a credential seal, not body copy */}
-                  <span className="absolute left-4 top-4 rounded-full bg-brand-gold px-3 py-1 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-brand-purple shadow-sm">
-                    {p.level}
-                  </span>
-                </div>
-                <div className="flex flex-1 flex-col p-6">
-                  <h3 className="font-heading text-lg font-bold leading-snug text-brand-purple [text-wrap:balance]">
-                    {p.title}
-                  </h3>
-                  <p className="mt-1.5 font-sans text-[11px] font-semibold uppercase tracking-[0.12em] text-brand-gold-deep">
-                    {p.school}
-                  </p>
-                  <p className="mt-3 flex-1 line-clamp-3 text-sm leading-relaxed text-brand-muted">
-                    {p.summary}
-                  </p>
-                  <span className="mt-5 flex items-center gap-1.5 font-heading text-sm font-semibold text-brand-purple">
-                    View program
-                    <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1.5">
-                      →
-                    </span>
-                  </span>
-                </div>
-              </Link>
-            </Reveal>
-          ))}
-        </div>
-        <div className="mt-10 text-center">
-          <Link
-            href="/programs"
-            className="inline-block rounded-full border-2 border-brand-purple px-8 py-3 font-heading font-semibold text-brand-purple transition hover:bg-brand-purple hover:text-white"
-          >
-            Explore the Full Catalog
-          </Link>
-        </div>
-      </Section>
-
-      <ProgramRibbon items={ribbon} />
+      {/* THE PROGRAMME FINDER.
+          This replaced four featured cards and a link to a list of forty-one
+          rows. Nobody chooses a degree by reading an index — see the component
+          for how somebody actually chooses, and for why nothing here is
+          labelled AI. */}
+      <ProgrammeFinder />
 
       {/* Research & Innovation */}
       <section data-chapter="Research" className="relative overflow-hidden bg-brand-purple py-24 text-white sm:py-32">
@@ -526,6 +478,12 @@ export default async function HomePage() {
           infer a relationship. See StandingBand for the wording constraint the
           university asked for. */}
       <StandingBand />
+
+      {/* The university already had cryptographically sealed credentials that
+          anyone could verify, hidden three clicks deep. It is the most
+          genuinely futuristic thing here, so it is on the front page and it is
+          live rather than simulated. */}
+      <VerificationDemo />
 
       {/* Where the university physically is. */}
       <CampusBand />
