@@ -80,10 +80,40 @@ export default function FeeModule() {
 
   const input =
     'w-full px-3 py-2 bg-gray-50 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35';
+  /**
+   * Totals, read from the stored record rather than from its filename.
+   *
+   * These were parsed with a regex over `file_name` — the human-readable label
+   * that also contains the student's name. A student called "Ngwa Ndip-Agbor
+   * 2000" or any name with a middle dot in it shifted the match, and the
+   * payment was then silently dropped from the total. A finance figure that
+   * depends on how somebody's name is spelled is not a figure.
+   *
+   * The payload is already stored as JSON in file_url; this reads that.
+   *
+   * NOTE: receipts live in `documents` as base64 JSON. That is the wrong home
+   * for a financial record — it cannot be queried, summed or reconciled in SQL,
+   * and it is invisible to any audit that does not know the encoding. A
+   * `payments` table is the fix, and it is a schema change rather than a
+   * component change, so it is recorded here and in PORTAL-DESIGN.md rather
+   * than half-done.
+   */
   const totals: Record<string, number> = {};
   for (const r of receipts) {
-    const m = r.file_name.match(/· ([\d,]+) (FCFA|USD|EUR|GBP|NGN)/);
-    if (m) totals[m[2]] = (totals[m[2]] ?? 0) + Number(m[1].replace(/,/g, ''));
+    try {
+      const json = JSON.parse(decodeURIComponent(escape(atob(String(r.file_url).split('base64,')[1]))));
+      // "150,000 FCFA" — split the number from the currency once, here.
+      const m = String(json.amount ?? '').match(/^([\d,.]+)\s*(\w+)$/);
+      if (!m) continue;
+      const value = Number(m[1].replace(/,/g, ''));
+      if (!Number.isFinite(value)) continue;
+      // Currencies are never added together. 150,000 FCFA + 200 EUR is not a
+      // number, and a single "total collected" would be a fiction the finance
+      // office would be asked to explain.
+      totals[m[2]] = (totals[m[2]] ?? 0) + value;
+    } catch {
+      /* A receipt that cannot be read is skipped rather than mis-counted. */
+    }
   }
 
   return (

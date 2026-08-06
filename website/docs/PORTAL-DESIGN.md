@@ -129,6 +129,21 @@ graduate already holding that design. The database enforces it
 
 Only the Superadministrator may publish one. See `docs/migrations/002_superadmin.sql`.
 
+## Known structural problems
+
+**Receipts are stored in the wrong table.** `FeeModule` writes each payment
+into `documents` as base64-encoded JSON in `file_url`, with a human-readable
+label in `file_name`. A financial record held that way cannot be queried,
+summed or reconciled in SQL, and is invisible to any audit that does not know
+the encoding. Totals on screen were originally computed by regex over the
+filename — which contains the student's name, so a name with a digit or a
+middle dot in it silently dropped that payment from the total.
+
+The reading is fixed; the storage is not. It needs a `payments` table
+(student_id, amount numeric, currency, method, purpose, received_by,
+received_at, reference) and a migration. Until that exists, treat the fee
+figures as indicative and reconcile against the receipts themselves.
+
 ## What is still outstanding
 
 - No issuance record exists, so `/verify` cannot yet render a credential under
