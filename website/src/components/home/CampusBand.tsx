@@ -35,7 +35,7 @@ export default function CampusBand() {
     <section
       data-chapter="Campuses"
       aria-labelledby="campuses-heading"
-      className="bg-white py-24 sm:py-32"
+      className="bg-white py-24 dark:bg-[#150f1e] sm:py-32"
     >
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <Reveal>
@@ -45,11 +45,11 @@ export default function CampusBand() {
             </p>
             <h2
               id="campuses-heading"
-              className="mt-4 font-heading text-display font-bold text-brand-purple [text-wrap:balance]"
+              className="mt-4 font-heading text-display font-bold text-brand-purple dark:text-white [text-wrap:balance]"
             >
               Two campuses, and one that travels with you
             </h2>
-            <p className="mt-6 text-lg leading-relaxed text-brand-muted">
+            <p className="mt-6 text-lg leading-relaxed text-brand-muted dark:text-white/65">
               Every programme runs on campus, online, or blended between the two. You are not
               choosing a place so much as choosing how much of it you need.
             </p>
@@ -59,7 +59,7 @@ export default function CampusBand() {
         <div className="mt-16 grid gap-7 sm:mt-20 lg:grid-cols-3">
           {CAMPUSES.map((c, i) => (
             <Reveal key={c.city} delay={i * 100}>
-              <article className="group flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-lift ring-1 ring-brand-sand/70 transition duration-500 hover:shadow-lift-lg hover:ring-brand-gold/40">
+              <article className="group flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-lift ring-1 ring-brand-sand/70 transition duration-500 hover:shadow-lift-lg hover:ring-brand-gold/40 dark:bg-white/[0.04] dark:ring-white/10">
                 <div className="relative h-48 overflow-hidden">
                   <Image
                     src={c.image}
@@ -87,8 +87,8 @@ export default function CampusBand() {
                 </div>
 
                 <div className="flex flex-1 flex-col p-6">
-                  <p className="font-heading text-[15px] font-bold text-brand-purple">{c.role}</p>
-                  <p className="mt-2 flex-1 text-[15px] leading-relaxed text-brand-muted">
+                  <p className="font-heading text-[15px] font-bold text-brand-purple dark:text-white">{c.role}</p>
+                  <p className="mt-2 flex-1 text-[15px] leading-relaxed text-brand-muted dark:text-white/60">
                     {c.address}
                   </p>
 
@@ -97,7 +97,7 @@ export default function CampusBand() {
                       href={c.map}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="mt-5 inline-flex items-center gap-2 font-heading text-sm font-bold text-brand-purple transition hover:text-brand-gold-deep"
+                      className="mt-5 inline-flex items-center gap-2 font-heading text-sm font-bold text-brand-purple transition hover:text-brand-gold-deep dark:text-brand-gold dark:hover:text-white"
                     >
                       Open in maps
                       <ExternalLink size={14} aria-hidden="true" />
@@ -106,7 +106,7 @@ export default function CampusBand() {
                   ) : (
                     <Link
                       href="/online-learning"
-                      className="group/l mt-5 inline-flex items-center gap-2 font-heading text-sm font-bold text-brand-purple transition hover:text-brand-gold-deep"
+                      className="group/l mt-5 inline-flex items-center gap-2 font-heading text-sm font-bold text-brand-purple transition hover:text-brand-gold-deep dark:text-brand-gold dark:hover:text-white"
                     >
                       How online study works
                       <span aria-hidden="true" className="transition-transform duration-300 group-hover/l:translate-x-1">→</span>

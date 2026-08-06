@@ -73,7 +73,7 @@ export default function FacultyShowcase() {
     <section
       data-chapter="Faculties"
       aria-labelledby="faculties-heading"
-      className="bg-brand-cream py-24 sm:py-32"
+      className="bg-brand-cream py-24 dark:bg-[#181121] sm:py-32"
     >
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <Reveal>
@@ -83,11 +83,11 @@ export default function FacultyShowcase() {
             </p>
             <h2
               id="faculties-heading"
-              className="mt-4 font-heading text-display font-bold text-brand-purple [text-wrap:balance]"
+              className="mt-4 font-heading text-display font-bold text-brand-purple dark:text-white [text-wrap:balance]"
             >
               Four faculties. One standard.
             </h2>
-            <p className="mt-6 text-lg leading-relaxed text-brand-muted">
+            <p className="mt-6 text-lg leading-relaxed text-brand-muted dark:text-white/65">
               Our faculty teach what they have practised — in pulpits, classrooms, laboratories and
               boardrooms — and hold the qualifications to examine it. Every faculty is built on that
               double standard: scholarship that has been tested somewhere real.
@@ -100,7 +100,7 @@ export default function FacultyShowcase() {
             const count = programmesByFaculty(f.id).length;
             return (
               <Reveal key={f.id} delay={i * 90}>
-                <article className="group relative h-full overflow-hidden rounded-2xl bg-white shadow-lift ring-1 ring-brand-sand/70 transition duration-500 hover:shadow-lift-lg hover:ring-brand-gold/40">
+                <article className="group relative h-full overflow-hidden rounded-2xl bg-white shadow-lift ring-1 ring-brand-sand/70 transition duration-500 hover:shadow-lift-lg hover:ring-brand-gold/40 dark:bg-white/[0.04] dark:ring-white/10 dark:hover:ring-brand-gold/40">
                   <div className="relative h-56 overflow-hidden sm:h-60">
                     <Image
                       src={IMAGES[f.id] ?? '/images/campus-global.jpg'}
@@ -129,11 +129,11 @@ export default function FacultyShowcase() {
                   </div>
 
                   <div className="p-6 sm:p-7">
-                    <p className="text-[15px] italic leading-relaxed text-brand-purple/80">
+                    <p className="text-[15px] italic leading-relaxed text-brand-purple/80 dark:text-brand-gold/85">
                       {f.mission}
                     </p>
-                    <p className="mt-4 leading-relaxed text-brand-muted">{f.blurb}</p>
-                    <p className="mt-6 inline-flex items-center gap-2 font-heading text-sm font-bold text-brand-purple">
+                    <p className="mt-4 leading-relaxed text-brand-muted dark:text-white/60">{f.blurb}</p>
+                    <p className="mt-6 inline-flex items-center gap-2 font-heading text-sm font-bold text-brand-purple dark:text-brand-gold">
                       Explore the faculty
                       <span
                         aria-hidden="true"

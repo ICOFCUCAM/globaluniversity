@@ -27,7 +27,7 @@ function VoiceCard({ v, tone }: { v: Voice; tone: 'light' | 'dark' }) {
       className={`flex h-full flex-col rounded-2xl p-7 ring-1 transition duration-500 sm:p-8 ${
         dark
           ? 'bg-white/[0.05] ring-white/10 hover:ring-brand-gold/40'
-          : 'bg-white shadow-lift ring-brand-sand/70 hover:shadow-lift-lg hover:ring-brand-gold/40'
+          : 'bg-white shadow-lift ring-brand-sand/70 hover:shadow-lift-lg hover:ring-brand-gold/40 dark:bg-white/[0.04] dark:ring-white/10'
       }`}
     >
       <span
@@ -88,7 +88,7 @@ export default function Voices() {
     <section
       data-chapter="Voices"
       aria-labelledby="voices-heading"
-      className="bg-brand-cream py-24 sm:py-32"
+      className="bg-brand-cream py-24 dark:bg-[#181121] sm:py-32"
     >
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <Reveal>
@@ -98,7 +98,7 @@ export default function Voices() {
             </p>
             <h2
               id="voices-heading"
-              className="mt-4 font-heading text-display font-bold text-brand-purple [text-wrap:balance]"
+              className="mt-4 font-heading text-display font-bold text-brand-purple dark:text-white [text-wrap:balance]"
             >
               A university is judged by its graduates
             </h2>
@@ -118,7 +118,7 @@ export default function Voices() {
         {alumni.length > 0 && (
           <>
             <Reveal>
-              <h3 className="mt-20 text-center font-heading text-2xl font-bold text-brand-purple">
+              <h3 className="mt-20 text-center font-heading text-2xl font-bold text-brand-purple dark:text-white">
                 Where our graduates serve
               </h3>
             </Reveal>
@@ -136,7 +136,7 @@ export default function Voices() {
           <p className="mt-14 text-center">
             <Link
               href="/contact"
-              className="group inline-flex items-center gap-2.5 rounded-full border-2 border-brand-purple px-8 py-4 font-heading text-[15px] font-bold text-brand-purple transition duration-300 hover:bg-brand-purple hover:text-white"
+              className="group inline-flex items-center gap-2.5 rounded-full border-2 border-brand-purple px-8 py-4 font-heading text-[15px] font-bold text-brand-purple transition duration-300 hover:bg-brand-purple hover:text-white dark:border-brand-gold dark:text-brand-gold dark:hover:bg-brand-gold dark:hover:text-brand-purple-dark"
             >
               Studied here? Tell us your story
               <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">→</span>
