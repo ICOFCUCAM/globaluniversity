@@ -144,6 +144,18 @@ The reading is fixed; the storage is not. It needs a `payments` table
 received_at, reference) and a migration. Until that exists, treat the fee
 figures as indicative and reconcile against the receipts themselves.
 
+## Credential signing
+
+`CREDENTIAL_SECRET` is required. Without it, signing and verification both
+refuse — deliberately. The route previously fell back to a literal committed to
+this repository, so anyone who read the file could forge a signature the
+university's own `/verify` page would confirm. Signing is also authenticated
+now: it was an open POST endpoint that would sign any payload for anyone.
+
+A valid signature proves the institution signed the payload. It does **not**
+prove the credential was issued or that it still stands — there is no issuance
+record to check against. Say "correctly signed", not "valid", until there is.
+
 ## What is still outstanding
 
 - No issuance record exists, so `/verify` cannot yet render a credential under
