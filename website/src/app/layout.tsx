@@ -73,6 +73,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${display.variable} ${sans.variable}`}>
       <body>
+        {/* SKIP LINK — the first focusable thing in the document.
+            This site has a two-row masthead with a utility bar, a wordmark, six
+            top-level menus and four buttons: about twenty tab stops before a
+            keyboard user reaches a single word of the page they asked for, on
+            every navigation. It is visually hidden until focused, which is the
+            whole trick — it costs a sighted mouse user nothing and saves a
+            keyboard user twenty keystrokes per page. */}
+        <a
+          href="#main"
+          className="sr-only rounded-br-xl bg-brand-purple px-6 py-4 font-heading text-sm font-bold text-white focus:not-sr-only focus:absolute focus:left-0 focus:top-0 focus:z-[100] focus:outline-none focus:ring-4 focus:ring-brand-gold"
+        >
+          Skip to main content
+        </a>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
