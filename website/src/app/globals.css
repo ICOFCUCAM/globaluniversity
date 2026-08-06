@@ -99,6 +99,50 @@ body {
   box-shadow: 0 0 0 5px rgba(29, 20, 40, 0.85);
 }
 
+/* ---------------------------------------------------------------------------
+   TYPESETTING DETAIL.
+
+   Four things that separate a page which has been set from one that has been
+   styled. None is visible on its own; together they are most of the difference
+   between a website and a printed page.
+   --------------------------------------------------------------------------- */
+
+/* 1. Headlines are set tight. Default tracking is drawn for body sizes, and at
+      display sizes the same value reads as gappy — the larger the type, the
+      less air the letters need between them. */
+h1, h2, .font-heading {
+  letter-spacing: -0.018em;
+}
+
+/* 2. Body text is not justified and not hyphenated, but it IS balanced at the
+      short measures headings run to. `pretty` prevents the single-word last
+      line — the widow — which is the commonest typographic fault on the web. */
+p, li, dd, blockquote {
+  text-wrap: pretty;
+}
+
+/* 3. Numerals in running prose are proportional and look right; numerals in a
+      column must line up, or the eye cannot compare them. Every figure in the
+      proof band, the finder's counts and the fee tables is tabular. */
+.tabular, dd, td, .font-mono {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 4. Quotation marks and hanging punctuation. Supported only in Safari today,
+      ignored silently everywhere else, and free: a pulled quote whose opening
+      mark hangs into the margin has a straight left edge, which is what the eye
+      is actually reading down. */
+blockquote {
+  hanging-punctuation: first last;
+}
+
+/* Selection carries the brand rather than the browser's default blue, which on
+   a purple and gold page looks like a bug. */
+::selection {
+  background: theme('colors.brand.gold');
+  color: #1d1428;
+}
+
 /* Hairline gold rule used to open sections. */
 .rule-gold::after {
   content: '';
