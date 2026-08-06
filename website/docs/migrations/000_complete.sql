@@ -882,6 +882,21 @@ set role = 'admin',
     full_name = coalesce(nullif(full_name, ''), 'System Administrator')
 where lower(email) = 'tchamer@aol.com';
 
+-- THE ADMISSIONS OFFICER. Uncomment and put the real address in.
+--
+-- Without one, the pipeline stops one step short of working. The Registrar can
+-- verify and forward, and the record sits at 'registrar_approved' with nobody
+-- holding the role that may move it to 'approved' — section 10b refuses the
+-- Registrar that move on purpose. No error is shown to anyone; applications
+-- simply accumulate in a queue no desk is watching.
+--
+-- The account must already exist in Authentication → Users.
+
+-- update profiles
+-- set role = 'admissions-officer',
+--     full_name = coalesce(nullif(full_name, ''), 'Admissions Officer')
+-- where lower(email) = 'admissions@iguc.net';
+
 
 -- ===========================================================================
 -- 15. VERIFY — READ THE OUTPUT OF ALL FIVE
@@ -926,7 +941,7 @@ where not exists (select 1 from profiles p where p.id = u.id);
 
 
 -- ===========================================================================
--- THREE THINGS TO DO AFTER THIS FINISHES
+-- FIVE THINGS TO DO AFTER THIS FINISHES
 --
 -- 1. Dashboard → Authentication → Providers → Email → turn OFF "Allow new
 --    users to sign up". The portal has no sign-up form, but the endpoint stays
@@ -946,4 +961,19 @@ where not exists (select 1 from profiles p where p.id = u.id);
 -- 3. Set SUPABASE_SERVICE_ROLE_KEY in Vercel — server-side, never with a
 --    NEXT_PUBLIC_ prefix. Without it the Registrar's approve button and every
 --    /api/admin route refuse rather than silently doing nothing.
+--
+-- 4. Set CREDENTIAL_SECRET in Vercel — 32 characters or more, server-side,
+--    never NEXT_PUBLIC_. This is the key every admission letter, transcript and
+--    certificate is sealed with. Without it the system does not fail loudly: it
+--    keeps issuing admission letters, each one printed "Not sealed", carrying
+--    no verification code and no QR. They are genuine letters that nobody can
+--    check. Set it BEFORE the first admission goes out — changing it later
+--    invalidates the seal on every document already issued under the old one.
+--
+--      openssl rand -hex 32
+--
+-- 5. Appoint the Admissions Officer — section 14, the commented block. The
+--    pipeline is Finance → Registrar → Admissions Office, and with no holder of
+--    the third role, approved applications stop at 'registrar_approved' and
+--    nothing tells anyone why.
 -- ===========================================================================

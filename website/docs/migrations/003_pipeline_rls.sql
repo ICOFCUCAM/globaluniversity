@@ -1,4 +1,20 @@
 -- ===========================================================================
+-- SUPERSEDED — DO NOT RUN THIS UNLESS 000_complete.sql PREDATES IT
+--
+-- Everything in this file is now part of 000_complete.sql:
+--
+--   students_staff_read           →  000_complete.sql, section 9
+--   students_desk_update          →  000_complete.sql, section 9
+--   guard_admissions_separation   →  000_complete.sql, section 10b
+--
+-- Run 000_complete.sql. It is the one file, it is idempotent, and it contains
+-- this. Keep this file only for a database that had an older 000 applied and
+-- needs the pipeline fix without re-running the whole thing; it is harmless to
+-- run on top of a current 000, because both are idempotent and identical.
+-- ===========================================================================
+
+
+-- ===========================================================================
 -- ICOF Global University — the admissions pipeline: reads, writes and gates
 --
 -- Two things in one file, because they are the same subject and running one
