@@ -118,7 +118,7 @@ export default function CertificateGenerator() {
               programme: data.student.program,
               degree: 'Bachelor of Science',
               classification,
-              serial: `CERT/${data.student.matric_no.replace(/\//g, '')}`,
+              credentialId: `IGUC-PREVIEW-${data.student.matric_no.replace(/[^A-Za-z0-9]/g, '')}`,
             }}
           />
         </div>

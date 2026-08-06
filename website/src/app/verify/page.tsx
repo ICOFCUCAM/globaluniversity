@@ -7,6 +7,11 @@ function VerifyInner() {
   const params = useSearchParams();
   const [state, setState] = useState<'checking' | 'valid' | 'invalid' | 'none' | 'unconfigured'>('checking');
   const [payload, setPayload] = useState<Record<string, string> | null>(null);
+  const [register, setRegister] = useState<{
+    status: string; note: string; issuedOn?: string | null;
+    revokedOn?: string | null; revocationReason?: string | null;
+    templateVersion?: number | null; hashMatches?: boolean;
+  } | null>(null);
 
   useEffect(() => {
     const d = params.get('d');
@@ -20,6 +25,7 @@ function VerifyInner() {
       .then((res) => {
         if (res.signed ?? res.valid) {
           setPayload(res.payload);
+          setRegister(res.register ?? null);
           setState('valid');
         } else if (res.error === 'credential-secret-not-set') setState('unconfigured');
         else setState('invalid');
@@ -104,17 +110,18 @@ function VerifyInner() {
               </svg>
             </span>
           </span>
-          {/* "Sealed", not "authentic". A verified signature proves the
-              university sealed these particulars; it does not prove the
-              credential was ever issued, or that it still stands — an offer can
-              be withdrawn, and there is no issuance record behind this page to
-              say so. Claiming more than the check establishes is exactly how a
-              verification page becomes useful to a forger. */}
+          {/* Two checks, reported separately, because they can disagree and the
+              disagreement is the interesting part. The signature says the
+              university's key was applied. The register says it was issued and
+              still stands. Only when both hold does this page say the credential
+              is current — and it never says more than the checks establish. */}
           <p className="mt-4 text-center font-heading text-xl font-bold text-emerald-700 [text-wrap:balance]">
-            Sealed by ICOF Global University
+            {register?.status === 'issued' && register.hashMatches !== false
+              ? 'Issued by ICOF Global University'
+              : 'Sealed by ICOF Global University'}
           </p>
           <p className="mt-1.5 text-center font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-600/80">
-            Signature verified — particulars below are as issued
+            Signature verified
           </p>
           <dl className="mt-7 space-y-2.5 text-sm">
             {Object.entries(payload).map(([k, v]) => (
@@ -124,12 +131,64 @@ function VerifyInner() {
               </div>
             ))}
           </dl>
+          {register && (
+            <div className={`mt-6 rounded-xl border p-4 ${
+              register.status === 'revoked' || register.hashMatches === false
+                ? 'border-red-300 bg-red-50'
+                : register.status === 'issued'
+                  ? 'border-emerald-300 bg-white'
+                  : 'border-amber-300 bg-amber-50'
+            }`}>
+              <p className={`font-sans text-[10px] font-bold uppercase tracking-[0.16em] ${
+                register.status === 'revoked' || register.hashMatches === false
+                  ? 'text-red-700'
+                  : register.status === 'issued' ? 'text-emerald-700' : 'text-amber-700'
+              }`}>
+                {register.status === 'revoked'
+                  ? 'Revoked'
+                  : register.status === 'replaced'
+                    ? 'Superseded'
+                    : register.status === 'issued'
+                      ? (register.hashMatches === false ? 'Altered' : 'On the register')
+                      : register.status === 'unavailable' ? 'Register unavailable' : 'Not registered'}
+              </p>
+              <p className="mt-1.5 text-sm leading-relaxed text-[#2f2838]">{register.note}</p>
+              <dl className="mt-3 space-y-1 text-[12px] text-[#6b6076]">
+                {register.issuedOn && (
+                  <div className="flex justify-between gap-6">
+                    <dt>Issued</dt>
+                    <dd className="font-medium text-[#2f2838]">
+                      {new Date(register.issuedOn).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    </dd>
+                  </div>
+                )}
+                {register.revokedOn && (
+                  <div className="flex justify-between gap-6">
+                    <dt>Revoked</dt>
+                    <dd className="font-medium text-red-700">
+                      {new Date(register.revokedOn).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    </dd>
+                  </div>
+                )}
+                {register.revocationReason && (
+                  <div className="flex justify-between gap-6">
+                    <dt>Reason</dt>
+                    <dd className="text-right font-medium text-red-700">{register.revocationReason}</dd>
+                  </div>
+                )}
+                {register.templateVersion != null && (
+                  <div className="flex justify-between gap-6">
+                    <dt>Issued under design</dt>
+                    <dd className="font-medium text-[#2f2838]">v{register.templateVersion}</dd>
+                  </div>
+                )}
+              </dl>
+            </div>
+          )}
           <p className="mt-5 text-[11px] leading-relaxed text-emerald-900/70">
-            This confirms the university sealed these particulars and that none of them has been
-            altered since. It does not confirm that the document still stands — an offer of
-            admission may be withdrawn, and a student's registration may change. For current
-            standing, write to{' '}
-            <a href="mailto:registrar@iguc.net" className="underline">registrar@iguc.net</a>.
+            Questions about a credential shown here go to{' '}
+            <a href="mailto:registrar@iguc.net" className="underline">registrar@iguc.net</a>, quoting
+            the credential number.
           </p>
         </div>
       )}

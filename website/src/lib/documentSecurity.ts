@@ -356,3 +356,99 @@ export function canonicalise(p: SealedParticulars): string {
     }),
   );
 }
+
+
+/* ------------------------------------------------------------------ */
+/* The credential register                                             */
+/* ------------------------------------------------------------------ */
+
+import { randomBytes, createHash } from 'node:crypto';
+
+/**
+ * The credential number, e.g. IGUC-BTH-26A9-F8K2-P19D.
+ *
+ * NOT SEQUENTIAL, and that is the whole design. A sequential number —
+ * CERT/000014582 — tells a forger exactly what the next one is, tells anyone
+ * holding two certificates how many the university has ever issued, and makes
+ * a plausible-looking fake a matter of picking a number in range.
+ *
+ * The readable part is deliberate: IGUC identifies the university and BTH the
+ * award, so a registrar reading a number over the telephone can tell at once
+ * whether it is even the right kind of document. The year is there for filing.
+ * The last twelve characters are random, from the system CSPRNG — sixty bits,
+ * which is not guessable and not enumerable.
+ *
+ * Uniqueness is enforced by the register's unique index, not by hope: two
+ * issues racing to the same number fail loudly on the second rather than
+ * quietly issuing a duplicate.
+ */
+export function newCredentialId(award: string, year: number): string {
+  const code = (award || '')
+    .replace(/[^A-Za-z ]/g, '')
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 4) || 'GEN';
+
+  const bytes = randomBytes(9);
+  let body = '';
+  for (let i = 0; i < 12; i += 1) body += ALPHABET[bytes[i % bytes.length] % ALPHABET.length];
+
+  return [
+    'IGUC',
+    code,
+    String(year).slice(-2) + body.slice(0, 2),
+    body.slice(2, 6),
+    body.slice(6, 10),
+  ].join('-');
+}
+
+/**
+ * SHA-256 over the canonical statement of an award.
+ *
+ * Computed once, at issue, and stored. Verification recomputes it from the
+ * REGISTER — never from the presented document — and compares. A signature can
+ * only say "something is wrong"; this says what the correct values were.
+ *
+ * Reuses sealedPayload so the hashed bytes and the sealed bytes are the same
+ * bytes. Two canonicalisations that drifted apart would be a defect nobody
+ * would notice until a genuine credential failed to verify.
+ */
+export function contentHash(
+  version: string,
+  document: string,
+  fields: Record<string, string | undefined>,
+): string {
+  return createHash('sha256')
+    .update(JSON.stringify(sealedPayload(version, document, fields)))
+    .digest('hex');
+}
+
+export interface AwardFacts {
+  credentialId: string;
+  holderName: string;
+  award: string;
+  classification?: string;
+  programme?: string;
+  issuedOn: string;
+}
+
+export const AWARD_FORMAT = 'ICOFGU-AWARD-V1';
+
+/** The fields an award certificate seals, in the order it seals them. */
+export function awardFields(f: AwardFacts): Record<string, string | undefined> {
+  return {
+    name: f.holderName,
+    credential_id: f.credentialId,
+    award: f.award,
+    classification: f.classification,
+    programme: f.programme,
+    issued: f.issuedOn,
+  };
+}
+
+export function sealAward(f: AwardFacts, siteUrl: string): DocumentSeal {
+  return sealDocument(AWARD_FORMAT, 'Degree Certificate', awardFields(f), siteUrl);
+}

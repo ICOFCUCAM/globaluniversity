@@ -73,12 +73,33 @@ export interface CredentialDesign {
   /**
    * The fixed wording. These are the sentences the university is committing to,
    * which is exactly why they are editable by one office and no other.
+   *
+   * A map rather than a fixed shape, because a certificate and a transcript say
+   * different things and there is no honest superset of the two. WORDING_KEYS
+   * below lists what each kind requires; the Studio renders its fields from that
+   * list and validateDesign checks against it, so adding a line to a document
+   * means adding one entry in one place.
    */
-  wording: {
-    certifyLine: string;
-    satisfiedLine: string;
-    awardLine: string;
-    privilegesLine: string;
+  wording: Record<string, string>;
+
+  /**
+   * The security artwork. See credentialArt.ts, which is candid about what each
+   * layer achieves — none of it stops a determined forger, and the real control
+   * is the issuance register behind /verify.
+   *
+   * There is deliberately no `uvLayer` flag. UV ink is applied by a press on a
+   * second pass; a browser cannot emit it and a toggle would imply the
+   * university produces something it does not. The Studio offers the UV artwork
+   * as a file to hand a printer instead.
+   */
+  security: {
+    guilloche: boolean;
+    guillocheOpacity: number;
+    microtextBorder: boolean;
+    securityGround: boolean;
+    engravedSeal: boolean;
+    /** The verification QR. Off only for a document that is never issued. */
+    qr: boolean;
   };
 
   /** Whose signatures appear, and in what order, left to right. */
@@ -106,29 +127,73 @@ export interface CredentialTemplate {
  * published version must be a faithful copy of what came before it, or every
  * certificate issued to date silently disagrees with its own record.
  */
+/**
+ * Which lines each kind of document is made of.
+ *
+ * `label` is what the Superadministrator sees in the Studio; `key` is what the
+ * renderer reads. Keeping them together means a line cannot exist in the
+ * document without a field to edit it, or a field without a line.
+ */
+export const WORDING_KEYS: Record<CredentialKind, { key: string; label: string }[]> = {
+  certificate: [
+    { key: 'senate', label: 'Conferring body' },
+    { key: 'authority', label: 'Authority' },
+    { key: 'recognition', label: 'Recognition' },
+    { key: 'confers', label: 'Conferral' },
+    { key: 'degreeLead', label: 'Before the award' },
+    { key: 'classificationLead', label: 'Before the classification' },
+    { key: 'privileges', label: 'Privileges' },
+    { key: 'given', label: 'Date preamble' },
+  ],
+  transcript: [
+    { key: 'title', label: 'Title' },
+    { key: 'statement', label: 'Statement of truth' },
+    { key: 'programmeLead', label: 'Before the programme' },
+    { key: 'validity', label: 'Validity note' },
+  ],
+};
+
 export const DEFAULT_CERTIFICATE_DESIGN: CredentialDesign = {
   pageSize: 'A4',
   orientation: 'landscape',
   brand: '#422e59',
   accent: '#c5a55a',
-  ink: '#444444',
-  paper: '#fffff8',
-  fontFamily: "'Times New Roman', Times, serif",
+  // Near-black, not grey. #444 on cream is what a certificate looks like when
+  // it has been photocopied twice; the original should start darker than that.
+  ink: '#241c30',
+  paper: '#fffdf5',
+  fontFamily: "Georgia, 'Times New Roman', Times, serif",
   border: 'double',
   borderWidthMm: 3,
   sealOpacity: 0.05,
   showSeal: true,
+  // The conferral, in the form the older universities use: the body that
+  // confers, the authority it acts under, the act itself, and the date in
+  // words. It reads as an instrument rather than as a notification, which is
+  // what it is.
   wording: {
-    certifyLine: 'This is to certify that',
-    satisfiedLine: 'having satisfied the requirements prescribed by the Senate of the University',
-    awardLine: 'is hereby awarded the degree of',
-    privilegesLine: 'with all the rights, privileges and responsibilities thereunto appertaining',
+    senate: 'The Senate of',
+    authority: 'under the authority vested in it',
+    recognition: 'and in recognition of the successful completion of the prescribed course of study',
+    confers: 'confers upon',
+    degreeLead: 'the Degree of',
+    classificationLead: 'with',
+    privileges: 'with all the rights, privileges and responsibilities thereunto appertaining',
+    given: 'Given this',
   },
   signatories: [
     { name: '', office: 'Vice Chancellor' },
     { name: '', office: 'Registrar' },
   ],
   footnote: '',
+  security: {
+    guilloche: true,
+    guillocheOpacity: 0.5,
+    microtextBorder: true,
+    securityGround: true,
+    engravedSeal: true,
+    qr: true,
+  },
 };
 
 export const DEFAULT_TRANSCRIPT_DESIGN: CredentialDesign = {
@@ -138,13 +203,20 @@ export const DEFAULT_TRANSCRIPT_DESIGN: CredentialDesign = {
   borderWidthMm: 1,
   sealOpacity: 0.04,
   wording: {
-    certifyLine: 'Official Academic Transcript',
-    satisfiedLine: 'The record below is a true statement of the academic performance of',
-    awardLine: 'in the programme of',
-    privilegesLine: 'This transcript is invalid without the seal of the University.',
+    title: 'Official Academic Transcript',
+    statement: 'The record set out below is a true statement of the academic performance of',
+    programmeLead: 'in the programme of',
+    validity: 'This transcript is invalid without the seal of the University.',
   },
   signatories: [{ name: '', office: 'Registrar' }],
   footnote: 'Issued under the seal of ICOF Global University. Verify at iguc.net/verify.',
+  security: {
+    ...DEFAULT_CERTIFICATE_DESIGN.security,
+    // A transcript is a table. A rosette behind columns of marks makes them
+    // harder to read, and legibility of the marks is the document's whole job.
+    guilloche: false,
+    engravedSeal: true,
+  },
 };
 
 export function defaultDesign(kind: CredentialKind): CredentialDesign {
@@ -169,6 +241,7 @@ export function withDefaults(
     ...base,
     ...stored,
     wording: { ...base.wording, ...(stored.wording ?? {}) },
+    security: { ...base.security, ...(stored.security ?? {}) },
     signatories: stored.signatories?.length ? stored.signatories : base.signatories,
   };
 }
@@ -183,7 +256,7 @@ export function withDefaults(
  * issued, and it should fail at the moment of publishing rather than at the
  * moment a graduate opens it.
  */
-export function validateDesign(d: CredentialDesign): string[] {
+export function validateDesign(d: CredentialDesign, kind: CredentialKind = 'certificate'): string[] {
   const problems: string[] = [];
   const hex = /^#[0-9a-fA-F]{6}$/;
 
@@ -210,8 +283,17 @@ export function validateDesign(d: CredentialDesign): string[] {
   if (d.signatories.some((s) => !s.office.trim())) {
     problems.push('Every signatory needs an office. A signature over a blank line attests to nothing.');
   }
-  for (const [key, value] of Object.entries(d.wording)) {
-    if (!value.trim()) problems.push(`Wording "${key}" cannot be empty.`);
+  // Only the lines this kind of document actually prints. A stored design may
+  // carry keys from another kind — checking those would refuse a perfectly good
+  // certificate because a transcript field it never renders is blank.
+  for (const { key, label } of WORDING_KEYS[kind]) {
+    if (!(d.wording[key] ?? '').trim()) problems.push(`"${label}" cannot be empty.`);
+  }
+  if (!d.security.qr) {
+    problems.push(
+      'A credential without a verification code cannot be checked by anyone who receives it. ' +
+      'Turn the QR back on, or this design can only be used for documents that are never issued.',
+    );
   }
   return problems;
 }
