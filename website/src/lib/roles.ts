@@ -117,6 +117,10 @@ export const OPERATIONAL_CAPABILITIES = [
   // different blast radii, and a capability that covered both would mean any
   // lecturer could rewrite the cumulative record of every student on the roll.
   'recompute-gpa',
+  // Which programmes the university is currently admitting to. An academic
+  // decision — what the faculty is ready to teach this year — not an
+  // administrative one, which is why it is not in the Admissions Officer's set.
+  'set-admission-openings',
   // Dean
   'view-admitted-students',
   'approve-transfers',
@@ -263,6 +267,7 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
     'process-applications',
     'approve-credential-design',
     'recompute-gpa',
+    'set-admission-openings',
   ],
 
   // The Head of Academic Affairs approves admissions and SIGNS the admission
@@ -274,6 +279,7 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
     'assign-lecturers', 'build-timetable', 'manage-courses',
     'approve-credential-design', 'recompute-gpa',
     'admit-student', 'reject-application', 'request-documents',
+    'set-admission-openings',
   ],
 
   dean: ['view-admitted-students', 'approve-transfers', 'monitor-progress'],

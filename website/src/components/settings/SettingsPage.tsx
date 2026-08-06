@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { roleLabels } from '@/lib/roles';
+import { roleLabels, can } from '@/lib/roles';
+import AdmissionOpenings from './AdmissionOpenings';
 import { GRADING_SCALE, CLASSIFICATION_BANDS, MAX_GRADE_POINT } from '@/lib/grading';
 import { UNIVERSITY } from '@/lib/constants';
 import {
-  User, Shield, Bell, Palette, Database, Save, CheckCircle2
+  User, Shield, Bell, Palette, Database, Save, CheckCircle2, DoorOpen,
 } from 'lucide-react';
 
 export default function SettingsPage() {
@@ -94,6 +95,12 @@ export default function SettingsPage() {
 
   const tabs = [
     { id: 'profile', label: 'Profile', icon: <User size={16} /> },
+    // Only the offices that hold the capability. A tab that opens a screen the
+    // viewer cannot use is worse than no tab: it implies the university is
+    // withholding something rather than that the decision belongs elsewhere.
+    ...(can(user?.role, 'set-admission-openings')
+      ? [{ id: 'openings', label: 'Admission openings', icon: <DoorOpen size={16} /> }]
+      : []),
     { id: 'grading', label: 'Grading Scale', icon: <Database size={16} /> },
     { id: 'notifications', label: 'Notifications', icon: <Bell size={16} /> },
     { id: 'security', label: 'Security', icon: <Shield size={16} /> },
@@ -168,6 +175,8 @@ export default function SettingsPage() {
               </button>
             </div>
           )}
+
+          {activeTab === 'openings' && <AdmissionOpenings />}
 
           {activeTab === 'grading' && (
             <div className="space-y-4">

@@ -35,6 +35,40 @@ const FIELDS: Record<string, string[]> = {
   Business: ['Business Management', 'Project Management'],
 };
 
+/**
+ * Which levels and fields the university is currently admitting to.
+ *
+ * WHY THE FALLBACK IS "SHOW EVERYTHING". If migration 008 has not been run, or
+ * the openings cannot be read, this form must behave exactly as it did before
+ * the feature existed. The alternative — treating an unreadable list as an
+ * empty one — closes the university's front door because a table is missing,
+ * and turns every applicant away with no one having decided to.
+ *
+ * So: a closure is only ever applied when the university has actually recorded
+ * one. Absence of information is never treated as a refusal.
+ */
+function useOpenings() {
+  const [closed, setClosed] = useState<{ levels: Set<string>; fields: Set<string> } | null>(null);
+  useEffect(() => {
+    let live = true;
+    fetch('/api/admissions/openings')
+      .then((r) => r.json())
+      .then((d) => {
+        if (!live || !d?.configured) return;
+        const levels = new Set<string>();
+        const fields = new Set<string>();
+        for (const o of d.openings ?? []) {
+          if (o.open) continue;
+          (o.kind === 'level' ? levels : fields).add(o.label);
+        }
+        setClosed({ levels, fields });
+      })
+      .catch(() => { /* unreachable: leave everything open. See above. */ });
+    return () => { live = false; };
+  }, []);
+  return closed;
+}
+
 const inputCls =
   'w-full rounded-lg border border-brand-sand bg-white px-4 py-2.5 text-sm text-brand-purple placeholder:text-brand-muted/60 focus:border-brand-gold-deep focus:outline-none';
 const labelCls = 'block text-xs font-semibold uppercase tracking-wide text-brand-purple';
@@ -187,6 +221,7 @@ function fileSize(bytes: number): string {
 }
 
 export default function ApplyForm() {
+  const closed = useOpenings();
   const [step, setStep] = useState(0);
   const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error' | 'unconfigured'>('idle');
   const [review, setReview] = useState<ReviewSection[]>([]);
@@ -501,18 +536,23 @@ export default function ApplyForm() {
               <span className={labelCls}>Application enrollment for a <span className="text-red-600">*</span></span>
               <select name="level" required className={inputCls} defaultValue="">
                 <option value="" disabled>Select level</option>
-                {LEVELS.map((l) => <option key={l}>{l}</option>)}
+                {LEVELS.filter((l) => !closed?.levels.has(l)).map((l) => <option key={l}>{l}</option>)}
               </select>
             </label>
             <label className="block space-y-1.5">
               <span className={labelCls}>Specific field / program <span className="text-red-600">*</span></span>
               <select name="field" required className={inputCls} defaultValue="">
                 <option value="" disabled>Select field</option>
-                {Object.entries(FIELDS).map(([group, options]) => (
-                  <optgroup key={group} label={group}>
-                    {options.map((o) => <option key={o}>{o}</option>)}
-                  </optgroup>
-                ))}
+                {Object.entries(FIELDS).map(([group, options]) => {
+                  const open = options.filter((o) => !closed?.fields.has(o));
+                  // A faculty with nothing open is not shown as an empty group.
+                  if (open.length === 0) return null;
+                  return (
+                    <optgroup key={group} label={group}>
+                      {open.map((o) => <option key={o}>{o}</option>)}
+                    </optgroup>
+                  );
+                })}
                 <option>Other</option>
               </select>
             </label>

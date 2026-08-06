@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import { site } from '@/content/site';
 import Crest from './Crest';
@@ -7,19 +6,17 @@ import { Aurora, Grain, Seam } from './Atmosphere';
 export default function Footer() {
   return (
     <footer className="relative text-white">
-      {/* Building background, as on the original site's footer */}
-      <Image
-        src="/images/wp/footer-building.jpg"
-        alt=""
-        fill
-        loading="lazy"
-        quality={55}
-        className="object-cover"
-        sizes="100vw"
-      />
-      {/* Same ordering rule as the CTA band: atmosphere first, scrim over it. */}
+      {/* NO PHOTOGRAPH HERE, and its absence is the fix.
+          The call-to-action band immediately above the footer already carries
+          /images/wp/footer-building.jpg, and the footer carried the SAME file.
+          The two are adjacent on every page of the site, so every page ended
+          with the same building printed twice, one directly under the other,
+          separated by a scrim. It read as a rendering fault rather than as a
+          design.
+          A footer is navigation. It does not need a picture, and one repeated
+          from the band above it is worse than none. */}
       <Aurora tone="purple" intensity={0.3} fields={2} />
-      <div className="absolute inset-0 bg-brand-purple-dark/90" />
+      <div className="absolute inset-0 bg-brand-purple-dark" />
       <Grain opacity={0.05} />
       <Seam />
 
