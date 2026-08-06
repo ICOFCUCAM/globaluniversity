@@ -168,6 +168,7 @@ export function patternById(id: string): SecurityPattern | undefined {
 /** The name to print in a specification for a given watermark setting. */
 export function watermarkName(watermark: string): string {
   switch (watermark) {
+    case 'device-in-rosette': return 'The ICOF Globe Guilloché™ in Academic Rosette';
     case 'device': return 'The ICOF Globe Guilloché™';
     case 'rosette': return 'The ICOF Academic Rosette™';
     case 'globe': return 'ICOF Graticule';

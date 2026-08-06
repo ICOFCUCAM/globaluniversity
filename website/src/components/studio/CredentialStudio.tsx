@@ -477,12 +477,14 @@ export default function CredentialStudio() {
                   <Select
                     value={design.security.watermark}
                     onChange={(v) => setSecurity('watermark', v as CredentialDesign['security']['watermark'])}
-                    options={['device', 'globe-in-rosette', 'globe', 'rosette']}
+                    options={['device-in-rosette', 'device', 'globe-in-rosette', 'globe', 'rosette']}
                   />
                 </Row>
                 <p className="text-[11px] leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">
-                  {design.security.watermark === 'device'
-                    ? 'The university’s device: the globe turned to Africa, ringed by its own name and descriptor, flanked by laurel, with the year of foundation. The only one of these four that cannot be lifted onto somebody else’s certificate without saying so — which is what a background is for.'
+                  {design.security.watermark === 'device-in-rosette'
+                    ? 'Both. The guilloché band is felt round the outside — the engine-turning is what makes a sheet read as a security document at arm’s length — and where the stock wireframe globe used to sit inside it there is now the university’s own device. The band is the setting; the device is what is set in it.'
+                    : design.security.watermark === 'device'
+                    ? 'The university’s device alone, without the guilloché band round it: the globe turned to Africa, ringed by its own name and descriptor, flanked by laurel, with the year of foundation. Cannot be lifted onto somebody else’s certificate without saying so — which is what a background is for.'
                     : design.security.watermark === 'rosette'
                       ? 'The guilloché alone. Beautiful, and on ten thousand certificate templates. It says nothing about this institution.'
                       : design.security.watermark === 'globe'

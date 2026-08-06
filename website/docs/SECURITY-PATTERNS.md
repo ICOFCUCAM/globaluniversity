@@ -81,6 +81,24 @@ what every certificate generator on the internet produces: starting there meant
 the diploma looked like a template and only the doctorate looked like an
 instrument. The floor is now what used to be the middle.
 
+### The band round it
+
+**The ICOF Globe Guilloché™ in Academic Rosette** — the default, and what the
+certificate carries.
+
+Two counter-rotated bands of engine-turning surround the device, and the device
+is set at 0.66 inside them. The band was on the old watermark and it was the
+good part of it: it is what makes a sheet read as a security document at arm's
+length. What sat inside it was a stock wireframe globe that said nothing about
+this institution, and that is what the device replaces.
+
+The band is the setting; the device is what is set in it. At 0.62 with the band
+at 55% strength the engine-turning swamped the figure and the device read as a
+detail caught in a web — the eye has to land on the device first.
+
+*Implementation: `deviceInRosette()`. Set `watermark: 'device'` for the device
+without the band.*
+
 ### Five silhouettes
 
 The tier says how much is worked into the figure. The **silhouette** says what

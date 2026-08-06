@@ -1647,6 +1647,51 @@ export function africanGlobeOfKnowledge(opts: {
 export const africanGlobeOfKnowledgeUri = (o: Parameters<typeof africanGlobeOfKnowledge>[0]) =>
   enc(africanGlobeOfKnowledge(o));
 
+/**
+ * The device set inside the guilloché rosette.
+ *
+ * WHAT THIS IS AND WHY IT EXISTS. The old watermark was a plain wireframe
+ * graticule inside a scalloped rosette band. The band was the good part of it —
+ * it is the engine-turning, and it is what makes the sheet read as a security
+ * document at arm's length. What sat inside it was a stock globe that said
+ * nothing about this institution.
+ *
+ * So the band stays and the stock globe goes. In its place is the university's
+ * own device — the ring of its words, the register of African ornament, the
+ * twelve faculties and their chords, the laurel, the world turned to Africa,
+ * the year of foundation and the faculty's emblem — at whatever tier the award
+ * calls for and in whichever of the five silhouettes the university has chosen.
+ *
+ * The result carries both: the guilloché is felt round the outside, and the
+ * thing it surrounds belongs to this university and to no other.
+ *
+ * TWO BANDS, NOT ONE. globeInRosette used a single band because a second one
+ * ran inside the sphere and made the graticule unreadable. That constraint does
+ * not apply here — the device is set at 0.62, well inside both bands — and one
+ * band alone is too slight to be felt behind a full page of type.
+ */
+export function deviceInRosette(
+  opts: Parameters<typeof africanGlobeOfKnowledge>[0],
+): string {
+  const { seed, size, colour } = opts;
+  const opacity = opts.opacity ?? 1;
+  // 0.66 and 0.45. At 0.62 with the band at 0.55 the engine-turning swamped the
+  // thing it is meant to surround — the device read as a detail caught in a web
+  // rather than as the subject. The band is the setting; the device is what is
+  // set in it, and the eye has to land on the device first.
+  const inner = size * 0.66;
+  const band = guillocheRosette(seed, size, colour, opacity * 0.45, 2)
+    .replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '');
+  const device = africanGlobeOfKnowledge({ ...opts, size: inner })
+    .replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '');
+  const off = ((size - inner) / 2).toFixed(2);
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" ` +
+    `viewBox="0 0 ${size} ${size}">${band}<g transform="translate(${off},${off})">${device}</g></svg>`;
+}
+
+export const deviceInRosetteUri = (o: Parameters<typeof africanGlobeOfKnowledge>[0]) =>
+  enc(deviceInRosette(o));
+
 /* ------------------------------------------------------------------ */
 /* Five silhouettes for the device                                      */
 /* ------------------------------------------------------------------ */

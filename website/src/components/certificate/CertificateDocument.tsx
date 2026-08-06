@@ -42,7 +42,7 @@ import {
   seedFrom, guillocheRosetteUri, guillocheBandUri, microtextBandUri,
   securityGroundUri, ordinalDay, yearInWords,
   ornateFrameUri, waferSealUri, guillocheGlobeUri, globeInRosetteUri,
-  africanGlobeOfKnowledgeUri,
+  africanGlobeOfKnowledgeUri, deviceInRosetteUri,
 } from '@/lib/credentialArt';
 import { wordingForAward, deviceTierFor, emblemFor, awardTitleAfterLead } from '@/lib/awards';
 
@@ -245,8 +245,8 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
     // The watermark figure. 'globe-in-rosette' is the university's own mark;
     // see CredentialDesign.security.watermark for why a globe and not more
     // rosette.
-    rosette: sec.watermark === 'device'
-      ? africanGlobeOfKnowledgeUri({
+    rosette: sec.watermark === 'device-in-rosette' || sec.watermark === 'device'
+      ? (sec.watermark === 'device-in-rosette' ? deviceInRosetteUri : africanGlobeOfKnowledgeUri)({
           seed,
           size: 640,
           colour: design.brand,
@@ -456,29 +456,13 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
           its own seat in the paper's colour, and it is drawn above the ground
           anyway. A second disc here would be a paper circle in the wrong place
           by a few millimetres, showing as a pale crescent beside the collet. */}
-      {reserved && !mounted && sec.securityGround && (
-        <div
-          aria-hidden="true"
-          style={{
-            position: 'absolute',
-            left: '50%',
-            bottom: `${bleed + design.borderWidthMm + 11}mm`,
-            transform: 'translateX(-50%)',
-            width: '36mm',
-            height: '36mm',
-            borderRadius: '50%',
-            background: design.paper,
-          }}
-        />
-      )}
-
       {/* Layer 1 — the guilloché rosette, large and faint, behind the text. */}
       {sec.guilloche && (
         <div aria-hidden="true" style={{
           position: 'absolute',
           // Raised off centre. The lower middle is kept clear for the wafer, and
           // a watermark under it would show as a halo round the seal's edge.
-          top: '43%', left: '50%',
+          top: '50%', left: '50%',
           transform: 'translate(-50%, -50%)',
           // Visible as texture, not as decoration competing with the text. Below
           // about 0.2 it disappears entirely on a laser printer, which is where
@@ -511,9 +495,36 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
             // of the figure landed exactly on the sheet edge and the microtext
             // ring was trimmed — a legend cut off by the paper is worse than a
             // smaller device, because it reads as a printing fault.
-            style={{ width: `${Math.min(w, h) * 0.76}mm`, height: `${Math.min(w, h) * 0.76}mm` }}
+            style={{ width: `${Math.min(w, h) * 0.88}mm`, height: `${Math.min(w, h) * 0.88}mm` }}
           />
         </div>
+      )}
+
+      {/* The clear disc for the hand-affixed wafer.
+          PAINTED AFTER THE WATERMARK, not before it. It used to sit above the
+          security ground and below the guilloché, so the ground was cleared and
+          the watermark printed straight back into the same 36mm — which is the
+          exact halo the reservation exists to prevent, and it got worse the
+          moment the figure was enlarged to fill the sheet. Anything that must
+          be clear has to be painted after EVERYTHING that could reach it.
+
+          Not gated on securityGround either. The area has to be clear of
+          whatever is under it, and the watermark is under it whether or not the
+          ground is switched on. */}
+      {reserved && !mounted && (
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            left: '50%',
+            bottom: `${bleed + design.borderWidthMm + 11}mm`,
+            transform: 'translateX(-50%)',
+            width: '36mm',
+            height: '36mm',
+            borderRadius: '50%',
+            background: design.paper,
+          }}
+        />
       )}
 
       {/* Layer 2 — the frame.

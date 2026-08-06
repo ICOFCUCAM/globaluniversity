@@ -176,7 +176,7 @@ export interface CredentialDesign {
      * obvious to anyone who has ever looked at a map, which is not true of a
      * rosette.
      */
-    watermark: 'device' | 'globe-in-rosette' | 'globe' | 'rosette';
+    watermark: 'device-in-rosette' | 'device' | 'globe-in-rosette' | 'globe' | 'rosette';
     /**
      * The silhouette the device is struck in. Applies to 'device' only.
      *
@@ -259,7 +259,7 @@ export const DEFAULT_CERTIFICATE_DESIGN: CredentialDesign = {
   fontFamily: "Georgia, 'Times New Roman', Times, serif",
   titleFont: "'UnifrakturMaguntia', 'UnifrakturMaguntia Fallback', 'Old English Text MT', Georgia, serif",
   sealColour: '#b31217',
-  sealPlacement: 'reserved',
+  sealPlacement: 'device',
   bleedMm: 0,
   border: 'ornate',
   borderWidthMm: 11,
@@ -305,7 +305,7 @@ export const DEFAULT_CERTIFICATE_DESIGN: CredentialDesign = {
   security: {
     guilloche: true,
     guillocheOpacity: 0.5,
-    watermark: 'device',
+    watermark: 'device-in-rosette',
     deviceStyle: 'seal',
     microtextBorder: true,
     securityGround: true,
