@@ -217,6 +217,7 @@ export type ViewType =
   | 'results' 
   | 'transcript' 
   | 'certificate'
+  | 'my-credentials'
   | 'lms' 
   | 'exams'
   | 'documents'

@@ -112,6 +112,28 @@ export async function GET(request: Request) {
   }
 
   const url = new URL(request.url);
+
+  // ---------------------------------------------------------------------
+  // LOOKUP BY CREDENTIAL NUMBER — how an employer actually verifies.
+  //
+  // Every certificate prints "VERIFY AT iguc.net/verify" and a credential
+  // number beneath it, and until now that instruction could not be followed:
+  // this route only accepted the base64 payload and signature out of a QR. An
+  // employer holding a printed certificate has a NUMBER. Someone reading one
+  // over the telephone has a number. A registrar in another country filing a
+  // reference has a number.
+  //
+  // So a number is now enough. It returns what the register holds, and no
+  // signature check is involved because there is no presented payload to check
+  // — which is the honest position: this confirms the university issued a
+  // credential with that number and states what it says, and the reader
+  // compares it against the paper in front of them.
+  // ---------------------------------------------------------------------
+  const byNumber = (url.searchParams.get('id') ?? '').trim().toUpperCase();
+  if (byNumber) {
+    return NextResponse.json(await lookUpByNumber(byNumber));
+  }
+
   const data = url.searchParams.get('d') ?? '';
   const sig = url.searchParams.get('s') ?? '';
   const signed = !!data && !!sig && matches(sign(data, key), sig);
@@ -231,5 +253,71 @@ async function lookUpRegister(payload: Record<string, unknown> | null): Promise<
             ? 'Issued by ICOF Global University and current on its register.'
             : 'This credential is on the register, but the details presented do not match what ' +
               'the university recorded. The document has been altered since it was issued.',
+  };
+}
+
+/**
+ * Verification by credential number alone.
+ *
+ * Deliberately returns the substance of the award — holder, award,
+ * classification, date, status — because that is what the enquirer is checking
+ * against the document in their hand, and withholding it would make the check
+ * useless. It does NOT return the student's contact details, date of birth,
+ * marks or anything else on the student record: an employer verifying a degree
+ * is entitled to know that the degree is real, not to a copy of the file.
+ *
+ * A number that is not on the register returns a plain negative. There is no
+ * timing difference and no hint — a number is either issued or it is not.
+ */
+async function lookUpByNumber(credentialId: string) {
+  const admin = adminClient();
+  if (!admin) {
+    return {
+      ok: false,
+      error: 'register-unavailable',
+      note: 'The credential register could not be reached, so this number can be neither ' +
+        'confirmed nor denied. That is not a finding about the document.',
+    };
+  }
+
+  const { data, error } = await admin
+    .from('credentials_issued')
+    .select('credential_id, kind, holder_name, award, classification, programme, issued_at, status, revoked_at, revocation_reason, template_version')
+    .eq('credential_id', credentialId)
+    .maybeSingle();
+
+  if (error) {
+    return { ok: false, error: 'register-error', note: error.message };
+  }
+  if (!data) {
+    return {
+      ok: true,
+      found: false,
+      note: 'No credential with this number has been issued by ICOF Global University.',
+    };
+  }
+
+  return {
+    ok: true,
+    found: true,
+    credential: {
+      credentialId: data.credential_id,
+      kind: data.kind,
+      holderName: data.holder_name,
+      award: data.award,
+      classification: data.classification,
+      programme: data.programme,
+      issuedOn: data.issued_at,
+      templateVersion: data.template_version,
+      status: data.status,
+      revokedOn: data.revoked_at,
+      revocationReason: data.revocation_reason,
+    },
+    note:
+      data.status === 'revoked'
+        ? 'This credential was issued and has since been REVOKED by the university. It no longer stands.'
+        : data.status === 'replaced'
+          ? 'This credential has been superseded by a reissued version.'
+          : 'Issued by ICOF Global University and current on its register.',
   };
 }

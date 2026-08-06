@@ -98,6 +98,10 @@ export const menuGroups: MenuGroup[] = [
       { id: 'results', label: 'Results', icon: <ClipboardList size={18} />, roles: ALL },
       { id: 'transcript', label: 'Transcript', icon: <FileText size={18} />, roles: ['superadmin', 'admin', 'student'] },
       { id: 'certificate', label: 'Certificate', icon: <Award size={18} />, roles: ['superadmin', 'admin', 'student'] },
+      // The graduate's own wallet: what the university has issued them, and a
+      // link they can send to an employer. Students only — staff read the
+      // register through the Registrar's screens, not through a wallet.
+      { id: 'my-credentials', label: 'My credentials', icon: <Award size={18} />, roles: ['student'] },
       { id: 'documents', label: 'Documents', icon: <FolderOpen size={18} />, roles: ['superadmin', 'admin', 'student'] },
       { id: 'fees', label: 'Fees & receipts', icon: <Wallet size={18} />, roles: ['superadmin', 'admin', 'finance', 'finance-director'] },
     ],

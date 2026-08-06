@@ -23,6 +23,7 @@ import ResultProcessing from './results/ResultProcessing';
 import GradeBook from './results/GradeBook';
 import TranscriptGenerator from './transcript/TranscriptGenerator';
 import CertificateGenerator from './certificate/CertificateGenerator';
+import MyCredentials from './credentials/MyCredentials';
 import LMSModule from './lms/LMSModule';
 import ExamModule from './exams/ExamModule';
 import QuestionBank from './exams/QuestionBank';
@@ -181,6 +182,8 @@ export default function AppLayout() {
         return <TranscriptGenerator />;
       case 'certificate':
         return <CertificateGenerator />;
+      case 'my-credentials':
+        return <MyCredentials />;
       case 'lms':
         return <LMSModule />;
       case 'exams':

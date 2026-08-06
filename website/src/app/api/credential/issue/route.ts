@@ -37,6 +37,8 @@ import {
   newCredentialId, contentHash, sealAward, awardFields, verificationQrSvg, AWARD_FORMAT,
 } from '@/lib/documentSecurity';
 import { UNIVERSITY } from '@/lib/constants';
+import { getClassification } from '@/lib/grading';
+import { awardWording, awardKindOf } from '@/lib/awards';
 
 export const runtime = 'nodejs';
 
@@ -50,7 +52,6 @@ export async function POST(request: Request) {
   let body: {
     studentId?: string;
     award?: string;
-    classification?: string;
     templateVersion?: number;
   };
   try {
@@ -87,6 +88,50 @@ export async function POST(request: Request) {
     }, { status: 409 });
   }
 
+  // ---------------------------------------------------------------------
+  // THE CLASSIFICATION IS COMPUTED, NEVER SUPPLIED.
+  //
+  // It used to be a field on the request body. That meant the caller stated
+  // what class of degree the university was awarding — so the difference
+  // between a Second Class and a First was a value in a JSON payload, decided
+  // by whoever pressed the button rather than by the marks. An issuing route
+  // that accepts the classification is not issuing a credential; it is
+  // transcribing an assertion.
+  //
+  // It now comes from the student's cumulative GPA, through the same
+  // classification bands the regulations publish and the transcript prints. A
+  // certificate and a transcript for the same graduate cannot now disagree,
+  // because there is one function and both call it.
+  // ---------------------------------------------------------------------
+  const { data: gpaRow, error: gpaErr } = await admin
+    .from('semester_gpas')
+    .select('cgpa, academic_year, semester')
+    .eq('student_id', student.id)
+    .order('academic_year', { ascending: false })
+    .order('semester', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (gpaErr) {
+    return NextResponse.json({ ok: false, error: `gpa-lookup-failed: ${gpaErr.message}` }, { status: 500 });
+  }
+  const cgpa = Number(gpaRow?.cgpa);
+  if (!gpaRow || !Number.isFinite(cgpa)) {
+    // Refusing is the only honest answer. A certificate states a class of
+    // degree; with no cumulative GPA on the record there is nothing to state,
+    // and printing one without a classification — or with a guessed one —
+    // would have the university attesting to a result it has not computed.
+    return NextResponse.json({
+      ok: false,
+      error: 'no-cgpa',
+      detail:
+        'This student has no cumulative GPA on record, so the class of the award cannot be ' +
+        'determined. A certificate states a classification and the university does not guess it. ' +
+        'Post the results and recompute the GPA before issuing.',
+    }, { status: 409 });
+  }
+  const classification = getClassification(cgpa);
+
   const holderName = [student.first_name, student.middle_name, student.last_name]
     .filter(Boolean)
     .join(' ');
@@ -97,7 +142,7 @@ export async function POST(request: Request) {
     credentialId,
     holderName,
     award: body.award.trim(),
-    classification: body.classification?.trim() || undefined,
+    classification,
     programme: student.program ?? undefined,
     issuedOn,
   };
@@ -150,7 +195,10 @@ export async function POST(request: Request) {
     entityType: 'credential',
     entityId: credentialId,
     performedBy: caller.id,
-    details: { student_id: student.id, award: facts.award, hash, by_email: caller.email },
+    details: {
+      student_id: student.id, award: facts.award, hash,
+      cgpa, classification, by_email: caller.email,
+    },
   });
 
   return NextResponse.json({
@@ -162,6 +210,11 @@ export async function POST(request: Request) {
       classification: facts.classification ?? null,
       programme: facts.programme ?? null,
       issuedOn,
+      // The wording the certificate prints for this award. A degree is
+      // "admitted to the Degree of"; a diploma is not a degree and saying so
+      // would be false on its face.
+      wording: awardWording(awardKindOf(facts.award)),
+      cgpa,
       contentHash: hash,
       sealCode: seal.code,
       qrSvg: await verificationQrSvg(seal.verifyUrl, 84),

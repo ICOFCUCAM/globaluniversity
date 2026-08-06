@@ -1,23 +1,58 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 function VerifyInner() {
   const params = useSearchParams();
   const [state, setState] = useState<'checking' | 'valid' | 'invalid' | 'none' | 'unconfigured'>('checking');
   const [payload, setPayload] = useState<Record<string, string> | null>(null);
+  const [number, setNumber] = useState('');
+  const [looking, setLooking] = useState(false);
+  const [byNumber, setByNumber] = useState<{
+    found?: boolean;
+    note?: string;
+    credential?: {
+      holderName?: string; award?: string; classification?: string | null;
+      programme?: string | null; issuedOn?: string | null; status?: string;
+    };
+  } | null>(null);
   const [register, setRegister] = useState<{
     status: string; note: string; issuedOn?: string | null;
     revokedOn?: string | null; revocationReason?: string | null;
     templateVersion?: number | null; hashMatches?: boolean;
   } | null>(null);
 
+  const lookUpNumber = useCallback(async (raw: string) => {
+    const id = raw.trim();
+    if (!id) return;
+    setLooking(true);
+    setByNumber(null);
+    const res = await fetch(`/api/credential?id=${encodeURIComponent(id)}`)
+      .then((r) => r.json())
+      .catch(() => null);
+    setByNumber(
+      res?.ok
+        ? res
+        : { found: false, note: res?.note ?? 'The register could not be reached. Try again shortly.' },
+    );
+    setLooking(false);
+  }, []);
+
   useEffect(() => {
     const d = params.get('d');
     const s = params.get('s');
+    // A share link from a graduate's credential wallet carries the number, not
+    // a signed payload — it is a link they may paste into an email to an
+    // employer, and it has to work when it is opened rather than require the
+    // recipient to retype anything.
+    const id = params.get('id');
     if (!d || !s) {
       setState('none');
+      if (id) {
+        setNumber(id.toUpperCase());
+        void lookUpNumber(id);
+      }
       return;
     }
     fetch(`/api/credential?d=${encodeURIComponent(d)}&s=${encodeURIComponent(s)}`)
@@ -31,7 +66,8 @@ function VerifyInner() {
         else setState('invalid');
       })
       .catch(() => setState('invalid'));
-  }, [params]);
+  }, [params, lookUpNumber]);
+
 
   return (
     <div className="mx-auto max-w-xl px-4 py-20 text-center">
@@ -54,12 +90,88 @@ function VerifyInner() {
         </p>
       )}
       {state === 'none' && (
-        <p className="mx-auto mt-8 max-w-md leading-relaxed text-brand-muted">
-          Scan the QR code on an ICOF Global University admission letter, transcript or
-          certificate to check it here. The code beside the seal on an admission letter can also be
-          confirmed by the Office of Admissions at{' '}
-          <a href="mailto:admissions@iguc.net" className="underline">admissions@iguc.net</a>.
-        </p>
+        <div className="mx-auto mt-8 max-w-md text-left">
+          <p className="text-center leading-relaxed text-brand-muted">
+            Scan the QR code on an ICOF Global University certificate, transcript or admission
+            letter — or enter the credential number printed on it.
+          </p>
+          {/* An employer holding a printed certificate has a NUMBER, not a QR
+              payload. Every certificate tells them to verify here, so there has
+              to be somewhere to type it; without this the instruction printed on
+              the document could not be followed. */}
+          <form
+            onSubmit={(e) => { e.preventDefault(); void lookUpNumber(number); }}
+            className="mt-7 rounded-2xl border border-brand-sand bg-white p-5"
+          >
+            <label htmlFor="credential-number" className="block font-sans text-[11px] font-bold uppercase tracking-[0.14em] text-brand-gold-deep">
+              Credential number
+            </label>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <input
+                id="credential-number"
+                value={number}
+                onChange={(e) => setNumber(e.target.value)}
+                placeholder="IGUC-BTH-26A9-F8K2-P19D"
+                autoComplete="off"
+                spellCheck={false}
+                className="min-w-[200px] flex-1 rounded-lg border border-brand-sand px-3 py-2.5 font-mono text-sm uppercase tracking-wide text-brand-purple focus:border-brand-gold focus:outline-none"
+              />
+              <button
+                type="submit"
+                disabled={!number.trim() || looking}
+                className="rounded-lg bg-brand-purple px-6 py-2.5 font-heading text-sm font-semibold text-white transition hover:bg-brand-purple-dark disabled:opacity-40"
+              >
+                {looking ? 'Checking…' : 'Verify'}
+              </button>
+            </div>
+            <p className="mt-2.5 text-xs leading-relaxed text-brand-muted">
+              This confirms whether the university issued a credential with that number, and what it
+              says. Compare it against the document in front of you. It does not disclose anything
+              else from the holder&apos;s record.
+            </p>
+
+            {byNumber && (
+              <div className={`mt-5 rounded-xl border p-4 ${
+                !byNumber.found
+                  ? 'border-red-300 bg-red-50'
+                  : byNumber.credential?.status === 'revoked'
+                    ? 'border-red-300 bg-red-50'
+                    : 'border-emerald-300 bg-emerald-50'
+              }`}>
+                <p className={`font-sans text-[11px] font-bold uppercase tracking-[0.14em] ${
+                  !byNumber.found || byNumber.credential?.status === 'revoked' ? 'text-red-700' : 'text-emerald-700'
+                }`}>
+                  {!byNumber.found
+                    ? 'Not issued'
+                    : byNumber.credential?.status === 'revoked'
+                      ? 'Revoked'
+                      : byNumber.credential?.status === 'replaced' ? 'Superseded' : 'Verified'}
+                </p>
+                <p className="mt-1.5 text-sm leading-relaxed text-[#2f2838]">{byNumber.note}</p>
+                {byNumber.found && byNumber.credential && (
+                  <dl className="mt-3 space-y-1.5 text-[13px]">
+                    {([
+                      ['Holder', byNumber.credential.holderName],
+                      ['Award', byNumber.credential.award],
+                      ['Classification', byNumber.credential.classification],
+                      ['Programme', byNumber.credential.programme],
+                      ['Issued', byNumber.credential.issuedOn
+                        ? new Date(byNumber.credential.issuedOn).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+                        : null],
+                    ] as [string, string | null | undefined][])
+                      .filter(([, v]) => v)
+                      .map(([k, v]) => (
+                        <div key={k} className="flex justify-between gap-6 border-b border-black/5 pb-1.5">
+                          <dt className="text-brand-muted">{k}</dt>
+                          <dd className="text-right font-semibold text-[#2f2838]">{v}</dd>
+                        </div>
+                      ))}
+                  </dl>
+                )}
+              </div>
+            )}
+          </form>
+        </div>
       )}
       {state === 'unconfigured' && (
         <div className="mt-10 rounded-2xl border border-amber-200 bg-amber-50 p-8 text-left">

@@ -42,6 +42,7 @@ import {
   seedFrom, guillocheRosetteUri, guillocheBandUri, microtextBandUri,
   engravedSealUri, securityGroundUri, ordinalDay, yearInWords,
 } from '@/lib/credentialArt';
+import { wordingForAward } from '@/lib/awards';
 
 export interface CertificateData {
   fullName: string;
@@ -79,6 +80,12 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
   const issued = data.issuedOn ?? new Date();
   const seed = seedFrom(data.credentialId || 'ICOFGU');
   const sec = design.security;
+
+  // The sentence follows the kind of award. The template supplies the house
+  // style; this supplies the three clauses that would otherwise be false on a
+  // diploma ("the Degree of") or meaningless on a doctorate ("with Second Class
+  // Honours"). See awards.ts.
+  const aw = wordingForAward(data.degree);
 
   const given = `${design.wording.given} ${ordinalDay(issued.getDate())} Day of ` +
     `${issued.toLocaleDateString('en-GB', { month: 'long' })}, ${yearInWords(issued.getFullYear())}`;
@@ -238,11 +245,11 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
         <p style={{ ...body(design), margin: '5mm 0 0', maxWidth: '150mm', lineHeight: 1.7 }}>
           {design.wording.authority}
           <br />
-          {design.wording.recognition}
+          {aw.recognition}
         </p>
 
         <p style={{ ...small(design), margin: '5mm 0 0', letterSpacing: '0.3em' }}>
-          {design.wording.confers}
+          {aw.confers}
         </p>
 
         {/* The name. The largest thing on the page by a wide margin — this is
@@ -261,7 +268,7 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
         </p>
 
         <p style={{ ...small(design), margin: '5mm 0 0', letterSpacing: '0.3em' }}>
-          {design.wording.degreeLead}
+          {aw.lead}
         </p>
 
         <p style={{
@@ -276,7 +283,7 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
           {data.degree}
         </p>
 
-        {data.classification && (
+        {aw.classified && data.classification && (
           // No box round it. The rule under the degree carries the eye down; a
           // bordered panel in the middle of a certificate reads as a form field.
           <p style={{ ...body(design), margin: '2.5mm 0 0', fontSize: '14px', fontStyle: 'italic' }}>
