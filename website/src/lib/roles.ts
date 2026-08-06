@@ -170,6 +170,10 @@ export const SYSTEM_CAPABILITIES = [
   'design-credentials',
   'publish-credential-template',
   'revoke-credential',
+  // Held by the three approving offices, and deliberately NOT by the
+  // Superadministrator who designs. An approval you give to your own work is a
+  // countersignature, not a control.
+  'approve-credential-design',
   // The system itself
   'configure-system',
   'manage-academic-session',
@@ -205,7 +209,7 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // institution where the Vice Chancellor can personally admit a student has
   // no separation of duties left to speak of, whatever its org chart says.
   chancellor: ['view-executive-dashboard', 'view-all-faculties', 'view-institutional-finance', 'view-admitted-students', 'monitor-progress'],
-  'vice-chancellor': ['view-executive-dashboard', 'view-all-faculties', 'view-institutional-finance', 'view-admitted-students', 'monitor-progress', 'department-reports'],
+  'vice-chancellor': ['view-executive-dashboard', 'view-all-faculties', 'view-institutional-finance', 'view-admitted-students', 'monitor-progress', 'department-reports', 'approve-credential-design'],
 
   // Directs Finance. Still cannot admit.
   'finance-director': ['verify-payment', 'approve-refund', 'generate-invoice', 'manage-student-accounts', 'view-institutional-finance'],
@@ -250,9 +254,10 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
     'create-student-record',
     'view-admitted-students',
     'process-applications',
+    'approve-credential-design',
   ],
 
-  'academic-office': ['assign-lecturers', 'build-timetable', 'manage-courses'],
+  'academic-office': ['assign-lecturers', 'build-timetable', 'manage-courses', 'approve-credential-design'],
 
   dean: ['view-admitted-students', 'approve-transfers', 'monitor-progress'],
 

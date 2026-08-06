@@ -37,7 +37,7 @@
 
 import React, { forwardRef } from 'react';
 import { UNIVERSITY } from '@/lib/constants';
-import type { CredentialDesign } from '@/lib/credentialTemplate';
+import type { CredentialDesign, Signatory } from '@/lib/credentialTemplate';
 import {
   seedFrom, guillocheRosetteUri, guillocheBandUri, microtextBandUri,
   securityGroundUri, ordinalDay, yearInWords,
@@ -76,7 +76,13 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
   data: CertificateData;
   /** Version number, printed in the foot so a document names its own design. */
   version?: number;
-}>(function CertificateDocument({ design, data, version }, ref) {
+  /**
+   * Studio only. Marks the area kept clear for the hand-affixed wafer so the
+   * designer can see it. Never set when issuing: a keyline printed under a
+   * wafer shows as a ring round its edge.
+   */
+  previewGuides?: boolean;
+}>(function CertificateDocument({ design, data, version, previewGuides }, ref) {
   const [w, h] = PAGE_MM[design.pageSize][design.orientation];
   const issued = data.issuedOn ?? new Date();
   const seed = seedFrom(data.credentialId || 'ICOFGU');
@@ -87,6 +93,24 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
   // diploma ("the Degree of") or meaningless on a doctorate ("with Second Class
   // Honours"). See awards.ts.
   const aw = wordingForAward(data.degree);
+
+  // The signatories divide either side of the seal, as they do on the
+  // university's own certificate: Chancellor and President to the left, Vice
+  // Chancellor and Registrar to the right, with the wafer between them.
+  const half = Math.ceil(design.signatories.length / 2);
+  const leftSigs = design.signatories.slice(0, half);
+  const rightSigs = design.signatories.slice(half);
+  const reserved = design.sealPlacement !== 'printed';
+
+  // Blackletter is set in mixed case, never capitals.
+  //
+  // Uppercase blackletter is close to unreadable — the capitals in a fraktur
+  // face are elaborate display forms meant to open a word, not to stand in a
+  // row of their own. The university's own first certificate sets the name as
+  // "ICOF Global University" for exactly that reason, and forcing capitals here
+  // would produce a title nobody could read at a glance.
+  const blackletter = /unifraktur|fraktur|blackletter|old english|cloister/i
+    .test(design.titleFont ?? '');
 
   const given = `${design.wording.given} ${ordinalDay(issued.getDate())} Day of ` +
     `${issued.toLocaleDateString('en-GB', { month: 'long' })}, ${yearInWords(issued.getFullYear())}`;
@@ -123,18 +147,24 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
       {/* Layer 1 — the guilloché rosette, large and faint, behind the text. */}
       {sec.guilloche && (
         <div style={{
-          position: 'absolute', top: '50%', left: '50%',
+          position: 'absolute',
+          // Raised off centre. The lower middle is kept clear for the wafer, and
+          // a watermark under it would show as a halo round the seal's edge.
+          top: '40%', left: '50%',
           transform: 'translate(-50%, -50%)',
           // Visible as texture, not as decoration competing with the text. Below
           // about 0.2 it disappears entirely on a laser printer, which is where
           // it matters most — a watermark nobody can see is not a watermark.
-          opacity: sec.guillocheOpacity * 0.26,
+          opacity: sec.guillocheOpacity * 0.19,
         }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={guillocheRosetteUri(seed, 520, design.brand, 1)}
             alt=""
-            style={{ width: `${Math.min(w, h) * 0.78}mm`, height: `${Math.min(w, h) * 0.78}mm` }}
+            // Sized and placed to clear the foot. The wafer is affixed in the
+            // middle of that row, and a watermark reaching under it would show
+            // as a halo round the seal's edge.
+            style={{ width: `${Math.min(w, h) * 0.62}mm`, height: `${Math.min(w, h) * 0.62}mm` }}
           />
         </div>
       )}
@@ -245,12 +275,15 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
 
         <h1 style={{
           margin: '2.5mm 0 0',
-          fontSize: '30px',
+          fontFamily: design.titleFont || design.fontFamily,
+          fontSize: blackletter ? '44px' : '30px',
           fontWeight: 400,
-          letterSpacing: '0.16em',
+          // Blackletter is drawn tight; the wide tracking that suits spaced
+          // roman capitals pulls it apart into disconnected shapes.
+          letterSpacing: blackletter ? '0.02em' : '0.16em',
           color: design.brand,
-          textTransform: 'uppercase',
-          lineHeight: 1.1,
+          textTransform: blackletter ? 'none' : 'uppercase',
+          lineHeight: blackletter ? 1.05 : 1.1,
         }}>
           {UNIVERSITY.name}
         </h1>
@@ -326,66 +359,63 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
           display: 'flex',
           alignItems: 'flex-end',
           justifyContent: 'space-between',
-          gap: '8mm',
+          gap: '5mm',
         }}>
           {/* The seal, drawn per document rather than a PNG anyone can download.
               See credentialArt.ts — it is geometry, not a file, so it cannot be
               lifted, and it is vector, so it holds at print resolution. */}
-          {/* The wafer, where the university has always put it. Red, starburst,
-              embossed — the feature a hand reaches for first when someone is
-              deciding whether a document is real. Print cannot reproduce relief;
-              this is the artwork, correctly registered, for a university that
-              applies a real foil wafer over it. */}
-          <div style={{ width: '30mm', flex: '0 0 30mm', textAlign: 'left' }}>
-            {design.showSeal && sec.engravedSeal && (
+          {/* --- Signatures either side, the seal between -----------------
+              This is the arrangement on the university's own certificate:
+              Chancellor and President to the left, Vice Chancellor and
+              Registrar to the right, with the wafer in the middle.
+
+              The middle is left as clear paper. The university affixes a real
+              foil wafer to the hard copy there, and a wafer pressed over
+              printed artwork sits proud of it and shows a halo of whatever was
+              underneath — so nothing is drawn in that area at all, not the
+              watermark, not the guilloché, not a keyline. The dashed marker is
+              a Studio guide and never prints. */}
+          <SignatureColumn design={design} sigs={leftSigs} />
+
+          <div style={{
+            flex: '0 0 38mm',
+            alignSelf: 'stretch',
+            display: 'flex',
+            alignItems: 'flex-end',
+            justifyContent: 'center',
+            paddingBottom: '2mm',
+          }}>
+            {reserved ? (
+              previewGuides ? (
+                <div style={{
+                  width: '32mm', height: '32mm', borderRadius: '50%',
+                  border: `0.4mm dashed ${design.accent}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  textAlign: 'center', fontSize: '6.5px', lineHeight: 1.25,
+                  letterSpacing: '0.06em', color: design.accent,
+                  fontFamily: 'Helvetica, Arial, sans-serif', padding: '2mm',
+                }}>
+                  SPACE RESERVED<br />FOR THE SEAL
+                </div>
+              ) : (
+                <div style={{ width: '32mm', height: '32mm' }} />
+              )
+            ) : (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={waferSealUri(seed, 300, design.sealColour || '#b31217',
                   `${UNIVERSITY.name.toUpperCase()} · `, UNIVERSITY.shortName)}
                 alt=""
-                style={{ width: '27mm', height: '27mm' }}
+                style={{ width: '30mm', height: '30mm' }}
               />
             )}
           </div>
 
-          {/* Four signatories, wrapping into rows.
-              The university's own first certificate carries four — the
-              Chancellor and International Presiding Bishop, the President, the
-              Vice Chancellor and the Registrar. Two of them were missing from
-              this system entirely, and a degree certificate that omits the
-              offices which confer it is not the university's certificate.
-
-              They wrap rather than sit on one line: four across A4 leaves each
-              about 40mm, and "ICOF Chancellor & International Presiding Bishop"
-              does not fit in 40mm. An office abbreviated to fit is an office
-              misnamed. */}
-          <div style={{
-            flex: '1 1 auto',
-            display: 'flex',
-            flexWrap: 'wrap',
-            justifyContent: 'center',
-            alignItems: 'flex-end',
-            gap: '5mm 9mm',
-          }}>
-            {design.signatories.map((s, i) => (
-              <div key={`${s.office}-${i}`} style={{ flex: '0 1 auto', minWidth: '52mm', maxWidth: '72mm' }}>
-                <div style={{
-                  borderTop: `0.3mm solid ${design.ink}`,
-                  paddingTop: '1.6mm',
-                  fontSize: '10.5px',
-                  fontWeight: 700,
-                  color: design.ink,
-                }}>
-                  {s.name || nameForOffice(s.office)}
-                </div>
-                <div style={{ fontSize: '9px', opacity: 0.72, marginTop: '0.5mm', lineHeight: 1.3 }}>{s.office}</div>
-              </div>
-            ))}
-          </div>
+          <SignatureColumn design={design} sigs={rightSigs} />
 
           {/* Verification. The only thing on this page that settles the
-              question, and it is printed as prominently as the seal. */}
-          <div style={{ width: '32mm', flex: '0 0 32mm', textAlign: 'right' }}>
+              question, and printed as prominently as the seal. */}
+          <div style={{ width: '26mm', flex: '0 0 26mm', textAlign: 'right' }}>
             {sec.qr && data.qrSvg ? (
               <div
                 style={{ width: '22mm', height: '22mm', marginLeft: 'auto', background: '#fff', padding: '1mm' }}
@@ -401,7 +431,7 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
                 NOT ISSUED — NO VERIFICATION CODE
               </div>
             ) : null}
-            <p style={{ fontSize: '6.5px', letterSpacing: '0.08em', margin: '1.2mm 0 0', opacity: 0.75 }}>
+            <p style={{ fontSize: '6px', letterSpacing: '0.06em', margin: '1.2mm 0 0', opacity: 0.75 }}>
               VERIFY AT {UNIVERSITY.website.toUpperCase()}/VERIFY
             </p>
           </div>
@@ -423,6 +453,37 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
     </div>
   );
 });
+
+/**
+ * One column of signatories, stacked.
+ *
+ * Stacked rather than side by side because "ICOF Chancellor & International
+ * Presiding Bishop" needs a line to itself at this size, and an office
+ * abbreviated to fit is an office misnamed.
+ */
+function SignatureColumn({ design, sigs }: { design: CredentialDesign; sigs: Signatory[] }) {
+  if (!sigs.length) return <div style={{ flex: '1 1 0' }} />;
+  return (
+    <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '5mm' }}>
+      {sigs.map((s, i) => (
+        <div key={`${s.office}-${i}`}>
+          <div style={{
+            borderTop: `0.3mm solid ${design.ink}`,
+            paddingTop: '1.5mm',
+            fontSize: '10.5px',
+            fontWeight: 700,
+            color: design.ink,
+          }}>
+            {s.name || nameForOffice(s.office)}
+          </div>
+          <div style={{ fontSize: '8.5px', opacity: 0.72, marginTop: '0.4mm', lineHeight: 1.3 }}>
+            {s.office}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 const body = (d: CredentialDesign): React.CSSProperties => ({
   fontSize: '13px',

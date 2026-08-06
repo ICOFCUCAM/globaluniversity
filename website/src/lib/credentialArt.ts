@@ -102,35 +102,72 @@ export function guillocheRosette(
   //   x = (A − b)·cos t + d·cos(((A − b)/b)·t)
   //   y = (A − b)·sin t − d·sin(((A − b)/b)·t)
   //
-  // Two things have to be right or it does not look like a rosette.
+  // Three things have to be right or it does not look like engine turning.
   //
   // The petal count (A − b)/b must be a WHOLE NUMBER, or the curve never closes
-  // and the figure degenerates into a starburst. So the petal count is chosen
-  // first, as an integer, and b is derived from it.
+  // and the figure degenerates into a starburst.
   //
-  // And one curve is not a rosette. What makes the engraving on a share
-  // certificate look the way it does is a stack of the same curve with the pen
-  // offset stepped a little each time: the curves interfere, and the moiré
-  // between them is the figure. Three curves look like a scribble. Sixteen look
-  // like a guilloché.
-  const petals = 7 + Math.floor(r() * 7);
-  const curves = 16;
-  const A = R * 0.96;
-  const b = A / (petals + 1);
-  const steps = petals * 110;
+  // One curve is not a rosette. What makes the engraving on a share certificate
+  // look the way it does is a stack of the same curve with the pen offset
+  // stepped a little each time: the curves interfere, and the moiré between
+  // them is the figure.
+  //
+  // And one BAND is not a rosette either — which is what this drew at first. A
+  // single ring of petals reads as a decorative motif; a real guilloché is
+  // several figures of different periodicity laid over one another at different
+  // radii, so the interference happens between the bands as well as within
+  // them. Three bands, counter-rotated, with a fine radial ground behind: the
+  // pattern stops being something you could sketch and starts being something
+  // you would have to solve.
+  const bands = [
+    { scale: 0.98, petals: 7 + Math.floor(r() * 5), curves: 14, phase: 0 },
+    { scale: 0.72, petals: 11 + Math.floor(r() * 6), curves: 12, phase: Math.PI / 5 },
+    { scale: 0.46, petals: 5 + Math.floor(r() * 4), curves: 10, phase: Math.PI / 3 },
+  ];
 
-  for (let n = 0; n < curves; n += 1) {
-    const d = b * (0.45 + (n / (curves - 1)) * 1.25);
-    const pts: string[] = [];
-    for (let i = 0; i <= steps; i += 1) {
-      const t = (i / steps) * Math.PI * 2 * (petals + 1);
-      const x = R + (A - b) * Math.cos(t) + d * Math.cos(((A - b) / b) * t);
-      const y = R + (A - b) * Math.sin(t) - d * Math.sin(((A - b) / b) * t);
-      pts.push(`${x.toFixed(2)},${y.toFixed(2)}`);
+  // The ground: a fine radial engine-turn, the plain lathe work that sits under
+  // the figures on a banknote. Cheap to draw, very tedious to fake by hand.
+  const spokes = 180;
+  const groundPts: string[] = [];
+  for (let i = 0; i < spokes; i += 1) {
+    const a = (i / spokes) * Math.PI * 2;
+    const r0 = R * 0.30;
+    const r1 = R * (0.90 + Math.sin(a * 9) * 0.05);
+    groundPts.push(
+      `M${(R + Math.cos(a) * r0).toFixed(2)},${(R + Math.sin(a) * r0).toFixed(2)} ` +
+      `L${(R + Math.cos(a) * r1).toFixed(2)},${(R + Math.sin(a) * r1).toFixed(2)}`,
+    );
+  }
+  paths.push(
+    `<path d="${groundPts.join(' ')}" fill="none" stroke="${colour}" stroke-width="0.18" ` +
+    `stroke-opacity="${(opacity * 0.34).toFixed(3)}"/>`,
+  );
+
+  for (const band of bands) {
+    const A = R * band.scale;
+    const b = A / (band.petals + 1);
+    const steps = band.petals * 110;
+    for (let n = 0; n < band.curves; n += 1) {
+      const d = b * (0.42 + (n / (band.curves - 1)) * 1.28);
+      const pts: string[] = [];
+      for (let i = 0; i <= steps; i += 1) {
+        const t = (i / steps) * Math.PI * 2 * (band.petals + 1) + band.phase;
+        const x = R + (A - b) * Math.cos(t) + d * Math.cos(((A - b) / b) * t);
+        const y = R + (A - b) * Math.sin(t) - d * Math.sin(((A - b) / b) * t);
+        pts.push(`${x.toFixed(2)},${y.toFixed(2)}`);
+      }
+      paths.push(
+        `<polyline points="${pts.join(' ')}" fill="none" stroke="${colour}" ` +
+        `stroke-width="0.26" stroke-opacity="${(opacity * 0.62).toFixed(3)}"/>`,
+      );
     }
+  }
+
+  // Two concentric hairlines to close the figure, as a lathe would.
+  for (const k of [0.995, 0.965]) {
     paths.push(
-      `<polyline points="${pts.join(' ')}" fill="none" stroke="${colour}" ` +
-      `stroke-width="0.3" stroke-opacity="${(opacity * 0.75).toFixed(3)}"/>`,
+      `<circle cx="${R}" cy="${R}" r="${(R * k).toFixed(2)}" fill="none" stroke="${colour}" ` +
+      `stroke-width="0.3" stroke-opacity="${(opacity * 0.7).toFixed(3)}"/>`,
     );
   }
 

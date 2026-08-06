@@ -267,7 +267,7 @@ export default function CredentialStudio() {
 
   const preview = kind === 'transcript'
     ? <TranscriptDocument design={design} data={SAMPLE_TRANSCRIPT} />
-    : <CertificateDocument design={design} data={SAMPLE} />;
+    : <CertificateDocument design={design} data={SAMPLE} previewGuides />;
 
   return (
     <div className="space-y-5">

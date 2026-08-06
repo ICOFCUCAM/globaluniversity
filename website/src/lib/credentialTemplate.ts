@@ -82,6 +82,20 @@ export interface CredentialDesign {
   sealColour: string;
 
   /**
+   * Whether the seal is printed or left as clear paper for a real one.
+   *
+   * 'reserved' is the university's practice: a foil wafer is affixed by hand to
+   * the hard copy, in the middle, between the two columns of signatures. So the
+   * document must leave that area genuinely clear — no text, no watermark, no
+   * guilloché — because a wafer pressed over printed artwork sits proud of it
+   * and shows a halo of whatever was underneath.
+   *
+   * 'printed' draws the wafer instead, for a copy that will never be sealed by
+   * hand — a duplicate sent electronically, or a specimen.
+   */
+  sealPlacement: 'reserved' | 'printed';
+
+  /**
    * Border treatment. `none` suits transcripts; `ornate` is the engraved gilt
    * frame taken from the university's own first certificate, and is what a
    * degree certificate should carry.
@@ -186,8 +200,9 @@ export const DEFAULT_CERTIFICATE_DESIGN: CredentialDesign = {
   ink: '#241c30',
   paper: '#fffdf5',
   fontFamily: "Georgia, 'Times New Roman', Times, serif",
-  titleFont: "Georgia, 'Times New Roman', Times, serif",
+  titleFont: "'UnifrakturMaguntia', 'Old English Text MT', Georgia, serif",
   sealColour: '#b31217',
+  sealPlacement: 'reserved',
   border: 'ornate',
   borderWidthMm: 11,
   sealOpacity: 0.05,
@@ -250,13 +265,14 @@ export const TITLE_FONTS: { label: string; stack: string; available: boolean; no
   },
   {
     label: 'Blackletter — as the 2011 certificate',
-    stack: "'UnifrakturMaguntia', 'Old English Text MT', 'Cloister Black', 'Lucida Blackletter', Georgia, serif",
-    available: false,
+    stack: "'UnifrakturMaguntia', 'Old English Text MT', 'Cloister Black', Georgia, serif",
+    available: true,
     note:
-      'The face on the university’s first certificate. No blackletter font ships with this ' +
-      'application, so this renders only on a machine that already has one — on every other it ' +
-      'silently falls back to the serif. To use it properly the university must supply a licensed ' +
-      'font file to embed; until then this is a preview of an intention, not a setting.',
+      'The face on the university’s first certificate. UnifrakturMaguntia, under the SIL Open ' +
+      'Font License, bundled with the application and served from the university’s own domain — ' +
+      'so it renders identically on every machine and needs no network. Set in mixed case: ' +
+      'blackletter capitals are close to unreadable, which is why the 2011 certificate does not ' +
+      'use them either.',
   },
 ];
 

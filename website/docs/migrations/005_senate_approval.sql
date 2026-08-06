@@ -4,22 +4,21 @@
 -- Run after 004_credential_register.sql. Idempotent; destroys nothing.
 --
 -- ---------------------------------------------------------------------------
--- DO NOT RUN THIS YET, AND DO NOT TREAT IT AS GOVERNANCE UNTIL YOU DO.
+-- SAFE TO RUN. The application half is built:
 --
--- This file is the schema half: the lifecycle column, the approvals table, the
--- immutability guard and the publication gate. The application half is not
--- built — there are no routes to submit a design for approval or to record an
--- office's decision, and the existing publish route INSERTS a new template row
--- rather than updating one, so the publication trigger below never fires for it.
+--   POST  /api/admin/credential-template          submits a design (no longer
+--                                                 publishes — it writes the new
+--                                                 version inactive)
+--   PATCH /api/admin/credential-template          { decision } records an
+--                                                 office's approval, or
+--                                                 { publish: true } brings an
+--                                                 approved design into force
 --
--- Running this today therefore changes nothing about who can publish. It would
--- create the appearance of an approval chain with no chain, which is worse than
--- having neither — an administrator reading the schema would conclude the
--- control exists.
+-- Publishing is an UPDATE now, so the gate in section 3 actually fires.
 --
--- Run it when the submit and approve routes land. Until then it is a design
--- committed for review, and it is marked as such rather than left out, because
--- the next person to pick this up needs the shape as much as the code.
+-- BEFORE YOU RUN IT, appoint the three approving offices — see the note at the
+-- foot of this file. Without them no design can ever be published again, and
+-- the certificate currently in force will simply stay in force.
 -- ---------------------------------------------------------------------------
 --
 -- ---------------------------------------------------------------------------
