@@ -5,6 +5,7 @@
 //   'timetable-slot'  — one scheduled class
 //   'attendance'      — one attendance record (slot id + matric + status)
 import React, { useEffect, useMemo, useState } from 'react';
+import { write } from '@/lib/write';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { CalendarDays, Plus, UserCheck, Trash2 } from 'lucide-react';
@@ -71,12 +72,12 @@ export default function TimetableModule() {
   async function addSlot(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
-    await supabase.from('documents').insert({
+    await write(supabase.from('documents').insert({
       file_name: `${form.day} ${form.start} · ${form.course}`,
       file_url: enc(form),
       file_type: 'application/json',
       document_type: 'timetable-slot',
-    });
+    }), 'save the timetable entry');
     setBusy(false);
     setShowNew(false);
     setForm({ day: 'Monday', start: '08:00', end: '10:00', course: '', lecturer: '', room: '' });
@@ -86,12 +87,12 @@ export default function TimetableModule() {
   async function mark(status: 'present' | 'absent') {
     if (!markFor || !matric.trim()) return;
     setBusy(true);
-    await supabase.from('documents').insert({
+    await write(supabase.from('documents').insert({
       file_name: `${markFor.course} · ${matric} · ${status}`,
       file_url: enc({ slotId: markFor.id, matric: matric.trim().toUpperCase(), status }),
       file_type: 'application/json',
       document_type: 'attendance',
-    });
+    }), 'save the timetable entry');
     setBusy(false);
     setMatric('');
     load();
@@ -178,7 +179,7 @@ export default function TimetableModule() {
                             <button
                               aria-label="Remove class"
                               onClick={async () => {
-                                await supabase.from('documents').delete().eq('id', s.id);
+                                await write(supabase.from('documents').delete().eq('id', s.id), 'save the timetable entry');
                                 load();
                               }}
                               className="rounded-lg bg-red-50 p-1.5 text-red-600"

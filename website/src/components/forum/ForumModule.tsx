@@ -4,6 +4,7 @@
 // Stored on the shared documents table: 'forum-thread' and 'forum-reply'
 // (reply file_name carries the parent thread id).
 import React, { useEffect, useState } from 'react';
+import { write } from '@/lib/write';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { MessageSquare, Plus, CornerDownRight, Send } from 'lucide-react';
@@ -78,12 +79,12 @@ export default function ForumModule() {
   async function createThread(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
-    await supabase.from('documents').insert({
+    await write(supabase.from('documents').insert({
       file_name: `${form.course} :: ${form.title}`,
       file_url: enc({ ...form, author }),
       file_type: 'application/json',
       document_type: 'forum-thread',
-    });
+    }), 'post to the forum');
     setBusy(false);
     setShowNew(false);
     setForm({ course: '', title: '', body: '' });
@@ -93,12 +94,12 @@ export default function ForumModule() {
   async function postReply(threadId: string) {
     if (!replyText.trim()) return;
     setBusy(true);
-    await supabase.from('documents').insert({
+    await write(supabase.from('documents').insert({
       file_name: `${threadId}::reply`,
       file_url: enc({ body: replyText, author }),
       file_type: 'application/json',
       document_type: 'forum-reply',
-    });
+    }), 'post to the forum');
     setBusy(false);
     setReplyText('');
     load();

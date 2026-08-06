@@ -4,6 +4,7 @@
 // Stored on the shared documents table (document_type 'announcement')
 // until a dedicated table is provisioned; payload is a data-URL JSON.
 import React, { useEffect, useState } from 'react';
+import { write } from '@/lib/write';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Megaphone, Plus, Pin, Trash2 } from 'lucide-react';
@@ -64,12 +65,12 @@ export default function AnnouncementModule() {
     e.preventDefault();
     setBusy(true);
     const payload = btoa(unescape(encodeURIComponent(JSON.stringify(form))));
-    await supabase.from('documents').insert({
+    await write(supabase.from('documents').insert({
       file_name: `${form.audience} · ${form.title}`,
       file_url: `data:application/json;base64,${payload}`,
       file_type: 'application/json',
       document_type: 'announcement',
-    });
+    }), 'save the announcement');
     setBusy(false);
     setShowNew(false);
     setForm({ title: '', body: '', audience: 'All' });
@@ -137,7 +138,7 @@ export default function AnnouncementModule() {
                   <button
                     aria-label={n.pinned ? 'Unpin' : 'Pin'}
                     onClick={async () => {
-                      await supabase.from('documents').update({ verified: !n.pinned }).eq('id', n.id);
+                      await write(supabase.from('documents').update({ verified: !n.pinned }).eq('id', n.id), 'save the announcement');
                       load();
                     }}
                     className={`rounded-lg p-2 ${n.pinned ? 'bg-[#f7dc79] text-[#422e59]' : 'bg-gray-100 text-[#6b6076] dark:text-[#9c93ad]'}`}
@@ -147,7 +148,7 @@ export default function AnnouncementModule() {
                   <button
                     aria-label="Delete announcement"
                     onClick={async () => {
-                      await supabase.from('documents').delete().eq('id', n.id);
+                      await write(supabase.from('documents').delete().eq('id', n.id), 'save the announcement');
                       load();
                     }}
                     className="rounded-lg bg-red-50 p-2 text-red-600"

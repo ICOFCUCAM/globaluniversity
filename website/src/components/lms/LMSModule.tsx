@@ -1,5 +1,6 @@
 import { SampleDataNotice } from '@/components/ui/portal';
 import React, { useEffect, useState } from 'react';
+import { write } from '@/lib/write';
 import { supabase } from '@/lib/supabase';
 import { lmsMaterials } from '@/lib/sampleData';
 import {
@@ -49,12 +50,12 @@ export default function LMSModule() {
 
   async function scheduleClass(e: React.FormEvent) {
     e.preventDefault();
-    await supabase.from('documents').insert({
+    await write(supabase.from('documents').insert({
       file_name: `${sched.course} · ${sched.title} · ${sched.time}`,
       file_url: `data:application/json;base64,${btoa(unescape(encodeURIComponent(JSON.stringify(sched))))}`,
       file_type: 'application/json',
       document_type: 'live-class',
-    });
+    }), 'upload the material');
     setShowSchedule(false);
     setSched({ course: '', title: '', lecturer: '', time: '', link: '', status: 'upcoming', attendees: 0 });
     loadClasses();

@@ -4,6 +4,7 @@
 // randomized paper generation from them. Stored on the shared documents
 // table (document_type 'exam-question') until a dedicated table exists.
 import React, { useEffect, useMemo, useState } from 'react';
+import { write } from '@/lib/write';
 import { supabase } from '@/lib/supabase';
 import { Database, Plus, Shuffle, Trash2, Printer } from 'lucide-react';
 
@@ -70,12 +71,12 @@ export default function QuestionBank() {
     e.preventDefault();
     if (form.options.filter((o) => o.trim()).length < 2) return;
     setBusy(true);
-    await supabase.from('documents').insert({
+    await write(supabase.from('documents').insert({
       file_name: `${form.course} · ${form.topic || 'General'} · ${form.text.slice(0, 60)}`,
       file_url: enc(form),
       file_type: 'application/json',
       document_type: 'exam-question',
-    });
+    }), 'save the question');
     setBusy(false);
     setShowNew(false);
     setForm({ course: form.course, topic: '', text: '', options: ['', '', '', ''], answer: 0, difficulty: 'medium' });
@@ -185,7 +186,7 @@ export default function QuestionBank() {
               <button
                 aria-label="Delete question"
                 onClick={async () => {
-                  await supabase.from('documents').delete().eq('id', q.id);
+                  await write(supabase.from('documents').delete().eq('id', q.id), 'save the question');
                   load();
                 }}
                 className="shrink-0 rounded-lg bg-red-50 p-2 text-red-600"

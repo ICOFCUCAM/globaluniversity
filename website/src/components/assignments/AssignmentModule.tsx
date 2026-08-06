@@ -5,6 +5,7 @@
 //   brief:      document_type 'assignment-brief', file_url = data-URL JSON
 //   submission: document_type 'assignment-sub',   file_url = data-URL of work
 import React, { useEffect, useState } from 'react';
+import { write } from '@/lib/write';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { ClipboardList, Plus, Download, CheckCircle2, Clock } from 'lucide-react';
@@ -59,12 +60,12 @@ export default function AssignmentModule() {
     e.preventDefault();
     setBusy(true);
     const payload = btoa(unescape(encodeURIComponent(JSON.stringify(brief))));
-    await supabase.from('documents').insert({
+    await write(supabase.from('documents').insert({
       file_name: `${brief.course} — ${brief.title} — due ${brief.due}`,
       file_url: `data:application/json;base64,${payload}`,
       file_type: 'application/json',
       document_type: 'assignment-brief',
-    });
+    }), 'save the assignment');
     setBusy(false);
     setShowNew(false);
     setBrief({ course: '', title: '', due: '', instructions: '' });
@@ -79,12 +80,12 @@ export default function AssignmentModule() {
       return;
     }
     setBusy(true);
-    await supabase.from('documents').insert({
+    await write(supabase.from('documents').insert({
       file_name: `${matric} ⟶ ${submitFor.file_name} ⟶ ${file.name}`,
       file_url: await toDataUrl(file),
       file_type: file.type,
       document_type: 'assignment-sub',
-    });
+    }), 'save the assignment');
     setBusy(false);
     setSubmitFor(null);
     setFile(null);
@@ -170,7 +171,7 @@ export default function AssignmentModule() {
                 </a>
                 <button
                   onClick={async () => {
-                    await supabase.from('documents').update({ verified: !s.verified }).eq('id', s.id);
+                    await write(supabase.from('documents').update({ verified: !s.verified }).eq('id', s.id), 'save the assignment');
                     load();
                   }}
                   className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold ${
