@@ -197,6 +197,23 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
     <div
       id={DOC_ID}
       ref={ref}
+      // The document announces what it is and what it says.
+      //
+      // It was a stack of unlabelled divs: a screen reader met an image with no
+      // alt, then a heading, then loose paragraphs, and could not tell that any
+      // of it was a certificate — let alone whose. Graduates read their own
+      // credentials, and some of them do it with a screen reader.
+      //
+      // `article` rather than a bare region: it is a self-contained document,
+      // which is precisely what the role means.
+      role="article"
+      lang="en"
+      aria-label={
+        `${data.duplicateOf ? 'Duplicate degree certificate' : 'Degree certificate'} of ` +
+        `${UNIVERSITY.name}, conferring ${data.degree}` +
+        `${aw.classified && data.classification ? ` with ${data.classification}` : ''}` +
+        ` upon ${data.fullName}. Credential number ${data.credentialId}.`
+      }
       style={{
         width: `${w}mm`,
         height: `${h}mm`,
@@ -216,7 +233,7 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
       {/* Layer 0 — the ground. Not a flat fill: a fine lattice with the
           university's initials worked into it, which photocopiers dither badly. */}
       {sec.securityGround && (
-        <div style={{
+        <div aria-hidden="true" style={{
           position: 'absolute', inset: 0,
           backgroundImage: `url("${securityGroundUri(seed, 72, design.brand, UNIVERSITY.shortName, 0.05)}")`,
           backgroundRepeat: 'repeat',
@@ -251,7 +268,7 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
 
       {/* Layer 1 — the guilloché rosette, large and faint, behind the text. */}
       {sec.guilloche && (
-        <div style={{
+        <div aria-hidden="true" style={{
           position: 'absolute',
           // Raised off centre. The lower middle is kept clear for the wafer, and
           // a watermark under it would show as a halo round the seal's edge.
@@ -286,7 +303,7 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
           taken at an angle; re-using it would embed somebody's snapshot of a
           real graduate's certificate into every document the university issues. */}
       {design.border === 'ornate' && (
-        <div style={{
+        <div aria-hidden="true" style={{
           position: 'absolute', inset: 0,
           backgroundImage: `url("${ornateFrameUri(w, h, design.accent, '#8a6d1f', design.borderWidthMm)}")`,
           backgroundSize: '100% 100%',
@@ -341,7 +358,7 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
           repeats this certificate's own id so a band lifted from a genuine scan
           carries the original's number into the forgery. */}
       {sec.microtextBorder && (
-        <div style={{
+        <div aria-hidden="true" style={{
           position: 'absolute',
           left: `${design.borderWidthMm + 8.5}mm`,
           right: `${design.borderWidthMm + 8.5}mm`,
@@ -362,7 +379,7 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
           asks for it: an issued certificate must never carry it, and a preview
           must never be without it. */}
       {specimen && (
-        <div style={{
+        <div role="note" aria-label="Specimen — not an issued credential" style={{
           position: 'absolute', inset: 0, zIndex: 5,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           pointerEvents: 'none',
