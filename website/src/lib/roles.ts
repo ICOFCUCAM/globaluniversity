@@ -213,8 +213,19 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   hod: ['assign-lecturers-to-courses', 'approve-course-allocation', 'monitor-teaching', 'department-reports', 'view-registered-students', 'view-admitted-students'],
   'programme-coordinator': ['monitor-teaching', 'department-reports', 'view-registered-students', 'manage-courses'],
 
-  // Prepares applications for the Registrar. Cannot decide one.
-  'admissions-officer': ['process-applications', 'request-documents', 'track-application'],
+  // The Admissions Office makes the final assessment and admits.
+  //
+  // It used to only prepare files for the Registrar. The university has since
+  // separated the two acts: the Registrar verifies that the record is complete
+  // and correct and forwards it; this office assesses it and admits.
+  //
+  // It still cannot verify a payment, and it cannot forward a record to itself
+  // — 'assign-programme' and 'create-student-record' stay with the Registrar,
+  // so an application cannot enter this queue except through that office.
+  'admissions-officer': [
+    'process-applications', 'request-documents', 'track-application',
+    'admit-student', 'reject-application', 'defer-admission', 'view-admitted-students',
+  ],
 
   'library-staff': ['manage-library'],
   'student-affairs': ['manage-hostel', 'manage-student-welfare'],
@@ -227,6 +238,9 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
 
   // Cannot edit payments. 'verify-payment' and 'approve-refund' are absent.
   registrar: [
+    // Retained: the Registrar's own approve route still holds this, and the
+    // university may want a single-office fallback if the Admissions Office is
+    // unstaffed. The pipeline gate is the record's status, not this list.
     'admit-student',
     'reject-application',
     'request-documents',

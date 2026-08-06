@@ -1,5 +1,12 @@
 -- ===========================================================================
--- ICOF Global University — FIX: applications never reached the Finance desk
+-- ICOF Global University — the admissions pipeline: reads, writes and gates
+--
+-- Two things in one file, because they are the same subject and running one
+-- without the other leaves the pipeline half-wired:
+--
+--   1. The fix for applications never reaching the Finance desk.
+--   2. The three-office pipeline — Finance, Registrar, Admissions Office —
+--      with each office's permitted moves enforced in the database.
 --
 -- Run this in the Supabase SQL editor. It is small, idempotent, and safe to
 -- run on a database that already has 000_complete.sql applied.
@@ -118,7 +125,11 @@ begin
     end if;
   end if;
 
-  -- Decision fields: the Registrar only.
+  -- Decision fields: the two offices that decide, and nobody else.
+  --
+  -- The Registrar records the verification and forwards; the Admissions Office
+  -- records the admission. Finance appears in neither list, which is the point
+  -- — the office that takes the money never writes a decision.
   if (new.decision_reason      is distinct from old.decision_reason)
      or (new.decided_by          is distinct from old.decided_by)
      or (new.decided_at          is distinct from old.decided_at)
@@ -126,16 +137,38 @@ begin
      or (new.admission_conditions is distinct from old.admission_conditions)
      or (new.account_created_at  is distinct from old.account_created_at)
   then
-    if actor <> 'registrar' then
-      raise exception 'only the Office of the Registrar may record an admission decision';
+    if actor not in ('registrar', 'admissions-officer') then
+      raise exception 'only the Registrar or the Admissions Office may record a decision';
     end if;
   end if;
 
   -- `status` moves through the pipeline, and which move is allowed depends on
-  -- who is making it. Finance may only move an application to fee_paid.
+  -- who is making it. Three offices, three permitted moves, and no office can
+  -- make another's.
   if new.status is distinct from old.status then
+    -- Finance registers the fee and nothing else.
     if actor in ('finance', 'finance-director') and new.status <> 'fee_paid' then
       raise exception 'the Finance office may only move an application to fee_paid';
+    end if;
+
+    -- The Registrar verifies the record and forwards it, or asks for documents,
+    -- or declines. It does not admit: 'approved' and 'conditional' are the
+    -- Admissions Office's, and this is what stops the Registrar bypassing them.
+    if actor = 'registrar'
+       and new.status not in ('registrar_approved', 'documents_required', 'rejected', 'deferred')
+    then
+      raise exception 'the Registrar verifies and forwards; admitting belongs to the Admissions Office';
+    end if;
+
+    -- The Admissions Office admits, and only from a record the Registrar has
+    -- forwarded. An application that skipped the Registrar cannot be admitted.
+    if actor = 'admissions-officer' then
+      if new.status not in ('approved', 'conditional', 'rejected', 'deferred') then
+        raise exception 'the Admissions Office may admit, decline or defer';
+      end if;
+      if new.status in ('approved', 'conditional') and old.status <> 'registrar_approved' then
+        raise exception 'this record has not been verified and forwarded by the Registrar';
+      end if;
     end if;
   end if;
 

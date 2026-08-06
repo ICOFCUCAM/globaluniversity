@@ -652,6 +652,110 @@ create trigger profiles_guard_privileges
 
 
 -- ===========================================================================
+-- 10b. THE ADMISSIONS PIPELINE — three offices, three permitted moves
+--
+-- Finance registers the fee. The Registrar verifies the record and forwards
+-- it. The Admissions Office assesses and admits. No office can make another
+-- office's move, and the Admissions Office cannot admit a record the Registrar
+-- has not forwarded.
+--
+-- RLS cannot restrict columns, so this is a trigger — the same technique as
+-- section 10.
+-- ===========================================================================
+
+create or replace function guard_admissions_separation() returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  actor text;
+begin
+  -- Server routes hold the service-role key and have already checked the
+  -- caller's capability in application code; this guard is for the browser.
+  if current_user not in ('authenticated', 'anon') then
+    return new;
+  end if;
+
+  actor := auth_role();
+
+  if actor in ('superadmin', 'admin') then
+    return new;
+  end if;
+
+  -- Payment fields: Finance only.
+  if (new.payment_status    is distinct from old.payment_status)
+     or (new.fee_reference     is distinct from old.fee_reference)
+     or (new.fee_amount        is distinct from old.fee_amount)
+     or (new.fee_currency      is distinct from old.fee_currency)
+     or (new.fee_registered_by is distinct from old.fee_registered_by)
+     or (new.fee_registered_at is distinct from old.fee_registered_at)
+  then
+    if actor not in ('finance', 'finance-director') then
+      raise exception 'only the Finance office may register or alter a payment';
+    end if;
+  end if;
+
+  -- Decision fields: the two offices that decide, and nobody else.
+  --
+  -- The Registrar records the verification and forwards; the Admissions Office
+  -- records the admission. Finance appears in neither list, which is the point
+  -- — the office that takes the money never writes a decision.
+  if (new.decision_reason      is distinct from old.decision_reason)
+     or (new.decided_by          is distinct from old.decided_by)
+     or (new.decided_at          is distinct from old.decided_at)
+     or (new.student_number      is distinct from old.student_number)
+     or (new.admission_conditions is distinct from old.admission_conditions)
+     or (new.account_created_at  is distinct from old.account_created_at)
+  then
+    if actor not in ('registrar', 'admissions-officer') then
+      raise exception 'only the Registrar or the Admissions Office may record a decision';
+    end if;
+  end if;
+
+  -- `status` moves through the pipeline, and which move is allowed depends on
+  -- who is making it. Three offices, three permitted moves, and no office can
+  -- make another's.
+  if new.status is distinct from old.status then
+    -- Finance registers the fee and nothing else.
+    if actor in ('finance', 'finance-director') and new.status <> 'fee_paid' then
+      raise exception 'the Finance office may only move an application to fee_paid';
+    end if;
+
+    -- The Registrar verifies the record and forwards it, or asks for documents,
+    -- or declines. It does not admit: 'approved' and 'conditional' are the
+    -- Admissions Office's, and this is what stops the Registrar bypassing them.
+    if actor = 'registrar'
+       and new.status not in ('registrar_approved', 'documents_required', 'rejected', 'deferred')
+    then
+      raise exception 'the Registrar verifies and forwards; admitting belongs to the Admissions Office';
+    end if;
+
+    -- The Admissions Office admits, and only from a record the Registrar has
+    -- forwarded. An application that skipped the Registrar cannot be admitted.
+    if actor = 'admissions-officer' then
+      if new.status not in ('approved', 'conditional', 'rejected', 'deferred') then
+        raise exception 'the Admissions Office may admit, decline or defer';
+      end if;
+      if new.status in ('approved', 'conditional') and old.status <> 'registrar_approved' then
+        raise exception 'this record has not been verified and forwarded by the Registrar';
+      end if;
+    end if;
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists students_guard_separation on students;
+create trigger students_guard_separation
+  before update on students
+  for each row execute function guard_admissions_separation();
+
+
+
+
+-- ===========================================================================
 -- 11. THE LAST SUPERADMINISTRATOR CANNOT BE SUSPENDED OR DEMOTED
 --
 -- Not a rail against clumsiness — a governance one. An institution whose only

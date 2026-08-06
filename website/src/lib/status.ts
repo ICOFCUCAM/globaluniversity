@@ -29,6 +29,10 @@ export type UniversalStatus =
   | 'payment-verified'
   | 'registrar-reviewing'
   | 'documents-required'
+  // The Registrar has verified the record and passed it on. The applicant is
+  // not admitted at this point — the Admissions Office makes that decision,
+  // and until it does, nobody should describe this person as admitted.
+  | 'awaiting-admissions'
   | 'approved'
   | 'conditional'
   | 'rejected'
@@ -114,6 +118,21 @@ export const STATUSES: Record<UniversalStatus, StatusMeta> = {
       'The Registrar has asked the applicant for further documents. The record stays in the Registrar’s queue so an applicant who never responds remains visible.',
     chip: 'bg-purple-50 text-purple-700 ring-1 ring-purple-200',
     dot: 'bg-purple-500',
+  },
+  // Indigo, and deliberately not green. Green is `approved`; an applicant at
+  // this stage has been cleared by the Registrar, not admitted. Only the
+  // Admissions Office admits, and until it does nobody should describe this
+  // person as a student.
+  'awaiting-admissions': {
+    key: 'awaiting-admissions',
+    label: 'Awaiting Admissions Office',
+    colour: 'Indigo',
+    order: 7,
+    terminal: false,
+    meaning:
+      'The Registrar has verified the record and forwarded it to the Admissions Office, which makes the final assessment and admits.',
+    chip: 'bg-indigo-50 text-indigo-800 ring-1 ring-indigo-200',
+    dot: 'bg-indigo-500',
   },
   approved: {
     key: 'approved',
@@ -202,6 +221,8 @@ export function toUniversal(stored: string | null | undefined): UniversalStatus 
       return 'registrar-reviewing';
     case 'documents_required':
       return 'documents-required';
+    case 'registrar_approved':
+      return 'awaiting-admissions';
     case 'approved':
     case 'active':
       return 'approved';

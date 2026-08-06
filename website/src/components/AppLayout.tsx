@@ -13,6 +13,7 @@ import StudentDashboard from './dashboard/StudentDashboard';
 import LecturerDashboard from './dashboard/LecturerDashboard';
 import StudentManagement from './students/StudentManagement';
 import AdmissionsDesk from './admissions/AdmissionsDesk';
+import AdmissionsOffice from './admissions/AdmissionsOffice';
 import { isEnrolledRole } from '@/lib/roles';
 import { labelForView } from '@/lib/portalNav';
 import { UNIVERSITY } from '@/lib/constants';
@@ -164,6 +165,8 @@ export default function AppLayout() {
         return <AdmissionsDesk desk="finance" />;
       case 'admissions-registrar':
         return <AdmissionsDesk desk="registrar" />;
+      case 'admissions-office':
+        return <AdmissionsOffice />;
       case 'students':
         return <StudentManagement onNavigate={setCurrentView} />;
       case 'lecturers':

@@ -12,7 +12,7 @@ import type { ViewType, UserRole } from './types';
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen, ClipboardList,
   FileText, Award, Monitor, PenTool, FolderOpen, BarChart3,
-  Settings, Shield, BookMarked, Wallet, Stamp, UserCog, Palette,
+  Settings, Shield, BookMarked, Wallet, Stamp, UserCog, Palette, Inbox,
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -69,6 +69,7 @@ export const menuGroups: MenuGroup[] = [
     items: [
       { id: 'admissions-finance', label: 'Finance desk', icon: <Wallet size={18} />, roles: ['superadmin', 'admin', 'finance'] },
       { id: 'admissions-registrar', label: 'Registrar desk', icon: <Stamp size={18} />, roles: ['superadmin', 'admin', 'registrar'] },
+      { id: 'admissions-office', label: 'Admissions Office', icon: <Inbox size={18} />, roles: ['superadmin', 'admin', 'admissions-officer'] },
       { id: 'students', label: 'Students', icon: <Users size={18} />, roles: ['superadmin', 'admin', 'registrar', 'admissions-officer', 'finance', 'finance-director', 'dean'] },
     ],
   },

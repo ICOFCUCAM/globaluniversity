@@ -1,0 +1,441 @@
+// ---------------------------------------------------------------------------
+// The admission package.
+//
+// One document, emailed to the applicant's own address the moment the
+// Admissions Office admits them. It is the only thing many of them will have
+// from the university until they arrive, and for an international applicant it
+// is the document they take to an embassy — so it has to stand on its own, with
+// nothing assumed and nothing to look up.
+//
+// WHAT IS IN IT, AND WHY EACH PART EARNS ITS PLACE:
+//
+//   1. The admission letter, signed by the Head of Admissions. The formal
+//      offer. Everything else is annexed to it.
+//   2. The conditions of the offer — the specific ones attached to this
+//      applicant, if any, with dates.
+//   3. Terms of study, in two versions: on-campus and online. The applicant's
+//      own mode is given first and in full; the other is present but marked,
+//      because students transfer between modes and then discover the rules
+//      changed underneath them.
+//   4. Fees and payment, with the band the applicant falls into named.
+//   5. The regulations they are agreeing to: grading, attendance, academic
+//      integrity, and the disciplinary and appeals route.
+//   6. What to do next, dated.
+//
+// WHAT IS DELIBERATELY NOT IN IT: any figure the university has not published.
+// The fee band is described and pointed at the published schedule rather than
+// quoted, because a wrong amount in an admission letter is a contractual
+// problem, not a typo.
+//
+// The letter is generated as HTML rather than PDF because no PDF toolchain is
+// installed in this deployment, and an HTML letter that prints correctly is
+// worth more than a PDF that cannot be produced. It carries print CSS, opens to
+// A4, and every recipient can save it to PDF from their browser. If a true PDF
+// is needed later, this is the document to render.
+// ---------------------------------------------------------------------------
+
+import { UNIVERSITY } from './constants';
+
+/**
+ * The public site, for the links printed in the letter.
+ *
+ * SITE_URL is set in Vercel; the fallback is the university's own domain
+ * rather than a placeholder, because this string is printed on a document a
+ * graduate may still be holding in ten years.
+ */
+const SITE = process.env.SITE_URL ?? `https://${UNIVERSITY.website.replace(/^www\./, '')}`;
+import { passMark, gradeScale, classificationBands } from '@/content/regulations';
+
+export interface AdmissionPackageInput {
+  fullName: string;
+  studentNumber: string;
+  programme: string;
+  faculty: string;
+  level: string;
+  campus: string;
+  /** 'online' | 'campus' — decides which terms are given first. */
+  mode: string;
+  intake: string;
+  applicationNumber: string;
+  conditions?: { requirement: string; dueBy: string }[];
+  /** Named so the letter can be addressed and signed by a person. */
+  headOfAdmissions: string;
+  registrar: string;
+  issuedOn?: Date;
+  portalUrl: string;
+  /** Present only when the account is created with the offer. */
+  temporaryPassword?: string;
+}
+
+const esc = (v: string) =>
+  String(v ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+/** True when the applicant is studying online rather than on a campus. */
+function isOnline(mode: string): boolean {
+  return /online|distance|odl/i.test(mode ?? '');
+}
+
+/* ------------------------------------------------------------------ */
+/* The terms, held as data so both versions stay in step               */
+/* ------------------------------------------------------------------ */
+
+const CAMPUS_TERMS: string[] = [
+  'You are expected in person for lectures, seminars and examinations at your registered campus. Attendance is recorded.',
+  'Registration in person at the Office of the Registrar must be completed before teaching begins. Bring the originals of every document uploaded with your application.',
+  'Examinations are sat on campus, under invigilation, on the dates published in the academic calendar. An examination missed without prior approval is recorded as a non-attempt.',
+  'A student card is issued at registration and must be carried on campus and produced at every examination.',
+  'Accommodation is not allocated by the university. The Office of Student Affairs can advise on lodging near the campus but does not guarantee it.',
+  'A change of campus after registration requires the written approval of the Registrar and may affect the fee band that applies to you.',
+];
+
+const ONLINE_TERMS: string[] = [
+  'Teaching is delivered through the university’s online learning environment. You are responsible for arranging a device and an internet connection sufficient to take part; the university cannot supply either.',
+  'Registration is completed in the student portal. Certified copies of every document uploaded with your application must be received by the Office of the Registrar before your first examination.',
+  'Live sessions are scheduled in West Africa Time (UTC+1). Recordings are made available where a session is recorded, but participation is assessed, and participation carries 20% of the mark in every taught course.',
+  'Examinations are taken online under the conditions published for each course. Where an examination requires supervision, you are responsible for meeting the identification requirements set for it.',
+  'Continuous assessment deadlines are absolute and are set in West Africa Time. A submission is late by the clock of the learning environment, not the clock where you are.',
+  'A transfer to on-campus study requires the written approval of the Registrar and will change the fee band that applies to you.',
+];
+
+const COMMON_TERMS: string[] = [
+  'This offer is made for the intake stated and is not transferable to another intake without the written approval of the Admissions Office.',
+  'This offer is personal to you and cannot be transferred to another person.',
+  'The university may withdraw this offer if any information given in your application is found to be false, incomplete or misleading, at any point during your studies or afterwards.',
+  'Your place is confirmed by completing registration and settling the fees due for the first period of study. An offer not taken up by the end of the registration period lapses.',
+];
+
+/* ------------------------------------------------------------------ */
+/* Rendering                                                           */
+/* ------------------------------------------------------------------ */
+
+function section(title: string, body: string, opts: { pageBreak?: boolean } = {}): string {
+  return `
+  <section class="pkg-section${opts.pageBreak ? ' page-break' : ''}">
+    <h2>${esc(title)}</h2>
+    ${body}
+  </section>`;
+}
+
+const list = (items: string[]) =>
+  `<ol class="terms">${items.map((t) => `<li>${t}</li>`).join('')}</ol>`;
+
+export function admissionPackageHtml(input: AdmissionPackageInput): string {
+  const issued = input.issuedOn ?? new Date();
+  const issuedLong = issued.toLocaleDateString('en-GB', {
+    day: 'numeric', month: 'long', year: 'numeric',
+  });
+  const online = isOnline(input.mode);
+  const conditional = (input.conditions?.length ?? 0) > 0;
+
+  const ownTerms = online ? ONLINE_TERMS : CAMPUS_TERMS;
+  const otherTerms = online ? CAMPUS_TERMS : ONLINE_TERMS;
+  const ownLabel = online ? 'online study' : 'study on campus';
+  const otherLabel = online ? 'study on campus' : 'online study';
+
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Admission Package — ${esc(input.fullName)} — ${esc(input.studentNumber)}</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: #f4f1ea; color: #2f2838;
+    font-family: Georgia, 'Times New Roman', serif; font-size: 11.5pt; line-height: 1.55;
+  }
+  .sheet {
+    max-width: 190mm; margin: 0 auto; background: #fff; padding: 0 0 24mm;
+  }
+  .masthead {
+    background: #33234a; color: #fff; padding: 22mm 16mm 14mm; text-align: center;
+  }
+  .masthead .crest {
+    width: 62px; height: 62px; border-radius: 50%; object-fit: cover;
+    border: 2px solid #c5a55a; margin-bottom: 10px;
+  }
+  .masthead h1 {
+    margin: 0; font-size: 20pt; letter-spacing: 3px; text-transform: uppercase;
+  }
+  .masthead .sub { margin: 6px 0 0; font-size: 9pt; letter-spacing: 2px; color: #e9c14a; text-transform: uppercase; }
+  .masthead .addr { margin: 10px 0 0; font-size: 9pt; color: rgba(255,255,255,.75); }
+  .body { padding: 12mm 16mm 0; }
+  h2 {
+    font-size: 12pt; text-transform: uppercase; letter-spacing: 1.5px;
+    color: #422e59; border-bottom: 1px solid #e8dcc0; padding-bottom: 5px; margin: 0 0 10px;
+  }
+  h3 { font-size: 11pt; color: #422e59; margin: 14px 0 6px; }
+  .pkg-section { margin-bottom: 16px; }
+  .page-break { break-before: page; }
+  .ref { display: flex; justify-content: space-between; font-size: 9.5pt; color: #6b6076; margin-bottom: 14px; }
+  table.details { width: 100%; border-collapse: collapse; margin: 10px 0 4px; font-size: 10.5pt; }
+  table.details td { padding: 5px 0; vertical-align: top; }
+  table.details td.k { color: #6b6076; width: 42%; }
+  table.details td.v { font-weight: bold; }
+  ol.terms { margin: 6px 0 0; padding-left: 20px; }
+  ol.terms li { margin-bottom: 7px; }
+  .callout {
+    border-left: 3px solid #c5a55a; background: #faf6ee; padding: 10px 14px; margin: 12px 0; font-size: 10.5pt;
+  }
+  .callout.warn { border-left-color: #b45309; background: #fffbeb; }
+  .muted-block { border: 1px solid #e8dcc0; background: #fbfaf7; padding: 10px 14px; margin-top: 10px; font-size: 10pt; color: #554c60; }
+  .sig { margin-top: 26px; }
+  .sig .rule { border-top: 1px solid #33234a; width: 62mm; padding-top: 5px; }
+  .sig .name { font-weight: bold; }
+  .sig .office { color: #6b6076; font-size: 10pt; }
+  .grade-table { width: 100%; border-collapse: collapse; font-size: 10pt; margin-top: 8px; }
+  .grade-table th, .grade-table td { border: 1px solid #e8dcc0; padding: 4px 7px; text-align: left; }
+  .grade-table th { background: #faf6ee; font-size: 9pt; text-transform: uppercase; letter-spacing: .5px; }
+  .foot { margin-top: 18px; padding-top: 10px; border-top: 1px solid #e8dcc0; font-size: 9pt; color: #8a8194; text-align: center; }
+  @media print { body { background: #fff; } .sheet { max-width: none; } }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <div class="masthead">
+    <img class="crest" src="${esc(SITE)}/images/site-icon.png" alt="">
+    <h1>${esc(UNIVERSITY.name)}</h1>
+    <p class="sub">Office of Admissions</p>
+    <p class="addr">${esc(UNIVERSITY.address)}</p>
+  </div>
+
+  <div class="body">
+
+    <div class="ref">
+      <span>Ref: ${esc(input.applicationNumber)}</span>
+      <span>${esc(issuedLong)}</span>
+    </div>
+
+    ${section(
+      conditional ? 'Offer of conditional admission' : 'Offer of admission',
+      `
+      <p>Dear ${esc(input.fullName)},</p>
+
+      <p>
+        Following the assessment of your application, I am pleased to offer you
+        ${conditional ? '<strong>conditional admission</strong>' : '<strong>admission</strong>'}
+        to ${esc(UNIVERSITY.name)} for the programme set out below.
+      </p>
+
+      <table class="details">
+        <tr><td class="k">Programme</td><td class="v">${esc(input.programme)}</td></tr>
+        <tr><td class="k">Faculty</td><td class="v">${esc(input.faculty)}</td></tr>
+        <tr><td class="k">Level</td><td class="v">${esc(input.level)}</td></tr>
+        <tr><td class="k">Mode of study</td><td class="v">${esc(input.mode)}</td></tr>
+        <tr><td class="k">Campus</td><td class="v">${esc(input.campus)}</td></tr>
+        <tr><td class="k">Intake</td><td class="v">${esc(input.intake)}</td></tr>
+        <tr><td class="k">Student number</td><td class="v">${esc(input.studentNumber)}</td></tr>
+      </table>
+
+      <p>
+        Your student number is quoted above. Use it in every communication with the university,
+        on every payment, and to sign in to the student portal. It identifies you for the whole of
+        your studies and does not change.
+      </p>
+      `,
+    )}
+
+    ${conditional ? section(
+      'Conditions of this offer',
+      `
+      <div class="callout warn">
+        <strong>This offer is conditional.</strong> You may register and begin study, but the
+        following must be completed by the dates given. Each remains on your record until it is
+        met, and an unmet condition may lead to your registration being withdrawn.
+      </div>
+      <table class="details">
+        ${input.conditions!.map((c) => `
+        <tr>
+          <td class="k">${esc(c.requirement)}</td>
+          <td class="v">by ${esc(c.dueBy)}</td>
+        </tr>`).join('')}
+      </table>
+      `,
+    ) : `
+    <section class="pkg-section">
+      <h2>Conditions of this offer</h2>
+      <p>This offer is unconditional. No further academic condition is attached to it.</p>
+      <p>It remains subject to the general terms in the next section, and in particular to the
+      accuracy of the information given in your application.</p>
+    </section>`}
+
+    ${section(
+      `Terms of study — ${ownLabel}`,
+      `
+      <p>These are the terms that apply to you, as a student admitted for
+      <strong>${esc(input.mode)}</strong> study.</p>
+      ${list(ownTerms)}
+      <h3>General terms, applying to every student</h3>
+      ${list(COMMON_TERMS)}
+      `,
+      { pageBreak: true },
+    )}
+
+    ${section(
+      `Terms for ${otherLabel}`,
+      `
+      <div class="muted-block">
+        <strong>These do not apply to you at present.</strong> They are included because students
+        do transfer between modes, and a student who moves should not discover afterwards that the
+        rules changed underneath them. A transfer requires the written approval of the Registrar.
+      </div>
+      ${list(otherTerms)}
+      `,
+    )}
+
+    ${section(
+      'Fees and payment',
+      `
+      <p>
+        The university operates two fee bands. Students from Africa and the Global South are
+        charged a subsidised rate, funded as scholarship by the International Circle of Faith.
+        Students from Europe and North America are charged a higher rate.
+      </p>
+      <p>
+        The schedule that applies to your programme, and the instalment terms available on it, are
+        published at <strong>${esc(UNIVERSITY.website)}/tuition</strong>. The Finance
+        Office will confirm the amount due for your first period of study when you register.
+      </p>
+      <div class="callout">
+        Fees are quoted to you by the Finance Office in writing. No amount is stated in this
+        letter, and no member of staff is authorised to agree a different figure with you
+        privately. If anyone asks you to pay outside the university's published channels, report
+        it to the Registrar at ${esc(UNIVERSITY.email)}.
+      </div>
+      `,
+    )}
+
+    ${section(
+      'Academic regulations you are accepting',
+      `
+      <p>By registering you accept the university's academic regulations. The provisions you are
+      most likely to need are set out here; the full regulations are published at
+      <strong>${esc(UNIVERSITY.website)}/academic-regulations</strong>.</p>
+
+      <h3>Grading and the pass mark</h3>
+      <p>The pass mark is <strong>${esc(passMark)}</strong>. Grades are awarded on the following
+      scale, and grade points run to ${classificationBands.length ? '4.00' : '4.00'}.</p>
+      <table class="grade-table">
+        <tr><th>Grade</th><th>Range</th><th>Points</th><th>Descriptor</th></tr>
+        ${gradeScale.map((g) => `
+        <tr><td>${esc(g.grade)}</td><td>${esc(g.range)}</td><td>${esc(g.points)}</td><td>${esc(g.descriptor)}</td></tr>`).join('')}
+      </table>
+
+      <h3>Assessment</h3>
+      <p>Taught courses are assessed on four components — participation 20%, assignments 30%,
+      examinations 30% and presentations 20%. Every component carries a mark, and a component not
+      submitted is marked zero.</p>
+
+      <h3>Degree classification</h3>
+      <table class="grade-table">
+        <tr><th>Classification</th><th>Requires</th></tr>
+        ${classificationBands.map((b) => `
+        <tr><td>${esc(b.label)}</td><td>${esc(b.basis)} (CGPA ${b.min.toFixed(2)})</td></tr>`).join('')}
+      </table>
+
+      <h3>Academic integrity</h3>
+      <p>Plagiarism, the fabrication of data, and the submission of work that is not your own are
+      academic misconduct. So is presenting work generated by another person or by a machine as
+      your own. Misconduct is dealt with under the university's disciplinary process, and a finding
+      may result in the cancellation of a mark, of a course, or of your admission.</p>
+
+      <h3>Discipline and appeal</h3>
+      <p>Disciplinary matters are heard under the process published in the Student Handbook. You
+      have the right to be told the case against you, to answer it, and to appeal a decision to the
+      Registrar within fourteen days of being notified of it.</p>
+      `,
+      { pageBreak: true },
+    )}
+
+    ${section(
+      'What to do next',
+      `
+      <ol class="terms">
+        <li><strong>Sign in to the student portal</strong> at
+          <strong>${esc(input.portalUrl)}</strong> using your student number
+          ${input.temporaryPassword ? 'and the temporary password sent in the covering email' : 'and the password issued to you'}.
+          Change your password immediately on first sign-in. Your password is personal to you and
+          must not be shared with anyone, including university staff — no one at the university
+          will ever ask you for it.</li>
+        <li><strong>Complete registration</strong> before teaching begins. ${
+          online
+            ? 'Registration is completed in the portal.'
+            : 'Registration is completed in person at the Office of the Registrar.'
+        }</li>
+        <li><strong>Settle the fees</strong> due for your first period of study, as confirmed by
+          the Finance Office.</li>
+        <li><strong>Register for your courses</strong> in the portal once registration opens.</li>
+        ${conditional ? '<li><strong>Meet the conditions above</strong> by the dates given.</li>' : ''}
+      </ol>
+      <p>If anything in this letter is wrong — your name, your programme, your campus or your mode
+      of study — reply to the email that carried it <em>before</em> you register, and the Office of
+      Admissions will correct it.</p>
+      `,
+    )}
+
+    <div class="sig">
+      <p>We look forward to welcoming you to ${esc(UNIVERSITY.name)}.</p>
+      <p>Yours sincerely,</p>
+      <div class="rule">
+        <div class="name">${esc(input.headOfAdmissions)}</div>
+        <div class="office">Head of Admissions</div>
+        <div class="office">${esc(UNIVERSITY.name)}</div>
+      </div>
+    </div>
+
+    <div class="foot">
+      This admission package was issued electronically on ${esc(issuedLong)} and is valid without a
+      handwritten signature. Its authenticity may be confirmed with the Office of the Registrar at
+      ${esc(UNIVERSITY.email)}, quoting ${esc(input.applicationNumber)} and
+      ${esc(input.studentNumber)}.
+    </div>
+
+  </div>
+</div>
+</body>
+</html>`;
+}
+
+/** The plain-text covering note the package is attached to. */
+export function admissionCoveringText(input: AdmissionPackageInput): string {
+  const conditional = (input.conditions?.length ?? 0) > 0;
+  return `Dear ${input.fullName},
+
+Your application to ${UNIVERSITY.name} has been assessed by the Office of Admissions,
+and I am pleased to tell you that you have been offered${conditional ? ' conditional' : ''} admission.
+
+  Programme        ${input.programme}
+  Faculty          ${input.faculty}
+  Mode of study    ${input.mode}
+  Campus           ${input.campus}
+  Intake           ${input.intake}
+  Student number   ${input.studentNumber}
+${input.temporaryPassword ? `
+  Portal           ${input.portalUrl}
+  Username         ${input.studentNumber}
+  Temporary password  ${input.temporaryPassword}
+
+Please sign in and change your password immediately. Your password is personal to you and
+must not be shared with anyone, including university staff.
+` : ''}
+Your full admission package is attached. It contains the admission letter, the conditions of
+your offer, the terms of study for your mode and for the other, the fee arrangements, and the
+academic regulations you are accepting by registering. Please read it before you register.
+${conditional ? `
+YOUR OFFER IS CONDITIONAL. The conditions and their dates are set out in the attached package.
+You may register and begin study, but each condition remains on your record until it is met.
+` : ''}
+If anything in the package is wrong — your name, your programme, your campus or your mode of
+study — reply to this email before you register and we will correct it.
+
+We look forward to welcoming you.
+
+${input.headOfAdmissions}
+Head of Admissions
+${UNIVERSITY.name}
+${UNIVERSITY.address}`;
+}

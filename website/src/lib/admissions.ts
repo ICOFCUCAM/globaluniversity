@@ -140,6 +140,52 @@ export async function financeQueue(): Promise<Student[]> {
  * the Registrar cannot approve an applicant whose fee has not been registered
  * even by mistake.
  */
+/**
+ * The Admissions Office's queue: records the Registrar has verified and passed
+ * on, awaiting the final assessment that admits.
+ *
+ * This filter is the second gate, and it works exactly as the first one does.
+ * A record the Registrar has not forwarded does not appear here, so the
+ * Admissions Office cannot admit an applicant whose documents have not been
+ * verified, even by mistake.
+ */
+export async function admissionsQueue(): Promise<Student[]> {
+  const { data, error } = await supabase
+    .from('students')
+    .select('*')
+    .eq('status', 'registrar_approved')
+    .order('decided_at', { ascending: true });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as Student[];
+}
+
+/**
+ * The Registrar verifies the record and forwards it. It does not admit.
+ *
+ * The Registrar used to approve, which created the account and sent the
+ * welcome email in one step. The university has since separated the two: the
+ * Registrar confirms the record is complete and correct, and the Admissions
+ * Office makes the assessment that admits. This is the Registrar's half.
+ */
+export async function forwardToAdmissions(
+  studentId: string,
+  opts: { byUserId: string; note?: string },
+): Promise<void> {
+  const { error } = await supabase
+    .from('students')
+    .update({
+      status: 'registrar_approved',
+      decision_reason: opts.note ?? null,
+      decided_by: opts.byUserId,
+      decided_at: new Date().toISOString(),
+    })
+    .eq('id', studentId)
+    // Only from a state the Registrar legitimately holds. Without this, a
+    // stale browser tab could forward a record that has since been rejected.
+    .in('status', ['fee_paid', 'documents_required']);
+  if (error) throw new Error(error.message);
+}
+
 export async function registrarQueue(): Promise<Student[]> {
   const { data, error } = await supabase
     .from('students')

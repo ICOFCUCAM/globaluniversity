@@ -208,6 +208,7 @@ export type ViewType =
   // Superadministrator only. See src/lib/roles.ts — SYSTEM_CAPABILITIES.
   | 'accounts'
   | 'studio'
+  | 'admissions-office'
   | 'programme-resources'
   | 'dashboard' 
   | 'students' 
