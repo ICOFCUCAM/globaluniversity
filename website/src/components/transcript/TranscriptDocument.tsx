@@ -74,20 +74,83 @@ const PAGE_MM = {
   Letter: { portrait: [216, 279], landscape: [279, 216] },
 } as const;
 
+const DOC_ID = 'icof-transcript';
+
 const TranscriptDocument = forwardRef<HTMLDivElement, {
   design: CredentialDesign;
   data: TranscriptData;
   version?: number;
-}>(function TranscriptDocument({ design, data, version }, ref) {
+  /**
+   * Overprint SPECIMEN. Everything the certificate's own note says applies here
+   * and applies harder: a transcript is the document a credential evaluator
+   * reads line by line, and an indistinguishable copy of one produced from a
+   * preview pane is a blank marksheet with the university's name on it.
+   */
+  specimen?: boolean;
+}>(function TranscriptDocument({ design, data, version, specimen }, ref) {
   const [w, h] = PAGE_MM[design.pageSize][design.orientation];
   const issued = data.issuedOn ?? new Date();
+
+  // No credential number, no transcript. The number is what a reader verifies
+  // and what seeds the security ground; without it every transcript the
+  // university issues carries identical artwork and none of them can be
+  // checked. See CertificateDocument, where the same guard is explained at
+  // length — the failure is the same and so is the answer.
+  const missingId = !data.credentialId?.trim();
   const seed = seedFrom(data.credentialId || 'ICOFGU');
   const sec = design.security;
   const pad = design.borderWidthMm + 9;
 
+  if (missingId && !specimen) {
+    return (
+      <div
+        ref={ref}
+        role="alert"
+        style={{
+          width: `${w}mm`, boxSizing: 'border-box', padding: '30mm', textAlign: 'center',
+          fontFamily: design.fontFamily, background: '#fffaf0',
+          border: '2mm solid #b45309', color: '#7c2d12',
+        }}
+      >
+        <p style={{ fontSize: '17px', fontWeight: 700, margin: 0 }}>No transcript can be rendered</p>
+        <p style={{ fontSize: '12.5px', lineHeight: 1.6, margin: '6mm 0 0' }}>
+          This document has no credential number. A transcript without one cannot be verified by
+          anyone who receives it, and the number is what seeds its security ground. Issue it
+          through the register first.
+        </p>
+      </div>
+    );
+  }
+
   return (
+    <>
+      {/* The page. Portrait A4 by default, margin zero because the document's
+          own border runs to the sheet edge. Without this the browser printed a
+          transcript at its own defaults and cropped the frame — the same defect
+          the certificate had, in the same place, for the same reason. */}
+      <style>{`
+        @media print {
+          @page { size: ${design.pageSize} ${design.orientation}; margin: 0; }
+          html, body { margin: 0 !important; padding: 0 !important; background: #fff !important; }
+          body * { visibility: hidden; }
+          #${DOC_ID}, #${DOC_ID} * { visibility: visible; }
+          #${DOC_ID} { position: absolute; left: 0; top: 0; box-shadow: none !important; }
+          /* A transcript runs to several pages and a term must not be split
+             across a break — a semester's marks read as a block. */
+          #${DOC_ID} section { break-inside: avoid; }
+        }
+      `}</style>
     <div
+      id={DOC_ID}
       ref={ref}
+      role="article"
+      lang="en"
+      aria-label={
+        `Academic transcript of ${UNIVERSITY.name} for ${data.fullName}, student number ` +
+        `${data.studentNumber}, ${data.programme}. Cumulative GPA ${data.cgpa.toFixed(2)}` +
+        `${data.classification ? `, ${data.classification}` : ''}. ` +
+        `Credential number ${data.credentialId}.`
+      }
       style={{
         width: `${w}mm`,
         minHeight: `${h}mm`,
@@ -101,17 +164,38 @@ const TranscriptDocument = forwardRef<HTMLDivElement, {
       }}
     >
       {sec.securityGround && (
-        <div style={{
+        <div aria-hidden="true" style={{
           position: 'absolute', inset: 0,
           backgroundImage: `url("${securityGroundUri(seed, 72, design.brand, UNIVERSITY.shortName, 0.035)}")`,
           backgroundRepeat: 'repeat',
         }} />
       )}
       {design.border !== 'none' && (
-        <div style={{
+        <div aria-hidden="true" style={{
           position: 'absolute', inset: 0,
           border: `${design.borderWidthMm}mm solid ${design.brand}`,
         }} />
+      )}
+
+      {specimen && (
+        <div
+          role="note"
+          aria-label="Specimen — not an issued transcript"
+          style={{
+            position: 'absolute', inset: 0, zIndex: 5, pointerEvents: 'none',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+        >
+          <span style={{
+            transform: 'rotate(-28deg)',
+            fontFamily: 'Helvetica, Arial, sans-serif',
+            fontSize: `${Math.round(Math.min(w, h) * 0.34)}px`,
+            fontWeight: 700, letterSpacing: '0.16em',
+            color: '#b31217', opacity: 0.13, whiteSpace: 'nowrap',
+          }}>
+            SPECIMEN
+          </span>
+        </div>
       )}
 
       <div style={{ position: 'relative', padding: `${pad}mm`, boxSizing: 'border-box' }}>
@@ -277,6 +361,7 @@ const TranscriptDocument = forwardRef<HTMLDivElement, {
         </p>
       </div>
     </div>
+    </>
   );
 });
 
