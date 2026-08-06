@@ -9,8 +9,38 @@ import PageChrome from '@/components/PageChrome';
 import SiteChrome, { SiteMain } from '@/components/SiteChrome';
 import { site } from '@/content/site';
 
-const display = Fraunces({ subsets: ['latin'], variable: '--font-display', weight: ['400', '600', '700', '900'] });
-const sans = Inter({ subsets: ['latin'], variable: '--font-sans' });
+// ---------------------------------------------------------------------------
+// THE TWO FACES.
+//
+// display: 'swap' on both. The default, 'auto', lets a browser hide text for up
+// to three seconds while a font loads — on a slow connection in Buea that is a
+// blank headline on the most important screen of the site. Swap shows the
+// fallback immediately and repaints when the real face arrives. The repaint is
+// a visible shift, which is the price, and it is a far smaller price than
+// nothing at all.
+//
+// THE WEIGHTS ARE PINNED to the four actually used. Fraunces ships nine, and
+// every unrequested weight is a subset the visitor downloads and never sees.
+//
+// A NOTE ON THE OPTICAL SIZE AXIS. Fraunces carries one, and it is the reason
+// to prefer a variable serif: the same family drawn with fine hairlines for a
+// 72px headline and sturdier strokes for 15px body text, rather than one
+// drawing doing both jobs badly. next/font will not expose axes and pinned
+// weights at the same time — `axes` requires the full variable face — so this
+// is a real choice between two goods.
+//
+// Pinned weights win. The whole variable face is roughly four times the
+// download of four static subsets, and this university's readers are on
+// Cameroonian mobile connections. Optical sizing is a refinement a typographer
+// notices; a headline that has not arrived is something everybody notices.
+// ---------------------------------------------------------------------------
+const display = Fraunces({
+  subsets: ['latin'],
+  variable: '--font-display',
+  weight: ['400', '600', '700', '900'],
+  display: 'swap',
+});
+const sans = Inter({ subsets: ['latin'], variable: '--font-sans', display: 'swap' });
 
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
