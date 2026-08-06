@@ -40,6 +40,7 @@
 // ---------------------------------------------------------------------------
 
 import { WORLD, AFRICA } from './worldCoastlines';
+import { COURSE_RUN, type BorderCourse } from './borderCatalogue';
 
 /**
  * A tiny deterministic PRNG (mulberry32).
@@ -484,26 +485,36 @@ export function yearInWords(year: number): string {
 /* ------------------------------------------------------------------ */
 
 /**
- * The engraved gold border, drawn from the university's own first certificate.
+ * The engraved gilt frame, redrawn from the university's own certificate.
  *
- * WHAT WAS TAKEN FROM IT. The 2011 ICOF certificate is framed by a deep gilt
- * band: an outer fillet, a broad field carrying a repeated scroll-and-leaf
- * motif, a bead course, and a medallion at each corner. That frame is most of
- * why the document reads as an instrument the moment you see it, before a word
- * of it is read — and it is the single largest difference between it and the
- * plain double rule this system was drawing.
+ * WHAT THE FIRST VERSION GOT WRONG. It was a flat band with a repeating
+ * squiggle stroked on it. The frame on the 2011 certificate is a MITRED GILT
+ * MOULDING carrying carved acanthus, and the two differences that matter are
+ * both about light:
  *
- * WHAT WAS NOT TAKEN. It is redrawn, not traced. The original is a raster of a
- * printed sheet, photographed at an angle; scanning and re-using it would have
- * embedded somebody's photograph of a real graduate's certificate into every
- * document the university issues, at whatever resolution the phone managed.
- * This is geometry — it holds at any size, prints at press resolution, and
- * weighs a few kilobytes.
+ *   IT IS MITRED. A picture frame is four lengths of moulding cut at 45° and
+ *   joined, and its cross-section — outer lip, rise, crown, fall, inner lip —
+ *   runs ACROSS each length. One gradient over the whole rectangle gets the top
+ *   and bottom right and the two sides wrong, because on the sides the section
+ *   now runs along the length instead of across it. So this draws four
+ *   trapezoids with mitred ends, each with its own gradient perpendicular to
+ *   its own run. That is also why the corners have a visible diagonal join,
+ *   which a real frame has and a CSS border does not.
  *
- * The gold is three stops rather than one flat fill, because gilt is not a
- * colour, it is a gradient: the reason a photocopy of a gilded certificate
- * looks obviously wrong is that the copier renders the gradient as a single
- * muddy tone.
+ *   THE ORNAMENT HAS RELIEF. Carved gilt is not a colour, it is a surface: a
+ *   lit edge on one side of every form and a shadow on the other. So every
+ *   ornament is drawn three times — a shade pass offset down-right, a highlight
+ *   pass offset up-left, and the form itself between them. It is the oldest
+ *   trick in engraving and it is why an engraved frame reads as carved on flat
+ *   paper.
+ *
+ * WHY NOT A PHOTOGRAPH OF THE REAL FRAME. Three reasons, and the third is the
+ * one that decides it. A photograph carries the lighting of the room it was
+ * taken in, which will not match the rest of the document. It is a raster, so
+ * it softens at print resolution and at any size but the one it was shot at.
+ * And a photograph can be lifted from a scan of one certificate and dropped
+ * onto a forgery, whereas geometry drawn from an equation cannot be — which is
+ * the entire argument for every other layer on this sheet.
  */
 export function ornateFrame(
   widthMm: number,
@@ -511,81 +522,289 @@ export function ornateFrame(
   gold: string,
   deep: string,
   bandMm = 11,
+  course: BorderCourse = 'acanthus',
 ): string {
   const w = widthMm;
   const h = heightMm;
   const b = bandMm;
-  const id = `f${Math.round(w)}x${Math.round(h)}`;
+  // THE COURSE IS PART OF THE ID. Without it, seven frames of the same size on
+  // one page all mint `f150x105x11-run`, every url(#…) resolves to the FIRST
+  // definition in the document, and the whole catalogue renders as whichever
+  // course was drawn first. Same fault as the device's seal/shield collision,
+  // in a different file — an id unique per call site is not unique per document.
+  const id = `f${Math.round(w)}x${Math.round(h)}x${Math.round(b)}${course}`;
 
-  // One tile of the scroll course. A C-scroll, a leaf springing from it, and a
-  // lozenge between — the motif that repeats all the way round.
-  const tile = 14;
-  const motif = `
-    <g fill="none" stroke="${deep}" stroke-width="0.55" stroke-linecap="round">
-      <path d="M1,${b / 2} C1,${b * 0.18} ${tile * 0.28},${b * 0.16} ${tile * 0.30},${b / 2}
-               C${tile * 0.32},${b * 0.84} ${tile * 0.06},${b * 0.82} ${tile * 0.10},${b / 2}"/>
-      <path d="M${tile * 0.34},${b / 2} C${tile * 0.44},${b * 0.14} ${tile * 0.60},${b * 0.20} ${tile * 0.64},${b / 2}
-               C${tile * 0.60},${b * 0.80} ${tile * 0.44},${b * 0.86} ${tile * 0.34},${b / 2}"/>
-      <path d="M${tile * 0.66},${b * 0.30} L${tile * 0.82},${b / 2} L${tile * 0.66},${b * 0.70}
-               L${tile * 0.50},${b / 2} Z" stroke-width="0.45"/>
-      <circle cx="${tile * 0.92}" cy="${b / 2}" r="0.9" fill="${deep}" stroke="none"/>
-    </g>`;
+  // The lit and shaded tones. Derived from the gilt rather than passed in, so a
+  // university that changes its gold gets a frame that is still lit from the
+  // same direction.
+  const pale = mixHex(gold, '#ffffff', 0.55);
+  const shade = mixHex(deep, '#000000', 0.35);
 
-  // A corner medallion: a rosette in a lobed frame, of the kind cast into the
-  // corners of an engraved border.
-  const medallion = (cx: number, cy: number, r: number) => {
-    const petals: string[] = [];
-    for (let i = 0; i < 8; i += 1) {
-      const a = (i / 8) * Math.PI * 2;
-      petals.push(
-        `<ellipse cx="${(cx + Math.cos(a) * r * 0.42).toFixed(2)}" cy="${(cy + Math.sin(a) * r * 0.42).toFixed(2)}" ` +
-        `rx="${(r * 0.30).toFixed(2)}" ry="${(r * 0.16).toFixed(2)}" ` +
-        `transform="rotate(${((a * 180) / Math.PI).toFixed(1)} ${(cx + Math.cos(a) * r * 0.42).toFixed(2)} ${(cy + Math.sin(a) * r * 0.42).toFixed(2)})" ` +
-        `fill="none" stroke="${deep}" stroke-width="0.4"/>`,
-      );
+  /* --- one length of acanthus -------------------------------------------
+     An S-stem with a leaf springing above it and below it, a volute at each
+     turn, and berries in the eyes of the scrolls. Drawn in tile space, x
+     running along the moulding and y across it. */
+  const T = b * (COURSE_RUN[course] ?? 1.55); // the tile's run
+  const leaf = (cx: number, cy: number, len: number, wid: number, rot: number) =>
+    `<g transform="translate(${cx.toFixed(2)},${cy.toFixed(2)}) rotate(${rot.toFixed(1)})">` +
+    // The lobe: a lens with one side fuller than the other, as an acanthus is.
+    `<path d="M0,0 C${(len * 0.22).toFixed(2)},${(-wid).toFixed(2)} ` +
+    `${(len * 0.72).toFixed(2)},${(-wid * 0.92).toFixed(2)} ${len.toFixed(2)},0 ` +
+    `C${(len * 0.70).toFixed(2)},${(wid * 0.66).toFixed(2)} ` +
+    `${(len * 0.26).toFixed(2)},${(wid * 0.80).toFixed(2)} 0,0 Z"/>` +
+    // The midrib, which is what stops a lens reading as a bean.
+    `<path d="M${(len * 0.06).toFixed(2)},${(wid * 0.04).toFixed(2)} ` +
+    `C${(len * 0.36).toFixed(2)},${(-wid * 0.30).toFixed(2)} ` +
+    `${(len * 0.66).toFixed(2)},${(-wid * 0.34).toFixed(2)} ${(len * 0.94).toFixed(2)},0" ` +
+    `fill="none" stroke-width="${(wid * 0.13).toFixed(2)}"/>` +
+    `</g>`;
+
+  // A volute: a tapering spiral, built as a filled band because SVG cannot
+  // taper a stroke. Out along the spiral at one width, back at another.
+  const volute = (cx: number, cy: number, r0: number, turns: number, dir: number) => {
+    const steps = 44;
+    const outer: string[] = [];
+    const inner: string[] = [];
+    for (let i = 0; i <= steps; i += 1) {
+      const t = i / steps;
+      const a = dir * t * turns * Math.PI * 2;
+      const r = r0 * Math.exp(-1.35 * t);
+      const wdt = r0 * 0.30 * (1 - t * 0.85);
+      outer.push(`${(cx + Math.cos(a) * (r + wdt)).toFixed(2)},${(cy + Math.sin(a) * (r + wdt)).toFixed(2)}`);
+      inner.push(`${(cx + Math.cos(a) * (r - wdt)).toFixed(2)},${(cy + Math.sin(a) * (r - wdt)).toFixed(2)}`);
     }
-    return `<g>
-      <circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#${id}-gold)" stroke="${deep}" stroke-width="0.5"/>
-      <circle cx="${cx}" cy="${cy}" r="${(r * 0.80).toFixed(2)}" fill="none" stroke="${deep}" stroke-width="0.35"/>
-      ${petals.join('')}
-      <circle cx="${cx}" cy="${cy}" r="${(r * 0.16).toFixed(2)}" fill="${deep}"/>
-    </g>`;
+    return `<path d="M${outer.join(' L')} L${inner.reverse().join(' L')} Z"/>`;
   };
 
-  const m = b * 0.92;
+  // The ornament of one tile, without colour. Painted three times below.
+  // The COURSE — the carved run that distinguishes one border from another.
+  // Everything else on this frame is shared: the mitred section, the relief
+  // passes, the corner cartouche, the fillets. That is the whole point of the
+  // catalogue — one moulding engine, many courses — because a border is not a
+  // picture, it is a profile plus a repeat, and treating each as a separate
+  // drawing is how a system ends up with six frames that do not belong to the
+  // same institution.
+  const bead = (cx: number, r: number) =>
+    `<circle cx="${cx.toFixed(2)}" cy="${(b * 0.5).toFixed(2)}" r="${r.toFixed(2)}"/>`;
+  const rule = (y: number, wdt: number) =>
+    `<path d="M0,${y.toFixed(2)} L${T.toFixed(2)},${y.toFixed(2)}" fill="none" stroke-width="${wdt.toFixed(2)}"/>`;
+
+  let tileForms: string;
+  switch (course) {
+    // The rope, or cable, moulding. Twisted strands cut into the section — the
+    // simplest carved run there is, and the most robust at small sizes.
+    case 'rope': {
+      const strands: string[] = [];
+      for (let i = 0; i < 4; i += 1) {
+        const x = (i / 4) * T;
+        strands.push(
+          `<path d="M${x.toFixed(2)},${(b * 0.86).toFixed(2)} ` +
+          `C${(x + T * 0.10).toFixed(2)},${(b * 0.62).toFixed(2)} ` +
+          `${(x + T * 0.16).toFixed(2)},${(b * 0.38).toFixed(2)} ` +
+          `${(x + T * 0.27).toFixed(2)},${(b * 0.14).toFixed(2)}" ` +
+          `fill="none" stroke-width="${(b * 0.16).toFixed(2)}" stroke-linecap="round"/>`,
+        );
+      }
+      tileForms = strands.join('');
+      break;
+    }
+
+    // Bead and reel: the classical astragal. A sphere, two discs, a sphere.
+    case 'bead-reel': {
+      tileForms =
+        bead(T * 0.14, b * 0.19) +
+        `<rect x="${(T * 0.30).toFixed(2)}" y="${(b * 0.36).toFixed(2)}" ` +
+        `width="${(T * 0.06).toFixed(2)}" height="${(b * 0.28).toFixed(2)}" rx="${(b * 0.03).toFixed(2)}"/>` +
+        `<rect x="${(T * 0.40).toFixed(2)}" y="${(b * 0.36).toFixed(2)}" ` +
+        `width="${(T * 0.06).toFixed(2)}" height="${(b * 0.28).toFixed(2)}" rx="${(b * 0.03).toFixed(2)}"/>` +
+        bead(T * 0.62, b * 0.19) +
+        `<rect x="${(T * 0.80).toFixed(2)}" y="${(b * 0.38).toFixed(2)}" ` +
+        `width="${(T * 0.05).toFixed(2)}" height="${(b * 0.24).toFixed(2)}" rx="${(b * 0.03).toFixed(2)}"/>`;
+      break;
+    }
+
+    // The Greek fret. Cut as a band rather than a stroke so it takes the relief
+    // passes like carving instead of like a drawn line.
+    case 'meander': {
+      const u = T / 6;
+      const y0 = b * 0.22;
+      const y1 = b * 0.78;
+      tileForms =
+        `<path d="M0,${y1.toFixed(2)} L0,${y0.toFixed(2)} L${(u * 4).toFixed(2)},${y0.toFixed(2)} ` +
+        `L${(u * 4).toFixed(2)},${(b * 0.58).toFixed(2)} L${(u * 2).toFixed(2)},${(b * 0.58).toFixed(2)} ` +
+        `L${(u * 2).toFixed(2)},${(b * 0.42).toFixed(2)} L${(u * 5).toFixed(2)},${(b * 0.42).toFixed(2)} ` +
+        `L${(u * 5).toFixed(2)},${y1.toFixed(2)} Z" fill-rule="evenodd" ` +
+        `stroke-width="${(b * 0.09).toFixed(2)}" fill="none"/>`;
+      break;
+    }
+
+    // Laurel: paired leaves bound at intervals with a ribbon. The wreath a
+    // university confers, run as a border.
+    case 'laurel': {
+      const pairs: string[] = [];
+      for (let i = 0; i < 3; i += 1) {
+        const x = (i / 3) * T + T * 0.08;
+        pairs.push(leaf(x, b * 0.46, b * 0.40, b * 0.14, -34));
+        pairs.push(leaf(x, b * 0.54, b * 0.40, b * 0.14, 34));
+      }
+      tileForms =
+        rule(b * 0.50, b * 0.05) +
+        pairs.join('') +
+        `<path d="M${(T * 0.94).toFixed(2)},${(b * 0.24).toFixed(2)} ` +
+        `C${(T * 0.99).toFixed(2)},${(b * 0.40).toFixed(2)} ${(T * 0.99).toFixed(2)},${(b * 0.60).toFixed(2)} ` +
+        `${(T * 0.94).toFixed(2)},${(b * 0.76).toFixed(2)}" fill="none" stroke-width="${(b * 0.07).toFixed(2)}"/>`;
+      break;
+    }
+
+    // Guilloché: two counter-running strands plaited round a row of eyes. The
+    // security-printer's border, and the one that hardest resists hand copying —
+    // every crossing is fixed by the wave, so a drawn copy drifts everywhere.
+    case 'guilloche': {
+      const a: string[] = [];
+      const b1: string[] = [];
+      const N = 40;
+      for (let i = 0; i <= N; i += 1) {
+        const x = (i / N) * T;
+        const y = b * 0.5 + Math.sin((i / N) * Math.PI * 2) * b * 0.26;
+        const y2 = b * 0.5 - Math.sin((i / N) * Math.PI * 2) * b * 0.26;
+        a.push(`${x.toFixed(2)},${y.toFixed(2)}`);
+        b1.push(`${x.toFixed(2)},${y2.toFixed(2)}`);
+      }
+      tileForms =
+        `<polyline points="${a.join(' ')}" fill="none" stroke-width="${(b * 0.075).toFixed(2)}"/>` +
+        `<polyline points="${b1.join(' ')}" fill="none" stroke-width="${(b * 0.075).toFixed(2)}"/>` +
+        bead(T * 0.25, b * 0.075) + bead(T * 0.75, b * 0.075);
+      break;
+    }
+
+    // A plain ovolo: no carving at all, just the moulded section. For a
+    // transcript, where a carved border competes with columns of marks and the
+    // legibility of the marks is the document's whole job.
+    case 'plain':
+      tileForms = '';
+      break;
+
+    // The university's own: the acanthus redrawn from its 2011 certificate.
+    case 'acanthus':
+    default:
+      tileForms =
+        `<path d="M0,${(b * 0.50).toFixed(2)} C${(T * 0.16).toFixed(2)},${(b * 0.20).toFixed(2)} ` +
+        `${(T * 0.34).toFixed(2)},${(b * 0.80).toFixed(2)} ${(T * 0.50).toFixed(2)},${(b * 0.50).toFixed(2)} ` +
+        `C${(T * 0.66).toFixed(2)},${(b * 0.20).toFixed(2)} ${(T * 0.84).toFixed(2)},${(b * 0.80).toFixed(2)} ` +
+        `${T.toFixed(2)},${(b * 0.50).toFixed(2)}" fill="none" stroke-width="${(b * 0.075).toFixed(2)}"/>` +
+        leaf(T * 0.08, b * 0.42, b * 0.44, b * 0.17, -26) +
+        leaf(T * 0.60, b * 0.58, b * 0.44, b * 0.17, 154) +
+        volute(T * 0.34, b * 0.30, b * 0.135, 1.2, 1) +
+        volute(T * 0.84, b * 0.70, b * 0.135, 1.2, -1) +
+        bead(T * 0.47, b * 0.040) + bead(T * 0.97, b * 0.040);
+      break;
+  }
+
+  // Shade down-right, highlight up-left, form between. The offsets are a fixed
+  // fraction of the band so the relief holds at any frame width.
+  const o = b * 0.038;
+  const relief = (forms: string) =>
+    `<g transform="translate(${o.toFixed(2)},${o.toFixed(2)})" fill="${shade}" stroke="${shade}" opacity="0.55">${forms}</g>` +
+    `<g transform="translate(${(-o).toFixed(2)},${(-o).toFixed(2)})" fill="${pale}" stroke="${pale}" opacity="0.75">${forms}</g>` +
+    `<g fill="${deep}" stroke="${deep}" opacity="0.92">${forms}</g>`;
+
+  /* --- the corner cartouche ---------------------------------------------- */
+  const corner = (cx: number, cy: number, rot: number) => {
+    const R = b * 0.86;
+    const forms =
+      volute(0, 0, R * 0.50, 1.35, 1) +
+      volute(R * 0.62, R * 0.10, R * 0.34, 1.2, -1) +
+      leaf(-R * 0.10, R * 0.30, R * 0.95, R * 0.34, 52) +
+      leaf(R * 0.28, -R * 0.42, R * 0.85, R * 0.30, -34) +
+      `<circle cx="0" cy="0" r="${(R * 0.10).toFixed(2)}"/>`;
+    return `<g transform="translate(${cx.toFixed(2)},${cy.toFixed(2)}) rotate(${rot})">${relief(forms)}</g>`;
+  };
+
+  // The mitred lengths. Each trapezoid's gradient runs ACROSS its own run.
+  const face = (pts: string, grad: string) =>
+    `<polygon points="${pts}" fill="url(#${id}-${grad})"/>`;
+
+  // The moulding's section, as gradient stops: outer lip, rise, crown, fall,
+  // inner lip. This is what makes it read as rounded rather than as a stripe.
+  const section = (x1: number, y1: number, x2: number, y2: number) => `
+    <linearGradient id="${id}-${x1 === x2 ? (y1 < y2 ? 'top' : 'bot') : (x1 < x2 ? 'lft' : 'rgt')}"
+                    x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}">
+      <stop offset="0%"   stop-color="${deep}"/>
+      <stop offset="7%"   stop-color="${pale}"/>
+      <stop offset="20%"  stop-color="${gold}"/>
+      <stop offset="38%"  stop-color="${pale}"/>
+      <stop offset="55%"  stop-color="${deep}"/>
+      <stop offset="72%"  stop-color="${gold}"/>
+      <stop offset="90%"  stop-color="${pale}"/>
+      <stop offset="100%" stop-color="${deep}"/>
+    </linearGradient>`;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}mm" height="${h}mm" viewBox="0 0 ${w} ${h}">
   <defs>
-    <linearGradient id="${id}-gold" x1="0" y1="0" x2="0.35" y2="1">
-      <stop offset="0%"   stop-color="${gold}" stop-opacity="0.35"/>
-      <stop offset="38%"  stop-color="${gold}" stop-opacity="0.95"/>
-      <stop offset="62%"  stop-color="${deep}" stop-opacity="0.75"/>
-      <stop offset="100%" stop-color="${gold}" stop-opacity="0.45"/>
-    </linearGradient>
-    <pattern id="${id}-scroll" width="${tile}" height="${b}" patternUnits="userSpaceOnUse">${motif}</pattern>
+    ${section(0, 0, 0, 1)}${section(0, 1, 0, 0)}${section(0, 0, 1, 0)}${section(1, 0, 0, 0)}
+    <clipPath id="${id}-ctop"><polygon points="0,0 ${w},0 ${w - b},${b} ${b},${b}"/></clipPath>
+    <clipPath id="${id}-cbot"><polygon points="0,${h} ${w},${h} ${w - b},${h - b} ${b},${h - b}"/></clipPath>
+    <clipPath id="${id}-clft"><polygon points="0,0 ${b},${b} ${b},${h - b} 0,${h}"/></clipPath>
+    <clipPath id="${id}-crgt"><polygon points="${w},0 ${w - b},${b} ${w - b},${h - b} ${w},${h}"/></clipPath>
+    <pattern id="${id}-run" width="${T}" height="${b}" patternUnits="userSpaceOnUse">
+      ${relief(tileForms)}
+    </pattern>
   </defs>
 
-  <!-- the gilt field, as a frame: a filled rect with the middle cut out by
-       fill-rule evenodd, so nothing is painted over the paper. -->
-  <path fill="url(#${id}-gold)" fill-rule="evenodd"
-        d="M0,0 H${w} V${h} H0 Z M${b},${b} H${w - b} V${h - b} H${b} Z"/>
-  <path fill="url(#${id}-scroll)" fill-rule="evenodd"
-        d="M0,0 H${w} V${h} H0 Z M${b},${b} H${w - b} V${h - b} H${b} Z"/>
+  <!-- Four mitred lengths of moulding. -->
+  ${face(`0,0 ${w},0 ${w - b},${b} ${b},${b}`, 'top')}
+  ${face(`0,${h} ${w},${h} ${w - b},${h - b} ${b},${h - b}`, 'bot')}
+  ${face(`0,0 ${b},${b} ${b},${h - b} 0,${h}`, 'lft')}
+  ${face(`${w},0 ${w - b},${b} ${w - b},${h - b} ${w},${h}`, 'rgt')}
 
-  <!-- fillets: a fine rule either side of the field, and a bead course inside -->
-  <rect x="0.6" y="0.6" width="${w - 1.2}" height="${h - 1.2}" fill="none" stroke="${deep}" stroke-width="0.7"/>
-  <rect x="${b - 0.5}" y="${b - 0.5}" width="${w - 2 * b + 1}" height="${h - 2 * b + 1}" fill="none" stroke="${deep}" stroke-width="0.7"/>
-  <rect x="${b + 1.6}" y="${b + 1.6}" width="${w - 2 * b - 3.2}" height="${h - 2 * b - 3.2}" fill="none" stroke="${deep}" stroke-width="0.35"/>
+  <!-- The acanthus, run along each length. The sides carry the same tile turned
+       through a right angle, so the carving runs WITH the moulding rather than
+       across it. -->
+  <g clip-path="url(#${id}-ctop)"><rect x="0" y="0" width="${w}" height="${b}" fill="url(#${id}-run)"/></g>
+  <g clip-path="url(#${id}-cbot)"><g transform="translate(0,${h}) scale(1,-1)"><rect x="0" y="0" width="${w}" height="${b}" fill="url(#${id}-run)"/></g></g>
+  <g clip-path="url(#${id}-clft)"><g transform="rotate(90) translate(0,${-b})"><rect x="0" y="0" width="${h}" height="${b}" fill="url(#${id}-run)"/></g></g>
+  <g clip-path="url(#${id}-crgt)"><g transform="translate(${w},0) rotate(90) scale(1,-1) translate(0,${-b})"><rect x="0" y="0" width="${h}" height="${b}" fill="url(#${id}-run)"/></g></g>
 
-  ${medallion(m, m, b * 0.62)}
-  ${medallion(w - m, m, b * 0.62)}
-  ${medallion(m, h - m, b * 0.62)}
-  ${medallion(w - m, h - m, b * 0.62)}
+  <!-- The mitres, drawn over the joins. -->
+  <g stroke="${shade}" stroke-width="${(b * 0.02).toFixed(2)}" opacity="0.45" fill="none">
+    <path d="M0,0 L${b},${b}"/><path d="M${w},0 L${w - b},${b}"/>
+    <path d="M0,${h} L${b},${h - b}"/><path d="M${w},${h} L${w - b},${h - b}"/>
+  </g>
+
+  ${corner(b * 0.98, b * 0.98, 0)}
+  ${corner(w - b * 0.98, b * 0.98, 90)}
+  ${corner(w - b * 0.98, h - b * 0.98, 180)}
+  ${corner(b * 0.98, h - b * 0.98, 270)}
+
+  <!-- Fillets: a fine rule at the sight edge and at the back edge, and the
+       double keyline on the field that the 2011 certificate carries. -->
+  <rect x="${(b * 0.10).toFixed(2)}" y="${(b * 0.10).toFixed(2)}"
+        width="${(w - b * 0.20).toFixed(2)}" height="${(h - b * 0.20).toFixed(2)}"
+        fill="none" stroke="${shade}" stroke-width="${(b * 0.045).toFixed(2)}" opacity="0.7"/>
+  <rect x="${(b - b * 0.06).toFixed(2)}" y="${(b - b * 0.06).toFixed(2)}"
+        width="${(w - 2 * b + b * 0.12).toFixed(2)}" height="${(h - 2 * b + b * 0.12).toFixed(2)}"
+        fill="none" stroke="${shade}" stroke-width="${(b * 0.055).toFixed(2)}" opacity="0.8"/>
+  <rect x="${(b + b * 0.30).toFixed(2)}" y="${(b + b * 0.30).toFixed(2)}"
+        width="${(w - 2 * b - b * 0.60).toFixed(2)}" height="${(h - 2 * b - b * 0.60).toFixed(2)}"
+        fill="none" stroke="${gold}" stroke-width="${(b * 0.075).toFixed(2)}"/>
+  <rect x="${(b + b * 0.52).toFixed(2)}" y="${(b + b * 0.52).toFixed(2)}"
+        width="${(w - 2 * b - b * 1.04).toFixed(2)}" height="${(h - 2 * b - b * 1.04).toFixed(2)}"
+        fill="none" stroke="${gold}" stroke-width="${(b * 0.028).toFixed(2)}"/>
 </svg>`;
 }
 
-export const ornateFrameUri = (w: number, h: number, gold: string, deep: string, band?: number) =>
-  enc(ornateFrame(w, h, gold, deep, band));
+/** Mix two hex colours. Used to derive the lit and shaded tones of the gilt. */
+function mixHex(a: string, bx: string, t: number): string {
+  const p = (c: string) => [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16));
+  const [r1, g1, b1] = p(a);
+  const [r2, g2, b2] = p(bx);
+  const m = (x: number, y: number) => Math.round(x + (y - x) * t).toString(16).padStart(2, '0');
+  return `#${m(r1, r2)}${m(g1, g2)}${m(b1, b2)}`;
+}
+
+export const ornateFrameUri = (
+  w: number, h: number, gold: string, deep: string, band?: number, course?: BorderCourse,
+) => enc(ornateFrame(w, h, gold, deep, band, course));
 
 /* ------------------------------------------------------------------ */
 /* The wafer seal                                                       */

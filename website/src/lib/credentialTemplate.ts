@@ -40,6 +40,7 @@
 // ---------------------------------------------------------------------------
 
 import { UNIVERSITY } from './constants';
+import type { BorderCourse } from './borderCatalogue';
 
 export type CredentialKind = 'certificate' | 'transcript';
 
@@ -82,6 +83,51 @@ export interface CredentialDesign {
 
   /** The wafer seal's colour. Red on the university's own certificate. */
   sealColour: string;
+
+  /**
+   * The colour of the university's name at the head of the document.
+   *
+   * TAKEN FROM THE UNIVERSITY'S OWN SIGNAGE, not from the brand palette. The
+   * board over the door sets the name in blackletter in oxblood, and that is
+   * the institution's mark as anyone who has stood in front of the building
+   * knows it. The certificate had it in the portal's brand purple, which is a
+   * screen colour chosen for a website — so the document and the building
+   * disagreed about what colour the university is.
+   *
+   * Held apart from `brand` because it applies to the name alone. The body
+   * text, the rules and the device stay in the brand colour: a certificate set
+   * entirely in oxblood reads as a warning notice, and the point of a title
+   * colour is that it is the title's.
+   */
+  titleColour: string;
+
+  /**
+   * The keyline round each letter of the title.
+   *
+   * The signage is sign-painter's work, not plain type: a dark letter with a
+   * light keyline cut round the outside of it and a shadow thrown down-right.
+   * The keyline is what separates the letter from whatever is behind it, which
+   * on the board is a pale wall and on the certificate is the guilloché — so it
+   * does the same job on paper that it does on the wall.
+   *
+   * Empty string turns it off.
+   */
+  titleOutline: string;
+
+  /**
+   * Relief on the title, as on the signage.
+   *
+   * The board's letters are cut with a light edge above and a shadow below, so
+   * they stand off the wall. On paper the equivalent is letterpress bite — the
+   * type pressed INTO the sheet — which is a hairline of paper catching the
+   * light on one side and a soft shade on the other.
+   *
+   * Kept very fine deliberately. The signage is two metres wide and its relief
+   * is proportionate at that size; the same offsets at 44px are a drop shadow,
+   * and a drop shadow on a degree certificate reads as a template. Off gives
+   * flat type, which is also correct and is what most engravers would do.
+   */
+  titleRelief: boolean;
 
   /**
    * Bleed, in millimetres, for commercial printing. 0 for office printing.
@@ -128,6 +174,18 @@ export interface CredentialDesign {
    */
   border: 'none' | 'single' | 'double' | 'ornate';
   borderWidthMm: number;
+
+  /**
+   * Which carved course the ornate frame runs, from the border catalogue.
+   *
+   * Applies when `border` is 'ornate'. Every course shares the same moulding
+   * section — mitred lengths, relief passes, corner cartouche, fillets — and
+   * differs only in the ornament cut along it, which is what makes the set read
+   * as one institution's frames rather than six borrowed from six workshops.
+   *
+   * See src/lib/borderCatalogue.ts for what each is and where it belongs.
+   */
+  borderCourse: BorderCourse;
 
   /** Watermark seal opacity, 0–1. Zero removes it. */
   sealOpacity: number;
@@ -289,10 +347,18 @@ export const DEFAULT_CERTIFICATE_DESIGN: CredentialDesign = {
   fontFamily: "Georgia, 'Times New Roman', Times, serif",
   titleFont: "'UnifrakturMaguntia', 'UnifrakturMaguntia Fallback', 'Old English Text MT', Georgia, serif",
   sealColour: '#b31217',
+  // The oxblood of the board over the door.
+  // Dark interior, light keyline — the board over the door, as the university
+  // describes it. Not pure black: a trace of the oxblood is left in it, which is
+  // what the letters read as at a distance and what the shadow picks up.
+  titleColour: '#1b1016',
+  titleOutline: '#ffffff',
+  titleRelief: true,
   sealPlacement: 'device',
   bleedMm: 0,
   border: 'ornate',
   borderWidthMm: 11,
+  borderCourse: 'acanthus',
   sealOpacity: 0.05,
   showSeal: true,
   // The conferral, in the form the older universities use: the body that

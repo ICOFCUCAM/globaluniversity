@@ -56,6 +56,7 @@ import { uvLayerSvg } from '@/lib/credentialArt';
 import ApprovalQueue from './ApprovalQueue';
 import { WORDING_KEYS, TITLE_FONTS } from '@/lib/credentialTemplate';
 import { SECURITY_PATTERNS, watermarkName } from '@/lib/securityPatterns';
+import { BORDER_CATALOGUE, borderById } from '@/lib/borderCatalogue';
 import {
   Palette, Upload, AlertTriangle, CheckCircle2, History, Award, FileText,
   Loader2, Plus, Trash2, RotateCcw, ShieldAlert, ShieldCheck, PenLine,
@@ -383,8 +384,34 @@ export default function CredentialStudio() {
                     <Select value={design.orientation} onChange={(v) => set('orientation', v as CredentialDesign['orientation'])} options={['landscape', 'portrait']} />
                   </Row>
                   <Row label="Border">
-                    <Select value={design.border} onChange={(v) => set('border', v as CredentialDesign['border'])} options={['double', 'single', 'none']} />
+                    <Select value={design.border} onChange={(v) => set('border', v as CredentialDesign['border'])} options={['ornate', 'double', 'single', 'none']} />
                   </Row>
+                  {design.border === 'ornate' && (
+                    <>
+                      <Row label="Carved course">
+                        <Select
+                          value={design.borderCourse}
+                          onChange={(v) => set('borderCourse', v as CredentialDesign['borderCourse'])}
+                          options={BORDER_CATALOGUE.map((b) => b.id)}
+                        />
+                      </Row>
+                      <p className="text-[11px] leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">
+                        <strong className="text-[#33234a] dark:text-[#e4dcf0]">
+                          {borderById(design.borderCourse)?.name}
+                        </strong>{' '}
+                        {borderById(design.borderCourse)?.what}{' '}
+                        <em className="not-italic text-[#8a7d1f]">
+                          {borderById(design.borderCourse)?.use}
+                        </em>
+                      </p>
+                      <p className="text-[11px] leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">
+                        Every course is cut into the same moulding — mitred lengths, lit and shaded
+                        relief, corner cartouche, fillets — and differs only in the ornament along
+                        the run. That is what makes the set read as one institution’s frames rather
+                        than several borrowed from several workshops.
+                      </p>
+                    </>
+                  )}
                   <Row label="Bleed">
                     <Select
                       value={String(design.bleedMm)}

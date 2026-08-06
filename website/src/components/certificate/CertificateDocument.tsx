@@ -272,7 +272,7 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
           : globeInRosetteUri(seed, 560, design.brand, 1),
     // Sheet size and a band widened by the bleed, so the trim falls through
     // the gilt rather than beside it.
-    frame: ornateFrameUri(sheetW, sheetH, design.accent, '#8a6d1f', design.borderWidthMm + bleed),
+    frame: ornateFrameUri(sheetW, sheetH, design.accent, '#8a6d1f', design.borderWidthMm + bleed, design.borderCourse),
     band: guillocheBandUri(seed ^ 0x51, 300, 14, design.accent, 0.9),
     // The microtext course now carries the university's own words as well as
     // the credential number. Under a loupe it reads as the institution; on a
@@ -307,7 +307,7 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
     }),
   }), [
     seed, sheetW, sheetH, bleed, design.brand, design.accent, design.borderWidthMm,
-    design.sealColour, design.paper, data.credentialId, sec.watermark, sec.deviceStyle, sec.world, sec.holderRing, data.fullName,
+    design.sealColour, design.paper, design.borderCourse, data.credentialId, sec.watermark, sec.deviceStyle, sec.world, sec.holderRing, data.fullName,
     data.degree, data.faculty,
   ]);
 
@@ -722,9 +722,43 @@ backgroundImage: `url("${art.micro}")`,
           // Blackletter is drawn tight; the wide tracking that suits spaced
           // roman capitals pulls it apart into disconnected shapes.
           letterSpacing: blackletter ? '0.02em' : '0.16em',
-          color: design.brand,
+          // The oxblood of the university's own signage, not the portal's brand
+          // purple. The board over the door is the institution's mark as anyone
+          // standing in front of the building knows it; the certificate was
+          // using a colour chosen for a website, so the document and the
+          // building disagreed about what colour the university is.
+          color: design.titleColour || design.brand,
           textTransform: blackletter ? 'none' : 'uppercase',
           lineHeight: blackletter ? 1.05 : 1.1,
+          // Letterpress bite, not a drop shadow.
+          //
+          // The signage is cut with a light edge above and a shade below so the
+          // letters stand off the wall. On paper the equivalent is type pressed
+          // INTO the sheet: a hairline of paper catching the light on one side
+          // and a soft shade on the other. The offsets are a third of what the
+          // signage uses proportionally — its relief is right at two metres
+          // wide, and the same offsets at 44px are a drop shadow, which on a
+          // degree certificate reads as a template.
+          // The keyline, then the shadow.
+          //
+          // BUILT FROM text-shadow RATHER THAN -webkit-text-stroke. The stroke
+          // property is prefixed, is not in any specification, and is applied
+          // CENTRED on the outline — so half of it eats into the letterform and
+          // a blackletter face, whose thin strokes are already hairlines, loses
+          // them. Eight offsets at the same radius put the keyline entirely
+          // OUTSIDE the glyph and work in every engine that will ever print
+          // this.
+          textShadow: [
+            ...(design.titleOutline
+              ? [0, 45, 90, 135, 180, 225, 270, 315].map((deg) => {
+                  const r = 0.9;
+                  const x = (Math.cos((deg * Math.PI) / 180) * r).toFixed(2);
+                  const y = (Math.sin((deg * Math.PI) / 180) * r).toFixed(2);
+                  return `${x}px ${y}px 0 ${design.titleOutline}`;
+                })
+              : []),
+            ...(design.titleRelief ? ['1.1px 1.5px 1.6px rgba(0,0,0,0.30)'] : []),
+          ].join(', ') || undefined,
         }}>
           {UNIVERSITY.name}
         </h1>
