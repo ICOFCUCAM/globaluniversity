@@ -35,7 +35,7 @@
 // carry different rosettes, and the same certificate always carries its own.
 // ---------------------------------------------------------------------------
 
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useMemo } from 'react';
 import { UNIVERSITY } from '@/lib/constants';
 import type { CredentialDesign, Signatory } from '@/lib/credentialTemplate';
 import {
@@ -168,6 +168,34 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
   const given = `${design.wording.given} ${ordinalDay(issued.getDate())} Day of ` +
     `${issued.toLocaleDateString('en-GB', { month: 'long' })}, ${yearInWords(issued.getFullYear())}`;
 
+  // The artwork, computed once per set of inputs rather than per render.
+  //
+  // Each of these traces thousands of points, serialises an SVG and base64s it:
+  // the rosette alone is three bands of sixteen curves at 110 steps a petal,
+  // and the frame carries a pattern tile plus four medallions. They were all
+  // being rebuilt on every render — so in the Studio, where the design changes
+  // on every keystroke of a colour field, the whole set was regenerated for each
+  // character typed, and the preview visibly stuttered.
+  //
+  // The dependencies are the values the artwork is actually derived from. Seed
+  // is in every one of them because the artwork is per-credential by design:
+  // two certificates carry different figures, and memoising across them would
+  // be the bug this list prevents.
+  const art = useMemo(() => ({
+    ground: securityGroundUri(seed, 72, design.brand, UNIVERSITY.shortName, 0.05),
+    rosette: guillocheRosetteUri(seed, 520, design.brand, 1),
+    frame: ornateFrameUri(w, h, design.accent, '#8a6d1f', design.borderWidthMm),
+    band: guillocheBandUri(seed ^ 0x51, 300, 14, design.accent, 0.9),
+    micro: microtextBandUri(
+      `${UNIVERSITY.name.toUpperCase()} · ${data.credentialId}`, 300, 6, design.brand, 1.9,
+    ),
+    wafer: waferSealUri(seed, 300, design.sealColour || '#b31217',
+      `${UNIVERSITY.name.toUpperCase()} · `, UNIVERSITY.shortName),
+  }), [
+    seed, w, h, design.brand, design.accent, design.borderWidthMm,
+    design.sealColour, data.credentialId,
+  ]);
+
   return (
     <>
       {/* The page.
@@ -235,7 +263,7 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
       {sec.securityGround && (
         <div aria-hidden="true" style={{
           position: 'absolute', inset: 0,
-          backgroundImage: `url("${securityGroundUri(seed, 72, design.brand, UNIVERSITY.shortName, 0.05)}")`,
+          backgroundImage: `url("${art.ground}")`,
           backgroundRepeat: 'repeat',
         }} />
       )}
@@ -281,7 +309,7 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
         }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={guillocheRosetteUri(seed, 520, design.brand, 1)}
+            src={art.rosette}
             alt=""
             // Sized and placed to clear the foot. The wafer is affixed in the
             // middle of that row, and a watermark reaching under it would show
@@ -305,7 +333,7 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
       {design.border === 'ornate' && (
         <div aria-hidden="true" style={{
           position: 'absolute', inset: 0,
-          backgroundImage: `url("${ornateFrameUri(w, h, design.accent, '#8a6d1f', design.borderWidthMm)}")`,
+          backgroundImage: `url("${art.frame}")`,
           backgroundSize: '100% 100%',
           backgroundRepeat: 'no-repeat',
         }} />
@@ -326,7 +354,7 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
           security border that appears on some printers only is worse than one
           that is always there. */}
       {design.border === 'double' && sec.guilloche && (() => {
-        const band = guillocheBandUri(seed ^ 0x51, 300, 14, design.accent, 0.9);
+        const band = art.band;
         const edge = design.borderWidthMm;
         const thick = 6;
         const common: React.CSSProperties = {
@@ -364,9 +392,7 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
           right: `${design.borderWidthMm + 8.5}mm`,
           bottom: `${design.borderWidthMm + 5.4}mm`,
           height: '1.7mm',
-          backgroundImage: `url("${microtextBandUri(
-            `${UNIVERSITY.name.toUpperCase()} · ${data.credentialId}`, 300, 6, design.brand, 1.9,
-          )}")`,
+backgroundImage: `url("${art.micro}")`,
           backgroundRepeat: 'repeat-x',
           backgroundSize: 'auto 1.7mm',
         }} />
@@ -585,8 +611,7 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
             ) : (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={waferSealUri(seed, 300, design.sealColour || '#b31217',
-                  `${UNIVERSITY.name.toUpperCase()} · `, UNIVERSITY.shortName)}
+                src={art.wafer}
                 alt=""
                 style={{ width: '30mm', height: '30mm' }}
               />
