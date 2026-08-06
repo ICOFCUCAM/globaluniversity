@@ -1,8 +1,8 @@
 import { SampleDataNotice } from '@/components/ui/portal';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import MyWeek from './MyWeek';
 import { useAuth } from '@/contexts/AuthContext';
-import { sampleTranscriptData } from '@/lib/sampleData';
+import { supabase } from '@/lib/supabase';
 import { getGPAColor, getClassificationShort } from '@/lib/grading';
 import {
   BookOpen, ClipboardList, FileText, Award, Monitor,
@@ -16,41 +16,95 @@ interface StudentDashboardProps {
 
 export default function StudentDashboard({ onNavigate }: StudentDashboardProps) {
   const { user } = useAuth();
-  const data = sampleTranscriptData;
 
-  // Calculate current semester results
-  const currentYear = data.years[data.years.length - 1];
-  const currentSem = currentYear?.semesters[currentYear.semesters.length - 1];
+  /**
+   * The signed-in student's own record.
+   *
+   * This screen printed the signed-in student's NAME above another student's
+   * CGPA, credits and classification, taken from sampleTranscriptData, and
+   * described their programme as "B.Sc. Computer Science" — a subject this
+   * university does not teach. A student saw their own name over a grade point
+   * average that was not theirs, on the first screen after signing in, and had
+   * no reason to doubt it.
+   *
+   * A wrong CGPA shown to the person it purports to describe is the single most
+   * damaging thing a student portal can do. It is the number they use to decide
+   * whether to retake a course, apply for a scholarship, or graduate.
+   */
+  const [record, setRecord] = useState<any | null>(null);
+  const [approved, setApproved] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const semesterGPAs = data.years.flatMap((y) =>
-    y.semesters.map((s, si) => ({
-      label: `Y${y.year}S${s.semester}`,
-      gpa: s.gpa,
-    }))
-  );
+  useEffect(() => {
+    if (!user?.id) { setLoading(false); return; }
+    let live = true;
+    (async () => {
+      const { data: student } = await supabase
+        .from('students')
+        .select('*')
+        .eq('auth_user_id', user.id)
+        .maybeSingle();
+
+      // Only approved results count towards a CGPA. A mark still in draft is a
+      // lecturer's working note, and showing it to the student as their grade
+      // pre-empts the HOD, the Dean and the Registrar.
+      const { data: results } = student
+        ? await supabase
+            .from('results')
+            .select('total_score, grade, grade_point, courses(code, title, credit_unit)')
+            .eq('student_id', student.id)
+            .eq('status', 'approved')
+        : { data: [] as any[] };
+
+      if (!live) return;
+      setRecord(student ?? null);
+      setApproved(results ?? []);
+      setLoading(false);
+    })();
+    return () => { live = false; };
+  }, [user?.id]);
+
+  const credits = approved.reduce((sum, r: any) => sum + (r.courses?.credit_unit ?? 0), 0);
+  const cgpa = credits > 0
+    ? Number(
+        (approved.reduce((sum, r: any) => sum + (r.grade_point ?? 0) * (r.courses?.credit_unit ?? 0), 0) / credits)
+          .toFixed(2),
+      )
+    : null;
+  const programme = record
+    ? [record.degree_type, record.program].filter(Boolean).join(' ')
+    : '';
 
   return (
     <div className="space-y-6">
-      <SampleDataNotice what="a sample student record" />
       {/* Welcome */}
       <div className="bg-gradient-to-r from-[#422e59] to-[#3949ab] rounded-2xl p-6 text-white relative overflow-hidden">
         <div className="relative z-10">
           <p className="text-blue-200 text-sm">Welcome back,</p>
           <h1 className="text-2xl font-bold mt-1">{user?.name}</h1>
-          <p className="text-blue-200 text-sm mt-1">{user?.matricNo} · B.Sc. Computer Science</p>
-          <div className="flex gap-6 mt-4">
+          <p className="mt-1 text-sm text-white/70">
+            {record?.student_number || user?.matricNo || '—'}
+            {programme ? ` · ${programme}` : ''}
+          </p>
+          <div className="mt-4 flex flex-wrap gap-6">
             <div>
-              <p className="text-3xl font-bold text-amber-300">{data.cgpa}</p>
-              <p className="text-xs text-blue-200">Current CGPA</p>
+              <p className="text-3xl font-bold tabular-nums text-amber-300">
+                {loading ? '…' : cgpa !== null ? cgpa.toFixed(2) : '—'}
+              </p>
+              <p className="text-xs text-white/60">
+                {cgpa !== null ? 'CGPA' : 'No approved results yet'}
+              </p>
             </div>
             <div>
-              <p className="text-3xl font-bold text-emerald-300">{data.totalCredits}</p>
-              <p className="text-xs text-blue-200">Credits Earned</p>
+              <p className="text-3xl font-bold tabular-nums text-emerald-300">{loading ? '…' : credits}</p>
+              <p className="text-xs text-white/60">Credits earned</p>
             </div>
-            <div>
-              <p className="text-lg font-bold text-amber-300 mt-1">{getClassificationShort(data.cgpa)}</p>
-              <p className="text-xs text-blue-200">Classification</p>
-            </div>
+            {cgpa !== null && (
+              <div>
+                <p className="mt-1 text-lg font-bold text-amber-300">{getClassificationShort(cgpa)}</p>
+                <p className="text-xs text-white/60">Standing</p>
+              </div>
+            )}
           </div>
         </div>
         <div className="absolute right-6 top-6 w-20 h-20 rounded-full border-4 border-amber-400/30 flex items-center justify-center">
@@ -86,66 +140,60 @@ export default function StudentDashboard({ onNavigate }: StudentDashboardProps) 
         ))}
       </div>
 
-      {/* GPA Progress */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl p-5 border border-[#ece7de] dark:border-[#2e2637]">
-          <h3 className="font-semibold text-[#33234a] dark:text-[#e4dcf0] mb-4">GPA Progress</h3>
-          <div className="flex items-end gap-2 h-32">
-            {semesterGPAs.map((s, i) => (
-              <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                <span className="text-[10px] font-medium text-[#6b6076] dark:text-[#9c93ad]">{s.gpa}</span>
-                <div
-                  className="w-full bg-gradient-to-t from-blue-600 to-blue-400 rounded-t transition-all duration-500"
-                  style={{ height: `${(s.gpa / 5) * 100}%` }}
-                />
-                <span className="text-[9px] text-[#a49bb0] dark:text-[#7b7289]">{s.label}</span>
-              </div>
-            ))}
-          </div>
+      {/* The student's own approved results. The GPA-progress chart that stood
+          here plotted another student's semester GPAs on a 5.00 axis; both the
+          data and the axis were wrong. A per-semester series needs results to
+          carry a semester, which they do not yet, so this lists what has
+          actually been approved rather than drawing a shape. */}
+      <div className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27]">
+        <div className="flex items-center justify-between border-b border-[#f0ece4] px-5 py-4 dark:border-[#2a2333]">
+          <h3 className="font-semibold text-[#33234a] dark:text-[#e4dcf0]">Your approved results</h3>
+          <span className="text-xs text-[#a49bb0]">
+            {approved.length} course{approved.length === 1 ? '' : 's'} · {credits} credits
+          </span>
         </div>
-
-        {/* Current Semester Courses */}
-        <div className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27]">
-          <div className="px-5 py-4 border-b border-[#f0ece4] dark:border-[#2a2333] flex items-center justify-between">
-            <h3 className="font-semibold text-[#33234a] dark:text-[#e4dcf0]">Current Semester</h3>
-            <span className="text-xs text-[#a49bb0] dark:text-[#7b7289]">Year 4, Semester 2</span>
-          </div>
+        {loading ? (
+          <p className="px-5 py-8 text-center text-sm text-[#a49bb0]">Loading your record…</p>
+        ) : !record ? (
+          <p className="px-5 py-8 text-center text-sm text-[#6b6076] dark:text-[#9c93ad]">
+            No student record is linked to this account yet. If you have just been admitted, the
+            Registrar&apos;s office links it when your enrolment is completed.
+          </p>
+        ) : approved.length === 0 ? (
+          <p className="px-5 py-8 text-center text-sm text-[#6b6076] dark:text-[#9c93ad]">
+            Nothing approved yet. Marks appear here once your lecturer has submitted them and they
+            have been approved — a mark still being entered is not a result.
+          </p>
+        ) : (
           <div className="divide-y divide-[#f0ece4] dark:divide-[#2a2333]">
-            {currentSem?.courses.map((course, i) => (
-              <div key={i} className="px-5 py-3 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-[#4a4155] dark:text-[#c8c1d4]">{course.code}</p>
-                  <p className="text-xs text-[#a49bb0] dark:text-[#7b7289]">{course.title}</p>
+            {approved.map((r: any, i: number) => (
+              <div key={i} className="flex items-center justify-between px-5 py-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-[#33234a] dark:text-[#e4dcf0]">
+                    {r.courses?.code ?? '—'}
+                  </p>
+                  <p className="truncate text-xs text-[#a49bb0]">{r.courses?.title ?? ''}</p>
                 </div>
-                <div className="text-right">
-                  <span className={`text-sm font-bold ${getGPAColor(course.gradePoint)}`}>{course.grade}</span>
-                  <p className="text-[10px] text-[#a49bb0] dark:text-[#7b7289]">{course.creditUnit} CU</p>
+                <div className="flex-shrink-0 text-right">
+                  <span className={`text-sm font-bold ${getGPAColor(r.grade_point ?? 0)}`}>
+                    {r.grade ?? '—'}
+                  </span>
+                  <p className="text-[10px] tabular-nums text-[#a49bb0]">
+                    {r.courses?.credit_unit ?? 0} credits
+                  </p>
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        )}
       </div>
 
-      {/* Upcoming */}
-      <div className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] p-5">
-        <h3 className="font-semibold text-[#33234a] dark:text-[#e4dcf0] mb-3">Upcoming Schedule</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {[
-            { title: 'CSC 412 Lecture', time: 'Today, 2:00 PM', type: 'Live Class', color: 'border-l-blue-500' },
-            { title: 'CSC 414 Assignment Due', time: 'Tomorrow, 11:59 PM', type: 'Assignment', color: 'border-l-amber-500' },
-            { title: 'CSC 411 Project Defense', time: 'April 15, 9:00 AM', type: 'Exam', color: 'border-l-red-500' },
-          ].map((item, i) => (
-            <div key={i} className={`p-3 bg-gray-50 rounded-lg border-l-4 ${item.color}`}>
-              <p className="text-sm font-medium text-[#4a4155] dark:text-[#c8c1d4]">{item.title}</p>
-              <p className="text-xs text-[#a49bb0] dark:text-[#7b7289] mt-1 flex items-center gap-1">
-                <Clock size={10} /> {item.time}
-              </p>
-              <span className="text-[10px] font-medium text-[#6b6076] dark:text-[#9c93ad] mt-1 inline-block">{item.type}</span>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* The schedule block that stood here listed "CSC 412 Lecture, Today
+          2:00 PM" and two more like it — a course this university does not
+          teach, at a time nobody scheduled. It is removed rather than relabelled:
+          a timetable is not a decoration, and an invented one sends a student to
+          a room at an hour when nothing is happening. It returns when the
+          timetable module holds real sessions. */}
     </div>
   );
 }
