@@ -177,9 +177,22 @@ export async function POST(request: Request) {
   const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SITE_URL, MAIL_FROM } = process.env;
   const portalUrl = `${SITE_URL ?? `https://${UNIVERSITY.website.replace(/^www\./, '')}`}/portal`;
 
+  // Dates come out of Postgres as ISO. An admission letter is read by people,
+  // and by people in several countries, so it prints the month in words —
+  // 03/04/2007 means two different days depending on who is holding it, and on
+  // a document used to establish identity that is not a small thing.
+  const dateOfBirth = student.date_of_birth
+    ? new Date(student.date_of_birth).toLocaleDateString('en-GB', {
+        day: 'numeric', month: 'long', year: 'numeric',
+      })
+    : undefined;
+
   const packageInput = {
     fullName: fullName || 'Student',
     studentNumber,
+    dateOfBirth,
+    gender: student.gender || undefined,
+    nationality: student.nationality || undefined,
     programme: [student.degree_type, student.program].filter(Boolean).join(' — ') || 'your programme',
     faculty: student.faculty || UNIVERSITY.name,
     level: student.degree_type || '—',
@@ -201,7 +214,7 @@ export async function POST(request: Request) {
     temporaryPassword: password,
   };
 
-  const html = admissionPackageHtml(packageInput);
+  const html = await admissionPackageHtml(packageInput);
   const text = admissionCoveringText(packageInput);
 
   if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {

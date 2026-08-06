@@ -1,0 +1,150 @@
+// ---------------------------------------------------------------------------
+// The document seal — does it actually detect an alteration?
+//
+// Run with:  node src/lib/documentSecurity.test.mjs
+//
+// The admission letter claims that changing a name, a date of birth or a
+// student number on its face makes the printed code stop matching. That is the
+// whole of its anti-forgery value, and it is a claim about behaviour, so it is
+// tested rather than asserted in a comment.
+//
+// What is checked here:
+//   - a different value in any sealed field produces a different code;
+//   - the same values produce the same code, whatever the whitespace or case,
+//     because a seal that broke on a double space would have a genuine student
+//     accused of forging their own letter;
+//   - the code is drawn from an alphabet a person can read aloud;
+//   - with no signing key, nothing is sealed and the letter says so, rather
+//     than printing a code that means nothing.
+// ---------------------------------------------------------------------------
+
+import { execFileSync } from 'node:child_process';
+import { mkdirSync } from 'node:fs';
+import { join } from 'node:path';
+
+let failures = 0;
+function check(label, actual, expected) {
+  const ok = JSON.stringify(actual) === JSON.stringify(expected);
+  if (!ok) {
+    failures++;
+    console.error(`FAIL  ${label}\n      expected ${JSON.stringify(expected)}\n      actual   ${JSON.stringify(actual)}`);
+  } else {
+    console.log(`ok    ${label}`);
+  }
+}
+
+// The module is TypeScript. Bundle it rather than adding a loader to the
+// project — the same reason grading.test.mjs is a plain script.
+//
+// The bundle goes under node_modules/.cache, not /tmp, because react and
+// react-dom are left external: they are peer-dependency graphs with their own
+// conditional exports, and bundling them is both slow and a good way to test
+// something other than the code under test. Left external, they resolve from
+// node_modules — which only works if the bundle sits inside the project.
+const dir = join(new URL('../../node_modules/.cache/icof', import.meta.url).pathname);
+mkdirSync(dir, { recursive: true });
+const bundle = join(dir, 'seal.mjs');
+execFileSync('npx', [
+  'esbuild', new URL('./documentSecurity.ts', import.meta.url).pathname,
+  '--bundle', '--format=esm', '--platform=node', `--outfile=${bundle}`, '--log-level=error',
+  '--external:react', '--external:react-dom', '--external:qrcode.react',
+]);
+
+process.env.CREDENTIAL_SECRET = 'k'.repeat(48);
+const { sealParticulars, sealMatches, canonicalise, verificationQrSvg } = await import(bundle);
+
+const SITE = 'https://iguc.net';
+const base = {
+  fullName: 'Marie-Claire Ekane Njoya',
+  dateOfBirth: '14 March 2004',
+  studentNumber: 'ICOF202600451',
+  applicationNumber: 'APP-2026-00451',
+  programme: "Bachelor's Degree — BSc Christian Counselling",
+  issuedOn: '2026-08-06',
+};
+
+const seal = sealParticulars(base, SITE);
+check('a letter is sealed when the key is set', seal.sealed, true);
+check('the code is grouped for reading aloud', /^ICOF-[0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z]{4}$/.test(seal.code), true);
+check(
+  'the code avoids the characters that are misread — I, L, O, U',
+  /[ILOU]/.test(seal.code.slice(5)),
+  false,
+);
+
+// --- An alteration to any sealed field breaks the code. ---------------------
+const alterations = {
+  'the name': { fullName: 'Marie-Claire Ekane Njoyah' },
+  'the date of birth': { dateOfBirth: '14 March 2003' },
+  'the student number': { studentNumber: 'ICOF202600452' },
+  'the application number': { applicationNumber: 'APP-2026-00452' },
+  'the programme': { programme: "Master's Degree — MSc Christian Counselling" },
+  'the date of issue': { issuedOn: '2026-08-07' },
+};
+for (const [what, change] of Object.entries(alterations)) {
+  const altered = sealParticulars({ ...base, ...change }, SITE);
+  check(`changing ${what} changes the code`, altered.code === seal.code, false);
+  check(`the original code no longer matches after ${what} is changed`,
+    sealMatches({ ...base, ...change }, SITE, seal.code), false);
+}
+
+// --- But harmless differences do not. ---------------------------------------
+check(
+  'a double space in the name does not break the seal',
+  sealParticulars({ ...base, fullName: 'Marie-Claire  Ekane Njoya' }, SITE).code,
+  seal.code,
+);
+check(
+  'a difference of case does not break the seal',
+  sealParticulars({ ...base, fullName: 'MARIE-CLAIRE EKANE NJOYA' }, SITE).code,
+  seal.code,
+);
+check('the code checks against itself', sealMatches(base, SITE, seal.code), true);
+check('a code with the spaces stripped still checks', sealMatches(base, SITE, seal.code.toLowerCase()), true);
+
+// --- The sealed format is versioned. ----------------------------------------
+// When a particular is added or the order changes, letters already issued must
+// still verify, and they can only do that if the document records which format
+// sealed them.
+check(
+  'the sealed payload carries its format version',
+  JSON.parse(canonicalise(base)).v,
+  'ICOFGU-ADMISSION-V1',
+);
+
+// --- The link in the QR is the one the university's own page can check. -----
+// The signature covers the base64 payload, because GET /api/credential re-signs
+// the `d` parameter and compares. Sign anything else and the letter carries a
+// QR that the university itself rejects.
+const { createHmac } = await import('node:crypto');
+const d = new URL(seal.verifyUrl).searchParams.get('d');
+const sig = new URL(seal.verifyUrl).searchParams.get('s');
+check(
+  'the QR signature is an HMAC of the payload, as /api/credential verifies it',
+  createHmac('sha256', process.env.CREDENTIAL_SECRET).update(d).digest('hex'),
+  sig,
+);
+check(
+  'the payload decodes to the particulars a reader will be shown',
+  JSON.parse(Buffer.from(d, 'base64url').toString('utf8')).student_number,
+  'ICOF202600451',
+);
+
+const qr = verificationQrSvg(seal.verifyUrl, 96);
+check('a QR code is produced', qr.startsWith('<svg') && qr.length > 500, true);
+check('the QR needs no external request', /https?:\/\/(?!www\.w3\.org)/.test(qr.replace(seal.verifyUrl, '')), false);
+
+// --- No key, no seal. -------------------------------------------------------
+// A code that cannot be verified is worse than no code: it invites a reader to
+// trust something nobody can check.
+delete process.env.CREDENTIAL_SECRET;
+const unsealed = sealParticulars(base, SITE);
+check('with no signing key nothing is sealed', unsealed.sealed, false);
+check('and no code is printed', unsealed.code, '');
+check('and a presented code cannot pass', sealMatches(base, SITE, seal.code), false);
+
+process.env.CREDENTIAL_SECRET = 'short';
+check('a short key is refused as no key at all', sealParticulars(base, SITE).sealed, false);
+
+console.log(failures === 0 ? '\nAll document-seal checks passed.' : `\n${failures} check(s) failed.`);
+process.exit(failures === 0 ? 0 : 1);

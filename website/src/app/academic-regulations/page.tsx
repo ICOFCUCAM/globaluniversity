@@ -13,6 +13,7 @@ import {
   assessmentSchemes,
   miscellaneousFees,
   miscellaneousFeesTotal,
+  usdConversionRate,
   paymentTerms,
   feeBands,
   feeBandNote,
@@ -269,6 +270,13 @@ export default function AcademicRegulationsPage() {
             <P>
               These amounts are the Africa and Global South band. The equivalent schedule for the
               Europe and North America band has not been published.
+            </P>
+            <P>
+              Every fee is quoted in US dollars. The schedule was converted from FCFA at{' '}
+              <strong>{usdConversionRate.fcfaPerUsd} FCFA to the dollar</strong>, the rate the
+              university has adopted, and each amount is rounded up to a whole multiple of{' '}
+              {usdConversionRate.roundedToNearest} dollars so that no fee needs change made on it.
+              You pay in your own national currency to the ICOF national base in your country.
             </P>
             <Table head={['Item', 'Amount']}>
               {miscellaneousFees.map((f) => (

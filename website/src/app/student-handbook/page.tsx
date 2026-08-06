@@ -252,8 +252,9 @@ export default function StudentHandbookPage() {
             <P>
               A graduating student with outstanding fees will have a hold placed on transcripts,
               diplomas and degrees until those fees are paid in full. Certificates are charged at
-              10,000 FCFA and academic records at 2,000 FCFA; the full list is in the Academic
-              Regulations.
+              USD 20 and academic records at USD 5; the full list is in the Academic Regulations.
+              Fees are quoted in US dollars and paid in your own national currency to the ICOF
+              national base in your country.
             </P>
             <P>
               Doctoral candidates complete all required coursework, pass comprehensive examinations

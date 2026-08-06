@@ -31,7 +31,7 @@ export default function FeeModule() {
   const [payments, setPayments] = useState<any[]>([]);
   const [tableMissing, setTableMissing] = useState(false);
   const [recordError, setRecordError] = useState<string | null>(null);
-  const [form, setForm] = useState({ student_id: '', amount: '', currency: 'FCFA', purpose: 'Tuition', method: 'MTN Mobile Money' });
+  const [form, setForm] = useState({ student_id: '', amount: '', currency: 'USD', purpose: 'Tuition', method: 'MTN Mobile Money' });
 
   /**
    * Payments come from `payments` now, with the old document-blob receipts read
@@ -84,7 +84,7 @@ export default function FeeModule() {
     }
     setRecordError(null);
     setShowNew(false);
-    setForm({ student_id: '', amount: '', currency: 'FCFA', purpose: 'Tuition', method: 'MTN Mobile Money' });
+    setForm({ student_id: '', amount: '', currency: 'USD', purpose: 'Tuition', method: 'MTN Mobile Money' });
     load();
   }
 
@@ -232,7 +232,7 @@ export default function FeeModule() {
             <div className="flex gap-2">
               <input required type="number" min={1} placeholder="Amount" className={input} value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
               <select className={input + ' max-w-[110px]'} value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value })}>
-                {['FCFA', 'USD', 'EUR', 'GBP', 'NGN'].map((c) => (
+                {['USD', 'FCFA', 'EUR', 'GBP', 'NGN'].map((c) => (
                   <option key={c}>{c}</option>
                 ))}
               </select>

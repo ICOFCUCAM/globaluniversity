@@ -309,19 +309,33 @@ export const feeBandNote =
 // Payment is still made locally — see `localPayment` below — but the amount
 // owed is a dollar amount, not a different figure per country.
 //
-// CONVERSION, AND WHAT NEEDS CONFIRMING. The schedule was previously published
-// in FCFA. It has been converted at 600 FCFA to the dollar and rounded to the
-// nearest five dollars, because a fee schedule reading $4.17 is not a schedule
-// anyone can collect against. Rounding moves real money: the transcript fee
-// converts to $3.33 and is shown as $5.
+// CONVERSION. The schedule was previously published in FCFA. The university has
+// adopted a rate of 600 FCFA to the dollar, and every converted figure is
+// rounded to a whole multiple of five dollars — because a fee schedule reading
+// $4.17 is not a schedule anyone can collect against, and a cashier at a
+// national base should never have to make change on a fee.
 //
-// Both the rate and the rounding are the university's to confirm. They are
-// marked here rather than presented as settled, and the FCFA original is kept
-// beside each line so the arithmetic can be checked rather than trusted.
+// Rounding moves real money, always upwards to the next five: the transcript fee
+// converts to $3.33 and is charged at $5. The FCFA original is kept beside each
+// line so the arithmetic stays checkable rather than merely trusted.
 // ---------------------------------------------------------------------------
 
-/** The rate used to convert the published FCFA schedule. To be confirmed. */
-export const usdConversionRate = { fcfaPerUsd: 600, confirmed: false };
+/**
+ * The rate the university has adopted for converting the FCFA schedule, and
+ * the step every dollar figure is rounded to.
+ *
+ * `roundedToNearest: 5` is not decoration. It is the rule the schedule below is
+ * held to, and `assertFeesAreRounded()` checks the schedule against it, so a
+ * fee added later at $12 fails a test rather than reaching a student.
+ */
+export const usdConversionRate = { fcfaPerUsd: 600, roundedToNearest: 5, confirmed: true };
+
+/** Round an FCFA amount to the dollar figure the schedule would carry. */
+export function fcfaToUsd(fcfa: number): number {
+  const raw = fcfa / usdConversionRate.fcfaPerUsd;
+  const step = usdConversionRate.roundedToNearest;
+  return Math.max(step, Math.ceil(raw / step) * step);
+}
 
 /** Fees payable in addition to tuition, in US dollars. */
 export const miscellaneousFees: {
@@ -347,8 +361,45 @@ export const miscellaneousFees: {
   { item: 'Development fee', amount: 'USD 10', wasFcfa: '5,000 FCFA' },
 ];
 
-/** The compulsory items above, excluding the optional ones. */
-export const miscellaneousFeesTotal = 'USD 200';
+/**
+ * The compulsory items above, added up.
+ *
+ * Computed rather than typed. It was typed once, as USD 200, and it was wrong —
+ * the items it claims to add come to more than that, and nobody noticed because
+ * a total written by hand is not checked by anything. Deriving it means the
+ * figure cannot drift when a line is added, removed or repriced.
+ *
+ * Optional items are excluded. An open-ended item ("and above") is counted at
+ * its minimum, which is why this is stated as a floor rather than a quotation.
+ */
+export const miscellaneousFeesTotal = `USD ${miscellaneousFees
+  .filter((f) => !f.optional)
+  .reduce((sum, f) => sum + Number(f.amount.replace(/[^0-9]/g, '')), 0)} and above`;
+
+/**
+ * Every dollar figure in the schedule is a whole multiple of five.
+ *
+ * Called from the fee test. It exists because the rounding rule is easy to
+ * state and easy to break: someone converts 7,000 FCFA at 600, gets 11.67,
+ * writes "USD 12", and the schedule quietly stops being collectable in notes.
+ */
+export function assertFeesAreRounded(): string[] {
+  const step = usdConversionRate.roundedToNearest;
+  const wrong: string[] = [];
+  for (const f of miscellaneousFees) {
+    const amount = Number(f.amount.replace(/[^0-9]/g, ''));
+    if (!Number.isFinite(amount) || amount % step !== 0) {
+      wrong.push(`${f.item}: ${f.amount} is not a multiple of ${step}`);
+    }
+    if (f.wasFcfa) {
+      const expected = fcfaToUsd(Number(f.wasFcfa.replace(/[^0-9]/g, '')));
+      if (amount !== expected) {
+        wrong.push(`${f.item}: ${f.wasFcfa} at ${usdConversionRate.fcfaPerUsd} is USD ${expected}, not ${f.amount}`);
+      }
+    }
+  }
+  return wrong;
+}
 
 /** The application fee, quoted separately because it is paid before anything else. */
 export const applicationFee = 'USD 100';

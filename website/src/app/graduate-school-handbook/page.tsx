@@ -314,7 +314,8 @@ export default function GraduateSchoolHandbookPage() {
             <P>
               A graduating student with outstanding fees will have a hold placed on transcripts,
               diplomas and degrees until those fees are paid. The thesis and dissertation fee is
-              25,000 FCFA and above; see the{' '}
+              USD 45 and above, quoted in US dollars and paid in your own national currency to the
+              ICOF national base in your country; see the{' '}
               <Link href="/academic-regulations#fees" className="font-semibold text-brand-purple underline decoration-brand-gold underline-offset-4">
                 Academic Regulations
               </Link>

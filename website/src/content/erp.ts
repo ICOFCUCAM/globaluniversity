@@ -323,7 +323,7 @@ export const erpModules: ErpModule[] = [
       'Room inspection',
     ],
     next: [
-      'The published fee schedule quotes student housing at 35,000–50,000 FCFA a month but the university has not described its housing stock. Rooms must be modelled before they can be allocated.',
+      'The published fee schedule quotes student housing at USD 60–85 a month but the university has not described its housing stock. Rooms must be modelled before they can be allocated.',
     ],
     roles: ['student', 'student-affairs'],
   },

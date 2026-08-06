@@ -49,7 +49,10 @@ function VerifyInner() {
       )}
       {state === 'none' && (
         <p className="mx-auto mt-8 max-w-md leading-relaxed text-brand-muted">
-          Scan the QR code on an ICOF Global University transcript or certificate to verify it here.
+          Scan the QR code on an ICOF Global University admission letter, transcript or
+          certificate to check it here. The code beside the seal on an admission letter can also be
+          confirmed by the Office of Admissions at{' '}
+          <a href="mailto:admissions@iguc.net" className="underline">admissions@iguc.net</a>.
         </p>
       )}
       {state === 'unconfigured' && (
@@ -101,11 +104,17 @@ function VerifyInner() {
               </svg>
             </span>
           </span>
+          {/* "Sealed", not "authentic". A verified signature proves the
+              university sealed these particulars; it does not prove the
+              credential was ever issued, or that it still stands — an offer can
+              be withdrawn, and there is no issuance record behind this page to
+              say so. Claiming more than the check establishes is exactly how a
+              verification page becomes useful to a forger. */}
           <p className="mt-4 text-center font-heading text-xl font-bold text-emerald-700 [text-wrap:balance]">
-            Authentic ICOF Global University credential
+            Sealed by ICOF Global University
           </p>
           <p className="mt-1.5 text-center font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-600/80">
-            Signature verified
+            Signature verified — particulars below are as issued
           </p>
           <dl className="mt-7 space-y-2.5 text-sm">
             {Object.entries(payload).map(([k, v]) => (
@@ -115,6 +124,13 @@ function VerifyInner() {
               </div>
             ))}
           </dl>
+          <p className="mt-5 text-[11px] leading-relaxed text-emerald-900/70">
+            This confirms the university sealed these particulars and that none of them has been
+            altered since. It does not confirm that the document still stands — an offer of
+            admission may be withdrawn, and a student's registration may change. For current
+            standing, write to{' '}
+            <a href="mailto:registrar@iguc.net" className="underline">registrar@iguc.net</a>.
+          </p>
         </div>
       )}
     </div>

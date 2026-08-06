@@ -7,20 +7,35 @@
 // is the document they take to an embassy — so it has to stand on its own, with
 // nothing assumed and nothing to look up.
 //
-// WHAT IS IN IT, AND WHY EACH PART EARNS ITS PLACE:
+// HOW IT IS ARRANGED, AND WHY THE ARRANGEMENT IS THE POINT:
 //
-//   1. The admission letter, signed by the Head of Admissions. The formal
-//      offer. Everything else is annexed to it.
-//   2. The conditions of the offer — the specific ones attached to this
-//      applicant, if any, with dates.
-//   3. Terms of study, in two versions: on-campus and online. The applicant's
-//      own mode is given first and in full; the other is present but marked,
-//      because students transfer between modes and then discover the rules
-//      changed underneath them.
-//   4. Fees and payment, with the band the applicant falls into named.
-//   5. The regulations they are agreeing to: grading, attendance, academic
-//      integrity, and the disciplinary and appeals route.
-//   6. What to do next, dated.
+//   PAGE 1 is the admission letter, and nothing else. The letterhead, the
+//   reference, the student's particulars, the offer, and the signature of the
+//   Head of Academic Affairs at the foot of that same page.
+//
+//   PAGES 2 ONWARD are annexes to it, lettered A, B, C…, each starting on a
+//   fresh page: the conditions, the terms of study, the fees, the regulations,
+//   and what to do next.
+//
+// The signature used to sit at the end of the whole pack, after the last annex.
+// That is wrong, and not only in appearance: a signature at the end of a
+// document signs everything above it, so the letter itself carried no signature
+// on its own page. Detach page 1 — which is what an embassy, an employer or a
+// sponsor will photocopy — and it was an unsigned sheet. The letter is now
+// self-contained: the offer, the particulars it is made against, and the
+// signature under them, on one page that stands alone.
+//
+// The letter carries the student's particulars in full — name, date of birth,
+// nationality, student number, application number — because it is an identity
+// document as much as an offer. A reader has to be able to match the letter to
+// the person holding it without another document in hand.
+//
+// Those same particulars are sealed: a code computed over them with a key only
+// the university holds, printed beside the signature, repeated in the watermark
+// behind the text and in the running head of every annexe. Change a name on the
+// face of the letter and the code stops matching it, the watermark disagrees,
+// and the annexes disagree too. See src/lib/documentSecurity.ts, which is
+// candid about what this does and does not achieve.
 //
 // WHAT IS DELIBERATELY NOT IN IT: any figure the university has not published.
 // The fee band is described and pointed at the published schedule rather than
@@ -36,6 +51,7 @@
 
 import { UNIVERSITY } from './constants';
 import { CREST_DATA_URI } from './crest';
+import { sealParticulars, watermarkDataUri, microtext, verificationQrSvg } from './documentSecurity';
 
 /**
  * The public site, for the links printed in the letter.
@@ -58,6 +74,17 @@ import { passMark, gradeScale, classificationBands } from '@/content/regulations
 export interface AdmissionPackageInput {
   fullName: string;
   studentNumber: string;
+  /**
+   * The particulars the letter is made against.
+   *
+   * Optional because an application may be missing any of them, and a letter
+   * with a blank date of birth is better than no letter. Each is omitted from
+   * the printed block rather than shown empty — an official document with
+   * "Date of birth: —" on it invites the question of what else is missing.
+   */
+  dateOfBirth?: string;
+  gender?: string;
+  nationality?: string;
   programme: string;
   faculty: string;
   level: string;
@@ -137,22 +164,42 @@ const COMMON_TERMS: string[] = [
 /* Rendering                                                           */
 /* ------------------------------------------------------------------ */
 
-function section(title: string, body: string, opts: { pageBreak?: boolean } = {}): string {
-  return `
-  <section class="pkg-section${opts.pageBreak ? ' page-break' : ''}">
-    <h2>${esc(title)}</h2>
-    ${body}
-  </section>`;
-}
-
 const list = (items: string[]) =>
   `<ol class="terms">${items.map((t) => `<li>${t}</li>`).join('')}</ol>`;
 
-export function admissionPackageHtml(input: AdmissionPackageInput): string {
+/** A particulars row, rendered only when there is something to put in it. */
+const row = (k: string, v: string | undefined | null): string =>
+  v && String(v).trim()
+    ? `<tr><td class="k">${esc(k)}</td><td class="v">${esc(String(v))}</td></tr>`
+    : '';
+
+export async function admissionPackageHtml(input: AdmissionPackageInput): Promise<string> {
   const issued = input.issuedOn ?? new Date();
   const issuedLong = issued.toLocaleDateString('en-GB', {
     day: 'numeric', month: 'long', year: 'numeric',
   });
+  const issuedIso = issued.toISOString().slice(0, 10);
+
+  // The seal is computed here, from the same values that are printed, so the
+  // code on the page can never describe a different letter from the one it is
+  // printed on. Deriving it in the caller would allow the two to drift.
+  const seal = sealParticulars(
+    {
+      fullName: input.fullName,
+      dateOfBirth: input.dateOfBirth,
+      studentNumber: input.studentNumber,
+      applicationNumber: input.applicationNumber,
+      programme: input.programme,
+      issuedOn: issuedIso,
+    },
+    SITE,
+  );
+  const watermark = watermarkDataUri(input.studentNumber, seal.code);
+  // The QR carries the full-strength signature. The printed code beside it is
+  // the same seal shortened for a human; this is the one a machine checks.
+  const qr = seal.sealed ? await verificationQrSvg(seal.verifyUrl, 84) : '';
+  const micro = microtext(input.studentNumber, seal.code);
+
   const where = modeOf(input.mode);
   const online = where === 'online';
   const both = where === 'both';
@@ -168,156 +215,20 @@ export function admissionPackageHtml(input: AdmissionPackageInput): string {
     : online ? 'online study' : 'study on campus';
   const otherLabel = online ? 'study on campus' : 'online study';
 
-  return `<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<title>Admission Package — ${esc(input.fullName)} — ${esc(input.studentNumber)}</title>
-<style>
-  @page { size: A4; margin: 18mm 16mm; }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; background: #f4f1ea; color: #2f2838;
-    font-family: Georgia, 'Times New Roman', serif; font-size: 11.5pt; line-height: 1.55;
-  }
-  .sheet {
-    max-width: 190mm; margin: 0 auto; background: #fff; padding: 16mm 16mm 24mm;
-  }
-  /* The letterhead.
-     A solid purple slab with a centred crest was a banner, not a letterhead —
-     it read as a web hero pasted onto a document, and it wasted the top third
-     of the first page. A university's letterhead is typographic: the name, the
-     motto, the office issuing the letter, a rule, and the contact block. It
-     prints in one colour if it has to, and it leaves room for the letter.
+  // ---------------------------------------------------------------------
+  // The annexes, built as a list so they letter themselves.
+  //
+  // Which annexes exist depends on the offer — a student admitted to both
+  // modes gets no "terms for the other mode" — so A, B, C… are assigned from
+  // the list rather than written into the headings, where they would go out of
+  // step the first time a section was added or dropped.
+  // ---------------------------------------------------------------------
+  const annexes: { title: string; body: string }[] = [];
 
-     No photograph. A campus picture on an admission letter dates the document,
-     bloats the file, prints badly in greyscale, and — for a university teaching
-     on two campuses and online — tells a student who will never visit Buea
-     something untrue about where they are going. */
-  .letterhead {
-    display: flex; align-items: flex-start; gap: 14px;
-    padding: 0 0 10px; border-bottom: 2.5px solid #422e59; margin-bottom: 3px;
-  }
-  .letterhead .crest { width: 78px; height: 78px; flex: 0 0 78px; object-fit: contain; }
-  .letterhead .lockup { flex: 1 1 auto; min-width: 0; padding-top: 2px; padding-right: 8px; }
-  .letterhead .name {
-    /* No nowrap. It sat the name on one line by pushing it straight through
-       the contact block on its right — the two overlapped and both became
-       unreadable. The lockup is allowed to wrap; the contact column has a
-       fixed width so it cannot be encroached on. */
-    margin: 0; font-size: 16pt; line-height: 1.12; font-weight: bold;
-    letter-spacing: .8px; color: #422e59; text-transform: uppercase;
-  }
-  .letterhead .sub {
-    margin: 2px 0 0; font-size: 10.5pt; letter-spacing: 3px;
-    text-transform: uppercase; color: #6b6076;
-  }
-  .letterhead .motto {
-    margin: 4px 0 0; font-size: 10.5pt; font-style: italic; color: #8a6d1f;
-    letter-spacing: .3px;
-  }
-  .letterhead .contact {
-    flex: 0 0 48mm; text-align: right; font-size: 8.5pt; line-height: 1.5; color: #6b6076;
-    font-family: Helvetica, Arial, sans-serif; padding-top: 4px;
-  }
-  /* The thin gold rule under the main one — the university's two colours, in
-     the proportion they are used everywhere else. */
-  .rule-gold { height: 2px; background: #c5a55a; margin-bottom: 16px; }
-  .office-line {
-    font-family: Helvetica, Arial, sans-serif; font-size: 8.5pt; letter-spacing: 2.5px;
-    text-transform: uppercase; color: #422e59; margin: 0 0 14px;
-  }
-  .body { padding: 0; }
-  h2 {
-    font-size: 12pt; text-transform: uppercase; letter-spacing: 1.5px;
-    color: #422e59; border-bottom: 1px solid #e8dcc0; padding-bottom: 5px; margin: 0 0 10px;
-  }
-  h3 { font-size: 11pt; color: #422e59; margin: 14px 0 6px; }
-  .pkg-section { margin-bottom: 16px; }
-  .page-break { break-before: page; }
-  .ref { display: flex; justify-content: space-between; font-size: 9.5pt; color: #6b6076; margin-bottom: 14px; }
-  table.details { width: 100%; border-collapse: collapse; margin: 10px 0 4px; font-size: 10.5pt; }
-  table.details td { padding: 5px 0; vertical-align: top; }
-  table.details td.k { color: #6b6076; width: 42%; }
-  table.details td.v { font-weight: bold; }
-  ol.terms { margin: 6px 0 0; padding-left: 20px; }
-  ol.terms li { margin-bottom: 7px; }
-  .callout {
-    border-left: 3px solid #c5a55a; background: #faf6ee; padding: 10px 14px; margin: 12px 0; font-size: 10.5pt;
-  }
-  .callout.warn { border-left-color: #b45309; background: #fffbeb; }
-  .muted-block { border: 1px solid #e8dcc0; background: #fbfaf7; padding: 10px 14px; margin-top: 10px; font-size: 10pt; color: #554c60; }
-  .sig { margin-top: 26px; }
-  /* Wide enough for a name carrying two doctorates without wrapping mid-title. */
-  .sig .rule { border-top: 1px solid #33234a; width: 105mm; padding-top: 5px; }
-  .sig .name { font-weight: bold; }
-  .sig .office { color: #6b6076; font-size: 10pt; }
-  .grade-table { width: 100%; border-collapse: collapse; font-size: 10pt; margin-top: 8px; }
-  .grade-table th, .grade-table td { border: 1px solid #e8dcc0; padding: 4px 7px; text-align: left; }
-  .grade-table th { background: #faf6ee; font-size: 9pt; text-transform: uppercase; letter-spacing: .5px; }
-  .foot { margin-top: 18px; padding-top: 10px; border-top: 1px solid #e8dcc0; font-size: 9pt; color: #8a8194; text-align: center; }
-  @media print { body { background: #fff; } .sheet { max-width: none; } }
-</style>
-</head>
-<body>
-<div class="sheet">
-
-  <header class="letterhead">
-    <img class="crest" src="${CREST_DATA_URI}" alt="${esc(UNIVERSITY.name)} crest">
-    <div class="lockup">
-      <h1 class="name">${esc(UNIVERSITY.name)}</h1>
-      <p class="motto">${esc(UNIVERSITY.motto)}</p>
-    </div>
-    <div class="contact">
-      ${esc(UNIVERSITY.address)}<br>
-      ${esc(UNIVERSITY.phone)}<br>
-      ${esc(ADMISSIONS_EMAIL)}<br>
-      ${esc(UNIVERSITY.website)}
-    </div>
-  </header>
-  <div class="rule-gold"></div>
-  <p class="office-line">Office of Admissions</p>
-
-  <div class="body">
-
-    <div class="ref">
-      <span>Ref: ${esc(input.applicationNumber)}</span>
-      <span>${esc(issuedLong)}</span>
-    </div>
-
-    ${section(
-      conditional ? 'Offer of conditional admission' : 'Offer of admission',
-      `
-      <p>Dear ${esc(input.fullName)},</p>
-
-      <p>
-        Following the assessment of your application, I am pleased to offer you
-        ${conditional ? '<strong>conditional admission</strong>' : '<strong>admission</strong>'}
-        to ${esc(UNIVERSITY.name)} for the programme set out below.
-      </p>
-
-      <table class="details">
-        <tr><td class="k">Programme</td><td class="v">${esc(input.programme)}</td></tr>
-        <tr><td class="k">Faculty</td><td class="v">${esc(input.faculty)}</td></tr>
-        <tr><td class="k">Level</td><td class="v">${esc(input.level)}</td></tr>
-        <tr><td class="k">Where you will study</td><td class="v">${esc(input.mode)}</td></tr>
-        <tr><td class="k">Attendance</td><td class="v">${esc(input.attendance || 'Full time')}</td></tr>
-        <tr><td class="k">Campus</td><td class="v">${esc(input.campus)}</td></tr>
-        <tr><td class="k">Intake</td><td class="v">${esc(input.intake)}</td></tr>
-        <tr><td class="k">Student number</td><td class="v">${esc(input.studentNumber)}</td></tr>
-      </table>
-
-      <p>
-        Your student number is quoted above. Use it in every communication with the university,
-        on every payment, and to sign in to the student portal. It identifies you for the whole of
-        your studies and does not change.
-      </p>
-      `,
-    )}
-
-    ${conditional ? section(
-      'Conditions of this offer',
-      `
+  annexes.push({
+    title: 'Conditions of this offer',
+    body: conditional
+      ? `
       <div class="callout warn">
         <strong>This offer is conditional.</strong> You may register and begin study, but the
         following must be completed by the dates given. Each remains on your record until it is
@@ -329,45 +240,41 @@ export function admissionPackageHtml(input: AdmissionPackageInput): string {
           <td class="k">${esc(c.requirement)}</td>
           <td class="v">by ${esc(c.dueBy)}</td>
         </tr>`).join('')}
-      </table>
-      `,
-    ) : `
-    <section class="pkg-section">
-      <h2>Conditions of this offer</h2>
+      </table>`
+      : `
       <p>This offer is unconditional. No further academic condition is attached to it.</p>
-      <p>It remains subject to the general terms in the next section, and in particular to the
-      accuracy of the information given in your application.</p>
-    </section>`}
+      <p>It remains subject to the general terms in the next annexe, and in particular to the
+      accuracy of the information given in your application.</p>`,
+  });
 
-    ${section(
-      `Terms of study — ${ownLabel}`,
-      `
+  annexes.push({
+    title: `Terms of study — ${ownLabel}`,
+    body: `
       <p>These are the terms that apply to you, as a student admitted to study
       <strong>${esc(input.mode.toLowerCase())}</strong>${
         input.attendance ? `, ${esc(input.attendance.toLowerCase())}` : ''
       }.${both ? ' You are bound by the campus terms and the online terms, because you will study both ways.' : ''}</p>
       ${list(ownTerms)}
       <h3>General terms, applying to every student</h3>
-      ${list(COMMON_TERMS)}
-      `,
-      { pageBreak: true },
-    )}
+      ${list(COMMON_TERMS)}`,
+  });
 
-    ${both ? '' : section(
-      `Terms for ${otherLabel}`,
-      `
+  if (!both) {
+    annexes.push({
+      title: `Terms for ${otherLabel}`,
+      body: `
       <div class="muted-block">
         <strong>These do not apply to you at present.</strong> They are included because students
         do transfer between modes, and a student who moves should not discover afterwards that the
         rules changed underneath them. A transfer requires the written approval of the Registrar.
       </div>
-      ${list(otherTerms)}
-      `,
-    )}
+      ${list(otherTerms)}`,
+    });
+  }
 
-    ${section(
-      'Fees and payment',
-      `
+  annexes.push({
+    title: 'Fees and payment',
+    body: `
       <p>
         The university operates two fee bands. Students from Africa and the Global South are
         charged a subsidised rate, funded as scholarship by the International Circle of Faith.
@@ -392,20 +299,19 @@ export function admissionPackageHtml(input: AdmissionPackageInput): string {
         letter, and no member of staff is authorised to agree a different figure with you
         privately. If anyone asks you to pay outside the university's published channels, report
         it to the Office of Admissions at ${esc(ADMISSIONS_EMAIL)}.
-      </div>
-      `,
-    )}
+      </div>`,
+  });
 
-    ${section(
-      'Academic regulations you are accepting',
-      `
+  annexes.push({
+    title: 'Academic regulations you are accepting',
+    body: `
       <p>By registering you accept the university's academic regulations. The provisions you are
       most likely to need are set out here; the full regulations are published at
       <strong>${esc(UNIVERSITY.website)}/academic-regulations</strong>.</p>
 
       <h3>Grading and the pass mark</h3>
       <p>The pass mark is <strong>${esc(passMark)}</strong>. Grades are awarded on the following
-      scale, and grade points run to ${classificationBands.length ? '4.00' : '4.00'}.</p>
+      scale, and grade points run to 4.00.</p>
       <table class="grade-table">
         <tr><th>Grade</th><th>Range</th><th>Points</th><th>Descriptor</th></tr>
         ${gradeScale.map((g) => `
@@ -433,14 +339,12 @@ export function admissionPackageHtml(input: AdmissionPackageInput): string {
       <h3>Discipline and appeal</h3>
       <p>Disciplinary matters are heard under the process published in the Student Handbook. You
       have the right to be told the case against you, to answer it, and to appeal a decision to the
-      Registrar within fourteen days of being notified of it.</p>
-      `,
-      { pageBreak: true },
-    )}
+      Registrar within fourteen days of being notified of it.</p>`,
+  });
 
-    ${section(
-      'What to do next',
-      `
+  annexes.push({
+    title: 'What to do next',
+    body: `
       <ol class="terms">
         <li><strong>Sign in to the student portal</strong> at
           <strong>${esc(input.portalUrl)}</strong> using your student number
@@ -448,6 +352,9 @@ export function admissionPackageHtml(input: AdmissionPackageInput): string {
           Change your password immediately on first sign-in. Your password is personal to you and
           must not be shared with anyone, including university staff — no one at the university
           will ever ask you for it.</li>
+        <li><strong>Check your particulars</strong> on page 1 of this letter against your
+          identity documents. Your name, date of birth and nationality are printed there exactly
+          as they will appear on your award. Anything wrong must be corrected before you register.</li>
         <li><strong>Start straight away.</strong> You are enrolled from the date of this letter
           and may begin studying immediately. Teaching does not wait on the fee schedule, and you
           do not need to have paid anything further before you start.</li>
@@ -460,34 +367,396 @@ export function admissionPackageHtml(input: AdmissionPackageInput): string {
           quoted in US dollars and paid in your own national currency to the ICOF national base in
           your country — you do not need to find dollars. Ask them for the rate in force before
           you pay, and keep the receipt.</li>
-        ${conditional ? '<li><strong>Meet the conditions above</strong> by the dates given.</li>' : ''}
+        ${conditional ? '<li><strong>Meet the conditions in Annexe A</strong> by the dates given.</li>' : ''}
       </ol>
-      <p>If anything in this letter is wrong — your name, your programme, your campus or your mode
-      of study — reply to the email that carried it <em>before</em> you register, and the Office of
-      Admissions will correct it.</p>
-      `,
-    )}
+      <p>If anything in this letter is wrong — your name, your date of birth, your programme, your
+      campus or your mode of study — reply to the email that carried it <em>before</em> you
+      register, and the Office of Admissions will correct it.</p>`,
+  });
 
-    <div class="sig">
-      <p>We look forward to welcoming you to ${esc(UNIVERSITY.name)}.</p>
-      <p>Yours sincerely,</p>
-      <div class="rule">
-        <div class="name">${esc(input.headOfAdmissions)}${
-          input.postNominals ? `, ${esc(input.postNominals)}` : ''
-        }</div>
-        <div class="office">Head of Academic Affairs</div>
-        <div class="office">${esc(UNIVERSITY.name)}</div>
+  const annexeLetter = (i: number) => String.fromCharCode(65 + i);
+
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Admission Package — ${esc(input.fullName)} — ${esc(input.studentNumber)}</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: #f4f1ea; color: #2f2838;
+    font-family: Georgia, 'Times New Roman', serif; font-size: 11.5pt; line-height: 1.55;
+  }
+  .sheet {
+    max-width: 190mm; margin: 0 auto; background: #fff; padding: 16mm 16mm 24mm;
+    /* The watermark. Tiled behind everything, on every page, carrying this
+       student's number and this letter's seal — see documentSecurity.ts for
+       what that is for. print-color-adjust is not optional: browsers drop
+       background images when printing by default, and a security feature that
+       disappears on the printed copy is not a security feature. */
+    background-image: url("${watermark}");
+    background-repeat: repeat;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  /* Text sits above the watermark, never under it. */
+  .letter, .annex, .foot { position: relative; }
+
+  /* The microtext rule: 2.4pt type clipped to one line. Crisp on an original,
+     a grey smudge on a photocopy. */
+  .microrule {
+    overflow: hidden; white-space: nowrap; height: 1.6mm; line-height: 1.6mm;
+    font-family: Helvetica, Arial, sans-serif; font-size: 2.4pt; letter-spacing: .2px;
+    color: #6b6076; margin: 6px 0 0; user-select: none;
+  }
+  .microrule-caption {
+    font-family: Helvetica, Arial, sans-serif; font-size: 6.5pt; letter-spacing: 1.2px;
+    text-transform: uppercase; color: #a79ab6; margin: 2px 0 0;
+  }
+
+  /* The seal panel, at the foot of page 1 beside the signature. */
+  .sig-row { display: flex; gap: 14px; align-items: flex-end; margin-top: 14px; }
+  .sig-row .sig { flex: 1 1 auto; margin-top: 0; }
+  .seal-panel {
+    flex: 0 0 74mm; border: 1px solid #d9cba4; background: #fdfbf5;
+    padding: 8px 10px; font-family: Helvetica, Arial, sans-serif; font-size: 7.5pt;
+    line-height: 1.45; color: #6b6076;
+    display: flex; gap: 9px; align-items: flex-start;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  .seal-panel .words { flex: 1 1 auto; min-width: 0; }
+  .seal-panel .qr { flex: 0 0 19mm; }
+  .seal-panel .qr svg { display: block; width: 19mm; height: 19mm; }
+  .seal-panel .qr-caption {
+    font-size: 6pt; letter-spacing: .6px; text-transform: uppercase;
+    color: #8a8194; text-align: center; margin: 2px 0 0;
+  }
+  .seal-panel .h {
+    font-size: 6.5pt; font-weight: bold; letter-spacing: 1.6px; text-transform: uppercase;
+    color: #8a6d1f; margin: 0 0 4px;
+  }
+  /* One line, always. A code that wraps mid-group is a code somebody reads
+     aloud wrongly. */
+  .seal-panel .code {
+    font-family: 'Courier New', Courier, monospace; font-size: 9.5pt; font-weight: bold;
+    letter-spacing: .4px; color: #422e59; margin: 0 0 4px; white-space: nowrap;
+  }
+  .seal-panel .url { word-break: break-all; color: #422e59; }
+  .seal-panel.unsealed { border-color: #d6b48a; background: #fffaf0; }
+  .void-mark {
+    font-family: Helvetica, Arial, sans-serif; font-size: 6.5pt; font-weight: bold;
+    letter-spacing: 2px; text-transform: uppercase; color: #b45309; margin: 5px 0 0;
+  }
+  /* The letterhead.
+     A solid purple slab with a centred crest was a banner, not a letterhead —
+     it read as a web hero pasted onto a document, and it wasted the top third
+     of the first page. A university's letterhead is typographic: the name, the
+     motto, the office issuing the letter, a rule, and the contact block. It
+     prints in one colour if it has to, and it leaves room for the letter.
+
+     No photograph. A campus picture on an admission letter dates the document,
+     bloats the file, prints badly in greyscale, and — for a university teaching
+     on two campuses and online — tells a student who will never visit Buea
+     something untrue about where they are going. */
+  .letterhead {
+    display: flex; align-items: flex-start; gap: 14px;
+    padding: 0 0 8px; border-bottom: 2.5px solid #422e59; margin-bottom: 3px;
+  }
+  .letterhead .crest { width: 70px; height: 70px; flex: 0 0 70px; object-fit: contain; }
+  .letterhead .lockup { flex: 1 1 auto; min-width: 0; padding-top: 2px; padding-right: 8px; }
+  .letterhead .name {
+    /* No nowrap. It sat the name on one line by pushing it straight through
+       the contact block on its right — the two overlapped and both became
+       unreadable. The lockup is allowed to wrap; the contact column has a
+       fixed width so it cannot be encroached on. */
+    margin: 0; font-size: 16pt; line-height: 1.12; font-weight: bold;
+    letter-spacing: .8px; color: #422e59; text-transform: uppercase;
+  }
+  .letterhead .sub {
+    margin: 2px 0 0; font-size: 10.5pt; letter-spacing: 3px;
+    text-transform: uppercase; color: #6b6076;
+  }
+  .letterhead .motto {
+    margin: 4px 0 0; font-size: 10.5pt; font-style: italic; color: #8a6d1f;
+    letter-spacing: .3px;
+  }
+  /* Address, email, website. No telephone number: an admission letter is kept
+     for years and a number changes, a wrong one on a document a graduate is
+     still holding is worse than no number at all, and the reply the letter
+     actually wants is written — to the address that issued it. */
+  .letterhead .contact {
+    flex: 0 0 48mm; text-align: right; font-size: 8.5pt; line-height: 1.5; color: #6b6076;
+    font-family: Helvetica, Arial, sans-serif; padding-top: 4px;
+  }
+  /* The thin gold rule under the main one — the university's two colours, in
+     the proportion they are used everywhere else. */
+  .rule-gold { height: 2px; background: #c5a55a; margin-bottom: 16px; }
+  .office-line {
+    font-family: Helvetica, Arial, sans-serif; font-size: 8.5pt; letter-spacing: 2.5px;
+    text-transform: uppercase; color: #422e59; margin: 0 0 14px;
+  }
+  h2 {
+    font-size: 12pt; text-transform: uppercase; letter-spacing: 1.5px;
+    color: #422e59; border-bottom: 1px solid #e8dcc0; padding-bottom: 5px; margin: 0 0 10px;
+  }
+  h3 { font-size: 11pt; color: #422e59; margin: 14px 0 6px; }
+
+  /* The letter is one page and the annexes follow it, each on its own.
+     break-after on the letter guarantees the signature is the last thing on
+     page 1 even when a long name or an extra particular pushes the block down;
+     break-before on each annex keeps them from running together. */
+  .letter { break-after: page; }
+  .annex { break-before: page; }
+  .annex-head {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+    border-bottom: 1px solid #e8dcc0; padding-bottom: 6px; margin-bottom: 14px;
+    font-family: Helvetica, Arial, sans-serif; font-size: 8pt; letter-spacing: 2px;
+    text-transform: uppercase; color: #8a8194;
+  }
+  .annex-head .who { text-align: right; }
+  .annex h2 { border-bottom: none; padding-bottom: 0; margin-bottom: 12px; font-size: 13pt; }
+  .annex .tag {
+    display: block; font-family: Helvetica, Arial, sans-serif; font-size: 8pt;
+    letter-spacing: 2.5px; color: #8a6d1f; margin-bottom: 3px;
+  }
+  /* On screen there are no page edges to separate the parts, so the breaks are
+     drawn instead. Printing ignores this entirely. */
+  @media screen {
+    .letter { padding-bottom: 14mm; border-bottom: 1px dashed #ded7c6; margin-bottom: 16mm; }
+    .annex + .annex { padding-top: 12mm; border-top: 1px dashed #ded7c6; margin-top: 16mm; }
+  }
+
+  .doc-title {
+    font-family: Helvetica, Arial, sans-serif; font-size: 12pt; font-weight: bold;
+    letter-spacing: 3px; text-transform: uppercase; color: #422e59;
+    text-align: center; margin: 4px 0 16px;
+  }
+  .ref { display: flex; justify-content: space-between; font-size: 9.5pt; color: #6b6076; margin-bottom: 14px; }
+
+  /* The particulars, two columns: who the student is, and what they are
+     admitted to. Side by side because a reader checking identity and a reader
+     checking the award are looking for different halves of the same block. */
+  .particulars { display: flex; gap: 16px; margin: 10px 0 2px; }
+  .particulars > div { flex: 1 1 0; min-width: 0; }
+  .particulars h3 {
+    margin: 0 0 2px; font-family: Helvetica, Arial, sans-serif; font-size: 8pt;
+    letter-spacing: 2px; text-transform: uppercase; color: #8a8194; font-weight: bold;
+    border-bottom: 1px solid #e8dcc0; padding-bottom: 4px;
+  }
+  /* Set tight. Fifteen particulars across two columns is a block, not prose,
+     and the letter has one page to hold it in along with everything else. */
+  .particulars table.details {
+    margin-top: 3px; font-size: 9.5pt; line-height: 1.3;
+  }
+  .particulars table.details td { padding: 1.5px 0; }
+  .particulars table.details td.k { width: 46%; }
+  /* The index of annexes, set as a run rather than a list. Five annexes stacked
+     one per line cost more of page 1 than the letter can spare, and this is a
+     contents line, not a section. */
+  .annexe-index { font-size: 9.5pt; color: #554c60; }
+  .annexe-index b { color: #422e59; }
+
+  /* THE LETTER IS BUDGETED TO ONE PAGE — 987px of printable A4 at 96dpi, after
+     the 18mm @page margins. It measures 910px on a typical offer and 967px on
+     the worst realistic one (a 49-character name, a 76-character programme, a
+     conditional offer, online only). Anything added to page 1 has to come out
+     of that headroom, or the signature slides onto page 2 and the letter stops
+     being the self-contained sheet the whole arrangement exists to produce.
+     scratchpad/stress.mjs measures it. */
+  .letter p { margin: 8px 0; }
+  .letter .doc-title { margin: 2px 0 10px; }
+  .letter .ref { margin-bottom: 10px; }
+  table.details { width: 100%; border-collapse: collapse; margin: 10px 0 4px; font-size: 10.5pt; }
+  table.details td { padding: 3px 0; vertical-align: top; }
+  table.details td.k { color: #6b6076; width: 42%; }
+  table.details td.v { font-weight: bold; }
+  ol.terms { margin: 6px 0 0; padding-left: 20px; }
+  ol.terms li { margin-bottom: 7px; }
+  .callout {
+    border-left: 3px solid #c5a55a; background: #faf6ee; padding: 10px 14px; margin: 12px 0; font-size: 10.5pt;
+  }
+  .callout.warn { border-left-color: #b45309; background: #fffbeb; }
+  .muted-block { border: 1px solid #e8dcc0; background: #fbfaf7; padding: 10px 14px; margin-top: 10px; font-size: 10pt; color: #554c60; }
+  .sig { margin-top: 20px; }
+  /* Full width of the signature column rather than a fixed measure: the seal
+     panel beside it sets that column's width, and a rule wider than its column
+     would run under the panel. */
+  .sig .rule { border-top: 1px solid #33234a; width: 100%; padding-top: 5px; }
+  .sig .name { font-weight: bold; }
+  .sig .office { color: #6b6076; font-size: 10pt; }
+  .grade-table { width: 100%; border-collapse: collapse; font-size: 10pt; margin-top: 8px; }
+  .grade-table th, .grade-table td { border: 1px solid #e8dcc0; padding: 4px 7px; text-align: left; }
+  .grade-table th { background: #faf6ee; font-size: 9pt; text-transform: uppercase; letter-spacing: .5px; }
+  .foot { margin-top: 18px; padding-top: 10px; border-top: 1px solid #e8dcc0; font-size: 9pt; color: #8a8194; text-align: center; }
+  @media print {
+    body { background: #fff; }
+    /* @page already supplies the margin. Leaving the sheet's own padding on top
+       of it double-margined every printed page and pushed the signature off
+       page 1 — the one thing the whole arrangement exists to prevent. */
+    .sheet { max-width: none; padding: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <!-- ==================================================================
+       PAGE 1 — THE ADMISSION LETTER
+       Self-contained: letterhead, reference, particulars, offer, signature.
+       Nothing else goes on this page, and it ends with a page break.
+       ================================================================== -->
+  <section class="letter">
+
+    <header class="letterhead">
+      <img class="crest" src="${CREST_DATA_URI}" alt="${esc(UNIVERSITY.name)} crest">
+      <div class="lockup">
+        <h1 class="name">${esc(UNIVERSITY.name)}</h1>
+        <p class="motto">${esc(UNIVERSITY.motto)}</p>
+      </div>
+      <div class="contact">
+        ${esc(UNIVERSITY.address)}<br>
+        ${esc(ADMISSIONS_EMAIL)}<br>
+        ${esc(UNIVERSITY.website)}
+      </div>
+    </header>
+    <div class="rule-gold"></div>
+    <p class="microrule">${esc(micro)}</p>
+    <p class="office-line">Office of Admissions</p>
+
+    <div class="ref">
+      <span>Our ref: ${esc(input.applicationNumber)}</span>
+      <span>${esc(issuedLong)}</span>
+    </div>
+
+    <p class="doc-title">${conditional ? 'Conditional Offer of Admission' : 'Offer of Admission'}</p>
+
+    <p>Dear ${esc(input.fullName)},</p>
+
+    <p>
+      Following the assessment of your application by the Office of Admissions, I am pleased to
+      offer you ${conditional ? '<strong>conditional admission</strong>' : '<strong>admission</strong>'}
+      to ${esc(UNIVERSITY.name)}, on the particulars recorded below. This offer is personal to you.
+    </p>
+
+    <div class="particulars">
+      <div>
+        <h3>The student</h3>
+        <table class="details">
+          ${row('Full name', input.fullName)}
+          ${row('Date of birth', input.dateOfBirth)}
+          ${row('Gender', input.gender)}
+          ${row('Nationality', input.nationality)}
+          ${row('Student number', input.studentNumber)}
+          ${row('Application number', input.applicationNumber)}
+        </table>
+      </div>
+      <div>
+        <h3>The admission</h3>
+        <table class="details">
+          ${row('Programme', input.programme)}
+          ${row('Faculty', input.faculty)}
+          ${row('Level', input.level)}
+          ${row('Mode of study', input.mode)}
+          ${row('Attendance', input.attendance || 'Full time')}
+          ${row('Campus', input.campus)}
+          ${row('Intake', input.intake)}
+          ${row('Status', conditional ? 'Admitted, conditionally' : 'Admitted')}
+        </table>
       </div>
     </div>
 
-    <div class="foot">
-      This admission package was issued electronically on ${esc(issuedLong)} and is valid without a
-      handwritten signature. Its authenticity may be confirmed with the Office of the Registrar at
-      ${esc(ADMISSIONS_EMAIL)}, quoting ${esc(input.applicationNumber)} and
-      ${esc(input.studentNumber)}.
+    <p>
+      Your student number is <strong>${esc(input.studentNumber)}</strong>. It does not change:
+      quote it in every communication, on every payment, and to sign in to the portal. The
+      particulars above are what will appear on your award — check them against your identity
+      documents and tell us before you register if any is wrong.
+    </p>
+
+    <p>
+      ${conditional
+        ? 'Your offer carries conditions, set out in Annexe A. You may register and begin studying now, and you are enrolled from the date of this letter.'
+        : 'You are enrolled from the date of this letter and may begin studying at once; teaching does not wait on the fee schedule.'}
+      The terms on which the offer is made are annexed to this letter and form part of it:
+      <span class="annexe-index">${annexes
+        .map((a, i) => `<b>${annexeLetter(i)}</b> ${esc(a.title)}`)
+        .join(' &nbsp;·&nbsp; ')}.</span>
+    </p>
+
+    <div class="sig-row">
+      <div class="sig">
+        <p>We look forward to welcoming you to ${esc(UNIVERSITY.name)}.</p>
+        <p>Yours sincerely,</p>
+        <div class="rule">
+          <div class="name">${esc(input.headOfAdmissions)}${
+            input.postNominals ? `, ${esc(input.postNominals)}` : ''
+          }</div>
+          <div class="office">Head of Academic Affairs</div>
+          <div class="office">${esc(UNIVERSITY.name)}</div>
+        </div>
+      </div>
+
+      ${seal.sealed ? `
+      <div class="seal-panel">
+        <div class="words">
+          <p class="h">Document seal</p>
+          <p class="code">${esc(seal.code)}</p>
+          <p style="margin:0">Sealed over the particulars printed on this page. Alter any of them
+          and the seal stops matching.</p>
+          <p style="margin:4px 0 0">Or check at <span class="url">${esc(UNIVERSITY.website)}/verify</span></p>
+          <p class="void-mark">Void if altered</p>
+        </div>
+        <div class="qr">
+          ${qr}
+          <p class="qr-caption">Scan to verify</p>
+        </div>
+      </div>` : `
+      <div class="seal-panel unsealed">
+        <div class="words">
+          <p class="h">Document seal</p>
+          <p><strong>Not sealed.</strong> This copy was produced while the university's signing key
+          was unavailable, so it carries no verification code. It is a genuine letter but cannot be
+          checked electronically. Ask the Office of Admissions to reissue it.</p>
+        </div>
+      </div>`}
     </div>
 
+    <p class="microrule">${esc(micro)}</p>
+    <p class="microrule-caption">The line above is printed text, not a rule. It is legible on an original and illegible on a copy.</p>
+
+  </section>
+
+  <!-- ==================================================================
+       PAGES 2 ONWARD — THE ANNEXES
+       Each starts on a fresh page and carries a running head, so a page
+       separated from the pack can still be traced to its student.
+       ================================================================== -->
+  ${annexes.map((a, i) => `
+  <section class="annex">
+    <div class="annex-head">
+      <span>${esc(UNIVERSITY.name)} — Admission Package</span>
+      <span class="who">${esc(input.fullName)} · ${esc(input.studentNumber)}${
+        seal.sealed ? ` · ${esc(seal.code)}` : ''
+      }</span>
+    </div>
+    <h2>
+      <span class="tag">Annexe ${annexeLetter(i)}</span>
+      ${esc(a.title)}
+    </h2>
+    ${a.body}
+  </section>`).join('')}
+
+  <div class="foot">
+    This admission package was issued electronically on ${esc(issuedLong)} to
+    ${esc(input.fullName)}, student number ${esc(input.studentNumber)}, and is valid without a
+    handwritten signature. It comprises the admission letter and
+    ${annexes.length} annexe${annexes.length === 1 ? '' : 's'}.${
+      seal.sealed
+        ? ` It is sealed under code <strong>${esc(seal.code)}</strong>, which may be checked at ${esc(UNIVERSITY.website)}/verify or with the Office of Admissions at ${esc(ADMISSIONS_EMAIL)}.`
+        : ` Its authenticity may be confirmed with the Office of Admissions at ${esc(ADMISSIONS_EMAIL)}, quoting ${esc(input.applicationNumber)} and ${esc(input.studentNumber)}.`
+    }
   </div>
+
 </div>
 </body>
 </html>`;
@@ -501,12 +770,16 @@ export function admissionCoveringText(input: AdmissionPackageInput): string {
 Your application to ${UNIVERSITY.name} has been assessed by the Office of Admissions,
 and I am pleased to tell you that you have been offered${conditional ? ' conditional' : ''} admission.
 
+  Full name        ${input.fullName}${input.dateOfBirth ? `
+  Date of birth    ${input.dateOfBirth}` : ''}${input.nationality ? `
+  Nationality      ${input.nationality}` : ''}
   Programme        ${input.programme}
   Faculty          ${input.faculty}
   Mode of study    ${input.mode}
   Campus           ${input.campus}
   Intake           ${input.intake}
   Student number   ${input.studentNumber}
+  Application no.  ${input.applicationNumber}
 ${input.temporaryPassword ? `
   Portal           ${input.portalUrl}
   Username         ${input.studentNumber}
@@ -515,9 +788,15 @@ ${input.temporaryPassword ? `
 Please sign in and change your password immediately. Your password is personal to you and
 must not be shared with anyone, including university staff.
 ` : ''}
-Your full admission package is attached. It contains the admission letter, the conditions of
-your offer, the terms of study for your mode and for the other, the fee arrangements, and the
+Your full admission package is attached. Page 1 is the admission letter itself, signed by the
+Head of Academic Affairs and carrying your particulars and a document seal; the annexes that
+follow set out the conditions of your offer, the terms of study, the fee arrangements, and the
 academic regulations you are accepting by registering. Please read it before you register.
+
+Keep the letter as it was sent. It carries a seal computed over your name, date of birth,
+student number, application number and programme, so anyone you present it to — an employer, a
+sponsor, an embassy — can check it at ${UNIVERSITY.website}/verify. Editing the file, even to
+correct something, breaks the seal and makes the letter unverifiable.
 ${conditional ? `
 YOUR OFFER IS CONDITIONAL. The conditions and their dates are set out in the attached package.
 You may register and begin study, but each condition remains on your record until it is met.

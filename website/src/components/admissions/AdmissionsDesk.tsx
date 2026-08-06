@@ -71,7 +71,10 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
   // Finance form
   const [reference, setReference] = useState('');
   const [amount, setAmount] = useState('');
-  const [currency, setCurrency] = useState('FCFA');
+  // USD, because the university now quotes every fee in dollars and takes
+  // payment in national currency at the national base. A desk that defaults to
+  // FCFA records a Nigerian student's naira receipt as francs.
+  const [currency, setCurrency] = useState('USD');
   // Registrar form
   const [note, setNote] = useState('');
   const [declineReason, setDeclineReason] = useState('');
@@ -434,7 +437,7 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
                       <input
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
-                        placeholder="e.g. 10,000 FCFA"
+                        placeholder="e.g. 100"
                         className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#c9a227] focus:outline-none"
                       />
                     </label>

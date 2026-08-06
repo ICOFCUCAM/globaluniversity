@@ -19,11 +19,14 @@ export const UNIVERSITY = {
   // The post-nominals are affixed to the name because the letter is the
   // university's formal attestation of an academic decision, and the standing
   // of the person making it is part of what the reader — an employer, another
-  // university, an immigration officer — is being asked to accept. Both
-  // doctorates are named rather than abbreviated to "PhD, PhD", which states
-  // less and reads as a typing error.
+  // university, an immigration officer — is being asked to accept.
+  //
+  // Both doctorates are named, in the initialled form: "Ph.D. (Fin.), Ph.D.
+  // (Syst. Theol.)". Two named fields rather than a bare "Ph.D., Ph.D.", which
+  // states less and reads as a typing error; initialled rather than spelt out,
+  // so the signature line stays one line under the rule.
   headOfAcademicAffairs: 'Prof Aaron Ndenka',
-  headOfAcademicAffairsPostNominals: 'PhD (Finance), PhD (Systematic Theology)',
+  headOfAcademicAffairsPostNominals: 'Ph.D. (Fin.), Ph.D. (Syst. Theol.)',
   admissionsEmail: 'admissions@iguc.net',
   viceChancellor: 'Prof Chamayah Meyembi',
 };
