@@ -27,6 +27,7 @@ export default function ResultProcessing() {
   const [results, setResults] = useState<ResultEntry[]>([]);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [showGradingScale, setShowGradingScale] = useState(false);
 
   useEffect(() => {
@@ -77,6 +78,7 @@ export default function ResultProcessing() {
   async function handleSaveResults() {
     if (!selectedCourse) return;
     setSaving(true);
+    setSaveError(null);
 
     const resultsToInsert = results
       .filter((r) => r.totalScore > 0)
@@ -85,27 +87,51 @@ export default function ResultProcessing() {
         course_id: selectedCourse,
         ca_score: r.caScore,
         exam_score: r.examScore,
+        total_score: r.totalScore,
         grade: r.grade,
         grade_point: r.gradePoint,
-        status: 'submitted',
-        submitted_at: new Date().toISOString(),
+        // 'draft', not 'submitted'. The approval chain in lifecycle.ts is
+        // lecturer → HOD → Dean → Registrar, and a result is only submitted
+        // once the lecturer says it is finished. Writing 'submitted' on every
+        // save meant a half-entered class went forward for approval the moment
+        // the lecturer saved their work in progress.
+        status: 'draft',
       }));
 
-    if (resultsToInsert.length > 0) {
-      const { error } = await supabase.from('results').upsert(resultsToInsert, {
-        onConflict: 'student_id,course_id',
-      });
-      if (!error) {
-        setSaved(true);
-        // Log audit
-        await supabase.from('audit_logs').insert({
-          action: 'Results submitted',
-          entity_type: 'results',
-          performed_by: user?.name || 'Unknown',
-          details: { course_id: selectedCourse, count: resultsToInsert.length },
-        });
-      }
+    if (resultsToInsert.length === 0) {
+      setSaving(false);
+      setSaveError('No marks have been entered, so there was nothing to save.');
+      return;
     }
+
+    const { error } = await supabase.from('results').upsert(resultsToInsert, {
+      onConflict: 'student_id,course_id',
+    });
+
+    if (error) {
+      // Previously `if (!error) { … }` with no else: a failed save left the
+      // marks on screen, the Save button idle and no message anywhere. A
+      // lecturer closed the tab believing a class of marks was recorded.
+      setSaving(false);
+      setSaveError(
+        `Not saved: ${error.message}. Your marks are still on this screen — do not close the tab.`,
+      );
+      return;
+    }
+
+    setSaved(true);
+
+    // performed_by is a uuid column and this was passing user?.name, so every
+    // audit write for result entry failed on type — silently, because the
+    // result was never checked. The lecturer's identity is their id.
+    await supabase.from('audit_logs').insert({
+      action: 'results.saved',
+      entity_type: 'results',
+      entity_id: selectedCourse,
+      performed_by: user?.id ?? null,
+      details: { course_id: selectedCourse, count: resultsToInsert.length },
+    });
+
     setSaving(false);
   }
 
@@ -201,10 +227,21 @@ export default function ResultProcessing() {
                   disabled={saving}
                   className="flex items-center gap-1.5 px-4 py-2 bg-[#422e59] text-white rounded-lg text-xs font-medium hover:bg-[#322244] disabled:opacity-50 transition-colors"
                 >
-                  <Save size={14} /> {saving ? 'Saving...' : 'Save Results'}
+                  <Save size={14} /> {saving ? 'Saving…' : 'Save marks'}
                 </button>
               </div>
             </div>
+            {/* A failed save has to be visible on the screen holding the marks
+                that failed. It was silent. */}
+            {saveError && (
+              <p
+                role="alert"
+                className="flex items-start gap-2 border-b border-red-200 bg-red-50 px-5 py-3 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200"
+              >
+                <AlertCircle size={15} className="mt-0.5 flex-shrink-0" />
+                {saveError}
+              </p>
+            )}
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
