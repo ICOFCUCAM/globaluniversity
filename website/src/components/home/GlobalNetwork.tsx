@@ -119,14 +119,14 @@ export default function GlobalNetwork() {
           <div className="mt-12 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <Link
               href="/accreditation"
-              className="group inline-flex items-center gap-2.5 rounded-full bg-brand-gold px-8 py-4 font-heading text-[15px] font-bold text-brand-purple-dark shadow-gold transition duration-300 hover:bg-brand-gold-deep"
+              className="group inline-flex items-center gap-2.5 rounded-full bg-brand-gold px-8 py-4 font-heading text-[15px] font-bold text-brand-purple-dark shadow-gold transition duration-300 ease-enter hover:bg-brand-gold-deep active:scale-[0.98] active:duration-75"
             >
               Academic partnerships
               <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">→</span>
             </Link>
             <Link
               href="/admissions"
-              className="group inline-flex items-center gap-2.5 rounded-full border-2 border-white/35 px-8 py-4 font-heading text-[15px] font-bold text-white transition duration-300 hover:border-brand-gold hover:text-brand-gold"
+              className="group inline-flex items-center gap-2.5 rounded-full border-2 border-white/35 px-8 py-4 font-heading text-[15px] font-bold text-white transition duration-300 ease-enter hover:border-brand-gold hover:text-brand-gold active:scale-[0.98] active:duration-75"
             >
               International admissions
               <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">→</span>

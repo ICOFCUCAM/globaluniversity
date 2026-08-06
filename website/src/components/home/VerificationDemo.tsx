@@ -175,7 +175,7 @@ export default function VerificationDemo() {
                 <button
                   type="submit"
                   disabled={!id.trim() || result.kind === 'checking'}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-gold px-6 py-3.5 font-heading text-[15px] font-bold text-brand-purple-dark transition duration-300 hover:bg-brand-gold-deep disabled:opacity-40"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-gold px-6 py-3.5 font-heading text-[15px] font-bold text-brand-purple-dark transition duration-300 ease-enter hover:bg-brand-gold-deep active:scale-[0.98] active:duration-75 disabled:opacity-40"
                 >
                   {result.kind === 'checking' && <Loader2 size={16} className="animate-spin" />}
                   Check

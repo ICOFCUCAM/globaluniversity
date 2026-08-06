@@ -93,14 +93,14 @@ export default function PathwayLadder() {
           <div className="mt-16 flex flex-col items-center gap-4 sm:mt-20 sm:flex-row sm:justify-center">
             <Link
               href="/programs"
-              className="group inline-flex items-center gap-2.5 rounded-full bg-brand-purple px-8 py-4 font-heading text-[15px] font-bold text-white shadow-lift transition duration-300 hover:bg-brand-purple-dark hover:shadow-lift-lg"
+              className="group inline-flex items-center gap-2.5 rounded-full bg-brand-purple px-8 py-4 font-heading text-[15px] font-bold text-white shadow-lift transition duration-300 ease-enter hover:bg-brand-purple-dark hover:shadow-lift-lg active:scale-[0.98] active:duration-75"
             >
               Browse all programmes
               <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">→</span>
             </Link>
             <Link
               href="/admissions"
-              className="group inline-flex items-center gap-2.5 rounded-full border-2 border-brand-purple px-8 py-4 font-heading text-[15px] font-bold text-brand-purple transition duration-300 hover:bg-brand-purple hover:text-white dark:border-brand-gold dark:text-brand-gold dark:hover:bg-brand-gold dark:hover:text-brand-purple-dark"
+              className="group inline-flex items-center gap-2.5 rounded-full border-2 border-brand-purple px-8 py-4 font-heading text-[15px] font-bold text-brand-purple transition duration-300 ease-enter hover:bg-brand-purple hover:text-white active:scale-[0.98] active:duration-75 dark:border-brand-gold dark:text-brand-gold dark:hover:bg-brand-gold dark:hover:text-brand-purple-dark"
             >
               Entry requirements
               <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">→</span>

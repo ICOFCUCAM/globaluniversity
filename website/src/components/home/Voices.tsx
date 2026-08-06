@@ -136,7 +136,7 @@ export default function Voices() {
           <p className="mt-14 text-center">
             <Link
               href="/contact"
-              className="group inline-flex items-center gap-2.5 rounded-full border-2 border-brand-purple px-8 py-4 font-heading text-[15px] font-bold text-brand-purple transition duration-300 hover:bg-brand-purple hover:text-white dark:border-brand-gold dark:text-brand-gold dark:hover:bg-brand-gold dark:hover:text-brand-purple-dark"
+              className="group inline-flex items-center gap-2.5 rounded-full border-2 border-brand-purple px-8 py-4 font-heading text-[15px] font-bold text-brand-purple transition duration-300 ease-enter hover:bg-brand-purple hover:text-white active:scale-[0.98] active:duration-75 dark:border-brand-gold dark:text-brand-gold dark:hover:bg-brand-gold dark:hover:text-brand-purple-dark"
             >
               Studied here? Tell us your story
               <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">→</span>

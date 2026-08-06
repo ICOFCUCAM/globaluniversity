@@ -193,7 +193,7 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
                 // yellow robes, a tan tablecloth — loses its edge entirely, and a
                 // primary call to action that dissolves into the background is not a
                 // call to action. A dark hairline holds the shape on every frame.
-                className="group relative flex items-center justify-center gap-2.5 overflow-hidden rounded-full bg-brand-gold px-8 py-4 font-heading text-[15px] font-bold tracking-[0.01em] text-brand-purple-dark shadow-gold ring-1 ring-brand-purple-dark/25 transition duration-300 hover:bg-brand-gold-deep hover:shadow-lift-lg sm:px-10 sm:py-[1.15rem] sm:text-base"
+                className="group relative flex items-center justify-center gap-2.5 overflow-hidden rounded-full bg-brand-gold px-8 py-4 font-heading text-[15px] font-bold tracking-[0.01em] text-brand-purple-dark shadow-gold ring-1 ring-brand-purple-dark/25 transition duration-300 ease-enter hover:bg-brand-gold-deep active:scale-[0.98] active:duration-75 hover:shadow-lift-lg sm:px-10 sm:py-[1.15rem] sm:text-base"
               >
                 <span className="relative z-10">{slide.cta.label}</span>
                 {/* The arrow travels on hover. A static arrow is decoration; one
