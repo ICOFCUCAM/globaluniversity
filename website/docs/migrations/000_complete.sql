@@ -542,6 +542,34 @@ create policy documents_own on documents for select using (
   student_id in (select id from students where auth_user_id = auth.uid())
 );
 
+-- Staff may read applications.
+--
+-- WITHOUT THIS THE ADMISSIONS PIPELINE DOES NOT WORK AT ALL. `students_own_row`
+-- alone restricts SELECT to `auth.uid() = auth_user_id`; an applicant has no
+-- auth account so that column is null, and a Finance officer is not the
+-- applicant. RLS therefore returned zero rows to every member of staff, so the
+-- Finance queue, the Registrar's queue, the student register and every
+-- dashboard count read empty — while the applications sat in the table.
+drop policy if exists students_staff_read on students;
+create policy students_staff_read on students
+  for select using (
+    auth_role() in (
+      'superadmin', 'admin', 'registrar', 'finance', 'finance-director',
+      'admissions-officer', 'dean', 'hod', 'programme-coordinator',
+      'academic-office', 'lecturer', 'student-affairs'
+    )
+  );
+
+-- And the two desks may write. There was no UPDATE policy at all, so
+-- registering a fee was refused even when the application could be seen.
+-- Narrow on purpose: a lecturer or dean may read the register, and neither
+-- appears here, because neither admits students nor takes money.
+drop policy if exists students_desk_update on students;
+create policy students_desk_update on students
+  for update using (
+    auth_role() in ('superadmin', 'admin', 'registrar', 'finance', 'finance-director', 'admissions-officer')
+  );
+
 -- /apply inserts with the publishable key. It needs INSERT and must not get
 -- SELECT — otherwise the key that submits an application could list every
 -- other application.
