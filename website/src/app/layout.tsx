@@ -71,7 +71,27 @@ const jsonLd = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${display.variable} ${sans.variable}`}>
+    <html lang="en" className={`${display.variable} ${sans.variable}`} suppressHydrationWarning>
+      <head>
+        {/* THE THEME, APPLIED BEFORE ANYTHING PAINTS.
+            This runs synchronously in <head>, ahead of the first paint and
+            ahead of React. Setting the class on mount instead would show a
+            visitor with dark mode enabled one frame of full-brightness white —
+            the flash of wrong theme — which at night is genuinely unpleasant
+            and is the commonest way a dark mode is got wrong.
+
+            It is inlined rather than imported because a separate file is a
+            second request, and a request that has to complete before the first
+            paint is the definition of render-blocking.
+
+            Wrapped in try/catch: localStorage throws in Safari private mode,
+            and a theme preference must never be able to blank the page. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var c=localStorage.getItem('iguc-theme')||'system';var d=c==='dark'||(c==='system'&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);document.documentElement.style.colorScheme=d?'dark':'light'}catch(e){}`,
+          }}
+        />
+      </head>
       <body>
         {/* SKIP LINK — the first focusable thing in the document.
             This site has a two-row masthead with a utility bar, a wordmark, six
