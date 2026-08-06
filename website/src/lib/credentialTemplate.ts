@@ -205,6 +205,17 @@ export interface CredentialDesign {
      * 'globe' is the orthographic sphere it replaced.
      */
     world: 'flat' | 'globe';
+    /**
+     * Whether the holder's name and credential number are set round the device
+     * in microtext.
+     *
+     * Every other element of the device is identical on every certificate the
+     * university issues, so a device lifted from a genuine scan is a valid
+     * device for any forgery built on it. This ring is not: it makes the artwork
+     * specific to ONE award, and a lifted ring carries the original holder's
+     * name into the copy, where it disagrees with the conferral printed over it.
+     */
+    holderRing: boolean;
     microtextBorder: boolean;
     securityGround: boolean;
     engravedSeal: boolean;
@@ -325,6 +336,7 @@ export const DEFAULT_CERTIFICATE_DESIGN: CredentialDesign = {
     watermark: 'device-in-rosette',
     deviceStyle: 'seal',
     world: 'flat',
+    holderRing: true,
     microtextBorder: true,
     securityGround: true,
     engravedSeal: true,

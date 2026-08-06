@@ -55,6 +55,8 @@ The university's composed device, built outside in:
 - **the world**, as a flat map on the azimuthal equidistant projection — the
   one on the United Nations emblem — cut at 60°S, with 20°E running straight
   down so Africa sits at the foot;
+- **the holder's own ring** — their name and credential number in microtext,
+  repeated to fill the circumference;
 - the **year of foundation** in roman;
 - the **faculty's emblem**.
 
@@ -81,6 +83,29 @@ smear round the edge of the disc.
 
 `security.world: 'globe'` restores the orthographic sphere, which shows one
 hemisphere and hides the other.
+
+### The holder's ring
+
+Set inside the institutional legend and inside the African register, so the
+figure reads outside in: **the university, its ornament, then the person.**
+
+This is the only element of the device that differs between two certificates of
+the same award. Everything else is identical on every document the university
+issues — which means a device lifted from a genuine scan is a valid device for
+any forgery built on it. A ring carrying the holder's name is not: the lifted
+ring brings the original holder's name into the copy, where a registrar
+comparing it against the conferral printed over it will find the two
+disagreeing.
+
+**It is repeated to fill the circumference**, not written once. A legend that
+runs a third of the way round and stops looks like a caption; repeated, it is a
+course of microtext, which is what it is for. The repeat count is computed from
+the measure so the ring is full at any diameter — a fixed count would crowd at
+one size and leave a gap at another, and a gap in a microtext course is exactly
+where a forger's join would hide.
+
+*Set in Studio → Security features → The holder's ring.
+`CredentialDesign.security.holderRing`.*
 
 ### Four levels of elaboration, by award
 

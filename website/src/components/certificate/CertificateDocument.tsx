@@ -261,6 +261,9 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
           style: sec.deviceStyle,
           world: sec.world,
           emblem: emblemFor(data.faculty),
+          // The holder's own ring. See credentialArt: it is what stops a device
+          // lifted from a genuine scan being a valid device for a forgery.
+          holder: sec.holderRing ? { name: data.fullName, credentialId: data.credentialId } : null,
         })
       : sec.watermark === 'globe'
         ? guillocheGlobeUri(seed, 520, design.brand, 1)
@@ -298,12 +301,13 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
       style: sec.deviceStyle,
       world: sec.world,
       emblem: emblemFor(data.faculty),
+      holder: sec.holderRing ? { name: data.fullName, credentialId: data.credentialId } : null,
       centre: 'void',
       paper: design.paper,
     }),
   }), [
     seed, sheetW, sheetH, bleed, design.brand, design.accent, design.borderWidthMm,
-    design.sealColour, design.paper, data.credentialId, sec.watermark, sec.deviceStyle, sec.world,
+    design.sealColour, design.paper, data.credentialId, sec.watermark, sec.deviceStyle, sec.world, sec.holderRing, data.fullName,
     data.degree, data.faculty,
   ]);
 

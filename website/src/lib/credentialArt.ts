@@ -1506,6 +1506,20 @@ export function africanGlobeOfKnowledge(opts: {
   world?: 'flat' | 'globe';
   /** The sheet's colour, for the vacant centre. Must match the stock. */
   paper?: string;
+  /**
+   * The holder's own ring: their name and their credential number, set in
+   * microtext and repeated round the figure.
+   *
+   * WHY THIS IS WORTH THE TROUBLE. Every other element of the device is the
+   * same on every certificate the university issues, which means a device
+   * lifted from a genuine scan is a valid device for any forgery built on it.
+   * A ring carrying the holder's name is not: it makes the artwork specific to
+   * ONE award, so lifting it carries the original holder's name into the copy —
+   * where a registrar comparing the ring against the conferral will find them
+   * disagreeing. It is the same argument as the microtext course along the
+   * foot, applied to the one figure a forger is most likely to reuse.
+   */
+  holder?: { name: string; credentialId: string } | null;
 }): string {
   const { seed, size, colour, legend, founded } = opts;
   const tier = opts.tier ?? 'standard';
@@ -1514,6 +1528,7 @@ export function africanGlobeOfKnowledge(opts: {
   const opacity = opts.opacity ?? 1;
   const centre = opts.centre ?? 'globe';
   const world = opts.world ?? 'flat';
+  const holder = opts.holder ?? null;
   const paper = opts.paper ?? '#fffdf5';
   const R = size / 2;
   // The whole style name, not its initial. 'seal' and 'shield' both begin with
@@ -1576,9 +1591,9 @@ export function africanGlobeOfKnowledge(opts: {
 
   if (style === 'seal' || style === 'radiant') {
     if (style === 'seal') L.push(microRing(circleD(ringR)));
-    L.push(africanBand(seed, size, colour, f.sectors, R * 0.905, R * 0.795, opacity));
+    L.push(africanBand(seed, size, colour, f.sectors, R * 0.925, R * 0.855, opacity));
     if (f.doubleRegister) {
-      L.push(africanBand(seed ^ 0x9d, size, colour, Math.round(f.sectors * 1.4), R * 0.985, R * 0.925, opacity * 0.75));
+      L.push(africanBand(seed ^ 0x9d, size, colour, Math.round(f.sectors * 1.4), R * 0.995, R * 0.965, opacity * 0.75));
     }
   }
 
@@ -1695,10 +1710,37 @@ export function africanGlobeOfKnowledge(opts: {
     ));
   }
 
+  // --- the holder's ring --------------------------------------------------
+  // Set inside the institutional legend and inside the African register, so the
+  // figure reads outside in: the university, its ornament, then the person.
+  //
+  // REPEATED TO FILL THE CIRCUMFERENCE rather than written once. A legend that
+  // runs a third of the way round and stops looks like a caption; repeated, it
+  // is a course of microtext, which is what it is for. The repeat count is
+  // computed from the measure so the ring is full at any size — a fixed count
+  // would crowd at one diameter and leave a gap at another, and a gap in a
+  // microtext course is exactly where a forger's join would be hidden.
+  if (holder && holder.name.trim()) {
+    const hr = R * 0.825;
+    const fs = size * 0.019;
+    const ls = size * 0.004;
+    const unit = `${holder.name.toUpperCase()}   ·   ${holder.credentialId}   ·   `;
+    // ~0.55em average advance for capitals in a humanist sans, plus tracking.
+    const per = unit.length * (fs * 0.55 + ls);
+    const reps = Math.max(1, Math.min(6, Math.round((2 * Math.PI * hr) / per)));
+    L.push(
+      `<path id="${id}-holder" fill="none" d="${circleD(hr)}"/>` +
+      `<text font-family="Helvetica,Arial,sans-serif" font-size="${fs.toFixed(2)}" ` +
+      `letter-spacing="${ls.toFixed(2)}" fill="${colour}" ` +
+      `fill-opacity="${(opacity * 0.8).toFixed(3)}">` +
+      `<textPath href="#${id}-holder" startOffset="0%">${escapeXml(unit.repeat(reps))}</textPath></text>`,
+    );
+  }
+
   // --- the network, on every tier now ------------------------------------
   if (f.network) {
     const nodes = 12;
-    const nr = style === 'cartouche' ? R * 0.60 : style === 'panel' ? R * 0.48 : R * 0.735;
+    const nr = style === 'cartouche' ? R * 0.58 : style === 'panel' ? R * 0.46 : R * 0.700;
     const chords: string[] = [];
     for (let i = 0; i < nodes; i += 1) {
       const a = (i / nodes) * Math.PI * 2 - Math.PI / 2;
@@ -1727,7 +1769,7 @@ export function africanGlobeOfKnowledge(opts: {
   if (style !== 'panel') {
     for (let c = 0; c < 4; c += 1) {
       const a = (c / 4) * Math.PI * 2 + Math.PI / 2;
-      const rr = style === 'cartouche' ? R * 0.66 : R * 0.765;
+      const rr = style === 'cartouche' ? R * 0.64 : R * 0.750;
       const bx = R + Math.cos(a) * rr;
       const by = R + Math.sin(a) * (style === 'cartouche' ? rr * 0.72 : rr);
       const leaves: string[] = [];

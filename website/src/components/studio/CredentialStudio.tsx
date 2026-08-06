@@ -493,6 +493,12 @@ export default function CredentialStudio() {
                 </p>
                 {design.security.watermark === 'device' && (
                   <>
+                    <Toggle
+                      label="The holder’s ring"
+                      detail="The graduate’s name and credential number, set in microtext and repeated round the device. Every other element of the figure is identical on every certificate the university issues, so a device lifted from a genuine scan is a valid device for any forgery built on it. This ring is not — a lifted ring carries the original holder’s name into the copy, where it disagrees with the conferral printed over it."
+                      checked={design.security.holderRing}
+                      onChange={(v) => setSecurity('holderRing', v)}
+                    />
                     <Row label="The world">
                       <Select
                         value={design.security.world}

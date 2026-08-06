@@ -243,6 +243,30 @@ check(
   true,
 );
 
+// --- The holder's ring is the holder's. -------------------------------------
+// The one element of the device that differs between two certificates of the
+// same award. If it did not carry the name, a device lifted from a genuine scan
+// would be a valid device for any forgery built on it.
+//
+// The artwork is embedded as base64 data URIs, so the assertion has to DECODE
+// them. Searching the raw markup passes for the wrong reason: the credential
+// number also appears as plain text in the foot, so a naive `includes` is green
+// whether or not the ring exists.
+const artworkOf = (html) =>
+  (html.match(/data:image\/svg\+xml;base64,([A-Za-z0-9+/=]+)/g) ?? [])
+    .map((u) => Buffer.from(u.split(',')[1], 'base64').toString('utf8'))
+    .join('\n');
+
+const ringed = artworkOf(render({ fullName: 'Ayuk Besong Tabi', credentialId: 'IGUC-BA-9Q7X-2M4K-T55R' }));
+check('the device carries the holder’s name', ringed.includes('AYUK BESONG TABI'), true);
+check('and the credential number with it', ringed.includes('IGUC-BA-9Q7X-2M4K-T55R'), true);
+check('a different holder gets a different ring', ringed.includes('GRACE NALOVA MEYEMBI'), false);
+check(
+  'the ring is repeated rather than written once',
+  (ringed.match(/AYUK BESONG TABI/g) ?? []).length > 1,
+  true,
+);
+
 // --- It is announced to assistive technology. -------------------------------
 const html = render();
 check('the document declares itself an article', html.includes('role="article"'), true);
