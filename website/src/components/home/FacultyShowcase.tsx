@@ -100,7 +100,7 @@ export default function FacultyShowcase() {
             const count = programmesByFaculty(f.id).length;
             return (
               <Reveal key={f.id} delay={i * 90}>
-                <article className="group relative h-full overflow-hidden rounded-2xl bg-white shadow-lift ring-1 ring-brand-sand/70 transition duration-500 hover:shadow-lift-lg hover:ring-brand-gold/40 dark:bg-white/[0.04] dark:ring-white/10 dark:hover:ring-brand-gold/40">
+                <article className="group relative h-full overflow-hidden rounded-2xl bg-white shadow-lift focus-within:ring-2 focus-within:ring-brand-gold focus-within:ring-offset-2 ring-1 ring-brand-sand/70 transition duration-500 hover:shadow-lift-lg hover:ring-brand-gold/40 dark:bg-white/[0.04] dark:ring-white/10 dark:hover:ring-brand-gold/40">
                   <div className="relative h-56 overflow-hidden sm:h-60">
                     <Image
                       src={IMAGES[f.id] ?? '/images/campus-global.jpg'}

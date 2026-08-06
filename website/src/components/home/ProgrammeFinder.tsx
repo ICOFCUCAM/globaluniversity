@@ -279,7 +279,7 @@ export default function ProgrammeFinder() {
                 <article
                   key={p.slug}
                   style={{ animationDelay: `${i * 45}ms` }}
-                  className="group relative flex animate-rise flex-col rounded-2xl border border-[#e6ddcb] bg-white p-6 transition duration-500 hover:-translate-y-1 hover:border-brand-gold hover:shadow-lift-lg dark:border-white/10 dark:bg-white/[0.04] dark:hover:border-brand-gold/50"
+                  className="group relative flex animate-rise flex-col rounded-2xl border border-[#e6ddcb] bg-white p-6 focus-within:border-brand-gold focus-within:ring-2 focus-within:ring-brand-gold/60 transition duration-500 hover:-translate-y-1 hover:border-brand-gold hover:shadow-lift-lg dark:border-white/10 dark:bg-white/[0.04] dark:hover:border-brand-gold/50"
                 >
                   <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-gold-deep">
                     {p.award} · {faculty?.name.replace('Faculty of ', '') ?? ''}

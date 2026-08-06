@@ -61,7 +61,7 @@ export default function CampusBand() {
         <div className="mt-16 grid gap-7 sm:mt-20 lg:grid-cols-3">
           {CAMPUSES.map((c, i) => (
             <Reveal key={c.city} delay={i * 100}>
-              <article className="group flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-lift ring-1 ring-brand-sand/70 transition duration-500 hover:shadow-lift-lg hover:ring-brand-gold/40 dark:bg-white/[0.04] dark:ring-white/10">
+              <article className="group flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-lift focus-within:ring-2 focus-within:ring-brand-gold focus-within:ring-offset-2 ring-1 ring-brand-sand/70 transition duration-500 hover:shadow-lift-lg hover:ring-brand-gold/40 dark:bg-white/[0.04] dark:ring-white/10">
                 <div className="relative h-48 overflow-hidden">
                   <Image
                     src={c.image}

@@ -60,7 +60,7 @@ export default function PathwayLadder() {
           <ol className="relative grid gap-8 sm:gap-10 lg:grid-cols-5 lg:gap-6">
             {PATHWAY.map((step, i) => (
               <Reveal key={step.award} delay={i * 90}>
-                <li className="group relative flex gap-5 sm:pl-0 lg:block">
+                <li className="group relative flex gap-5 rounded-xl focus-within:ring-2 focus-within:ring-brand-gold focus-within:ring-offset-4 sm:pl-0 lg:block">
                   {/* The node. It sits on the rail on desktop and beside the
                       copy on mobile, which is why the rail changes axis. */}
                   <span
