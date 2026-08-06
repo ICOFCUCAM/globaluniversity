@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
 import { UNIVERSITY, IMAGES } from '@/lib/constants';
 import { Aurora, Grain, LightShaft, Seam } from './Atmosphere';
 import type { UserRole } from '@/lib/types';
@@ -48,6 +49,39 @@ export default function LoginScreen() {
   // handleSignup removed. The portal has no sign-up route: a student account is
   // created by the Office of the Registrar on approving an application, and the
   // credentials are emailed from the server. See src/lib/admissions.ts.
+
+  /**
+   * Send a password-reset email.
+   *
+   * This was `<a href="#">`, which is the worst form of dead control: it looks
+   * like the standard link every user has been trained to click, and it scrolls
+   * the page to the top instead. Someone locked out of their account clicked
+   * it, watched the page jump, and concluded the portal was broken.
+   *
+   * Every welcome email this system sends tells the recipient to change their
+   * temporary password immediately, so being locked out is a routine event
+   * here, not an edge case.
+   *
+   * The message is deliberately the same whether or not the address is
+   * registered. Saying "no account with that email" turns this box into a way
+   * of discovering who holds an account at the university.
+   */
+  async function handleReset() {
+    setError('');
+    setSuccess('');
+    if (!email.trim()) {
+      setError('Enter your email address first, then choose “Forgot password?”.');
+      return;
+    }
+    setSubmitting(true);
+    await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${window.location.origin}/portal`,
+    });
+    setSubmitting(false);
+    setSuccess(
+      `If an account exists for ${email.trim()}, a reset link is on its way. It expires shortly, so use it when it arrives.`,
+    );
+  }
 
   function handleDemoLogin(role: UserRole) {
     setError('');
@@ -212,7 +246,13 @@ export default function LoginScreen() {
                       <input type="checkbox" className="rounded border-gray-300 text-[#422e59] focus:ring-blue-500" />
                       Remember me
                     </label>
-                    <a href="#" className="text-blue-600 hover:underline">Forgot password?</a>
+                    <button
+                      type="button"
+                      onClick={handleReset}
+                      className="text-[#422e59] hover:underline dark:text-[#c9b6e6]"
+                    >
+                      Forgot password?
+                    </button>
                   </div>
                   <button
                     type="submit"
