@@ -69,7 +69,14 @@ export function Section({
   chapter?: string;
 }) {
   return (
-    <section id={id} data-chapter={chapter} className={`py-14 sm:py-20 ${className}`}>
+    /* WHITESPACE IS THE CHEAPEST SIGNAL OF CONFIDENCE A PAGE HAS.
+       This was py-14 / sm:py-20 — about 56px and 80px — which on a 1440px
+       screen puts roughly one section-height of content between two headings
+       and reads as compressed. Every institution this site is measured against
+       runs 120–160px between bands. The cost is scroll length, which is not a
+       cost: a visitor who is interested scrolls, and one who is not left at the
+       hero either way. */
+    <section id={id} data-chapter={chapter} className={`py-20 sm:py-28 lg:py-32 ${className}`}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6">{children}</div>
     </section>
   );

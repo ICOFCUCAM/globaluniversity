@@ -221,30 +221,57 @@ export interface HeroSlide {
   image: string;
 }
 
+// ---------------------------------------------------------------------------
+// THE HERO.
+//
+// WHAT THESE USED TO SAY. The first slide was headed "The Community University"
+// — which is the university's descriptor, not its purpose, and the descriptor
+// is already in the header three centimetres above. The second asked for
+// donations. A stranger's first four seconds were spent on a label they had
+// just read and a request for money.
+//
+// A university's hero answers one question: what is this place FOR. Harvard's
+// homepage does not say "Harvard University". The name is settled by the
+// masthead; the hero is where the institution says what it is trying to do.
+//
+// So each headline below is a purpose and each supporting line is the evidence
+// for it. The building fund has not been deleted — it has moved to where
+// somebody already persuaded is willing to read it, rather than standing in
+// front of the applicant it was interrupting.
+// ---------------------------------------------------------------------------
+
 export const heroSlides: HeroSlide[] = [
   {
-    title: 'The Community University',
-    text: 'Educating men and women as skilled professionals in godly principles, morals and ministries worldwide.',
-    cta: { label: 'Enroll Today', href: '/admissions' },
+    title: 'Educating Leaders for Africa and the World',
+    text:
+      'Accredited degrees in theology, education, technology and business — taught by practitioners, '
+      + 'open to working adults, and recognised beyond our borders.',
+    cta: { label: 'Begin Your Application', href: '/apply' },
+    image: '/images/graduation-2024/grad-2024-platform-party.jpg',
+  },
+  {
+    title: 'Where Faith Meets Academic Rigour',
+    text:
+      'Founded within the International Circle of Faith, we hold scholarship and character to the same '
+      + 'standard — because a qualification that forms no one is only a piece of paper.',
+    cta: { label: 'Explore Our Faculties', href: '/faculty' },
     image: '/images/home-hero.jpg',
   },
   {
-    title: 'Donate for Our University Building Project',
-    text: 'Join us in building the future of education — a cutting-edge campus where ideas flourish and innovation takes flight. Together, let’s raise $1,000,000 to bring this vision to life.',
-    cta: { label: 'Support Us', href: '/contact' },
-    image: '/images/hall.jpg',
-  },
-  {
-    title: 'Support Intermissions and Evangelism Worldwide',
-    text: 'Empower missions and outreach efforts to reach grassroots levels more effectively, amplifying the reach and impact of the Kingdom of God.',
-    cta: { label: 'Learn More', href: '/about' },
+    title: 'A Degree You Can Take From Anywhere',
+    text:
+      'Study online, on campus in Buea or Douala, or blended between the two — without leaving your '
+      + 'work, your family or your ministry.',
+    cta: { label: 'See How Study Works', href: '/online-learning' },
     image: '/images/global.jpg',
   },
   {
-    title: 'A University in Pursuit of a Brighter Future',
-    text: 'Anything you can dream, you can do — and we have the alumni to prove it. Fill out our free online application today.',
-    cta: { label: 'Apply Now', href: '/apply' },
-    image: '/images/graduation-2024/grad-2024-platform-party.jpg',
+    title: 'From Certificate to Doctorate, Without Starting Again',
+    text:
+      'Every award articulates into the next. What you complete here carries forward — so the first '
+      + 'qualification you earn is the first step, never the last.',
+    cta: { label: 'See the Pathways', href: '/programs' },
+    image: '/images/graduation-2024/grad-2024-academic-procession.jpg',
   },
 ];
 

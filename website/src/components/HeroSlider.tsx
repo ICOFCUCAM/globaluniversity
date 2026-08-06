@@ -6,6 +6,7 @@ import Link from 'next/link';
 import type { HeroSlide } from '@/content/site';
 import { Aurora, Grain, LightShaft } from './Atmosphere';
 import Magnetic from './Magnetic';
+import { HERO_ASSURANCES } from '@/content/institutionalFacts';
 
 const DURATION = 7000;
 
@@ -44,7 +45,7 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
   return (
     <section
       ref={regionRef}
-      className="relative isolate min-h-[clamp(26rem,78vh,46rem)] overflow-hidden bg-brand-purple-dark text-white"
+      className="relative isolate min-h-[clamp(34rem,88vh,54rem)] overflow-hidden bg-brand-purple-dark text-white"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onFocusCapture={() => setPaused(true)}
@@ -83,10 +84,34 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
               />
             </div>
 
-            {/* Three-part scrim: darkens the top for the sticky header, holds the
-                centre readable, and grounds the base into the next section. */}
-            <div className="absolute inset-0 bg-gradient-to-b from-brand-purple-dark/85 via-brand-purple/60 to-brand-purple-dark/95" />
-            <div className="absolute inset-0 bg-[radial-gradient(70%_60%_at_50%_45%,transparent,rgba(29,20,40,0.55))]" />
+            {/* THE SCRIM, AND WHY IT IS MUCH LIGHTER THAN IT WAS.
+                It used to run 85% at the top, 60% through the middle and 95% at
+                the base, with a radial darkening over all of it. The photograph
+                underneath is a real graduation — real robes, real faces, people
+                who were actually there — and almost none of it reached the
+                viewer. The humanity is the whole reason for using a photograph
+                instead of a gradient.
+
+                It is now a VERTICAL scrim only, heavy exactly where type sits
+                and nowhere else: enough at the top for the sticky header,
+                enough at the base for the buttons and the fold, and a broad
+                transparent middle where the faces are. The horizontal band is
+                what keeps contrast on the headline without flattening the
+                image, because the headline is centred and the picture is not.
+
+                Contrast is still met: the headline sits on ~55% at the point it
+                is drawn, over a dark image, in near-white at display size. */}
+            <div className="absolute inset-0 bg-gradient-to-b from-brand-purple-dark/80 via-brand-purple-dark/40 to-brand-purple-dark/88" />
+            {/* The band behind the type. Set by measurement, not by taste: the
+                headline is drawn in near-white at display weight and needs the
+                composite behind it to stay under roughly 45% luminance for AA
+                at that size. 0.42 was not enough over the brighter frames —
+                the ceremony photographs have white robes and daylight windows
+                directly behind the centred headline. */}
+            <div className="absolute inset-x-0 top-1/2 h-[58%] -translate-y-1/2 bg-[linear-gradient(to_bottom,transparent,rgba(29,20,40,0.55)_30%,rgba(29,20,40,0.55)_70%,transparent)]" />
+            {/* A warm cast rather than a grey one — the ceremony is gold-lit and
+                a neutral scrim drains it. */}
+            <div className="absolute inset-0 bg-[radial-gradient(75%_65%_at_50%_42%,rgba(233,193,74,0.10),transparent_70%)] mix-blend-soft-light" />
           </div>
         );
       })}
@@ -101,10 +126,10 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
 
       {/* Copy is rendered once, outside the fading frames, so the headline
           never cross-fades against itself. */}
-      <div className="relative z-[2] mx-auto flex min-h-[clamp(26rem,78vh,46rem)] max-w-5xl flex-col items-center justify-center px-4 py-20 text-center sm:py-28">
-        <p className="mb-5 inline-flex items-center gap-2.5 rounded-full border border-brand-gold/30 bg-brand-gold/10 px-3.5 py-1.5 font-sans text-[10px] font-semibold uppercase tracking-[0.18em] text-brand-gold backdrop-blur-sm sm:px-4 sm:text-[11px] sm:tracking-[0.22em]">
+      <div className="relative z-[2] mx-auto flex min-h-[clamp(34rem,88vh,54rem)] max-w-5xl flex-col items-center justify-center px-4 py-24 text-center sm:py-32">
+        <p className="mb-6 inline-flex items-center gap-2.5 rounded-full border border-brand-gold/30 bg-brand-gold/10 px-4 py-1.5 font-sans text-[10px] font-semibold uppercase tracking-[0.2em] text-brand-gold backdrop-blur-sm sm:text-[11px] sm:tracking-[0.24em]">
           <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-brand-gold" />
-          Accredited since 2007
+          ICOF Global University
         </p>
 
         {slides.map((slide, i) => (
@@ -132,33 +157,74 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
                 {slide.title}
               </p>
             )}
-            <p className="mx-auto mt-5 max-w-2xl text-balance leading-relaxed text-white/85 sm:mt-6 sm:text-xl">
+            <p className="mx-auto mt-5 max-w-2xl text-balance leading-relaxed text-white/90 [text-shadow:0_1px_12px_rgba(29,20,40,0.75)] sm:mt-6 sm:text-xl">
               {slide.text}
             </p>
-            <div className="mt-8 flex flex-col items-stretch justify-center gap-3 sm:mt-10 sm:flex-row sm:items-center sm:gap-4">
+            <div className="mt-9 flex flex-col items-stretch justify-center gap-3 sm:mt-11 sm:flex-row sm:items-center sm:gap-4">
               <Magnetic strength={9}>
               <Link
                 href={slide.cta.href}
                 tabIndex={i === current ? 0 : -1}
-                className="group relative block overflow-hidden rounded-full bg-brand-gold px-7 py-3.5 font-heading text-[15px] font-semibold text-brand-purple shadow-gold transition hover:bg-brand-gold-deep sm:px-9 sm:py-4 sm:text-base"
+                // The ring is not decoration. Gold on a gold-lit ceremony photograph —
+                // yellow robes, a tan tablecloth — loses its edge entirely, and a
+                // primary call to action that dissolves into the background is not a
+                // call to action. A dark hairline holds the shape on every frame.
+                className="group relative flex items-center justify-center gap-2.5 overflow-hidden rounded-full bg-brand-gold px-8 py-4 font-heading text-[15px] font-bold tracking-[0.01em] text-brand-purple-dark shadow-gold ring-1 ring-brand-purple-dark/25 transition duration-300 hover:bg-brand-gold-deep hover:shadow-lift-lg sm:px-10 sm:py-[1.15rem] sm:text-base"
               >
                 <span className="relative z-10">{slide.cta.label}</span>
+                {/* The arrow travels on hover. A static arrow is decoration; one
+                    that moves is a promise about what the click does. */}
                 <span
                   aria-hidden="true"
-                  className="absolute inset-y-0 -left-1/3 w-1/3 bg-white/40 blur-md transition-transform duration-700 group-hover:translate-x-[420%]"
+                  className="relative z-10 transition-transform duration-300 group-hover:translate-x-1"
+                >
+                  →
+                </span>
+                <span
+                  aria-hidden="true"
+                  className="absolute inset-y-0 -left-1/3 w-1/3 bg-white/40 blur-md transition-transform duration-700 group-hover:translate-x-[460%]"
                 />
               </Link>
               </Magnetic>
               <Magnetic strength={9}>
               <Link
-                href="/apply"
+                href="/programs"
                 tabIndex={i === current ? 0 : -1}
-                className="rounded-full border-2 border-white/40 px-7 py-3.5 font-heading text-[15px] font-semibold text-white backdrop-blur-sm transition hover:border-brand-gold hover:text-brand-gold sm:px-9 sm:py-4 sm:text-base"
+                className="group flex items-center justify-center gap-2.5 rounded-full border-2 border-white/45 bg-brand-purple-dark/25 px-8 py-4 font-heading text-[15px] font-bold tracking-[0.01em] text-white backdrop-blur-md transition duration-300 hover:border-brand-gold hover:bg-brand-gold/15 hover:text-brand-gold sm:px-10 sm:py-[1.15rem] sm:text-base"
               >
-                Start an Application
+                Explore Programmes
+                <span
+                  aria-hidden="true"
+                  className="transition-transform duration-300 group-hover:translate-x-1"
+                >
+                  →
+                </span>
               </Link>
               </Magnetic>
             </div>
+
+            {/* THE TRUST STRIP.
+                A stranger's next thought after "what is this place for" is
+                "why should I believe you". Every clause here is checkable by
+                the person reading it — the accreditation against the Ministry's
+                own register, the campuses against the address in the footer,
+                the study modes against any programme page.
+
+                What is NOT here: alumni counts, satisfaction percentages,
+                countries represented. Those are the figures that would impress
+                most and this university cannot yet evidence any of them. See
+                src/content/institutionalFacts.ts. */}
+            <ul className="mt-9 flex flex-wrap items-center justify-center gap-x-7 gap-y-2.5 sm:mt-11">
+              {HERO_ASSURANCES.map((a) => (
+                <li
+                  key={a}
+                  className="flex items-center gap-2 font-sans text-[11px] font-medium tracking-wide text-white/80 [text-shadow:0_1px_10px_rgba(29,20,40,0.8)] sm:text-[12.5px]"
+                >
+                  <span aria-hidden="true" className="h-1 w-1 shrink-0 rounded-full bg-brand-gold" />
+                  {a}
+                </li>
+              ))}
+            </ul>
           </div>
         ))}
       </div>

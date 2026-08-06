@@ -5,16 +5,20 @@ import Cta from '@/components/Cta';
 import HeroSlider from '@/components/HeroSlider';
 import Reveal from '@/components/Reveal';
 import { getHomePage, getPrograms } from '@/lib/data';
-import { partners, site } from '@/content/site';
+import { site } from '@/content/site';
 import { chancellor, welcomeExcerpt } from '@/content/welcome';
 import { quickIconMap } from '@/components/Icons';
-import CountUp from '@/components/CountUp';
 import { Aurora, Grain, Seam } from '@/components/Atmosphere';
 import KineticText from '@/components/KineticText';
 import { SpotlightGroup, SpotlightCard } from '@/components/Spotlight';
 import ProgramRibbon from '@/components/ProgramRibbon';
 import ScrollRail from '@/components/ScrollRail';
 import { IconCampus, IconChapel, IconGlobe, IconLaptop } from '@/components/Icons';
+import ProofBand from '@/components/home/ProofBand';
+import PathwayLadder from '@/components/home/PathwayLadder';
+import FacultyShowcase from '@/components/home/FacultyShowcase';
+import StandingBand from '@/components/home/StandingBand';
+import StudentExperience from '@/components/home/StudentExperience';
 
 const PILLARS = [
   {
@@ -32,7 +36,11 @@ const PILLARS = [
 ];
 
 export default async function HomePage() {
-  const { heroSlides, quickLinks, stats, about, events, news, homeFeatures, homeFaculties, homeFaqs } =
+  // `stats` and `homeFaculties` are no longer read here. The four WordPress
+  // statistics they carried are retired — see ProofBand — and the faculty tiles
+  // are now built from the catalogue by FacultyShowcase, so the count on the
+  // card cannot disagree with the page it links to.
+  const { heroSlides, quickLinks, about, events, news, homeFeatures, homeFaqs } =
     await getHomePage();
   const allPrograms = await getPrograms();
   const programs = allPrograms.slice(0, 4);
@@ -132,8 +140,93 @@ export default async function HomePage() {
         </SpotlightGroup>
       </nav>
 
+      {/* The proof band. A visitor's second question — after "what is this
+          place for" — is "why should I believe you", and nothing answered it
+          above the fold. Every figure is computed from the catalogue rather
+          than typed; see ProofBand for what was there before and why it had to
+          go. */}
+      <ProofBand />
+
+      {/* University overview */}
+      <Section chapter="About">
+        <div className="grid items-center gap-12 lg:grid-cols-2">
+          <Reveal>
+            <Eyebrow>About the University</Eyebrow>
+            <KineticText className="font-heading text-display font-bold text-brand-purple [text-wrap:balance]">
+              A university in pursuit of a brighter future
+            </KineticText>
+            <div className="mt-5 h-[3px] w-16 rounded-full bg-gradient-to-r from-brand-gold-deep to-brand-gold" />
+            <p className="mt-6 leading-relaxed text-brand-muted">{about.intro}</p>
+            <div className="mt-8 flex flex-wrap gap-4">
+              <Link
+                href="/about"
+                className="rounded-full bg-brand-purple px-7 py-3 font-heading text-sm font-semibold text-white transition hover:bg-brand-purple-dark"
+              >
+                Our History &amp; Mission
+              </Link>
+              <Link
+                href="/faculty"
+                className="rounded-full border-2 border-brand-purple px-7 py-3 font-heading text-sm font-semibold text-brand-purple transition hover:bg-brand-purple hover:text-white"
+              >
+                Leadership &amp; Governance
+              </Link>
+            </div>
+          </Reveal>
+          <Reveal delay={150}>
+            <div className="relative h-80 overflow-hidden rounded-2xl shadow-xl lg:h-[420px]">
+              <Image
+                src={about.image}
+                alt="Graduands at an ICOF Global University ceremony"
+                fill
+                loading="lazy"
+                quality={82}
+                className="object-cover transition duration-[900ms] ease-out hover:scale-105"
+                sizes="(min-width:1024px) 45vw, 100vw"
+              />
+            </div>
+          </Reveal>
+        </div>
+      </Section>
+
+      {/* Why choose */}
+      <Section chapter="Why IGUC" className="bg-white">
+        <SectionHeading eyebrow="Why ICOF Global University">
+          Nobility, professionalism &amp; godliness
+        </SectionHeading>
+        <SpotlightGroup className="grid gap-6 md:grid-cols-3">
+          {PILLARS.map((p, i) => (
+            <Reveal key={p.title} delay={i * 120}>
+              <SpotlightCard className="group h-full overflow-hidden rounded-2xl border border-brand-sand bg-brand-cream p-9 transition duration-500 hover:shadow-lift" tone="light">
+                {/* Ghost numeral sits behind the copy as a watermark */}
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -right-2 -top-6 font-heading text-[7rem] font-bold leading-none text-brand-gold/15 transition duration-700 group-hover:text-brand-gold/25"
+                >
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <div className="relative">
+                  <span aria-hidden="true" className="block h-[3px] w-10 rounded-full bg-brand-gold-deep" />
+                  <h3 className="mt-5 font-heading text-xl font-bold leading-snug text-brand-purple [text-wrap:balance]">
+                    {p.title}
+                  </h3>
+                  <p className="mt-3.5 text-sm leading-relaxed text-brand-muted">{p.body}</p>
+                </div>
+              </SpotlightCard>
+            </Reveal>
+          ))}
+        </SpotlightGroup>
+      </Section>
+
+      {/* The faculties, as places rather than as a caption under a tile. */}
+      <FacultyShowcase />
+
+      {/* The ladder. The commonest reason somebody does not apply is believing
+          the only door they can reach is the wrong one; this shows the awards
+          as one route rather than five unrelated cards. */}
+      <PathwayLadder />
+
       {/* Chancellor's welcome — the site opened with this on the original iguc.net */}
-      <section data-chapter="Welcome" className="relative overflow-hidden bg-brand-purple-dark py-20 text-white sm:py-24">
+      <section data-chapter="Welcome" className="relative overflow-hidden bg-brand-purple-dark py-24 text-white sm:py-32">
         <Image
           src="/images/wp/g-hall.jpg"
           alt=""
@@ -226,133 +319,10 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* University overview */}
-      <Section chapter="About">
-        <div className="grid items-center gap-12 lg:grid-cols-2">
-          <Reveal>
-            <Eyebrow>About the University</Eyebrow>
-            <KineticText className="font-heading text-display font-bold text-brand-purple [text-wrap:balance]">
-              A university in pursuit of a brighter future
-            </KineticText>
-            <div className="mt-5 h-[3px] w-16 rounded-full bg-gradient-to-r from-brand-gold-deep to-brand-gold" />
-            <p className="mt-6 leading-relaxed text-brand-muted">{about.intro}</p>
-            <div className="mt-8 flex flex-wrap gap-4">
-              <Link
-                href="/about"
-                className="rounded-full bg-brand-purple px-7 py-3 font-heading text-sm font-semibold text-white transition hover:bg-brand-purple-dark"
-              >
-                Our History &amp; Mission
-              </Link>
-              <Link
-                href="/faculty"
-                className="rounded-full border-2 border-brand-purple px-7 py-3 font-heading text-sm font-semibold text-brand-purple transition hover:bg-brand-purple hover:text-white"
-              >
-                Leadership &amp; Governance
-              </Link>
-            </div>
-          </Reveal>
-          <Reveal delay={150}>
-            <div className="relative h-80 overflow-hidden rounded-2xl shadow-xl lg:h-[420px]">
-              <Image
-                src={about.image}
-                alt="Graduands at an ICOF Global University ceremony"
-                fill
-                loading="lazy"
-                quality={82}
-                className="object-cover transition duration-[900ms] ease-out hover:scale-105"
-                sizes="(min-width:1024px) 45vw, 100vw"
-              />
-            </div>
-          </Reveal>
-        </div>
-      </Section>
+      {/* What a week here actually looks like — the question that decides
+          whether a working adult with a family applies. */}
+      <StudentExperience />
 
-      {/* Why choose */}
-      <Section chapter="Why IGUC" className="bg-white">
-        <SectionHeading eyebrow="Why ICOF Global University">
-          Nobility, professionalism &amp; godliness
-        </SectionHeading>
-        <SpotlightGroup className="grid gap-6 md:grid-cols-3">
-          {PILLARS.map((p, i) => (
-            <Reveal key={p.title} delay={i * 120}>
-              <SpotlightCard className="group h-full overflow-hidden rounded-2xl border border-brand-sand bg-brand-cream p-9 transition duration-500 hover:shadow-lift" tone="light">
-                {/* Ghost numeral sits behind the copy as a watermark */}
-                <span
-                  aria-hidden="true"
-                  className="pointer-events-none absolute -right-2 -top-6 font-heading text-[7rem] font-bold leading-none text-brand-gold/15 transition duration-700 group-hover:text-brand-gold/25"
-                >
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <div className="relative">
-                  <span aria-hidden="true" className="block h-[3px] w-10 rounded-full bg-brand-gold-deep" />
-                  <h3 className="mt-5 font-heading text-xl font-bold leading-snug text-brand-purple [text-wrap:balance]">
-                    {p.title}
-                  </h3>
-                  <p className="mt-3.5 text-sm leading-relaxed text-brand-muted">{p.body}</p>
-                </div>
-              </SpotlightCard>
-            </Reveal>
-          ))}
-        </SpotlightGroup>
-      </Section>
-
-      {/* Schools & Faculties */}
-      <Section chapter="Faculties">
-        <SectionHeading eyebrow="Academic Community">{homeFaculties.heading}</SectionHeading>
-        <p className="mx-auto -mt-5 mb-12 max-w-2xl text-center leading-relaxed text-brand-muted">{homeFaculties.intro}</p>
-        {/* Tiles are staggered vertically at lg — an even row of four reads as
-            a contact sheet; an offset row reads as a composition. */}
-        <SpotlightGroup className="mx-auto grid max-w-6xl gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {homeFaculties.items.map((f, i) => (
-            <Reveal key={f.name} delay={i * 100} className={i % 2 === 1 ? 'lg:mt-10' : ''}>
-              <SpotlightCard className="h-80 rounded-2xl" tone="dark">
-                <Link
-                  href="/faculty"
-                  className="group relative block h-full overflow-hidden rounded-2xl shadow-lift transition duration-500 hover:-translate-y-2 hover:shadow-lift-lg"
-                >
-                  <Image
-                    src={f.image}
-                    alt=""
-                    fill
-                    loading="lazy"
-                    className="object-cover transition duration-[1100ms] ease-out group-hover:scale-[1.14]"
-                    sizes="(min-width:1024px) 25vw, (min-width:640px) 50vw, 100vw"
-                  />
-                  {/* Two stops rather than one: the name stays legible on light
-                      photographs without flattening the image behind it. */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-brand-purple-dark via-brand-purple-dark/50 to-transparent" />
-                  {/* Purple wash deepens on hover, gold rim lights from below */}
-                  <div className="absolute inset-0 bg-brand-purple/0 transition duration-500 group-hover:bg-brand-purple/30" />
-                  <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-brand-gold to-transparent opacity-0 transition duration-500 group-hover:opacity-100" />
-
-                  {/* Index, set as a plate marking */}
-                  <span
-                    aria-hidden="true"
-                    className="absolute right-4 top-4 font-sans text-[10px] font-bold tracking-[0.2em] text-white/35 transition duration-500 group-hover:text-brand-gold"
-                  >
-                    {String(i + 1).padStart(2, '0')}
-                  </span>
-
-                  <div className="absolute inset-x-0 bottom-0 p-6">
-                    <span
-                      aria-hidden="true"
-                      className="mb-3.5 block h-[2px] w-9 origin-left rounded-full bg-brand-gold transition-transform duration-500 group-hover:scale-x-[2.6]"
-                    />
-                    {/* The name rises to make room for the affordance */}
-                    <h3 className="font-heading text-[17px] font-bold leading-snug text-white transition-transform duration-500 group-hover:-translate-y-1 [text-wrap:balance]">
-                      {f.name}
-                    </h3>
-                    <span className="mt-2 flex translate-y-2 items-center gap-1.5 font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-gold opacity-0 transition duration-500 group-hover:translate-y-0 group-hover:opacity-100">
-                      Explore
-                      <span aria-hidden="true">→</span>
-                    </span>
-                  </div>
-                </Link>
-              </SpotlightCard>
-            </Reveal>
-          ))}
-        </SpotlightGroup>
-      </Section>
 
       {/* Programs */}
       <Section chapter="Programs" className="bg-white">
@@ -412,7 +382,7 @@ export default async function HomePage() {
       <ProgramRibbon items={ribbon} />
 
       {/* Research & Innovation */}
-      <section data-chapter="Research" className="relative overflow-hidden bg-brand-purple py-20 text-white sm:py-24">
+      <section data-chapter="Research" className="relative overflow-hidden bg-brand-purple py-24 text-white sm:py-32">
         <Image src="/images/wp/g-decor.jpg" alt="" fill loading="lazy" quality={55} className="object-cover opacity-10" sizes="100vw" />
         <Aurora tone="purple" intensity={0.8} fields={2} />
         <Grain />
@@ -543,8 +513,14 @@ export default async function HomePage() {
         </div>
       </Section>
 
+      {/* Accreditation, partners and verification — one section that says what
+          the standing IS, rather than a strip of logos asking the visitor to
+          infer a relationship. See StandingBand for the wording constraint the
+          university asked for. */}
+      <StandingBand />
+
       {/* Global footprint */}
-      <section data-chapter="Global" className="relative overflow-hidden bg-brand-purple-dark py-16 text-white">
+      <section data-chapter="Global" className="relative overflow-hidden bg-brand-purple-dark py-20 text-white sm:py-24">
         <Aurora tone="dual" intensity={0.75} fields={2} />
         <Grain />
         <Seam />
@@ -669,114 +645,6 @@ export default async function HomePage() {
             </Reveal>
           ))}
         </SpotlightGroup>
-      </Section>
-
-      {/* Success in numbers — each figure sits inside its own progress ring,
-          so the band reads as instrumentation rather than a row of digits. */}
-      <section data-chapter="Impact" className="relative overflow-hidden bg-brand-purple py-24 text-white">
-        <Aurora tone="gold" intensity={0.45} fields={2} />
-        <Grain opacity={0.045} />
-        <Seam />
-        {/* Engraved rule field */}
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 opacity-[0.06]"
-          style={{ backgroundImage: 'repeating-linear-gradient(115deg, #f7dc79 0 1px, transparent 1px 22px)' }}
-        />
-
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
-          <p className="mb-16 text-center font-sans text-xs font-semibold uppercase tracking-[0.25em] text-brand-gold">
-            Student Success
-          </p>
-          <SpotlightGroup className="grid grid-cols-2 gap-x-6 gap-y-14 lg:grid-cols-4">
-            {stats.map((s, i) => (
-              <Reveal key={s.label} delay={i * 110}>
-                <div className="flex flex-col items-center text-center">
-                  <div className="relative h-[132px] w-[132px] sm:h-[168px] sm:w-[168px]">
-                    {/* Ring: a conic sweep clipped to an annulus. No SVG, no
-                        library — one element, one gradient, one mask. */}
-                    <div
-                      aria-hidden="true"
-                      className="absolute inset-0 animate-ring-in rounded-full"
-                      style={{
-                        background:
-                          'conic-gradient(from -90deg, #f7dc79 0deg, #e9c14a 190deg, rgba(247,220,121,0.10) 250deg, rgba(247,220,121,0.10) 360deg)',
-                        WebkitMask: 'radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px))',
-                        mask: 'radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px))',
-                        animationDelay: `${i * 110}ms`,
-                      }}
-                    />
-                    {/* Inner well */}
-                    <div className="absolute inset-[14px] rounded-full border border-white/10 bg-brand-purple-dark/45 backdrop-blur-sm" />
-                    {/* Orbiting node, one per ring, phase-shifted */}
-                    <div
-                      aria-hidden="true"
-                      className="absolute inset-0 animate-orbit"
-                      style={{ animationDelay: `${i * -3}s` }}
-                    >
-                      <span className="absolute left-1/2 top-0 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-gold shadow-gold" />
-                    </div>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <p className="font-heading text-[2rem] font-bold leading-none text-brand-gold sm:text-[2.6rem]">
-                        <CountUp value={s.value} />
-                      </p>
-                    </div>
-                  </div>
-                  <p className="mt-6 font-sans text-[11px] font-semibold uppercase tracking-[0.18em] text-white/70">
-                    {s.label}
-                  </p>
-                </div>
-              </Reveal>
-            ))}
-          </SpotlightGroup>
-        </div>
-      </section>
-
-      {/* Recognition */}
-      <Section chapter="Accreditation" className="bg-white">
-        <SectionHeading eyebrow="Recognition & Partners">Accreditation you can trust</SectionHeading>
-        <p className="mx-auto -mt-5 mb-12 max-w-2xl text-center leading-relaxed text-brand-muted">
-          ICOF Global University is accredited by the Ministry of Higher Education of Cameroon and
-          has been continually accredited since 2007, working alongside partner institutions of the
-          International Circle of Faith worldwide.
-        </p>
-        <ul className="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-x-4 gap-y-6">
-          {partners.map((p, i) => (
-            <li key={p.name}>
-              <Reveal delay={i * 70}>
-                <div
-                  title={p.name}
-                  className="group flex h-24 w-36 items-center justify-center rounded-xl border border-transparent px-4 transition duration-500 hover:border-brand-sand hover:bg-brand-cream"
-                >
-                  <div className="relative h-14 w-full opacity-55 grayscale transition duration-500 group-hover:opacity-100 group-hover:grayscale-0">
-                    <Image src={p.image} alt={p.name} fill className="object-contain" sizes="144px" />
-                  </div>
-                </div>
-              </Reveal>
-            </li>
-          ))}
-        </ul>
-
-        {/* The accreditation claim itself, stated plainly rather than left to the logos */}
-        {/* Stacked rather than inline: at 3-up the link wrapped to a second
-            row and left an orphaned divider hanging above it. */}
-        <div className="mx-auto mt-12 max-w-3xl overflow-hidden rounded-2xl border border-brand-sand bg-brand-cream text-center">
-          <div className="flex flex-col divide-y divide-brand-sand sm:flex-row sm:divide-x sm:divide-y-0">
-            <p className="flex-1 px-6 py-5 font-sans text-[11px] font-semibold uppercase leading-relaxed tracking-[0.16em] text-brand-gold-deep">
-              Ministry of Higher&nbsp;Education, Cameroon
-            </p>
-            <p className="flex-1 px-6 py-5 font-sans text-[11px] font-semibold uppercase leading-relaxed tracking-[0.16em] text-brand-gold-deep">
-              Continuously accredited since&nbsp;2007
-            </p>
-          </div>
-          <Link
-            href="/governance"
-            className="group flex items-center justify-center gap-2 border-t border-brand-sand bg-white px-6 py-4 font-heading text-sm font-semibold text-brand-purple transition hover:bg-brand-purple hover:text-white"
-          >
-            Governance &amp; accreditation
-            <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">→</span>
-          </Link>
-        </div>
       </Section>
 
       {/* Diary & initiatives — one band. Both halves were dead-end cards before;
