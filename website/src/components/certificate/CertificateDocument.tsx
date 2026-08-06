@@ -379,6 +379,16 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
       // which is precisely what the role means.
       role="article"
       lang="en"
+      // OFF THE FACE OF THE DOCUMENT, still on the element.
+      //
+      // "DESIGN v3" was printed in the foot beside the credential number. It is
+      // an internal fact about which template rendered the sheet, and it means
+      // nothing to the graduate, the employer or the credential evaluator who
+      // read that line — the three people the line is for. The version still
+      // matters to the university, which has to be able to re-render a 2024
+      // certificate under the 2024 design, so it stays queryable on the element
+      // and is recorded against the issuance. It is simply not paper.
+      data-design-version={version ?? undefined}
       aria-label={
         `${data.duplicateOf ? 'Duplicate degree certificate' : 'Degree certificate'} of ` +
         `${UNIVERSITY.name}, conferring ${data.degree}` +
@@ -955,11 +965,11 @@ backgroundImage: `url("${art.micro}")`,
         </div>
 
         {/* The foot, wrapping rather than overrunning.
-            Five values were concatenated onto one line with no width limit: a
-            footnote, the registration reference, the credential number, the
-            seal and the design version. With the footnote left empty — as it is
-            by default — that fits. Set a footnote of any length and the line
-            runs off the sheet, silently, because nothing here was ever measured.
+            Values were concatenated onto one line with no width limit: a
+            footnote, the registration reference, the credential number and the
+            seal. With the footnote left empty — as it is by default — that fits.
+            Set a footnote of any length and the line runs off the sheet,
+            silently, because nothing here was ever measured.
 
             The identifiers are grouped and set to wrap, and the footnote is
             given its own line: it is a sentence, and the codes are not. */}
@@ -990,7 +1000,6 @@ backgroundImage: `url("${art.micro}")`,
               data.registrationNo ? `REG. NO. ${data.registrationNo}` : null,
               `CREDENTIAL ${data.credentialId}`,
               data.sealCode ? `SEAL ${data.sealCode}` : null,
-              version ? `DESIGN v${version}` : null,
             ].filter(Boolean).join(' · ')}
           </p>
         </div>
@@ -1010,7 +1019,15 @@ backgroundImage: `url("${art.micro}")`,
 function SignatureColumn({ design, sigs }: { design: CredentialDesign; sigs: Signatory[] }) {
   if (!sigs.length) return <div style={{ flex: '1 1 0' }} />;
   return (
-    <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '5mm' }}>
+    // 15mm between the ranks, not 5.
+    //
+    // The rule is where somebody signs, and a signature is roughly 8-10mm tall
+    // written normally. At 5mm the second signatory's pen ran into the first
+    // signatory's office line — the two ranks were laid out as if the names
+    // were the content, when the names are labels and the CLEAR SPACE ABOVE
+    // EACH RULE is the content. Four officers sign this document by hand; the
+    // sheet has to be usable by all four without anybody writing small.
+    <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '15mm' }}>
       {sigs.map((s, i) => (
         <div key={`${s.office}-${i}`}>
           <div style={{

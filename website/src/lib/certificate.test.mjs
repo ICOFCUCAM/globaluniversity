@@ -267,6 +267,24 @@ check(
   true,
 );
 
+// --- The design version is not on the paper. --------------------------------
+// It is an internal fact about which template rendered the sheet. It stays
+// queryable on the element, because the university has to be able to re-render
+// a 2024 certificate under the 2024 design — it is simply not printed.
+const versioned = render({}, { version: 7 });
+check('the design version is not printed', text(versioned).includes('DESIGN v7'), false);
+check('but it is still on the element', versioned.includes('data-design-version="7"'), true);
+
+// --- There is room to sign. -------------------------------------------------
+// The rule is where an officer signs and a signature is 8-10mm tall. The gap
+// between the two ranks is the content of that part of the sheet; the names
+// under the rules are labels.
+check(
+  'the signature ranks are spaced for a pen',
+  /flex-direction:column;gap:15mm/.test(render()),
+  true,
+);
+
 // --- It is announced to assistive technology. -------------------------------
 const html = render();
 check('the document declares itself an article', html.includes('role="article"'), true);
