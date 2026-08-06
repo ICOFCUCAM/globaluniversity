@@ -19,6 +19,8 @@ screens published:
 | Analytics | Six departments the university does not have, with GPAs and pass rates |
 | Audit log | Eight fabricated entries, including a grade altered from C to B |
 | Sign-in page | "7,228 Success Stories · 1,742 Happy Students" |
+| Student dashboard | The signed-in student's **name above another student's CGPA** |
+| Certificate | "Status: **Eligible**" — a fixed string, for everyone, always |
 
 None were marked. A dashboard is where an administrator gets the figure they
 then quote in a meeting or to a ministry inspector; an audit log is what you
@@ -35,6 +37,43 @@ The rules that follow from it:
   substitute anything.
 - Specimens are legitimate (the certificate generator must draw *something*
   before the university has issued one). They carry `<SampleDataNotice />`.
+
+## Grading is the highest-stakes code here
+
+`grading.ts` derives its scale from `content/regulations.ts` and must continue
+to. It spent its whole life on a different scale entirely — A at 70, pass at 40,
+points out of 5.00 — against a published scale of A at 94, pass at 65, points
+out of 4.00. A student scoring 50% was told "C, Good, pass"; under the
+university's own regulations 50% is an outright fail.
+
+`npm run test:grading` asserts the eleven bands against the published document,
+by hand rather than by importing the same constant. Two of the assertions would
+have caught the original fault: 50% must fail, 65% must be the lowest pass.
+
+**Still to be decided by the university:** it publishes a grading scale but has
+not adopted degree classification bands. The bands in `CLASSIFICATION_BANDS` are
+a reading of a 4.00 scale, not a quotation, and they are the only number on a
+certificate that is inferred. They should be adopted formally.
+
+**Also unresolved:** the mark sheet records two components (CA out of 40, exam
+out of 60) while the published scheme has four (participation 20, assignments
+30, examinations 30, presentations 20). The exam is therefore weighted 60% where
+the regulations say 30%, and participation and presentations have nowhere to go.
+Either the sheet gains four fields — which needs a schema change — or the
+regulations are amended. Result Processing states this on screen.
+
+## Errors are never discarded
+
+Fourteen writes across six screens did `await supabase.from(…).insert(…)` and
+never looked at the result: the modal closed, the list refreshed, the work
+vanished. Use `write()` from `lib/write.ts`, which reports the database's own
+message.
+
+This pattern hid two much larger faults. Results could never be saved at all —
+`results` had no unique index matching the upsert's conflict target, so every
+save failed — and every audit write from result entry was failing on a type
+mismatch, meaning the action most likely to be disputed left no trace. Both were
+invisible because nobody checked a return value.
 
 ## Dead controls
 
