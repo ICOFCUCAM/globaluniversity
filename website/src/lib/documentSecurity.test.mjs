@@ -51,7 +51,7 @@ execFileSync('npx', [
 ]);
 
 process.env.CREDENTIAL_SECRET = 'k'.repeat(48);
-const { sealParticulars, sealMatches, canonicalise, verificationQrSvg } = await import(bundle);
+const { sealParticulars, sealCard, sealMatches, canonicalise, verificationQrSvg } = await import(bundle);
 
 const SITE = 'https://iguc.net';
 const base = {
@@ -130,9 +130,41 @@ check(
   'ICOF202600451',
 );
 
-const qr = verificationQrSvg(seal.verifyUrl, 96);
+const qr = await verificationQrSvg(seal.verifyUrl, 96);
 check('a QR code is produced', qr.startsWith('<svg') && qr.length > 500, true);
 check('the QR needs no external request', /https?:\/\/(?!www\.w3\.org)/.test(qr.replace(seal.verifyUrl, '')), false);
+
+// --- A card is a different document, and its seal is not a letter's. --------
+// Both carry the same name, date of birth, student number and programme. If the
+// kind were not inside the sealed bytes, a card's seal would verify against a
+// letter's payload and vice versa — so a withdrawn student could present an old
+// admission letter's code on a current-looking card.
+const card = sealCard({
+  fullName: base.fullName,
+  dateOfBirth: base.dateOfBirth,
+  studentNumber: base.studentNumber,
+  programme: base.programme,
+  issuedOn: '2026-08-06',
+  expiresOn: '2027-08-06',
+}, SITE);
+check('a card is sealed too', card.sealed, true);
+check('a card and a letter for the same student seal differently', card.code === seal.code, false);
+check(
+  'the card payload names its own kind',
+  JSON.parse(Buffer.from(new URL(card.verifyUrl).searchParams.get('d'), 'base64url').toString('utf8')).document,
+  'Student Identity Card',
+);
+
+// The expiry is inside the seal — the one field a card is worth forging.
+const extended = sealCard({
+  fullName: base.fullName,
+  dateOfBirth: base.dateOfBirth,
+  studentNumber: base.studentNumber,
+  programme: base.programme,
+  issuedOn: '2026-08-06',
+  expiresOn: '2030-08-06',
+}, SITE);
+check('extending the expiry changes the card seal', extended.code === card.code, false);
 
 // --- No key, no seal. -------------------------------------------------------
 // A code that cannot be verified is worse than no code: it invites a reader to

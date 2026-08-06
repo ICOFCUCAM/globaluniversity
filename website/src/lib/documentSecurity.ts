@@ -80,7 +80,7 @@ export interface DocumentSeal {
 const ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
 
 /**
- * The particulars, normalised and ordered, as they are sealed.
+ * The fields, normalised and ordered, as they are sealed.
  *
  * Case and spacing are flattened because "Ndenka  Aaron" and "Ndenka Aaron" are
  * the same person, and a seal that broke on a double space would have a genuine
@@ -88,28 +88,23 @@ const ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
  * insertion order, and the sealed bytes are the serialisation, so the order is
  * part of the format rather than an implementation detail.
  *
- * The `v` field is a version. When the format changes — a particular added, an
- * order altered — old letters must still verify, and they can only do that if
- * the document says which format it was sealed under.
+ * `v` is the format version, and `document` names the kind. Both are sealed.
+ * The version is what lets an old letter still verify after the format
+ * changes; the kind is what stops a seal issued for one document being
+ * presented as another — an admission letter and an identity card carry many of
+ * the same fields, and without the kind in the sealed bytes a card's seal would
+ * verify against a letter's payload.
  */
-function sealedPayload(p: SealedParticulars): Record<string, string> {
+function sealedPayload(
+  version: string,
+  document: string,
+  fields: Record<string, string | undefined>,
+): Record<string, string> {
   const norm = (v: string | undefined) =>
     String(v ?? '').replace(/\s+/g, ' ').trim().toUpperCase();
-  return {
-    v: 'ICOFGU-ADMISSION-V1',
-    document: 'Offer of Admission',
-    name: norm(p.fullName),
-    date_of_birth: norm(p.dateOfBirth),
-    student_number: norm(p.studentNumber),
-    application_number: norm(p.applicationNumber),
-    programme: norm(p.programme),
-    issued: norm(p.issuedOn),
-  };
-}
-
-/** The exact string the seal is computed over, printable for checking. */
-export function canonicalise(p: SealedParticulars): string {
-  return JSON.stringify(sealedPayload(p));
+  const out: Record<string, string> = { v: version, document };
+  for (const [k, v] of Object.entries(fields)) out[k] = norm(v);
+  return out;
 }
 
 function secret(): string | null {
@@ -132,8 +127,13 @@ function secret(): string | null {
  * The full digest still travels in the verification link, so the machine check
  * is done at full strength and only the human check is shortened.
  */
-export function sealParticulars(p: SealedParticulars, siteUrl: string): DocumentSeal {
-  const data = canonicalise(p);
+export function sealDocument(
+  version: string,
+  document: string,
+  fields: Record<string, string | undefined>,
+  siteUrl: string,
+): DocumentSeal {
+  const data = JSON.stringify(sealedPayload(version, document, fields));
   const key = secret();
 
   // The signed bytes are the base64url payload itself, not the JSON behind it.
@@ -277,5 +277,82 @@ export async function verificationQrSvg(url: string, size = 96): Promise<string>
   ]);
   return renderToStaticMarkup(
     createElement(QRCodeSVG, { value: url, size, level: 'M', marginSize: 1 }),
+  );
+}
+
+
+/* ------------------------------------------------------------------ */
+/* The documents that are sealed                                       */
+/* ------------------------------------------------------------------ */
+
+/**
+ * An offer of admission.
+ *
+ * The field order here IS the format. Adding a field, removing one or moving
+ * one changes the sealed bytes, so every letter already issued stops verifying
+ * — which is why the version is in the payload. Change the order only together
+ * with the version, and keep the old version verifiable.
+ */
+export function sealParticulars(p: SealedParticulars, siteUrl: string): DocumentSeal {
+  return sealDocument(
+    'ICOFGU-ADMISSION-V1',
+    'Offer of Admission',
+    {
+      name: p.fullName,
+      date_of_birth: p.dateOfBirth,
+      student_number: p.studentNumber,
+      application_number: p.applicationNumber,
+      programme: p.programme,
+      issued: p.issuedOn,
+    },
+    siteUrl,
+  );
+}
+
+export interface SealedCard {
+  fullName: string;
+  dateOfBirth?: string;
+  studentNumber: string;
+  programme: string;
+  issuedOn: string;
+  expiresOn: string;
+}
+
+/**
+ * A student identity card.
+ *
+ * `expires` is sealed, and that is the point of sealing a card at all. A card
+ * is worth forging mainly to extend it — a withdrawn student who wants another
+ * year of library access and examination entry changes one date. With the
+ * expiry inside the seal, that change breaks the code, and the gate scanning it
+ * is told so rather than reading back the date printed in front of it.
+ */
+export function sealCard(c: SealedCard, siteUrl: string): DocumentSeal {
+  return sealDocument(
+    'ICOFGU-CARD-V1',
+    'Student Identity Card',
+    {
+      name: c.fullName,
+      date_of_birth: c.dateOfBirth,
+      student_number: c.studentNumber,
+      programme: c.programme,
+      issued: c.issuedOn,
+      expires: c.expiresOn,
+    },
+    siteUrl,
+  );
+}
+
+/** The exact string a seal is computed over, printable for checking. */
+export function canonicalise(p: SealedParticulars): string {
+  return JSON.stringify(
+    sealedPayload('ICOFGU-ADMISSION-V1', 'Offer of Admission', {
+      name: p.fullName,
+      date_of_birth: p.dateOfBirth,
+      student_number: p.studentNumber,
+      application_number: p.applicationNumber,
+      programme: p.programme,
+      issued: p.issuedOn,
+    }),
   );
 }
