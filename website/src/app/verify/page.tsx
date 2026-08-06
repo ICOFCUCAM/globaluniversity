@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 
 function VerifyInner() {
   const params = useSearchParams();
-  const [state, setState] = useState<'checking' | 'valid' | 'invalid' | 'none'>('checking');
+  const [state, setState] = useState<'checking' | 'valid' | 'invalid' | 'none' | 'unconfigured'>('checking');
   const [payload, setPayload] = useState<Record<string, string> | null>(null);
 
   useEffect(() => {
@@ -18,10 +18,11 @@ function VerifyInner() {
     fetch(`/api/credential?d=${encodeURIComponent(d)}&s=${encodeURIComponent(s)}`)
       .then((r) => r.json())
       .then((res) => {
-        if (res.valid) {
+        if (res.signed ?? res.valid) {
           setPayload(res.payload);
           setState('valid');
-        } else setState('invalid');
+        } else if (res.error === 'credential-secret-not-set') setState('unconfigured');
+        else setState('invalid');
       })
       .catch(() => setState('invalid'));
   }, [params]);
@@ -51,6 +52,21 @@ function VerifyInner() {
           Scan the QR code on an ICOF Global University transcript or certificate to verify it here.
         </p>
       )}
+      {state === 'unconfigured' && (
+        <div className="mt-10 rounded-2xl border border-amber-200 bg-amber-50 p-8 text-left">
+          <p className="font-heading text-lg font-bold text-amber-900">
+            Verification is not available
+          </p>
+          <p className="mt-2 text-sm leading-relaxed text-amber-900/90">
+            This university has not finished configuring credential verification, so this document
+            can be neither confirmed nor rejected here. That is not a finding about the document.
+            Contact the Office of the Registrar at{' '}
+            <a href="mailto:registrar@iguc.net" className="underline">registrar@iguc.net</a> to
+            verify it directly.
+          </p>
+        </div>
+      )}
+
       {state === 'invalid' && (
         <div className="mt-10 rounded-2xl border border-red-200 bg-red-50 p-8 shadow-lift">
           <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-100 text-red-600">
