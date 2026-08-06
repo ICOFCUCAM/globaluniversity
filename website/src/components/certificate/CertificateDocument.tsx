@@ -78,6 +78,17 @@ export interface CertificateData {
    * refers back.
    */
   duplicateOf?: string | null;
+  /**
+   * The university's own registration reference, e.g. ICOFGU/BA202308.
+   *
+   * Distinct from the credential number and printed alongside it, because they
+   * answer different questions. The credential number is the verification key —
+   * random, unguessable, meaningless to a human. The registration reference is
+   * the university's filing: it says which award and which year, and it is what
+   * a registrar quotes when pulling the paper file. The 2011 certificate
+   * carries one and this system had no field for it.
+   */
+  registrationNo?: string | null;
 }
 
 /**
@@ -690,6 +701,7 @@ backgroundImage: `url("${art.micro}")`,
           fontFamily: 'Helvetica, Arial, sans-serif',
         }}>
           {design.footnote ? `${design.footnote} · ` : ''}
+          {data.registrationNo ? `REG. NO. ${data.registrationNo} · ` : ''}
           CREDENTIAL {data.credentialId}
           {data.sealCode ? ` · SEAL ${data.sealCode}` : ''}
           {version ? ` · DESIGN v${version}` : ''}
