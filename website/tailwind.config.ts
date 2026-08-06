@@ -101,6 +101,22 @@ const config: Config = {
         body: ['var(--font-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         sans: ['var(--font-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
+      // ONE EASING VOCABULARY.
+      //
+      // The homepage used ease-out, the default cubic-bezier, and three
+      // hand-written curves, chosen independently in eight components. Motion
+      // that does not share a curve reads as several interfaces stacked on one
+      // page — the eye cannot name the inconsistency but it registers it, and
+      // what it registers is "assembled" rather than "designed".
+      //
+      // `exit` is faster than `enter` on purpose: a thing arriving deserves the
+      // reader's attention, a thing leaving is finished with and holding it on
+      // screen only delays what comes next.
+      transitionTimingFunction: {
+        enter: 'cubic-bezier(0.22, 1, 0.36, 1)',
+        exit: 'cubic-bezier(0.4, 0, 1, 1)',
+        settle: 'cubic-bezier(0.16, 1, 0.3, 1)',
+      },
       keyframes: {
         // Results entering the programme finder. Small distance, short
         // duration: a card that flies in is a card the reader waits for.
