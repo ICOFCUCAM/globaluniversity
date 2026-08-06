@@ -126,3 +126,45 @@ export function awardWording(kind: AwardKind): AwardWording {
 export function wordingForAward(award: string): AwardWording {
   return awardWording(awardKindOf(award));
 }
+
+/* ------------------------------------------------------------------ */
+/* How the security device varies by award and faculty                  */
+/* ------------------------------------------------------------------ */
+
+/**
+ * How elaborate the watermark device is for this award.
+ *
+ * A diploma and a doctorate should not carry the same figure. The university's
+ * highest award ought to be recognisable as its highest award from across a
+ * room, before a word of it is read — which is what the tiers do, and it costs
+ * nothing because it is the same device throughout. Only the elaboration
+ * changes, so the identity holds and the hierarchy shows.
+ */
+export function deviceTierFor(award: string): 'simple' | 'standard' | 'elaborate' | 'full' {
+  switch (awardKindOf(award)) {
+    case 'doctorate': return 'full';
+    case 'masters': return 'elaborate';
+    case 'bachelors': return 'standard';
+    default: return 'simple';
+  }
+}
+
+/**
+ * The emblem at the foot of the device, by faculty.
+ *
+ * Matched on the faculty's own name rather than stored on it, for the same
+ * reason the award wording is derived from the award title: a separate field
+ * drifts, and the first time it does the certificate says one thing and the
+ * record another.
+ *
+ * A faculty this does not recognise gets no emblem rather than a wrong one. An
+ * open book under an engineering degree is worse than a plain device.
+ */
+export function emblemFor(faculty: string | null | undefined): 'book' | 'gear' | 'compass' | 'torch' | 'none' {
+  const f = (faculty ?? '').toLowerCase();
+  if (/theolog|divinity|ministr|counsell|bible/.test(f)) return 'book';
+  if (/engineer|technolog|comput|science/.test(f)) return 'gear';
+  if (/business|management|commerce|econom|account/.test(f)) return 'compass';
+  if (/educat|teach|pedagog/.test(f)) return 'torch';
+  return 'none';
+}

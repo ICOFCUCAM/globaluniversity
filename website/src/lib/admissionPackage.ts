@@ -496,7 +496,7 @@ export async function admissionPackageHtml(input: AdmissionPackageInput): Promis
      will never see Buea, and it is presented to embassies and employers who
      need to know what institution stands behind it — not which of its campuses
      happens to teach. It names the seat of the institution and its descriptor,
-     "The Community University of Africa", so the letterhead reads as what the
+     "The Community University", so the letterhead reads as what the
      university is rather than where one of its buildings is.
 
      No telephone number: an admission letter is kept for years, a number

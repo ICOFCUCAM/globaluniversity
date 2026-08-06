@@ -14,7 +14,7 @@ export const UNIVERSITY = {
   // it teaches. The campus address stays on correspondence, where it is what
   // the reader actually needs.
   headquarters: 'ICOF Global Headquarters, USA',
-  descriptor: 'The Community University of Africa',
+  descriptor: 'The Community University',
   phone: '+237 675 133 426',
   email: 'registrar@iguc.net',
   website: 'www.iguc.net',

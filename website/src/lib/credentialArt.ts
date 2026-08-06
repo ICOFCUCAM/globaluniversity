@@ -831,44 +831,97 @@ export const globeInRosetteUri = (seed: number, size: number, colour: string, op
 /* ------------------------------------------------------------------ */
 
 /**
- * The coastline of Africa, as longitude/latitude pairs.
+ * The coastlines, as longitude/latitude pairs.
  *
- * Simplified to about fifty points — enough that the shape is unmistakable at
- * the size a watermark is read, and few enough that it draws instantly and
- * weighs nothing. The Gulf of Guinea, the Horn, the Cape and the western bulge
- * are the four features that make the outline recognisable; everything else is
- * fill.
+ * NOT AFRICA ALONE. The first version of this drew only Africa, and that was
+ * wrong about the institution: this is a GLOBAL university that calls itself the
+ * community university OF Africa — the continent is where it stands, not the
+ * limit of where it reaches. A globe showing one continent on an otherwise
+ * empty earth says the opposite of what the name says.
  *
- * Hand-built from coordinates rather than traced from a map file: a shapefile
- * would be megabytes, would need a licence, and would be more precision than a
- * watermark can print. This is a device, not a survey, and it is labelled as
- * one.
+ * So it draws the whole hemisphere the reader can see from 20°E: Africa at the
+ * centre, Europe above it, Arabia and the Indian subcontinent running off the
+ * eastern limb, the Brazilian bulge at the western one. Africa is central
+ * because of where the university stands; the rest is there because of where it
+ * teaches.
+ *
+ * Simplified to the point where each shape is unmistakable and no further. Hand
+ * placed rather than traced from a shapefile: a shapefile would be megabytes,
+ * would need a licence, and would carry more precision than a watermark can
+ * print. This is a device, not a survey.
  */
-const AFRICA: [number, number][] = [
-  [10.2, 37.1], [15.0, 32.0], [20.0, 32.5], [25.0, 31.5], [30.0, 31.5], [32.5, 31.0],
-  [34.0, 28.0], [35.0, 24.0], [37.0, 21.0], [38.5, 18.0], [39.5, 15.0], [43.0, 12.5],
-  [48.0, 11.5], [51.4, 11.8], [48.0, 5.0], [44.0, 2.0], [41.0, -2.0], [40.0, -6.0],
-  [40.5, -10.5], [40.0, -15.0], [35.0, -20.0], [32.5, -25.0], [30.0, -30.0],
-  [27.0, -33.5], [22.0, -34.0], [18.5, -34.4], [17.0, -30.0], [13.5, -23.0],
-  [12.0, -17.0], [13.0, -12.0], [12.0, -6.0], [9.5, -1.0], [9.0, 4.0], [5.0, 5.2],
-  [0.0, 5.5], [-4.0, 5.0], [-8.0, 4.5], [-13.0, 8.0], [-16.0, 12.0], [-17.5, 15.0],
-  [-16.5, 20.0], [-14.0, 25.0], [-10.0, 30.0], [-6.0, 35.9], [0.0, 36.5], [5.0, 37.0],
-  [10.2, 37.1],
+const COASTLINES: [number, number][][] = [
+  // Africa. The Gulf of Guinea, the Horn, the Cape and the western bulge are
+  // the four features that make the outline recognisable.
+  [
+    [10.2, 37.1], [15.0, 32.0], [20.0, 32.5], [25.0, 31.5], [30.0, 31.5], [32.5, 31.0],
+    [34.0, 28.0], [35.0, 24.0], [37.0, 21.0], [38.5, 18.0], [39.5, 15.0], [43.0, 12.5],
+    [48.0, 11.5], [51.4, 11.8], [48.0, 5.0], [44.0, 2.0], [41.0, -2.0], [40.0, -6.0],
+    [40.5, -10.5], [40.0, -15.0], [35.0, -20.0], [32.5, -25.0], [30.0, -30.0],
+    [27.0, -33.5], [22.0, -34.0], [18.5, -34.4], [17.0, -30.0], [13.5, -23.0],
+    [12.0, -17.0], [13.0, -12.0], [12.0, -6.0], [9.5, -1.0], [9.0, 4.0], [5.0, 5.2],
+    [0.0, 5.5], [-4.0, 5.0], [-8.0, 4.5], [-13.0, 8.0], [-16.0, 12.0], [-17.5, 15.0],
+    [-16.5, 20.0], [-14.0, 25.0], [-10.0, 30.0], [-6.0, 35.9], [0.0, 36.5], [5.0, 37.0],
+    [10.2, 37.1],
+  ],
+  // Europe: Iberia, the Mediterranean, the Black Sea, the Baltic, Scandinavia.
+  [
+    [-9.5, 43.8], [-9.0, 37.0], [-5.6, 36.0], [0.0, 39.0], [5.0, 43.0], [10.0, 44.0],
+    [13.5, 45.5], [16.0, 43.0], [19.0, 42.0], [23.0, 38.0], [27.0, 40.0], [30.0, 41.0],
+    [35.0, 44.0], [39.0, 44.0], [37.0, 47.0], [32.0, 46.0], [30.0, 47.0], [31.0, 52.0],
+    [28.0, 55.0], [24.0, 57.0], [21.0, 56.0], [19.0, 54.0], [13.0, 54.0], [9.0, 55.0],
+    [8.0, 57.0], [11.0, 59.0], [15.0, 65.0], [21.0, 69.0], [27.0, 71.0], [31.0, 70.0],
+    [25.0, 65.0], [20.0, 60.0], [16.0, 57.0], [12.0, 55.0], [7.0, 53.0], [3.0, 52.0],
+    [-1.0, 50.0], [-4.0, 48.0], [-1.0, 45.0], [-9.5, 43.8],
+  ],
+  // The British Isles, small but the thing a European reader looks for first.
+  [
+    [-5.0, 50.0], [-3.0, 51.0], [1.0, 51.5], [1.0, 53.0], [-1.0, 55.0], [-2.0, 57.0],
+    [-5.0, 58.5], [-6.0, 56.0], [-5.0, 54.0], [-3.0, 53.0], [-5.0, 52.0], [-5.0, 50.0],
+  ],
+  // Arabia.
+  [
+    [43.0, 12.5], [45.0, 13.0], [48.0, 14.0], [52.0, 17.0], [56.0, 22.0], [57.0, 24.0],
+    [55.0, 26.5], [51.0, 26.0], [48.0, 29.0], [43.0, 30.0], [39.0, 28.0], [38.0, 24.0],
+    [40.0, 20.0], [43.0, 15.0], [43.0, 12.5],
+  ],
+  // The Indian subcontinent, running off the eastern limb.
+  [
+    [68.0, 23.5], [72.0, 20.0], [73.5, 16.0], [76.0, 9.0], [78.0, 8.0], [80.0, 13.0],
+    [80.5, 16.0], [84.0, 19.0], [87.0, 21.5], [89.0, 22.0],
+  ],
+  // Madagascar.
+  [
+    [49.5, -12.5], [50.5, -15.5], [49.0, -18.0], [47.0, -22.0], [45.0, -25.0],
+    [43.5, -24.0], [43.5, -20.0], [44.5, -16.0], [46.5, -15.0], [48.5, -13.0],
+    [49.5, -12.5],
+  ],
+  // The Brazilian bulge, at the western limb — the edge of the Americas, which
+  // is as much as this face of the earth shows.
+  [
+    [-35.0, -5.0], [-38.5, -13.0], [-39.0, -18.0], [-42.0, -23.0], [-48.0, -26.0],
+    [-52.0, -32.0], [-58.0, -35.0],
+  ],
 ];
 
 /**
- * The globe, turned so that Africa faces the reader.
+ * The world, turned so that Africa is at the centre of it.
  *
  * THIS IS THE ANSWER TO "the background is generic". A guilloché rosette is
  * beautiful and it is on ten thousand certificate templates. A wireframe globe
- * is better and it is still a stock motif. A globe turned to Africa, with the
- * coastline picked out on it, belongs to one institution: the International
- * Circle of Faith's global university, which calls itself The Community
- * University of Africa. Nobody else's document can carry it without saying so.
+ * is better and it is still a stock motif. A world with its coastlines drawn
+ * and Africa in the middle belongs to one institution: the International Circle
+ * of Faith's GLOBAL university, which calls itself the community university of
+ * Africa. Nobody else's document can carry it without saying so.
  *
- * The spin is computed rather than random — 20°E is set to face the viewer,
- * which centres the continent — so every certificate shows the same face. The
- * seed still varies the figure around it, so two documents are not identical.
+ * The emphasis matters and the first version got it backwards. Drawing Africa
+ * alone on an empty earth says the university's reach stops at the continent,
+ * which is the opposite of its name. Africa is central because that is where it
+ * stands; the rest of the hemisphere is there because that is where it teaches.
+ *
+ * The spin is computed rather than random — 20°E faces the viewer — so every
+ * certificate shows the same face of the earth. The seed still varies the
+ * figure around it, so two documents are not identical.
  */
 export function africaGlobe(
   seed: number,
@@ -932,10 +985,14 @@ export function africaGlobe(
     emit(pts, sw(Math.abs(lat) < 0.01 ? 0.75 : 0.46), 0.5, 0.2);
   }
 
-  // The continent. Drawn at full weight over the graticule — it is the thing
-  // the reader is meant to recognise.
-  const coast = AFRICA.map(([lon, lat]) => project(lat, lon));
-  emit(coast, sw(1.5), 1, 0.15);
+  // The land. Drawn at full weight over the graticule — it is the thing the
+  // reader is meant to recognise. Africa is drawn heaviest of all: it is the
+  // centre of this face and the centre of the university's own description of
+  // itself.
+  COASTLINES.forEach((shape, i) => {
+    const coast = shape.map(([lon, lat]) => project(lat, lon));
+    emit(coast, sw(i === 0 ? 1.6 : 1.0), i === 0 ? 1 : 0.7, 0.12);
+  });
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
   ${out.join('')}
@@ -1059,3 +1116,297 @@ export const africaGlobeUri = (seed: number, size: number, colour: string, opaci
 export const institutionalDeviceUri = (
   seed: number, size: number, colour: string, legend: string[], founded: string, opacity?: number,
 ) => enc(institutionalDevice(seed, size, colour, legend, founded, opacity));
+
+/* ------------------------------------------------------------------ */
+/* The African Globe of Knowledge                                       */
+/* ------------------------------------------------------------------ */
+
+export type DeviceTier = 'simple' | 'standard' | 'elaborate' | 'full';
+export type DeviceEmblem = 'book' | 'gear' | 'compass' | 'torch' | 'none';
+
+/**
+ * A ring of geometric ornament drawn from a Central African vocabulary.
+ *
+ * WHY NOT MORE BANKNOTE GUILLOCHÉ. The rosette is a European engraving
+ * tradition — it is what a Swiss security printer draws, and it is what every
+ * certificate template on the internet borrows. Using it as the sole ornament
+ * on the credential of a university that calls itself the community university
+ * of Africa means the document's decoration is from one continent and its
+ * identity from another.
+ *
+ * WHAT THIS IS, AND WHAT IT DELIBERATELY IS NOT. It is built from the
+ * vocabulary that Central and West African textile and architectural ornament
+ * shares — interlocking lozenges, nested chevrons, triangle registers — set out
+ * radially. It is NOT a reproduction of any specific motif. Adinkra glyphs,
+ * kente patterns and Bamileke wall figures carry meaning, ownership and in some
+ * cases sacred use; lifting one to decorate a degree certificate would be
+ * taking something that is not the university's to take, and doing it in the
+ * name of authenticity. A geometric family is common property; a symbol is not,
+ * and the line between them is the whole reason this comment is here.
+ *
+ * As security artwork it does the same job as a guilloché: every vertex is
+ * determined by the sector count and the radii, so a hand copy drifts
+ * everywhere at once.
+ */
+export function africanBand(
+  seed: number,
+  size: number,
+  colour: string,
+  sectors: number,
+  rOuter: number,
+  rInner: number,
+  opacity: number,
+): string {
+  const R = size / 2;
+  const parts: string[] = [];
+  const step = (Math.PI * 2) / sectors;
+  const pt = (a: number, r: number) => `${(R + Math.cos(a) * r).toFixed(2)},${(R + Math.sin(a) * r).toFixed(2)}`;
+
+  for (let i = 0; i < sectors; i += 1) {
+    const a0 = i * step - Math.PI / 2;
+    const a1 = a0 + step;
+    const mid = (a0 + a1) / 2;
+
+    // A lozenge on the sector boundary — the register that runs through almost
+    // all of this ornament family.
+    parts.push(
+      `<polygon points="${pt(a0, rOuter)} ${pt(a0 - step * 0.28, (rOuter + rInner) / 2)} ` +
+      `${pt(a0, rInner)} ${pt(a0 + step * 0.28, (rOuter + rInner) / 2)}" ` +
+      `fill="none" stroke="${colour}" stroke-width="${(size * 0.0016).toFixed(2)}" ` +
+      `stroke-opacity="${(opacity * 0.9).toFixed(3)}"/>`,
+    );
+
+    // Nested chevrons pointing outward, three deep.
+    for (let k = 0; k < 3; k += 1) {
+      const f = 0.22 + k * 0.24;
+      const rr = rInner + (rOuter - rInner) * f;
+      parts.push(
+        `<polyline points="${pt(mid - step * 0.34, rr)} ${pt(mid, rr + (rOuter - rInner) * 0.20)} ` +
+        `${pt(mid + step * 0.34, rr)}" fill="none" stroke="${colour}" ` +
+        `stroke-width="${(size * 0.0014).toFixed(2)}" stroke-opacity="${(opacity * 0.75).toFixed(3)}"/>`,
+      );
+    }
+  }
+
+  // The two rules that close the register.
+  for (const r of [rOuter, rInner]) {
+    parts.push(
+      `<circle cx="${R}" cy="${R}" r="${r.toFixed(2)}" fill="none" stroke="${colour}" ` +
+      `stroke-width="${(size * 0.0018).toFixed(2)}" stroke-opacity="${(opacity * 0.8).toFixed(3)}"/>`,
+    );
+  }
+  return parts.join('');
+}
+
+/** A small emblem for the faculty, at the foot of the device. */
+function emblemPath(kind: DeviceEmblem, cx: number, cy: number, r: number, colour: string, opacity: number): string {
+  const sw = (r * 0.09).toFixed(2);
+  const st = `fill="none" stroke="${colour}" stroke-width="${sw}" stroke-opacity="${opacity.toFixed(3)}"`;
+  switch (kind) {
+    case 'book':
+      // An open book. Theology and Education.
+      return `<g ${st}>
+        <path d="M${cx - r},${cy - r * 0.5} Q${cx - r * 0.5},${cy - r * 0.8} ${cx},${cy - r * 0.45}
+                 Q${cx + r * 0.5},${cy - r * 0.8} ${cx + r},${cy - r * 0.5}
+                 L${cx + r},${cy + r * 0.6} Q${cx + r * 0.5},${cy + r * 0.3} ${cx},${cy + r * 0.65}
+                 Q${cx - r * 0.5},${cy + r * 0.3} ${cx - r},${cy + r * 0.6} Z"/>
+        <line x1="${cx}" y1="${cy - r * 0.45}" x2="${cx}" y2="${cy + r * 0.65}"/>
+      </g>`;
+    case 'gear':
+      // Engineering and Technology.
+      return `<g ${st}>
+        <circle cx="${cx}" cy="${cy}" r="${(r * 0.45).toFixed(2)}"/>
+        ${Array.from({ length: 8 }, (_, i) => {
+          const a = (i / 8) * Math.PI * 2;
+          return `<line x1="${(cx + Math.cos(a) * r * 0.6).toFixed(2)}" y1="${(cy + Math.sin(a) * r * 0.6).toFixed(2)}" ` +
+                 `x2="${(cx + Math.cos(a) * r).toFixed(2)}" y2="${(cy + Math.sin(a) * r).toFixed(2)}"/>`;
+        }).join('')}
+      </g>`;
+    case 'compass':
+      // Business and Management: the dividers, not the magnetic compass.
+      return `<g ${st}>
+        <path d="M${cx},${cy - r} L${cx - r * 0.55},${cy + r * 0.75}"/>
+        <path d="M${cx},${cy - r} L${cx + r * 0.55},${cy + r * 0.75}"/>
+        <circle cx="${cx}" cy="${cy - r}" r="${(r * 0.12).toFixed(2)}"/>
+        <path d="M${cx - r * 0.34},${cy + r * 0.15} A${(r * 0.4).toFixed(2)},${(r * 0.4).toFixed(2)} 0 0 0 ${cx + r * 0.34},${cy + r * 0.15}"/>
+      </g>`;
+    case 'torch':
+      return `<g ${st}>
+        <path d="M${cx},${cy - r} Q${cx + r * 0.42},${cy - r * 0.45} ${cx},${cy - r * 0.1}
+                 Q${cx - r * 0.42},${cy - r * 0.45} ${cx},${cy - r} Z"/>
+        <rect x="${(cx - r * 0.16).toFixed(2)}" y="${(cy - r * 0.05).toFixed(2)}" width="${(r * 0.32).toFixed(2)}" height="${(r * 0.95).toFixed(2)}"/>
+      </g>`;
+    default:
+      return '';
+  }
+}
+
+/**
+ * The African Globe of Knowledge — the university's security device.
+ *
+ * A single engraved figure rather than a stack of borrowed ornaments. From
+ * across a room it reads as a seal; under a loupe it resolves into microtext,
+ * geometric register and graticule. That is the test a security device has to
+ * pass, and a watermark that looks like clip art laid behind the text fails it
+ * however good the clip art is.
+ *
+ * WHAT IS IN IT, OUTSIDE IN:
+ *
+ *   a microtext ring carrying the university's name, descriptor and motto
+ *   a register of Central African geometric ornament — see africanBand
+ *   twelve nodes joined by chords: the faculties, and the network between them
+ *   laurel sprigs at the four cardinal points
+ *   the world, turned so Africa is at its centre, coastlines engraved
+ *   the year of foundation, and the faculty's emblem
+ *
+ * TIERS. A diploma and a doctorate should not carry the same device — the
+ * university's highest award ought to be recognisable as its highest award
+ * across a room. `simple` drops the network and the emblem; `full` adds
+ * radiating rays behind the whole figure. It is the same device throughout, so
+ * the identity holds; only the elaboration changes.
+ */
+export function africanGlobeOfKnowledge(opts: {
+  seed: number;
+  size: number;
+  colour: string;
+  legend: string[];
+  founded: string;
+  tier?: DeviceTier;
+  emblem?: DeviceEmblem;
+  opacity?: number;
+}): string {
+  const { seed, size, colour, legend, founded } = opts;
+  const tier = opts.tier ?? 'standard';
+  const emblem = opts.emblem ?? 'none';
+  const opacity = opts.opacity ?? 1;
+  const R = size / 2;
+  const id = `k${seed.toString(36)}`;
+  const layers: string[] = [];
+
+  // Layer 6 (bottom): rays, on the highest award only.
+  if (tier === 'full') {
+    const rays: string[] = [];
+    for (let i = 0; i < 72; i += 1) {
+      const a = (i / 72) * Math.PI * 2;
+      const long = i % 6 === 0;
+      rays.push(
+        `M${(R + Math.cos(a) * R * 0.30).toFixed(2)},${(R + Math.sin(a) * R * 0.30).toFixed(2)} ` +
+        `L${(R + Math.cos(a) * R * (long ? 0.99 : 0.86)).toFixed(2)},${(R + Math.sin(a) * R * (long ? 0.99 : 0.86)).toFixed(2)}`,
+      );
+    }
+    layers.push(
+      `<path d="${rays.join(' ')}" fill="none" stroke="${colour}" ` +
+      `stroke-width="${(size * 0.0013).toFixed(2)}" stroke-opacity="${(opacity * 0.34).toFixed(3)}"/>`,
+    );
+  }
+
+  // Layer 5: the microtext ring.
+  const ringR = R * 0.955;
+  layers.push(
+    `<path id="${id}-ring" fill="none" d="M ${R},${R} m -${ringR.toFixed(2)},0 ` +
+    `a ${ringR.toFixed(2)},${ringR.toFixed(2)} 0 1,1 ${(ringR * 2).toFixed(2)},0 ` +
+    `a ${ringR.toFixed(2)},${ringR.toFixed(2)} 0 1,1 -${(ringR * 2).toFixed(2)},0"/>`,
+    `<text font-family="Helvetica,Arial,sans-serif" font-size="${(size * 0.023).toFixed(2)}" ` +
+    `letter-spacing="${(size * 0.005).toFixed(2)}" fill="${colour}" ` +
+    `fill-opacity="${(opacity * 0.85).toFixed(3)}">` +
+    `<textPath href="#${id}-ring" startOffset="9%">${escapeXml(legend.join('   ·   '))}</textPath></text>`,
+  );
+
+  // Layer 4: the African geometric register.
+  layers.push(africanBand(seed, size, colour, tier === 'simple' ? 16 : 24, R * 0.905, R * 0.795, opacity));
+
+  // Layer 3: twelve nodes, joined. The faculties and the network between them —
+  // a university that teaches on four continents is a set of places connected,
+  // not a single point, and this is the one element that says so.
+  if (tier !== 'simple') {
+    const nodes = 12;
+    const nr = R * 0.735;
+    const chords: string[] = [];
+    for (let i = 0; i < nodes; i += 1) {
+      const a = (i / nodes) * Math.PI * 2 - Math.PI / 2;
+      const x = R + Math.cos(a) * nr;
+      const y = R + Math.sin(a) * nr;
+      layers.push(
+        `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${(size * 0.008).toFixed(2)}" ` +
+        `fill="none" stroke="${colour}" stroke-width="${(size * 0.0018).toFixed(2)}" ` +
+        `stroke-opacity="${(opacity * 0.85).toFixed(3)}"/>`,
+      );
+      // Chords to the nodes five and seven places round: the step that produces
+      // a closed twelve-pointed figure rather than a mesh.
+      for (const skip of [5, 7]) {
+        const b = (((i + skip) % nodes) / nodes) * Math.PI * 2 - Math.PI / 2;
+        chords.push(
+          `M${x.toFixed(2)},${y.toFixed(2)} L${(R + Math.cos(b) * nr).toFixed(2)},${(R + Math.sin(b) * nr).toFixed(2)}`,
+        );
+      }
+    }
+    layers.push(
+      `<path d="${chords.join(' ')}" fill="none" stroke="${colour}" ` +
+      `stroke-width="${(size * 0.0011).toFixed(2)}" stroke-opacity="${(opacity * 0.30).toFixed(3)}"/>`,
+    );
+  }
+
+  // Layer 2: laurel sprigs at the cardinal points.
+  for (let c = 0; c < 4; c += 1) {
+    const a = (c / 4) * Math.PI * 2 + Math.PI / 2;
+    const bx = R + Math.cos(a) * R * 0.765;
+    const by = R + Math.sin(a) * R * 0.765;
+    const leaves: string[] = [];
+    for (let k = -2; k <= 2; k += 1) {
+      if (k === 0) continue;
+      const off = k * size * 0.021;
+      const lx = bx + Math.cos(a + Math.PI / 2) * off;
+      const ly = by + Math.sin(a + Math.PI / 2) * off;
+      leaves.push(
+        `<ellipse cx="${lx.toFixed(2)}" cy="${ly.toFixed(2)}" rx="${(size * 0.019).toFixed(2)}" ` +
+        `ry="${(size * 0.0075).toFixed(2)}" transform="rotate(${((a * 180) / Math.PI + (k > 0 ? 55 : -55)).toFixed(1)} ${lx.toFixed(2)} ${ly.toFixed(2)})" ` +
+        `fill="none" stroke="${colour}" stroke-width="${(size * 0.0018).toFixed(2)}" ` +
+        `stroke-opacity="${(opacity * 0.8).toFixed(3)}"/>`,
+      );
+    }
+    layers.push(leaves.join(''));
+  }
+
+  // An inner guilloché collar, from 'elaborate' upward.
+  //
+  // This is what separates a master's from a bachelor's. Without it the two
+  // middle tiers were identical — the tier existed in the type and did nothing
+  // to the drawing, which is the same defect as a setting with no control.
+  if (tier === 'elaborate' || tier === 'full') {
+    layers.push(
+      // Very light. At half opacity fourteen overlapping curves came out as a
+      // dark ring that buried the globe — the collar is meant to be felt rather
+      // than seen, and the thing at the centre is the subject.
+      guillocheRosette(seed ^ 0x2f, size * 0.66, colour, opacity * 0.13, 1)
+        .replace(/^<svg[^>]*>/, `<g transform="translate(${(size * 0.17).toFixed(2)},${(size * 0.17).toFixed(2)})">`)
+        .replace(/<\/svg>$/, '</g>'),
+    );
+  }
+
+  // Layer 1: the world, Africa at its centre.
+  const inner = size * 0.56;
+  const off = ((size - inner) / 2).toFixed(2);
+  layers.push(
+    `<g transform="translate(${off},${off})">` +
+    africaGlobe(seed, inner, colour, opacity).replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '') +
+    `</g>`,
+  );
+
+  // The year, and the faculty's emblem beneath it.
+  layers.push(
+    `<text x="${R}" y="${(R + R * 0.62).toFixed(2)}" text-anchor="middle" ` +
+    `font-family="Georgia,serif" font-size="${(size * 0.038).toFixed(2)}" ` +
+    `letter-spacing="${(size * 0.007).toFixed(2)}" fill="${colour}" ` +
+    `fill-opacity="${(opacity * 0.8).toFixed(3)}">${escapeXml(founded)}</text>`,
+  );
+  // The emblem sits below the year with air between them. It was overlapping,
+  // which on a device reads as a printing fault rather than as two elements.
+  if (emblem !== 'none' && tier !== 'simple') {
+    layers.push(emblemPath(emblem, R, R + R * 0.735, size * 0.026, colour, opacity * 0.7));
+  }
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${layers.join('')}</svg>`;
+}
+
+export const africanGlobeOfKnowledgeUri = (o: Parameters<typeof africanGlobeOfKnowledge>[0]) =>
+  enc(africanGlobeOfKnowledge(o));

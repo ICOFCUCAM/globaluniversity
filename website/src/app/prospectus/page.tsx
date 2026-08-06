@@ -82,7 +82,7 @@ export default function ProspectusPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }} />
       <PageBanner
         title="University Prospectus"
-        subtitle="Where education meets innovation and excellence — the Community University of Africa."
+        subtitle="Where education meets innovation and excellence — the Community University."
         image="/images/graduates.jpg"
         eyebrow="Prospective students"
       />

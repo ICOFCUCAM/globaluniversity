@@ -23,7 +23,7 @@ const PILLARS = [
   },
   {
     title: 'Access for the Community',
-    body: 'As the Community University of Africa, we bring accredited higher education within reach of working adults, ministers and first-generation students across Cameroon and beyond.',
+    body: 'As the Community University, we bring accredited higher education within reach of working adults, ministers and first-generation students across Cameroon and beyond.',
   },
   {
     title: 'Practice Over Theory',

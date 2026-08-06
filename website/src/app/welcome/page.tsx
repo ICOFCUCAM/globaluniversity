@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Welcome from the Chancellor · ICOF Global University',
     description:
-      'Welcome to ICOF Global University — the Community University of Africa. A word from our Chancellor, Bishop Bernie L Wade, PhD.',
+      'Welcome to ICOF Global University — the Community University. A word from our Chancellor, Bishop Bernie L Wade, PhD.',
     images: [chancellor.image],
   },
 };

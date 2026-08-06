@@ -13,7 +13,7 @@ export interface SearchEntry {
 }
 
 const pages: SearchEntry[] = [
-  { title: 'Home', href: '/', section: 'University', text: 'The Community University of Africa, a global university in Buea, Douala, Nigeria and online worldwide.' },
+  { title: 'Home', href: '/', section: 'University', text: 'The Community University, a global university in Buea, Douala, Nigeria and online worldwide.' },
   { title: "Chancellor's Welcome", href: '/welcome', section: 'University', text: 'Welcome message from the Chancellor Bishop Bernie L Wade PhD, Presiding Bishop of the International Circle of Faith, biography, Vice Chancellor Prof Chamayah Meyembi.' },
   { title: 'About Us', href: '/about', section: 'University', text: 'History, mission and values, accreditation, International Circle of Faith, purpose.' },
   { title: 'Governance & Accreditation', href: '/governance', section: 'University', text: 'Leadership, Chancellor, Vice Chancellor, Registrar, Dissertation Council, quality assurance, Ministry of Higher Education.' },

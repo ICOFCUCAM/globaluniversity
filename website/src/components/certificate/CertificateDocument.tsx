@@ -42,9 +42,9 @@ import {
   seedFrom, guillocheRosetteUri, guillocheBandUri, microtextBandUri,
   securityGroundUri, ordinalDay, yearInWords,
   ornateFrameUri, waferSealUri, guillocheGlobeUri, globeInRosetteUri,
-  institutionalDeviceUri,
+  africanGlobeOfKnowledgeUri,
 } from '@/lib/credentialArt';
-import { wordingForAward } from '@/lib/awards';
+import { wordingForAward, deviceTierFor, emblemFor } from '@/lib/awards';
 
 export interface CertificateData {
   fullName: string;
@@ -60,6 +60,8 @@ export interface CertificateData {
    * a registrar; the rest is random, from /api/credential/issue.
    */
   credentialId: string;
+  /** Named on the device's emblem. Omitted when the faculty is unrecognised. */
+  faculty?: string | null;
   /** The seal in words, for a reader with no scanner. */
   sealCode?: string | null;
   /** Verification QR, as SVG markup. Rendered by the server that signed it. */
@@ -242,10 +244,20 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
     // see CredentialDesign.security.watermark for why a globe and not more
     // rosette.
     rosette: sec.watermark === 'device'
-      ? institutionalDeviceUri(seed, 600, design.brand, [
-          UNIVERSITY.name.toUpperCase(),
-          UNIVERSITY.descriptor.toUpperCase(),
-        ], romanYear(UNIVERSITY.established), 1)
+      ? africanGlobeOfKnowledgeUri({
+          seed,
+          size: 640,
+          colour: design.brand,
+          legend: [
+            UNIVERSITY.name.toUpperCase(),
+            UNIVERSITY.descriptor.toUpperCase(),
+            UNIVERSITY.motto.toUpperCase(),
+          ],
+          founded: romanYear(UNIVERSITY.established),
+          // The device grows with the award, and carries the faculty's emblem.
+          tier: deviceTierFor(data.degree),
+          emblem: emblemFor(data.faculty),
+        })
       : sec.watermark === 'globe'
         ? guillocheGlobeUri(seed, 520, design.brand, 1)
         : sec.watermark === 'rosette'
@@ -271,7 +283,7 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
       `${UNIVERSITY.name.toUpperCase()} · `, UNIVERSITY.shortName),
   }), [
     seed, sheetW, sheetH, bleed, design.brand, design.accent, design.borderWidthMm,
-    design.sealColour, data.credentialId, sec.watermark,
+    design.sealColour, data.credentialId, sec.watermark, data.degree, data.faculty,
   ]);
 
   if (missingId && !specimen) {

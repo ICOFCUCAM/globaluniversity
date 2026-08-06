@@ -51,7 +51,7 @@ export interface NewsItem {
 export const site = {
   name: 'ICOF Global University',
   shortName: 'IGUC',
-  tagline: 'The Community University of Africa',
+  tagline: 'The Community University',
   description:
     'ICOF Global University provides access to higher education opportunities that enable students to develop knowledge and skills necessary to achieve their professional goals, improve the performance of their organizations, and provide leadership and service to their communities.',
   url: 'https://iguc.net',
@@ -207,7 +207,7 @@ export interface NavItem {
 }
 
 export const hero = {
-  title: 'The Community University of Africa',
+  title: 'The Community University',
   text: 'Educating men and women as skilled professionals in godly principles, morals and ministries worldwide.',
   cta: { label: 'Enroll Today', href: '/admissions' },
   image: '/images/home-hero.jpg',
@@ -223,7 +223,7 @@ export interface HeroSlide {
 
 export const heroSlides: HeroSlide[] = [
   {
-    title: 'The Community University of Africa',
+    title: 'The Community University',
     text: 'Educating men and women as skilled professionals in godly principles, morals and ministries worldwide.',
     cta: { label: 'Enroll Today', href: '/admissions' },
     image: '/images/home-hero.jpg',
