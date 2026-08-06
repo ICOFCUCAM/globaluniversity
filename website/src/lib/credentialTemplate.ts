@@ -62,8 +62,31 @@ export interface CredentialDesign {
   /** Serif for the document body — certificates are not sans-serif documents. */
   fontFamily: string;
 
-  /** Border treatment. `none` suits transcripts; `double` is the certificate. */
-  border: 'none' | 'single' | 'double';
+  /**
+   * The face for the university's name at the head of the document.
+   *
+   * The university's first certificate sets it in blackletter, and it is a
+   * large part of why that document reads the way it does. Held separately
+   * from `fontFamily` because a blackletter body would be unreadable — the
+   * face belongs on the title and nowhere else.
+   *
+   * A blackletter stack falls back to the body serif on any machine that does
+   * not have one of the named faces, which is most of them. See the note in the
+   * Studio: to have it render reliably the university must supply a licensed
+   * font file to embed. Defaulting to blackletter without that would make every
+   * certificate look wrong on most screens and right on the designer's.
+   */
+  titleFont: string;
+
+  /** The wafer seal's colour. Red on the university's own certificate. */
+  sealColour: string;
+
+  /**
+   * Border treatment. `none` suits transcripts; `ornate` is the engraved gilt
+   * frame taken from the university's own first certificate, and is what a
+   * degree certificate should carry.
+   */
+  border: 'none' | 'single' | 'double' | 'ornate';
   borderWidthMm: number;
 
   /** Watermark seal opacity, 0–1. Zero removes it. */
@@ -163,8 +186,10 @@ export const DEFAULT_CERTIFICATE_DESIGN: CredentialDesign = {
   ink: '#241c30',
   paper: '#fffdf5',
   fontFamily: "Georgia, 'Times New Roman', Times, serif",
-  border: 'double',
-  borderWidthMm: 3,
+  titleFont: "Georgia, 'Times New Roman', Times, serif",
+  sealColour: '#b31217',
+  border: 'ornate',
+  borderWidthMm: 11,
   sealOpacity: 0.05,
   showSeal: true,
   // The conferral, in the form the older universities use: the body that
@@ -181,7 +206,13 @@ export const DEFAULT_CERTIFICATE_DESIGN: CredentialDesign = {
     privileges: 'with all the rights, privileges and responsibilities thereunto appertaining',
     given: 'Given this',
   },
+  // Four, as on the university's own first certificate. Two were missing: the
+  // Chancellor, who is also the International Presiding Bishop, and the
+  // President — and a degree certificate that omits the offices that actually
+  // confer it is not the university's certificate.
   signatories: [
+    { name: '', office: 'ICOF Chancellor & International Presiding Bishop' },
+    { name: '', office: 'President' },
     { name: '', office: 'Vice Chancellor' },
     { name: '', office: 'Registrar' },
   ],
@@ -195,6 +226,39 @@ export const DEFAULT_CERTIFICATE_DESIGN: CredentialDesign = {
     qr: true,
   },
 };
+
+/**
+ * Faces for the title.
+ *
+ * `available: false` means the face is named in the stack but is not present in
+ * the application, so it renders only where the reader's own machine has it —
+ * which for a blackletter face is almost nowhere. It is offered because the
+ * university may license and embed one, and hidden behind a plain warning
+ * because a certificate that looks right on one machine and wrong on every
+ * other is worse than one that looks the same everywhere.
+ */
+export const TITLE_FONTS: { label: string; stack: string; available: boolean; note?: string }[] = [
+  {
+    label: 'Serif (Georgia)',
+    stack: "Georgia, 'Times New Roman', Times, serif",
+    available: true,
+  },
+  {
+    label: 'Serif (Times)',
+    stack: "'Times New Roman', Times, Georgia, serif",
+    available: true,
+  },
+  {
+    label: 'Blackletter — as the 2011 certificate',
+    stack: "'UnifrakturMaguntia', 'Old English Text MT', 'Cloister Black', 'Lucida Blackletter', Georgia, serif",
+    available: false,
+    note:
+      'The face on the university’s first certificate. No blackletter font ships with this ' +
+      'application, so this renders only on a machine that already has one — on every other it ' +
+      'silently falls back to the serif. To use it properly the university must supply a licensed ' +
+      'font file to embed; until then this is a preview of an intention, not a setting.',
+  },
+];
 
 export const DEFAULT_TRANSCRIPT_DESIGN: CredentialDesign = {
   ...DEFAULT_CERTIFICATE_DESIGN,

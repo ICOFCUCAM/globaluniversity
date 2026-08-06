@@ -398,3 +398,182 @@ export function yearInWords(year: number): string {
   const o = ONES[rest % 10];
   return `Two Thousand ${o ? `${t}-${o}` : t}`;
 }
+
+/* ------------------------------------------------------------------ */
+/* The ornate frame                                                     */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The engraved gold border, drawn from the university's own first certificate.
+ *
+ * WHAT WAS TAKEN FROM IT. The 2011 ICOF certificate is framed by a deep gilt
+ * band: an outer fillet, a broad field carrying a repeated scroll-and-leaf
+ * motif, a bead course, and a medallion at each corner. That frame is most of
+ * why the document reads as an instrument the moment you see it, before a word
+ * of it is read — and it is the single largest difference between it and the
+ * plain double rule this system was drawing.
+ *
+ * WHAT WAS NOT TAKEN. It is redrawn, not traced. The original is a raster of a
+ * printed sheet, photographed at an angle; scanning and re-using it would have
+ * embedded somebody's photograph of a real graduate's certificate into every
+ * document the university issues, at whatever resolution the phone managed.
+ * This is geometry — it holds at any size, prints at press resolution, and
+ * weighs a few kilobytes.
+ *
+ * The gold is three stops rather than one flat fill, because gilt is not a
+ * colour, it is a gradient: the reason a photocopy of a gilded certificate
+ * looks obviously wrong is that the copier renders the gradient as a single
+ * muddy tone.
+ */
+export function ornateFrame(
+  widthMm: number,
+  heightMm: number,
+  gold: string,
+  deep: string,
+  bandMm = 11,
+): string {
+  const w = widthMm;
+  const h = heightMm;
+  const b = bandMm;
+  const id = `f${Math.round(w)}x${Math.round(h)}`;
+
+  // One tile of the scroll course. A C-scroll, a leaf springing from it, and a
+  // lozenge between — the motif that repeats all the way round.
+  const tile = 14;
+  const motif = `
+    <g fill="none" stroke="${deep}" stroke-width="0.55" stroke-linecap="round">
+      <path d="M1,${b / 2} C1,${b * 0.18} ${tile * 0.28},${b * 0.16} ${tile * 0.30},${b / 2}
+               C${tile * 0.32},${b * 0.84} ${tile * 0.06},${b * 0.82} ${tile * 0.10},${b / 2}"/>
+      <path d="M${tile * 0.34},${b / 2} C${tile * 0.44},${b * 0.14} ${tile * 0.60},${b * 0.20} ${tile * 0.64},${b / 2}
+               C${tile * 0.60},${b * 0.80} ${tile * 0.44},${b * 0.86} ${tile * 0.34},${b / 2}"/>
+      <path d="M${tile * 0.66},${b * 0.30} L${tile * 0.82},${b / 2} L${tile * 0.66},${b * 0.70}
+               L${tile * 0.50},${b / 2} Z" stroke-width="0.45"/>
+      <circle cx="${tile * 0.92}" cy="${b / 2}" r="0.9" fill="${deep}" stroke="none"/>
+    </g>`;
+
+  // A corner medallion: a rosette in a lobed frame, of the kind cast into the
+  // corners of an engraved border.
+  const medallion = (cx: number, cy: number, r: number) => {
+    const petals: string[] = [];
+    for (let i = 0; i < 8; i += 1) {
+      const a = (i / 8) * Math.PI * 2;
+      petals.push(
+        `<ellipse cx="${(cx + Math.cos(a) * r * 0.42).toFixed(2)}" cy="${(cy + Math.sin(a) * r * 0.42).toFixed(2)}" ` +
+        `rx="${(r * 0.30).toFixed(2)}" ry="${(r * 0.16).toFixed(2)}" ` +
+        `transform="rotate(${((a * 180) / Math.PI).toFixed(1)} ${(cx + Math.cos(a) * r * 0.42).toFixed(2)} ${(cy + Math.sin(a) * r * 0.42).toFixed(2)})" ` +
+        `fill="none" stroke="${deep}" stroke-width="0.4"/>`,
+      );
+    }
+    return `<g>
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#${id}-gold)" stroke="${deep}" stroke-width="0.5"/>
+      <circle cx="${cx}" cy="${cy}" r="${(r * 0.80).toFixed(2)}" fill="none" stroke="${deep}" stroke-width="0.35"/>
+      ${petals.join('')}
+      <circle cx="${cx}" cy="${cy}" r="${(r * 0.16).toFixed(2)}" fill="${deep}"/>
+    </g>`;
+  };
+
+  const m = b * 0.92;
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}mm" height="${h}mm" viewBox="0 0 ${w} ${h}">
+  <defs>
+    <linearGradient id="${id}-gold" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0%"   stop-color="${gold}" stop-opacity="0.35"/>
+      <stop offset="38%"  stop-color="${gold}" stop-opacity="0.95"/>
+      <stop offset="62%"  stop-color="${deep}" stop-opacity="0.75"/>
+      <stop offset="100%" stop-color="${gold}" stop-opacity="0.45"/>
+    </linearGradient>
+    <pattern id="${id}-scroll" width="${tile}" height="${b}" patternUnits="userSpaceOnUse">${motif}</pattern>
+  </defs>
+
+  <!-- the gilt field, as a frame: a filled rect with the middle cut out by
+       fill-rule evenodd, so nothing is painted over the paper. -->
+  <path fill="url(#${id}-gold)" fill-rule="evenodd"
+        d="M0,0 H${w} V${h} H0 Z M${b},${b} H${w - b} V${h - b} H${b} Z"/>
+  <path fill="url(#${id}-scroll)" fill-rule="evenodd"
+        d="M0,0 H${w} V${h} H0 Z M${b},${b} H${w - b} V${h - b} H${b} Z"/>
+
+  <!-- fillets: a fine rule either side of the field, and a bead course inside -->
+  <rect x="0.6" y="0.6" width="${w - 1.2}" height="${h - 1.2}" fill="none" stroke="${deep}" stroke-width="0.7"/>
+  <rect x="${b - 0.5}" y="${b - 0.5}" width="${w - 2 * b + 1}" height="${h - 2 * b + 1}" fill="none" stroke="${deep}" stroke-width="0.7"/>
+  <rect x="${b + 1.6}" y="${b + 1.6}" width="${w - 2 * b - 3.2}" height="${h - 2 * b - 3.2}" fill="none" stroke="${deep}" stroke-width="0.35"/>
+
+  ${medallion(m, m, b * 0.62)}
+  ${medallion(w - m, m, b * 0.62)}
+  ${medallion(m, h - m, b * 0.62)}
+  ${medallion(w - m, h - m, b * 0.62)}
+</svg>`;
+}
+
+export const ornateFrameUri = (w: number, h: number, gold: string, deep: string, band?: number) =>
+  enc(ornateFrame(w, h, gold, deep, band));
+
+/* ------------------------------------------------------------------ */
+/* The wafer seal                                                       */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The red foil wafer, as on the university's first certificate.
+ *
+ * A starburst wafer applied over the paper and embossed — the thing a hand
+ * reaches for first when someone is deciding whether a document is real,
+ * because it is the one feature that is felt rather than seen.
+ *
+ * Printing it flat cannot reproduce that, and nothing here pretends to: what
+ * this gives is the artwork, correctly registered, for a university that
+ * applies a real foil wafer over it. Drawn rather than photographed for the
+ * same reason as the frame — it is geometry, so it holds at press resolution
+ * and cannot be lifted as a file from one document and pasted onto another.
+ */
+export function waferSeal(
+  seed: number,
+  size: number,
+  colour: string,
+  legend: string,
+  centre: string,
+): string {
+  const R = size / 2;
+  const id = `w${seed.toString(36)}`;
+  const points = 24;
+  const outer = R * 0.98;
+  const inner = R * 0.80;
+
+  const star: string[] = [];
+  for (let i = 0; i < points * 2; i += 1) {
+    const a = (i / (points * 2)) * Math.PI * 2 - Math.PI / 2;
+    const r = i % 2 === 0 ? outer : inner;
+    star.push(`${(R + Math.cos(a) * r).toFixed(2)},${(R + Math.sin(a) * r).toFixed(2)}`);
+  }
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+  <defs>
+    <!-- The highlight sits in the top-left quadrant and the shadow only at the
+         very edge. Running black from the midpoint outwards, as this first did,
+         desaturated the whole wafer to grey — foil reads as metal, not as a
+         dark version of its own colour. -->
+    <radialGradient id="${id}-wax" cx="34%" cy="30%">
+      <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.62"/>
+      <stop offset="26%"  stop-color="${colour}" stop-opacity="1"/>
+      <stop offset="100%" stop-color="${colour}" stop-opacity="1"/>
+    </radialGradient>
+    <path id="${id}-arc" d="M ${R},${R} m -${R * 0.60},0 a ${R * 0.60},${R * 0.60} 0 1,1 ${R * 1.20},0 a ${R * 0.60},${R * 0.60} 0 1,1 -${R * 1.20},0"/>
+  </defs>
+  <!-- The rim is a stroke, not a gradient stop. A dark stop inside a radial
+       gradient reaches the star's points first, so the tips came out silver
+       while the middle stayed red — the wafer read as pressed metal rather than
+       as foil. -->
+  <polygon points="${star.join(' ')}" fill="url(#${id}-wax)"/>
+  <polygon points="${star.join(' ')}" fill="none" stroke="#000000" stroke-opacity="0.22" stroke-width="${(size * 0.008).toFixed(2)}"/>
+  <circle cx="${R}" cy="${R}" r="${(R * 0.74).toFixed(2)}" fill="none" stroke="#ffffff" stroke-opacity="0.32" stroke-width="${(size * 0.012).toFixed(2)}"/>
+  <circle cx="${R}" cy="${R}" r="${(R * 0.46).toFixed(2)}" fill="none" stroke="#ffffff" stroke-opacity="0.24" stroke-width="${(size * 0.020).toFixed(2)}"/>
+  <text font-family="Georgia,'Times New Roman',serif" font-size="${(size * 0.072).toFixed(2)}"
+        letter-spacing="${(size * 0.014).toFixed(2)}" fill="#ffffff" fill-opacity="0.82">
+    <textPath href="#${id}-arc" startOffset="2%">${escapeXml(legend)}</textPath>
+  </text>
+  <text x="${R}" y="${(R + size * 0.035).toFixed(2)}" text-anchor="middle"
+        font-family="Georgia,'Times New Roman',serif" font-size="${(size * 0.11).toFixed(2)}"
+        font-weight="bold" fill="#ffffff" fill-opacity="0.9">${escapeXml(centre)}</text>
+</svg>`;
+}
+
+export const waferSealUri = (seed: number, size: number, colour: string, legend: string, centre: string) =>
+  enc(waferSeal(seed, size, colour, legend, centre));

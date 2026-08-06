@@ -37,6 +37,11 @@ export const UNIVERSITY = {
   headOfAcademicAffairsPostNominals: 'Ph.D. (Fin.), Ph.D. (Syst. Theol.)',
   admissionsEmail: 'admissions@iguc.net',
   viceChancellor: 'Prof Chamayah Meyembi',
+  // The two offices above the Vice Chancellor, from the university's own first
+  // certificate. Both sign a degree certificate; neither was in this system.
+  chancellor: 'Dr. Raymond L. Young',
+  chancellorOffice: 'ICOF Chancellor & International Presiding Bishop',
+  president: 'Bonnie L. Walo',
 };
 
 // Portal imagery. Previously eleven URLs on the original template's

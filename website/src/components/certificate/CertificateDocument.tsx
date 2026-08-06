@@ -40,7 +40,8 @@ import { UNIVERSITY } from '@/lib/constants';
 import type { CredentialDesign } from '@/lib/credentialTemplate';
 import {
   seedFrom, guillocheRosetteUri, guillocheBandUri, microtextBandUri,
-  engravedSealUri, securityGroundUri, ordinalDay, yearInWords,
+  securityGroundUri, ordinalDay, yearInWords,
+  ornateFrameUri, waferSealUri,
 } from '@/lib/credentialArt';
 import { wordingForAward } from '@/lib/awards';
 
@@ -138,9 +139,26 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
         </div>
       )}
 
-      {/* Layer 2 — the border. The outer rule, then a guilloché band, then a
-          hairline: three edges a scan has to reproduce rather than one. */}
-      {design.border !== 'none' && (
+      {/* Layer 2 — the frame.
+          'ornate' is the engraved gilt border redrawn from the university's own
+          first certificate: an outer fillet, a scroll-and-leaf course, a bead
+          rule and a medallion at each corner. It is most of why that document
+          reads as an instrument before a word of it has been read, and it is
+          the largest single difference between it and the plain double rule
+          this system was drawing.
+
+          Redrawn, not traced. The original is a photograph of a printed sheet
+          taken at an angle; re-using it would embed somebody's snapshot of a
+          real graduate's certificate into every document the university issues. */}
+      {design.border === 'ornate' && (
+        <div style={{
+          position: 'absolute', inset: 0,
+          backgroundImage: `url("${ornateFrameUri(w, h, design.accent, '#8a6d1f', design.borderWidthMm)}")`,
+          backgroundSize: '100% 100%',
+          backgroundRepeat: 'no-repeat',
+        }} />
+      )}
+      {design.border !== 'none' && design.border !== 'ornate' && (
         <div style={{
           position: 'absolute', inset: 0,
           border: `${design.borderWidthMm}mm solid ${design.brand}`,
@@ -176,7 +194,7 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
         );
       })()}
 
-      {design.border !== 'none' && (
+      {design.border !== 'none' && design.border !== 'ornate' && (
         <div style={{
           position: 'absolute',
           inset: `${design.borderWidthMm + 7.5}mm`,
@@ -313,37 +331,54 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
           {/* The seal, drawn per document rather than a PNG anyone can download.
               See credentialArt.ts — it is geometry, not a file, so it cannot be
               lifted, and it is vector, so it holds at print resolution. */}
-          <div style={{ width: '32mm', flex: '0 0 32mm', textAlign: 'left' }}>
+          {/* The wafer, where the university has always put it. Red, starburst,
+              embossed — the feature a hand reaches for first when someone is
+              deciding whether a document is real. Print cannot reproduce relief;
+              this is the artwork, correctly registered, for a university that
+              applies a real foil wafer over it. */}
+          <div style={{ width: '30mm', flex: '0 0 30mm', textAlign: 'left' }}>
             {design.showSeal && sec.engravedSeal && (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={engravedSealUri(seed, 300, design.brand, design.accent,
-                  UNIVERSITY.name.toUpperCase(), UNIVERSITY.shortName)}
+                src={waferSealUri(seed, 300, design.sealColour || '#b31217',
+                  `${UNIVERSITY.name.toUpperCase()} · `, UNIVERSITY.shortName)}
                 alt=""
-                style={{ width: '30mm', height: '30mm', opacity: 0.95 }}
+                style={{ width: '27mm', height: '27mm' }}
               />
             )}
           </div>
 
+          {/* Four signatories, wrapping into rows.
+              The university's own first certificate carries four — the
+              Chancellor and International Presiding Bishop, the President, the
+              Vice Chancellor and the Registrar. Two of them were missing from
+              this system entirely, and a degree certificate that omits the
+              offices which confer it is not the university's certificate.
+
+              They wrap rather than sit on one line: four across A4 leaves each
+              about 40mm, and "ICOF Chancellor & International Presiding Bishop"
+              does not fit in 40mm. An office abbreviated to fit is an office
+              misnamed. */}
           <div style={{
             flex: '1 1 auto',
             display: 'flex',
-            justifyContent: 'space-evenly',
+            flexWrap: 'wrap',
+            justifyContent: 'center',
             alignItems: 'flex-end',
-            gap: '6mm',
+            gap: '5mm 9mm',
           }}>
             {design.signatories.map((s, i) => (
-              <div key={`${s.office}-${i}`} style={{ minWidth: '42mm' }}>
+              <div key={`${s.office}-${i}`} style={{ flex: '0 1 auto', minWidth: '52mm', maxWidth: '72mm' }}>
                 <div style={{
                   borderTop: `0.3mm solid ${design.ink}`,
                   paddingTop: '1.6mm',
-                  fontSize: '11px',
+                  fontSize: '10.5px',
                   fontWeight: 700,
                   color: design.ink,
                 }}>
                   {s.name || nameForOffice(s.office)}
                 </div>
-                <div style={{ fontSize: '9.5px', opacity: 0.7, marginTop: '0.6mm' }}>{s.office}</div>
+                <div style={{ fontSize: '9px', opacity: 0.72, marginTop: '0.5mm', lineHeight: 1.3 }}>{s.office}</div>
               </div>
             ))}
           </div>
@@ -410,7 +445,12 @@ const small = (d: CredentialDesign): React.CSSProperties => ({
  */
 function nameForOffice(office: string): string {
   const o = office.toLowerCase();
+  // Order matters: 'vice chancellor' contains 'chancellor', so the narrower
+  // office has to be tested first or the Vice Chancellor's rule would carry the
+  // Chancellor's name.
   if (o.includes('vice chancellor')) return UNIVERSITY.viceChancellor;
+  if (o.includes('chancellor')) return UNIVERSITY.chancellor;
+  if (o.includes('president')) return UNIVERSITY.president;
   if (o.includes('registrar')) return UNIVERSITY.registrar;
   if (o.includes('academic affairs')) return UNIVERSITY.headOfAcademicAffairs;
   // Any other office — Chancellor, Dean, Provost — has no constant to fall back
