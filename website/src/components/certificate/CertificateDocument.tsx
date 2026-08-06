@@ -180,6 +180,8 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
   const leftSigs = design.signatories.slice(0, half);
   const rightSigs = design.signatories.slice(half);
   const reserved = design.sealPlacement !== 'printed';
+  // The seal set inside the device rather than in a circle of its own.
+  const mounted = design.sealPlacement === 'device';
 
   // Blackletter is set in mixed case, never capitals.
   //
@@ -282,9 +284,25 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
     ),
     wafer: waferSealUri(seed, 300, design.sealColour || '#b31217',
       `${UNIVERSITY.name.toUpperCase()} · `, UNIVERSITY.shortName),
+    // The mount. The same figure as the watermark, struck small, with the world
+    // taken out of its middle and a collet put in its place — so the wafer the
+    // Registry presses lands inside the device rather than beside it. Drawn at
+    // full strength, not watermark strength: this one is a printed element of
+    // the document, not a ground behind it.
+    mount: africanGlobeOfKnowledgeUri({
+      seed, size: 520, colour: design.brand,
+      legend: [UNIVERSITY.name.toUpperCase(), UNIVERSITY.motto.toUpperCase()],
+      founded: romanYear(UNIVERSITY.established),
+      tier: deviceTierFor(data.degree),
+      style: sec.deviceStyle,
+      emblem: emblemFor(data.faculty),
+      centre: 'void',
+      paper: design.paper,
+    }),
   }), [
     seed, sheetW, sheetH, bleed, design.brand, design.accent, design.borderWidthMm,
-    design.sealColour, data.credentialId, sec.watermark, sec.deviceStyle, data.degree, data.faculty,
+    design.sealColour, design.paper, data.credentialId, sec.watermark, sec.deviceStyle,
+    data.degree, data.faculty,
   ]);
 
   if (missingId && !specimen) {
@@ -400,7 +418,45 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
           A disc of paper, painted after the ground and before the text, is the
           simplest thing that cannot be got wrong by a later layer: anything
           drawn beneath it is hidden, and the text above it is unaffected. */}
-      {reserved && sec.securityGround && (
+      {/* The mount, when the seal is set inside the device.
+          Positioned against the sheet rather than laid out in the signature
+          row, so it can never change the height of that row. Its centre is on
+          the same line the reserved disc used, so a Registry that already knows
+          where the wafer goes does not have to learn a new position. */}
+      {mounted && (
+        <div aria-hidden="true" style={{
+          position: 'absolute',
+          left: '50%',
+          // The clear band in the middle of the foot runs from the end of the
+          // attestation to the credential line: about 44mm, with the signature
+          // rules crossing it only in the left and right columns. The mount is
+          // cut to that band. At 50mm it sat over the credential number, which
+          // is the one line on the sheet that must stay legible.
+          bottom: `${bleed + design.borderWidthMm + 15}mm`,
+          transform: 'translateX(-50%)',
+          width: '44mm', height: '44mm',
+        }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={art.mount} alt="" style={{ width: '44mm', height: '44mm', display: 'block' }} />
+          {previewGuides && (
+            <div style={{
+              position: 'absolute', top: '50%', left: '50%',
+              transform: 'translate(-50%, -50%)',
+              textAlign: 'center', fontSize: '6px', lineHeight: 1.3,
+              letterSpacing: '0.06em', color: design.accent,
+              fontFamily: 'Helvetica, Arial, sans-serif',
+            }}>
+              AFFIX THE<br />SEAL HERE
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Not needed when the seal is mounted in the device: the mount paints
+          its own seat in the paper's colour, and it is drawn above the ground
+          anyway. A second disc here would be a paper circle in the wrong place
+          by a few millimetres, showing as a pale crescent beside the collet. */}
+      {reserved && !mounted && sec.securityGround && (
         <div
           aria-hidden="true"
           style={{
@@ -801,14 +857,22 @@ backgroundImage: `url("${art.micro}")`,
           <SignatureColumn design={design} sigs={leftSigs} />
 
           <div style={{
-            flex: '0 0 38mm',
+            flex: mounted ? '0 0 46mm' : '0 0 38mm',
             alignSelf: 'stretch',
             display: 'flex',
             alignItems: 'flex-end',
             justifyContent: 'center',
             paddingBottom: '2mm',
           }}>
-            {reserved ? (
+            {mounted ? (
+              // A spacer only. The mount itself is positioned absolutely near
+              // the foot of the sheet — see below — because a 50mm image inside
+              // a stretched flex column made the whole signature row 50mm tall
+              // and pushed the second rank of signatures and the credential
+              // line off the bottom of the paper. The seal's mount must not be
+              // able to move the signatures.
+              <div style={{ width: '30mm' }} />
+            ) : reserved ? (
               previewGuides ? (
                 <div style={{
                   width: '32mm', height: '32mm', borderRadius: '50%',

@@ -615,13 +615,15 @@ export default function CredentialStudio() {
                   <Select
                     value={design.sealPlacement}
                     onChange={(v) => set('sealPlacement', v as CredentialDesign['sealPlacement'])}
-                    options={['reserved', 'printed']}
+                    options={['reserved', 'device', 'printed']}
                   />
                 </Row>
                 <p className="text-[11px] leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">
                   {design.sealPlacement === 'printed'
                     ? 'The wafer is printed. Use this only for a copy that will never be sealed by hand — an electronic duplicate, or a specimen.'
-                    : 'Space is left clear in the middle for a real wafer. This is the university’s practice, and it is what the hard copy expects.'}
+                    : design.sealPlacement === 'device'
+                      ? 'The seal takes the globe’s place. The university’s device is struck small at the foot with everything it carries — ring, register, network, laurel — and the world removed from its middle, leaving a collet for the wafer. The seal then sits at the heart of the university’s own figure instead of in a blank circle beside it. Still clear paper: nothing is printed where the wafer lands.'
+                      : 'Space is left clear in the middle for a real wafer. Correct, and plain — the circle reads as an omission until the seal is on it.'}
                 </p>
                 <Row label="Wafer colour">
                   <Colour value={design.sealColour} onChange={(v) => set('sealColour', v)} />

@@ -207,8 +207,23 @@ printed. Software cannot produce it and this system does not pretend to — what
 it supplies is correctly registered clear space and the artwork for the wafer.
 The security is in the physical application, which is the university's to do.
 
-`sealPlacement: 'printed'` draws the wafer instead, for a copy that will never
-be sealed by hand — an electronic duplicate, or a specimen.
+### Where the clear space is
+
+| Setting | What the document leaves |
+|---|---|
+| `reserved` | A plain clear disc, 36 mm, centred in the foot. Correct, and it reads as an omission until the seal is on it. |
+| `device` | **The seal takes the globe's place.** The university's device is struck small at the foot — ring, register, network, laurel, all of it — with the world removed from its middle and a collet struck where it was. The wafer is affixed at the heart of the university's own figure. |
+| `printed` | The wafer is drawn. For a copy that will never be sealed by hand — an electronic duplicate, or a specimen. |
+
+On `device` the seat is **44 mm mount, 30 mm clear**, and the mount is drawn
+larger in the middle than the globe it replaces: a globe is a subject the
+ornament surrounds, a seat is a fitting the ornament must clear.
+
+```
+Layer 5 (seal), sealPlacement: device
+                 Mount 44 mm, struck. Clear seat 30 mm at its centre.
+                 DO NOT PRINT INTO THE SEAT. The collet is the register mark.
+```
 
 *Implementation: `waferSeal()`; `CredentialDesign.sealPlacement`*
 

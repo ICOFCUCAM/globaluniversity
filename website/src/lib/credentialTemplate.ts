@@ -106,10 +106,18 @@ export interface CredentialDesign {
    * guilloché — because a wafer pressed over printed artwork sits proud of it
    * and shows a halo of whatever was underneath.
    *
+   * 'device' is the same clear space, struck inside the university's own
+   * device. The figure is drawn small at the foot with everything it carries —
+   * ring, register, network, laurel — and the WORLD REMOVED FROM ITS CENTRE, a
+   * collet struck where the globe was. The wafer is affixed there. The seal
+   * then sits at the heart of the university's device instead of in a blank
+   * circle beside it, which is what a sealed instrument looks like and what
+   * 'reserved' alone never did.
+   *
    * 'printed' draws the wafer instead, for a copy that will never be sealed by
    * hand — a duplicate sent electronically, or a specimen.
    */
-  sealPlacement: 'reserved' | 'printed';
+  sealPlacement: 'reserved' | 'device' | 'printed';
 
   /**
    * Border treatment. `none` suits transcripts; `ornate` is the engraved gilt

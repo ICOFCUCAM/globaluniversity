@@ -1309,12 +1309,25 @@ export function africanGlobeOfKnowledge(opts: {
   style?: DeviceStyle;
   emblem?: DeviceEmblem;
   opacity?: number;
+  /**
+   * What sits at the heart of the figure.
+   *
+   * 'globe' is the world turned to Africa — the device's subject.
+   * 'void' leaves the centre as bare paper inside a struck collet, so the
+   * university's own foil wafer is affixed THERE, in the middle of its own
+   * device, rather than in a separate blank circle further down the sheet.
+   */
+  centre?: 'globe' | 'void';
+  /** The sheet's colour, for the vacant centre. Must match the stock. */
+  paper?: string;
 }): string {
   const { seed, size, colour, legend, founded } = opts;
   const tier = opts.tier ?? 'standard';
   const style = opts.style ?? 'seal';
   const emblem = opts.emblem ?? 'none';
   const opacity = opts.opacity ?? 1;
+  const centre = opts.centre ?? 'globe';
+  const paper = opts.paper ?? '#fffdf5';
   const R = size / 2;
   // The whole style name, not its initial. 'seal' and 'shield' both begin with
   // s, so two devices on one page — a Studio preview beside a gallery, a sheet
@@ -1322,7 +1335,7 @@ export function africanGlobeOfKnowledge(opts: {
   // resolved to the FIRST match in the document: the seal's circle. The legend
   // came out running down the side of the wrong figure. An id that is unique
   // "in practice" is not unique.
-  const id = `k${seed.toString(36)}${style}${tier}`;
+  const id = `k${seed.toString(36)}${style}${tier}${centre}`;
   const f = tierFlags(tier);
   const L: string[] = [];
   const sw = (v: number) => (size * v).toFixed(2);
@@ -1559,17 +1572,63 @@ export function africanGlobeOfKnowledge(opts: {
     );
   }
 
-  // --- the world ----------------------------------------------------------
-  // Bigger. The globe is the subject and it was reading as a detail inside the
-  // ornament rather than the thing the ornament surrounds.
-  const inner = size * (style === 'panel' ? 0.50 : style === 'shield' ? 0.54 : 0.60);
+  // --- the centre ---------------------------------------------------------
+  // Either the world, or a vacant setting for the wafer.
+  //
+  // 'void' is not "the globe, hidden". It is a MOUNT: everything the device
+  // carries stays — ring, register, network, laurel, collar, rays — and the
+  // middle is left as bare paper with a collet struck round it, so the seal the
+  // university presses by hand lands inside its own device rather than in a
+  // blank circle beside it.
+  //
+  // The clear disc is painted LAST, in the paper's colour, over whatever the
+  // earlier layers put there. The collar is a rosette centred on the figure and
+  // the rays start at 0.30R, so both run through the middle; suppressing them
+  // one by one would mean every future layer had to remember this rule. Paint
+  // the hole instead, and no layer can get it wrong.
+  // The vacant centre is drawn LARGER than the globe it replaces. The globe is
+  // a subject the ornament surrounds; the seat is a fitting the ornament has to
+  // clear. At the globe's 0.60 a 44mm mount left a 26mm seat, and the wafer the
+  // university actually presses is 30mm — it would have overhung the collet.
+  const innerK = centre === 'void'
+    ? (style === 'panel' ? 0.58 : style === 'shield' ? 0.62 : 0.68)
+    : (style === 'panel' ? 0.50 : style === 'shield' ? 0.54 : 0.60);
+  const inner = size * innerK;
   const gx = ((size - inner) / 2).toFixed(2);
   const gy = (style === 'shield' ? size * 0.255 : (size - inner) / 2).toFixed(2);
-  L.push(
-    `<g transform="translate(${gx},${gy})">` +
-    africaGlobe(seed, inner, colour, opacity).replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '') +
-    `</g>`,
-  );
+  if (centre === 'globe') {
+    L.push(
+      `<g transform="translate(${gx},${gy})">` +
+      africaGlobe(seed, inner, colour, opacity).replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '') +
+      `</g>`,
+    );
+  } else {
+    const cyv = style === 'shield' ? size * 0.255 + inner / 2 : R;
+    const rv = inner / 2;
+    L.push(
+      `<circle cx="${R}" cy="${cyv.toFixed(2)}" r="${rv.toFixed(2)}" fill="${paper}"/>`,
+      // The collet: a bead rule at the seat, a fillet outside it, and a course
+      // of small radial ticks between — the setting a struck medal is mounted
+      // in. Without it the middle reads as an omission rather than a fitting.
+      `<circle cx="${R}" cy="${cyv.toFixed(2)}" r="${rv.toFixed(2)}" fill="none" stroke="${colour}" ` +
+      `stroke-width="${sw(0.0042)}" stroke-opacity="${(opacity * 0.9).toFixed(3)}"/>`,
+      `<circle cx="${R}" cy="${cyv.toFixed(2)}" r="${(rv * 1.075).toFixed(2)}" fill="none" stroke="${colour}" ` +
+      `stroke-width="${sw(0.0016)}" stroke-opacity="${(opacity * 0.6).toFixed(3)}"/>`,
+    );
+    const ticks: string[] = [];
+    const tn = 72;
+    for (let i = 0; i < tn; i += 1) {
+      const a = (i / tn) * Math.PI * 2;
+      ticks.push(
+        `M${(R + Math.cos(a) * rv * 1.012).toFixed(2)},${(cyv + Math.sin(a) * rv * 1.012).toFixed(2)} ` +
+        `L${(R + Math.cos(a) * rv * 1.062).toFixed(2)},${(cyv + Math.sin(a) * rv * 1.062).toFixed(2)}`,
+      );
+    }
+    L.push(
+      `<path d="${ticks.join(' ')}" fill="none" stroke="${colour}" stroke-width="${sw(0.0014)}" ` +
+      `stroke-opacity="${(opacity * 0.55).toFixed(3)}"/>`,
+    );
+  }
 
   // --- year and emblem ----------------------------------------------------
   const yearY = style === 'shield' ? R * 1.56 : style === 'panel' ? R + R * 0.44 : R + R * 0.62;
