@@ -282,9 +282,9 @@ export const feeBands: FeeBand[] = [
     appliesTo:
       'Students who are nationals of, or resident in, countries of Africa and the Global South.',
     basis:
-      'A subsidised rate, funded as scholarship. The published FCFA schedule is this band: the university carries the difference so that cost is not what keeps a called student out of higher education.',
+      'A subsidised rate, funded as scholarship. The university carries the difference so that cost is not what keeps a called student out of higher education. Quoted in US dollars like every other fee, and paid in local currency to the ICOF national base.',
     figures:
-      'The fee schedule in Part V of these regulations — registration, examination, certificate, transcript and development fees in FCFA — applies to this band.',
+      'The fee schedule in Part V of these regulations — registration, examination, certificate, transcript and development fees — applies to this band.',
     confirmed: true,
   },
   {
@@ -301,31 +301,82 @@ export const feeBands: FeeBand[] = [
 export const feeBandNote =
   'Which band applies is determined by nationality and residence, not by mode of study. A student in either band studying online sits the same assessments and receives the same award.';
 
-/** Fees payable in addition to tuition. */
-export const miscellaneousFees: { item: string; amount: string; optional?: boolean }[] = [
-  { item: 'Academic record (transcripts)', amount: '2,000 FCFA' },
-  { item: 'Additional transcripts', amount: '2,500 FCFA', optional: true },
-  { item: 'Late application fee', amount: '5,000 FCFA', optional: true },
-  { item: 'Certificate fee', amount: '10,000 FCFA' },
-  { item: 'Degree replacement', amount: '25,000 FCFA', optional: true },
-  { item: 'Student ID card', amount: '2,000 FCFA' },
-  { item: 'ID card replacement', amount: '3,000 FCFA', optional: true },
-  { item: 'T-shirt', amount: '5,000 FCFA' },
-  { item: 'Official wear batch', amount: '1,500 FCFA' },
-  { item: 'Supplementary examinations', amount: '25,000 FCFA' },
-  { item: 'Syllabus fee', amount: '5,000 FCFA', optional: true },
-  { item: 'Thesis and dissertation fee', amount: '25,000 FCFA and above' },
-  { item: 'Development fee', amount: '5,000 FCFA' },
+// ---------------------------------------------------------------------------
+// FEES ARE QUOTED IN US DOLLARS.
+//
+// The university has adopted the US dollar as the currency of record for every
+// published fee, so one schedule applies whichever country a student is in.
+// Payment is still made locally — see `localPayment` below — but the amount
+// owed is a dollar amount, not a different figure per country.
+//
+// CONVERSION, AND WHAT NEEDS CONFIRMING. The schedule was previously published
+// in FCFA. It has been converted at 600 FCFA to the dollar and rounded to the
+// nearest five dollars, because a fee schedule reading $4.17 is not a schedule
+// anyone can collect against. Rounding moves real money: the transcript fee
+// converts to $3.33 and is shown as $5.
+//
+// Both the rate and the rounding are the university's to confirm. They are
+// marked here rather than presented as settled, and the FCFA original is kept
+// beside each line so the arithmetic can be checked rather than trusted.
+// ---------------------------------------------------------------------------
+
+/** The rate used to convert the published FCFA schedule. To be confirmed. */
+export const usdConversionRate = { fcfaPerUsd: 600, confirmed: false };
+
+/** Fees payable in addition to tuition, in US dollars. */
+export const miscellaneousFees: {
+  item: string;
+  amount: string;
+  /** The figure this was converted from, so the arithmetic stays checkable. */
+  wasFcfa?: string;
+  optional?: boolean;
+}[] = [
+  { item: 'Application fee', amount: 'USD 100' },
+  { item: 'Academic record (transcripts)', amount: 'USD 5', wasFcfa: '2,000 FCFA' },
+  { item: 'Additional transcripts', amount: 'USD 5', wasFcfa: '2,500 FCFA', optional: true },
+  { item: 'Late application fee', amount: 'USD 10', wasFcfa: '5,000 FCFA', optional: true },
+  { item: 'Certificate fee', amount: 'USD 20', wasFcfa: '10,000 FCFA' },
+  { item: 'Degree replacement', amount: 'USD 45', wasFcfa: '25,000 FCFA', optional: true },
+  { item: 'Student ID card', amount: 'USD 5', wasFcfa: '2,000 FCFA' },
+  { item: 'ID card replacement', amount: 'USD 5', wasFcfa: '3,000 FCFA', optional: true },
+  { item: 'T-shirt', amount: 'USD 10', wasFcfa: '5,000 FCFA' },
+  { item: 'Official wear batch', amount: 'USD 5', wasFcfa: '1,500 FCFA' },
+  { item: 'Supplementary examinations', amount: 'USD 45', wasFcfa: '25,000 FCFA' },
+  { item: 'Syllabus fee', amount: 'USD 10', wasFcfa: '5,000 FCFA', optional: true },
+  { item: 'Thesis and dissertation fee', amount: 'USD 45 and above', wasFcfa: '25,000 FCFA and above' },
+  { item: 'Development fee', amount: 'USD 10', wasFcfa: '5,000 FCFA' },
 ];
 
-export const miscellaneousFeesTotal = '50,500 FCFA';
+/** The compulsory items above, excluding the optional ones. */
+export const miscellaneousFeesTotal = 'USD 200';
+
+/** The application fee, quoted separately because it is paid before anything else. */
+export const applicationFee = 'USD 100';
+
+/**
+ * Paying locally.
+ *
+ * Fees are owed in dollars and paid in the student's own currency, at the
+ * national office of the International Circle of Faith in their country. A
+ * student in Nigeria pays naira to the Nigerian base; a student in Cameroon
+ * pays FCFA to the Cameroonian base. Neither has to find dollars, and the
+ * university reconciles one currency.
+ */
+export const localPayment: string[] = [
+  'Fees are quoted in US dollars. You do not have to pay in dollars.',
+  'Payment is made in your own national currency to the ICOF national base in your country, which issues the receipt and remits to the university.',
+  'The amount in your currency is the dollar amount converted at the rate published by the university for that period. Ask the national base for the rate in force before you pay.',
+  'A receipt from the national base is proof of payment. Keep it: it is what the Finance Office matches your record against.',
+  'Where no national base has been established, payment is made directly to the university by the means published on the Cost & Tuition page.',
+];
 
 export const paymentTerms: string[] = [
-  'Every programme, undergraduate and postgraduate, requires an Acceptance of Place Fee, an Application Fee and a University Levy before a place is secured.',
-  'On acceptance, a student pays 50% of the university fees as an initial deposit, together with the University Levy.',
+  'The Application Fee is USD 100 and is paid with the application.',
+  'An admitted student may begin studying immediately. Teaching does not wait on the fee schedule: a student is enrolled on admission and starts with their cohort.',
+  'The Acceptance of Place Fee and the University Levy are due within the first period of study, and an initial deposit of 50% of tuition is due on the schedule the Finance Office confirms at registration.',
   'Payment dates are published each semester on the student website and in the university bulletin, and must be honoured.',
-  'Payment may be made in cash, by cheque, or by direct deposit into the university account.',
-  'A late registration penalty of 10,000 FCFA applies to all late registrations. Registration dates are posted at all university communication centres; not having seen them does not remove the penalty.',
+  'Payment may be made in cash, by cheque, or by direct deposit. Students pay in their own national currency to the ICOF national base in their country; the amount is the dollar figure converted at the rate published for that period.',
+  'A late registration penalty of USD 20 applies to all late registrations. Registration dates are posted at all university communication centres; not having seen them does not remove the penalty.',
   'A bounced cheque must be made good in cash or by direct deposit, together with a penalty of 20% of its value.',
   'Fee statements are posted quarterly. Signing the Registration Form accepts responsibility for payment by the due date whether or not a statement has been received, and it is the student’s responsibility to keep the university informed of a correct address and to follow up unpaid amounts.',
   'A student carrying an outstanding balance from a previous year may not register until it is paid in full.',

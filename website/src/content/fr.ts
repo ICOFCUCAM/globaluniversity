@@ -119,7 +119,7 @@ export const fr = {
     ],
     tuitionHeading: 'Frais de scolarité',
     tuition:
-      'Scolarité à temps plein : 12 200 $ par an · à temps partiel : 6 600 $ · livres et fournitures : 500 $ · logement étudiant : 35 000 à 50 000 FCFA par mois. Des bourses sont disponibles ; les paiements sont acceptés en FCFA, USD, EUR, GBP et NGN.',
+      'Scolarité à temps plein : 12 200 $ par an · à temps partiel : 6 600 $ · livres et fournitures : 500 $ · logement étudiant : environ 60 à 85 $ par mois. Des bourses sont disponibles. Tous les frais sont libellés en dollars américains et se règlent dans votre monnaie nationale auprès de la base nationale de l’ICOF.',
   },
   programs: {
     title: 'Diplômes et programmes',

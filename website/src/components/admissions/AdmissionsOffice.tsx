@@ -26,6 +26,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { UNIVERSITY } from '@/lib/constants';
 import { admissionsQueue } from '@/lib/admissions';
 import { can } from '@/lib/roles';
 import { statusMeta, toUniversal } from '@/lib/status';
@@ -70,7 +71,10 @@ export default function AdmissionsOffice() {
   }, []);
 
   useEffect(() => { if (allowed) void load(); }, [allowed, load]);
-  useEffect(() => { setSignatory((s) => s || user?.name || ''); }, [user?.name]);
+  // Defaults to the office holder, not to the account signed in. An
+  // administrator pressing this button should not find their own name under a
+  // decision the Head of Academic Affairs makes.
+  useEffect(() => { setSignatory((s) => s || UNIVERSITY.headOfAcademicAffairs); }, []);
 
   async function admit() {
     if (!selected) return;
@@ -246,7 +250,7 @@ export default function AdmissionsOffice() {
 
               <div className="space-y-4 border-t border-[#f0ece4] p-5 dark:border-[#2a2333]">
                 <div>
-                  <label htmlFor="signatory" className={LABEL}>Signed by (Head of Admissions)</label>
+                  <label htmlFor="signatory" className={LABEL}>Signed by (Head of Academic Affairs)</label>
                   <input
                     id="signatory"
                     value={signatory}
@@ -255,8 +259,9 @@ export default function AdmissionsOffice() {
                     className={`${INPUT} mt-1 max-w-md`}
                   />
                   <p className="mt-1 text-[11px] text-[#a49bb0]">
-                    This name is printed under the signature rule on the admission letter. It should
-                    be the person holding the office, not the account signed in.
+                    Printed under the signature rule on the admission letter, above
+                    &ldquo;Head of Academic Affairs&rdquo;. Change it only when the office changes
+                    hands.
                   </p>
                 </div>
 
@@ -320,7 +325,8 @@ export default function AdmissionsOffice() {
                   <p>
                     Admitting issues the student number, creates the student&apos;s account, and
                     emails <strong>{selected.email}</strong> the full admission package — the letter
-                    signed as above, the conditions, the terms for {(selected as any).mode || 'their mode'} study
+                    signed by the Head of Academic Affairs, the conditions, the terms for{' '}
+                    {(selected as any).mode || 'their mode'} study
                     and for the other, the fee arrangements and the academic regulations.
                     <strong> The applicant will have been told. This cannot be taken back.</strong>
                   </p>

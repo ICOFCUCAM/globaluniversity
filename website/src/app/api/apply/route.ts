@@ -53,7 +53,8 @@ const FIELDS: Array<[string, string]> = [
   ['field_other', 'Other / specialization'],
   ['campus', 'Campus'],
   ['start_when', 'Intended start of studies'],
-  ['mode', 'Mode of study'],
+  ['mode', 'Where the applicant will study'],
+  ['attendance', 'Attendance (full or part time)'],
   ['financing', 'Financing'],
   ['financing_explain', 'Financing details'],
   ['illness', 'Serious illness'],
@@ -153,7 +154,7 @@ export async function POST(request: Request) {
     try {
       await transporter.sendMail({
         from: `"IGUC Online Application" <${MAIL_FROM || SMTP_USER}>`,
-        to: APPLY_TO ?? 'admission@iguc.net',
+        to: APPLY_TO ?? 'admissions@iguc.net',
         replyTo: applicantEmail,
         subject: `New application ${appNo}: ${surname} ${firstname} — ${String(form.get('level') ?? '')} ${String(form.get('field') ?? '')}`,
         text: `A new application was submitted on iguc.net.\n\n${lines.join('\n')}\n`,

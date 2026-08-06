@@ -89,8 +89,8 @@ export default function Footer() {
               </a>
             </li>
             <li>
-              <a href="mailto:admission@iguc.net" className="hover:text-brand-gold">
-                admission@iguc.net
+              <a href="mailto:admissions@iguc.net" className="hover:text-brand-gold">
+                admissions@iguc.net
               </a>
             </li>
           </ul>

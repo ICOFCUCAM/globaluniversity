@@ -394,7 +394,7 @@ export const contentPages: ContentPage[] = [
       {
         heading: 'Living in Buea',
         paragraphs: [
-          'Buea, in the foothills of Mount Cameroon, is one of Central Africa\u2019s university towns \u2014 anglophone, welcoming and affordable. Single-room student accommodation with kitchen and facilities ranges from 35,000 to 50,000 FCFA per month, and the campus sits opposite Bulu Blind Junction with easy access to the town.',
+          'Buea, in the foothills of Mount Cameroon, is one of Central Africa\u2019s university towns \u2014 anglophone, welcoming and affordable. Single-room student accommodation with kitchen and facilities costs roughly USD 60 to 85 per month, paid locally in FCFA, and the campus sits opposite Bulu Blind Junction with easy access to the town.',
         ],
       },
       {

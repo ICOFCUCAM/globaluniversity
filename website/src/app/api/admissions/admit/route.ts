@@ -184,13 +184,16 @@ export async function POST(request: Request) {
     faculty: student.faculty || UNIVERSITY.name,
     level: student.degree_type || '—',
     campus: (student as any).campus || 'Buea (Main Campus)',
-    mode: (student as any).mode || 'Full Time',
+    mode: (student as any).mode || 'On campus',
     intake: student.intake || String(intakeYear),
     applicationNumber: student.matric_no,
     conditions: isConditional ? conditions : undefined,
-    // Named so the letter is signed by a person holding an office, not by "the
-    // system". Falls back to the office itself rather than to a blank line.
-    headOfAdmissions: headOfAdmissions?.trim() || caller.fullName || 'The Head of Admissions',
+    // The university signs admission letters as Head of Academic Affairs, and
+    // the holder is named in constants. The desk may override it — an office
+    // changes hands — but it never falls back to whichever account pressed the
+    // button, which would put an administrator's name under a decision they
+    // did not make.
+    headOfAdmissions: headOfAdmissions?.trim() || UNIVERSITY.headOfAcademicAffairs,
     registrar: UNIVERSITY.registrar,
     portalUrl,
     temporaryPassword: password,

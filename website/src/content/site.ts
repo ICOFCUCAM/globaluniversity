@@ -874,11 +874,16 @@ export const tuition = {
     { program: 'Full-time tuition (per year)', fee: '$12,200 (living at home or on campus) · $12,000 (students with dependents)' },
     { program: 'Part-time tuition (per year)', fee: '$6,600 · $6,400 (students with dependents)' },
     { program: 'Books & supplies', fee: '$500' },
-    { program: 'Student housing (single room, toilet & kitchen)', fee: '35,000 – 50,000 FCFA per month' },
+    { program: 'Student housing (single room, toilet & kitchen)', fee: 'USD 60 – 85 per month' },
+    { program: 'Application fee', fee: 'USD 100, payable with the application' },
     { program: 'Extension courses', fee: 'Varies by program — email admissions@iguc.net' },
   ],
   bands: 'ICOF operates two fee bands. Students from Africa and the Global South pay a subsidised rate, funded as scholarship — the university carries the difference so that cost is not what keeps a called student out of higher education. Students from Europe and North America pay a higher rate, set at approximately European levels and slightly below them; those fees help fund the scholarship band. Which band applies is determined by nationality and residence, not by mode of study.',
-  note: 'We provide financial aid through scholarships — follow our announcements and newsletters to know when a scholarship program is published. Online courses are offered for master’s and doctoral programs.',
+  currency:
+    'Every fee on this page is quoted in US dollars, and you do not have to pay in dollars. Payment is made in your own national currency to the ICOF national base in your country, which issues your receipt and remits to the university. Ask the national base for the rate in force before you pay, and keep the receipt — it is what the Finance Office matches your record against. Where no national base has been established, payment is made directly to the university.',
+  whenToPay:
+    'An admitted student may begin studying immediately. Being admitted is what enrols you, not being paid up: the fee schedule runs alongside your study rather than before it, and the Finance Office confirms what is due and when.',
+  note: 'We provide financial aid through scholarships — follow our announcements and newsletters to know when a scholarship program is published. Every programme is available on campus in Buea and Douala, online, or as a combination of the two.',
 };
 
 export const campusLife = {

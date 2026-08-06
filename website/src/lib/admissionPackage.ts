@@ -44,6 +44,14 @@ import { UNIVERSITY } from './constants';
  * graduate may still be holding in ten years.
  */
 const SITE = process.env.SITE_URL ?? `https://${UNIVERSITY.website.replace(/^www\./, '')}`;
+
+/**
+ * The address on the letterhead and in the footer.
+ *
+ * Admissions, not the Registrar. A student replying to a query about their
+ * admission letter should reach the office that issued it.
+ */
+const ADMISSIONS_EMAIL = 'admissions@iguc.net';
 import { passMark, gradeScale, classificationBands } from '@/content/regulations';
 
 export interface AdmissionPackageInput {
@@ -58,7 +66,11 @@ export interface AdmissionPackageInput {
   intake: string;
   applicationNumber: string;
   conditions?: { requirement: string; dueBy: string }[];
-  /** Named so the letter can be addressed and signed by a person. */
+  /**
+   * Named so the letter is signed by a person holding an office rather than by
+   * "the system". The university signs admission letters as Head of Academic
+   * Affairs; the office is fixed, the holder is not, so only the name is passed.
+   */
   headOfAdmissions: string;
   registrar: string;
   issuedOn?: Date;
@@ -84,7 +96,7 @@ function isOnline(mode: string): boolean {
 
 const CAMPUS_TERMS: string[] = [
   'You are expected in person for lectures, seminars and examinations at your registered campus. Attendance is recorded.',
-  'Registration in person at the Office of the Registrar must be completed before teaching begins. Bring the originals of every document uploaded with your application.',
+  'Registration is completed in the portal and you may begin studying at once. The Office of the Registrar completes your formalities when you arrive, and you should bring the originals of every document uploaded with your application.',
   'Examinations are sat on campus, under invigilation, on the dates published in the academic calendar. An examination missed without prior approval is recorded as a non-attempt.',
   'A student card is issued at registration and must be carried on campus and produced at every examination.',
   'Accommodation is not allocated by the university. The Office of Student Affairs can advise on lodging near the campus but does not guarantee it.',
@@ -93,7 +105,7 @@ const CAMPUS_TERMS: string[] = [
 
 const ONLINE_TERMS: string[] = [
   'Teaching is delivered through the university’s online learning environment. You are responsible for arranging a device and an internet connection sufficient to take part; the university cannot supply either.',
-  'Registration is completed in the student portal. Certified copies of every document uploaded with your application must be received by the Office of the Registrar before your first examination.',
+  'Registration is completed in the student portal and you may begin studying at once. Certified copies of every document uploaded with your application must reach the Office of the Registrar before your first examination.',
   'Live sessions are scheduled in West Africa Time (UTC+1). Recordings are made available where a session is recorded, but participation is assessed, and participation carries 20% of the mark in every taught course.',
   'Examinations are taken online under the conditions published for each course. Where an examination requires supervision, you are responsible for meeting the identification requirements set for it.',
   'Continuous assessment deadlines are absolute and are set in West Africa Time. A submission is late by the clock of the learning environment, not the clock where you are.',
@@ -104,7 +116,7 @@ const COMMON_TERMS: string[] = [
   'This offer is made for the intake stated and is not transferable to another intake without the written approval of the Admissions Office.',
   'This offer is personal to you and cannot be transferred to another person.',
   'The university may withdraw this offer if any information given in your application is found to be false, incomplete or misleading, at any point during your studies or afterwards.',
-  'Your place is confirmed by completing registration and settling the fees due for the first period of study. An offer not taken up by the end of the registration period lapses.',
+  'Your place is confirmed by completing registration in the portal. You may begin studying immediately; the fee schedule runs alongside your study rather than before it. An offer not taken up by the end of the registration period lapses.',
 ];
 
 /* ------------------------------------------------------------------ */
@@ -148,21 +160,52 @@ export function admissionPackageHtml(input: AdmissionPackageInput): string {
     font-family: Georgia, 'Times New Roman', serif; font-size: 11.5pt; line-height: 1.55;
   }
   .sheet {
-    max-width: 190mm; margin: 0 auto; background: #fff; padding: 0 0 24mm;
+    max-width: 190mm; margin: 0 auto; background: #fff; padding: 16mm 16mm 24mm;
   }
-  .masthead {
-    background: #33234a; color: #fff; padding: 22mm 16mm 14mm; text-align: center;
+  /* The letterhead.
+     A solid purple slab with a centred crest was a banner, not a letterhead —
+     it read as a web hero pasted onto a document, and it wasted the top third
+     of the first page. A university's letterhead is typographic: the name, the
+     motto, the office issuing the letter, a rule, and the contact block. It
+     prints in one colour if it has to, and it leaves room for the letter.
+
+     No photograph. A campus picture on an admission letter dates the document,
+     bloats the file, prints badly in greyscale, and — for a university teaching
+     on two campuses and online — tells a student who will never visit Buea
+     something untrue about where they are going. */
+  .letterhead {
+    display: flex; align-items: flex-start; gap: 14px;
+    padding: 0 0 10px; border-bottom: 2.5px solid #422e59; margin-bottom: 3px;
   }
-  .masthead .crest {
-    width: 62px; height: 62px; border-radius: 50%; object-fit: cover;
-    border: 2px solid #c5a55a; margin-bottom: 10px;
+  .letterhead .crest { width: 78px; height: 78px; flex: 0 0 78px; object-fit: contain; }
+  .letterhead .lockup { flex: 1; min-width: 0; padding-top: 2px; }
+  .letterhead .name {
+    /* Sized to sit on one line at A4. A university's name broken across two
+       lines in its own letterhead is the first thing a reader notices. */
+    margin: 0; font-size: 17pt; line-height: 1.1; font-weight: bold;
+    letter-spacing: 1px; color: #422e59; text-transform: uppercase;
+    white-space: nowrap;
   }
-  .masthead h1 {
-    margin: 0; font-size: 20pt; letter-spacing: 3px; text-transform: uppercase;
+  .letterhead .sub {
+    margin: 2px 0 0; font-size: 10.5pt; letter-spacing: 3px;
+    text-transform: uppercase; color: #6b6076;
   }
-  .masthead .sub { margin: 6px 0 0; font-size: 9pt; letter-spacing: 2px; color: #e9c14a; text-transform: uppercase; }
-  .masthead .addr { margin: 10px 0 0; font-size: 9pt; color: rgba(255,255,255,.75); }
-  .body { padding: 12mm 16mm 0; }
+  .letterhead .motto {
+    margin: 4px 0 0; font-size: 10.5pt; font-style: italic; color: #8a6d1f;
+    letter-spacing: .3px;
+  }
+  .letterhead .contact {
+    flex: 0 0 auto; text-align: right; font-size: 8.5pt; line-height: 1.5; color: #6b6076;
+    font-family: Helvetica, Arial, sans-serif; padding-top: 4px;
+  }
+  /* The thin gold rule under the main one — the university's two colours, in
+     the proportion they are used everywhere else. */
+  .rule-gold { height: 2px; background: #c5a55a; margin-bottom: 16px; }
+  .office-line {
+    font-family: Helvetica, Arial, sans-serif; font-size: 8.5pt; letter-spacing: 2.5px;
+    text-transform: uppercase; color: #422e59; margin: 0 0 14px;
+  }
+  .body { padding: 0; }
   h2 {
     font-size: 12pt; text-transform: uppercase; letter-spacing: 1.5px;
     color: #422e59; border-bottom: 1px solid #e8dcc0; padding-bottom: 5px; margin: 0 0 10px;
@@ -196,12 +239,21 @@ export function admissionPackageHtml(input: AdmissionPackageInput): string {
 <body>
 <div class="sheet">
 
-  <div class="masthead">
+  <header class="letterhead">
     <img class="crest" src="${esc(SITE)}/images/site-icon.png" alt="">
-    <h1>${esc(UNIVERSITY.name)}</h1>
-    <p class="sub">Office of Admissions</p>
-    <p class="addr">${esc(UNIVERSITY.address)}</p>
-  </div>
+    <div class="lockup">
+      <h1 class="name">${esc(UNIVERSITY.name)}</h1>
+      <p class="motto">${esc(UNIVERSITY.motto)}</p>
+    </div>
+    <div class="contact">
+      ${esc(UNIVERSITY.address)}<br>
+      ${esc(UNIVERSITY.phone)}<br>
+      ${esc(ADMISSIONS_EMAIL)}<br>
+      ${esc(UNIVERSITY.website)}
+    </div>
+  </header>
+  <div class="rule-gold"></div>
+  <p class="office-line">Office of Admissions</p>
 
   <div class="body">
 
@@ -296,15 +348,24 @@ export function admissionPackageHtml(input: AdmissionPackageInput): string {
         Students from Europe and North America are charged a higher rate.
       </p>
       <p>
+        <strong>All fees are quoted in US dollars, and you do not have to pay in dollars.</strong>
+        Payment is made in your own national currency to the ICOF national base in your country,
+        which issues your receipt and remits to the university. Ask the national base for the rate
+        in force before you pay, and keep the receipt — it is what the Finance Office matches your
+        record against. Where no national base has been established, payment is made directly to
+        the university by the means published on the Cost &amp; Tuition page.
+      </p>
+      <p>
         The schedule that applies to your programme, and the instalment terms available on it, are
-        published at <strong>${esc(UNIVERSITY.website)}/tuition</strong>. The Finance
-        Office will confirm the amount due for your first period of study when you register.
+        published at <strong>${esc(UNIVERSITY.website)}/tuition</strong>. The Finance Office will
+        confirm what is due and when. <strong>You may begin studying before any of it is
+        settled</strong> — being admitted is what enrols you, not being paid up.
       </p>
       <div class="callout">
         Fees are quoted to you by the Finance Office in writing. No amount is stated in this
         letter, and no member of staff is authorised to agree a different figure with you
         privately. If anyone asks you to pay outside the university's published channels, report
-        it to the Registrar at ${esc(UNIVERSITY.email)}.
+        it to the Office of Admissions at ${esc(ADMISSIONS_EMAIL)}.
       </div>
       `,
     )}
@@ -361,14 +422,18 @@ export function admissionPackageHtml(input: AdmissionPackageInput): string {
           Change your password immediately on first sign-in. Your password is personal to you and
           must not be shared with anyone, including university staff — no one at the university
           will ever ask you for it.</li>
-        <li><strong>Complete registration</strong> before teaching begins. ${
+        <li><strong>Start straight away.</strong> You are enrolled from the date of this letter
+          and may begin studying immediately. Teaching does not wait on the fee schedule, and you
+          do not need to have paid anything further before you start.</li>
+        <li><strong>Register for your courses</strong> in the portal. ${
           online
-            ? 'Registration is completed in the portal.'
-            : 'Registration is completed in person at the Office of the Registrar.'
+            ? 'Everything you need is there; nothing has to be done in person before you begin.'
+            : 'You can do this from the portal before you arrive, and complete your registration formalities with the Office of the Registrar when you get here.'
         }</li>
-        <li><strong>Settle the fees</strong> due for your first period of study, as confirmed by
-          the Finance Office.</li>
-        <li><strong>Register for your courses</strong> in the portal once registration opens.</li>
+        <li><strong>Fees.</strong> The Finance Office will confirm what is due and when. Fees are
+          quoted in US dollars and paid in your own national currency to the ICOF national base in
+          your country — you do not need to find dollars. Ask them for the rate in force before
+          you pay, and keep the receipt.</li>
         ${conditional ? '<li><strong>Meet the conditions above</strong> by the dates given.</li>' : ''}
       </ol>
       <p>If anything in this letter is wrong — your name, your programme, your campus or your mode
@@ -382,7 +447,7 @@ export function admissionPackageHtml(input: AdmissionPackageInput): string {
       <p>Yours sincerely,</p>
       <div class="rule">
         <div class="name">${esc(input.headOfAdmissions)}</div>
-        <div class="office">Head of Admissions</div>
+        <div class="office">Head of Academic Affairs</div>
         <div class="office">${esc(UNIVERSITY.name)}</div>
       </div>
     </div>
@@ -390,7 +455,7 @@ export function admissionPackageHtml(input: AdmissionPackageInput): string {
     <div class="foot">
       This admission package was issued electronically on ${esc(issuedLong)} and is valid without a
       handwritten signature. Its authenticity may be confirmed with the Office of the Registrar at
-      ${esc(UNIVERSITY.email)}, quoting ${esc(input.applicationNumber)} and
+      ${esc(ADMISSIONS_EMAIL)}, quoting ${esc(input.applicationNumber)} and
       ${esc(input.studentNumber)}.
     </div>
 
@@ -435,7 +500,7 @@ study — reply to this email before you register and we will correct it.
 We look forward to welcoming you.
 
 ${input.headOfAdmissions}
-Head of Admissions
+Head of Academic Affairs
 ${UNIVERSITY.name}
 ${UNIVERSITY.address}`;
 }

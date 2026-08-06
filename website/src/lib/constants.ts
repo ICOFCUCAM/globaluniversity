@@ -12,6 +12,11 @@ export const UNIVERSITY = {
   website: 'www.iguc.net',
   established: 2007,
   registrar: 'Prof Lyonga Divine',
+  // Signs every admission letter. The office is Head of Academic Affairs; the
+  // holder is named here so the letter is signed by a person rather than by
+  // whichever account happened to press the button.
+  headOfAcademicAffairs: 'Prof Aaron Ndenka',
+  admissionsEmail: 'admissions@iguc.net',
   viceChancellor: 'Prof Chamayah Meyembi',
 };
 

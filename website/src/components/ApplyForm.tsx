@@ -129,8 +129,10 @@ const REVIEW_SECTIONS: Array<{ title: string; fields: Array<[string, string]> }>
     title: 'Programme applied for',
     fields: [
       ['level', 'Level'], ['field', 'Field'], ['field_other', 'Specialisation'],
-      ['planned_major', 'Planned major'], ['campus', 'Campus'], ['mode', 'Mode of study'],
-      ['start_when', 'Intended start'], ['financing', 'Financing'], ['financing_explain', 'Financing details'],
+      ['planned_major', 'Planned major'], ['campus', 'Campus'],
+      ['mode', 'Where you will study'], ['attendance', 'Attendance'],
+      ['start_when', 'Intended start'], ['financing', 'Financing'],
+      ['financing_explain', 'Financing details'],
     ],
   },
   {
@@ -527,7 +529,22 @@ export default function ApplyForm() {
             </label>
             <Field label="When do you intend to start your studies?" name="start_when" required />
           </div>
-          <Radios label="Mode of study" name="mode" options={['Full Time', 'Part Time', 'ODL']} required />
+          {/* Two questions, not one.
+              This was a single field offering "Full Time / Part Time / ODL",
+              which conflated how often you study with where. An applicant who
+              wanted to study part-time on campus had no way to say so, and
+              "ODL" put distance learning on the same list as attendance —
+              which is part of why the site reads as though the university
+              teaches online and nothing else. It does not: it teaches on two
+              campuses and online, and an applicant should be choosing between
+              them rather than picking one word that means both. */}
+          <Radios
+            label="Where will you study?"
+            name="mode"
+            options={['On campus', 'Online', 'Campus and online']}
+            required
+          />
+          <Radios label="How often?" name="attendance" options={['Full time', 'Part time']} required />
           <Radios label="How do you plan to finance your studies?" name="financing" options={['Self', 'Sponsored']} required />
           <Area label="If sponsored, please explain" name="financing_explain" />
         </div>
@@ -596,7 +613,7 @@ export default function ApplyForm() {
           </div>
           <p className="text-xs text-brand-muted">
             Accepted: PDF/JPG/PNG/DOC/DOCX/ZIP · max 4&nbsp;MB total. Larger documents can be emailed
-            to admission@iguc.net after you submit.
+            to admissions@iguc.net after you submit.
           </p>
           <h2 className={groupCls}>Health & circumstances</h2>
           <Radios label="Have you suffered from any serious illness?" name="illness" options={['Yes', 'No']} />
@@ -654,7 +671,7 @@ export default function ApplyForm() {
           {(!photo || !docFile) && (
             <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs text-amber-900">
               You can submit without these, but the Registrar cannot decide your application until
-              they arrive. Go back to Uploads, or email them to admission@iguc.net afterwards.
+              they arrive. Go back to Uploads, or email them to admissions@iguc.net afterwards.
             </p>
           )}
 
@@ -703,7 +720,7 @@ export default function ApplyForm() {
               {status === 'unconfigured'
                 ? 'Online submission is being set up. Your answers are saved in this browser — please email them to us, or call the admissions office and we will complete your application with you: '
                 : 'Something went wrong sending your application. Your answers are saved in this browser, so you can try again — or send them to us directly: '}
-              <a href="mailto:admission@iguc.net" className="font-semibold underline">admission@iguc.net</a> ·{' '}
+              <a href="mailto:admissions@iguc.net" className="font-semibold underline">admissions@iguc.net</a> ·{' '}
               <a href="tel:+237675133426" className="font-semibold underline">+237 675 133 426</a>.
             </div>
           )}

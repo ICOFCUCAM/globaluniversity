@@ -33,6 +33,19 @@ export default async function TuitionPage() {
           </table>
         </div>
         <p className="mx-auto mt-6 max-w-3xl text-center text-sm text-brand-muted">{tuition.bands}</p>
+        {/* Two things a prospective student most needs to know about money and
+            almost never finds: which currency they actually pay in, and whether
+            they have to pay before they can start. */}
+        <div className="mx-auto mt-8 max-w-3xl space-y-4 rounded-2xl border border-brand-sand bg-white p-6">
+          <div>
+            <h3 className="font-heading text-sm font-bold text-brand-purple">Paying in your own currency</h3>
+            <p className="mt-1.5 text-sm leading-relaxed text-brand-muted">{tuition.currency}</p>
+          </div>
+          <div className="border-t border-brand-sand pt-4">
+            <h3 className="font-heading text-sm font-bold text-brand-purple">When you pay</h3>
+            <p className="mt-1.5 text-sm leading-relaxed text-brand-muted">{tuition.whenToPay}</p>
+          </div>
+        </div>
         <p className="mx-auto mt-6 max-w-3xl text-center text-sm text-brand-muted">{tuition.note}</p>
       </Section>
       <Cta />
