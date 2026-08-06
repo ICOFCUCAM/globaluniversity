@@ -726,7 +726,7 @@ backgroundImage: `url("${art.micro}")`,
           <div style={{ width: '26mm', flex: '0 0 26mm', textAlign: 'right' }}>
             {sec.qr && data.qrSvg ? (
               <div
-                style={{ width: '22mm', height: '22mm', marginLeft: 'auto', background: '#fff', padding: '1mm' }}
+                style={{ width: '24mm', height: '24mm', marginLeft: 'auto', background: '#fff', padding: '1.2mm' }}
                 dangerouslySetInnerHTML={{ __html: data.qrSvg }}
               />
             ) : sec.qr ? (

@@ -51,7 +51,7 @@ execFileSync('npx', [
 ]);
 
 process.env.CREDENTIAL_SECRET = 'k'.repeat(48);
-const { sealParticulars, sealCard, sealMatches, canonicalise, verificationQrSvg } = await import(bundle);
+const { sealParticulars, sealCard, sealAward, sealMatches, canonicalise, verificationQrSvg } = await import(bundle);
 
 const SITE = 'https://iguc.net';
 const base = {
@@ -165,6 +165,34 @@ const extended = sealCard({
   expiresOn: '2030-08-06',
 }, SITE);
 check('extending the expiry changes the card seal', extended.code === card.code, false);
+
+// --- The QR has to scan off paper, which is a size problem. -----------------
+// The long URL encodes as an 87-module symbol. At the 24mm a certificate can
+// spare that is 0.28mm a module, and the practical floor for a phone camera
+// reading printed matter is about 0.5mm — so every certificate carried a QR
+// that could not be scanned, and the document tells the reader to scan it.
+const award = sealAward({
+  credentialId: 'IGUC-BA-26A9-F8K2-P19D',
+  holderName: base.fullName,
+  award: 'Bachelor of Arts',
+  classification: 'Second Class Honours (Upper Division)',
+  programme: 'Christian Counselling',
+  issuedOn: '2026-08-05',
+}, SITE);
+const modulesOf = async (url) =>
+  Number(/viewBox="0 0 (\d+)/.exec(await verificationQrSvg(url, 84))[1]);
+
+check('the short form encodes in fewer modules',
+  (await modulesOf(award.shortVerifyUrl)) < (await modulesOf(award.verifyUrl)), true);
+check('and is coarse enough to scan at 24mm printed (0.5mm a module)',
+  24 / (await modulesOf(award.shortVerifyUrl)) >= 0.5, true);
+check('the short form resolves by credential number',
+  new URL(award.shortVerifyUrl).searchParams.get('id'), 'IGUC-BA-26A9-F8K2-P19D');
+
+// A document that is NOT on the register has nothing to look up, so it keeps
+// the long form. An admission letter is sealed but never registered.
+check('an unregistered document keeps the signed payload in its QR',
+  seal.shortVerifyUrl, seal.verifyUrl);
 
 // --- No key, no seal. -------------------------------------------------------
 // A code that cannot be verified is worse than no code: it invites a reader to

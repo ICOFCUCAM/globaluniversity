@@ -217,7 +217,10 @@ export async function POST(request: Request) {
       cgpa,
       contentHash: hash,
       sealCode: seal.code,
-      qrSvg: await verificationQrSvg(seal.verifyUrl, 84),
+      // The short form. See DocumentSeal.shortVerifyUrl: the long URL encodes
+      // as an 87-module QR, which at the size a certificate can spare is a
+      // quarter of a millimetre a module and does not scan off paper.
+      qrSvg: await verificationQrSvg(seal.shortVerifyUrl, 84),
     },
     auditWarning: auditErr ?? undefined,
   });

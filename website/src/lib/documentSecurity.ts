@@ -56,8 +56,30 @@ export interface SealedParticulars {
 export interface DocumentSeal {
   /** Human-readable, spoken over a telephone: ICOF-4K7Q-9XB2-M3TD. */
   code: string;
-  /** The full URL a reader can open to check it. */
+  /** The full URL a reader can open to check it: payload plus signature. */
   verifyUrl: string;
+  /**
+   * The URL the QR actually carries, for a document that is on the register.
+   *
+   * MEASURED, and the measurement is why this exists. `verifyUrl` is 451
+   * characters — a base64 payload plus a 64-character hex signature — which
+   * encodes as an 87-module QR. Printed at 22mm that is 0.25mm a module, and
+   * the practical floor for a phone camera reading off paper is about 0.5mm.
+   * Every certificate this system produced carried a QR that could not be
+   * scanned, which makes the entire verification story fail at the last inch:
+   * the reader is told to scan, and scanning does not work.
+   *
+   * Short form is the credential number alone, about 45 characters and 33
+   * modules — 0.7mm at the same size, which scans comfortably.
+   *
+   * Nothing is lost by dropping the payload. It was a copy of the award facts
+   * supplied by whoever presented the document, and /verify now resolves the
+   * number against the register instead: the university's own record rather
+   * than the holder's copy of it. That is the stronger check, not the weaker
+   * one. The signature remains printed as the seal code, for a reader with no
+   * camera.
+   */
+  shortVerifyUrl: string;
   /** The exact string the code was computed over, printed so it is checkable. */
   sealedFields: string;
   /**
@@ -147,6 +169,7 @@ export function sealDocument(
     return {
       code: '',
       verifyUrl: `${siteUrl}/verify`,
+      shortVerifyUrl: `${siteUrl}/verify`,
       sealedFields: data,
       sealed: false,
     };
@@ -159,9 +182,19 @@ export function sealDocument(
   }
   const grouped = `ICOF-${code.slice(0, 4)}-${code.slice(4, 8)}-${code.slice(8, 12)}`;
 
+  // The credential number, for the short form. Present on documents that are on
+  // the register; absent on a student card or an admission letter, which are
+  // sealed but not registered — those keep the long form, because there is
+  // nothing to look them up by.
+  const parsed = JSON.parse(data) as Record<string, string>;
+  const registered = parsed.credential_id;
+
   return {
     code: grouped,
     verifyUrl: `${siteUrl}/verify?d=${payload}&s=${digest.toString('hex')}`,
+    shortVerifyUrl: registered
+      ? `${siteUrl}/verify?id=${encodeURIComponent(registered)}`
+      : `${siteUrl}/verify?d=${payload}&s=${digest.toString('hex')}`,
     sealedFields: data,
     sealed: true,
   };
