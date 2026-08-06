@@ -6,6 +6,7 @@ import LoginScreen from './LoginScreen';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
 import AdminDashboard from './dashboard/AdminDashboard';
+import FinanceDashboard from './dashboard/FinanceDashboard';
 import StudentDashboard from './dashboard/StudentDashboard';
 import LecturerDashboard from './dashboard/LecturerDashboard';
 import StudentManagement from './students/StudentManagement';
@@ -124,6 +125,12 @@ export default function AppLayout() {
       case 'programme-resources':
         return <ProgrammeResources />;
       case 'dashboard':
+        // Finance gets a dashboard about money, not one counting lecturers and
+        // departments — and one that does not open with actions this desk is
+        // forbidden to take.
+        if (user?.role === 'finance' || user?.role === 'finance-director') {
+          return <FinanceDashboard onNavigate={setCurrentView} />;
+        }
         if (user?.role === 'admin' || user?.role === 'superadmin') return <AdminDashboard onNavigate={setCurrentView} />;
         if (user?.role === 'student') return <StudentDashboard onNavigate={setCurrentView} />;
         if (user?.role === 'lecturer') return <LecturerDashboard onNavigate={setCurrentView} />;

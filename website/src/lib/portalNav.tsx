@@ -28,13 +28,40 @@ export interface MenuGroup {
   items: MenuItem[];
 }
 
+/**
+ * Every role that signs in to this portal.
+ *
+ * This constant was named ALL and listed four roles: superadmin, admin,
+ * student, lecturer. So a Finance Administrator signing in saw exactly one
+ * menu item — the Finance desk — and no Dashboard, no Settings, no
+ * announcements. They could not reach the screen that changes their own
+ * password, on a system that emails them a temporary one and tells them to
+ * change it immediately.
+ *
+ * The same was true of the Registrar, every Dean, every Head of Department and
+ * the Chancellor. Four roles had a portal; the other eleven had a page.
+ */
+const EVERYONE: UserRole[] = [
+  'superadmin', 'admin', 'chancellor', 'vice-chancellor', 'registrar',
+  'finance-director', 'finance', 'admissions-officer', 'dean', 'hod',
+  'programme-coordinator', 'academic-office', 'lecturer', 'library-staff',
+  'student-affairs', 'student',
+];
+
+/** Everyone whose work is teaching, studying or running a programme. */
+const ACADEMIC: UserRole[] = [
+  'superadmin', 'admin', 'chancellor', 'vice-chancellor', 'registrar',
+  'dean', 'hod', 'programme-coordinator', 'academic-office', 'lecturer', 'student',
+];
+
+/** Retained for the entries that genuinely are staff-and-students only. */
 const ALL: UserRole[] = ['superadmin', 'admin', 'student', 'lecturer'];
 
 export const menuGroups: MenuGroup[] = [
   {
     title: null,
     items: [
-      { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} />, roles: ALL },
+      { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} />, roles: EVERYONE },
     ],
   },
   {
@@ -42,15 +69,15 @@ export const menuGroups: MenuGroup[] = [
     items: [
       { id: 'admissions-finance', label: 'Finance desk', icon: <Wallet size={18} />, roles: ['superadmin', 'admin', 'finance'] },
       { id: 'admissions-registrar', label: 'Registrar desk', icon: <Stamp size={18} />, roles: ['superadmin', 'admin', 'registrar'] },
-      { id: 'students', label: 'Students', icon: <Users size={18} />, roles: ['superadmin', 'admin', 'registrar'] },
+      { id: 'students', label: 'Students', icon: <Users size={18} />, roles: ['superadmin', 'admin', 'registrar', 'admissions-officer', 'finance', 'finance-director', 'dean'] },
     ],
   },
   {
     title: 'Academic',
     items: [
-      { id: 'programme-resources', label: 'Programme resources', icon: <BookMarked size={18} />, roles: ALL },
-      { id: 'courses', label: 'Courses', icon: <BookOpen size={18} />, roles: ALL },
-      { id: 'timetable', label: 'Timetable', icon: <ClipboardList size={18} />, roles: ALL },
+      { id: 'programme-resources', label: 'Programme resources', icon: <BookMarked size={18} />, roles: ACADEMIC },
+      { id: 'courses', label: 'Courses', icon: <BookOpen size={18} />, roles: ACADEMIC },
+      { id: 'timetable', label: 'Timetable', icon: <ClipboardList size={18} />, roles: ACADEMIC },
       { id: 'lms', label: 'Learning (LMS)', icon: <Monitor size={18} />, roles: ALL },
     ],
   },
@@ -71,20 +98,20 @@ export const menuGroups: MenuGroup[] = [
       { id: 'transcript', label: 'Transcript', icon: <FileText size={18} />, roles: ['superadmin', 'admin', 'student'] },
       { id: 'certificate', label: 'Certificate', icon: <Award size={18} />, roles: ['superadmin', 'admin', 'student'] },
       { id: 'documents', label: 'Documents', icon: <FolderOpen size={18} />, roles: ['superadmin', 'admin', 'student'] },
-      { id: 'fees', label: 'Fees & receipts', icon: <Wallet size={18} />, roles: ['superadmin', 'admin'] },
+      { id: 'fees', label: 'Fees & receipts', icon: <Wallet size={18} />, roles: ['superadmin', 'admin', 'finance', 'finance-director'] },
     ],
   },
   {
     title: 'Community',
     items: [
-      { id: 'announcements', label: 'Announcements', icon: <ClipboardList size={18} />, roles: ALL },
-      { id: 'forum', label: 'Discussion forum', icon: <ClipboardList size={18} />, roles: ALL },
+      { id: 'announcements', label: 'Announcements', icon: <ClipboardList size={18} />, roles: EVERYONE },
+      { id: 'forum', label: 'Discussion forum', icon: <ClipboardList size={18} />, roles: EVERYONE },
     ],
   },
   {
     title: 'Insight',
     items: [
-      { id: 'analytics', label: 'Analytics', icon: <BarChart3 size={18} />, roles: ['superadmin', 'admin'] },
+      { id: 'analytics', label: 'Analytics', icon: <BarChart3 size={18} />, roles: ['superadmin', 'admin', 'chancellor', 'vice-chancellor', 'registrar', 'finance-director', 'dean'] },
       { id: 'insights', label: 'Learning analytics', icon: <BarChart3 size={18} />, roles: ['superadmin', 'admin', 'lecturer'] },
       { id: 'audit', label: 'Audit log', icon: <Shield size={18} />, roles: ['superadmin', 'admin'] },
     ],
@@ -96,7 +123,7 @@ export const menuGroups: MenuGroup[] = [
     items: [
       { id: 'accounts', label: 'Accounts', icon: <UserCog size={18} />, roles: ['superadmin'] },
       { id: 'studio', label: 'Credential studio', icon: <Palette size={18} />, roles: ['superadmin'] },
-      { id: 'settings', label: 'Settings', icon: <Settings size={18} />, roles: ALL },
+      { id: 'settings', label: 'Settings', icon: <Settings size={18} />, roles: EVERYONE },
     ],
   },
 ];
