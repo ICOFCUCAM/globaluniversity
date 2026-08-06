@@ -28,37 +28,73 @@ export default function ResultProcessing() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [loadingRoll, setLoadingRoll] = useState(false);
   const [showGradingScale, setShowGradingScale] = useState(false);
 
   useEffect(() => {
-    async function fetchData() {
-      const [coursesRes, studentsRes] = await Promise.all([
-        supabase.from('courses').select('*').order('code'),
-        supabase.from('students').select('*').order('matric_no'),
-      ]);
-      if (coursesRes.data) setCourses(coursesRes.data);
-      if (studentsRes.data) setStudents(studentsRes.data);
-    }
-    fetchData();
+    (async () => {
+      const { data } = await supabase.from('courses').select('*').order('code');
+      setCourses(data ?? []);
+    })();
   }, []);
 
+  /**
+   * The class, not the university.
+   *
+   * This screen loaded every student in the register and listed them under
+   * whichever course was selected. A lecturer teaching a seminar of nine opened
+   * it and was asked to enter marks for the entire student body — and any mark
+   * typed against a student who had never registered for that course would have
+   * been saved as a result for it.
+   *
+   * The roll comes from `enrollments`, which is the record of who registered
+   * for what. If nobody has registered, the correct answer is an empty roll and
+   * a screen that says so, not a list of everybody.
+   */
   useEffect(() => {
-    if (selectedCourse && students.length > 0) {
+    if (!selectedCourse) { setResults([]); return; }
+    let live = true;
+    (async () => {
+      setLoadingRoll(true);
+      const { data: enrolled } = await supabase
+        .from('enrollments')
+        .select('student_id, students(id, first_name, last_name, matric_no, student_number)')
+        .eq('course_id', selectedCourse);
+
+      // Marks already entered for this course, so reopening the screen shows
+      // what was saved rather than a blank sheet inviting re-entry.
+      const { data: existing } = await supabase
+        .from('results')
+        .select('student_id, ca_score, exam_score, total_score, grade, grade_point')
+        .eq('course_id', selectedCourse);
+
+      if (!live) return;
+      const priorBy = new Map((existing ?? []).map((r: any) => [r.student_id, r]));
+
       setResults(
-        students.map((s) => ({
-          studentId: s.id,
-          studentName: `${s.first_name} ${s.last_name}`,
-          matricNo: s.matric_no,
-          caScore: 0,
-          examScore: 0,
-          totalScore: 0,
-          grade: 'F',
-          gradePoint: 0,
-        }))
+        (enrolled ?? [])
+          .map((e: any) => e.students)
+          .filter(Boolean)
+          .sort((a: any, b: any) => (a.last_name ?? '').localeCompare(b.last_name ?? ''))
+          .map((st: any) => {
+            const prior = priorBy.get(st.id);
+            return {
+              studentId: st.id,
+              studentName: `${st.first_name} ${st.last_name}`,
+              matricNo: st.student_number || st.matric_no,
+              caScore: prior?.ca_score ?? 0,
+              examScore: prior?.exam_score ?? 0,
+              totalScore: prior?.total_score ?? 0,
+              grade: prior?.grade ?? '—',
+              gradePoint: prior?.grade_point ?? 0,
+            };
+          }),
       );
+      setLoadingRoll(false);
       setSaved(false);
-    }
-  }, [selectedCourse, students]);
+    })();
+    return () => { live = false; };
+  }, [selectedCourse]);
 
   function updateScore(index: number, field: 'caScore' | 'examScore', value: number) {
     setResults((prev) => {
@@ -257,6 +293,18 @@ export default function ResultProcessing() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#f0ece4] dark:divide-[#2a2333]">
+                  {loadingRoll && (
+                    <tr><td colSpan={7} className="px-5 py-8 text-center text-sm text-[#a49bb0]">
+                      Loading the class roll…
+                    </td></tr>
+                  )}
+                  {!loadingRoll && results.length === 0 && (
+                    <tr><td colSpan={7} className="px-5 py-8 text-center text-sm text-[#6b6076] dark:text-[#9c93ad]">
+                      Nobody has registered for this course yet. The roll here is the list of
+                      students who registered for it — not the whole register — so marks cannot be
+                      entered against someone who is not taking the course.
+                    </td></tr>
+                  )}
                   {results.map((entry, i) => (
                     <tr key={entry.studentId} className="transition-colors hover:bg-[#faf8f4] dark:hover:bg-[#241f2c]">
                       <td className="px-5 py-2.5 text-sm text-[#6b6076] dark:text-[#9c93ad]">{i + 1}</td>
