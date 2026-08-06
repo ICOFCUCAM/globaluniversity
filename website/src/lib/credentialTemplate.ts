@@ -180,6 +180,7 @@ export const WORDING_KEYS: Record<CredentialKind, { key: string; label: string }
     { key: 'degreeLead', label: 'Before the award' },
     { key: 'classificationLead', label: 'Before the classification' },
     { key: 'privileges', label: 'Privileges' },
+    { key: 'attestation', label: 'Attestation (in witness whereof)' },
     { key: 'given', label: 'Date preamble' },
   ],
   transcript: [
@@ -219,6 +220,18 @@ export const DEFAULT_CERTIFICATE_DESIGN: CredentialDesign = {
     degreeLead: 'the Degree of',
     classificationLead: 'with',
     privileges: 'with all the rights, privileges and responsibilities thereunto appertaining',
+    // The operative clause, and it was missing.
+    //
+    // "In witness whereof" is what makes the signatures and the seal below it
+    // mean something: it is the sentence in which the named officers attest,
+    // and without it four signatures sit under a statement nobody has said they
+    // are vouching for. The university's own first certificate carries it —
+    // "In witness whereof by authority duly committed to us, we have hereunto
+    // placed our names and seal of the University" — and it is the oldest and
+    // most load-bearing sentence on an instrument of this kind.
+    attestation:
+      'In witness whereof, by the authority duly committed to us, we have hereunto ' +
+      'placed our names and the seal of the University',
     given: 'Given this',
   },
   // Four, as on the university's own first certificate. Two were missing: the

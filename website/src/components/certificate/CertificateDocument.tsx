@@ -639,8 +639,22 @@ backgroundImage: `url("${art.micro}")`,
           {design.wording.privileges}
         </p>
 
-        <p style={{ ...body(design), margin: '5mm 0 0', fontSize: '12.5px', fontStyle: 'italic' }}>
-          {given}
+        {/* The attestation, then the date.
+            "In witness whereof" is the clause that makes the signatures and
+            seal below it operative — the sentence in which the named officers
+            attest. Without it four signatures sit under a statement nobody has
+            said they are vouching for. It runs into the date because they are
+            one sentence: we have placed our names and seal, given this day. */}
+        <p style={{
+          ...body(design),
+          margin: '5mm 0 0',
+          fontSize: '11.5px',
+          maxWidth: '175mm',
+          lineHeight: 1.55,
+        }}>
+          {design.wording.attestation}
+          {design.wording.attestation?.trim() ? ', ' : ''}
+          <span style={{ fontStyle: 'italic' }}>{given.charAt(0).toLowerCase() + given.slice(1)}</span>
         </p>
 
         {/* A duplicate says so on its face, and names what it replaces.

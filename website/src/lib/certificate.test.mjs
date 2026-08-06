@@ -101,6 +101,17 @@ check(
   true,
 );
 
+// --- The attestation clause. ------------------------------------------------
+// The sentence that makes the signatures and seal operative. Four signatures
+// under a document with no attestation are four names under a statement nobody
+// has said they are vouching for.
+check('the attestation is printed', basic.includes('In witness whereof'), true);
+check(
+  'and runs into the date as one sentence',
+  /placed our names and the seal of the University, given this Fifth Day/.test(basic),
+  true,
+);
+
 // --- The wording follows the kind of award. ---------------------------------
 const diploma = text(render({ degree: 'Diploma in Theology', programme: 'Theology' }));
 check('a diploma is not called a degree', diploma.includes('the Degree of'), false);
