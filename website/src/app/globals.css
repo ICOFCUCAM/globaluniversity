@@ -374,3 +374,52 @@ html {
     color: inherit;
   }
 }
+
+
+/* ---------------------------------------------------------------------------
+   PRINT.
+
+   A university homepage gets printed more than anyone designing it expects:
+   an applicant taking the fee table to a parent, an admissions officer putting
+   the entry requirements in front of somebody without a device, a partner
+   institution filing the accreditation statement. It printed as five wasted
+   pages of dark background, navigation and buttons.
+
+   Nothing here is clever. It is the difference between a page that can be put
+   on a desk and one that cannot.
+   --------------------------------------------------------------------------- */
+@media print {
+  /* Ink is the reader's, not ours. */
+  *, *::before, *::after {
+    background: transparent !important;
+    color: #000 !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  /* Chrome that means nothing on paper: navigation, the scroll rail, the
+     floating buttons, the theme control, decorative photography. */
+  header, footer, nav, [data-chapter]::before,
+  .no-print, [aria-label='Quick links'], [role='region'][aria-roledescription='carousel'] button,
+  [aria-label*='WhatsApp'], [aria-label*='Back to top'] {
+    display: none !important;
+  }
+
+  /* A link whose destination is invisible is a dead end on paper. */
+  a[href^='http']::after,
+  a[href^='/']::after {
+    content: ' (' attr(href) ')';
+    font-size: 0.75em;
+    word-break: break-all;
+  }
+  a[href^='#']::after { content: ''; }
+
+  /* Do not break a heading from what it introduces, or a card in half. */
+  h1, h2, h3 { break-after: avoid-page; }
+  article, figure, li, blockquote { break-inside: avoid; }
+
+  section { padding: 0.75rem 0 !important; }
+  body { font-size: 11pt; line-height: 1.45; }
+
+  @page { margin: 18mm; }
+}
