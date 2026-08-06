@@ -244,7 +244,7 @@ export const heroSlides: HeroSlide[] = [
     title: 'A University in Pursuit of a Brighter Future',
     text: 'Anything you can dream, you can do — and we have the alumni to prove it. Fill out our free online application today.',
     cta: { label: 'Apply Now', href: '/apply' },
-    image: '/images/graduation.jpg',
+    image: '/images/graduation-2024/grad-2024-platform-party.jpg',
   },
 ];
 
@@ -621,7 +621,7 @@ export const programs: Program[] = [
     title: 'Diploma in Ministry',
     level: 'Diploma',
     school: 'Faculty of Theology',
-    image: '/images/ceremonial.jpg',
+    image: '/images/graduation-2024/grad-2024-graduands-line.jpg',
     summary:
       'Practical ministerial formation at diploma level for those already serving in local churches — preaching, pastoral care, church administration and evangelism — leading on to the Bachelor of Ministry or the Bachelor of Theology.',
     outcomes: ['Preaching and teaching', 'Pastoral care', 'Church administration', 'Evangelism and mission'],
@@ -631,7 +631,7 @@ export const programs: Program[] = [
     title: 'Diploma in Christian Leadership',
     level: 'Diploma',
     school: 'Faculty of Theology',
-    image: '/images/grand-ceremony.jpg',
+    image: '/images/graduation-2024/grad-2024-graduands-scrolls.jpg',
     summary:
       'Leadership formation for those carrying responsibility in churches, ministries and Christian organisations. Where the Diploma in Ministry forms the pastor, this diploma forms the leader — governance, stewardship, team building and the handling of conflict, grounded in a biblical understanding of servant leadership.',
     outcomes: ['Servant leadership and character', 'Governance and accountability', 'Team building and delegation', 'Stewardship, conflict and change'],
@@ -641,7 +641,7 @@ export const programs: Program[] = [
     title: 'Bachelor of Divinity',
     level: 'Bachelor',
     school: 'Faculty of Theology',
-    image: '/images/ceremonial.jpg',
+    image: '/images/graduation-2024/grad-2024-graduands-group.jpg',
     summary:
       'The theological route to ordained ministry. Divinity is the more academically weighted of the two ministry bachelors: biblical languages, exegesis and systematic doctrine are studied in depth, and the degree is the natural preparation for the Master of Divinity and for further scholarship.',
     outcomes: ['Biblical languages and exegesis', 'Systematic theology', 'Homiletics', 'Preparation for ordination'],
@@ -681,7 +681,7 @@ export const programs: Program[] = [
     title: 'Master of Theology',
     level: 'Master',
     school: 'Faculty of Theology',
-    image: '/images/grand-ceremony.jpg',
+    image: '/images/graduation-2024/grad-2024-academic-procession.jpg',
     summary:
       'An advanced theological degree emphasising African and Black Hebrew theology, contextual theology and ecotheology, feminist and queer theologies, and disability theology, completed with a thesis.',
     outcomes: ['Contextual theology', 'African Christian history', 'Research methodologies', 'Thesis'],
@@ -692,7 +692,7 @@ export const programs: Program[] = [
     title: 'Master of Divinity',
     level: 'Master',
     school: 'Faculty of Theology',
-    image: '/images/grand-ceremony.jpg',
+    image: '/images/graduation-2024/grad-2024-procession-line.jpg',
     summary:
       'The comprehensive professional degree for ordained ministry — preaching, pastoral care, liturgy, church administration and practical theology, built on the doctrinal and biblical foundation of the Bachelor of Divinity or the Bachelor of Theology.',
     outcomes: ['Homiletics and worship', 'Pastoral theology and care', 'Church administration', 'Ministerial ethics'],
@@ -702,7 +702,7 @@ export const programs: Program[] = [
     title: 'Masters in Evangelism and Mission',
     level: 'Master',
     school: 'Faculty of Theology',
-    image: '/images/ceremonial.jpg',
+    image: '/images/graduation-2024/grad-2024-faculty-robes.jpg',
     summary:
       'Missiology and the practice of evangelism for those sent to plant, to cross cultures and to reach communities that the church has not yet reached — with particular attention to mission within and from Africa.',
     outcomes: ['Missiology and mission history', 'Cross-cultural communication', 'Church planting', 'Contemporary evangelism'],
@@ -712,7 +712,7 @@ export const programs: Program[] = [
     title: 'Master of Arts in Christian Leadership',
     level: 'Master',
     school: 'Faculty of Theology',
-    image: '/images/graduation.jpg',
+    image: '/images/graduation-2024/grad-2024-congregation-row.jpg',
     summary:
       'Advanced leadership study for those directing churches, denominations, Christian organisations and NGOs. The degree treats leadership itself as the object of study — organisational strategy, change, governance and ethics — and concludes with a supervised leadership research project.',
     outcomes: ['Organisational strategy and change', 'Governance and financial stewardship', 'Leadership ethics and supervision', 'Leadership research project'],
@@ -738,7 +738,7 @@ export const programs: Program[] = [
     title: 'Doctor of Philosophy (Ph.D.) in Theology',
     level: 'Doctorate',
     school: 'Faculty of Theology',
-    image: '/images/graduation.jpg',
+    image: '/images/graduation-2024/grad-2024-doctoral-portrait.jpg',
     summary:
       'The university’s research doctorate. Candidates produce an original contribution to theological scholarship under supervision, examined by the Dissertation Council and defended orally.',
     outcomes: ['Advanced research methods', 'Original contribution to knowledge', 'Dissertation and oral defence', 'Academic publishing'],
@@ -761,7 +761,7 @@ export const programs: Program[] = [
     title: 'Doctor of Systematic Theology',
     level: 'Doctorate',
     school: 'Faculty of Theology',
-    image: '/images/ceremonial.jpg',
+    image: '/images/graduation-2024/grad-2024-doctoral-blue.jpg',
     summary:
       'A specialised doctorate in the foundational doctrines of the Christian faith — their historical development, theological implications and contemporary relevance. Where the D.Th. ranges across the discipline, the DSTh stays within systematics: God, Christ, Spirit, humanity, salvation and last things.',
     outcomes: ['Trinitarian theology', 'Christology and soteriology', 'Theological method and hermeneutics', 'Dissertation in systematic theology'],
@@ -771,7 +771,7 @@ export const programs: Program[] = [
     title: 'Doctor of Ministry',
     level: 'Doctorate',
     school: 'Faculty of Theology',
-    image: '/images/grand-ceremony.jpg',
+    image: '/images/graduation-2024/grad-2024-doctoral-gold.jpg',
     summary:
       'The professional doctorate for practising ministers, in Christian Counseling and Administration. Study is grounded in the candidate’s own ministry context, and the final project addresses a problem in that context rather than a question in the literature alone.',
     outcomes: ['Christian counselling', 'Church and organisational administration', 'Reflective ministry practice', 'Applied doctoral project'],
@@ -914,7 +914,7 @@ export const events: EventItem[] = [
     title: 'Graduation',
     date: '2027-01-01',
     location: 'CNPS Hall, Mile 17, Buea',
-    image: '/images/graduation.jpg',
+    image: '/images/graduation-2024/grad-2024-congregation-full.jpg',
     summary: 'The annual graduation ceremony — January 01, at 09:00 AM, CNPS Hall, Mile 17, Buea.',
   },
   {

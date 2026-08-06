@@ -665,7 +665,7 @@ export const degreeLevels: DegreeLevel[] = [
     ],
     requirements: UNDERGRAD_REQUIREMENTS,
     international: 'Proof of English language.',
-    image: '/images/graduation.jpg',
+    image: '/images/graduation-2024/grad-2024-hooding.jpg',
   },
   {
     slug: 'masters-degrees',
@@ -703,7 +703,7 @@ export const degreeLevels: DegreeLevel[] = [
     ],
     international: 'Proof of English language.',
     duration: '2 years',
-    image: '/images/grand-ceremony.jpg',
+    image: '/images/graduation-2024/grad-2024-graduate-family.jpg',
   },
   {
     slug: 'doctoral',
