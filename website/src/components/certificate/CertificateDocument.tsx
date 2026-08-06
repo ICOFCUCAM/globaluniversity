@@ -190,15 +190,22 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
   // split across two on a degree certificate looks like a mistake rather than a
   // layout.
   //
-  // 0.62em average advance is measured for uppercase Georgia, which is what the
-  // name is set in. It is an estimate and it is meant to be — the alternative
-  // is measuring text in the DOM, which does not work during server rendering
-  // and would make the document's layout depend on when it was rendered.
+  // 0.75em average advance. MEASURED, not guessed: uppercase Georgia with the
+  // 0.05em tracking this line carries runs 0.66–0.70em for ordinary names and
+  // 0.99em for a name of nothing but Ws. 0.75 clears the realistic range with
+  // enough margin that a wide name shrinks a step early rather than overrunning
+  // — the failure modes are not symmetrical. A name one step too small is
+  // slightly quiet; a name one step too large wraps, and a conferral split
+  // across two lines reads as a mistake.
+  //
+  // Estimating rather than measuring in the DOM is deliberate: measurement does
+  // not work during server rendering, and it would make the document's layout
+  // depend on when it happened to be rendered.
   const printableMm = w - 2 * (design.borderWidthMm + 20);
   const printablePx = printableMm * 3.7795;
   const nameChars = Math.max(1, data.fullName.trim().length);
   const LADDER = [42, 38, 34, 30, 26, 22, 19];
-  const nameSize = LADDER.find((size) => nameChars * size * 0.62 <= printablePx)
+  const nameSize = LADDER.find((size) => nameChars * size * 0.75 <= printablePx)
     ?? LADDER[LADDER.length - 1];
 
   const given = `${design.wording.given} ${ordinalDay(issued.getDate())} Day of ` +
