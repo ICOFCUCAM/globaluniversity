@@ -223,6 +223,32 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
         }} />
       )}
 
+      {/* The clear zone for the hand-affixed wafer.
+          The watermark was moved off it and the guilloché sized to clear it,
+          but the security ground still tiled straight through — it is inset: 0
+          — and so did the microtext course along the foot. Both would show as a
+          ring of pattern round the edge of a wafer pressed over them, which is
+          exactly the halo the reservation exists to prevent.
+
+          A disc of paper, painted after the ground and before the text, is the
+          simplest thing that cannot be got wrong by a later layer: anything
+          drawn beneath it is hidden, and the text above it is unaffected. */}
+      {reserved && sec.securityGround && (
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            left: '50%',
+            bottom: `${design.borderWidthMm + 11}mm`,
+            transform: 'translateX(-50%)',
+            width: '36mm',
+            height: '36mm',
+            borderRadius: '50%',
+            background: design.paper,
+          }}
+        />
+      )}
+
       {/* Layer 1 — the guilloché rosette, large and faint, behind the text. */}
       {sec.guilloche && (
         <div style={{
