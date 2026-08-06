@@ -55,6 +55,7 @@ import TranscriptDocument from '@/components/transcript/TranscriptDocument';
 import { uvLayerSvg } from '@/lib/credentialArt';
 import ApprovalQueue from './ApprovalQueue';
 import { WORDING_KEYS, TITLE_FONTS } from '@/lib/credentialTemplate';
+import { SECURITY_PATTERNS, watermarkName } from '@/lib/securityPatterns';
 import {
   Palette, Upload, AlertTriangle, CheckCircle2, History, Award, FileText,
   Loader2, Plus, Trash2, RotateCcw, ShieldAlert, ShieldCheck, PenLine,
@@ -467,8 +468,8 @@ export default function CredentialStudio() {
                 hint="What each of these actually achieves is documented in credentialArt.ts, and it is less than the names suggest. None of it stops a determined forger. The control that decides authenticity is the credential number, the QR and the register behind them."
               >
                 <Toggle
-                  label="Guilloché"
-                  detail="The engraved rosette used on banknotes and share certificates. Seeded from each credential's own number, so two documents never carry the same figure."
+                  label={watermarkName(design.security.watermark)}
+                  detail="The central watermark. Seeded from each credential's own number, so two documents never carry the same figure — the pattern is part of the document rather than a background applied to all of them."
                   checked={design.security.guilloche}
                   onChange={(v) => setSecurity('guilloche', v)}
                 />
@@ -495,30 +496,67 @@ export default function CredentialStudio() {
                   <span className="w-12 text-right text-xs text-[#6b6076]">{Math.round(design.security.guillocheOpacity * 100)}%</span>
                 </Row>
                 <Toggle
-                  label="Microtext border"
+                  label="Microtext Security Layer"
                   detail="A rule that is really a line of 1.9pt type carrying this credential's number. Legible under a loupe, a grey smear on any photocopy — which is how an original is told from a copy."
                   checked={design.security.microtextBorder}
                   onChange={(v) => setSecurity('microtextBorder', v)}
                 />
                 <Toggle
-                  label="Security ground"
+                  label="Fine-Line Guilloché Mesh"
                   detail="A fine lattice with the university's initials worked into it, instead of flat paper. Photocopiers dither regular fine patterns badly, so a copy shows moiré where the original shows an even ground."
                   checked={design.security.securityGround}
                   onChange={(v) => setSecurity('securityGround', v)}
                 />
                 <Toggle
-                  label="Engraved seal"
+                  label="Embossed University Seal"
                   detail="Vector, drawn per document from its credential number. The old seal was the website's favicon at 5% opacity — a raster anyone could download, and a flat image a PDF editor can delete in one action."
                   checked={design.security.engravedSeal}
                   onChange={(v) => setSecurity('engravedSeal', v)}
                 />
                 <Toggle
-                  label="Verification QR"
+                  label="ICOF Credential Seal — QR"
                   detail="The only feature here that settles anything. Turning it off makes the design unpublishable, and that is deliberate."
                   checked={design.security.qr}
                   onChange={(v) => setSecurity('qr', v)}
                 />
               </Panel>
+
+              <div className="rounded-xl border border-[#ded6c8] bg-white p-4 dark:border-[#3d3349] dark:bg-[#241d30]">
+                <h3 className="text-sm font-semibold text-[#33234a] dark:text-[#e4dcf0]">
+                  The named patterns
+                </h3>
+                <p className="mt-1 text-xs leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">
+                  Each layer has an official name. An unnamed pattern cannot be ordered from a
+                  printer, cited in a verification procedure, or defended if somebody copies it —
+                  &ldquo;the background&rdquo; is not a thing anyone can point at, and
+                  &ldquo;the ICOF Globe Guilloché at 30% in brand purple&rdquo; is an instruction.
+                </p>
+                <ul className="mt-3 space-y-3">
+                  {SECURITY_PATTERNS.map((pat) => (
+                    <li key={pat.id} className="border-l-2 border-[#e8dcc0] pl-3">
+                      <p className="text-[13px] font-semibold text-[#33234a] dark:text-[#e4dcf0]">
+                        {pat.name}
+                      </p>
+                      <p className="text-[10px] font-medium uppercase tracking-[0.1em] text-[#a49bb0]">
+                        {pat.role}
+                      </p>
+                      <p className="mt-1 text-xs leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">
+                        {pat.what}
+                      </p>
+                      <p className="mt-1 text-xs leading-relaxed text-[#8a8194]">
+                        <strong className="font-semibold">Defends against:</strong> {pat.defends}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-3 text-[11px] leading-relaxed text-[#a49bb0]">
+                  The ™ is a claim of use, which is what it means and all it means. It is not ®,
+                  which may only be used for a mark actually registered with an
+                  intellectual-property office — using ® without a registration is an offence in
+                  most jurisdictions. Register these names if the university wants the stronger
+                  protection.
+                </p>
+              </div>
 
               <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-relaxed text-amber-900">
                 <p className="font-semibold">There is no UV toggle, and there should not be.</p>
