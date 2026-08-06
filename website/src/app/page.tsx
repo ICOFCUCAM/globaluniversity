@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Section, SectionHeading, Eyebrow } from '@/components/Section';
@@ -39,6 +40,28 @@ const PILLARS = [
     body: 'Our instructors have lived what they teach. Programs bridge classroom and workplace so that learning is applied from the first semester.',
   },
 ];
+
+// The homepage's own metadata. The root layout supplies a default title and
+// description for every page; the front page deserves its own, because it is
+// the one whose search result and social card are seen most and the generic
+// template is what appears when somebody shares the university itself.
+export const metadata: Metadata = {
+  title: `${site.name} — A Global University`,
+  description:
+    'Accredited degrees in theology, education, technology and business. Two campuses in '
+    + 'Cameroon, a centre in Nigeria, and every programme delivered online worldwide. '
+    + 'Accredited by the Ministry of Higher Education since 2007.',
+  alternates: { canonical: '/' },
+  openGraph: {
+    title: `${site.name} — A Global University`,
+    description:
+      'Educating leaders for Africa and the world. Certificate to doctorate, on campus in Buea '
+      + 'and Douala or online from anywhere.',
+    url: site.url,
+    siteName: site.name,
+    type: 'website',
+  },
+};
 
 export default async function HomePage() {
   // `stats` and `homeFaculties` are no longer read here. The four WordPress
