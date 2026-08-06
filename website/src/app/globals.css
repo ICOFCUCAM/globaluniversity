@@ -239,11 +239,39 @@ body {
 /* ---- Accessibility & motion ----
    The focus ring lives at the top of this file, in one place. The duplicate
    that used to sit here is gone; see the note there. */
+/* ---------------------------------------------------------------------------
+   REDUCED MOTION.
+
+   The blanket rule below is the standard one and it is not quite enough on its
+   own. Collapsing every animation to 0.01ms leaves anything that animates FROM
+   a transform stuck at its starting position — a Reveal that fades in from
+   ten pixels down never arrives, so a reader who asked for less movement gets
+   content that is permanently slightly out of place, or invisible.
+
+   So: durations collapse AND iteration counts are capped AND the two
+   properties this site actually animates from are reset to their resting
+   values. Somebody who has asked their operating system for less movement has
+   usually asked because movement makes them ill; giving them a broken page
+   instead of a still one is not an improvement.
+   --------------------------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  /* Land, rather than freeze mid-flight. */
+  [data-reveal], .animate-rise, [class*='animate-'] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  /* Ambient loops that exist only as atmosphere are switched off entirely
+     rather than run once very fast, which reads as a flicker. */
+  .animate-crest, .animate-ken-burns {
+    animation: none !important;
   }
 }
 
