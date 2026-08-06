@@ -34,7 +34,7 @@ export default function ProofBand() {
     <section
       aria-label="The university at a glance"
       data-chapter="At a glance"
-      className="relative border-y border-brand-sand/70 bg-brand-cream"
+      className="relative border-y border-brand-sand/70 bg-brand-cream dark:border-white/10 dark:bg-[#181121]"
     >
       <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-16">
         <dl className="grid grid-cols-2 gap-x-6 gap-y-10 sm:gap-y-12 lg:grid-cols-4">
@@ -42,14 +42,14 @@ export default function ProofBand() {
             <div key={f.label} className="group text-center">
               <dt className="sr-only">{f.label}</dt>
               <dd>
-                <span className="block font-heading text-[2.75rem] font-bold leading-none tracking-[-0.02em] text-brand-purple sm:text-[3.25rem]">
+                <span className="block font-heading text-[2.75rem] font-bold leading-none tracking-[-0.02em] text-brand-purple dark:text-white sm:text-[3.25rem]">
                   {f.value}
                 </span>
                 <span
                   aria-hidden="true"
                   className="mx-auto mt-4 block h-[2px] w-8 rounded-full bg-gradient-to-r from-brand-gold-deep to-brand-gold transition-all duration-500 group-hover:w-14"
                 />
-                <span className="mt-4 block font-sans text-[11px] font-semibold uppercase leading-snug tracking-[0.14em] text-brand-muted sm:text-[12px]">
+                <span className="mt-4 block font-sans text-[11px] font-semibold uppercase leading-snug tracking-[0.14em] text-brand-muted dark:text-white/55 sm:text-[12px]">
                   {f.label}
                 </span>
               </dd>
@@ -62,10 +62,10 @@ export default function ProofBand() {
             of them say where they came from; saying so is cheap and it is
             exactly the signal an accreditor, a partner institution or a careful
             parent is looking for. */}
-        <p className="mt-12 text-center font-sans text-[12.5px] leading-relaxed text-brand-muted">
+        <p className="mt-12 text-center font-sans text-[12.5px] leading-relaxed text-brand-muted dark:text-white/50">
           Every figure on this page is counted from the university&rsquo;s own published
           catalogue and records.{' '}
-          <Link href="/accreditation" className="font-semibold text-brand-purple underline decoration-brand-gold decoration-2 underline-offset-4 transition hover:text-brand-purple-dark">
+          <Link href="/accreditation" className="font-semibold text-brand-purple underline decoration-brand-gold decoration-2 underline-offset-4 transition hover:text-brand-purple-dark dark:text-brand-gold dark:hover:text-white">
             Read our accreditation
           </Link>
           .

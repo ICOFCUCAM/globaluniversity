@@ -26,7 +26,7 @@ export default function PathwayLadder() {
     <section
       data-chapter="Pathways"
       aria-labelledby="pathways-heading"
-      className="relative overflow-hidden bg-white py-24 sm:py-32"
+      className="relative overflow-hidden bg-white py-24 dark:bg-[#150f1e] sm:py-32"
     >
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <Reveal>
@@ -36,11 +36,11 @@ export default function PathwayLadder() {
             </p>
             <h2
               id="pathways-heading"
-              className="mt-4 font-heading text-display font-bold text-brand-purple [text-wrap:balance]"
+              className="mt-4 font-heading text-display font-bold text-brand-purple dark:text-white [text-wrap:balance]"
             >
               Start where you are. Go as far as you intend.
             </h2>
-            <p className="mt-6 text-lg leading-relaxed text-brand-muted">
+            <p className="mt-6 text-lg leading-relaxed text-brand-muted dark:text-white/65">
               Each award articulates into the next. A completed diploma may carry advanced standing
               into a bachelor&rsquo;s degree, so the first qualification you earn here is a step
               rather than a ceiling.
@@ -54,7 +54,7 @@ export default function PathwayLadder() {
         <div className="relative mt-16 sm:mt-20">
           <span
             aria-hidden="true"
-            className="absolute left-6 top-0 hidden h-full w-px bg-gradient-to-b from-brand-sand via-brand-gold/50 to-brand-sand sm:block lg:left-0 lg:top-[2.15rem] lg:h-px lg:w-full lg:bg-gradient-to-r"
+            className="absolute left-6 top-0 hidden h-full w-px bg-gradient-to-b from-brand-sand via-brand-gold/50 to-brand-sand dark:from-white/10 dark:via-brand-gold/40 dark:to-white/10 sm:block lg:left-0 lg:top-[2.15rem] lg:h-px lg:w-full lg:bg-gradient-to-r"
           />
 
           <ol className="relative grid gap-8 sm:gap-10 lg:grid-cols-5 lg:gap-6">
@@ -65,7 +65,7 @@ export default function PathwayLadder() {
                       copy on mobile, which is why the rail changes axis. */}
                   <span
                     aria-hidden="true"
-                    className="relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 border-brand-sand bg-white font-heading text-base font-bold text-brand-purple shadow-sm transition duration-500 group-hover:-translate-y-1 group-hover:border-brand-gold group-hover:bg-brand-purple group-hover:text-brand-gold group-hover:shadow-lift lg:mx-auto"
+                    className="relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 border-brand-sand bg-white font-heading text-base font-bold text-brand-purple shadow-sm dark:border-white/15 dark:bg-white/[0.06] dark:text-white transition duration-500 group-hover:-translate-y-1 group-hover:border-brand-gold group-hover:bg-brand-purple group-hover:text-brand-gold group-hover:shadow-lift lg:mx-auto"
                   >
                     {i + 1}
                   </span>
@@ -73,7 +73,7 @@ export default function PathwayLadder() {
                   <div className="min-w-0 lg:mt-6 lg:text-center">
                     <Link
                       href={step.href}
-                      className="font-heading text-xl font-bold text-brand-purple transition group-hover:text-brand-purple-dark"
+                      className="font-heading text-xl font-bold text-brand-purple transition group-hover:text-brand-purple-dark dark:text-white dark:group-hover:text-brand-gold"
                     >
                       <span className="absolute inset-0" aria-hidden="true" />
                       {step.award}
@@ -81,7 +81,7 @@ export default function PathwayLadder() {
                     <p className="mt-1.5 font-sans text-[11px] font-semibold uppercase tracking-[0.12em] text-brand-gold-deep">
                       {step.duration}
                     </p>
-                    <p className="mt-3 text-[15px] leading-relaxed text-brand-muted">{step.note}</p>
+                    <p className="mt-3 text-[15px] leading-relaxed text-brand-muted dark:text-white/60">{step.note}</p>
                   </div>
                 </li>
               </Reveal>
@@ -100,7 +100,7 @@ export default function PathwayLadder() {
             </Link>
             <Link
               href="/admissions"
-              className="group inline-flex items-center gap-2.5 rounded-full border-2 border-brand-purple px-8 py-4 font-heading text-[15px] font-bold text-brand-purple transition duration-300 hover:bg-brand-purple hover:text-white"
+              className="group inline-flex items-center gap-2.5 rounded-full border-2 border-brand-purple px-8 py-4 font-heading text-[15px] font-bold text-brand-purple transition duration-300 hover:bg-brand-purple hover:text-white dark:border-brand-gold dark:text-brand-gold dark:hover:bg-brand-gold dark:hover:text-brand-purple-dark"
             >
               Entry requirements
               <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">→</span>
