@@ -66,6 +66,16 @@ export interface CertificateData {
   issuedOn?: Date;
 }
 
+/**
+ * The printed element's id.
+ *
+ * Fixed rather than generated, because the print rules above have to name it
+ * and a rule cannot reference an id that changes per render. Only one
+ * certificate is ever on screen at a time — it is a modal or a preview pane —
+ * so a constant is safe and a duplicate would be a bug worth catching.
+ */
+const DOC_ID = 'icof-certificate';
+
 const PAGE_MM = {
   A4: { portrait: [210, 297], landscape: [297, 210] },
   Letter: { portrait: [216, 279], landscape: [279, 216] },
@@ -135,7 +145,33 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
     `${issued.toLocaleDateString('en-GB', { month: 'long' })}, ${yearInWords(issued.getFullYear())}`;
 
   return (
+    <>
+      {/* The page.
+          Without this a browser prints an A4 landscape certificate onto
+          portrait stock at its own default margins — so the document came out
+          scaled, cropped at the frame, and centred on nothing. There is no way
+          to set page size from an element; @page is the only mechanism, and it
+          has to be emitted alongside the document rather than sit in a global
+          stylesheet, because the size follows the design the Superadministrator
+          chose.
+
+          margin: 0 because the certificate IS the page. Its frame runs to the
+          sheet edge, and any margin the browser adds is white paper outside a
+          border that was drawn to be the border. */}
+      <style>{`
+        @media print {
+          @page { size: ${design.pageSize} ${design.orientation}; margin: 0; }
+          html, body { margin: 0 !important; padding: 0 !important; background: #fff !important; }
+          body * { visibility: hidden; }
+          #${DOC_ID}, #${DOC_ID} * { visibility: visible; }
+          #${DOC_ID} {
+            position: absolute; left: 0; top: 0;
+            box-shadow: none !important;
+          }
+        }
+      `}</style>
     <div
+      id={DOC_ID}
       ref={ref}
       style={{
         width: `${w}mm`,
@@ -487,6 +523,7 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
         </p>
       </div>
     </div>
+    </>
   );
 });
 
