@@ -351,6 +351,40 @@ export function validateDesign(d: CredentialDesign, kind: CredentialKind = 'cert
       'A certificate is often photocopied and scanned, which loses contrast rather than adding it.',
     );
   }
+
+  // The brand colour, checked against the paper as well.
+  //
+  // Only `ink` was checked, and `ink` is the least of it: the holder's name,
+  // the award, the university's name and the classification are all set in
+  // `brand`. A design could pass validation with unreadable body text made
+  // legible and a pale lilac name — which is to say, with the six words that
+  // matter most on the document illegible and the small print fine.
+  //
+  // 3:1 rather than 4.5:1 because these are large type, and WCAG's large-text
+  // threshold is the right one for 25px and up. Holding display type to the
+  // body-text ratio would rule out most of the colours a university actually
+  // uses.
+  if (hex.test(d.brand) && hex.test(d.paper) && contrast(d.brand, d.paper) < 3) {
+    problems.push(
+      'The brand colour is too close in tone to the paper (contrast below 3:1). ' +
+      'The holder’s name, the award and the university’s name are all set in it — ' +
+      'these are the six words on the document that must survive a photocopy.',
+    );
+  }
+
+  // The gilt against the paper.
+  //
+  // The accent draws the frame, the medallions and the rules. A gold too close
+  // to a cream paper produces a certificate with no visible border at all once
+  // it has been through a fax machine or a scanner set to greyscale — and the
+  // border is what a reader recognises before they read anything.
+  if (hex.test(d.accent) && hex.test(d.paper) && contrast(d.accent, d.paper) < 1.6) {
+    problems.push(
+      'The accent colour is too close to the paper for the frame to survive a greyscale scan. ' +
+      'The border is the first thing a reader recognises, and a gilt that vanishes on a copy ' +
+      'takes it with it.',
+    );
+  }
   if (d.borderWidthMm < 0 || d.borderWidthMm > 10) {
     problems.push('Border width must be between 0 and 10 mm.');
   }
