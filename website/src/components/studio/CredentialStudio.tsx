@@ -384,6 +384,18 @@ export default function CredentialStudio() {
                   <Row label="Border">
                     <Select value={design.border} onChange={(v) => set('border', v as CredentialDesign['border'])} options={['double', 'single', 'none']} />
                   </Row>
+                  <Row label="Bleed">
+                    <Select
+                      value={String(design.bleedMm)}
+                      onChange={(v) => set('bleedMm', Number(v))}
+                      options={['0', '3', '5']}
+                    />
+                  </Row>
+                  <p className="text-[11px] leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">
+                    {design.bleedMm > 0
+                      ? `${design.bleedMm}mm of artwork past the trim, with trim marks. For a commercial press — an office laser printer cannot bleed and will cut the frame off.`
+                      : 'None. Correct for office printing. A commercial press needs 3mm, or the guillotine leaves a white sliver wherever it falls short of the trim line.'}
+                  </p>
                   <Row label="Border width">
                     <input type="range" min={0} max={10} step={0.5} value={design.borderWidthMm}
                       onChange={(e) => set('borderWidthMm', Number(e.target.value))} className="w-full" />

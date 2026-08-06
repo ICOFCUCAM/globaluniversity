@@ -149,6 +149,17 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
   // a blank where the number goes. That failed silently, in the one direction
   // that matters: the document still looked exactly like a certificate.
   const missingId = !data.credentialId?.trim();
+
+  // Bleed and trim. See CredentialDesign.bleedMm.
+  //
+  // The sheet is drawn oversize by the bleed on every side and the artwork runs
+  // into it, so a guillotine falling a millimetre inside the trim line still
+  // cuts through printed frame rather than through white paper. The trim marks
+  // sit in the bleed area itself, which is the part that gets cut away — a mark
+  // inside the trim would be printed on the finished certificate.
+  const bleed = Math.max(0, design.bleedMm ?? 0);
+  const sheetW = w + bleed * 2;
+  const sheetH = h + bleed * 2;
   const issued = data.issuedOn ?? new Date();
   const seed = seedFrom(data.credentialId || 'ICOFGU');
   const sec = design.security;
@@ -227,7 +238,9 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
   const art = useMemo(() => ({
     ground: securityGroundUri(seed, 72, design.brand, UNIVERSITY.shortName, 0.05),
     rosette: guillocheRosetteUri(seed, 520, design.brand, 1),
-    frame: ornateFrameUri(w, h, design.accent, '#8a6d1f', design.borderWidthMm),
+    // Sheet size and a band widened by the bleed, so the trim falls through
+    // the gilt rather than beside it.
+    frame: ornateFrameUri(sheetW, sheetH, design.accent, '#8a6d1f', design.borderWidthMm + bleed),
     band: guillocheBandUri(seed ^ 0x51, 300, 14, design.accent, 0.9),
     micro: microtextBandUri(
       `${UNIVERSITY.name.toUpperCase()} · ${data.credentialId}`, 300, 6, design.brand, 1.9,
@@ -235,7 +248,7 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
     wafer: waferSealUri(seed, 300, design.sealColour || '#b31217',
       `${UNIVERSITY.name.toUpperCase()} · `, UNIVERSITY.shortName),
   }), [
-    seed, w, h, design.brand, design.accent, design.borderWidthMm,
+    seed, sheetW, sheetH, bleed, design.brand, design.accent, design.borderWidthMm,
     design.sealColour, data.credentialId,
   ]);
 
@@ -283,7 +296,7 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
           border that was drawn to be the border. */}
       <style>{`
         @media print {
-          @page { size: ${design.pageSize} ${design.orientation}; margin: 0; }
+          @page { size: ${bleed ? `${sheetW}mm ${sheetH}mm` : `${design.pageSize} ${design.orientation}`}; margin: 0; }
           html, body { margin: 0 !important; padding: 0 !important; background: #fff !important; }
           body * { visibility: hidden; }
           #${DOC_ID}, #${DOC_ID} * { visibility: visible; }
@@ -314,8 +327,11 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
         ` upon ${data.fullName}. Credential number ${data.credentialId}.`
       }
       style={{
-        width: `${w}mm`,
-        height: `${h}mm`,
+        // The document is drawn at the BLEED size, not the trim size, and the
+        // frame is inset by the bleed — so the gilt runs off every edge and the
+        // trim falls through it.
+        width: `${sheetW}mm`,
+        height: `${sheetH}mm`,
         fontFamily: design.fontFamily,
         position: 'relative',
         backgroundColor: design.paper,
@@ -355,7 +371,7 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
           style={{
             position: 'absolute',
             left: '50%',
-            bottom: `${design.borderWidthMm + 11}mm`,
+            bottom: `${bleed + design.borderWidthMm + 11}mm`,
             transform: 'translateX(-50%)',
             width: '36mm',
             height: '36mm',
@@ -401,6 +417,12 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
           Redrawn, not traced. The original is a photograph of a printed sheet
           taken at an angle; re-using it would embed somebody's snapshot of a
           real graduate's certificate into every document the university issues. */}
+      {/* Drawn at the SHEET size, not the trim size, and the band is widened by
+          the bleed. So the gilt starts at the very edge of the oversize sheet
+          and the guillotine cuts THROUGH it — which is the whole point. Insetting
+          the frame to the trim line, as this first did, left blank paper in the
+          bleed area and reproduced exactly the white sliver bleed exists to
+          prevent. After trimming, the visible band is borderWidthMm again. */}
       {design.border === 'ornate' && (
         <div aria-hidden="true" style={{
           position: 'absolute', inset: 0,
@@ -412,7 +434,7 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
       {design.border !== 'none' && design.border !== 'ornate' && (
         <div style={{
           position: 'absolute', inset: 0,
-          border: `${design.borderWidthMm}mm solid ${design.brand}`,
+          border: `${design.borderWidthMm + bleed}mm solid ${design.brand}`,
         }} />
       )}
       {/* A band of guilloché running round the frame, drawn as four strips.
@@ -426,7 +448,7 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
           that is always there. */}
       {design.border === 'double' && sec.guilloche && (() => {
         const band = art.band;
-        const edge = design.borderWidthMm;
+        const edge = bleed + design.borderWidthMm;
         const thick = 6;
         const common: React.CSSProperties = {
           position: 'absolute',
@@ -448,7 +470,7 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
       {design.border !== 'none' && design.border !== 'ornate' && (
         <div style={{
           position: 'absolute',
-          inset: `${design.borderWidthMm + 7.5}mm`,
+          inset: `${bleed + design.borderWidthMm + 7.5}mm`,
           border: `0.4mm solid ${design.accent}`,
         }} />
       )}
@@ -459,9 +481,9 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
       {sec.microtextBorder && (
         <div aria-hidden="true" style={{
           position: 'absolute',
-          left: `${design.borderWidthMm + 8.5}mm`,
-          right: `${design.borderWidthMm + 8.5}mm`,
-          bottom: `${design.borderWidthMm + 5.4}mm`,
+          left: `${bleed + design.borderWidthMm + 8.5}mm`,
+          right: `${bleed + design.borderWidthMm + 8.5}mm`,
+          bottom: `${bleed + design.borderWidthMm + 5.4}mm`,
           height: '1.7mm',
 backgroundImage: `url("${art.micro}")`,
           backgroundRepeat: 'repeat-x',
@@ -497,11 +519,35 @@ backgroundImage: `url("${art.micro}")`,
       )}
 
       {/* ---- The instrument ---------------------------------------------- */}
+      {/* Trim marks, in the bleed area — which is the part that gets cut off.
+          A mark drawn inside the trim line would be printed on the finished
+          certificate, which is the mistake this is most often made with. */}
+      {bleed > 0 && previewGuides !== true && (
+        <div aria-hidden="true">
+          {([[0, 0], [1, 0], [0, 1], [1, 1]] as [number, number][]).map(([xi, yi]) => (
+            <React.Fragment key={`${xi}-${yi}`}>
+              <div style={{
+                position: 'absolute', background: '#000',
+                width: `${Math.max(2, bleed - 1)}mm`, height: '0.2mm',
+                [xi ? 'right' : 'left']: 0,
+                top: `${bleed + (yi ? h : 0)}mm`,
+              }} />
+              <div style={{
+                position: 'absolute', background: '#000',
+                height: `${Math.max(2, bleed - 1)}mm`, width: '0.2mm',
+                [yi ? 'bottom' : 'top']: 0,
+                left: `${bleed + (xi ? w : 0)}mm`,
+              }} />
+            </React.Fragment>
+          ))}
+        </div>
+      )}
+
       <div style={{
         position: 'relative',
         height: '100%',
         boxSizing: 'border-box',
-        padding: `${design.borderWidthMm + 14}mm ${design.borderWidthMm + 20}mm ${design.borderWidthMm + 11}mm`,
+        padding: `${bleed + design.borderWidthMm + 14}mm ${bleed + design.borderWidthMm + 20}mm ${bleed + design.borderWidthMm + 11}mm`,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',

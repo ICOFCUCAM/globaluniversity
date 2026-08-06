@@ -82,6 +82,22 @@ export interface CredentialDesign {
   sealColour: string;
 
   /**
+   * Bleed, in millimetres, for commercial printing. 0 for office printing.
+   *
+   * The frame runs to the sheet edge. A commercial press prints oversize and
+   * trims, and trimming has a tolerance of a millimetre or so either way — so
+   * artwork that stops exactly at the trim line comes back with a white sliver
+   * down one edge wherever the guillotine fell short. The fix is universal and
+   * has been for a century: extend the artwork past the trim and cut through it.
+   *
+   * 3mm is the standard every printer expects. It is off by default because an
+   * office laser printer cannot bleed at all — it has an unprintable margin —
+   * and a bleed set for a press produces a certificate with its frame cut off
+   * on the machine in the Registry.
+   */
+  bleedMm: number;
+
+  /**
    * Whether the seal is printed or left as clear paper for a real one.
    *
    * 'reserved' is the university's practice: a foil wafer is affixed by hand to
@@ -204,6 +220,7 @@ export const DEFAULT_CERTIFICATE_DESIGN: CredentialDesign = {
   titleFont: "'UnifrakturMaguntia', 'UnifrakturMaguntia Fallback', 'Old English Text MT', Georgia, serif",
   sealColour: '#b31217',
   sealPlacement: 'reserved',
+  bleedMm: 0,
   border: 'ornate',
   borderWidthMm: 11,
   sealOpacity: 0.05,

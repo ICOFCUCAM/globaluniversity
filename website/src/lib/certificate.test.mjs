@@ -160,6 +160,21 @@ check(
   42,
 );
 
+// --- Bleed, for a commercial press. -----------------------------------------
+// The frame runs to the sheet edge, and trimming has a tolerance either way. If
+// the artwork stops at the trim line the guillotine leaves a white sliver
+// wherever it falls short — so the artwork extends past the trim and is cut
+// through. Getting this backwards (insetting the frame to the trim line)
+// reproduces the exact fault bleed exists to prevent.
+const bled = { ...DEFAULT_CERTIFICATE_DESIGN, bleedMm: 3 };
+const bledHtml = renderWith(bled);
+check('the sheet is drawn oversize by the bleed on every side',
+  /width:303mm;height:216mm/.test(bledHtml), true);
+check('the page rule asks for the oversize sheet',
+  bledHtml.includes('@page { size: 303mm 216mm; margin: 0; }'), true);
+check('and with no bleed the page is the named stock',
+  renderWith(DEFAULT_CERTIFICATE_DESIGN).includes('@page { size: A4 landscape; margin: 0; }'), true);
+
 // --- A certificate with no number is refused. -------------------------------
 const noId = text(render({ credentialId: '' }));
 check('no credential number means no certificate', noId.includes('No certificate can be rendered'), true);
