@@ -52,14 +52,35 @@ The university's composed device, built outside in:
 - **twelve nodes joined by chords** — the faculties, and the network between
   them;
 - **laurel sprigs** at the four cardinal points;
-- **the world**, turned so that Africa is at its centre, with the coastlines of
-  Africa, Europe, the British Isles, Arabia, the Indian subcontinent, Madagascar
-  and the Brazilian bulge engraved on it;
+- **the world**, as a flat map on the azimuthal equidistant projection — the
+  one on the United Nations emblem — cut at 60°S, with 20°E running straight
+  down so Africa sits at the foot;
 - the **year of foundation** in roman;
 - the **faculty's emblem**.
 
 Seeded from the credential number, so no two documents carry the same figure.
-20°E faces the reader on every one, so the face of the earth is constant.
+20°E is straight down on every one, so the face of the earth is constant.
+
+### Why the map is flat and not a globe
+
+The projection is **circular by construction** — the pole is the centre, every
+meridian a straight radius, every parallel a concentric circle — so it fills a
+roundel without a single coastline cropped. A rectangular map squeezed into the
+same circle loses its corners, which are Alaska and New Zealand, and a map that
+cuts off land to fit its frame reads as a mistake.
+
+It is also the **better security figure**. Its parallels are true circles and
+its meridians true radii at even spacing: that is engine-turning, and a hand
+copy of it goes wrong at every crossing at once. A sphere's meridians are
+ellipses of continuously varying eccentricity, and a hand copy of those drifts
+slowly and forgivingly.
+
+It is **cut at 60°S**, as the UN emblem is, because on this projection the South
+Pole is not a point but the entire outer rim — Antarctica can only be drawn as a
+smear round the edge of the disc.
+
+`security.world: 'globe'` restores the orthographic sphere, which shows one
+hemisphere and hides the other.
 
 ### Four levels of elaboration, by award
 
@@ -107,7 +128,7 @@ doctorate in the same silhouette are one figure at two levels of work.
 
 | Style | What it is |
 |---|---|
-| `seal` | A struck medallion. The classical answer, and the one that reads most like a stamp. |
+| **`seal`** | **The university's silhouette.** A struck medallion. The classical answer, chosen from all five drawn on a real certificate. |
 | `cartouche` | An engraved oval, as on a bookplate or a share certificate. |
 | `shield` | An escutcheon with a chief. The most heraldic, and read as arms before anything on it is legible. |
 | `radiant` | Open rather than closed — the rays run past any boundary, so there is no edge for the eye to stop at. |

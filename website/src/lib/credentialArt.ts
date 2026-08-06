@@ -905,6 +905,184 @@ const COASTLINES: [number, number][][] = [
 ];
 
 /**
+ * The rest of the world, for the flat map only.
+ *
+ * COASTLINES above is the hemisphere a globe turned to 20°E actually shows —
+ * everything past the limb is hidden, so drawing it would have been wasted
+ * geometry. A FLAT map has no limb: every longitude is on the sheet at once,
+ * and a world map with one hemisphere blank is not a world map.
+ *
+ * Coarse on purpose. At 100mm the whole map is the size of a coffee cup and a
+ * fjord is a hair's breadth; what has to survive is the SHAPE a reader
+ * recognises — the taper of South America, the hook of Alaska, the Gulf, the
+ * bulge of Australia. Detail below that is ink for nobody.
+ */
+const WORLD_EXTRA: [number, number][][] = [
+  // North America: Alaska round to Panama, up the eastern seaboard, back along
+  // the Arctic coast.
+  [
+    [-168, 65], [-165, 60], [-153, 58], [-145, 60], [-135, 58], [-130, 54], [-125, 49],
+    [-124, 42], [-121, 35], [-117, 32], [-110, 24], [-105, 20], [-97, 16], [-92, 15],
+    [-87, 13], [-83, 9], [-79, 9], [-83, 15], [-88, 18], [-91, 19], [-95, 19], [-97, 26],
+    [-94, 29], [-89, 29], [-85, 30], [-82, 27], [-80, 25], [-81, 31], [-76, 35], [-74, 39],
+    [-70, 42], [-67, 45], [-64, 45], [-60, 47], [-56, 51], [-64, 60], [-78, 62], [-85, 66],
+    [-95, 68], [-105, 69], [-115, 70], [-130, 70], [-141, 70], [-156, 71], [-165, 68],
+    [-168, 65],
+  ],
+  // Greenland.
+  [
+    [-45, 60], [-42, 63], [-38, 66], [-30, 68], [-22, 70], [-20, 74], [-25, 78], [-35, 82],
+    [-45, 83], [-55, 82], [-62, 78], [-68, 75], [-72, 70], [-65, 65], [-53, 60], [-45, 60],
+  ],
+  // South America, complete. The Brazilian bulge in COASTLINES is only the part
+  // a globe turned to Africa can see.
+  [
+    [-81, 0], [-79, -5], [-76, -14], [-71, -18], [-71, -24], [-73, -37], [-75, -47],
+    [-74, -53], [-68, -55], [-65, -52], [-62, -48], [-62, -41], [-57, -38], [-57, -34],
+    [-53, -33], [-48, -26], [-44, -23], [-39, -18], [-35, -8], [-38, -4], [-44, -2],
+    [-50, 0], [-52, 5], [-60, 8], [-66, 10], [-72, 12], [-77, 8], [-79, 2], [-81, 0],
+  ],
+  // Asia: the Arctic coast east to the Bering Strait, then the Pacific seaboard
+  // down to the Bay of Bengal. Left open where it meets the Indian and Arabian
+  // outlines already in COASTLINES.
+  [
+    [60, 70], [75, 73], [90, 75], [105, 77], [115, 74], [130, 73], [145, 72], [160, 70],
+    [172, 67], [180, 64], [170, 60], [160, 58], [155, 52], [143, 54], [140, 45], [130, 43],
+    [126, 37], [122, 31], [121, 23], [109, 21], [105, 9], [104, 1], [100, 7], [98, 13],
+    [95, 17], [92, 21], [89, 22],
+  ],
+  // Australia.
+  [
+    [113, -22], [114, -27], [118, -34], [125, -32], [132, -32], [138, -35], [141, -38],
+    [147, -38], [150, -37], [153, -32], [153, -27], [146, -19], [142, -11], [136, -12],
+    [130, -12], [125, -14], [121, -19], [113, -22],
+  ],
+  // New Zealand.
+  [
+    [173, -35], [178, -38], [177, -41], [174, -41], [171, -44], [167, -46], [166, -45],
+    [171, -42], [173, -38], [173, -35],
+  ],
+  // Japan.
+  [
+    [130, 31], [132, 34], [136, 35], [140, 36], [141, 41], [145, 44], [142, 42], [139, 38],
+    [135, 34], [131, 32], [130, 31],
+  ],
+  // Sumatra, Java and the lesser Sundas.
+  [
+    [95, 5], [100, 2], [104, -2], [106, -6], [112, -8], [116, -9], [120, -9], [125, -9],
+    [131, -8],
+  ],
+  // Borneo.
+  [
+    [109, 2], [114, 4], [118, 5], [117, 0], [114, -3], [110, -3], [109, 2],
+  ],
+];
+
+/**
+ * The world as a flat map, drawn on the azimuthal equidistant projection.
+ *
+ * WHY THIS PROJECTION AND NOT A RECTANGLE. The device is a roundel. A
+ * rectangular world map cropped into a circle loses the corners, which are
+ * Alaska and New Zealand — and a map that cuts off land to fit its frame looks
+ * like a mistake. The azimuthal equidistant is circular BY CONSTRUCTION: the
+ * North Pole is the centre, every meridian is a straight radius, and every
+ * parallel is a concentric circle. It is the projection on the United Nations
+ * emblem, and it is what "a flat map of the world" means to almost everybody
+ * who has seen one.
+ *
+ * IT IS CUT AT 60°S, as the UN emblem is. On this projection the South Pole is
+ * not a point but the entire outer rim, so Antarctica can only be drawn as a
+ * smear round the edge of the disc. Cutting the map above it is the honest
+ * choice and the conventional one.
+ *
+ * THE ROTATION IS FIXED, not seeded: 20°E runs straight DOWN from the pole, so
+ * Africa sits at the foot of the map, centred, on every certificate the
+ * university issues. The globe it replaces put 20°E at the centre of the
+ * visible face for the same reason — the face of the earth is a constant of the
+ * document, and only the guilloché round it varies.
+ *
+ * Every parallel on this projection is a true circle centred on the pole, so
+ * the graticule doubles as engine-turning: concentric circles at even spacing,
+ * cut by radial meridians. That is a guilloché in everything but name, and it
+ * is why the flat map carries more security weight than the globe did — a
+ * sphere's meridians are ellipses of varying eccentricity and a hand copy goes
+ * wrong slowly; these are circles and radii, and a hand copy goes wrong at
+ * every crossing at once.
+ */
+export function flatWorld(
+  seed: number,
+  size: number,
+  colour: string,
+  opacity = 0.5,
+): string {
+  const R = size / 2;
+  const radius = R * 0.86;
+  const CUT = -60;          // the southern limit of the map
+  const SPAN = 90 - CUT;    // degrees of latitude from pole to rim
+
+  // 20°E points straight down, so Africa is at the foot and centred.
+  const project = (latDeg: number, lonDeg: number) => {
+    const r = ((90 - latDeg) / SPAN) * radius;
+    const a = ((lonDeg - 20) * Math.PI) / 180;
+    return { x: R + r * Math.sin(a), y: R + r * Math.cos(a), front: latDeg >= CUT };
+  };
+
+  const sw = (base: number) => (base * size) / 400;
+  const out: string[] = [];
+
+  // Anything south of the cut is off the map. Dropped rather than clamped: a
+  // clamped point sits ON the rim and draws a false coastline round the edge.
+  const emit = (pts: { x: number; y: number; front: boolean }[], width: number, o: number) => {
+    let run: string[] = [];
+    const flush = () => {
+      if (run.length > 1) {
+        out.push(
+          `<polyline points="${run.join(' ')}" fill="none" stroke="${colour}" ` +
+          `stroke-width="${width.toFixed(2)}" stroke-linejoin="round" ` +
+          `stroke-opacity="${(opacity * o).toFixed(3)}"/>`,
+        );
+      }
+      run = [];
+    };
+    for (const p of pts) {
+      if (!p.front) { flush(); continue; }
+      run.push(`${p.x.toFixed(2)},${p.y.toFixed(2)}`);
+    }
+    flush();
+  };
+
+  // The graticule. Meridians every 20°, parallels every 15°, the equator and
+  // the tropics picked out.
+  for (let lon = 0; lon < 360; lon += 20) {
+    emit([project(88, lon), project(CUT, lon)], sw(0.5), 0.5);
+  }
+  for (let lat = 75; lat >= CUT; lat -= 15) {
+    const pts = [];
+    for (let lon = 0; lon <= 360; lon += 3) pts.push(project(lat, lon));
+    emit(pts, sw(lat === 0 ? 0.85 : 0.46), lat === 0 ? 0.6 : 0.42);
+  }
+  for (const lat of [23.4, -23.4]) {
+    const pts = [];
+    for (let lon = 0; lon <= 360; lon += 3) pts.push(project(lat, lon));
+    emit(pts, sw(0.4), 0.3);
+  }
+
+  // The land. Africa heaviest — it is at the foot of the map and at the centre
+  // of the university's description of itself.
+  [...COASTLINES, ...WORLD_EXTRA].forEach((shape, i) => {
+    emit(shape.map(([lon, lat]) => project(lat, lon)), sw(i === 0 ? 1.6 : 1.0), i === 0 ? 1 : 0.72);
+  });
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+  ${out.join('')}
+  <circle cx="${R}" cy="${R}" r="${radius.toFixed(2)}" fill="none" stroke="${colour}"
+          stroke-width="${sw(1.3).toFixed(2)}" stroke-opacity="${(opacity * 0.95).toFixed(3)}"/>
+  <circle cx="${R}" cy="${R}" r="${(radius * 1.035).toFixed(2)}" fill="none" stroke="${colour}"
+          stroke-width="${sw(0.45).toFixed(2)}" stroke-opacity="${(opacity * 0.5).toFixed(3)}"/>
+</svg>`;
+}
+
+/**
  * The world, turned so that Africa is at the centre of it.
  *
  * THIS IS THE ANSWER TO "the background is generic". A guilloché rosette is
@@ -1318,6 +1496,14 @@ export function africanGlobeOfKnowledge(opts: {
    * device, rather than in a separate blank circle further down the sheet.
    */
   centre?: 'globe' | 'void';
+  /**
+   * Which world the device carries.
+   *
+   * 'flat' is the azimuthal equidistant map — the UN-emblem projection, cut at
+   * 60°S, with 20°E running straight down so Africa is at the foot. 'globe' is
+   * the orthographic sphere it replaced.
+   */
+  world?: 'flat' | 'globe';
   /** The sheet's colour, for the vacant centre. Must match the stock. */
   paper?: string;
 }): string {
@@ -1327,6 +1513,7 @@ export function africanGlobeOfKnowledge(opts: {
   const emblem = opts.emblem ?? 'none';
   const opacity = opts.opacity ?? 1;
   const centre = opts.centre ?? 'globe';
+  const world = opts.world ?? 'flat';
   const paper = opts.paper ?? '#fffdf5';
   const R = size / 2;
   // The whole style name, not its initial. 'seal' and 'shield' both begin with
@@ -1335,7 +1522,7 @@ export function africanGlobeOfKnowledge(opts: {
   // resolved to the FIRST match in the document: the seal's circle. The legend
   // came out running down the side of the wrong figure. An id that is unique
   // "in practice" is not unique.
-  const id = `k${seed.toString(36)}${style}${tier}${centre}`;
+  const id = `k${seed.toString(36)}${style}${tier}${centre}${world}`;
   const f = tierFlags(tier);
   const L: string[] = [];
   const sw = (v: number) => (size * v).toFixed(2);
@@ -1599,7 +1786,8 @@ export function africanGlobeOfKnowledge(opts: {
   if (centre === 'globe') {
     L.push(
       `<g transform="translate(${gx},${gy})">` +
-      africaGlobe(seed, inner, colour, opacity).replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '') +
+      (world === 'flat' ? flatWorld : africaGlobe)(seed, inner, colour, opacity)
+        .replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '') +
       `</g>`,
     );
   } else {

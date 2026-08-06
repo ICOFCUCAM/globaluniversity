@@ -259,6 +259,7 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
           // The device grows with the award, and carries the faculty's emblem.
           tier: deviceTierFor(data.degree),
           style: sec.deviceStyle,
+          world: sec.world,
           emblem: emblemFor(data.faculty),
         })
       : sec.watermark === 'globe'
@@ -295,13 +296,14 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
       founded: romanYear(UNIVERSITY.established),
       tier: deviceTierFor(data.degree),
       style: sec.deviceStyle,
+      world: sec.world,
       emblem: emblemFor(data.faculty),
       centre: 'void',
       paper: design.paper,
     }),
   }), [
     seed, sheetW, sheetH, bleed, design.brand, design.accent, design.borderWidthMm,
-    design.sealColour, design.paper, data.credentialId, sec.watermark, sec.deviceStyle,
+    design.sealColour, design.paper, data.credentialId, sec.watermark, sec.deviceStyle, sec.world,
     data.degree, data.faculty,
   ]);
 
@@ -865,6 +867,20 @@ backgroundImage: `url("${art.micro}")`,
               underneath — so nothing is drawn in that area at all, not the
               watermark, not the guilloché, not a keyline. The dashed marker is
               a Studio guide and never prints. */}
+          {/* The counterweight for the verification block at the other end.
+              WITHOUT IT THE FOOT DOES NOT BALANCE. The QR is 26mm plus a 5mm
+              gap on the right of this row, so the signatures-and-seal group sat
+              15mm LEFT of the sheet's centre — while the seal's mount is pinned
+              to the true centre by `left: 50%`. The two disagreed by 15mm,
+              which is about the amount that makes a document read as assembled
+              rather than composed.
+
+              Reserving the same measure on the left costs a strip of blank
+              paper and buys a foot symmetrical about the middle, with the seal
+              where the eye expects it. Only reserved when there is something to
+              counterweight. */}
+          {sec.qr && <div aria-hidden="true" style={{ flex: '0 0 26mm' }} />}
+
           <SignatureColumn design={design} sigs={leftSigs} />
 
           <div style={{

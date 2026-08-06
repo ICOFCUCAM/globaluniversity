@@ -493,6 +493,18 @@ export default function CredentialStudio() {
                 </p>
                 {design.security.watermark === 'device' && (
                   <>
+                    <Row label="The world">
+                      <Select
+                        value={design.security.world}
+                        onChange={(v) => setSecurity('world', v as CredentialDesign['security']['world'])}
+                        options={['flat', 'globe']}
+                      />
+                    </Row>
+                    <p className="text-[11px] leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">
+                      {design.security.world === 'flat'
+                        ? 'A flat map of the world, on the azimuthal equidistant projection — the one on the United Nations emblem. Circular by construction, so it fits a roundel without anything being cropped off; cut at 60°S, as that emblem is, because on this projection the South Pole is not a point but the whole outer rim. 20°E runs straight down, so Africa sits at the foot of the map on every certificate. Its parallels are true concentric circles and its meridians true radii, which makes the graticule itself engine-turning — a hand copy goes wrong at every crossing at once, where a sphere’s elliptical meridians drift slowly and forgivingly.'
+                        : 'The orthographic sphere: a globe turned so 20°E faces the reader, showing Africa at the centre of the visible face with Europe above it and the Brazilian bulge at the western limb. Only ever shows one hemisphere — the other half of the world is behind it.'}
+                    </p>
                     <Row label="Silhouette">
                       <Select
                         value={design.security.deviceStyle}
@@ -502,7 +514,7 @@ export default function CredentialStudio() {
                     </Row>
                     <p className="text-[11px] leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">
                       {design.security.deviceStyle === 'seal'
-                        ? 'A struck medallion — a closed circle with a double register. The classical answer, and the one that reads most like a stamp. It also repeats the roundness of the QR at the other end of the sheet.'
+                        ? 'The university’s silhouette, chosen from all five drawn on a real certificate. A struck medallion — a closed circle with a double register. Changing it changes the shape every credential this university issues is recognised by, so change it deliberately or not at all.'
                         : design.security.deviceStyle === 'cartouche'
                           ? 'An engraved oval, as on a bookplate or a share certificate. Taller than it is wide, so it carries a portrait-shaped field down the middle of a landscape sheet without filling it.'
                           : design.security.deviceStyle === 'shield'

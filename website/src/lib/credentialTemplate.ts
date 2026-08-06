@@ -186,8 +186,25 @@ export interface CredentialDesign {
      * roundel in the middle while the wide margins do nothing. These are five
      * different shapes rather than five skins — 'panel' in particular is not a
      * roundel at all but a banknote vignette running across the width.
+     *
+     * THE UNIVERSITY CHOSE 'seal', from all five drawn on a real certificate.
+     * That is recorded here because a default that was decided and a default
+     * that was never changed look identical in code, and the difference matters
+     * the next time somebody is tempted to "tidy it up".
      */
     deviceStyle: 'seal' | 'cartouche' | 'shield' | 'radiant' | 'panel';
+    /**
+     * Which world the device carries.
+     *
+     * 'flat' is the azimuthal equidistant map — the UN-emblem projection, cut
+     * at 60°S, with 20°E running straight down so Africa sits at the foot. Its
+     * parallels are true concentric circles and its meridians true radii, which
+     * makes the graticule itself engine-turning: a hand copy goes wrong at every
+     * crossing at once, where a sphere's elliptical meridians drift slowly.
+     *
+     * 'globe' is the orthographic sphere it replaced.
+     */
+    world: 'flat' | 'globe';
     microtextBorder: boolean;
     securityGround: boolean;
     engravedSeal: boolean;
@@ -307,6 +324,7 @@ export const DEFAULT_CERTIFICATE_DESIGN: CredentialDesign = {
     guillocheOpacity: 0.5,
     watermark: 'device-in-rosette',
     deviceStyle: 'seal',
+    world: 'flat',
     microtextBorder: true,
     securityGround: true,
     engravedSeal: true,
