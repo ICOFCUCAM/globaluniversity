@@ -92,7 +92,17 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
    * wafer shows as a ring round its edge.
    */
   previewGuides?: boolean;
-}>(function CertificateDocument({ design, data, version, previewGuides }, ref) {
+  /**
+   * Overprint SPECIMEN across the face.
+   *
+   * Set for anything that is not an issued credential: the Studio preview, a
+   * design under review, a sample. It is not decoration — a certificate is a
+   * document whose whole value is that it cannot be produced casually, and a
+   * system that lets a designer print an indistinguishable copy of one from a
+   * preview pane has handed out a blank.
+   */
+  specimen?: boolean;
+}>(function CertificateDocument({ design, data, version, previewGuides, specimen }, ref) {
   const [w, h] = PAGE_MM[design.pageSize][design.orientation];
   const issued = data.issuedOn ?? new Date();
   const seed = seedFrom(data.credentialId || 'ICOFGU');
@@ -303,6 +313,33 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
           backgroundRepeat: 'repeat-x',
           backgroundSize: 'auto 1.7mm',
         }} />
+      )}
+
+      {/* SPECIMEN.
+          Drawn above every other layer and below nothing, at an opacity that
+          survives a photocopy — the point of the mark is that it is still there
+          on the copy somebody made of the copy. Rendered only when the caller
+          asks for it: an issued certificate must never carry it, and a preview
+          must never be without it. */}
+      {specimen && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 5,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          pointerEvents: 'none',
+        }}>
+          <span style={{
+            transform: 'rotate(-24deg)',
+            fontFamily: 'Helvetica, Arial, sans-serif',
+            fontSize: `${Math.round(Math.min(w, h) * 0.42)}px`,
+            fontWeight: 700,
+            letterSpacing: '0.16em',
+            color: '#b31217',
+            opacity: 0.14,
+            whiteSpace: 'nowrap',
+          }}>
+            SPECIMEN
+          </span>
+        </div>
       )}
 
       {/* ---- The instrument ---------------------------------------------- */}
