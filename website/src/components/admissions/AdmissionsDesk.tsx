@@ -27,7 +27,7 @@ import {
   processedApplications,
   registerFeePayment,
   declineApplication,
-  approveApplication,
+  forwardToAdmissions,
   requestDocuments,
   deferAdmission,
   transferProgramme,
@@ -131,32 +131,29 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
     }
   }
 
+  /**
+   * The Registrar verifies the record and forwards it. It no longer admits.
+   *
+   * This used to call approveApplication, which created the account and sent
+   * the welcome email in one step. The university has separated the two: this
+   * office confirms the record is complete and correct, and the Admissions
+   * Office makes the assessment that admits and issues the package.
+   *
+   * Nothing is emailed here, and no account is created. Both belong to the
+   * step after this one, and the database refuses either from this office.
+   */
   async function onApprove() {
     if (!selected) return;
     setBusy(true);
     try {
-      const res = await approveApplication(selected.id, {
+      await forwardToAdmissions(selected.id, {
         byUserId: user?.id ?? '',
         note: note.trim() || undefined,
-        conditions: conditions.length ? conditions : undefined,
       });
-      if (!res.ok) {
-        setFlash({ tone: 'bad', message: `Not approved — ${res.error}` });
-      } else if ((res as { emailSent?: boolean }).emailSent === false) {
-        // The account exists but the email did not go. Say so precisely: the
-        // applicant is admitted and does not yet know it.
-        setFlash({
-          tone: 'warn',
-          message: `Account created for ${res.email}, but the welcome email could not be sent (${res.error}). The applicant has NOT been told. Their password is shown in the response and must be passed on another way.`,
-        });
-      } else {
-        setFlash({
-          tone: 'ok',
-          message: conditions.length
-            ? `Conditionally admitted. Account created, credentials emailed to ${res.email}, and ${conditions.length} condition${conditions.length === 1 ? '' : 's'} recorded on the record.`
-            : `Approved. Account created and credentials emailed to ${res.email}.`,
-        });
-      }
+      setFlash({
+        tone: 'ok',
+        message: `Verified and forwarded to the Admissions Office. Nothing has been sent to the applicant — the Admissions Office makes the final assessment and issues the admission package.`,
+      });
       setNote('');
       setConditions([]);
       setSelected(null);
@@ -259,7 +256,7 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
           <p className="mt-1 max-w-2xl text-sm text-[#6b6076] dark:text-[#9c93ad]">
             {isFinance
               ? 'Applications awaiting the application fee. Registering a payment turns the record from red to blue and passes it to the Office of the Registrar.'
-              : 'Applications whose fee Finance has registered. Approving an application creates the student’s account on their chosen programme and emails them their login details.'}
+              : 'Applications whose fee Finance has registered. Verify the record and forward it to the Admissions Office, which makes the final assessment and issues the admission package.'}
           </p>
         </div>
         <button
@@ -457,7 +454,7 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
               {!isFinance && !mayAdmit && (
                 <p className="mt-7 flex items-start gap-2 rounded-xl bg-gray-50 p-5 text-sm text-[#6b6076] dark:text-[#9c93ad] ring-1 ring-gray-200">
                   <Lock size={16} className="mt-0.5 shrink-0" />
-                  Your role cannot admit students. Only the Registrar Administrator may approve,
+                  Your role cannot act on this queue. Only the Registrar Administrator may verify and forward,
                   reject or request documents.
                 </p>
               )}
@@ -465,13 +462,14 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
                 <div className="mt-7 space-y-4">
                   <div className="rounded-xl bg-emerald-50 p-5 ring-1 ring-emerald-200">
                     <h3 className="flex items-center gap-2 font-bold text-emerald-900">
-                      <CheckCircle2 size={18} /> Approve
+                      <CheckCircle2 size={18} /> Verify and forward to the Admissions Office
                     </h3>
                     <p className="mt-1.5 text-xs text-emerald-800">
-                      Approving creates this applicant&rsquo;s account on{' '}
-                      <strong>{selected.program || 'the programme they selected'}</strong> and emails
-                      them their matriculation number, username and password. This cannot be undone
-                      from here.
+                      This confirms the record is complete and correct and passes it to the
+                      Admissions Office for final assessment. <strong>Nothing is sent to the
+                      applicant and no account is created</strong> — the Admissions Office admits
+                      and issues the admission package. Conditions are attached at that step, not
+                      this one.
                     </p>
                     <label className="mt-3 block">
                       <span className="text-[10px] font-bold uppercase tracking-wide text-emerald-800">
@@ -554,7 +552,7 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
                       {busy ? <Loader2 size={15} className="animate-spin" /> : <Mail size={15} />}
                       {conditions.length
                         ? `Admit conditionally with ${conditions.length} condition${conditions.length === 1 ? '' : 's'}`
-                        : 'Approve, create account and send credentials'}
+                        : 'Verify and forward to the Admissions Office'}
                     </button>
                   </div>
 
