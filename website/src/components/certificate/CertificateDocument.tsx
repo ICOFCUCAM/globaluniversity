@@ -334,6 +334,23 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
           {data.degree}
         </p>
 
+        {/* The field of study.
+            `programme` was on CertificateData from the first version of this
+            file, was passed in by both callers, and was never once rendered —
+            so every certificate the system could produce named the award and
+            omitted the subject. "Bachelor of Theology" is the degree; "in
+            Theology" is what it is in, and a credential evaluator reads the
+            second as carefully as the first. The university's own certificate
+            carries it.
+
+            Omitted when the programme merely repeats the award — "Bachelor of
+            Theology, in Theology" is noise, not precision. */}
+        {data.programme && !awardNamesProgramme(data.degree, data.programme) && (
+          <p style={{ ...body(design), margin: '2mm 0 0', fontSize: '15px' }}>
+            in {data.programme}
+          </p>
+        )}
+
         {aw.classified && data.classification && (
           // No box round it. The rule under the degree carries the eye down; a
           // bordered panel in the middle of a certificate reads as a form field.
@@ -497,6 +514,20 @@ const small = (d: CredentialDesign): React.CSSProperties => ({
   textTransform: 'uppercase',
   fontFamily: 'Helvetica, Arial, sans-serif',
 });
+
+/**
+ * Does the award's own title already name the programme?
+ *
+ * "Bachelor of Theology" in "Theology" adds nothing and reads as a stutter on a
+ * document with this much white space around it. "Bachelor of Arts" in
+ * "Christian Counselling" is the case the line exists for.
+ */
+function awardNamesProgramme(award: string, programme: string): boolean {
+  const norm = (v: string) => v.toLowerCase().replace(/[^a-z]+/g, ' ').trim();
+  const a = norm(award);
+  const p = norm(programme);
+  return !!p && a.includes(p);
+}
 
 /**
  * A signatory left blank falls back to whoever currently holds that office.
