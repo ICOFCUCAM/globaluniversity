@@ -19,6 +19,7 @@
 // ---------------------------------------------------------------------------
 
 import { NextResponse } from 'next/server';
+import { guard } from '@/lib/adminAuth';
 import { createClient } from '@supabase/supabase-js';
 import { randomBytes } from 'crypto';
 import nodemailer from 'nodemailer';
@@ -158,6 +159,29 @@ ICOF Global University`;
 }
 
 export async function POST(request: Request) {
+  // ---------------------------------------------------------------------
+  // THIS ROUTE HAD NO AUTHENTICATION AT ALL, and it is the route that admits
+  // students.
+  //
+  // It read the approver's identity from `byUserId` IN THE REQUEST BODY — a
+  // self-asserted claim — and then created a Supabase auth account, set a
+  // password on it, wrote a `profiles` row with role 'student', and returned
+  // that password in its own response. Anyone who could reach the URL with a
+  // student id could admit that person and collect their credentials. No
+  // session, no token, no capability check.
+  //
+  // The comments at the top of this file explain at length why the service-role
+  // key must not go to a browser and why the password is generated server-side.
+  // All of that was true and all of it was beside the point: the door was open.
+  //
+  // It is now behind the same guard as every other admin route, and the actor
+  // is taken from the verified token rather than from the body. `byUserId` is
+  // ignored if sent.
+  // ---------------------------------------------------------------------
+  const g = await guard(request, 'admit-student');
+  if (!g.ok) return NextResponse.json({ ok: false, error: g.error }, { status: g.status });
+  const approver = g.caller;
+
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!serviceKey) {
     // Refuse loudly. See the header comment: a silent fallback would email
@@ -170,6 +194,9 @@ export async function POST(request: Request) {
 
   let body: {
     studentId?: string;
+    /** Ignored. Kept in the type so an old client sending it is not a parse
+        error — but the approver is whoever the token says, not whoever the
+        body claims. */
     byUserId?: string;
     note?: string;
     conditions?: { requirement: string; dueBy: string }[];
@@ -179,7 +206,8 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ ok: false, error: 'bad-json' }, { status: 400 });
   }
-  const { studentId, byUserId, note, conditions } = body;
+  const { studentId, note, conditions } = body;
+  const byUserId = approver.id;
   const isConditional = Array.isArray(conditions) && conditions.length > 0;
   if (!studentId) {
     return NextResponse.json({ ok: false, error: 'missing-student-id' }, { status: 400 });

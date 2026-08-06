@@ -278,105 +278,250 @@ export async function admissionPackageHtml(input: AdmissionPackageInput): Promis
   }
 
   annexes.push({
-    title: 'Fees and payment',
+    title: 'Tuition fees, financial regulations and payment arrangements',
     body: `
-      <p>
-        The university operates two fee bands. Students from Africa and the Global South are
-        charged a subsidised rate, funded as scholarship by the International Circle of Faith.
-        Students from Europe and North America are charged a higher rate.
-      </p>
-      <p>
-        <strong>All fees are quoted in US dollars, and you do not have to pay in dollars.</strong>
-        Payment is made in your own national currency to the ICOF national base in your country,
-        which issues your receipt and remits to the university. Ask the national base for the rate
-        in force before you pay, and keep the receipt — it is what the Finance Office matches your
-        record against. Where no national base has been established, payment is made directly to
-        the university by the means published on the Cost &amp; Tuition page.
-      </p>
-      <p>
-        The schedule that applies to your programme, and the instalment terms available on it, are
-        published at <strong>${esc(UNIVERSITY.website)}/tuition</strong>. The Finance Office will
-        confirm what is due and when. <strong>You may begin studying before any of it is
-        settled</strong> — being admitted is what enrols you, not being paid up.
-      </p>
+      <p>This Annexe forms part of your offer and sets out the regulations governing tuition,
+      payment, sponsorship and financial responsibility. Read it before you pay anything to the
+      university or to an ICOF national office.</p>
+
+      <h3>1. Tuition policy</h3>
+      <p>The university charges according to the region in which a student ordinarily resides.
+      This is what allows it to extend assistance to students from economically disadvantaged
+      regions while sustaining the institution.</p>
+
+      <h3>2. The two fee bands</h3>
+      <p><strong>Africa and the Global South.</strong> A subsidised rate, made possible by
+      educational support from the International Circle of Faith and other partners. The subsidy
+      is part of the university's mission rather than an automatic entitlement, and the University
+      Council may review it.</p>
+      <p><strong>Europe and North America.</strong> The international schedule, which reflects the
+      full cost of delivery and contributes towards the scholarships that fund the subsidised
+      band.</p>
+
+      <h3>3. Currency</h3>
+      <p>All fees are published in <strong>United States dollars</strong> as a uniform
+      international reference. <strong>You are not expected to find dollars.</strong> Publication
+      in dollars does not oblige you to obtain or remit US currency.</p>
+
+      <h3>4. Payment through an ICOF national office</h3>
+      <p>Where a recognised ICOF national office exists in your country, payment is normally made
+      there. That office receives the payment, issues an official receipt, records the transaction,
+      remits the funds and notifies the Finance Department.</p>
+      <p><strong>Keep every receipt.</strong> Receipts are the primary evidence the Finance
+      Department reconciles your record against, and without them verification is delayed.</p>
+
+      <h3>5. Countries without a national office</h3>
+      <p>Pay the university directly, by one of the methods it publishes officially. Only payment
+      instructions issued through the university's own channels are valid. Never act on banking
+      details received through social media, a messaging application or a conversation.</p>
+
+      <h3>6. Exchange rates</h3>
+      <p>Obtain the rate in force from the national office or the Finance Department before you
+      pay. Rates move with banking regulation and market conditions, and a rate quoted earlier
+      cannot be guaranteed indefinitely.</p>
+
+      <h3>7. The schedule</h3>
+      <p>The schedule for your programme, with instalment arrangements and deadlines, is published
+      at <strong>${esc(UNIVERSITY.website)}/tuition</strong>. That published schedule is the
+      authoritative statement of what you owe. Revisions are notified through official channels.</p>
+
+      <h3>8. Who tells you what is due</h3>
+      <p>The Finance Department communicates directly with you about fees, administrative and
+      graduation charges, schedules, balances, instalments, scholarships and sponsorships. Rely on
+      its written communication and on nothing else.</p>
+
+      <h3>9. You may begin studying now</h3>
+      <p><strong>Admission is enrolment.</strong> You may start immediately. The university
+      deliberately separates academic participation from financial scheduling so that learning is
+      not interrupted; unless the Finance Department restricts it specifically, you need not
+      postpone study pending settlement. Financial obligations continue alongside your progress.</p>
+
+      <h3>10. Authorised quotations only</h3>
+      <p>The only amounts the university recognises are those the Finance Department states
+      officially. No employee, representative, agent, lecturer, administrator or contractor has
+      authority to negotiate a private arrangement or quote an unofficial fee.</p>
+
       <div class="callout">
-        Fees are quoted to you by the Finance Office in writing. No amount is stated in this
-        letter, and no member of staff is authorised to agree a different figure with you
-        privately. If anyone asks you to pay outside the university's published channels, report
-        it to the Office of Admissions at ${esc(ADMISSIONS_EMAIL)}.
-      </div>`,
+        <strong>11. Fraud.</strong> The university has zero tolerance for financial fraud. Never
+        transfer funds to a personal bank account, a mobile-money account or a cryptocurrency
+        wallet. If anyone asks you to pay outside the published procedures, report it at once to
+        the Office of Admissions at ${esc(ADMISSIONS_EMAIL)} or to the Finance Department.
+      </div>
+
+      <h3>12. Receipts</h3>
+      <p>Every legitimate payment is acknowledged by an official receipt. Keep them all until
+      graduation and beyond: they may be required for reconciliation, registration, examination
+      and graduation clearance, transcripts and credential verification.</p>
+
+      <h3>13. Financial holds</h3>
+      <p>Where significant obligations remain outstanding beyond the agreed arrangements, the
+      university may place a temporary hold on selected services — transcripts, graduation
+      clearance, release of a certificate, enrolment for a further semester. Wherever reasonably
+      possible you will be notified before any hold is applied.</p>
+
+      <h3>14. Enquiries</h3>
+      <p>Direct all questions about fees, instalments, scholarships, refunds and records to the
+      Finance Department through the university's published channels. Do not rely on informal
+      advice from other students or third parties.</p>`,
   });
 
   annexes.push({
-    title: 'Academic regulations you are accepting',
+    title: 'Academic regulations governing your studies',
     body: `
-      <p>By registering you accept the university's academic regulations. The provisions you are
-      most likely to need are set out here; the full regulations are published at
+      <p>By completing registration, activating your student account or taking part in any
+      academic activity, you accept these regulations and any future amendment lawfully adopted by
+      the Senate. What follows is a summary; the complete regulations, faculty policies and
+      examination procedures are published at
       <strong>${esc(UNIVERSITY.website)}/academic-regulations</strong>.</p>
 
-      <h3>Grading and the pass mark</h3>
-      <p>The pass mark is <strong>${esc(passMark)}</strong>. Grades are awarded on the following
-      scale, and grade points run to 4.00.</p>
+      <h3>I. The academic system</h3>
+      <p>The university operates a competency-based system. Every programme is structured around
+      defined learning outcomes, credit requirements, assessment methods and graduation standards
+      approved by the Senate.</p>
+
+      <h3>II. Pass mark and grading</h3>
+      <p>The minimum pass for every taught course is <strong>${esc(passMark)}</strong>. Marks below
+      it are a fail unless an approved programme regulation provides otherwise. Grade points run
+      to 4.00.</p>
       <table class="grade-table">
-        <tr><th>Grade</th><th>Range</th><th>Points</th><th>Descriptor</th></tr>
+        <tr><th>Grade</th><th>Range</th><th>Points</th><th>Classification</th></tr>
         ${gradeScale.map((g) => `
         <tr><td>${esc(g.grade)}</td><td>${esc(g.range)}</td><td>${esc(g.points)}</td><td>${esc(g.descriptor)}</td></tr>`).join('')}
       </table>
+      <p>The GPA and the cumulative GPA are calculated under the university's approved policies.</p>
 
-      <h3>Assessment</h3>
-      <p>Taught courses are assessed on four components — participation 20%, assignments 30%,
-      examinations 30% and presentations 20%. Every component carries a mark, and a component not
-      submitted is marked zero.</p>
-
-      <h3>Degree classification</h3>
+      <h3>III. Methods of assessment</h3>
+      <p>Genuine achievement cannot be measured by written examination alone. Unless the Faculty
+      Board approves otherwise, every taught course is assessed on four components.</p>
       <table class="grade-table">
-        <tr><th>Classification</th><th>Requires</th></tr>
-        ${classificationBands.map((b) => `
-        <tr><td>${esc(b.label)}</td><td>${esc(b.basis)} (CGPA ${b.min.toFixed(2)})</td></tr>`).join('')}
+        <tr><th>Component</th><th>Weight</th></tr>
+        <tr><td>Class participation</td><td>20%</td></tr>
+        <tr><td>Coursework and assignments</td><td>30%</td></tr>
+        <tr><td>Final examination</td><td>30%</td></tr>
+        <tr><td>Presentations, seminars or practical work</td><td>20%</td></tr>
       </table>
+      <p>Each component counts independently. A component not attempted, without approved
+      justification, is marked zero.</p>
 
-      <h3>Academic integrity</h3>
-      <p>Plagiarism, the fabrication of data, and the submission of work that is not your own are
-      academic misconduct. So is presenting work generated by another person or by a machine as
-      your own. Misconduct is dealt with under the university's disciplinary process, and a finding
-      may result in the cancellation of a mark, of a course, or of your admission.</p>
+      <h3>IV. Coursework and continuous assessment</h3>
+      <p>Assignments must be your own original work. Deadlines published by the lecturer or through
+      the learning management system are binding, and late submission may attract a penalty unless
+      an extension has been approved.</p>
 
-      <h3>Discipline and appeal</h3>
-      <p>Disciplinary matters are heard under the process published in the Student Handbook. You
-      have the right to be told the case against you, to answer it, and to appeal a decision to the
-      Registrar within fourteen days of being notified of it.</p>`,
+      <h3>V. Examinations</h3>
+      <p>Examinations are conducted under conditions approved by the Senate. You must arrive
+      punctually, present valid university identification, occupy only your allocated seat and
+      comply with all invigilation instructions. The university may invalidate any examination
+      where misconduct or procedural irregularity has occurred.</p>
+
+      <h3>VI. Degree classification</h3>
+      <table class="grade-table">
+        <tr><th>Classification</th><th>Minimum requirement</th></tr>
+        ${classificationBands.map((b) => `
+        <tr><td>${esc(b.label)}</td><td>CGPA ${b.min.toFixed(2)} — ${esc(b.basis)}</td></tr>`).join('')}
+      </table>
+      <p>The Senate approves every classification before graduation, and no award is made until all
+      academic and administrative requirements have been met.</p>
+
+      <h3>VII. Academic integrity</h3>
+      <p>Misconduct includes plagiarism; fabricating or falsifying research data; impersonation in
+      examinations; unauthorised collaboration; cheating; submitting work prepared wholly or
+      substantially by another person; presenting machine-generated material as your own original
+      work without the acknowledgement university policy requires; forging academic documents; and
+      altering official records.</p>
+
+      <h3>VIII. Disciplinary sanctions</h3>
+      <p>A finding of misconduct may lead to a formal warning, reduction of marks, a mark of zero,
+      failure of a course, suspension, termination of registration, withdrawal of academic
+      privileges, or <strong>revocation of an award where fraud is discovered after
+      graduation</strong>. The university may report criminal conduct to the civil authorities
+      where the law requires it.</p>
+
+      <h3>IX. Your rights</h3>
+      <p>You are entitled to fair assessment; equal treatment without unlawful discrimination;
+      timely publication of results; academic supervision; respectful treatment by staff;
+      protection of your personal information; access to the regulations; and due process in any
+      disciplinary proceeding.</p>
+
+      <h3>X. Right of appeal</h3>
+      <p>Appeals are submitted in writing to the Office of the Registrar within
+      <strong>fourteen calendar days</strong> of formal notification of the decision, stating the
+      decision challenged, the grounds, and the evidence relied on. The decision of the Appeals
+      Committee is the final internal determination unless University Statute provides otherwise.</p>
+
+      <h3>XI. Amendment</h3>
+      <p>The Senate may revise these regulations where necessary for the university's academic
+      mission or to meet legal or accreditation requirements. Material amendments are notified
+      through official channels.</p>`,
   });
 
   annexes.push({
-    title: 'What to do next',
+    title: 'Registration, commencement of studies and student onboarding',
     body: `
-      <ol class="terms">
-        <li><strong>Sign in to the student portal</strong> at
-          <strong>${esc(input.portalUrl)}</strong> using your student number
-          ${input.temporaryPassword ? 'and the temporary password sent in the covering email' : 'and the password issued to you'}.
-          Change your password immediately on first sign-in. Your password is personal to you and
-          must not be shared with anyone, including university staff — no one at the university
-          will ever ask you for it.</li>
-        <li><strong>Check your particulars</strong> on page 1 of this letter against your
-          identity documents. Your name, date of birth and nationality are printed there exactly
-          as they will appear on your award. Anything wrong must be corrected before you register.</li>
-        <li><strong>Start straight away.</strong> You are enrolled from the date of this letter
-          and may begin studying immediately. Teaching does not wait on the fee schedule, and you
-          do not need to have paid anything further before you start.</li>
-        <li><strong>Register for your courses</strong> in the portal. ${
-          online
-            ? 'Everything you need is there; nothing has to be done in person before you begin.'
-            : 'You can do this from the portal before you arrive, and complete your registration formalities with the Office of the Registrar when you get here.'
-        }</li>
-        <li><strong>Fees.</strong> The Finance Office will confirm what is due and when. Fees are
-          quoted in US dollars and paid in your own national currency to the ICOF national base in
-          your country — you do not need to find dollars. Ask them for the rate in force before
-          you pay, and keep the receipt.</li>
-        ${conditional ? '<li><strong>Meet the conditions in Annexe A</strong> by the dates given.</li>' : ''}
-      </ol>
-      <p>If anything in this letter is wrong — your name, your date of birth, your programme, your
-      campus or your mode of study — reply to the email that carried it <em>before</em> you
-      register, and the Office of Admissions will correct it.</p>`,
+      <p>Your admission is already approved. What follows is administrative, and is intended to
+      move you into the university's academic community.</p>
+
+      <h3>I. Activating your student account</h3>
+      <p>The university has created your student account. Sign in at
+      <strong>${esc(input.portalUrl)}</strong> using <strong>your student number</strong> and the
+      <strong>temporary password sent to your email address</strong> — the external address you
+      gave during application. You will be required to set a new password on first sign-in.</p>
+      <div class="callout">
+        <strong>The temporary password is not printed in this document, deliberately.</strong>
+        This package is a PDF you may forward to a sponsor, an employer or a ministry of education.
+        A password inside it would travel with every copy. It is sent once, to you, by email.
+        No employee, lecturer or administrator of this university will ever ask you for it, and
+        the university is not responsible for access obtained through credentials you disclose.
+      </div>
+
+      <h3>II. Check your particulars</h3>
+      <p>Before registering, check everything on page 1 against your identity documents — your
+      full legal name, date of birth, nationality, programme, faculty, campus, mode of study and
+      intake. These become your official academic record and will appear exactly as printed on your
+      student identity card, transcript, statement of results, graduation list, degree certificate,
+      diploma supplement and every verification record.</p>
+      <p><strong>Report any error to the Office of Admissions immediately</strong>, at
+      ${esc(ADMISSIONS_EMAIL)}. Corrections requested after registration or after graduation may
+      require additional procedure and supporting documents.</p>
+
+      <h3>III. Commencement</h3>
+      <p>Your admission is effective from the date of this letter and you are an enrolled student
+      from that date. Teaching runs to the published academic calendar. Begin accessing materials,
+      attending, and completing assignments without delay — early engagement is the single largest
+      predictor of academic success.</p>
+
+      <h3>IV. Course registration</h3>
+      <p>Register your courses in the portal. Registration is what allows the university to
+      allocate you to classes, assign lecturers, generate registers, give you access to online
+      resources, schedule your examinations and keep an accurate record. Registering late may
+      delay your progression.</p>
+
+      <h3>V. Registration with the Registrar</h3>
+      <p>${online
+        ? 'Your programme is delivered online and nothing must be done in person before you begin. The Office of the Registrar may still ask to verify original documents.'
+        : 'Report to the Office of the Registrar on arrival. The Registrar verifies the original documents submitted with your application and confirms your record; registration is complete only once that verification has concluded.'}</p>
+
+      <h3>VI. Fees</h3>
+      <p>The Finance Department will communicate directly with you. See Annexe C for the financial
+      regulations in full.</p>
+
+      <h3>VII. Official communication</h3>
+      <p>The university communicates through your registered email address, the student portal,
+      official notices, and the Offices of Admissions and of the Registrar. Check them regularly:
+      <strong>not having read an official communication does not relieve you of the
+      responsibility it carries.</strong></p>
+
+      <h3>VIII. Your responsibilities</h3>
+      <p>You agree to comply with the university's statutes, regulations and procedures; to
+      maintain academic integrity; to respect the rights of other students and of staff; to
+      safeguard your portal credentials; to keep your personal records accurate; to participate
+      actively; and to meet the academic and financial obligations of your programme.</p>
+
+      <h3>IX. Where to get help</h3>
+      <p>Admissions: ${esc(ADMISSIONS_EMAIL)}. Registration: the Office of the Registrar. Fees:
+      the Finance Department. Anything academic: your Faculty Office.</p>
+
+      ${conditional ? '<h3>X. Your conditions</h3><p>This offer carries conditions, set out in Annexe A. Meet them by the dates given.</p>' : ''}`,
   });
 
   const annexeLetter = (i: number) => String.fromCharCode(65 + i);

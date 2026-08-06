@@ -265,7 +265,16 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
     'recompute-gpa',
   ],
 
-  'academic-office': ['assign-lecturers', 'build-timetable', 'manage-courses', 'approve-credential-design', 'recompute-gpa'],
+  // The Head of Academic Affairs approves admissions and SIGNS the admission
+  // letter — the signature on page 1 is theirs. An office that signs the offer
+  // but cannot issue it would mean somebody else pressing the button under
+  // their name, which is precisely the arrangement the signature exists to
+  // prevent.
+  'academic-office': [
+    'assign-lecturers', 'build-timetable', 'manage-courses',
+    'approve-credential-design', 'recompute-gpa',
+    'admit-student', 'reject-application', 'request-documents',
+  ],
 
   dean: ['view-admitted-students', 'approve-transfers', 'monitor-progress'],
 
