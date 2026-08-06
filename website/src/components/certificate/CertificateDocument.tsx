@@ -177,24 +177,29 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
   const blackletter = /unifraktur|fraktur|blackletter|old english|cloister/i
     .test(design.titleFont ?? '');
 
-  // The name is set to fit, not to a fixed size.
+  // The name is set to fit the sheet it is printed on.
   //
-  // 40px suits "Grace Nalova Meyembi". It does not suit "Emmanuella Chiamaka
-  // Nwachukwu-Adeyemi Oluwatosin", which at 40px is 300mm wide on a 297mm sheet
-  // — so the one name on the document that must be legible was the one certain
-  // to break it. Wrapping is worse than shrinking here: a conferral reads as one
-  // line, and a name split across two on a degree certificate looks like a
-  // mistake rather than a layout.
+  // 40px suits "Grace Nalova Meyembi" on a landscape A4. It does not suit
+  // "Emmanuella Chiamaka Nwachukwu-Adeyemi Oluwatosin", and it does not suit
+  // either of them on a PORTRAIT sheet, which is 87mm narrower — the first
+  // version of this counted characters and ignored the page, so a perfectly
+  // ordinary three-part name broke onto two lines in portrait while the code
+  // was satisfied it had fitted.
   //
-  // The steps are coarse on purpose. Continuous scaling would give every
-  // graduate a slightly different size, and a stack of certificates from one
-  // ceremony should look like a set.
-  const nameLength = data.fullName.trim().length;
-  const nameSize = nameLength <= 22 ? 42
-    : nameLength <= 30 ? 36
-    : nameLength <= 40 ? 30
-    : nameLength <= 52 ? 25
-    : 21;
+  // Wrapping is worse than shrinking: a conferral reads as one line, and a name
+  // split across two on a degree certificate looks like a mistake rather than a
+  // layout.
+  //
+  // 0.62em average advance is measured for uppercase Georgia, which is what the
+  // name is set in. It is an estimate and it is meant to be — the alternative
+  // is measuring text in the DOM, which does not work during server rendering
+  // and would make the document's layout depend on when it was rendered.
+  const printableMm = w - 2 * (design.borderWidthMm + 20);
+  const printablePx = printableMm * 3.7795;
+  const nameChars = Math.max(1, data.fullName.trim().length);
+  const LADDER = [42, 38, 34, 30, 26, 22, 19];
+  const nameSize = LADDER.find((size) => nameChars * size * 0.62 <= printablePx)
+    ?? LADDER[LADDER.length - 1];
 
   const given = `${design.wording.given} ${ordinalDay(issued.getDate())} Day of ` +
     `${issued.toLocaleDateString('en-GB', { month: 'long' })}, ${yearInWords(issued.getFullYear())}`;

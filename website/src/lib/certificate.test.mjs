@@ -128,6 +128,27 @@ check('a long name is set smaller than a short one',
   true);
 check('the long name still appears in full', text(longHtml).includes(longName), true);
 
+// --- The name fits the sheet it is printed on, not a character count. -------
+// The first version counted characters and ignored the page width, so an
+// ordinary three-part name broke onto two lines on a portrait sheet while the
+// code was satisfied it had fitted.
+const portrait = { ...DEFAULT_CERTIFICATE_DESIGN, orientation: 'portrait' };
+const renderWith = (design, data = {}) =>
+  renderToStaticMarkup(React.createElement(CertificateDocument, {
+    design, data: { ...BASE, ...data },
+  }));
+const sizeIn = (html) => Number(/font-size:(\d+)px;line-height:1\.12/.exec(html)?.[1]);
+check(
+  'the same name is set smaller on the narrower sheet',
+  sizeIn(renderWith(portrait)) < sizeIn(renderWith(DEFAULT_CERTIFICATE_DESIGN)),
+  true,
+);
+check(
+  'a name that fits landscape at full size is not shrunk needlessly',
+  sizeIn(renderWith(DEFAULT_CERTIFICATE_DESIGN, { fullName: 'John Doe' })),
+  42,
+);
+
 // --- A certificate with no number is refused. -------------------------------
 const noId = text(render({ credentialId: '' }));
 check('no credential number means no certificate', noId.includes('No certificate can be rendered'), true);
