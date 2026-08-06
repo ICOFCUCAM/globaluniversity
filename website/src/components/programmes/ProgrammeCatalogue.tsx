@@ -1,7 +1,15 @@
 'use client';
 
 // ---------------------------------------------------------------------------
-// The diploma catalogue.
+// The programme catalogue. One component, every award level.
+//
+// It was written for the diploma page and now serves the certificate,
+// bachelor's, master's and doctoral pages too. Everything that was
+// diploma-specific — the two-sentence introduction, the progression paragraph,
+// the careers paragraph, which rung of the ladder is highlighted — is now taken
+// from LEVEL_COPY keyed on the `award` prop, because the alternative was a
+// doctoral page telling a research candidate their degree articulates into a
+// bachelor's.
 //
 // WHAT IT REPLACED. Three beige boxes of bullet points. An applicant could read
 // the whole page and still not know how long a programme runs, what it is
@@ -21,8 +29,9 @@
 import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
-  FACULTIES, DIPLOMA_PROGRAMMES, PROGRESSION, DIPLOMA_CAREER_SECTORS,
-  programmesByFaculty, type Programme,
+  FACULTIES, PROGRESSION, DIPLOMA_CAREER_SECTORS, LEVEL_COPY,
+  programmesByAward, programmesByFaculty, programmeHref,
+  type Programme, type AwardLevel,
 } from '@/content/programmeCatalogue';
 
 const ALL_MODES = ['Online', 'On campus', 'Blended'];
@@ -44,7 +53,7 @@ function ProgrammeCard({ p }: { p: Programme }) {
       <div className="flex items-start gap-3">
         <span aria-hidden="true" className="text-2xl leading-none">{p.icon}</span>
         <h4 className="font-heading text-lg font-bold leading-snug text-brand-purple">
-          <Link href={`/programmes/${p.slug}`} className="hover:underline">{p.title}</Link>
+          <Link href={programmeHref(p.slug)} className="hover:underline">{p.title}</Link>
         </h4>
       </div>
 
@@ -66,7 +75,7 @@ function ProgrammeCard({ p }: { p: Programme }) {
 
       <div className="mt-4 flex flex-wrap gap-2">
         <Link
-          href={`/programmes/${p.slug}`}
+          href={programmeHref(p.slug)}
           className="rounded-full border border-brand-purple px-4 py-1.5 font-sans text-xs font-semibold text-brand-purple transition hover:bg-brand-purple hover:text-white"
         >
           Learn more
@@ -82,14 +91,23 @@ function ProgrammeCard({ p }: { p: Programme }) {
   );
 }
 
-export default function ProgrammeCatalogue() {
+export default function ProgrammeCatalogue({
+  award = 'Diploma',
+  intro,
+}: {
+  award?: AwardLevel;
+  /** Two sentences at the head. Falls back to LEVEL_COPY for this award. */
+  intro?: { lead: string; body: string };
+} = {}) {
+  const CATALOGUE = programmesByAward(award);
+  const copy = LEVEL_COPY[award];
   const [q, setQ] = useState('');
   const [faculty, setFaculty] = useState('all');
   const [mode, setMode] = useState('all');
 
   const matches = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    return DIPLOMA_PROGRAMMES.filter((p) => {
+    return CATALOGUE.filter((p) => {
       if (faculty !== 'all' && p.facultyId !== faculty) return false;
       if (mode !== 'all' && !p.modes.includes(mode)) return false;
       if (!needle) return true;
@@ -101,7 +119,7 @@ export default function ProgrammeCatalogue() {
         p.careers.some((c) => c.toLowerCase().includes(needle))
       );
     });
-  }, [q, faculty, mode]);
+  }, [q, faculty, mode, CATALOGUE]);
 
   const shownFaculties = FACULTIES.filter((f) => matches.some((p) => p.facultyId === f.id));
   const filtering = q.trim() !== '' || faculty !== 'all' || mode !== 'all';
@@ -111,19 +129,10 @@ export default function ProgrammeCatalogue() {
       {/* ---- What a diploma is, before anything is listed ---------------- */}
       <section className="mx-auto max-w-3xl text-center">
         <p className="font-sans text-xs font-semibold uppercase tracking-[0.25em] text-brand-gold">
-          Professional diploma qualifications
+          {intro?.lead ?? copy.lead}
         </p>
         <p className="mt-4 text-lg leading-relaxed text-[#4a4058]">
-          ICOF Global University diploma programmes provide practical, career-oriented education
-          designed to equip students with foundational academic knowledge, professional competence
-          and industry-ready skills.
-        </p>
-        <p className="mt-4 text-[15px] leading-relaxed text-[#5b5168]">
-          Diploma programmes normally require one to two academic years and may serve as a
-          professional qualification for immediate employment, a pathway to bachelor&rsquo;s degree
-          studies, continuing professional development, or ministry and vocational preparation.
-          Students completing a diploma may receive advanced standing into selected
-          bachelor&rsquo;s programmes, subject to faculty regulations.
+          {intro?.body ?? copy.body}
         </p>
       </section>
 
@@ -164,7 +173,7 @@ export default function ProgrammeCatalogue() {
           </label>
         </div>
         <p className="mt-3 font-sans text-xs text-[#6b6076]" role="status">
-          {matches.length} of {DIPLOMA_PROGRAMMES.length} programmes
+          {matches.length} of {CATALOGUE.length} programmes
           {filtering && (
             <button
               type="button"
@@ -180,7 +189,7 @@ export default function ProgrammeCatalogue() {
       {/* ---- The faculties, each with its own programmes ------------------ */}
       {shownFaculties.map((f) => {
         const list = matches.filter((p) => p.facultyId === f.id);
-        const all = programmesByFaculty(f.id);
+        const all = programmesByFaculty(f.id, award);
         return (
           <section key={f.id} aria-labelledby={`f-${f.id}`}>
             <div className="border-l-4 border-brand-gold pl-5">
@@ -192,9 +201,9 @@ export default function ProgrammeCatalogue() {
               </p>
               <p className="mt-3 max-w-3xl text-sm leading-relaxed text-[#6b6076]">{f.blurb}</p>
               <dl className="mt-4 flex flex-wrap gap-x-8 gap-y-2">
-                <Meta label="Diploma programmes" value={String(all.length)} />
+                <Meta label="Programmes" value={String(all.length)} />
                 <Meta label="Study modes" value={Array.from(new Set(all.flatMap((p) => p.modes))).join(' · ')} />
-                <Meta label="Award" value="Diploma (Dip)" />
+                <Meta label="Award" value={award} />
               </dl>
             </div>
             <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
@@ -215,17 +224,13 @@ export default function ProgrammeCatalogue() {
         <h3 id="progression" className="font-heading text-2xl font-bold text-brand-purple">
           Where this leads
         </h3>
-        <p className="mt-2 max-w-3xl text-sm leading-relaxed text-[#5b5168]">
-          A diploma is not a dead end at this university. Each award articulates into the next, and
-          a completed diploma may carry advanced standing into a bachelor&rsquo;s programme subject
-          to faculty regulations.
-        </p>
+        <p className="mt-2 max-w-3xl text-sm leading-relaxed text-[#5b5168]">{copy.progression}</p>
         <ol className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {PROGRESSION.map((step, i) => (
             <li
               key={step.award}
               className={`rounded-lg border p-4 ${
-                step.award === 'Diploma'
+                step.award === award
                   ? 'border-brand-gold bg-white shadow-sm'
                   : 'border-[#e6ddcb] bg-white/60'
               }`}
@@ -245,10 +250,7 @@ export default function ProgrammeCatalogue() {
         <h3 id="careers" className="font-heading text-2xl font-bold text-brand-purple">
           After graduation
         </h3>
-        <p className="mt-2 max-w-3xl text-sm leading-relaxed text-[#5b5168]">
-          Graduates of ICOF Global University diploma programmes go on to work across a range of
-          sectors, and many continue into bachelor&rsquo;s degree study with advanced standing.
-        </p>
+        <p className="mt-2 max-w-3xl text-sm leading-relaxed text-[#5b5168]">{copy.careers}</p>
         <ul className="mt-5 flex flex-wrap gap-2">
           {DIPLOMA_CAREER_SECTORS.map((s) => (
             <li key={s} className="rounded-full border border-[#e6ddcb] bg-white px-4 py-1.5 font-sans text-xs text-[#4a4058]">

@@ -6,6 +6,22 @@ import { Section, SectionHeading } from '@/components/Section';
 import Cta from '@/components/Cta';
 import { degreeLevels, getDegreeLevel } from '@/content/pages';
 import ProgrammeCatalogue from '@/components/programmes/ProgrammeCatalogue';
+import type { AwardLevel } from '@/content/programmeCatalogue';
+
+/**
+ * Which level pages are served by the catalogue, and at what award.
+ *
+ * Keyed by the level's slug rather than switched on inside the component, so
+ * adding a level is one line here and the bullet-list fallback below stays for
+ * anything not yet in the catalogue.
+ */
+const CATALOGUE_LEVELS: Record<string, AwardLevel | undefined> = {
+  'diploma-dip': 'Diploma',
+  certificates: 'Certificate',
+  'bachelors-degrees': "Bachelor's",
+  'masters-degrees': "Master's",
+  doctoral: 'Doctorate',
+};
 
 export const dynamicParams = false;
 
@@ -47,10 +63,10 @@ export default function DegreeLevelPage({ params }: { params: { slug: string } }
           with a page of its own behind every programme. The bullet lists below
           remain for the levels that do not yet have catalogue records — see
           src/content/programmeCatalogue.ts. */}
-      {level.slug === 'diploma-dip' ? (
+      {CATALOGUE_LEVELS[level.slug] ? (
         <Section className="bg-white">
           <div className="mx-auto max-w-6xl">
-            <ProgrammeCatalogue />
+            <ProgrammeCatalogue award={CATALOGUE_LEVELS[level.slug]} />
           </div>
         </Section>
       ) : (

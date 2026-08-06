@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { site, programs } from '@/content/site';
 import { contentPages, degreeLevels } from '@/content/pages';
-import { DIPLOMA_PROGRAMMES } from '@/content/programmeCatalogue';
+import { DIPLOMA_PROGRAMMES, hasProgramPage } from '@/content/programmeCatalogue';
 import { facultyList } from '@/content/faculties';
 
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -72,7 +72,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // university's to find. A page that is not in the sitemap is a page nobody
     // told the crawler about — building the routes and omitting them here would
     // have done half the work and none of the good.
-    ...DIPLOMA_PROGRAMMES.map((p) => ({
+    // Excluding any that also exist in site.ts: those are served by
+    // /programs/<slug> above, and /programmes/<slug> permanently redirects to
+    // them. Listing a URL that 301s tells the crawler to index a redirect.
+    ...DIPLOMA_PROGRAMMES.filter((p) => !hasProgramPage(p.slug)).map((p) => ({
       url: `${site.url}/programmes/${p.slug}`,
       changeFrequency: 'monthly' as const,
       priority: 0.8,

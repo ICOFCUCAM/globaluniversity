@@ -1,3 +1,5 @@
+import { programs as SITE_PROGRAMS } from './site';
+
 // ---------------------------------------------------------------------------
 // The programme catalogue.
 //
@@ -110,6 +112,16 @@ export const FACULTIES: FacultyProfile[] = [
   },
 ];
 
+FACULTIES.push(
+  {
+    id: 'education',
+    name: 'Faculty of Education',
+    mission: 'Forming teachers who can hold a classroom and reach the child in it.',
+    blurb:
+      'The Faculty of Education prepares classroom practitioners for primary and special education, with the pedagogy, the subject grounding and the practical placement the work requires.',
+  },
+);
+
 export const facultyById = (id: string) => FACULTIES.find((f) => f.id === id);
 
 /** The default duration for a diploma, in the university's own words. */
@@ -120,8 +132,9 @@ const theology = (
   careers: string[], pathway: string, icon: string,
 ): Programme => ({
   slug, title, facultyId: 'theology', award: 'Diploma',
-  // 120 ECTS is the figure on the university's own programme page.
-  credits: 120, creditsPublished: true,
+  // 180, on the university's instruction, correcting the 120 seeded in
+  // migration 006. See DIPLOMA_CREDITS below for the note this carries.
+  credits: 180, creditsPublished: true,
   duration: DIPLOMA_DURATION,
   modes: ['Online', 'On campus', 'Blended'],
   summary, description, careers, pathway, icon,
@@ -374,8 +387,231 @@ export const DIPLOMA_CAREER_SECTORS = [
   'Non-governmental organisations', 'Business', 'Information technology', 'Self-employment',
 ];
 
-export const programmeBySlug = (slug: string) =>
-  DIPLOMA_PROGRAMMES.find((p) => p.slug === slug);
+/**
+ * The prose around the cards, per award level.
+ *
+ * WHY IT IS DATA AND NOT PARAGRAPHS IN THE COMPONENT. The catalogue was written
+ * for the diploma page and its fixed copy said so — "a diploma is not a dead
+ * end at this university", "many continue into bachelor's degree study with
+ * advanced standing". Rendering that same text on the doctoral page would have
+ * told a prospective PhD candidate that their research degree articulates into
+ * a bachelor's. One component serving five levels has to be told which level it
+ * is serving.
+ */
+export interface LevelCopy {
+  lead: string;
+  body: string;
+  /** The heading and paragraph above the progression ladder. */
+  progression: string;
+  /** The paragraph under "After graduation". */
+  careers: string;
+}
 
-export const programmesByFaculty = (facultyId: string) =>
-  DIPLOMA_PROGRAMMES.filter((p) => p.facultyId === facultyId);
+export const LEVEL_COPY: Record<AwardLevel, LevelCopy> = {
+  Certificate: {
+    lead: 'Certificate qualifications',
+    body: 'ICOF Global University certificate programmes are short, focused awards for people entering a field, changing direction, or formalising experience they already have — completed in under a year and carrying credit towards a diploma.',
+    progression: 'A certificate is a starting point rather than an endpoint. Credit earned may be carried into a diploma programme, and from there into a degree, subject to faculty regulations.',
+    careers: 'Certificate holders work in support and assistant roles across these sectors, and many continue into diploma study with credit already earned.',
+  },
+  Diploma: {
+    lead: 'Professional diploma qualifications',
+    body: 'ICOF Global University diploma programmes provide practical, career-oriented education designed to equip students with foundational academic knowledge, professional competence and industry-ready skills.',
+    progression: 'A diploma is not a dead end at this university. Each award articulates into the next, and a completed diploma may carry advanced standing into a bachelor’s programme subject to faculty regulations.',
+    careers: 'Graduates of ICOF Global University diploma programmes go on to work across a range of sectors, and many continue into bachelor’s degree study with advanced standing.',
+  },
+  "Bachelor's": {
+    lead: 'Undergraduate degree programmes',
+    body: 'A bachelor’s degree is the university’s full undergraduate award: three to four years of study taken to depth, ending in a substantial piece of independent work and qualifying its holder for graduate study.',
+    progression: 'A bachelor’s degree is the gateway to graduate study. Holders may proceed to a postgraduate diploma or directly to a master’s programme, subject to faculty regulations.',
+    careers: 'Graduates hold professional and leadership positions across these sectors, and many continue into master’s study.',
+  },
+  'Postgraduate Diploma': {
+    lead: 'Postgraduate diploma programmes',
+    body: 'A postgraduate diploma is one year of graduate study for those who hold a first degree and need specialist qualification without committing to a full master’s.',
+    progression: 'A postgraduate diploma may be carried into a master’s programme as advanced standing, subject to faculty regulations.',
+    careers: 'Holders work in specialist and supervisory roles across these sectors.',
+  },
+  "Master's": {
+    lead: 'Graduate degree programmes',
+    body: 'ICOF Global University master’s programmes are graduate awards of 120 credits, taken by coursework or by research, for those who already hold a first degree and are qualifying for senior practice, teaching or doctoral study.',
+    progression: 'A master’s degree is the normal qualification for entry to doctoral research. Holders may proceed to a doctoral programme subject to faculty approval of a research proposal and the availability of supervision.',
+    careers: 'Graduates hold senior and specialist positions across these sectors, and those intending an academic career normally continue to doctoral research.',
+  },
+  Doctorate: {
+    lead: 'Doctoral research programmes',
+    body: 'A doctorate at ICOF Global University is a supervised research degree: three or more years of original work, examined on a thesis defended before a panel. It is the university’s highest award.',
+    progression: 'A doctorate is the terminal award. What follows is not a further degree but academic appointment, supervision of others, and publication.',
+    careers: 'Doctoral graduates teach, supervise research, lead institutions and publish in their fields.',
+  },
+};
+
+/* ------------------------------------------------------------------ */
+/* The other levels, derived from the programme records                 */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The award levels the university teaches, built from `programs` in site.ts.
+ *
+ * WHY DERIVED RATHER THAN RETYPED. Those thirty records already carry the
+ * title, the level, the faculty, a written summary and the learning outcomes
+ * for every award the university offers — everything a catalogue card needs
+ * except the credit figure. Typing them again here would have produced a second
+ * list to keep in step with the first, and the first time they drifted the site
+ * would describe the same degree two ways on two pages.
+ *
+ * CREDITS COME FROM THE AWARDS TABLE, on the university's instruction. Migration
+ * 006 seeds the two figures the university has published — Bachelor of Theology
+ * 180 ECTS, Diploma of Theology 120 — and those are used. The curriculum in
+ * curricula.ts totals 87 credits over four semesters for the same degree; it is
+ * a partial curriculum in different units, and the published figure is the one
+ * that governs.
+ *
+ * Every other award has no published figure, so no figure is printed. See the
+ * header of this file for why that matters more than filling the card.
+ */
+const PUBLISHED_CREDITS: Record<string, number> = {
+  'bachelor-of-theology': 180,
+  'diploma-in-theology': 180,
+};
+
+/**
+ * A figure the university has set for a whole award level rather than for one
+ * programme. Used only where the programme itself has no published figure, so a
+ * per-programme number always wins.
+ *
+ * WHY THE MASTER'S IS HERE AND NOT LISTED SIX TIMES. The university stated 120
+ * credits for the master's, not for one master's programme. Writing it once
+ * against the level means a seventh master's added next year carries the right
+ * figure the day it is added, instead of silently printing no credits until
+ * somebody notices the list is short.
+ */
+const LEVEL_CREDITS: Partial<Record<AwardLevel, number>> = {
+  "Master's": 120,
+};
+
+/**
+ * TWO NOTES THE UNIVERSITY SHOULD SEE RATHER THAN NUMBERS I QUIETLY ADJUSTED.
+ *
+ * THE DIPLOMA AT 180. Recorded on the university's instruction. Two things
+ * follow, and neither is a reason to change it back — they are reasons to look:
+ *
+ *   Migration 006 seeded the Diploma of Theology at 120 in the `awards` table,
+ *   and that table is what the graduation check reads. The migration file is
+ *   updated for fresh installs; a database that has already run it needs
+ *   `update awards set credits_required = 180 where code = 'DTH';` or the site
+ *   will advertise 180 while the system requires 120 to graduate.
+ *
+ *   180 credits puts the diploma level with the bachelor's, and sits oddly
+ *   beside a stated duration of one to two academic years — 180 ECTS is
+ *   normally three years of full-time study. If the diploma really runs to 180
+ *   the duration wording is what wants revisiting; if the duration is right,
+ *   the figure is. The site prints what it was told either way.
+ *
+ * THE MASTER'S AT 120. Applies to all six master's programmes, including the
+ * Master of Project Management, which sits under GIBMAS rather than Theology
+ * but is recorded at master's level and so takes the master's figure. If
+ * business master's are meant to differ, give that programme its own entry in
+ * PUBLISHED_CREDITS above.
+ *
+ * No master's award has a row in the `awards` table yet, so nothing in the
+ * graduation check contradicts this. When one is created it needs
+ * `credits_required = 120` or the two will disagree.
+ */
+
+const LEVEL_DURATION: Record<string, string> = {
+  Certificate: 'Up to one academic year',
+  Diploma: DIPLOMA_DURATION,
+  Bachelor: 'Three to four academic years',
+  Master: 'One to two academic years',
+  Doctorate: 'Three or more academic years of supervised research',
+};
+
+const FACULTY_ID: Record<string, string> = {
+  'Faculty of Theology': 'theology',
+  'Faculty of Education': 'education',
+  'Faculty of Engineering and Technology': 'engineering',
+  'Global Institute of Business and Management Science (GIBMAS)': 'business',
+};
+
+const LEVEL_AWARD: Record<string, AwardLevel> = {
+  Certificate: 'Certificate',
+  Diploma: 'Diploma',
+  Bachelor: "Bachelor's",
+  Master: "Master's",
+  Doctorate: 'Doctorate',
+};
+
+const LEVEL_ICON: Record<string, string> = {
+  Certificate: '📜', Diploma: '🎓', Bachelor: '🎓', Master: '📘', Doctorate: '⚗',
+};
+
+/** Every award the university offers, as catalogue entries. */
+export const ALL_PROGRAMMES: Programme[] = (() => {
+  const derived: Programme[] = SITE_PROGRAMS
+    // The diplomas written by hand above are richer — they carry a pathway, a
+    // longer description and their own icon. Where both exist the hand-written
+    // entry wins, and the derived one is dropped rather than producing two
+    // records with one slug.
+    .filter((sp) => !DIPLOMA_PROGRAMMES.some((d) => d.slug === sp.slug))
+    .map((sp) => {
+      const award = LEVEL_AWARD[sp.level] ?? 'Certificate';
+      // Programme first, then the level, then nothing at all. Never a guess.
+      const credits = PUBLISHED_CREDITS[sp.slug] ?? LEVEL_CREDITS[award];
+      return {
+      slug: sp.slug,
+      title: sp.title,
+      facultyId: FACULTY_ID[sp.school] ?? 'theology',
+      award,
+      duration: LEVEL_DURATION[sp.level],
+      credits,
+      creditsPublished: credits !== undefined,
+      modes: ['Online', 'On campus', 'Blended'],
+      // The record's summary is a paragraph. The card wants a sentence.
+      summary: sp.summary.split('. ')[0].replace(/\.$/, '') + '.',
+      description: [sp.summary],
+      // The outcomes are what the programme covers, which is not the same thing
+      // as what it prepares you for — so they are labelled as study areas on the
+      // page rather than silently relabelled as careers.
+      careers: sp.outcomes,
+      icon: LEVEL_ICON[sp.level] ?? '🎓',
+      };
+    });
+  return [...DIPLOMA_PROGRAMMES, ...derived];
+})();
+
+export const programmesByAward = (award: AwardLevel) =>
+  ALL_PROGRAMMES.filter((p) => p.award === award);
+
+export const programmeBySlug = (slug: string) =>
+  ALL_PROGRAMMES.find((p) => p.slug === slug);
+
+export const programmesByFaculty = (facultyId: string, award?: AwardLevel) =>
+  ALL_PROGRAMMES.filter((p) => p.facultyId === facultyId && (!award || p.award === award));
+
+// ---------------------------------------------------------------------------
+// ONE PROGRAMME, ONE URL.
+//
+// Two routes can render a single programme. /programs/<slug> is the older page
+// and the richer one — it carries the curriculum table, the hero photograph and
+// the related-programmes rail — and it is the one search engines have already
+// indexed. /programmes/<slug> is the catalogue's own page, written for the
+// hand-authored diplomas that have no record in site.ts and therefore no
+// /programs page at all.
+//
+// For three programmes — the theology, ministry and Christian leadership
+// diplomas — both existed, which is a defect and not a convenience: two URLs
+// serving the same degree split the ranking between them, and an applicant who
+// finds one has no way of knowing the other says more. The older, richer page
+// wins; the catalogue links to it, and /programmes/<slug> redirects there
+// rather than 404ing, because the duplicate was live and may be linked.
+// ---------------------------------------------------------------------------
+
+const SITE_SLUGS = new Set(SITE_PROGRAMS.map((p) => p.slug));
+
+/** True when /programs/<slug> renders this programme, so /programmes must not. */
+export const hasProgramPage = (slug: string) => SITE_SLUGS.has(slug);
+
+/** The one canonical URL for a programme. Use this everywhere it is linked. */
+export const programmeHref = (slug: string) =>
+  SITE_SLUGS.has(slug) ? `/programs/${slug}` : `/programmes/${slug}`;

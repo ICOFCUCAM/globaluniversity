@@ -74,10 +74,19 @@ create index if not exists awards_active_idx on awards (active, title);
 
 -- The two the university has published curricula for. `on conflict do nothing`
 -- so re-running this never overwrites a figure the university has since set.
+--
+-- DTH WAS 120 AND IS NOW 180, on the university's instruction. Because of the
+-- `on conflict do nothing` above, RE-RUNNING THIS FILE WILL NOT CORRECT A
+-- DATABASE THAT ALREADY HAS THE OLD ROW — that is the clause working as
+-- intended, and it is exactly why the correction has to be applied by hand:
+--
+--   update awards set credits_required = 180 where code = 'DTH';
+--
+-- Without it the site advertises 180 and the graduation check requires 120.
 insert into awards (code, title, kind, faculty, credits_required, min_cgpa, cgpa_confirmed)
 values
   ('BTH', 'Bachelor of Theology', 'bachelors', 'Faculty of Theology', 180, 1.00, false),
-  ('DTH', 'Diploma of Theology',  'diploma',   'Faculty of Theology', 120, 1.00, false)
+  ('DTH', 'Diploma of Theology',  'diploma',   'Faculty of Theology', 180, 1.00, false)
 on conflict (code) do nothing;
 
 
