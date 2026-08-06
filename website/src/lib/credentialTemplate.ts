@@ -200,7 +200,7 @@ export const DEFAULT_CERTIFICATE_DESIGN: CredentialDesign = {
   ink: '#241c30',
   paper: '#fffdf5',
   fontFamily: "Georgia, 'Times New Roman', Times, serif",
-  titleFont: "'UnifrakturMaguntia', 'Old English Text MT', Georgia, serif",
+  titleFont: "'UnifrakturMaguntia', 'UnifrakturMaguntia Fallback', 'Old English Text MT', Georgia, serif",
   sealColour: '#b31217',
   sealPlacement: 'reserved',
   border: 'ornate',
@@ -265,7 +265,7 @@ export const TITLE_FONTS: { label: string; stack: string; available: boolean; no
   },
   {
     label: 'Blackletter — as the 2011 certificate',
-    stack: "'UnifrakturMaguntia', 'Old English Text MT', 'Cloister Black', Georgia, serif",
+    stack: "'UnifrakturMaguntia', 'UnifrakturMaguntia Fallback', 'Old English Text MT', 'Cloister Black', Georgia, serif",
     available: true,
     note:
       'The face on the university’s first certificate. UnifrakturMaguntia, under the SIL Open ' +

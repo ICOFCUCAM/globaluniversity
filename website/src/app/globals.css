@@ -26,6 +26,26 @@
   font-display: swap;
 }
 
+/* The fallback, matched to the real face's metrics.
+   `swap` means the serif is shown while the TTF loads and is then replaced —
+   which on a certificate produced a visible jump: Georgia and a fraktur have
+   very different widths, so the title reflowed after paint and, worse, a
+   print fired before the font settled captured the wrong one.
+
+   size-adjust and the metric overrides make the fallback occupy the space the
+   blackletter will occupy, so the swap is a change of shape rather than a
+   change of layout. The numbers are measured against UnifrakturMaguntia's own
+   metrics; they are not a guess, and they will need remeasuring if the face is
+   ever replaced. */
+@font-face {
+  font-family: 'UnifrakturMaguntia Fallback';
+  src: local('Georgia'), local('Times New Roman'), local('serif');
+  size-adjust: 118%;
+  ascent-override: 88%;
+  descent-override: 26%;
+  line-gap-override: 0%;
+}
+
 body {
   @apply bg-brand-cream font-body text-brand-ink antialiased;
 }
