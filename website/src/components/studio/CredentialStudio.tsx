@@ -476,15 +476,17 @@ export default function CredentialStudio() {
                   <Select
                     value={design.security.watermark}
                     onChange={(v) => setSecurity('watermark', v as CredentialDesign['security']['watermark'])}
-                    options={['globe-in-rosette', 'globe', 'rosette']}
+                    options={['device', 'globe-in-rosette', 'globe', 'rosette']}
                   />
                 </Row>
                 <p className="text-[11px] leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">
-                  {design.security.watermark === 'rosette'
-                    ? 'The guilloché alone. Beautiful, and it says nothing about the institution.'
-                    : design.security.watermark === 'globe'
-                      ? 'A wireframe graticule. Harder to redraw than a rosette — the meridians are not evenly spaced, their spacing follows a cosine, and getting that wrong is obvious to anyone who has looked at a map.'
-                      : 'The university’s own mark: a graticule inside a guilloché ring. The rosette is the security figure and the globe is the institution — this is the International Circle of Faith’s global university, and its most-photographed document carried no sign of that anywhere.'}
+                  {design.security.watermark === 'device'
+                    ? 'The university’s device: the globe turned to Africa, ringed by its own name and descriptor, flanked by laurel, with the year of foundation. The only one of these four that cannot be lifted onto somebody else’s certificate without saying so — which is what a background is for.'
+                    : design.security.watermark === 'rosette'
+                      ? 'The guilloché alone. Beautiful, and on ten thousand certificate templates. It says nothing about this institution.'
+                      : design.security.watermark === 'globe'
+                        ? 'A wireframe graticule. Harder to redraw than a rosette — the meridians are not evenly spaced, their spacing follows a cosine, and getting that wrong is obvious to anyone who has looked at a map. Still a stock motif.'
+                        : 'A graticule inside a guilloché ring. Better than either alone, and still not specific to this university.'}
                 </p>
                 <Row label="Strength">
                   <input type="range" min={0.1} max={1} step={0.05} value={design.security.guillocheOpacity}

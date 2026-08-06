@@ -42,6 +42,7 @@ import {
   seedFrom, guillocheRosetteUri, guillocheBandUri, microtextBandUri,
   securityGroundUri, ordinalDay, yearInWords,
   ornateFrameUri, waferSealUri, guillocheGlobeUri, globeInRosetteUri,
+  institutionalDeviceUri,
 } from '@/lib/credentialArt';
 import { wordingForAward } from '@/lib/awards';
 
@@ -240,17 +241,31 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
     // The watermark figure. 'globe-in-rosette' is the university's own mark;
     // see CredentialDesign.security.watermark for why a globe and not more
     // rosette.
-    rosette: sec.watermark === 'globe'
-      ? guillocheGlobeUri(seed, 520, design.brand, 1)
-      : sec.watermark === 'rosette'
-        ? guillocheRosetteUri(seed, 520, design.brand, 1)
-        : globeInRosetteUri(seed, 560, design.brand, 1),
+    rosette: sec.watermark === 'device'
+      ? institutionalDeviceUri(seed, 600, design.brand, [
+          UNIVERSITY.name.toUpperCase(),
+          UNIVERSITY.descriptor.toUpperCase(),
+        ], romanYear(UNIVERSITY.established), 1)
+      : sec.watermark === 'globe'
+        ? guillocheGlobeUri(seed, 520, design.brand, 1)
+        : sec.watermark === 'rosette'
+          ? guillocheRosetteUri(seed, 520, design.brand, 1)
+          : globeInRosetteUri(seed, 560, design.brand, 1),
     // Sheet size and a band widened by the bleed, so the trim falls through
     // the gilt rather than beside it.
     frame: ornateFrameUri(sheetW, sheetH, design.accent, '#8a6d1f', design.borderWidthMm + bleed),
     band: guillocheBandUri(seed ^ 0x51, 300, 14, design.accent, 0.9),
+    // The microtext course now carries the university's own words as well as
+    // the credential number. Under a loupe it reads as the institution; on a
+    // photocopy it is a grey smear. Both of those are the point.
     micro: microtextBandUri(
-      `${UNIVERSITY.name.toUpperCase()} · ${data.credentialId}`, 300, 6, design.brand, 1.9,
+      [
+        UNIVERSITY.name.toUpperCase(),
+        UNIVERSITY.descriptor.toUpperCase(),
+        UNIVERSITY.motto.toUpperCase(),
+        data.credentialId,
+      ].join(' · '),
+      300, 6, design.brand, 1.9,
     ),
     wafer: waferSealUri(seed, 300, design.sealColour || '#b31217',
       `${UNIVERSITY.name.toUpperCase()} · `, UNIVERSITY.shortName),
@@ -890,6 +905,27 @@ function SignatureColumn({ design, sigs }: { design: CredentialDesign; sigs: Sig
       ))}
     </div>
   );
+}
+
+/**
+ * The year of foundation, in roman.
+ *
+ * On a device rather than in the body text, where it would be affectation.
+ * Every seal cut for a university since the fifteenth century carries the year
+ * this way, and a device that carried 2007 in arabic numerals would look like a
+ * logo rather than a seal.
+ */
+function romanYear(year: number): string {
+  const table: [number, string][] = [
+    [1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'], [100, 'C'], [90, 'XC'],
+    [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I'],
+  ];
+  let n = year;
+  let out = '';
+  for (const [value, sym] of table) {
+    while (n >= value) { out += sym; n -= value; }
+  }
+  return out;
 }
 
 const body = (d: CredentialDesign): React.CSSProperties => ({

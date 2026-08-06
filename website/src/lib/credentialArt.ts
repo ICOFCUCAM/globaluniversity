@@ -825,3 +825,237 @@ export function globeInRosette(
 
 export const globeInRosetteUri = (seed: number, size: number, colour: string, opacity?: number) =>
   enc(globeInRosette(seed, size, colour, opacity));
+
+/* ------------------------------------------------------------------ */
+/* The institutional device                                             */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The coastline of Africa, as longitude/latitude pairs.
+ *
+ * Simplified to about fifty points — enough that the shape is unmistakable at
+ * the size a watermark is read, and few enough that it draws instantly and
+ * weighs nothing. The Gulf of Guinea, the Horn, the Cape and the western bulge
+ * are the four features that make the outline recognisable; everything else is
+ * fill.
+ *
+ * Hand-built from coordinates rather than traced from a map file: a shapefile
+ * would be megabytes, would need a licence, and would be more precision than a
+ * watermark can print. This is a device, not a survey, and it is labelled as
+ * one.
+ */
+const AFRICA: [number, number][] = [
+  [10.2, 37.1], [15.0, 32.0], [20.0, 32.5], [25.0, 31.5], [30.0, 31.5], [32.5, 31.0],
+  [34.0, 28.0], [35.0, 24.0], [37.0, 21.0], [38.5, 18.0], [39.5, 15.0], [43.0, 12.5],
+  [48.0, 11.5], [51.4, 11.8], [48.0, 5.0], [44.0, 2.0], [41.0, -2.0], [40.0, -6.0],
+  [40.5, -10.5], [40.0, -15.0], [35.0, -20.0], [32.5, -25.0], [30.0, -30.0],
+  [27.0, -33.5], [22.0, -34.0], [18.5, -34.4], [17.0, -30.0], [13.5, -23.0],
+  [12.0, -17.0], [13.0, -12.0], [12.0, -6.0], [9.5, -1.0], [9.0, 4.0], [5.0, 5.2],
+  [0.0, 5.5], [-4.0, 5.0], [-8.0, 4.5], [-13.0, 8.0], [-16.0, 12.0], [-17.5, 15.0],
+  [-16.5, 20.0], [-14.0, 25.0], [-10.0, 30.0], [-6.0, 35.9], [0.0, 36.5], [5.0, 37.0],
+  [10.2, 37.1],
+];
+
+/**
+ * The globe, turned so that Africa faces the reader.
+ *
+ * THIS IS THE ANSWER TO "the background is generic". A guilloché rosette is
+ * beautiful and it is on ten thousand certificate templates. A wireframe globe
+ * is better and it is still a stock motif. A globe turned to Africa, with the
+ * coastline picked out on it, belongs to one institution: the International
+ * Circle of Faith's global university, which calls itself The Community
+ * University of Africa. Nobody else's document can carry it without saying so.
+ *
+ * The spin is computed rather than random — 20°E is set to face the viewer,
+ * which centres the continent — so every certificate shows the same face. The
+ * seed still varies the figure around it, so two documents are not identical.
+ */
+export function africaGlobe(
+  seed: number,
+  size: number,
+  colour: string,
+  opacity = 0.5,
+): string {
+  const R = size / 2;
+  const radius = R * 0.86;
+  const tilt = (23.4 * Math.PI) / 180;
+
+  // Put 20°E at the centre of the visible face. In the projection below the
+  // near point is at longitude 90°, so the offset is 90 − 20.
+  const spin = ((90 - 20) * Math.PI) / 180;
+
+  const project = (latDeg: number, lonDeg: number) => {
+    const la = (latDeg * Math.PI) / 180;
+    const lo = (lonDeg * Math.PI) / 180 + spin;
+    const x = Math.cos(la) * Math.cos(lo);
+    const y = Math.cos(la) * Math.sin(lo);
+    const z = Math.sin(la);
+    const yt = y * Math.cos(tilt) - z * Math.sin(tilt);
+    const zt = y * Math.sin(tilt) + z * Math.cos(tilt);
+    return { x: R + x * radius, y: R - zt * radius, front: yt >= 0 };
+  };
+
+  const sw = (base: number) => (base * size) / 400;
+  const out: string[] = [];
+
+  const emit = (pts: { x: number; y: number; front: boolean }[], width: number, near: number, far: number) => {
+    let run: string[] = [];
+    let runFront = pts[0]?.front ?? true;
+    const flush = () => {
+      if (run.length > 1) {
+        out.push(
+          `<polyline points="${run.join(' ')}" fill="none" stroke="${colour}" ` +
+          `stroke-width="${width.toFixed(2)}" stroke-linejoin="round" ` +
+          `stroke-opacity="${(opacity * (runFront ? near : far)).toFixed(3)}"/>`,
+        );
+      }
+      run = [];
+    };
+    for (const p of pts) {
+      if (p.front !== runFront) { flush(); runFront = p.front; }
+      run.push(`${p.x.toFixed(2)},${p.y.toFixed(2)}`);
+    }
+    flush();
+  };
+
+  // The graticule, quieter than before — it is the ground the continent sits on
+  // rather than the subject.
+  for (let lon = 0; lon < 180; lon += 20) {
+    const pts = [];
+    for (let lat = -90; lat <= 90; lat += 2) pts.push(project(lat, lon));
+    for (let lat = 90; lat >= -90; lat -= 2) pts.push(project(lat, lon + 180));
+    emit(pts, sw(0.5), 0.5, 0.2);
+  }
+  for (const lat of [-66.6, -45, -23.4, 0, 23.4, 45, 66.6]) {
+    const pts = [];
+    for (let lon = 0; lon <= 360; lon += 2) pts.push(project(lat, lon));
+    emit(pts, sw(Math.abs(lat) < 0.01 ? 0.75 : 0.46), 0.5, 0.2);
+  }
+
+  // The continent. Drawn at full weight over the graticule — it is the thing
+  // the reader is meant to recognise.
+  const coast = AFRICA.map(([lon, lat]) => project(lat, lon));
+  emit(coast, sw(1.5), 1, 0.15);
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+  ${out.join('')}
+  <circle cx="${R}" cy="${R}" r="${radius.toFixed(2)}" fill="none" stroke="${colour}"
+          stroke-width="${sw(1.3).toFixed(2)}" stroke-opacity="${(opacity * 0.95).toFixed(3)}"/>
+</svg>`;
+}
+
+/**
+ * The device: Africa on the globe, in a ring of the university's own words,
+ * flanked by laurel, with the year of foundation at the foot.
+ *
+ * Every element is the institution's rather than a stock ornament — the
+ * continent it names itself after, the motto it publishes, the year it was
+ * founded. Set as one figure so a forger cannot lift a generic rosette from
+ * another template and have it pass.
+ *
+ * The ring text is real microtext: legible under a loupe on an original,
+ * a smear on a photocopy. It is a security feature and a statement of identity
+ * in the same stroke, which is the only reason it is worth the space.
+ */
+export function institutionalDevice(
+  seed: number,
+  size: number,
+  colour: string,
+  legend: string[],
+  founded: string,
+  opacity = 0.5,
+): string {
+  const R = size / 2;
+  const id = `d${seed.toString(36)}`;
+  const inner = size * 0.62;
+  const off = ((size - inner) / 2).toFixed(2);
+
+  const globe = africaGlobe(seed, inner, colour, opacity)
+    .replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '');
+
+  // Laurel: two branches springing from the foot and curving up either side.
+  //
+  // A stem with leaves on it, not a scatter of ovals on a circle — which is
+  // what the first attempt drew, because the leaves were placed on the arc and
+  // nothing joined them. A wreath is read as two branches; without the stem it
+  // reads as confetti.
+  //
+  // It stops at the horizontal on both sides. The upper third of the ring
+  // belongs to the university's words, and a wreath that closes over the top
+  // would either cover them or force them smaller than a loupe can help with.
+  const laurel = (mirror: boolean) => {
+    const parts: string[] = [];
+    const r = R * 0.845;
+    const from = 0.06;
+    const to = 0.52;
+    const at = (t: number) => {
+      const a = Math.PI * (0.5 + (mirror ? -t : t));
+      return { a, x: R + Math.cos(a) * r, y: R + Math.sin(a) * r };
+    };
+
+    const stem: string[] = [];
+    for (let i = 0; i <= 40; i += 1) {
+      const pt = at(from + (i / 40) * (to - from));
+      stem.push(`${pt.x.toFixed(2)},${pt.y.toFixed(2)}`);
+    }
+    parts.push(
+      `<polyline points="${stem.join(' ')}" fill="none" stroke="${colour}" ` +
+      `stroke-width="${(size * 0.0028).toFixed(2)}" stroke-opacity="${(opacity * 0.75).toFixed(3)}"/>`,
+    );
+
+    for (let i = 0; i < 11; i += 1) {
+      const t = from + ((i + 0.5) / 11) * (to - from);
+      const { a, x, y } = at(t);
+      // Leaves sit outboard of the stem and lean along it, as they grow.
+      const lean = ((a * 180) / Math.PI) + (mirror ? -60 : 60);
+      const ox = x + Math.cos(a) * size * 0.028;
+      const oy = y + Math.sin(a) * size * 0.028;
+      parts.push(
+        `<ellipse cx="${ox.toFixed(2)}" cy="${oy.toFixed(2)}" rx="${(size * 0.034).toFixed(2)}" ` +
+        `ry="${(size * 0.0125).toFixed(2)}" transform="rotate(${lean.toFixed(1)} ${ox.toFixed(2)} ${oy.toFixed(2)})" ` +
+        `fill="none" stroke="${colour}" stroke-width="${(size * 0.0022).toFixed(2)}" ` +
+        `stroke-opacity="${(opacity * 0.8).toFixed(3)}"/>`,
+      );
+    }
+    return parts.join('');
+  };
+
+  const ringR = R * 0.945;
+  // Set over the upper two-thirds of the ring and no further. Text carried all
+  // the way round arrives at the foot upside down and runs into the year — and
+  // a seal legend that has to be rotated to read is a legend nobody reads.
+  const ringText = legend.join('   ·   ');
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+  <defs>
+    <path id="${id}-ring" d="M ${R},${R} m -${ringR.toFixed(2)},0 a ${ringR.toFixed(2)},${ringR.toFixed(2)} 0 1,1 ${(ringR * 2).toFixed(2)},0 a ${ringR.toFixed(2)},${ringR.toFixed(2)} 0 1,1 -${(ringR * 2).toFixed(2)},0"/>
+  </defs>
+
+  <circle cx="${R}" cy="${R}" r="${(R * 0.985).toFixed(2)}" fill="none" stroke="${colour}"
+          stroke-width="${(size * 0.004).toFixed(2)}" stroke-opacity="${(opacity * 0.7).toFixed(3)}"/>
+  <circle cx="${R}" cy="${R}" r="${(R * 0.905).toFixed(2)}" fill="none" stroke="${colour}"
+          stroke-width="${(size * 0.0018).toFixed(2)}" stroke-opacity="${(opacity * 0.45).toFixed(3)}"/>
+
+  <text font-family="Helvetica,Arial,sans-serif" font-size="${(size * 0.026).toFixed(2)}"
+        letter-spacing="${(size * 0.006).toFixed(2)}" fill="${colour}"
+        fill-opacity="${(opacity * 0.85).toFixed(3)}">
+    <textPath href="#${id}-ring" startOffset="12%">${escapeXml(ringText)}</textPath>
+  </text>
+
+  ${laurel(false)}${laurel(true)}
+
+  <g transform="translate(${off},${off})">${globe}</g>
+
+  <text x="${R}" y="${(R + R * 0.80).toFixed(2)}" text-anchor="middle"
+        font-family="Georgia,serif" font-size="${(size * 0.042).toFixed(2)}"
+        letter-spacing="${(size * 0.008).toFixed(2)}" fill="${colour}"
+        fill-opacity="${(opacity * 0.8).toFixed(3)}">${escapeXml(founded)}</text>
+</svg>`;
+}
+
+export const africaGlobeUri = (seed: number, size: number, colour: string, opacity?: number) =>
+  enc(africaGlobe(seed, size, colour, opacity));
+
+export const institutionalDeviceUri = (
+  seed: number, size: number, colour: string, legend: string[], founded: string, opacity?: number,
+) => enc(institutionalDevice(seed, size, colour, legend, founded, opacity));

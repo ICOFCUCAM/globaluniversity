@@ -151,19 +151,24 @@ export interface CredentialDesign {
     /**
      * Which figure the watermark draws.
      *
-     * 'globe-in-rosette' is the default and the university's own mark: a
-     * wireframe graticule inside a guilloché ring. The rosette is the security
-     * figure and the globe is the institution — this is the International
-     * Circle of Faith's GLOBAL university, teaching in Cameroon and sending its
-     * awards to be read on other continents, and its most-photographed document
-     * carried no sign of that anywhere.
+     * 'device' is the default and the only one of the four that belongs to this
+     * university alone: the globe turned to Africa, inside a ring of the
+     * university's own words, flanked by laurel, with the year of foundation at
+     * the foot.
+     *
+     * The others are progressively more generic. A rosette is on ten thousand
+     * certificate templates. A wireframe globe is better and still stock. A
+     * globe turned to Africa, ringed by "ICOF GLOBAL UNIVERSITY · THE COMMUNITY
+     * UNIVERSITY OF AFRICA", cannot be lifted onto anybody else's document
+     * without it saying so — which is the whole point of a device, and the
+     * reason a background that is merely decorative is a wasted surface.
      *
      * A graticule is also the harder figure to forge. Its meridians are not
      * concentric — their spacing follows a cosine — and getting that wrong is
      * obvious to anyone who has ever looked at a map, which is not true of a
      * rosette.
      */
-    watermark: 'globe-in-rosette' | 'globe' | 'rosette';
+    watermark: 'device' | 'globe-in-rosette' | 'globe' | 'rosette';
     microtextBorder: boolean;
     securityGround: boolean;
     engravedSeal: boolean;
@@ -281,7 +286,7 @@ export const DEFAULT_CERTIFICATE_DESIGN: CredentialDesign = {
   security: {
     guilloche: true,
     guillocheOpacity: 0.5,
-    watermark: 'globe-in-rosette',
+    watermark: 'device',
     microtextBorder: true,
     securityGround: true,
     engravedSeal: true,
