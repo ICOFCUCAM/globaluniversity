@@ -5,6 +5,7 @@ import PageBanner from '@/components/PageBanner';
 import { Section, SectionHeading } from '@/components/Section';
 import Cta from '@/components/Cta';
 import { degreeLevels, getDegreeLevel } from '@/content/pages';
+import ProgrammeCatalogue from '@/components/programmes/ProgrammeCatalogue';
 
 export const dynamicParams = false;
 
@@ -41,6 +42,18 @@ export default function DegreeLevelPage({ params }: { params: { slug: string } }
         </div>
       </Section>
 
+      {/* The diploma level is served by the full catalogue: faculty sections,
+          programme cards, filters, the progression ladder and career outcomes,
+          with a page of its own behind every programme. The bullet lists below
+          remain for the levels that do not yet have catalogue records — see
+          src/content/programmeCatalogue.ts. */}
+      {level.slug === 'diploma-dip' ? (
+        <Section className="bg-white">
+          <div className="mx-auto max-w-6xl">
+            <ProgrammeCatalogue />
+          </div>
+        </Section>
+      ) : (
       <Section className="bg-white">
         <SectionHeading>{level.title} Programs</SectionHeading>
         <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-2">
@@ -64,6 +77,7 @@ export default function DegreeLevelPage({ params }: { params: { slug: string } }
           </p>
         )}
       </Section>
+      )}
 
       <Section>
         <SectionHeading>Admission Requirements</SectionHeading>
