@@ -153,15 +153,15 @@ export default async function HomePage() {
       <ProofBand />
 
       {/* University overview */}
-      <Section chapter="About">
+      <Section chapter="About" className="dark:bg-[#150f1e]">
         <div className="grid items-center gap-12 lg:grid-cols-2">
           <Reveal>
             <Eyebrow>About the University</Eyebrow>
-            <KineticText className="font-heading text-display font-bold text-brand-purple [text-wrap:balance]">
+            <KineticText className="font-heading text-display font-bold text-brand-purple dark:text-white [text-wrap:balance]">
               A university in pursuit of a brighter future
             </KineticText>
             <div className="mt-5 h-[3px] w-16 rounded-full bg-gradient-to-r from-brand-gold-deep to-brand-gold" />
-            <p className="mt-6 leading-relaxed text-brand-muted">{about.intro}</p>
+            <p className="mt-6 leading-relaxed text-brand-muted dark:text-white/60">{about.intro}</p>
             <div className="mt-8 flex flex-wrap gap-4">
               <Link
                 href="/about"
@@ -194,14 +194,14 @@ export default async function HomePage() {
       </Section>
 
       {/* Why choose */}
-      <Section chapter="Why IGUC" className="bg-white">
+      <Section chapter="Why IGUC" className="bg-white dark:bg-[#181121]">
         <SectionHeading eyebrow="Why ICOF Global University">
           Nobility, professionalism &amp; godliness
         </SectionHeading>
         <SpotlightGroup className="grid gap-6 md:grid-cols-3">
           {PILLARS.map((p, i) => (
             <Reveal key={p.title} delay={i * 120}>
-              <SpotlightCard className="group h-full overflow-hidden rounded-2xl border border-brand-sand bg-brand-cream p-9 transition duration-500 hover:shadow-lift" tone="light">
+              <SpotlightCard className="group h-full overflow-hidden rounded-2xl border border-brand-sand bg-brand-cream dark:border-white/10 dark:bg-white/[0.04] p-9 transition duration-500 hover:shadow-lift" tone="light">
                 {/* Ghost numeral sits behind the copy as a watermark */}
                 <span
                   aria-hidden="true"
@@ -211,10 +211,10 @@ export default async function HomePage() {
                 </span>
                 <div className="relative">
                   <span aria-hidden="true" className="block h-[3px] w-10 rounded-full bg-brand-gold-deep" />
-                  <h3 className="mt-5 font-heading text-xl font-bold leading-snug text-brand-purple [text-wrap:balance]">
+                  <h3 className="mt-5 font-heading text-xl font-bold leading-snug text-brand-purple dark:text-white [text-wrap:balance]">
                     {p.title}
                   </h3>
-                  <p className="mt-3.5 text-sm leading-relaxed text-brand-muted">{p.body}</p>
+                  <p className="mt-3.5 text-sm leading-relaxed text-brand-muted dark:text-white/60">{p.body}</p>
                 </div>
               </SpotlightCard>
             </Reveal>
@@ -394,7 +394,7 @@ export default async function HomePage() {
       </section>
 
       {/* Admissions + International */}
-      <Section chapter="Admissions">
+      <Section chapter="Admissions" className="dark:bg-[#150f1e]">
         <div className="grid gap-6 lg:grid-cols-2">
           {[
             {
@@ -432,16 +432,16 @@ export default async function HomePage() {
                 />
                 <div className="relative flex h-full flex-col p-9 sm:p-10">
                   <Eyebrow>{c.eyebrow}</Eyebrow>
-                  <h3 className="font-heading text-display-sm font-bold text-brand-purple [text-wrap:balance]">
+                  <h3 className="font-heading text-display-sm font-bold text-brand-purple dark:text-white [text-wrap:balance]">
                     {c.title}
                   </h3>
-                  <p className="mt-4 text-sm leading-relaxed text-brand-muted">{c.body}</p>
+                  <p className="mt-4 text-sm leading-relaxed text-brand-muted dark:text-white/60">{c.body}</p>
 
                   <ul className="mt-6 flex flex-1 flex-wrap content-start gap-2">
                     {c.points.map((pt) => (
                       <li
                         key={pt}
-                        className="rounded-full border border-brand-sand bg-brand-cream px-3.5 py-1.5 font-sans text-[11px] font-semibold uppercase tracking-[0.1em] text-brand-purple"
+                        className="rounded-full border border-brand-sand bg-brand-cream dark:border-white/10 dark:bg-white/[0.04] px-3.5 py-1.5 font-sans text-[11px] font-semibold uppercase tracking-[0.1em] text-brand-purple"
                       >
                         {pt}
                       </li>
@@ -498,7 +498,7 @@ export default async function HomePage() {
       <GlobalNetwork />
 
       {/* Online learning */}
-      <Section chapter="Online" className="bg-white">
+      <Section chapter="Online" className="bg-white dark:bg-[#181121]">
         <div className="grid items-center gap-12 lg:grid-cols-2">
           <Reveal>
             <div className="relative h-72 overflow-hidden rounded-2xl shadow-xl lg:h-96">
@@ -515,11 +515,11 @@ export default async function HomePage() {
           </Reveal>
           <Reveal delay={120}>
             <Eyebrow>Online Learning</Eyebrow>
-            <KineticText className="font-heading text-display font-bold text-brand-purple [text-wrap:balance]">
+            <KineticText className="font-heading text-display font-bold text-brand-purple dark:text-white [text-wrap:balance]">
               Your classroom, wherever you are
             </KineticText>
             <div className="mt-5 h-[3px] w-16 rounded-full bg-gradient-to-r from-brand-gold-deep to-brand-gold" />
-            <p className="mt-6 leading-relaxed text-brand-muted">
+            <p className="mt-6 leading-relaxed text-brand-muted dark:text-white/60">
               Master&apos;s and doctoral programs delivered fully online, with live classes, course
               materials, assignments and examinations in one student portal — and your results,
               GPA and transcript building automatically as you study.
@@ -535,7 +535,7 @@ export default async function HomePage() {
                 'Fees and payment records',
                 'QR-verifiable credentials',
               ].map((f) => (
-                <li key={f} className="flex items-start gap-2.5 text-sm text-brand-muted">
+                <li key={f} className="flex items-start gap-2.5 text-sm text-brand-muted dark:text-white/60">
                   <span
                     aria-hidden="true"
                     className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-brand-gold text-brand-purple"
@@ -562,14 +562,14 @@ export default async function HomePage() {
       </Section>
 
       {/* Professional training features */}
-      <Section chapter="Executive studies">
+      <Section chapter="Executive studies" className="dark:bg-[#150f1e]">
         <SectionHeading eyebrow="Executive & Professional Studies">{homeFeatures.heading}</SectionHeading>
-        <p className="mx-auto -mt-5 mb-12 max-w-2xl text-center leading-relaxed text-brand-muted">{homeFeatures.intro}</p>
+        <p className="mx-auto -mt-5 mb-12 max-w-2xl text-center leading-relaxed text-brand-muted dark:text-white/60">{homeFeatures.intro}</p>
         <SpotlightGroup className="grid gap-6 md:grid-cols-3">
           {homeFeatures.items.map((f, i) => (
             <Reveal key={f.title} delay={i * 120}>
               <SpotlightCard
-                className="h-full overflow-hidden rounded-2xl border border-brand-sand bg-white p-8 shadow-sm transition duration-500 hover:shadow-lift"
+                className="h-full overflow-hidden rounded-2xl border border-brand-sand bg-white dark:bg-white/[0.04] p-8 shadow-sm transition duration-500 hover:shadow-lift"
                 tone="light"
               >
                 {/* Gold rule ignites along the top edge on hover */}
@@ -577,10 +577,10 @@ export default async function HomePage() {
                   aria-hidden="true"
                   className="absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 bg-gradient-to-r from-brand-gold-deep to-brand-gold transition-transform duration-500 group-hover/sc:scale-x-100"
                 />
-                <h3 className="font-heading text-lg font-bold leading-snug text-brand-purple [text-wrap:balance]">
+                <h3 className="font-heading text-lg font-bold leading-snug text-brand-purple dark:text-white [text-wrap:balance]">
                   {f.title}
                 </h3>
-                <p className="mt-3.5 text-sm leading-relaxed text-brand-muted">{f.body}</p>
+                <p className="mt-3.5 text-sm leading-relaxed text-brand-muted dark:text-white/60">{f.body}</p>
               </SpotlightCard>
             </Reveal>
           ))}
@@ -589,7 +589,7 @@ export default async function HomePage() {
 
       {/* Diary & initiatives — one band. Both halves were dead-end cards before;
           every item now resolves somewhere. */}
-      <Section chapter="Diary" className="bg-white">
+      <Section chapter="Diary" className="bg-white dark:bg-[#181121]">
         <div className="grid gap-14 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]">
           {/* Diary */}
           <div>
@@ -627,7 +627,7 @@ export default async function HomePage() {
                           <h3 className="font-heading text-base font-bold text-brand-purple transition group-hover:text-brand-gold-deep">
                             {ev.title}
                           </h3>
-                          <p className="mt-1.5 text-sm leading-relaxed text-brand-muted">{ev.location}</p>
+                          <p className="mt-1.5 text-sm leading-relaxed text-brand-muted dark:text-white/60">{ev.location}</p>
                         </div>
                       </Link>
                     </Reveal>
@@ -670,10 +670,10 @@ export default async function HomePage() {
                       <p className="font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-brand-gold-deep">
                         {n.category}
                       </p>
-                      <h3 className="mt-1.5 font-heading text-[15px] font-bold leading-snug text-brand-purple [text-wrap:balance]">
+                      <h3 className="mt-1.5 font-heading text-[15px] font-bold leading-snug text-brand-purple dark:text-white [text-wrap:balance]">
                         {n.title}
                       </h3>
-                      <p className="mt-2.5 flex-1 line-clamp-4 text-[13px] leading-relaxed text-brand-muted">
+                      <p className="mt-2.5 flex-1 line-clamp-4 text-[13px] leading-relaxed text-brand-muted dark:text-white/60">
                         {n.excerpt}
                       </p>
                       <span className="mt-4 flex items-center gap-1.5 font-heading text-[13px] font-semibold text-brand-purple">
@@ -692,7 +692,7 @@ export default async function HomePage() {
       </Section>
 
       {/* FAQ */}
-      <Section chapter="Questions">
+      <Section chapter="Questions" className="dark:bg-[#150f1e]">
         <SectionHeading eyebrow="Questions, Answered">Frequently asked questions</SectionHeading>
         <div className="mx-auto max-w-3xl divide-y divide-brand-sand overflow-hidden rounded-2xl border border-brand-sand bg-white">
           {homeFaqs.map((faq) => (
@@ -712,13 +712,13 @@ export default async function HomePage() {
                 </span>
               </summary>
               <div className="px-6 pb-6 pr-14">
-                <p className="text-[15px] leading-relaxed text-brand-muted">{faq.answer}</p>
+                <p className="text-[15px] leading-relaxed text-brand-muted dark:text-white/60">{faq.answer}</p>
               </div>
             </details>
           ))}
         </div>
 
-        <p className="mt-8 text-center text-sm text-brand-muted">
+        <p className="mt-8 text-center text-sm text-brand-muted dark:text-white/60">
           Still deciding?{' '}
           <Link href="/contact" className="font-semibold text-brand-purple underline underline-offset-4 hover:text-brand-gold-deep">
             Talk to an enrollment representative

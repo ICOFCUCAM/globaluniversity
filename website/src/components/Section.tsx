@@ -33,7 +33,7 @@ export function SectionHeading({
       {typeof children === 'string' ? (
         <KineticText
           className={`font-heading text-display font-bold [text-wrap:balance] ${
-            light ? 'text-white' : 'text-brand-purple'
+            light ? 'text-white' : 'text-brand-purple dark:text-white'
           }`}
         >
           {children}
@@ -41,7 +41,7 @@ export function SectionHeading({
       ) : (
         <h2
           className={`font-heading text-display font-bold [text-wrap:balance] ${
-            light ? 'text-white' : 'text-brand-purple'
+            light ? 'text-white' : 'text-brand-purple dark:text-white'
           }`}
         >
           {children}
