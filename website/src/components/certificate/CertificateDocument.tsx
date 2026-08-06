@@ -118,6 +118,16 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
   specimen?: boolean;
 }>(function CertificateDocument({ design, data, version, previewGuides, specimen }, ref) {
   const [w, h] = PAGE_MM[design.pageSize][design.orientation];
+
+  // A certificate with no credential number cannot be verified by anyone who
+  // receives it, and the number is what seeds every security layer on it — so
+  // without one the guilloché, the wafer and the microtext are identical on
+  // every document the university produces, which is worse than having none.
+  //
+  // It used to fall back to seeding from the literal string 'ICOFGU' and print
+  // a blank where the number goes. That failed silently, in the one direction
+  // that matters: the document still looked exactly like a certificate.
+  const missingId = !data.credentialId?.trim();
   const issued = data.issuedOn ?? new Date();
   const seed = seedFrom(data.credentialId || 'ICOFGU');
   const sec = design.security;
@@ -195,6 +205,34 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
     seed, w, h, design.brand, design.accent, design.borderWidthMm,
     design.sealColour, data.credentialId,
   ]);
+
+  if (missingId && !specimen) {
+    return (
+      <div
+        ref={ref}
+        role="alert"
+        style={{
+          width: `${w}mm`, height: `${h}mm`, boxSizing: 'border-box',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '30mm', textAlign: 'center',
+          fontFamily: design.fontFamily, background: '#fffaf0',
+          border: '2mm solid #b45309', color: '#7c2d12',
+        }}
+      >
+        <div>
+          <p style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>
+            No certificate can be rendered
+          </p>
+          <p style={{ fontSize: '13px', lineHeight: 1.6, margin: '6mm 0 0' }}>
+            This document has no credential number. A certificate without one cannot be verified by
+            anyone who receives it, and the number is what seeds the guilloché, the wafer and the
+            microtext — without it every certificate the university issues would carry identical
+            security artwork. Issue the credential through the register first.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
