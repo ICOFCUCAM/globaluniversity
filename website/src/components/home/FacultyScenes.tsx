@@ -129,7 +129,15 @@ export default function FacultyScenes({
       data-on-dark=""
       data-chapter="Faculties"
       aria-labelledby="faculties-heading"
-      className="relative z-10 overflow-hidden bg-brand-purple-dark py-24 text-white sm:py-28"
+      // py-32 at sm, not py-28. Measured across the page: the three other
+      // full bands — Studying here, Research and Where we are — all sit on
+      // 128px top and bottom, and this one was on 112. There was no reason for
+      // it; it was inherited from a version of this section that held four
+      // rows instead of five. One section breathing differently from its
+      // neighbours is the commonest thing that makes a page feel assembled
+      // rather than designed, and it is invisible until the numbers are put
+      // side by side.
+      className="relative z-10 overflow-hidden bg-brand-purple-dark py-24 text-white sm:py-32"
     >
       {/* NO PHOTOGRAPH BEHIND THIS SECTION.
 
