@@ -460,9 +460,16 @@ export default function Triptych({
 
         <div className="mx-auto w-full max-w-7xl px-6 pt-20 sm:px-10 lg:px-16 lg:pt-24">
           <div className="ml-auto max-w-xl lg:text-right">
-            <h3 className="font-heading text-[clamp(1.9rem,4.4vw,3.3rem)] font-bold leading-[1.06] tracking-[-0.03em] [text-wrap:balance]">
+            {/* h2, not h3. This is a peer of the statements above it, not a
+                subsection of the Chancellor's welcome that happens to precede
+                it — and the outline a screen reader announces was saying the
+                opposite. It was the only h3 among ten h2s on the page, which is
+                what made it visible: a heading level is a claim about
+                structure, and this one was claiming to be nested inside a
+                quotation. */}
+            <h2 className="font-heading text-[clamp(1.9rem,4.4vw,3.3rem)] font-bold leading-[1.06] tracking-[-0.03em] [text-wrap:balance]">
               Preparing people for the world that is coming.
-            </h3>
+            </h2>
             {/* WHITE, not gold, and this is the rule the composition is built
                 on rather than a colour preference. This link is 15px — small
                 text — and it sits on a photograph deliberately kept luminous.
