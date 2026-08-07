@@ -19,15 +19,14 @@ import FacultyScenes from '@/components/home/FacultyScenes';
 import { facultyById, programmesByFaculty } from '@/content/programmeCatalogue';
 import StandingBand from '@/components/home/StandingBand';
 import StudentExperience from '@/components/home/StudentExperience';
-import CampusBand from '@/components/home/CampusBand';
 import Voices from '@/components/home/Voices';
-import GlobalNetwork from '@/components/home/GlobalNetwork';
 import ProgrammeFinder from '@/components/home/ProgrammeFinder';
 import VerificationDemo from '@/components/home/VerificationDemo';
 import ChancellorWord from '@/components/home/ChancellorWord';
 import GlobalMovement from '@/components/home/GlobalMovement';
 import Formation from '@/components/home/Formation';
 import FinalScene from '@/components/home/FinalScene';
+import GlobalPresence from '@/components/home/GlobalPresence';
 
 // The motto's three words are no longer copy in this file. They live in
 // src/components/home/Formation.tsx, which tells them one at a time at the
@@ -466,16 +465,11 @@ export default async function HomePage() {
       <VerificationDemo />
 
       {/* Where the university physically is. */}
-      <CampusBand />
-
-      {/* THE GLOBAL NETWORK — the signature section.
-          This replaced four tiles listing the same places in words. A drawn map
-          says "global" in the half-second before anybody reads, which four
-          cards cannot; and it is drawn from the same coastline data engraved on
-          every certificate this university issues, so it costs no third-party
-          connection and matches the brand exactly. See the component for what
-          the map may and may not show. */}
-      <GlobalNetwork />
+      {/* Campuses and the global network were the same argument told twice —
+          3.36 screens to establish one fact. Merged into one scene over the
+          university's own flat world; see GlobalPresence.tsx for why the map
+          replaced the rotating globe, and what the map is forbidden to show. */}
+      <GlobalPresence />
 
       {/* Online learning */}
       <Section chapter="Online" className="bg-white dark:bg-[#181121]">
