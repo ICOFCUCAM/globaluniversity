@@ -4,9 +4,8 @@ import Link from 'next/link';
 import { Section, SectionHeading, Eyebrow } from '@/components/Section';
 import HeroScene from '@/components/home/HeroScene';
 import Reveal from '@/components/Reveal';
-import { getHomePage, getPrograms } from '@/lib/data';
+import { getPrograms } from '@/lib/data';
 import { site } from '@/content/site';
-import { quickIconMap } from '@/components/Icons';
 import { Aurora, Grain, Seam } from '@/components/Atmosphere';
 import KineticText from '@/components/KineticText';
 import { SpotlightGroup, SpotlightCard } from '@/components/Spotlight';
@@ -18,7 +17,6 @@ import PathwayLadder from '@/components/home/PathwayLadder';
 import FacultyScenes from '@/components/home/FacultyScenes';
 import { facultyById, programmesByFaculty } from '@/content/programmeCatalogue';
 import StudentExperience from '@/components/home/StudentExperience';
-import Voices from '@/components/home/Voices';
 import ProgrammeFinder from '@/components/home/ProgrammeFinder';
 import VerificationDemo from '@/components/home/VerificationDemo';
 import ChancellorWord from '@/components/home/ChancellorWord';
@@ -59,8 +57,6 @@ export default async function HomePage() {
   // statistics they carried are retired — see ProofBand — and the faculty tiles
   // are now built from the catalogue by FacultyShowcase, so the count on the
   // card cannot disagree with the page it links to.
-  const { quickLinks, about, events, news, homeFeatures, homeFaqs } =
-    await getHomePage();
   const allPrograms = await getPrograms();
   const programs = allPrograms.slice(0, 4);
   // Real program titles, deduplicated — the ribbon must never invent a field.
@@ -85,15 +81,14 @@ export default async function HomePage() {
         publisher: { '@id': `${site.url}/#organization` },
         inLanguage: 'en',
       },
-      {
-        '@type': 'FAQPage',
-        '@id': `${site.url}/#faq`,
-        mainEntity: homeFaqs.map((f) => ({
-          '@type': 'Question',
-          name: f.question,
-          acceptedAnswer: { '@type': 'Answer', text: f.answer },
-        })),
-      },
+      // NO FAQPage HERE ANY MORE, and this is a correctness fix rather than a
+      // tidy-up. The FAQ band was removed from this page, and Google's
+      // structured-data guidelines require FAQPage markup to describe content
+      // that is VISIBLE on the page carrying it. Emitting questions and answers
+      // a visitor cannot see is exactly the mismatch that earns a manual action
+      // against rich results — and it would have been invisible in every test
+      // this repository runs, because the JSON-LD stayed valid and the page
+      // stayed correct. The markup belongs on /admissions, with the questions.
       {
         '@type': 'ItemList',
         '@id': `${site.url}/#featured-programs`,
@@ -110,14 +105,10 @@ export default async function HomePage() {
           },
         })),
       },
-      ...events.map((ev) => ({
-        '@type': 'Event',
-        name: ev.title,
-        startDate: ev.date,
-        location: { '@type': 'Place', name: ev.location },
-        organizer: { '@id': `${site.url}/#organization` },
-        eventStatus: 'https://schema.org/EventScheduled',
-      })),
+      // No Event entries either, for the same reason the FAQPage went: the
+      // diary band that displayed them is off this page. Structured data
+      // describes THIS document; it is not a place to keep announcements the
+      // document no longer makes. Both belong on /events.
     ],
   };
 
@@ -133,35 +124,11 @@ export default async function HomePage() {
           the decision. */}
       <HeroScene />
 
-      {/* Quick links — the six routes most visitors arrive wanting */}
-      <nav aria-label="Quick links" className="relative z-10 -mt-14 px-4">
-        <SpotlightGroup className="mx-auto grid max-w-6xl grid-cols-2 gap-px overflow-hidden rounded-2xl bg-brand-sand/60 shadow-lift-lg ring-1 ring-brand-purple/5 backdrop-blur-xl sm:grid-cols-3 lg:grid-cols-6">
-          {quickLinks.map((q) => {
-            const Icon = quickIconMap[q.icon as keyof typeof quickIconMap];
-            return (
-              <SpotlightCard key={q.label} tone="light">
-                <Link
-                  href={q.href}
-                  className="group relative flex h-full flex-col items-center gap-3 bg-white/95 px-3 py-8 text-center transition duration-300 hover:bg-brand-cream"
-                >
-                  {/* Icon well lifts and inverts; the glyph itself never scales,
-                      so 1.5px strokes stay 1.5px. */}
-                  <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-cream text-brand-purple ring-1 ring-brand-sand/60 transition duration-500 group-hover:-translate-y-1 group-hover:bg-brand-purple group-hover:text-brand-gold group-hover:shadow-lift">
-                    {Icon ? <Icon className="h-[22px] w-[22px]" /> : null}
-                  </span>
-                  <span className="text-[11px] font-semibold uppercase leading-tight tracking-[0.08em] text-brand-purple">
-                    {q.label}
-                  </span>
-                  <span
-                    aria-hidden="true"
-                    className="absolute inset-x-5 bottom-0 h-[3px] origin-center scale-x-0 rounded-full bg-gradient-to-r from-brand-gold-deep to-brand-gold transition-transform duration-500 group-hover:scale-x-100"
-                  />
-                </Link>
-              </SpotlightCard>
-            );
-          })}
-        </SpotlightGroup>
-      </nav>
+      {/* The quick-links row is gone. Six routes in a card grid immediately
+          under the hero, every one already in the header navigation two lines
+          above it — the same destinations offered twice before the reader has
+          read a sentence. It cost 0.16 of a screen and taught nobody
+          anything. */}
 
       {/* The proof band. A visitor's second question — after "what is this
           place for" — is "why should I believe you", and nothing answered it
@@ -177,45 +144,11 @@ export default async function HomePage() {
       <GlobalMovement />
 
       {/* University overview */}
-      <Section chapter="About" className="bg-white dark:bg-[#150f1e]">
-        <div className="grid items-center gap-12 lg:grid-cols-2">
-          <Reveal>
-            <Eyebrow>About the University</Eyebrow>
-            <KineticText className="font-heading text-display font-bold text-brand-purple dark:text-white [text-wrap:balance]">
-              A university in pursuit of a brighter future
-            </KineticText>
-            <div className="mt-5 h-[3px] w-16 rounded-full bg-gradient-to-r from-brand-gold-deep to-brand-gold" />
-            <p className="mt-6 leading-relaxed text-brand-muted dark:text-white/60">{about.intro}</p>
-            <div className="mt-8 flex flex-wrap gap-4">
-              <Link
-                href="/about"
-                className="rounded-full bg-brand-purple px-7 py-3 font-heading text-sm font-semibold text-white transition hover:bg-brand-purple-dark"
-              >
-                Our History &amp; Mission
-              </Link>
-              <Link
-                href="/faculty"
-                className="rounded-full border-2 border-brand-purple px-7 py-3 font-heading text-sm font-semibold text-brand-purple transition hover:bg-brand-purple hover:text-white"
-              >
-                Leadership &amp; Governance
-              </Link>
-            </div>
-          </Reveal>
-          <Reveal delay={150}>
-            <div className="relative h-80 overflow-hidden rounded-2xl shadow-xl lg:h-[420px]">
-              <Image
-                src={about.image}
-                alt="Graduands at an ICOF Global University ceremony"
-                fill
-                loading="lazy"
-                quality={82}
-                className="object-cover transition duration-[900ms] ease-out hover:scale-105"
-                sizes="(min-width:1024px) 45vw, 100vw"
-              />
-            </div>
-          </Reveal>
-        </div>
-      </Section>
+      {/* The About band is gone. It said the university was born of the
+          International Circle of Faith and pointed at /about — which is exactly
+          what the fellowship scene directly above it says, at scale, over a
+          photograph. Two consecutive sections making one claim is the fault
+          this redesign exists to remove. /about is reached from there. */}
 
       {/* The motto, as a scene rather than a specification. Three convictions
           told one at a time over photography that changes beneath them — see
@@ -291,11 +224,10 @@ export default async function HomePage() {
           whether a working adult with a family applies. */}
       <StudentExperience />
 
-      {/* Student voices and alumni. This renders NOTHING until
-          src/content/voices.ts has real, consented, attributable people in it —
-          see that file for why no placeholder quotes were written. */}
-      <Voices />
-
+      {/* Voices is off the page. It rendered NOTHING: src/content/voices.ts is
+          deliberately empty because there are no consented, attributable
+          student quotations, and inventing them was refused. A component that
+          draws nothing is not a section. It returns when real ones exist. */}
 
       {/* THE PROGRAMME FINDER.
           This replaced four featured cards and a link to a list of forty-one
@@ -540,174 +472,24 @@ export default async function HomePage() {
       </Section>
 
       {/* Professional training features */}
-      <Section chapter="Executive studies" className="dark:bg-[#150f1e]">
-        <SectionHeading eyebrow="Executive & Professional Studies">{homeFeatures.heading}</SectionHeading>
-        <p className="mx-auto -mt-5 mb-12 max-w-2xl text-center leading-relaxed text-brand-muted dark:text-white/60">{homeFeatures.intro}</p>
-        <SpotlightGroup className="grid gap-6 md:grid-cols-3">
-          {homeFeatures.items.map((f, i) => (
-            <Reveal key={f.title} delay={i * 120}>
-              <SpotlightCard
-                className="h-full overflow-hidden rounded-2xl border border-brand-sand bg-white dark:bg-white/[0.04] p-8 shadow-sm transition duration-500 hover:shadow-lift"
-                tone="light"
-              >
-                {/* Gold rule ignites along the top edge on hover */}
-                <span
-                  aria-hidden="true"
-                  className="absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 bg-gradient-to-r from-brand-gold-deep to-brand-gold transition-transform duration-500 group-hover/sc:scale-x-100"
-                />
-                <h3 className="font-heading text-lg font-bold leading-snug text-brand-purple dark:text-white [text-wrap:balance]">
-                  {f.title}
-                </h3>
-                <p className="mt-3.5 text-sm leading-relaxed text-brand-muted dark:text-white/60">{f.body}</p>
-              </SpotlightCard>
-            </Reveal>
-          ))}
-        </SpotlightGroup>
-      </Section>
+      {/* THREE SECTIONS REMOVED HERE, AND WHY.
 
-      {/* Diary & initiatives — one band. Both halves were dead-end cards before;
-          every item now resolves somewhere. */}
-      <Section chapter="Diary" className="bg-white dark:bg-[#181121]">
-        <div className="grid gap-14 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]">
-          {/* Diary */}
-          <div>
-            <SectionHeading eyebrow="Mark Your Calendar" align="left">
-              University diary
-            </SectionHeading>
-            <ol className="relative -mt-4 border-t border-brand-sand">
-              {/* Rail: a single gradient line the date blocks sit on */}
-              <span
-                aria-hidden="true"
-                className="pointer-events-none absolute bottom-6 left-8 top-6 w-px bg-gradient-to-b from-brand-gold via-brand-sand to-transparent"
-              />
-              {events.map((ev, i) => {
-                const date = new Date(ev.date);
-                return (
-                  <li key={ev.slug} className="relative border-b border-brand-sand last:border-b-0">
-                    <Reveal delay={i * 90}>
-                      <Link href="/events" className="group relative flex items-start gap-5 py-6">
-                        {/* Torn-calendar block */}
-                        <time
-                          dateTime={ev.date}
-                          className="relative z-10 flex w-16 shrink-0 flex-col items-center rounded-xl border border-brand-sand bg-white py-2.5 shadow-sm transition duration-500 group-hover:border-brand-gold group-hover:bg-brand-gold group-hover:shadow-gold"
-                        >
-                          <span className="font-heading text-2xl font-bold leading-none text-brand-purple tabular">
-                            {date.toLocaleDateString('en-GB', { day: '2-digit' })}
-                          </span>
-                          <span className="mt-1 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-brand-gold-deep transition group-hover:text-brand-purple">
-                            {date.toLocaleDateString('en-GB', { month: 'short' })}
-                          </span>
-                          <span className="font-sans text-[9px] text-brand-muted transition group-hover:text-brand-purple/70">
-                            {date.getFullYear()}
-                          </span>
-                        </time>
-                        <div className="min-w-0 flex-1">
-                          <h3 className="font-heading text-base font-bold text-brand-purple transition group-hover:text-brand-gold-deep">
-                            {ev.title}
-                          </h3>
-                          <p className="mt-1.5 text-sm leading-relaxed text-brand-muted dark:text-white/60">{ev.location}</p>
-                        </div>
-                      </Link>
-                    </Reveal>
-                  </li>
-                );
-              })}
-            </ol>
-            <Link
-              href="/events"
-              className="mt-7 inline-flex items-center gap-1.5 font-heading text-sm font-semibold text-brand-purple hover:text-brand-gold-deep"
-            >
-              All events and important dates
-              <span aria-hidden="true">→</span>
-            </Link>
-          </div>
+          EXECUTIVE & PROFESSIONAL STUDIES was the densest band on the page —
+          216 words per screen — written in verbatim WordPress marketing copy
+          ("Build Relevant Skills", "Get The Right Path From The Best Learning
+          Platform"), and it contained ZERO links, which made it a genuine dead
+          end. It also told the practitioner claim for the third time. Its real
+          idea is a study-mode filter in the programme finder above.
 
-          {/* Initiatives */}
-          <div>
-            <SectionHeading eyebrow="Support the Work" align="left">
-              Our initiatives
-            </SectionHeading>
-            <SpotlightGroup className="-mt-4 grid gap-5 sm:grid-cols-3">
-              {news.map((n, i) => (
-                <Reveal key={n.slug} delay={i * 100}>
-                  <Link
-                    href={n.href}
-                    className="group flex h-full flex-col overflow-hidden rounded-2xl bg-brand-cream shadow-lift ring-1 ring-brand-sand/70 transition duration-500 hover:-translate-y-1.5 hover:shadow-lift-lg hover:ring-brand-gold"
-                  >
-                    <div className="relative h-36 overflow-hidden">
-                      <Image
-                        src={n.image}
-                        alt=""
-                        fill
-                        className="object-cover transition duration-[900ms] ease-out group-hover:scale-110"
-                        sizes="(min-width:1024px) 20vw, (min-width:640px) 33vw, 100vw"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-brand-purple-dark/50 to-transparent" />
-                    </div>
-                    <div className="flex flex-1 flex-col p-5">
-                      <p className="font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-brand-gold-deep">
-                        {n.category}
-                      </p>
-                      <h3 className="mt-1.5 font-heading text-[15px] font-bold leading-snug text-brand-purple dark:text-white [text-wrap:balance]">
-                        {n.title}
-                      </h3>
-                      <p className="mt-2.5 flex-1 line-clamp-4 text-[13px] leading-relaxed text-brand-muted dark:text-white/60">
-                        {n.excerpt}
-                      </p>
-                      <span className="mt-4 flex items-center gap-1.5 font-heading text-[13px] font-semibold text-brand-purple">
-                        Learn more
-                        <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1.5">
-                          →
-                        </span>
-                      </span>
-                    </div>
-                  </Link>
-                </Reveal>
-              ))}
-            </SpotlightGroup>
-          </div>
-        </div>
-      </Section>
+          THE DIARY was the weakest band on the page: events and support in one
+          box, neither given room. Both have real pages — /events and /support —
+          and both are in the footer.
 
-      {/* FAQ */}
-      <Section chapter="Questions" className="dark:bg-[#150f1e]">
-        <SectionHeading eyebrow="Questions, Answered">Frequently asked questions</SectionHeading>
-        <div className="mx-auto max-w-3xl divide-y divide-brand-sand overflow-hidden rounded-2xl border border-brand-sand bg-white">
-          {homeFaqs.map((faq) => (
-            <details key={faq.question} className="group">
-              <summary className="flex cursor-pointer list-none items-start gap-4 px-6 py-5 transition hover:bg-brand-cream">
-                <span className="flex-1 font-heading text-[17px] font-semibold leading-snug text-brand-purple">
-                  {faq.question}
-                </span>
-                {/* Plus that becomes a minus — two rules, no icon font, no glyph
-                    that renders differently between platforms. */}
-                <span
-                  aria-hidden="true"
-                  className="relative mt-1 h-5 w-5 shrink-0 rounded-full border border-brand-gold-deep/40 text-brand-gold-deep transition duration-300 group-open:rotate-180 group-open:bg-brand-gold-deep"
-                >
-                  <span className="absolute left-1/2 top-1/2 h-[1.5px] w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-current transition group-open:bg-white" />
-                  <span className="absolute left-1/2 top-1/2 h-2.5 w-[1.5px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-current transition duration-300 group-open:scale-y-0" />
-                </span>
-              </summary>
-              <div className="px-6 pb-6 pr-14">
-                <p className="text-[15px] leading-relaxed text-brand-muted dark:text-white/60">{faq.answer}</p>
-              </div>
-            </details>
-          ))}
-        </div>
-
-        <p className="mt-8 text-center text-sm text-brand-muted dark:text-white/60">
-          Still deciding?{' '}
-          <Link href="/contact" className="font-semibold text-brand-purple underline underline-offset-4 hover:text-brand-gold-deep">
-            Talk to an enrollment representative
-          </Link>
-          {' '}or{' '}
-          <Link href="/admissions" className="font-semibold text-brand-purple underline underline-offset-4 hover:text-brand-gold-deep">
-            read the admission requirements
-          </Link>
-          .
-        </p>
-      </Section>
+          THE FAQ pre-empted objections a reader has not made yet. A homepage
+          should create confidence and lead deeper; answering "what if I cannot
+          afford it" before anybody has decided they want it is the posture of a
+          page that expects to be doubted. The questions live on /admissions,
+          where somebody who has decided goes next. */}
 
       {/* The last scene. Cta.tsx still closes the other eighteen pages — see
           FinalScene.tsx for why a policy page has not earned a cinematic

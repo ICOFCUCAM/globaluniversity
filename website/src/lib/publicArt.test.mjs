@@ -138,7 +138,16 @@ check('the walk followed imports outward', reachable.size > entries.length, true
 // The hero is the file this test was written for. If it stops being reachable,
 // the homepage has been restructured and this test is checking a graph that no
 // longer contains the thing it is guarding.
-const heroReached = [...reachable.keys()].some((f) => f.endsWith('components/home/Hero.tsx'));
+//
+// IT FIRED ONCE, CORRECTLY: the hero was rebuilt as an asymmetric composition
+// and the file renamed Hero.tsx -> HeroScene.tsx. The canary did its job — it
+// caught a rename that would otherwise have left this whole suite quietly
+// guarding a graph with no hero in it, still reporting green.
+//
+// Matched by prefix rather than by exact filename now. A hero that gets renamed
+// again should keep this test honest rather than break it, but a hero that
+// disappears from the public graph entirely still has to fail here.
+const heroReached = [...reachable.keys()].some((f) => /components\/home\/Hero[^/]*\.tsx$/.test(f));
 check('the homepage hero is in the public graph', heroReached, true);
 
 const offenders = [...reachable.keys()]
