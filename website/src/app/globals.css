@@ -402,6 +402,25 @@ html {
     min-height: 0;
   }
 
+  /* STRETCHED LINKS ARE EXEMPT TOO, AND THIS NOTE EXISTS SO NOBODY "FIXES"
+     THEM.
+
+     An audit at 390px reported six links under 44px — the faculty card titles
+     and four programme card titles. Every one is a stretched link: an
+     absolutely positioned span inside it covers the whole card, so the tap
+     target is the card and the measured 25–29px is the height of the TEXT, not
+     of anything a thumb has to hit.
+
+     Chasing that number would mean padding a heading until its text box reached
+     44px, which changes the card's layout to satisfy a measurement rather than
+     a person. The audit was measuring the wrong box.
+
+     The test for a real near-miss is whether the element's own hit area is
+     small — not whether its text is. */
+  a:has(> span[aria-hidden='true'].absolute) {
+    min-height: 0;
+  }
+
   /* 3. Long identifiers and URLs — credential numbers, email addresses in the
         footer — force horizontal scroll on a narrow viewport, and a page that
         scrolls sideways feels broken in a way nothing else does. */
