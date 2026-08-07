@@ -121,10 +121,19 @@ export default function HeroScene() {
           Composition-wise it fits this panel exactly. The building and the tree
           are on the right of the frame and the left is open plaza and sun, so
           cropping to the right half keeps the architecture and discards the
-          blown-out sky that white type could never have sat on. */}
+          blown-out sky that white type could never have sat on.
+
+          IT IS A JPEG NOW, NOT A 2MB PNG. PNG is lossless and therefore the
+          wrong container for a photograph: this one arrived at 1.98MB and
+          re-encodes to 337KB at quality 92 with no visible difference at any
+          size this panel is drawn. next/image would have served WebP either
+          way, so no reader was ever downloading two megabytes — but the source
+          sits in git forever, is read on every build, and is the file anybody
+          opens when they want to look at it. A sixfold saving on all three for
+          nothing given up. */}
       <div className="absolute inset-y-0 right-0 -z-20 hidden w-[52%] lg:block xl:w-[50%]">
         <Image
-          src="/images/campus/plaza-sunrise.png"
+          src="/images/campus/plaza-sunrise.jpg"
           alt="A stone faculty building with columns, a paved plaza and a jacaranda in flower at sunrise"
           fill
           sizes="(min-width:1024px) 52vw, 100vw"
@@ -161,7 +170,7 @@ export default function HeroScene() {
           photograph, it is a stripe. */}
       <div aria-hidden="true" className="absolute inset-0 -z-20 lg:hidden">
         <Image
-          src="/images/campus/plaza-sunrise.png"
+          src="/images/campus/plaza-sunrise.jpg"
           alt=""
           fill
           sizes="100vw"
