@@ -242,7 +242,18 @@ export default function ProgrammeFinder() {
             </fieldset>
           </div>
 
-          <p className="mt-8 flex flex-wrap items-center gap-4 border-t border-[#efe8db] pt-6 font-sans text-sm text-brand-muted dark:border-white/10 dark:text-white/55" role="status">
+          {/* aria-live="polite" and not "assertive": the count changes on every
+              keystroke, and an assertive region interrupts a screen reader
+              mid-word each time. Polite queues the announcement until the
+              reader pauses, which for a search result is exactly right.
+              aria-atomic so the whole sentence is read, not the digit that
+              changed — "eleven" alone tells nobody anything. */}
+          <p
+            className="mt-8 flex flex-wrap items-center gap-4 border-t border-[#efe8db] pt-6 font-sans text-sm text-brand-muted dark:border-white/10 dark:text-white/55"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+          >
             <span>
               <strong className="font-heading text-lg text-brand-purple dark:text-white">
                 {results.length}
