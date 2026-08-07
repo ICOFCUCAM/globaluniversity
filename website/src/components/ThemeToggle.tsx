@@ -64,10 +64,16 @@ export default function ThemeToggle({ className = '' }: { className?: string }) 
   }
 
   return (
-    <fieldset
+    // A RADIOGROUP, not three toggle buttons. aria-pressed on three separate
+    // buttons tells a screen reader there are three independent switches, two
+    // of which happen to be off — so the user hears "Light, not pressed.
+    // System, pressed. Dark, not pressed" and has to infer the exclusivity.
+    // A radiogroup says it: one choice, three options, this one selected.
+    <div
+      role="radiogroup"
+      aria-label="Colour theme"
       className={`inline-flex items-center gap-0.5 rounded-full border border-white/20 p-0.5 ${className}`}
     >
-      <legend className="sr-only">Colour theme</legend>
       {OPTIONS.map(({ value, label, Icon }) => {
         // Before hydration nothing is marked selected. Rendering a guess and
         // correcting it is worse than a half-second of neutrality: it shows the
@@ -77,8 +83,9 @@ export default function ThemeToggle({ className = '' }: { className?: string }) 
           <button
             key={value}
             type="button"
+            role="radio"
+            aria-checked={on}
             onClick={() => choose(value)}
-            aria-pressed={on}
             title={`${label} theme`}
             className={`flex h-7 w-7 items-center justify-center rounded-full transition duration-300 ${
               on ? 'bg-brand-gold text-brand-purple-dark' : 'text-white/60 hover:text-white'
@@ -89,6 +96,6 @@ export default function ThemeToggle({ className = '' }: { className?: string }) 
           </button>
         );
       })}
-    </fieldset>
+    </div>
   );
 }
