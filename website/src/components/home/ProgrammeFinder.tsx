@@ -138,12 +138,21 @@ export default function ProgrammeFinder() {
   const filtering = q.trim() !== '' || interests.length > 0 || !!commitment || !!mode;
   const shown = filtering ? results.slice(0, 9) : results.slice(0, 6);
 
+  // The chips are toggles, and a toggle whose only "on" signal is colour fails
+  // for the eight per cent of men with a colour vision deficiency and for
+  // anyone in bright sunlight — which, for this university's applicants, is a
+  // meaningful share of the sessions. Selected chips carry a check as well as
+  // the fill, and the weight steps up. aria-pressed is already set at each
+  // call site, so assistive tech has always known; this is for the eye.
   const chip = (on: boolean) =>
-    `rounded-full border px-4 py-2 font-sans text-[13px] font-medium transition duration-300 ${
+    `inline-flex items-center gap-2 rounded-full border px-4 py-2 font-sans text-[13px] transition duration-300 ease-enter active:scale-[0.97] active:duration-75 ${
       on
-        ? 'border-brand-gold bg-brand-gold text-brand-purple-dark shadow-gold'
-        : 'border-[#ded6c8] bg-white text-brand-purple hover:border-brand-purple dark:border-white/15 dark:bg-white/5 dark:text-white/80 dark:hover:border-brand-gold'
+        ? 'border-brand-gold bg-brand-gold font-semibold text-brand-purple-dark shadow-gold'
+        : 'border-[#ded6c8] bg-white font-medium text-brand-purple hover:border-brand-purple dark:border-white/15 dark:bg-white/5 dark:text-white/80 dark:hover:border-brand-gold'
     }`;
+
+  const tick = (on: boolean) =>
+    on ? <span aria-hidden="true" className="-ml-0.5 text-[11px]">✓</span> : null;
 
   return (
     <section
@@ -194,7 +203,8 @@ export default function ProgrammeFinder() {
                   onClick={() => toggle(interests, i.id, setInterests)}
                   className={chip(interests.includes(i.id))}
                 >
-                  <span aria-hidden="true" className="mr-2 opacity-70">{i.icon}</span>
+                  {tick(interests.includes(i.id))}
+                  <span aria-hidden="true" className="opacity-70">{i.icon}</span>
                   {i.label}
                 </button>
               ))}
@@ -216,6 +226,7 @@ export default function ProgrammeFinder() {
                     onClick={() => setCommitment(commitment === c.id ? null : c.id)}
                     className={chip(commitment === c.id)}
                   >
+                    {tick(commitment === c.id)}
                     {c.label}
                   </button>
                 ))}
@@ -235,6 +246,7 @@ export default function ProgrammeFinder() {
                     onClick={() => setMode(mode === m ? null : m)}
                     className={chip(mode === m)}
                   >
+                    {tick(mode === m)}
                     {m}
                   </button>
                 ))}
