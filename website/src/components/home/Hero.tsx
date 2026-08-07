@@ -74,19 +74,20 @@ export default function Hero() {
   const [frame, setFrame] = useState(0);
   const [line, setLine] = useState(0);
   const [reduced, setReduced] = useState(false);
+  const [paused, setPaused] = useState(false);
 
   useEffect(() => {
     setReduced(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   }, []);
 
   useEffect(() => {
-    if (reduced) return;
+    if (reduced || paused) return;
     const t = setInterval(() => {
       setFrame((f) => (f + 1) % FRAMES.length);
       setLine((l) => (l + 1) % heroSlides.length);
     }, 7000);
     return () => clearInterval(t);
-  }, [reduced]);
+  }, [reduced, paused]);
 
   const slide = heroSlides[line];
 
@@ -95,6 +96,21 @@ export default function Hero() {
       data-on-dark=""
       aria-label="ICOF Global University"
       className="relative isolate overflow-hidden bg-brand-purple-dark text-white"
+      // THE HEADLINE ROTATES, WHICH MAKES IT MOVING CONTENT.
+      //
+      // WCAG 2.2.2 is explicit: anything that moves, blinks or auto-updates for
+      // more than five seconds needs a way to pause it. The old carousel paused
+      // on hover and focus; this hero rotates the headline AND the photograph,
+      // so it needs the same courtesy and did not have it.
+      //
+      // Pausing on focus matters more than pausing on hover. A keyboard user
+      // tabbing to the call to action gets the headline changing underneath the
+      // button they are aiming at, and a screen reader user gets the h1
+      // re-announced mid-sentence.
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocusCapture={() => setPaused(true)}
+      onBlurCapture={() => setPaused(false)}
     >
       {/* ---- the engraved ground, entirely vector ------------------------ */}
       <div aria-hidden="true" className="absolute inset-0">
