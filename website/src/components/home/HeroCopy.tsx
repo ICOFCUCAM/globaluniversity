@@ -62,17 +62,17 @@ export default function HeroCopy() {
         ))}
       </p>
 
-      <h1 className="mt-8 font-heading text-[clamp(2.5rem,6.6vw,5.2rem)] font-bold leading-[1.01] tracking-[-0.028em] text-transparent [background-image:linear-gradient(168deg,#ffffff_28%,#f7e6b4_70%,#e9c14a_100%)] [background-clip:text] [-webkit-background-clip:text] [text-wrap:balance]">
+      <h1 className="mt-[clamp(1.25rem,3.2vh,2rem)] font-heading text-[clamp(2.4rem,min(6.4vw,9vh),5rem)] font-bold leading-[1.02] tracking-[-0.028em] text-transparent [background-image:linear-gradient(168deg,#ffffff_28%,#f7e6b4_70%,#e9c14a_100%)] [background-clip:text] [-webkit-background-clip:text] [text-wrap:balance]">
         {slide.title}
       </h1>
 
-      <p className="mt-7 max-w-xl text-lg leading-relaxed text-white/80 sm:text-xl">{slide.text}</p>
+      <p className="mt-[clamp(1rem,2.6vh,1.75rem)] max-w-xl text-[clamp(1rem,1.9vh,1.25rem)] leading-relaxed text-white/80">{slide.text}</p>
 
-      <div className="mt-10 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:gap-4">
+      <div className="mt-[clamp(1.5rem,3.4vh,2.5rem)] flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:gap-4">
         <Magnetic strength={9}>
           <Link
             href={slide.cta.href}
-            className="group relative flex items-center justify-center gap-2.5 overflow-hidden rounded-full bg-brand-gold px-9 py-4 font-heading text-[15px] font-bold text-brand-purple-dark shadow-gold ring-1 ring-brand-purple-dark/25 transition duration-300 ease-enter hover:bg-brand-gold-deep active:scale-[0.98] active:duration-75 sm:px-10 sm:text-base"
+            className="group relative flex items-center justify-center gap-2.5 overflow-hidden whitespace-nowrap rounded-full bg-brand-gold px-9 py-4 font-heading text-[15px] font-bold text-brand-purple-dark shadow-gold ring-1 ring-brand-purple-dark/25 transition duration-300 ease-enter hover:bg-brand-gold-deep active:scale-[0.98] active:duration-75 sm:px-10 sm:text-base"
           >
             <span className="relative z-10">{slide.cta.label}</span>
             <span aria-hidden="true" className="relative z-10 transition-transform duration-300 group-hover:translate-x-1">→</span>
@@ -82,7 +82,7 @@ export default function HeroCopy() {
         <Magnetic strength={9}>
           <Link
             href="/programs"
-            className="group flex items-center justify-center gap-2.5 rounded-full border-2 border-white/40 bg-white/[0.06] px-9 py-4 font-heading text-[15px] font-bold text-white backdrop-blur-sm transition duration-300 ease-enter hover:border-brand-gold hover:bg-brand-gold/12 hover:text-brand-gold active:scale-[0.98] active:duration-75 sm:px-10 sm:text-base"
+            className="group flex items-center justify-center gap-2.5 whitespace-nowrap rounded-full border-2 border-white/40 bg-white/[0.06] px-9 py-4 font-heading text-[15px] font-bold text-white backdrop-blur-sm transition duration-300 ease-enter hover:border-brand-gold hover:bg-brand-gold/12 hover:text-brand-gold active:scale-[0.98] active:duration-75 sm:px-10 sm:text-base"
           >
             Explore Programmes
             <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">→</span>
@@ -90,7 +90,7 @@ export default function HeroCopy() {
         </Magnetic>
       </div>
 
-      <ul className="mt-10 flex flex-wrap gap-x-7 gap-y-2.5">
+      <ul className="mt-[clamp(1.5rem,3.4vh,2.5rem)] flex flex-wrap gap-x-7 gap-y-2.5">
         {HERO_ASSURANCES.map((a) => (
           <li key={a} className="flex items-center gap-2 font-sans text-[11px] font-medium tracking-wide text-white/65 sm:text-[12.5px]">
             <span aria-hidden="true" className="h-1 w-1 shrink-0 rounded-full bg-brand-gold" />

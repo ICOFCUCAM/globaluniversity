@@ -116,7 +116,17 @@ export default function Hero() {
         <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-b from-transparent to-brand-purple-dark" />
       </div>
 
-      <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 py-24 sm:px-6 sm:py-28 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,460px)] lg:gap-16 lg:py-32">
+      {/* ---- vertical scale is tied to the VIEWPORT HEIGHT, not just its width
+          A fixed py-32 with a 5.2rem headline made this hero 1039px tall. On a
+          1280x800 laptop — an ordinary machine, not a small one — that put both
+          call-to-action buttons entirely below the fold. The page looked
+          handsome and asked for nothing, which is the most expensive kind of
+          handsome a homepage can be.
+          So the padding, the headline and the crest all clamp against vh as
+          well as vw. On a tall display nothing changes; on a short one the
+          whole thing compresses until "Begin Your Application" is above the
+          fold, which is the one element that has to be. */}
+      <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-4 py-[clamp(2.75rem,7vh,7.5rem)] sm:px-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,480px)] lg:gap-16">
         <HeroCopy />
 
         {/* ---- the device -------------------------------------------------
@@ -124,7 +134,7 @@ export default function Hero() {
             name, the motto, the founding year — is set in readable type in the
             column beside it, so a screen reader that announced the figure would
             be reading the same words a second time. */}
-        <div aria-hidden="true" className="relative mx-auto w-full max-w-[520px]">
+        <div aria-hidden="true" className="relative mx-auto w-full max-w-[min(520px,58vh)]">
           {/* The dark disc the device is struck on. Gold hairlines on a
               mid-purple field have very little to push against; dropping the
               ground beneath them by a couple of stops is what turns a wire
