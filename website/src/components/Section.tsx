@@ -5,7 +5,7 @@ export function Eyebrow({ children, light = false }: { children: ReactNode; ligh
   return (
     <p
       className={`mb-3 font-sans text-xs font-semibold uppercase tracking-[0.25em] ${
-        light ? 'text-brand-gold' : 'text-brand-gold-deep'
+        light ? 'text-brand-gold' : 'text-brand-gold-ink'
       }`}
     >
       {children}

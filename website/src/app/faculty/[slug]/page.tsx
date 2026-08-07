@@ -70,7 +70,7 @@ function TickList({ items, columns = 2 }: { items: string[]; columns?: 1 | 2 }) 
             <svg
               aria-hidden="true"
               viewBox="0 0 24 24"
-              className="mt-[7px] h-3 w-3 shrink-0 text-brand-gold-deep"
+              className="mt-[7px] h-3 w-3 shrink-0 text-brand-gold-ink"
               fill="none"
               stroke="currentColor"
               strokeWidth={3.5}
@@ -456,7 +456,7 @@ export default function FacultyDetailPage({ params }: { params: { slug: string }
                               className="group inline-flex items-center gap-1.5 rounded-full border border-brand-sand bg-white px-4 py-2 font-heading text-sm font-semibold text-brand-purple shadow-sm transition hover:border-brand-gold hover:shadow-lift"
                             >
                               {a.title}
-                              <span aria-hidden="true" className="text-brand-gold-deep transition-transform duration-300 group-hover:translate-x-1">→</span>
+                              <span aria-hidden="true" className="text-brand-gold-ink transition-transform duration-300 group-hover:translate-x-1">→</span>
                             </Link>
                           </li>
                         ) : (
@@ -592,7 +592,7 @@ export default function FacultyDetailPage({ params }: { params: { slug: string }
           <div className="mx-auto max-w-4xl divide-y divide-brand-sand overflow-hidden rounded-2xl border border-brand-sand bg-brand-cream">
             {facultyCourses.map((c) => (
               <div key={c.code} className="flex flex-wrap items-baseline gap-x-4 gap-y-1 px-6 py-4">
-                <span className="w-24 shrink-0 font-mono text-xs font-bold text-brand-gold-deep">{c.code}</span>
+                <span className="w-24 shrink-0 font-mono text-xs font-bold text-brand-gold-ink">{c.code}</span>
                 <span className="flex-1 font-heading text-[15px] font-semibold text-brand-purple">{c.title}</span>
                 <span className="font-sans text-[10px] font-semibold uppercase tracking-[0.12em] text-brand-muted">
                   {c.level}

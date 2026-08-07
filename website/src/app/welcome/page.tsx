@@ -70,7 +70,7 @@ export default function WelcomePage() {
                 <p className="mt-2 text-sm leading-relaxed text-brand-muted">{chancellor.credentials}</p>
                 <a
                   href={`mailto:${chancellor.email}`}
-                  className="mt-3 inline-block text-sm font-medium text-brand-purple underline underline-offset-4 hover:text-brand-gold-deep"
+                  className="mt-3 inline-block text-sm font-medium text-brand-purple underline underline-offset-4 hover:text-brand-gold-ink"
                 >
                   {chancellor.email}
                 </a>
@@ -91,7 +91,7 @@ export default function WelcomePage() {
                   key={i}
                   className={
                     i === 0
-                      ? 'text-lg leading-relaxed text-brand-ink first-letter:float-left first-letter:mr-3 first-letter:font-heading first-letter:text-6xl first-letter:font-bold first-letter:leading-[0.85] first-letter:text-brand-gold-deep'
+                      ? 'text-lg leading-relaxed text-brand-ink first-letter:float-left first-letter:mr-3 first-letter:font-heading first-letter:text-6xl first-letter:font-bold first-letter:leading-[0.85] first-letter:text-brand-gold-ink'
                       : 'leading-relaxed text-brand-muted'
                   }
                 >
@@ -191,7 +191,7 @@ export default function WelcomePage() {
               >
                 <h3 className="font-heading text-lg font-bold text-brand-purple">{c.t}</h3>
                 <p className="mt-2 flex-1 text-sm leading-relaxed text-brand-muted">{c.b}</p>
-                <span aria-hidden="true" className="mt-4 font-heading text-sm font-semibold text-brand-gold-deep">
+                <span aria-hidden="true" className="mt-4 font-heading text-sm font-semibold text-brand-gold-ink">
                   →
                 </span>
               </Link>

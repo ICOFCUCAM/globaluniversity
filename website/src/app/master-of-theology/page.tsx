@@ -123,9 +123,9 @@ export default function MasterOfTheologyPage() {
                   {s.courses.map((c) => (
                     <details key={c.n} className="group">
                       <summary className="flex cursor-pointer list-none items-center gap-4 px-6 py-4 transition hover:bg-white">
-                        <span className="w-7 shrink-0 font-heading text-sm font-bold tabular text-brand-gold-deep">{c.n}</span>
+                        <span className="w-7 shrink-0 font-heading text-sm font-bold tabular text-brand-gold-ink">{c.n}</span>
                         <span className="flex-1 font-heading text-[15px] font-semibold text-brand-purple">{c.title}</span>
-                        <span aria-hidden="true" className="relative h-4 w-4 shrink-0 text-brand-gold-deep transition duration-300 group-open:rotate-180">
+                        <span aria-hidden="true" className="relative h-4 w-4 shrink-0 text-brand-gold-ink transition duration-300 group-open:rotate-180">
                           <span className="absolute left-1/2 top-1/2 h-[1.5px] w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-current" />
                           <span className="absolute left-1/2 top-1/2 h-2.5 w-[1.5px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-current transition duration-300 group-open:scale-y-0" />
                         </span>

@@ -130,7 +130,7 @@ export default async function ProgramDetailPage({ params }: { params: { slug: st
                     {term.courses.map((c) => (
                       <li key={c.code} className="border-l-2 border-brand-sand pl-5">
                         <p className="flex flex-wrap items-baseline gap-x-3">
-                          <span className="font-mono text-xs font-bold text-brand-gold-deep">{c.code}</span>
+                          <span className="font-mono text-xs font-bold text-brand-gold-ink">{c.code}</span>
                           <span className="font-heading text-[16px] font-bold text-brand-purple">{c.title}</span>
                           {c.credits !== undefined && (
                             <span className="rounded-full bg-brand-cream px-2.5 py-0.5 font-sans text-[10px] font-bold uppercase tracking-[0.1em] text-brand-gold-ink">

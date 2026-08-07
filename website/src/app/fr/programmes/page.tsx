@@ -25,7 +25,7 @@ export default function FrPrograms() {
               <ul className="mt-4 space-y-2">
                 {f.items.map((it) => (
                   <li key={it} className="flex gap-3 text-sm text-brand-muted">
-                    <span aria-hidden="true" className="text-brand-gold-deep">◆</span>
+                    <span aria-hidden="true" className="text-brand-gold-ink">◆</span>
                     <span>{it}</span>
                   </li>
                 ))}

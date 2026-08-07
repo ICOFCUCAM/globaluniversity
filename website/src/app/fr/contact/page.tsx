@@ -41,7 +41,7 @@ export default function FrContact() {
             >
               <p aria-hidden="true" className=" mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-brand-cream text-brand-purple ring-1 ring-brand-sand"><c.Icon className="h-6 w-6" /></p>
               <h2 className="mt-3 font-heading font-semibold text-brand-purple">{c.label}</h2>
-              <span className="mt-2 block text-sm text-brand-gold-deep">{c.value}</span>
+              <span className="mt-2 block text-sm text-brand-gold-ink">{c.value}</span>
             </a>
           ))}
         </div>

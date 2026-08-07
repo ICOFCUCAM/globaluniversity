@@ -133,7 +133,7 @@ export default function AcademicRegulationsPage() {
             {PARTS.map((p) => (
               <li key={p.id}>
                 <a href={`#${p.id}`} className="flex items-baseline gap-4 py-2.5 text-[15px] text-brand-muted transition hover:text-brand-purple">
-                  <span className="w-8 shrink-0 font-mono text-xs font-bold text-brand-gold-deep">{p.n}</span>
+                  <span className="w-8 shrink-0 font-mono text-xs font-bold text-brand-gold-ink">{p.n}</span>
                   <span className="font-heading font-semibold text-brand-purple">{p.title}</span>
                 </a>
               </li>
@@ -169,7 +169,7 @@ export default function AcademicRegulationsPage() {
             <Table head={['Code', 'Meaning']}>
               {specialGrades.map((s) => (
                 <tr key={s.code}>
-                  <td className="w-20 px-5 py-3 font-mono text-sm font-bold text-brand-gold-deep">{s.code}</td>
+                  <td className="w-20 px-5 py-3 font-mono text-sm font-bold text-brand-gold-ink">{s.code}</td>
                   <td className="px-5 py-3 text-brand-muted">{s.meaning}</td>
                 </tr>
               ))}
@@ -181,7 +181,7 @@ export default function AcademicRegulationsPage() {
             <Table head={['Code', 'Classification', 'Meaning']}>
               {courseClassification.map((c) => (
                 <tr key={c.code}>
-                  <td className="w-20 px-5 py-3 font-mono text-sm font-bold text-brand-gold-deep">{c.code}</td>
+                  <td className="w-20 px-5 py-3 font-mono text-sm font-bold text-brand-gold-ink">{c.code}</td>
                   <td className="px-5 py-3 font-heading font-semibold text-brand-purple">{c.name}</td>
                   <td className="px-5 py-3 text-brand-muted">{c.meaning}</td>
                 </tr>

@@ -60,7 +60,7 @@ export default function RootsOfFaithPage() {
 
       <Section>
         <div className="mx-auto max-w-3xl">
-          <p className="text-[19px] leading-[1.7] text-brand-ink first-letter:float-left first-letter:mr-3 first-letter:font-heading first-letter:text-6xl first-letter:font-bold first-letter:leading-[0.85] first-letter:text-brand-gold-deep">
+          <p className="text-[19px] leading-[1.7] text-brand-ink first-letter:float-left first-letter:mr-3 first-letter:font-heading first-letter:text-6xl first-letter:font-bold first-letter:leading-[0.85] first-letter:text-brand-gold-ink">
             {rootsOfFaith.intro}
           </p>
 

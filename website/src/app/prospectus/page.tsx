@@ -118,7 +118,7 @@ export default function ProspectusPage() {
             {PARTS.map((p) => (
               <li key={p.id}>
                 <a href={`#${p.id}`} className="flex items-baseline gap-4 py-2.5 text-[15px] text-brand-muted transition hover:text-brand-purple">
-                  <span className="w-8 shrink-0 font-mono text-xs font-bold text-brand-gold-deep">{p.n}</span>
+                  <span className="w-8 shrink-0 font-mono text-xs font-bold text-brand-gold-ink">{p.n}</span>
                   <span className="font-heading font-semibold text-brand-purple">{p.title}</span>
                 </a>
               </li>

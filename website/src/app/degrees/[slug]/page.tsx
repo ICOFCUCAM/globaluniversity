@@ -109,7 +109,7 @@ export default function DegreeLevelPage({ params }: { params: { slug: string } }
                 <svg
                   aria-hidden="true"
                   viewBox="0 0 24 24"
-                  className="mt-[7px] h-3 w-3 shrink-0 text-brand-gold-deep"
+                  className="mt-[7px] h-3 w-3 shrink-0 text-brand-gold-ink"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth={3.5}

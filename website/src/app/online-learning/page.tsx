@@ -101,7 +101,7 @@ export default function OnlineLearningPage() {
               Doctor of Theology and Doctor of Ministry. Our flexible online courses let you work
               towards your degree anywhere, at any time.
             </p>
-            <Link href="/degrees/masters-degrees" className="mt-4 inline-block text-sm font-semibold text-brand-gold-deep hover:underline">
+            <Link href="/degrees/masters-degrees" className="mt-4 inline-block text-sm font-semibold text-brand-gold-ink hover:underline">
               Explore graduate programs →
             </Link>
           </div>
@@ -114,7 +114,7 @@ export default function OnlineLearningPage() {
               Youth Leaders — taught online through the Personal Professional Development Industry
               &amp; Resource Center. Courses are free; certification is available for a small fee.
             </p>
-            <Link href="/ppdirc" className="mt-4 inline-block text-sm font-semibold text-brand-gold-deep hover:underline">
+            <Link href="/ppdirc" className="mt-4 inline-block text-sm font-semibold text-brand-gold-ink hover:underline">
               Browse PPDI-RC courses →
             </Link>
           </div>

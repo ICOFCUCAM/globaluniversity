@@ -86,7 +86,7 @@ export default function SiteSearch() {
               {q.trim().length >= 2 && results.length === 0 && (
                 <p className="px-5 py-8 text-center text-sm text-brand-muted">
                   Nothing found for “{q}”. Try another term, or{' '}
-                  <Link href="/contact" onClick={() => setOpen(false)} className="font-semibold text-brand-gold-deep underline">
+                  <Link href="/contact" onClick={() => setOpen(false)} className="font-semibold text-brand-gold-ink underline">
                     contact us
                   </Link>
                   .

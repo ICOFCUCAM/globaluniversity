@@ -71,7 +71,7 @@ export default function CourseCatalogue() {
             className="flex h-full flex-col rounded-2xl border border-brand-sand bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl"
           >
             <div className="flex items-start justify-between gap-3">
-              <span className="font-mono text-xs font-bold tracking-wider text-brand-gold-deep">{c.code}</span>
+              <span className="font-mono text-xs font-bold tracking-wider text-brand-gold-ink">{c.code}</span>
               {c.online && (
                 <span className="rounded-full bg-brand-purple px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand-gold">
                   Online

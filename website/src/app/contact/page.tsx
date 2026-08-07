@@ -19,21 +19,21 @@ export default async function ContactPage() {
           <div className="rounded-xl border-t-4 border-brand-gold bg-white p-6 text-center shadow-sm">
             <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-brand-cream text-brand-purple ring-1 ring-brand-sand"><IconMail className="h-6 w-6" /></span>
             <h3 className="mt-3 font-heading font-semibold text-brand-purple">Admissions</h3>
-            <a href={`mailto:${contact.email}`} className="mt-2 block text-sm text-brand-gold-deep">
+            <a href={`mailto:${contact.email}`} className="mt-2 block text-sm text-brand-gold-ink">
               {contact.email}
             </a>
           </div>
           <div className="rounded-xl border-t-4 border-brand-gold bg-white p-6 text-center shadow-sm">
             <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-brand-cream text-brand-purple ring-1 ring-brand-sand"><IconCalendar className="h-6 w-6" /></span>
             <h3 className="mt-3 font-heading font-semibold text-brand-purple">Apply Online</h3>
-            <a href="/apply" className="mt-2 block text-sm text-brand-gold-deep">
+            <a href="/apply" className="mt-2 block text-sm text-brand-gold-ink">
               Free Online Application
             </a>
           </div>
           <div className="rounded-xl border-t-4 border-brand-gold bg-white p-6 text-center shadow-sm">
             <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-brand-cream text-brand-purple ring-1 ring-brand-sand"><IconLaptop className="h-6 w-6" /></span>
             <h3 className="mt-3 font-heading font-semibold text-brand-purple">E-Learning</h3>
-            <a href="/portal" className="mt-2 block text-sm text-brand-gold-deep">
+            <a href="/portal" className="mt-2 block text-sm text-brand-gold-ink">
               Student Portal Login
             </a>
           </div>
@@ -42,12 +42,12 @@ export default async function ContactPage() {
           <div className="rounded-xl border-t-4 border-brand-gold bg-white p-6 text-center shadow-sm">
             <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-brand-cream text-brand-purple ring-1 ring-brand-sand"><IconSignal className="h-6 w-6" /></span>
             <h3 className="mt-3 font-heading font-semibold text-brand-purple">Call Us 24×7</h3>
-            <a href="tel:+237675133426" className="mt-2 block text-sm text-brand-gold-deep">+237 675 133 426</a>
+            <a href="tel:+237675133426" className="mt-2 block text-sm text-brand-gold-ink">+237 675 133 426</a>
           </div>
           <div className="rounded-xl border-t-4 border-brand-gold bg-white p-6 text-center shadow-sm">
             <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-brand-cream text-brand-purple ring-1 ring-brand-sand"><IconMail className="h-6 w-6" /></span>
             <h3 className="mt-3 font-heading font-semibold text-brand-purple">WhatsApp</h3>
-            <a href="https://wa.me/237675133426" className="mt-2 block text-sm text-brand-gold-deep">Chat with us</a>
+            <a href="https://wa.me/237675133426" className="mt-2 block text-sm text-brand-gold-ink">Chat with us</a>
           </div>
           <div className="rounded-xl border-t-4 border-brand-gold bg-white p-6 text-center shadow-sm">
             <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-brand-cream text-brand-purple ring-1 ring-brand-sand"><IconCampus className="h-6 w-6" /></span>
@@ -56,7 +56,7 @@ export default async function ContactPage() {
               href="https://maps.google.com/?q=Bulu+Blind+Junction+Buea+Cameroon"
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-2 block text-sm text-brand-gold-deep"
+              className="mt-2 block text-sm text-brand-gold-ink"
             >
               Opposite Bulu Blind Junction, Buea-Cameroon
             </a>

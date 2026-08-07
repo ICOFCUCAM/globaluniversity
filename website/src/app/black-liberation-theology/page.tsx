@@ -130,7 +130,7 @@ export default function BlackLiberationTheologyPage() {
                 <div className="flex items-baseline gap-4">
                   <span
                     aria-hidden="true"
-                    className="font-heading text-sm font-bold tabular text-brand-gold-deep"
+                    className="font-heading text-sm font-bold tabular text-brand-gold-ink"
                   >
                     {String(i + 1).padStart(2, '0')}
                   </span>
@@ -188,7 +188,7 @@ export default function BlackLiberationTheologyPage() {
               >
                 <span
                   aria-hidden="true"
-                  className="font-heading text-2xl font-bold tabular text-brand-gold-deep/50"
+                  className="font-heading text-2xl font-bold tabular text-brand-gold-ink/50"
                 >
                   {String(i + 1).padStart(2, '0')}
                 </span>
@@ -348,7 +348,7 @@ export default function BlackLiberationTheologyPage() {
                   {sem.modules.map((m) => (
                     <details key={m.code} className="group">
                       <summary className="flex cursor-pointer list-none items-center gap-4 px-6 py-4 transition hover:bg-brand-cream">
-                        <span className="w-[4.5rem] shrink-0 font-mono text-xs font-bold text-brand-gold-deep">
+                        <span className="w-[4.5rem] shrink-0 font-mono text-xs font-bold text-brand-gold-ink">
                           {m.code}
                         </span>
                         <span className="flex-1 font-heading text-[15px] font-semibold text-brand-purple">
@@ -356,7 +356,7 @@ export default function BlackLiberationTheologyPage() {
                         </span>
                         <span
                           aria-hidden="true"
-                          className="relative h-4 w-4 shrink-0 text-brand-gold-deep transition duration-300 group-open:rotate-180"
+                          className="relative h-4 w-4 shrink-0 text-brand-gold-ink transition duration-300 group-open:rotate-180"
                         >
                           <span className="absolute left-1/2 top-1/2 h-[1.5px] w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-current" />
                           <span className="absolute left-1/2 top-1/2 h-2.5 w-[1.5px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-current transition duration-300 group-open:scale-y-0" />

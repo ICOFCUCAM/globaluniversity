@@ -61,7 +61,7 @@ export default function FrenchHome() {
           {fr.home.pillars.map((p, i) => (
             <Reveal key={p.title} delay={i * 120}>
               <div className="h-full rounded-2xl border border-brand-sand bg-brand-cream p-8">
-                <span className="font-heading text-4xl font-bold text-brand-gold-deep">
+                <span className="font-heading text-4xl font-bold text-brand-gold-ink">
                   {String(i + 1).padStart(2, '0')}
                 </span>
                 <h3 className="mt-4 font-heading text-xl font-bold text-brand-purple">{p.title}</h3>

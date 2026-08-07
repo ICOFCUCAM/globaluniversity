@@ -50,7 +50,7 @@ export default function ContentPage({ params }: { params: { slug: string } }) {
                   <div className="flex items-baseline gap-4">
                     <span
                       aria-hidden="true"
-                      className="font-heading text-sm font-bold tabular text-brand-gold-deep"
+                      className="font-heading text-sm font-bold tabular text-brand-gold-ink"
                     >
                       {String(i + 1).padStart(2, '0')}
                     </span>

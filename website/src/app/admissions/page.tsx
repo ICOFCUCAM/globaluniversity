@@ -36,7 +36,7 @@ export default async function AdmissionsPage() {
             <p className="mt-4 text-brand-muted">
               The online application takes about 20 minutes. Have your identification, academic
               records and references ready. Questions? Write to{' '}
-              <a href={`mailto:${admissions.email}`} className="font-semibold text-brand-gold-deep">
+              <a href={`mailto:${admissions.email}`} className="font-semibold text-brand-gold-ink">
                 {admissions.email}
               </a>
               .
