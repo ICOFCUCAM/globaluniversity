@@ -206,19 +206,19 @@ export interface NavItem {
   groups?: NavGroup[];
 }
 
-export const hero = {
-  title: 'The Community University',
-  text: 'Educating men and women as skilled professionals in godly principles, morals and ministries worldwide.',
-  cta: { label: 'Enroll Today', href: '/admissions' },
-  image: '/images/home-hero.jpg',
-};
+// THE SINGLE `hero` OBJECT IS GONE, DELIBERATELY.
+//
+// It held the retired WordPress headline — "The Community University",
+// "Enroll Today" — and it was still exported and still returned by
+// getHomePage() long after the homepage stopped reading it. Retired copy that
+// remains one destructure away from the page is not dead code; it is a trap.
+// The messages the hero actually rotates through are heroSlides, below.
 
 // Hero slider — one slide per message the WordPress homepage rotated through.
 export interface HeroSlide {
   title: string;
   text: string;
   cta: { label: string; href: string };
-  image: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -247,7 +247,6 @@ export const heroSlides: HeroSlide[] = [
       'Two campuses in Cameroon, a professional development centre in Nigeria, and every programme '
       + 'delivered online worldwide — accredited, and recognised beyond our borders.',
     cta: { label: 'Begin Your Application', href: '/apply' },
-    image: '/images/graduation-2024/grad-2024-platform-party.jpg',
   },
   {
     title: 'Where Faith Meets Academic Rigour',
@@ -255,7 +254,6 @@ export const heroSlides: HeroSlide[] = [
       'Founded within the International Circle of Faith, we hold scholarship and character to the same '
       + 'standard — because a qualification that forms no one is only a piece of paper.',
     cta: { label: 'Explore Our Faculties', href: '/faculty' },
-    image: '/images/home-hero.jpg',
   },
   {
     title: 'A Degree You Can Take From Anywhere',
@@ -263,7 +261,6 @@ export const heroSlides: HeroSlide[] = [
       'Study online, on campus in Buea or Douala, or blended between the two — without leaving your '
       + 'work, your family or your ministry.',
     cta: { label: 'See How Study Works', href: '/online-learning' },
-    image: '/images/global.jpg',
   },
   {
     title: 'From Certificate to Doctorate, Without Starting Again',
@@ -271,7 +268,6 @@ export const heroSlides: HeroSlide[] = [
       'Every award articulates into the next. What you complete here carries forward — so the first '
       + 'qualification you earn is the first step, never the last.',
     cta: { label: 'See the Pathways', href: '/programs' },
-    image: '/images/graduation-2024/grad-2024-academic-procession.jpg',
   },
 ];
 

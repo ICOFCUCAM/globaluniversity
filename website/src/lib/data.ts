@@ -19,7 +19,6 @@
 
 import {
   site,
-  hero,
   heroSlides,
   quickLinks,
   stats,
@@ -51,7 +50,7 @@ export async function getSite() {
 }
 
 export async function getHomePage() {
-  return { hero, heroSlides, quickLinks, stats, about, events, news, cta, homeFeatures, homeFaculties, homeFaqs };
+  return { heroSlides, quickLinks, stats, about, events, news, cta, homeFeatures, homeFaculties, homeFaqs };
 }
 
 export async function getPrograms(): Promise<Program[]> {
