@@ -23,6 +23,23 @@ const config: Config = {
           'purple-light': '#57549a',
           gold: '#f7dc79',
           'gold-deep': '#e9c14a',
+          /**
+           * Gold that can carry TEXT on a light ground.
+           *
+           * brand-gold (#f7dc79) and brand-gold-deep (#e9c14a) are both LIGHT
+           * colours — luminance 0.73 and 0.58. They are correct as ink on the
+           * purple bands and as fills and rules anywhere, and they are
+           * unreadable as small text on cream or white: measured against cream
+           * they come in at 1.24:1 and 1.58:1, where WCAG AA asks 4.5 for
+           * anything under 18.66px bold.
+           *
+           * This is the same hue taken down to where it can be read: 5.47:1 on
+           * cream, 5.97:1 on white, 4.81:1 on sand — margin on all three, so a
+           * later background change does not silently break it.
+           *
+           * Use brand-gold on dark grounds and brand-gold-ink on light ones.
+           */
+          'gold-ink': '#7d5f11',
           cream: '#f7f5ed',
           sand: '#f7e6b4',
           ink: '#241a30',

@@ -1,165 +1,158 @@
 import Image from 'next/image';
-import { Grain } from '@/components/Atmosphere';
+import { Crown, Briefcase, ShieldCheck } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
-// THE FORMATION — one screen, three words, one motto.
+// OUR CONVICTIONS — a triptych on a cream ground.
 //
 // ===========================================================================
-// THE SECOND REDESIGN, AND WHY THE FIRST ONE WAS WRONG
+// THE THIRD VERSION, AND WHY THE SECOND ONE STILL NEEDED WORK
 // ===========================================================================
 //
-// This began as three bordered cards in a row — a motto rendered as a feature
-// comparison table. That was replaced with a sticky scene: each word held a
-// full viewport in turn while the photograph dissolved beneath it, three
-// screens of scrolling for three words.
+// Version one: three bordered cards in a row — a motto as a feature table.
+// Version two: a sticky scene, one word per viewport, three screens of
+// scrolling. Cut because it cost 3.0 screens, and because splitting the motto
+// across three screens meant the reader never saw it AS a motto.
 //
-// The sticky version worked exactly as designed and was still the wrong idea,
-// for two reasons that only became visible once it was on the page.
-//
-//   IT COST 3.0 SCREENS OF A 25-SCREEN PAGE. Together with the faculties scene
-//   next to it, two sections were consuming 7.4 screens — thirty per cent of
-//   the entire homepage — to deliver three convictions and four faculty names.
-//   That is a rate of about one idea per screen, on a page whose central
-//   problem was already length.
-//
-//   AND IT BROKE THE MOTTO INTO THREE UNRELATED CLAIMS. "Nobility,
-//   Professionalism and Godliness" is ONE motto. It is carved on the crest as
-//   one line. A reader who sees NOBILITY alone on a screen, scrolls, sees
-//   PROFESSIONALISM alone on a screen, scrolls, sees GODLINESS alone on a
-//   screen has been shown three separate assertions and never once shown the
-//   motto. The device that was meant to give each word weight was quietly
-//   dismantling the thing the words belong to.
-//
-// So: one viewport, all three words present at once, set at a size that makes
-// the point the sticky scene was trying to make with time. The reader sees the
-// motto — and can read it as a motto — and it costs one screen instead of three.
+// Version three — three columns of type on a dark full-bleed photograph —
+// fixed both of those and introduced a third fault that only shows when you
+// look at the page as a whole rather than at the section: it sat directly above
+// the faculties section, which is also dark and also full-viewport. Two
+// consecutive dark screens with no ground between them read as one tunnel, and
+// the reader loses any sense of having moved from one idea to the next.
 //
 // ===========================================================================
-// AND IT SHIPS NO JAVASCRIPT NOW
+// WHAT THE UNIVERSITY'S REFERENCE DESIGN GOT RIGHT
 // ===========================================================================
 //
-// The sticky version was a client component with a scroll listener, a
-// requestAnimationFrame loop, a reduced-motion query and three cross-fading
-// images. This is a server component with one image. Nothing to hydrate,
-// nothing to listen, nothing to reduce — the composition does the work that
-// the interaction was doing, which is the better trade wherever it is
-// available.
+// It puts this section on a CREAM ground and keeps the darkness inside a
+// photographic triptych — three panels butted together as one horizontal block,
+// each carrying an engraved icon, the word, the claim and the argument.
+//
+// That beats a full-bleed dark band for a reason worth writing down: it makes
+// the three convictions an OBJECT on the page rather than the page itself. An
+// object can be looked at. A full-bleed band is something you are inside, and
+// things you are inside are harder to regard as a whole — which is the exact
+// quality a motto needs.
+//
+// It also restores the light-dark rhythm: cream here, dark for the faculties.
+// That alternation is what stops a long page from feeling like one
+// undifferentiated scroll, and it had been lost.
+//
+// ===========================================================================
+// THE PANELS ARE BUTTED, NOT SPACED
+// ===========================================================================
+//
+// No gaps, no rounded corners on the individual panels, no shadows between
+// them — one hairline each. Three separated tiles are three cards however they
+// are styled; three panels sharing an edge are one figure divided into three
+// parts, which is what a triptych is and what the motto is.
 // ---------------------------------------------------------------------------
 
 const CONVICTIONS = [
   {
     word: 'Nobility',
+    icon: Crown,
     title: 'Education owed, not sold',
     body:
-      'Accredited higher education within reach of working adults, ministers and '
-      + 'first-generation students. A qualification only the comfortable can attempt is not '
-      + 'an education system.',
+      'We bring accredited higher education within reach of working adults, ministers and '
+      + 'first-generation students — in Cameroon, across Africa, and anywhere a connection reaches.',
+    src: '/images/graduation-2024/grad-2024-graduands-scrolls.jpg',
+    focal: '50% 32%',
   },
   {
     word: 'Professionalism',
+    icon: Briefcase,
     title: 'Taught by people who have done it',
     body:
-      'Our faculty earned their doctorates and senior qualifications in pulpits, classrooms, '
-      + 'laboratories and boardrooms before bringing that work into the lecture hall.',
+      'Our faculty hold the highest qualifications and real-world experience. Theory is applied '
+      + 'from the first semester because it was practised before it was taught.',
+    src: '/images/graduation-2024/grad-2024-faculty-robes.jpg',
+    focal: '50% 30%',
   },
   {
     word: 'Godliness',
+    icon: ShieldCheck,
     title: 'Character formed alongside competence',
     body:
-      'Rigorous scholarship and formed character belong together. A degree that trains a mind '
-      + 'and forms no one is only a piece of paper, however well examined.',
+      'Founded within the International Circle of Faith, we hold that rigorous scholarship and '
+      + 'formed character belong together.',
+    src: '/images/graduation-2024/grad-2024-hooding.jpg',
+    focal: '50% 34%',
   },
 ];
 
 export default function Formation() {
   return (
     <section
-      data-on-dark=""
       data-chapter="Formation"
       aria-labelledby="formation-heading"
-      className="relative z-10 flex min-h-[100svh] items-center overflow-hidden bg-brand-purple-dark py-24 text-white sm:py-28"
+      className="relative z-10 bg-brand-cream py-24 dark:bg-[#181121] sm:py-32"
     >
-      <Image
-        src="/images/graduation-2024/grad-2024-hooding.jpg"
-        alt="A graduate of ICOF Global University being hooded at the 2024 congregation"
-        fill
-        sizes="100vw"
-        quality={82}
-        loading="lazy"
-        className="-z-20 object-cover"
-        style={{ objectPosition: '50% 34%' }}
-      />
+      <div className="mx-auto max-w-7xl px-6 sm:px-10 lg:px-16">
+        <div className="mx-auto max-w-3xl text-center">
+          <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.34em] text-brand-gold-ink dark:text-brand-gold">
+            Our convictions
+          </p>
+          {/* Full stops rather than commas. The stops are the point: they make
+              three words into three statements without breaking them into three
+              sections, which is what the sticky version did wrong. */}
+          <h2
+            id="formation-heading"
+            className="mt-5 font-heading text-[clamp(1.8rem,3.6vw,2.9rem)] font-bold leading-[1.12] tracking-[-0.02em] text-brand-purple dark:text-white [text-wrap:balance]"
+          >
+            Nobility. Professionalism. Godliness.
+          </h2>
+          <div
+            aria-hidden="true"
+            className="mx-auto mt-6 h-[3px] w-16 rounded-full bg-gradient-to-r from-brand-gold-deep to-brand-gold"
+          />
+        </div>
 
-      {/* Heavier than the fixed-window bands. Those are showing a room; this is
-          showing three words at 5rem, and type that size over a busy photograph
-          is unreadable however good the picture. The photograph here is
-          atmosphere, not subject. */}
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 -z-10"
-        style={{
-          background:
-            'linear-gradient(180deg, rgba(12,6,26,0.92) 0%, rgba(14,7,30,0.86) 45%, '
-            + 'rgba(12,6,26,0.93) 100%)',
-        }}
-      />
-      <div aria-hidden="true" className="absolute inset-0 -z-10 bg-brand-purple/20 mix-blend-multiply" />
-      <div aria-hidden="true" className="absolute inset-0 -z-10">
-        <Grain opacity={0.07} />
-      </div>
-
-      <div className="relative mx-auto w-full max-w-7xl px-6 sm:px-10 lg:px-16">
-        <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.34em] text-brand-gold">
-          03 — Our formation
-        </p>
-
-        {/* The motto as ONE line, which is how it is carved. The three words
-            below are its expansion, not three separate headings — hence a
-            single h2 here and h3s beneath. */}
-        <h2
-          id="formation-heading"
-          className="mt-7 max-w-4xl font-heading text-[clamp(1.9rem,4vw,3.1rem)] font-bold leading-[1.1] tracking-[-0.02em] text-white [text-wrap:balance]"
-        >
-          Nobility, professionalism and godliness — the three things this
-          university means to form.
-        </h2>
-
-        <div className="mt-14 grid gap-x-12 gap-y-12 lg:grid-cols-3 lg:gap-y-0">
-          {CONVICTIONS.map((c, i) => (
-            <div key={c.word} className="relative">
-              {/* A hairline above each column rather than a box around it. The
-                  rule groups without enclosing, which is the whole difference
-                  between an editorial page and a page made of cards. */}
-              <div aria-hidden="true" className="mb-7 h-px w-full bg-gradient-to-r from-brand-gold/60 to-transparent" />
-              <p
+        <div className="mt-16 grid overflow-hidden rounded-sm shadow-lift-lg ring-1 ring-brand-purple/10 sm:mt-20 md:grid-cols-3">
+          {CONVICTIONS.map(({ word, icon: Icon, title, body, src, focal }, i) => (
+            <article
+              key={word}
+              className={`relative isolate flex min-h-[22rem] flex-col items-center justify-center px-8 py-14 text-center text-white lg:min-h-[25rem] lg:px-10 ${
+                i > 0 ? 'md:border-l md:border-white/15' : ''
+              }`}
+            >
+              <Image
+                src={src}
+                alt=""
+                fill
+                sizes="(min-width:768px) 33vw, 100vw"
+                quality={78}
+                loading="lazy"
+                className="-z-20 object-cover"
+                style={{ objectPosition: focal }}
+              />
+              {/* Heavy and even, unlike the directional scrims on the full-bleed
+                  bands. Each panel is a third of the width carrying a paragraph
+                  at 14px, so there is no part of the picture that is NOT behind
+                  text and nowhere for a gradient to open up. */}
+              <div
                 aria-hidden="true"
-                className="mb-4 font-heading text-[11px] font-bold tracking-[0.4em] text-brand-gold/75"
-              >
-                {String(i + 1).padStart(2, '0')}
-              </p>
-              {/* SIZED FOR THE LONGEST WORD, NOT THE SHORTEST.
-                  At clamp(2.1rem,3.8vw,3.4rem) "PROFESSIONALISM" — fifteen
-                  characters — overran its third of the grid and collided with
-                  "GODLINESS" in the column beside it. NOBILITY and GODLINESS
-                  both fitted, so the fault was invisible in two of three
-                  columns and only showed on the page.
-                  overflow-wrap:anywhere was the first attempt and it was worse:
-                  it stopped the collision by BREAKING the word, so the column
-                  read "PROFESSIONALIS / M" with an orphaned letter on its own
-                  line. It also fooled the measurement — asking for the text's
-                  bounding width returns the widest LINE, so a word that had
-                  already wrapped measured as comfortably fitting.
-                  The size is now set so the longest word fits on one line at
-                  every width the three-column grid applies, and the check is
-                  line COUNT rather than width. */}
-              <h3 className="font-heading text-[clamp(1.35rem,2.25vw,1.95rem)] font-bold uppercase leading-[1.05] tracking-[-0.02em] text-white">
-                {c.word}
+                className="absolute inset-0 -z-10"
+                style={{
+                  background:
+                    'linear-gradient(180deg, rgba(14,7,30,0.90) 0%, rgba(18,10,36,0.86) 50%, '
+                    + 'rgba(14,7,30,0.92) 100%)',
+                }}
+              />
+              <div aria-hidden="true" className="absolute inset-0 -z-10 bg-brand-purple/25 mix-blend-multiply" />
+
+              <Icon size={34} strokeWidth={1.25} aria-hidden="true" className="text-brand-gold" />
+
+              <h3 className="mt-7 font-sans text-[12px] font-semibold uppercase tracking-[0.3em] text-brand-gold">
+                {word}
               </h3>
-              <p className="mt-5 font-heading text-[17px] font-bold leading-snug text-brand-gold">
-                {c.title}
+
+              <p className="mt-5 font-heading text-[19px] font-bold leading-snug text-white [text-wrap:balance]">
+                {title}
               </p>
-              <p className="mt-4 text-[14.5px] leading-relaxed text-white/85">{c.body}</p>
-            </div>
+
+              <p className="mt-5 max-w-xs text-[14px] leading-relaxed text-white/85">{body}</p>
+            </article>
           ))}
         </div>
       </div>
