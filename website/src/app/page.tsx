@@ -7,7 +7,6 @@ import Reveal from '@/components/Reveal';
 import { getPrograms } from '@/lib/data';
 import { site } from '@/content/site';
 import { Aurora, Grain, Seam } from '@/components/Atmosphere';
-import KineticText from '@/components/KineticText';
 import { SpotlightGroup, SpotlightCard } from '@/components/Spotlight';
 import ProgramRibbon from '@/components/ProgramRibbon';
 import ScrollRail from '@/components/ScrollRail';
@@ -16,7 +15,7 @@ import ProofBand from '@/components/home/ProofBand';
 import PathwayLadder from '@/components/home/PathwayLadder';
 import FacultyScenes from '@/components/home/FacultyScenes';
 import { facultyById, programmesByFaculty } from '@/content/programmeCatalogue';
-import StudentExperience from '@/components/home/StudentExperience';
+import StudyHere from '@/components/home/StudyHere';
 import ProgrammeFinder from '@/components/home/ProgrammeFinder';
 import VerificationDemo from '@/components/home/VerificationDemo';
 import ChancellorWord from '@/components/home/ChancellorWord';
@@ -220,9 +219,11 @@ export default async function HomePage() {
           ground and his portrait is not. */}
       <ChancellorWord />
 
-      {/* What a week here actually looks like — the question that decides
-          whether a working adult with a family applies. */}
-      <StudentExperience />
+      {/* What studying here involves. This is StudentExperience and the Online
+          Learning band merged — see StudyHere.tsx, including the verbatim
+          duplicate headline that survived six redesigns because both halves
+          kept being edited in isolation. */}
+      <StudyHere />
 
       {/* Voices is off the page. It rendered NOTHING: src/content/voices.ts is
           deliberately empty because there are no consented, attributable
@@ -237,7 +238,11 @@ export default async function HomePage() {
       <ProgrammeFinder />
 
       {/* Research & Innovation */}
-      <section data-chapter="Research" className="relative overflow-hidden bg-brand-purple py-24 text-white sm:py-32">
+      {/* data-on-dark, not just bg-brand-purple. The focus-ring rules in
+          globals.css match either, but ScrollRail queries the ATTRIBUTE only —
+          so without it the rail drew its dark palette over a purple band and
+          the position marker went dark-on-dark for a whole section. */}
+      <section data-chapter="Research" data-on-dark="" className="relative overflow-hidden bg-brand-purple py-24 text-white sm:py-32">
         <Image src="/images/wp/g-decor.jpg" alt="" fill loading="lazy" quality={55} className="object-cover opacity-10" sizes="100vw" />
         <Aurora tone="purple" intensity={0.8} fields={2} />
         <Grain />
@@ -306,98 +311,13 @@ export default async function HomePage() {
       </section>
 
       {/* Admissions + International */}
-      <Section chapter="Admissions" className="dark:bg-[#150f1e]">
-        <div className="grid gap-6 lg:grid-cols-2">
-          {[
-            {
-              eyebrow: 'Admissions',
-              title: 'Anything you can dream, you can do',
-              body:
-                'From certificate to doctorate, our enrollment representatives walk with you through requirements, transferred coursework and financing. Applications are free, online, and reviewed continuously — and our support continues from enrollment to graduation and beyond.',
-              points: ['Free online application', 'Rolling review', 'Credit for prior study'],
-              primary: { label: 'Apply Now', href: '/apply' },
-              secondary: { label: 'Requirements', href: '/admissions' },
-              image: '/images/wp/g-grads.jpg',
-            },
-            {
-              eyebrow: 'International Students',
-              title: 'A global family of learners',
-              body:
-                'Rooted in Buea and Douala, connected worldwide through the International Circle of Faith, we welcome students from every nation. English-language study, recognized qualifications and online delivery make an IGUC education accessible wherever you are.',
-              points: ['Study in English', 'Recognized qualifications', 'Fully online routes'],
-              primary: { label: 'International Admissions', href: '/international' },
-              secondary: { label: 'Scholarships', href: '/scholarships' },
-              image: '/images/global.jpg',
-            },
-          ].map((c, i) => (
-            <Reveal key={c.eyebrow} delay={i * 120}>
-              <div className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-brand-sand bg-white shadow-lift transition duration-500 hover:shadow-lift-lg">
-                {/* Photograph reads at a whisper behind the copy and warms on hover */}
-                <Image
-                  src={c.image}
-                  alt=""
-                  fill
-                  loading="lazy"
-                  quality={55}
-                  className="object-cover opacity-[0.07] transition duration-700 group-hover:opacity-[0.13] group-hover:scale-105"
-                  sizes="(min-width:1024px) 50vw, 100vw"
-                />
-                <div className="relative flex h-full flex-col p-9 sm:p-10">
-                  <Eyebrow>{c.eyebrow}</Eyebrow>
-                  <h3 className="font-heading text-display-sm font-bold text-brand-purple dark:text-white [text-wrap:balance]">
-                    {c.title}
-                  </h3>
-                  <p className="mt-4 text-sm leading-relaxed text-brand-muted dark:text-white/60">{c.body}</p>
+      {/* The Admissions band is gone. "Anything you can dream, you can do" is
+          WordPress copy, and everything under it — apply, requirements, talk to
+          someone — is what the last scene of the page exists to say. A homepage
+          that asks for the application twice, six sections apart, is not asking
+          harder; it is admitting the first ask did not work. /admissions is
+          linked from the final scene and from the header. */}
 
-                  <ul className="mt-6 flex flex-1 flex-wrap content-start gap-2">
-                    {c.points.map((pt) => (
-                      <li
-                        key={pt}
-                        className="rounded-full border border-brand-sand bg-brand-cream dark:border-white/10 dark:bg-white/[0.04] px-3.5 py-1.5 font-sans text-[11px] font-semibold uppercase tracking-[0.1em] text-brand-purple"
-                      >
-                        {pt}
-                      </li>
-                    ))}
-                  </ul>
-
-                  <div className="mt-8 flex flex-wrap gap-3">
-                    <Link
-                      href={c.primary.href}
-                      className={`rounded-full px-7 py-3 font-heading text-sm font-semibold transition ${
-                        i === 0
-                          ? 'bg-brand-gold text-brand-purple shadow-gold hover:bg-brand-gold-deep'
-                          : 'bg-brand-purple text-white hover:bg-brand-purple-dark'
-                      }`}
-                    >
-                      {c.primary.label}
-                    </Link>
-                    <Link
-                      href={c.secondary.href}
-                      className="rounded-full border-2 border-brand-purple px-7 py-3 font-heading text-sm font-semibold text-brand-purple transition hover:bg-brand-purple hover:text-white"
-                    >
-                      {c.secondary.label}
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </Reveal>
-          ))}
-        </div>
-      </Section>
-
-      {/* Accreditation, partners and verification — one section that says what
-          the standing IS, rather than a strip of logos asking the visitor to
-          infer a relationship. See StandingBand for the wording constraint the
-          university asked for. */}
-      {/* StandingBand is gone. It claimed the recognition and this section
-          proves it — and its closing sentence was, word for word, this
-          section's headline. Claim and proof are now one section, in that
-          order. See VerificationDemo.tsx. */}
-
-      {/* The university already had cryptographically sealed credentials that
-          anyone could verify, hidden three clicks deep. It is the most
-          genuinely futuristic thing here, so it is on the front page and it is
-          live rather than simulated. */}
       <VerificationDemo />
 
       {/* Where the university physically is. */}
@@ -407,71 +327,10 @@ export default async function HomePage() {
           replaced the rotating globe, and what the map is forbidden to show. */}
       <GlobalPresence />
 
-      {/* Online learning */}
-      <Section chapter="Online" className="bg-white dark:bg-[#181121]">
-        <div className="grid items-center gap-12 lg:grid-cols-2">
-          <Reveal>
-            <div className="relative h-72 overflow-hidden rounded-2xl shadow-xl lg:h-96">
-              <Image
-                src="/images/banner.jpg"
-                alt="A student studying online with ICOF Global University"
-                fill
-                loading="lazy"
-                quality={82}
-                className="object-cover"
-                sizes="(min-width:1024px) 45vw, 100vw"
-              />
-            </div>
-          </Reveal>
-          <Reveal delay={120}>
-            <Eyebrow>Online Learning</Eyebrow>
-            <KineticText className="font-heading text-display font-bold text-brand-purple dark:text-white [text-wrap:balance]">
-              Your classroom, wherever you are
-            </KineticText>
-            <div className="mt-5 h-[3px] w-16 rounded-full bg-gradient-to-r from-brand-gold-deep to-brand-gold" />
-            <p className="mt-6 leading-relaxed text-brand-muted dark:text-white/60">
-              Master&apos;s and doctoral programs delivered fully online, with live classes, course
-              materials, assignments and examinations in one student portal — and your results,
-              GPA and transcript building automatically as you study.
-            </p>
+      {/* The Online Learning band is gone, merged upward into StudyHere. It
+          asked "how does it work" six sections after the band that asked "what
+          is it like" — one question split across a third of the page. */}
 
-            {/* What the portal actually does, stated as a checklist */}
-            <ul className="mt-7 grid gap-x-6 gap-y-3 sm:grid-cols-2">
-              {[
-                'Live and recorded classes',
-                'Assignments and submissions',
-                'Computer-based examinations',
-                'Automatic GPA and transcripts',
-                'Fees and payment records',
-                'QR-verifiable credentials',
-              ].map((f) => (
-                <li key={f} className="flex items-start gap-2.5 text-sm text-brand-muted dark:text-white/60">
-                  <span
-                    aria-hidden="true"
-                    className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-brand-gold text-brand-purple"
-                  >
-                    <svg viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth={3.5} strokeLinecap="round" strokeLinejoin="round">
-                      <path d="m5 12.5 4.5 4.5L19 7" />
-                    </svg>
-                  </span>
-                  {f}
-                </li>
-              ))}
-            </ul>
-
-            <div className="mt-8 flex flex-wrap gap-4">
-              <Link href="/online-learning" className="rounded-full bg-brand-gold px-7 py-3 font-heading text-sm font-semibold text-brand-purple transition hover:bg-brand-gold-deep">
-                How Online Study Works
-              </Link>
-              <Link href="/portal" className="rounded-full border-2 border-brand-purple px-7 py-3 font-heading text-sm font-semibold text-brand-purple transition hover:bg-brand-purple hover:text-white">
-                Student Portal
-              </Link>
-            </div>
-          </Reveal>
-        </div>
-      </Section>
-
-      {/* Professional training features */}
       {/* THREE SECTIONS REMOVED HERE, AND WHY.
 
           EXECUTIVE & PROFESSIONAL STUDIES was the densest band on the page —
