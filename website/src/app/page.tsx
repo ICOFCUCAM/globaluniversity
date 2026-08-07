@@ -403,9 +403,26 @@ export default async function HomePage() {
         <Grain />
         <Seam />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
-          <SectionHeading light eyebrow="Research & Innovation">
+          <SectionHeading light eyebrow="Research &amp; Innovation">
             Scholarship in service of society
           </SectionHeading>
+          {/* WHAT THIS SECTION DOES NOT CLAIM.
+              A design brief asked for research centre counts, publication
+              figures and international collaboration numbers here. This
+              university has no publications register and no centre register —
+              nothing in this system can produce those figures, and a research
+              claim is the one an academic reader checks first and hardest.
+
+              So the section names the three research activities that DO exist,
+              with the person or centre responsible for each, and says plainly
+              that the programme is being built. An institution describing where
+              its research is going is credible; one publishing a count it
+              cannot evidence is finished the first time somebody asks for the
+              list. See PENDING_MEASURES in institutionalFacts.ts. */}
+          <p className="mx-auto -mt-6 mb-14 max-w-2xl text-center leading-relaxed text-white/70">
+            Our research programme is young and is being built deliberately. These are the three
+            places it is happening now, each with the council or centre answerable for it.
+          </p>
           <SpotlightGroup className="grid gap-8 md:grid-cols-3">
             {[
               {
