@@ -79,9 +79,9 @@ export function Section({
     /* RELATIVE AND OPAQUE, ALWAYS — this is what lets a section CROSS a pinned
        scene instead of disappearing behind it.
 
-       A pinned scene (see PinnedScene.tsx) holds a photograph in a sticky child
-       while the reader scrolls past it, and the following section is supposed to
-       rise up over that held frame. That only works if the following section
+       A scene band (Formation, FacultyScenes, FixedWindow) holds a photograph
+       still while the reader scrolls past it, and the following section is
+       supposed to rise up over that held frame. That only works if the following section
        paints ABOVE it, and a section with a background but no `position` does
        not: an unpositioned background paints in the block-background layer,
        underneath every positioned element on the page. The pinned frame would

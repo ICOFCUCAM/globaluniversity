@@ -16,7 +16,8 @@ import ScrollRail from '@/components/ScrollRail';
 import { IconCampus, IconChapel, IconGlobe, IconLaptop } from '@/components/Icons';
 import ProofBand from '@/components/home/ProofBand';
 import PathwayLadder from '@/components/home/PathwayLadder';
-import FacultyShowcase from '@/components/home/FacultyShowcase';
+import FacultyScenes from '@/components/home/FacultyScenes';
+import { facultyById, programmesByFaculty } from '@/content/programmeCatalogue';
 import StandingBand from '@/components/home/StandingBand';
 import StudentExperience from '@/components/home/StudentExperience';
 import CampusBand from '@/components/home/CampusBand';
@@ -224,8 +225,56 @@ export default async function HomePage() {
           motto, and why nothing inside it is a link. */}
       <Formation />
 
-      {/* The faculties, as places rather than as a caption under a tile. */}
-      <FacultyShowcase />
+      {/* The four disciplines, one at a time at the size of a title card. The
+          slugs below are the REAL faculty pages, not the catalogue ids — those
+          two datasets use different keys, and the card grid this replaces
+          sidestepped the mismatch by linking all four to the index. See
+          FacultyScenes.tsx, and facultyLinks.test.mjs, which fails if any of
+          these stops resolving to a page. */}
+      <FacultyScenes
+        faculties={[
+          {
+            id: 'theology',
+            slug: 'theology-buea',
+            name: 'Theology',
+            mission: facultyById('theology')!.mission,
+            count: programmesByFaculty('theology').length,
+            src: '/images/graduation-2024/grad-2024-doctoral-portrait.jpg',
+            alt: 'A doctoral graduate of ICOF Global University in academic dress',
+            focal: '50% 16%',
+          },
+          {
+            id: 'engineering',
+            slug: 'engineering-technology',
+            name: 'Engineering & Technology',
+            mission: facultyById('engineering')!.mission,
+            count: programmesByFaculty('engineering').length,
+            src: '/images/graduation-2024/grad-2024-award-presentation.jpg',
+            alt: 'An award being presented at the ICOF Global University 2024 congregation',
+            focal: '50% 30%',
+          },
+          {
+            id: 'business',
+            slug: 'gibmas',
+            name: 'Business & Management',
+            mission: facultyById('business')!.mission,
+            count: programmesByFaculty('business').length,
+            src: '/images/graduation-2024/grad-2024-masters-caps.jpg',
+            alt: "Master's graduates of ICOF Global University in caps and gowns",
+            focal: '50% 32%',
+          },
+          {
+            id: 'education',
+            slug: 'education',
+            name: 'Education',
+            mission: facultyById('education')!.mission,
+            count: programmesByFaculty('education').length,
+            src: '/images/graduation-2024/grad-2024-graduands-group.jpg',
+            alt: 'Graduands of ICOF Global University gathered after the 2024 congregation',
+            focal: '50% 30%',
+          },
+        ]}
+      />
 
       {/* The ladder. The commonest reason somebody does not apply is believing
           the only door they can reach is the wrong one; this shows the awards

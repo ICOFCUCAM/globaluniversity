@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import PinnedScene from './PinnedScene';
+import FixedWindow from './FixedWindow';
 import { UNIVERSITY } from '@/lib/constants';
 
 // ---------------------------------------------------------------------------
@@ -31,13 +31,18 @@ import { UNIVERSITY } from '@/lib/constants';
 // one of them can be evidenced from anything in this system.
 //
 // ---------------------------------------------------------------------------
-// AND WHY IT IS PINNED
+// AND WHY THE PHOTOGRAPH IS FIXED BEHIND IT
 //
 // This is the first claim the page makes about identity, and the one a reader
 // is most likely to skim, because "part of a global movement" is the kind of
-// sentence every institution writes. Holding the frame takes the choice away:
-// the academic body stays in front of them for two thirds of a screen longer
-// than a band would, and then the university's own story rises across it.
+// sentence every institution writes.
+//
+// The photograph here is locked to the VIEWPORT and this band is a window that
+// travels across it: scroll and the words move upward over a stationary image,
+// exposing a different part of the congregation at the foot of the band than at
+// its head. The picture is embedded in the page rather than laid on top of it,
+// which is the difference between a photograph that decorates a claim and one
+// the claim is set into.
 // ---------------------------------------------------------------------------
 //
 // The two things said below are both checkable: the university stands within
@@ -49,13 +54,13 @@ import { UNIVERSITY } from '@/lib/constants';
 
 export default function GlobalMovement() {
   return (
-    <PinnedScene
+    <FixedWindow
       src="/images/graduation-2024/grad-2024-congregation-row.jpg"
       alt="Members of the ICOF Global University academic body in doctoral and faculty robes"
       anchor="right"
       focal="52% 24%"
       exposure={0.5}
-      hold={175}
+      height={124}
       chapter="The fellowship"
     >
       <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.34em] text-brand-gold">
@@ -95,6 +100,6 @@ export default function GlobalMovement() {
           </span>
         </Link>
       </div>
-    </PinnedScene>
+    </FixedWindow>
   );
 }

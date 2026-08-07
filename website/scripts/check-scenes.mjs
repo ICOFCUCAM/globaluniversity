@@ -58,8 +58,11 @@ const scenes = await page.evaluate(() => {
   return out;
 });
 
-console.log(`\nPinned scenes on ${url}\n`);
-if (!scenes.length) fail('no [data-pinned] scenes found at all');
+// Sticky scenes are one technique and fixed windows are another; a page may
+// legitimately use either or both. Absence of one is not a fault — silently
+// checking nothing would be.
+console.log(`\nScene bands on ${url}\n`);
+if (!scenes.length) console.log('  ..    no [data-pinned] sticky scenes on this page');
 
 const opaque = (c) => {
   if (!c || c === 'transparent') return false;
@@ -113,6 +116,65 @@ for (const s of scenes) {
   if (hit.skip) { skipped++; console.log(`  ..    ${s.chapter}: seam not in view, cross NOT probed`); }
   else if (hit.inside) pass(`${s.chapter}: the next layer paints over the held frame at the seam`);
   else fail(`${s.chapter}: at the seam the pinned frame is still on top — the cross is not happening`);
+}
+
+// -------------------------------------------------------------------------
+// Fixed windows: the photograph must NOT move in the viewport while the copy
+// travels across it, and the copy must never ride up under the sticky header.
+//
+// The first is the whole mechanism, and it is deleted by any ancestor gaining
+// transform / filter / will-change / contain — a change that would look like a
+// performance tweak in review while silently turning the window back into an
+// ordinary band.
+//
+// The second was a real fault: at 155svh the copy reached 14px from the top of
+// a 950px viewport, 84px inside the header, and the heading was sliced in half.
+// -------------------------------------------------------------------------
+const windows = await page.evaluate(() => [...document.querySelectorAll('[data-fixed-window]')]
+  .map((el) => el.getAttribute('data-chapter') || '(unnamed)'));
+
+if (windows.length) console.log('\nFixed windows\n');
+const headerH = await page.evaluate(() => {
+  const h = document.querySelector('header');
+  return h ? Math.round(h.getBoundingClientRect().height) : 0;
+});
+
+for (const chapter of windows) {
+  const reads = [];
+  for (const f of [0.05, 0.5, 0.95]) {
+    await page.evaluate(([c, frac]) => {
+      const el = [...document.querySelectorAll('[data-fixed-window]')]
+        .find((n) => (n.getAttribute('data-chapter') || '(unnamed)') === c);
+      const r = el.getBoundingClientRect();
+      const top = window.scrollY + r.top;
+      window.scrollTo({ top: top + Math.max(r.height - window.innerHeight, 0) * frac, behavior: 'instant' });
+    }, [chapter, f]);
+    await page.waitForTimeout(420);
+    reads.push(await page.evaluate((c) => {
+      const el = [...document.querySelectorAll('[data-fixed-window]')]
+        .find((n) => (n.getAttribute('data-chapter') || '(unnamed)') === c);
+      const img = el.querySelector('img');
+      const copy = el.querySelector('h1, h2, h3, p');
+      return {
+        imgTop: Math.round(img.getBoundingClientRect().top),
+        imgLeft: Math.round(img.getBoundingClientRect().left),
+        copyTop: Math.round(el.querySelector('div.relative').getBoundingClientRect().top),
+        firstTextTop: copy ? Math.round(copy.getBoundingClientRect().top) : 0,
+      };
+    }, chapter));
+  }
+  const drift = Math.max(...reads.map((r) => r.imgTop)) - Math.min(...reads.map((r) => r.imgTop))
+    + Math.max(...reads.map((r) => r.imgLeft)) - Math.min(...reads.map((r) => r.imgLeft));
+  const travel = Math.max(...reads.map((r) => r.copyTop)) - Math.min(...reads.map((r) => r.copyTop));
+  const highest = Math.min(...reads.map((r) => r.firstTextTop));
+
+  console.log(`  ${chapter}`);
+  if (drift <= 2) pass(`the photograph is stationary (${drift}px drift across the band)`);
+  else fail(`${chapter}: the photograph moved ${drift}px — an ancestor has gained transform/filter/will-change/contain and this is no longer a fixed window`);
+  if (travel > 150) pass(`the copy travels across it (${travel}px)`);
+  else fail(`${chapter}: the copy only travels ${travel}px — the band is too short to read as a window`);
+  if (highest > headerH + 8) pass(`the copy stays clear of the ${headerH}px header (nearest ${highest}px)`);
+  else fail(`${chapter}: the copy reaches ${highest}px, under the ${headerH}px header — reduce the band height`);
 }
 
 await browser.close();
