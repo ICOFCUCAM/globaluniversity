@@ -1,23 +1,15 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
 import Link from 'next/link';
-import { Section, SectionHeading, Eyebrow } from '@/components/Section';
 import HeroScene from '@/components/home/HeroScene';
-import Reveal from '@/components/Reveal';
 import { getPrograms } from '@/lib/data';
 import { site } from '@/content/site';
-import { Aurora, Grain, Seam } from '@/components/Atmosphere';
-import { SpotlightGroup, SpotlightCard } from '@/components/Spotlight';
-import ProgramRibbon from '@/components/ProgramRibbon';
 import ScrollRail from '@/components/ScrollRail';
-import { IconCampus, IconChapel, IconGlobe, IconLaptop } from '@/components/Icons';
 import ProofBand from '@/components/home/ProofBand';
 import PathwayLadder from '@/components/home/PathwayLadder';
 import FacultyScenes from '@/components/home/FacultyScenes';
 import { facultyById, programmesByFaculty } from '@/content/programmeCatalogue';
 import StudyHere from '@/components/home/StudyHere';
 import ProgrammeFinder from '@/components/home/ProgrammeFinder';
-import VerificationDemo from '@/components/home/VerificationDemo';
 import ChancellorWord from '@/components/home/ChancellorWord';
 import GlobalMovement from '@/components/home/GlobalMovement';
 import Formation from '@/components/home/Formation';
@@ -250,83 +242,121 @@ export default async function HomePage() {
           globals.css match either, but ScrollRail queries the ATTRIBUTE only —
           so without it the rail drew its dark palette over a purple band and
           the position marker went dark-on-dark for a whole section. */}
-      <section data-chapter="Research" data-on-dark="" className="relative overflow-hidden bg-brand-purple py-24 text-white sm:py-32">
-        <Image src="/images/wp/g-decor.jpg" alt="" fill loading="lazy" quality={55} className="object-cover opacity-10" sizes="100vw" />
-        <Aurora tone="purple" intensity={0.8} fields={2} />
-        <Grain />
-        <Seam />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
-          <SectionHeading light eyebrow="Research &amp; Innovation">
-            Scholarship in service of society
-          </SectionHeading>
-          {/* WHAT THIS SECTION DOES NOT CLAIM.
-              A design brief asked for research centre counts, publication
-              figures and international collaboration numbers here. This
-              university has no publications register and no centre register —
-              nothing in this system can produce those figures, and a research
-              claim is the one an academic reader checks first and hardest.
+      {/* ================================================================
+          RESEARCH, AS AN INDEX. No background photograph, no cards.
 
-              So the section names the three research activities that DO exist,
-              with the person or centre responsible for each, and says plainly
-              that the programme is being built. An institution describing where
-              its research is going is credible; one publishing a count it
-              cannot evidence is finished the first time somebody asks for the
-              list. See PENDING_MEASURES in institutionalFacts.ts. */}
-          <p className="mx-auto -mt-6 mb-14 max-w-2xl text-center leading-relaxed text-white/70">
+          It carried a decorative image at 10% opacity under an aurora, a grain
+          layer and a seam — four decorative layers behind three bordered tiles.
+          The photograph was unrecognisable at that opacity and was doing what
+          the faculties background was doing: costing a request and a decode to
+          deliver texture nobody could name.
+
+          The three activities are a list of where research happens and who is
+          answerable for it. A list wants rows.
+
+          WHAT THIS SECTION STILL REFUSES TO SAY, unchanged. A design brief
+          asked for research centre counts, publication figures and
+          international collaboration numbers. This university has no
+          publications register and no centre register — nothing in this system
+          can produce those figures, and a research claim is the one an academic
+          reader checks first and hardest. So it names the three activities that
+          DO exist, with the person or centre responsible for each, and says
+          plainly that the programme is being built. An institution describing
+          where its research is going is credible; one publishing a count it
+          cannot evidence is finished the first time somebody asks for the list.
+          See PENDING_MEASURES in institutionalFacts.ts.
+          ================================================================ */}
+      <section
+        data-chapter="Research"
+        data-on-dark=""
+        aria-labelledby="research-heading"
+        className="relative z-10 bg-brand-purple py-24 text-white sm:py-32"
+      >
+        <div className="mx-auto max-w-7xl px-6 sm:px-10 lg:px-16">
+          <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.34em] text-brand-gold">
+            Research &amp; innovation
+          </p>
+          <h2
+            id="research-heading"
+            className="mt-7 max-w-3xl font-heading text-[clamp(1.9rem,4vw,3.1rem)] font-bold leading-[1.1] tracking-[-0.02em] [text-wrap:balance]"
+          >
+            Scholarship in service of society
+          </h2>
+          <p className="mt-7 max-w-2xl text-[15.5px] leading-relaxed text-white/75">
             Our research programme is young and is being built deliberately. These are the three
             places it is happening now, each with the council or centre answerable for it.
           </p>
-          <SpotlightGroup className="grid gap-8 md:grid-cols-3">
+
+          <ul className="mt-16">
             {[
               {
                 t: 'Dissertation Council',
-                b: 'Doctoral research in theology, ministry and counseling is examined by the Dissertation Council under Professor Emeritus Arch Bishop Godfred Anyere Tah, upholding international standards of scholarship.',
+                b: 'Doctoral research in theology, ministry and counseling, examined under Professor Emeritus Arch Bishop Godfred Anyere Tah.',
                 href: '/degrees/doctoral',
               },
               {
                 t: 'PPDI-RC, Nigeria',
-                b: 'The Personal Professional Development Industry & Resource Center pursues applied research and training in behavioral therapy, agritech, digital business and community development.',
+                b: 'Applied research and training in behavioral therapy, agritech, digital business and community development.',
                 href: '/ppdirc',
               },
               {
                 t: 'Theology & African Society',
-                b: 'From liberation theology to criminology, our faculty publish and teach at the intersection of faith and the social questions facing African communities.',
+                b: 'From liberation theology to criminology — faculty publishing at the intersection of faith and the social questions facing African communities.',
                 href: '/research',
               },
             ].map((r, i) => (
-              <Reveal key={r.t} delay={i * 120}>
-                <SpotlightCard className="h-full rounded-2xl" tone="dark">
+              <li key={r.t}>
                 <Link
                   href={r.href}
-                  className="group relative flex h-full flex-col rounded-2xl border border-white/15 bg-white/5 p-8 backdrop-blur transition duration-500 hover:-translate-y-1 hover:bg-white/[0.08]"
+                  className="group grid items-baseline gap-x-8 gap-y-2 border-t border-white/15 py-8 transition-colors duration-300 hover:border-brand-gold/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold focus-visible:ring-offset-4 focus-visible:ring-offset-brand-purple lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_auto]"
                 >
+                  <span className="flex items-baseline gap-5">
+                    <span
+                      aria-hidden="true"
+                      className="font-heading text-[11px] font-bold tracking-[0.34em] text-brand-gold/75"
+                    >
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
+                    <span className="font-heading text-[clamp(1.35rem,2.4vw,1.9rem)] font-bold leading-tight tracking-[-0.02em] transition-colors duration-300 group-hover:text-brand-gold">
+                      {r.t}
+                    </span>
+                  </span>
+                  <span className="text-[14.5px] leading-relaxed text-white/75">{r.b}</span>
                   <span
                     aria-hidden="true"
-                    className="mb-5 block h-[3px] w-9 origin-left rounded-full bg-brand-gold transition-transform duration-500 group-hover:scale-x-[2]"
-                  />
-                  <h3 className="font-heading text-xl font-bold text-brand-gold [text-wrap:balance]">{r.t}</h3>
-                  <p className="mt-3 flex-1 text-sm leading-relaxed text-white/80">{r.b}</p>
-                  <span className="mt-6 flex items-center gap-1.5 font-sans text-[10px] font-bold uppercase tracking-[0.16em] text-white/50 transition group-hover:text-brand-gold">
-                    Read more
-                    <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">→</span>
+                    className="font-heading text-xl text-brand-gold/85 transition-all duration-300 group-hover:translate-x-1.5 group-hover:text-brand-gold"
+                  >
+                    →
                   </span>
                 </Link>
-                </SpotlightCard>
-              </Reveal>
+              </li>
             ))}
-          </SpotlightGroup>
+          </ul>
+          <div aria-hidden="true" className="border-t border-white/15" />
         </div>
       </section>
 
       {/* Admissions + International */}
-      {/* The Admissions band is gone. "Anything you can dream, you can do" is
-          WordPress copy, and everything under it — apply, requirements, talk to
-          someone — is what the last scene of the page exists to say. A homepage
-          that asks for the application twice, six sections apart, is not asking
-          harder; it is admitting the first ask did not work. /admissions is
-          linked from the final scene and from the header. */}
+      {/* CREDENTIAL VERIFICATION IS OFF THE HOMEPAGE, and the question that
+          removed it is the one every section should have to answer: who is
+          this for?
 
-      <VerificationDemo />
+          The live register is for somebody HOLDING a document — an employer, a
+          registrar, an evaluator abroad. That is not who reads a university
+          homepage. A prospective student does not want to verify a credential;
+          they want to know the one they earn will be verifiable, and that is a
+          sentence, not a working form.
+
+          The sentence is already on the page: the statistics band states the
+          accreditation in full, names MINESUP, and links to
+          /accreditation. Keeping a second section to say it again — with an
+          input, a button, three explainer steps and a panel — was the exact
+          repetition this redesign has been removing everywhere else, and it
+          survived only because the interaction inside it was good.
+
+          A good component in the wrong place is still in the wrong place. The
+          register lives at /verify, where somebody who needs it arrives with
+          an identifier already in hand. */}
 
       {/* Where the university physically is. */}
       {/* Campuses and the global network were the same argument told twice —

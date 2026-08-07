@@ -1,6 +1,5 @@
 import Link from 'next/link';
 
-import { flatWorldSvg } from '@/lib/flatWorld';
 import { CAMPUSES } from '@/content/institutionalFacts';
 
 // ---------------------------------------------------------------------------
@@ -70,14 +69,6 @@ import { CAMPUSES } from '@/content/institutionalFacts';
 
 // Rendered once, on the server. `places` draws the three pins the university
 // can actually evidence; see UNIVERSITY_PLACES in src/lib/flatWorld.ts.
-const WORLD = flatWorldSvg({
-  size: 640,
-  colour: '#4a3570',
-  inset: 0.92,
-  landOpacity: 0.20,
-  places: true,
-  id: 'presence',
-});
 
 export default function GlobalPresence() {
   return (
@@ -86,8 +77,7 @@ export default function GlobalPresence() {
       aria-labelledby="presence-heading"
       className="relative z-10 overflow-hidden bg-brand-cream py-24 dark:bg-[#181121] sm:py-32"
     >
-      <div className="mx-auto grid max-w-7xl items-center gap-14 px-6 sm:px-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)] lg:gap-20 lg:px-16">
-        {/* ---- the copy, first cell ------------------------------------- */}
+      <div className="mx-auto max-w-7xl px-6 sm:px-10 lg:px-16">
         <div>
       <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.34em] text-brand-gold-ink dark:text-brand-gold">
         09 — Where we are
@@ -97,14 +87,14 @@ export default function GlobalPresence() {
         One university. No borders.
       </h2>
 
-      <p className="mt-8 max-w-lg text-[15px] leading-relaxed text-brand-muted dark:text-white/80 sm:text-base">
+      <p className="mt-8 max-w-2xl text-[15px] leading-relaxed text-brand-muted dark:text-white/80 sm:text-base">
         Two campuses in Cameroon, a professional development centre in Nigeria, and every
         programme taught online to students on every continent. Wherever you study with us,
         you are a full member of this university — the same faculty, the same examinations,
         the same degree.
       </p>
 
-      <ul className="mt-10 grid gap-x-10 gap-y-5 sm:grid-cols-2">
+      <ul className="mt-12 grid gap-x-10 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
         {CAMPUSES.map((c) => (
           <li key={c.city} className="border-l-2 border-brand-gold-deep pl-4 dark:border-brand-gold/40">
             <p className="font-heading text-[17px] font-bold leading-tight text-brand-purple dark:text-white">
@@ -143,18 +133,6 @@ export default function GlobalPresence() {
       </div>
         </div>
 
-        {/* ---- the world, second cell --------------------------------------
-            Order-first on small screens so the figure introduces the section
-            rather than trailing it; on desktop it sits to the right of the
-            copy where the reading eye arrives last.
-
-            Decorative: every place it marks is named in the list above, so a
-            reader who cannot see it loses nothing. */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none order-first mx-auto w-full max-w-[26rem] lg:order-none lg:max-w-[32rem] lg:translate-x-[4%]"
-          dangerouslySetInnerHTML={{ __html: WORLD }}
-        />
       </div>
     </section>
   );
