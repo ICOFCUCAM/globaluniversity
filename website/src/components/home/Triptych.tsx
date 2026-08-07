@@ -116,7 +116,7 @@ const plate = (at: string) =>
   ' rgba(16,8,34,0.07) 78%,' +
   ' rgba(16,8,34,0) 100%)';
 
-export default function Triptych() {
+export default function Triptych({ children }: { children?: React.ReactNode }) {
   const facts = institutionalFacts();
   // Found by label rather than by index, so a reordering of institutionalFacts()
   // cannot silently promote the wrong number to seven rem. The programme count
@@ -173,6 +173,27 @@ export default function Triptych() {
           only mute the coastlines that are the whole point of the upgrade. The
           plate under each block of copy is doing correspondingly less work too
           — 0.38 rather than 0.56. */}
+      {/* A LIGHT, EVEN SCRIM — added when the window was extended upward, and
+          argued for rather than reached for.
+          The rule this repository keeps relearning is: when a light ground
+          fails a light ink, change the INK, because darkening the ground always
+          works and always costs the picture. It does not apply here, and the
+          reason it does not is worth being precise about. The ink is already
+          white — the lightest there is — and the text that now sits on the map
+          is a five-column ladder at 15px, so it cannot be made larger either.
+          Both of the usual answers are exhausted.
+          What is left is the ground, and the cost is genuinely different for a
+          MAP than for a photograph. A photograph under a wash loses faces,
+          depth and the sense that somebody was in the room. Line art loses a
+          little contrast and nothing else: at 0.34 every coastline, border and
+          graticule circle is still perfectly legible, which is why the land fill
+          also came down from 0.26 to 0.17 in the generator. Flat and fixed with
+          the map, so it cannot slide across it as the blocks travel. */}
+      <div
+        aria-hidden="true"
+        className="fixed inset-0 -z-10"
+        style={{ background: 'rgba(16,8,34,0.34)' }}
+      />
       <div aria-hidden="true" className="fixed inset-0 -z-10">
         <Grain opacity={0.06} />
       </div>
@@ -185,10 +206,30 @@ export default function Triptych() {
         the North Pole and cut at 60° south, with Africa at the foot.
       </span>
 
+      {/* ---- WHATEVER THE PAGE PUTS INSIDE THE WINDOW ---------------------
+
+          The window used to begin at block 1. The university asked for it to
+          start higher:
+
+              "can you make transparent these section. so that we can start
+               seeing the flatearth image top"
+
+          Anything rendered here is inside the clip, so the pinned map is behind
+          it — which means anything rendered here must have NO background of its
+          own and must be set for a dark ground. A section that keeps its white
+          background is not transparent, it is a white lid on the window, and
+          the map simply stops existing for its whole height.
+
+          This is a slot rather than an import so page.tsx still shows what the
+          composition contains, in order, at a glance. A component that reached
+          out and rendered two named sections of its own would hide the shape of
+          the homepage inside a file called Triptych. */}
+      {children}
+
       {/* ---- BLOCK 1 — transparent. The photograph reads. ------------------
           No background of any kind: everything behind this block is the fixed
           picture. Only the plate, which travels with the words. */}
-      <div className="relative flex min-h-[56svh] items-end lg:min-h-[62svh]">
+      <div data-block="" className="relative flex min-h-[56svh] items-end lg:min-h-[62svh]">
         <div aria-hidden="true" className="absolute inset-0 -z-[5]" style={{ background: plate('24% 74%') }} />
 
         <div className="mx-auto w-full max-w-7xl px-6 pb-20 sm:px-10 lg:px-16 lg:pb-24">
@@ -207,7 +248,7 @@ export default function Triptych() {
           bg-brand-purple-dark with no transparency anywhere in it. This is the
           block that hides the fixed picture, and it is the only one that has a
           background at all. */}
-      <div className="relative flex min-h-[86svh] items-center bg-brand-purple-dark lg:min-h-[92svh]">
+      <div data-block="" className="relative flex min-h-[86svh] items-center bg-brand-purple-dark lg:min-h-[92svh]">
         {/* The two seams. Short — 5rem — so the plane still reads as a plane.
             Any longer and the purple becomes a fade, which is the opposite of
             an interruption. They hang outside the block, over the transparent
@@ -334,7 +375,7 @@ export default function Triptych() {
           has travelled roughly a viewport and a half, the picture has not moved
           at all, so a different part of the congregation now stands behind the
           words. */}
-      <div className="relative flex min-h-[56svh] items-start lg:min-h-[62svh]">
+      <div data-block="" className="relative flex min-h-[56svh] items-start lg:min-h-[62svh]">
         <div aria-hidden="true" className="absolute inset-0 -z-[5]" style={{ background: plate('76% 30%') }} />
 
         <div className="mx-auto w-full max-w-7xl px-6 pt-20 sm:px-10 lg:px-16 lg:pt-24">

@@ -24,26 +24,36 @@ import { PATHWAY } from '@/content/institutionalFacts';
 export default function PathwayLadder() {
   return (
     <section
+      data-on-dark=""
       data-chapter="Pathways"
       aria-labelledby="pathways-heading"
-      // Reduced bottom padding: the programme finder sits directly beneath
-      // this on the same white ground and the two are one step. See the note in
-      // ProgrammeFinder.tsx about the 250px void this pair used to leave.
-      className="relative overflow-hidden bg-white pb-16 pt-24 dark:bg-[#150f1e] sm:pb-20 sm:pt-32"
+      // NO BACKGROUND. This section is inside the pinned world window, so
+      // everything behind it is the map — and a background of any kind here is
+      // not a "section on the map", it is a lid over it for the section's whole
+      // height. The whole palette below is set for a dark ground for the same
+      // reason: purple ink on a map that is mostly near-black would be the same
+      // failure spelled differently.
+      //
+      // NO `overflow-hidden` either. It does not clip a fixed descendant the
+      // way clip-path does, but it is the sort of property that gets upgraded to
+      // `contain` or paired with a transform by a later hand, and this section
+      // is now an ancestor of nothing — so the safest thing is that it does not
+      // establish anything at all.
+      className="relative pb-16 pt-24 text-white sm:pb-20 sm:pt-32"
     >
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <Reveal>
           <div className="mx-auto max-w-3xl text-center">
-            <p className="font-sans text-xs font-semibold uppercase tracking-[0.25em] text-brand-gold-ink">
+            <p className="font-sans text-xs font-semibold uppercase tracking-[0.25em] text-brand-gold">
               Academic pathways
             </p>
             <h2
               id="pathways-heading"
-              className="mt-4 font-heading text-display font-bold text-brand-purple dark:text-white [text-wrap:balance]"
+              className="mt-4 font-heading text-display font-bold text-white [text-wrap:balance]"
             >
               Start where you are. Go as far as you intend.
             </h2>
-            <p className="mt-6 text-lg leading-relaxed text-brand-muted dark:text-white/65">
+            <p className="mt-6 text-lg leading-relaxed text-white/70">
               Each award articulates into the next. A completed diploma may carry advanced standing
               into a bachelor&rsquo;s degree, so the first qualification you earn here is a step
               rather than a ceiling.
@@ -57,7 +67,7 @@ export default function PathwayLadder() {
         <div className="relative mt-16 sm:mt-20">
           <span
             aria-hidden="true"
-            className="absolute left-6 top-0 hidden h-full w-px bg-gradient-to-b from-brand-sand via-brand-gold/50 to-brand-sand dark:from-white/10 dark:via-brand-gold/40 dark:to-white/10 sm:block lg:left-0 lg:top-[2.15rem] lg:h-px lg:w-full lg:bg-gradient-to-r"
+            className="absolute left-6 top-0 hidden h-full w-px bg-gradient-to-b from-white/10 via-brand-gold/45 to-white/10 sm:block lg:left-0 lg:top-[2.15rem] lg:h-px lg:w-full lg:bg-gradient-to-r"
           />
 
           <ol className="relative grid gap-8 sm:gap-10 lg:grid-cols-5 lg:gap-6">
@@ -68,7 +78,7 @@ export default function PathwayLadder() {
                       copy on mobile, which is why the rail changes axis. */}
                   <span
                     aria-hidden="true"
-                    className="relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 border-brand-sand bg-white font-heading text-base font-bold text-brand-purple shadow-sm dark:border-white/15 dark:bg-white/[0.06] dark:text-white transition duration-500 group-hover:-translate-y-1 group-hover:border-brand-gold group-hover:bg-brand-purple group-hover:text-brand-gold group-hover:shadow-lift lg:mx-auto"
+                    className="relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 border-white/30 bg-white/10 font-heading text-base font-bold text-white shadow-sm transition duration-500 group-hover:-translate-y-1 group-hover:border-brand-gold group-hover:bg-brand-purple group-hover:text-brand-gold group-hover:shadow-lift lg:mx-auto"
                   >
                     {i + 1}
                   </span>
@@ -76,15 +86,15 @@ export default function PathwayLadder() {
                   <div className="min-w-0 lg:mt-6 lg:text-center">
                     <Link
                       href={step.href}
-                      className="font-heading text-xl font-bold text-brand-purple transition group-hover:text-brand-purple-dark dark:text-white dark:group-hover:text-brand-gold"
+                      className="font-heading text-xl font-bold text-white transition group-hover:text-brand-gold"
                     >
                       <span className="absolute inset-0" aria-hidden="true" />
                       {step.award}
                     </Link>
-                    <p className="mt-1.5 font-sans text-[11px] font-semibold uppercase tracking-[0.12em] text-brand-gold-ink">
+                    <p className="mt-1.5 font-sans text-[11px] font-semibold uppercase tracking-[0.12em] text-brand-gold">
                       {step.duration}
                     </p>
-                    <p className="mt-3 text-[15px] leading-relaxed text-brand-muted dark:text-white/60">{step.note}</p>
+                    <p className="mt-3 text-[15px] leading-relaxed text-white/65">{step.note}</p>
                   </div>
                 </li>
               </Reveal>
@@ -96,14 +106,14 @@ export default function PathwayLadder() {
           <div className="mt-16 flex flex-col items-center gap-4 sm:mt-20 sm:flex-row sm:justify-center">
             <Link
               href="/programs"
-              className="group inline-flex items-center gap-2.5 rounded-full bg-brand-purple px-8 py-4 font-heading text-[15px] font-bold text-white shadow-lift transition duration-300 ease-enter hover:bg-brand-purple-dark hover:shadow-lift-lg active:scale-[0.98] active:duration-75"
+              className="group inline-flex items-center gap-2.5 rounded-full bg-brand-gold px-8 py-4 font-heading text-[15px] font-bold text-brand-purple shadow-lift transition duration-300 ease-enter hover:bg-brand-gold-deep hover:shadow-lift-lg active:scale-[0.98] active:duration-75"
             >
               Browse all programmes
               <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">→</span>
             </Link>
             <Link
               href="/admissions"
-              className="group inline-flex items-center gap-2.5 rounded-full border-2 border-brand-purple px-8 py-4 font-heading text-[15px] font-bold text-brand-purple transition duration-300 ease-enter hover:bg-brand-purple hover:text-white active:scale-[0.98] active:duration-75 dark:border-brand-gold dark:text-brand-gold dark:hover:bg-brand-gold dark:hover:text-brand-purple-dark"
+              className="group inline-flex items-center gap-2.5 rounded-full border-2 border-white/40 px-8 py-4 font-heading text-[15px] font-bold text-white transition duration-300 ease-enter hover:border-brand-gold hover:text-brand-gold active:scale-[0.98] active:duration-75"
             >
               Entry requirements
               <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">→</span>

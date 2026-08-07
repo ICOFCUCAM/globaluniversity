@@ -236,11 +236,12 @@ for (const chapter of triptychs) {
     const el = [...document.querySelectorAll('[data-triptych]')].find(
       (n) => (n.getAttribute('data-chapter') || '(unnamed)') === c,
     );
-    // The content blocks: direct children that are not the decorative fixed
-    // layers and not the screen-reader caption.
-    const blocks = [...el.children].filter(
-      (n) => n.getAttribute('aria-hidden') !== 'true' && !n.classList.contains('sr-only'),
-    );
+    // The three statement blocks, found by their marker rather than by
+    // position. The window now also contains whatever the page slots into it —
+    // the academic ladder and the programme doorway are inside it, transparent,
+    // so the map runs behind them — and counting direct children would have
+    // reported five blocks in a triptych.
+    const blocks = [...el.querySelectorAll(':scope > [data-block]')];
     const alphaOf = (n) => {
       const m = getComputedStyle(n).backgroundColor.match(/rgba?\(([^)]+)\)/);
       if (!m) return 0;

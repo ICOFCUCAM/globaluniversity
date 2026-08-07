@@ -196,7 +196,6 @@ export default async function HomePage() {
       {/* The ladder. The commonest reason somebody does not apply is believing
           the only door they can reach is the wrong one; this shows the awards
           as one route rather than five unrelated cards. */}
-      <PathwayLadder />
 
       {/* A DOORWAY, NOT THE ROOM. The full programme finder — search field,
           three filter groups, live counts and six programmes in full — was the
@@ -206,7 +205,6 @@ export default async function HomePage() {
           The finder is untouched at /programs. This states the scale, names the
           four disciplines with their real counts, and sends the reader in
           already narrowed. See ProgrammeTeaser.tsx. */}
-      <ProgrammeTeaser />
 
       {/* THE SIGNATURE COMPOSITION. One photograph passing behind three
           blocks — visible, interrupted by an architectural plane of university
@@ -216,7 +214,18 @@ export default async function HomePage() {
           Triptych.tsx, including the resolution cost it knowingly accepts and
           why it is not built on FixedWindow. Used ONCE on the page: the effect
           becomes ordinary the second time. */}
-      <Triptych />
+      <Triptych>
+        {/* INSIDE THE WINDOW. Both of these used to be white sections between
+            the faculties and the triptych, and the map began only when the
+            triptych did. They are transparent now and set for a dark ground, so
+            the pinned world runs behind the academic ladder and the programme
+            doorway as well — the reader meets the map a screen and a half
+            earlier and it stays behind them until the middle plane closes over
+            it. See Triptych.tsx on why anything placed here must carry no
+            background of its own. */}
+        <PathwayLadder />
+        <ProgrammeTeaser />
+      </Triptych>
 
       {/* Chancellor's welcome — the site opened with this on the original iguc.net */}
       {/* The Chancellor's word. The photograph is the room he speaks in — see

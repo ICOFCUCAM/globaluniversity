@@ -311,8 +311,8 @@ const svg =
   // The land is lit from the pole outward rather than filled flat, so the disc
   // reads as a sphere seen from above instead of a sticker.
   `<radialGradient id="landfill" cx="50%" cy="50%" r="60%">` +
-  `<stop offset="0%" stop-color="${GOLD}" stop-opacity="0.26"/>` +
-  `<stop offset="100%" stop-color="${GOLD}" stop-opacity="0.10"/>` +
+  `<stop offset="0%" stop-color="${GOLD}" stop-opacity="0.17"/>` +
+  `<stop offset="100%" stop-color="${GOLD}" stop-opacity="0.07"/>` +
   `</radialGradient>` +
   `</defs>` +
   `<circle cx="${C}" cy="${C}" r="${R.toFixed(1)}" fill="url(#sea)"/>` +
