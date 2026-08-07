@@ -26,18 +26,47 @@ import GlobalNetwork from '@/components/home/GlobalNetwork';
 import ProgrammeFinder from '@/components/home/ProgrammeFinder';
 import VerificationDemo from '@/components/home/VerificationDemo';
 
+// THE THREE PILLARS ARE THE THREE WORDS OF THE MOTTO.
+//
+// The heading over these cards is "Nobility, professionalism & godliness" — the
+// university's own motto, carried on the certificate and now held constant in
+// the hero. The three cards under it were headed "Faith & Scholarship", "Access
+// for the Community" and "Practice Over Theory": three good ideas that had
+// nothing to do with the three words directly above them.
+//
+// A reader does not consciously notice the mismatch. What they notice is that
+// the section does not cohere, and the motto reads as decoration rather than as
+// something the institution organises itself around. Naming each card for its
+// word makes the heading a promise and the cards its evidence.
+//
+// "Access for the Community" is not lost — the Community University claim is
+// the substance of Nobility here, which is what that word means in the
+// university's own usage: education held to be owed rather than sold.
 const PILLARS = [
   {
-    title: 'Faith & Scholarship',
-    body: 'Founded within the International Circle of Faith, we unite rigorous academic study with formation in character — nobility, professionalism and godliness.',
+    word: 'Nobility',
+    title: 'Education owed, not sold',
+    body:
+      'We bring accredited higher education within reach of working adults, ministers and '
+      + 'first-generation students — in Cameroon, across Africa, and anywhere a connection reaches. '
+      + 'A qualification that only the comfortable can attempt is not an education system.',
   },
   {
-    title: 'Access for the Community',
-    body: 'As the Community University, we bring accredited higher education within reach of working adults, ministers and first-generation students across Cameroon and beyond.',
+    word: 'Professionalism',
+    title: 'Taught by people who have done it',
+    body:
+      'Our faculty hold professorships, doctorates and senior professional qualifications, and '
+      + 'earned them in pulpits, classrooms, laboratories and boardrooms before bringing that work '
+      + 'into the lecture hall. Theory is applied from the first semester because it was practised '
+      + 'before it was taught.',
   },
   {
-    title: 'Practice Over Theory',
-    body: 'Our instructors have lived what they teach. Programs bridge classroom and workplace so that learning is applied from the first semester.',
+    word: 'Godliness',
+    title: 'Character formed alongside competence',
+    body:
+      'Founded within the International Circle of Faith, we hold that rigorous scholarship and '
+      + 'formed character belong together. A degree that trains a mind and forms no one is only a '
+      + 'piece of paper, however well examined.',
   },
 ];
 
@@ -234,7 +263,10 @@ export default async function HomePage() {
                 </span>
                 <div className="relative">
                   <span aria-hidden="true" className="block h-[3px] w-10 rounded-full bg-brand-gold-deep" />
-                  <h3 className="mt-5 font-heading text-xl font-bold leading-snug text-brand-purple dark:text-white [text-wrap:balance]">
+                  <p className="mt-5 font-sans text-[11px] font-semibold uppercase tracking-[0.22em] text-brand-gold-deep">
+                    {p.word}
+                  </p>
+                  <h3 className="mt-2 font-heading text-xl font-bold leading-snug text-brand-purple dark:text-white [text-wrap:balance]">
                     {p.title}
                   </h3>
                   <p className="mt-3.5 text-sm leading-relaxed text-brand-muted dark:text-white/60">{p.body}</p>
