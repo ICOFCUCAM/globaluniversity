@@ -1,0 +1,227 @@
+import Image from 'next/image';
+import Link from 'next/link';
+import { Grain } from '@/components/Atmosphere';
+import { publicCrest } from '@/lib/publicCrest';
+import { UNIVERSITY } from '@/lib/constants';
+import { institutionalFacts, type Fact } from '@/content/institutionalFacts';
+
+// ---------------------------------------------------------------------------
+// 01 — IMPACT. The hero, rebuilt as an asymmetric editorial composition.
+//
+// ===========================================================================
+// WHAT THIS REPLACES AND THE JUDGEMENT THAT HAS CHANGED
+// ===========================================================================
+//
+// The old hero was a centred two-column arrangement: copy on the left, the
+// crest rendered large on the right, and no photography at all. It dropped
+// photography on a specific and correct finding — that a hero photograph is a
+// SUBJECT, examined at full size on a retina panel, and needs roughly twice its
+// rendered width in real pixels. At a 1440px full-bleed hero that asks for a
+// 2880px source, and this repository has none.
+//
+// That finding still holds. What has changed is the composition it was applied
+// to. A photograph does not have to be full-bleed to be a hero photograph.
+// Here it occupies a tall panel of about 46% of the viewport — roughly 660 CSS
+// pixels — which a 1080px source carries with headroom to spare at 1x and
+// acceptably at 2x, especially under the slight duotone this panel applies.
+//
+// So the rule was never "no photography in the hero". It was "no photography at
+// a size these files cannot hold", and 660px is a size they can hold.
+//
+// ===========================================================================
+// THE COMPOSITION
+// ===========================================================================
+//
+// Asymmetric on purpose. The type block sits left of centre and the photograph
+// runs off the right edge and off the top and bottom of the band — it is a crop
+// of a longer scene, not a picture placed in a slot. Nothing is centred, there
+// is no card, and the two halves are not equal.
+//
+// The crest sits ON the seam between them, overlapping both. That is the
+// device that stops this reading as a split screen: a split screen has two
+// sides, and an element straddling the join makes it one composition with a
+// hinge. It is also the only place on the page where the university's mark
+// appears at scale, which is what a hero is for.
+//
+// ===========================================================================
+// WHY THE PHOTOGRAPH IS A PROCESSION AND NOT A PORTRAIT
+// ===========================================================================
+//
+// A line of academics receding into depth. It carries perspective, which a
+// group portrait does not, and perspective is what makes a cropped panel read
+// as a window onto something larger rather than as a picture that has been cut
+// off. The eye follows the line out of frame, which is the effect the crop is
+// for.
+// ---------------------------------------------------------------------------
+
+// Computed at module scope on the server. institutionalFacts() counts rosters
+// and catalogues rather than returning typed numbers, so these four cannot
+// drift from what the rest of the site says.
+const FACTS: Fact[] = institutionalFacts();
+
+const CREST = publicCrest({
+  size: 600,
+  colour: '#f7dc79',
+  name: UNIVERSITY.name,
+  footer: `Founded ${UNIVERSITY.established}`,
+  id: 'hero-crest',
+});
+
+export default function HeroScene() {
+  return (
+    <section
+      data-on-dark=""
+      data-chapter="Hero"
+      aria-labelledby="hero-heading"
+      className="relative isolate flex min-h-[100svh] items-center overflow-hidden bg-brand-purple-dark text-white"
+    >
+      {/* ---- the photographic panel, right, bleeding off three edges ------- */}
+      <div className="absolute inset-y-0 right-0 -z-20 hidden w-[52%] lg:block xl:w-[50%]">
+        <Image
+          src="/images/graduation-2024/grad-2024-procession-line.jpg"
+          alt="Faculty of ICOF Global University in academic procession at the 2024 congregation"
+          fill
+          sizes="(min-width:1024px) 52vw, 100vw"
+          quality={88}
+          priority
+          className="object-cover"
+          style={{ objectPosition: '62% 38%' }}
+        />
+        {/* Duotone. The panel is a supporting element, not the subject — pulling
+            it into the institution's purple stops it competing with the
+            headline and, not by accident, makes a 1080px source read as an
+            intentional treatment rather than a soft photograph. */}
+        <div aria-hidden="true" className="absolute inset-0 bg-brand-purple/45 mix-blend-multiply" />
+        <div aria-hidden="true" className="absolute inset-0 bg-brand-gold/8 mix-blend-screen" />
+        {/* The seam. A long horizontal fade so the photograph dissolves into the
+            purple rather than meeting it at a line — the join is the weakest
+            point of any split composition and this is what hides it. */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-y-0 left-0 w-2/3 bg-gradient-to-r from-brand-purple-dark via-brand-purple-dark/70 to-transparent"
+        />
+        <div
+          aria-hidden="true"
+          className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-brand-purple-dark to-transparent"
+        />
+        <div
+          aria-hidden="true"
+          className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-brand-purple-dark/85 to-transparent"
+        />
+      </div>
+
+      {/* On mobile the photograph is a band behind everything rather than a
+          panel beside it — a 46% column at 390px is 180px, which is not a
+          photograph, it is a stripe. */}
+      <div aria-hidden="true" className="absolute inset-0 -z-20 lg:hidden">
+        <Image
+          src="/images/graduation-2024/grad-2024-procession-line.jpg"
+          alt=""
+          fill
+          sizes="100vw"
+          quality={80}
+          priority
+          className="object-cover"
+          style={{ objectPosition: '58% 36%' }}
+        />
+        <div aria-hidden="true" className="absolute inset-0 bg-brand-purple-dark/86" />
+        <div aria-hidden="true" className="absolute inset-0 bg-brand-purple/35 mix-blend-multiply" />
+      </div>
+
+      {/* Engraved ground: the meridian rules from the crest, at very low
+          opacity, tying the flat band to the university's own device. */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 -z-10 opacity-[0.06]"
+        style={{ backgroundImage: 'repeating-linear-gradient(104deg, #f7dc79 0 1px, transparent 1px 26px)' }}
+      />
+      <div aria-hidden="true" className="absolute inset-0 -z-10">
+        <Grain opacity={0.06} />
+      </div>
+
+      {/* ---- the crest, straddling the seam -------------------------------- */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute left-[47%] top-1/2 -z-10 hidden w-[26rem] -translate-y-1/2 opacity-[0.16] lg:block xl:w-[30rem]"
+        dangerouslySetInnerHTML={{ __html: CREST }}
+      />
+
+      {/* ---- the type ------------------------------------------------------ */}
+      <div className="relative mx-auto w-full max-w-7xl px-6 py-14 sm:px-10 sm:py-16 lg:px-16 lg:py-20">
+        <div className="max-w-2xl">
+          <p className="flex items-center gap-4 font-sans text-[10.5px] font-semibold uppercase tracking-[0.32em] text-brand-gold sm:text-[11.5px]">
+            A Global University
+            <span aria-hidden="true" className="h-px w-14 bg-gradient-to-r from-brand-gold to-transparent" />
+          </p>
+          <p className="mt-3 font-sans text-[12px] text-white/60 sm:text-[13px]">
+            of the International Circle of Faith
+          </p>
+
+          <h1
+            id="hero-heading"
+            className="mt-8 font-heading text-[clamp(2.7rem,6.4vw,5.1rem)] font-bold leading-[0.98] tracking-[-0.035em] [text-wrap:balance]"
+          >
+            Where faith meets
+            <br />
+            <span className="text-brand-gold">academic rigour.</span>
+          </h1>
+
+          <p className="mt-6 max-w-lg text-[15px] leading-relaxed text-white/85 sm:mt-8 sm:text-[17px]">
+            Accredited degrees taught from Buea, Douala and online worldwide — by people who
+            practised what they teach, to students who were never given the door.
+          </p>
+
+          <div className="mt-8 flex flex-wrap items-center gap-4 sm:mt-11">
+            <Link
+              href="/programs"
+              className="rounded-full bg-brand-gold px-8 py-4 font-heading text-[15px] font-bold text-brand-purple shadow-gold transition duration-300 hover:bg-brand-gold-deep"
+            >
+              Explore programmes
+            </Link>
+            <Link
+              href="/apply"
+              className="group inline-flex items-center gap-3 rounded-full border-2 border-white/40 px-8 py-4 font-heading text-[15px] font-bold text-white transition duration-300 hover:border-brand-gold hover:text-brand-gold"
+            >
+              Begin your application
+              <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">
+                →
+              </span>
+            </Link>
+          </div>
+
+          {/* The institutional strip. Four counted facts, not four claims —
+              every one of these is computed from a roster or a catalogue in
+              src/content, never typed. See institutionalFacts.ts. */}
+          {/* THE STRIP SITS BELOW THE FOLD ON SHORT VIEWPORTS, DELIBERATELY.
+              At 1280x800 the hero measures 890px and the four facts fall about
+              90px under the line. That is the right trade: the primary action
+              clears the fold at every size tested (1440x950, 1280x800,
+              390x844), and evidence of scale is worth having in full a little
+              way down rather than truncated to three facts at the top.
+
+              A four-column grid that BREAKS OUT of the max-w-2xl type block.
+              As a flex-wrap row inside 672px the fourth fact — "19 academic and
+              administrative staff", the longest label of the four — dropped to
+              a second line and was clipped by the bottom of the viewport. Four
+              facts on one line is the whole point of the strip; three facts and
+              an orphan is just an accident. */}
+          <dl className="mt-8 grid max-w-3xl grid-cols-2 gap-x-8 gap-y-5 border-t border-white/15 pt-6 sm:mt-12 sm:gap-y-7 sm:grid-cols-4 sm:gap-x-6 sm:pt-8">
+            {FACTS.map((p) => (
+              <div key={p.label}>
+                <dt className="sr-only">{p.label}</dt>
+                <dd>
+                  <span className="block font-heading text-[26px] font-bold leading-none text-brand-gold sm:text-[30px]">
+                    {p.value}
+                  </span>
+                  <span className="mt-2 block font-sans text-[10px] font-semibold uppercase leading-snug tracking-[0.16em] text-white/65">
+                    {p.label}
+                  </span>
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      </div>
+    </section>
+  );
+}

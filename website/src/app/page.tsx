@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Section, SectionHeading, Eyebrow } from '@/components/Section';
-import Hero from '@/components/home/Hero';
+import HeroScene from '@/components/home/HeroScene';
 import Reveal from '@/components/Reveal';
 import { getHomePage, getPrograms } from '@/lib/data';
 import { site } from '@/content/site';
@@ -131,7 +131,7 @@ export default async function HomePage() {
           repository three exceed 1600px wide, and the two that do are stock —
           one of them a Cambridge college. See Hero.tsx for the arithmetic and
           the decision. */}
-      <Hero />
+      <HeroScene />
 
       {/* Quick links — the six routes most visitors arrive wanting */}
       <nav aria-label="Quick links" className="relative z-10 -mt-14 px-4">
