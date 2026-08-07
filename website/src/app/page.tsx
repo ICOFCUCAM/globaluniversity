@@ -26,50 +26,12 @@ import ProgrammeFinder from '@/components/home/ProgrammeFinder';
 import VerificationDemo from '@/components/home/VerificationDemo';
 import ChancellorWord from '@/components/home/ChancellorWord';
 import GlobalMovement from '@/components/home/GlobalMovement';
+import Formation from '@/components/home/Formation';
 
-// THE THREE PILLARS ARE THE THREE WORDS OF THE MOTTO.
-//
-// The heading over these cards is "Nobility, professionalism & godliness" — the
-// university's own motto, carried on the certificate and now held constant in
-// the hero. The three cards under it were headed "Faith & Scholarship", "Access
-// for the Community" and "Practice Over Theory": three good ideas that had
-// nothing to do with the three words directly above them.
-//
-// A reader does not consciously notice the mismatch. What they notice is that
-// the section does not cohere, and the motto reads as decoration rather than as
-// something the institution organises itself around. Naming each card for its
-// word makes the heading a promise and the cards its evidence.
-//
-// "Access for the Community" is not lost — the Community University claim is
-// the substance of Nobility here, which is what that word means in the
-// university's own usage: education held to be owed rather than sold.
-const PILLARS = [
-  {
-    word: 'Nobility',
-    title: 'Education owed, not sold',
-    body:
-      'We bring accredited higher education within reach of working adults, ministers and '
-      + 'first-generation students — in Cameroon, across Africa, and anywhere a connection reaches. '
-      + 'A qualification that only the comfortable can attempt is not an education system.',
-  },
-  {
-    word: 'Professionalism',
-    title: 'Taught by people who have done it',
-    body:
-      'Our faculty hold professorships, doctorates and senior professional qualifications, and '
-      + 'earned them in pulpits, classrooms, laboratories and boardrooms before bringing that work '
-      + 'into the lecture hall. Theory is applied from the first semester because it was practised '
-      + 'before it was taught.',
-  },
-  {
-    word: 'Godliness',
-    title: 'Character formed alongside competence',
-    body:
-      'Founded within the International Circle of Faith, we hold that rigorous scholarship and '
-      + 'formed character belong together. A degree that trains a mind and forms no one is only a '
-      + 'piece of paper, however well examined.',
-  },
-];
+// The motto's three words are no longer copy in this file. They live in
+// src/components/home/Formation.tsx, which tells them one at a time at the
+// size of a title card over photography that changes beneath them, rather
+// than as three boxes in a row.
 
 // The homepage's own metadata. The root layout supplies a default title and
 // description for every page; the front page deserves its own, because it is
@@ -256,37 +218,11 @@ export default async function HomePage() {
         </div>
       </Section>
 
-      {/* Why choose */}
-      <Section chapter="Why IGUC" className="bg-white dark:bg-[#181121]">
-        <SectionHeading eyebrow="Why ICOF Global University">
-          Nobility, professionalism &amp; godliness
-        </SectionHeading>
-        <SpotlightGroup className="grid gap-6 md:grid-cols-3">
-          {PILLARS.map((p, i) => (
-            <Reveal key={p.title} delay={i * 120}>
-              <SpotlightCard className="group h-full overflow-hidden rounded-2xl border border-brand-sand bg-brand-cream dark:border-white/10 dark:bg-white/[0.04] p-9 transition duration-500 hover:shadow-lift" tone="light">
-                {/* Ghost numeral sits behind the copy as a watermark */}
-                <span
-                  aria-hidden="true"
-                  className="pointer-events-none absolute -right-2 -top-6 font-heading text-[7rem] font-bold leading-none text-brand-gold/15 transition duration-700 group-hover:text-brand-gold/25"
-                >
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <div className="relative">
-                  <span aria-hidden="true" className="block h-[3px] w-10 rounded-full bg-brand-gold-deep" />
-                  <p className="mt-5 font-sans text-[11px] font-semibold uppercase tracking-[0.22em] text-brand-gold-deep">
-                    {p.word}
-                  </p>
-                  <h3 className="mt-2 font-heading text-xl font-bold leading-snug text-brand-purple dark:text-white [text-wrap:balance]">
-                    {p.title}
-                  </h3>
-                  <p className="mt-3.5 text-sm leading-relaxed text-brand-muted dark:text-white/60">{p.body}</p>
-                </div>
-              </SpotlightCard>
-            </Reveal>
-          ))}
-        </SpotlightGroup>
-      </Section>
+      {/* The motto, as a scene rather than a specification. Three convictions
+          told one at a time over photography that changes beneath them — see
+          Formation.tsx for why three boxes in a row was the wrong figure for a
+          motto, and why nothing inside it is a link. */}
+      <Formation />
 
       {/* The faculties, as places rather than as a caption under a tile. */}
       <FacultyShowcase />
