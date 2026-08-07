@@ -1,7 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { Grain } from '@/components/Atmosphere';
-import { institutionalFacts } from '@/content/institutionalFacts';
 
 /**
  * The university's own paragraph about itself and the fellowship it belongs to,
@@ -42,12 +41,19 @@ const ABOUT =
 // stands behind the words at the end of the scroll than at the beginning, and
 // the middle block passes over it like a shutter closing and opening again.
 //
-//     block 1   OPAQUE        the claim, on solid ground — see below
-//     the slot  transparent   whatever the page puts in the window
-//     block 2   OPAQUE        the picture is behind an architectural plane
-//     block 3   transparent   the same fixed picture, now showing a
-//                             different part of itself, because the reader
-//                             has travelled and the picture has not
+//     block 1   OPAQUE        the About band, on solid ground — see below
+//     the slot  MIXED         whatever the page puts in the window; today the
+//                             pathway ladder, whose second row is opaque purple
+//                             and is therefore the interruption
+//     block 3   transparent   the fixed picture, showing a different part of
+//                             itself than it would have at the top, because the
+//                             reader has travelled and the picture has not
+//
+// THERE IS NO BLOCK 2 ANY MORE. It held the counted facts on an opaque plane
+// and the university asked for it to go. The composition keeps its shutter
+// because the ladder inside the window is opaque — ground, interruption,
+// ground — which is why check-scenes now asserts "SOME opaque block separates
+// the first from the last" rather than "the middle block is opaque".
 //
 // BLOCK 1 STARTED AS A WINDOW AND IS NOW A LID. It was transparent, so the map
 // began the instant the hero ended:
@@ -82,7 +88,8 @@ const ABOUT =
 //
 // scripts/check-scenes.mjs measures the picture's viewport rectangle at three
 // scroll depths and fails on any drift at all, and separately proves the first
-// two blocks are opaque and the last one is a window.
+// block is opaque, the last one is a window, and something opaque interrupts
+// the picture between them.
 //
 // ===========================================================================
 // WHAT PINNING FIXED, BESIDES THE EFFECT
@@ -155,17 +162,6 @@ const plate = (at: string) =>
   ' rgba(16,8,34,0) 100%)';
 
 export default function Triptych({ children }: { children?: React.ReactNode }) {
-  const facts = institutionalFacts();
-  // Found by label rather than by index, so a reordering of institutionalFacts()
-  // cannot silently promote the wrong number to seven rem. The programme count
-  // leads because it answers the question a prospective student actually has —
-  // is there enough here for me — and because it is the one figure that grows
-  // every time the university opens a course.
-  const lead = facts.find((f) => /programme/i.test(f.label)) ?? facts[0];
-  const rest = facts.filter((f) => f !== lead);
-  const facultyCount = facts.find((f) => /faculties/i.test(f.label))?.value ?? '';
-  const established = facts.find((f) => /established/i.test(f.label))?.value ?? '';
-
   return (
     <section
       data-on-dark=""
@@ -360,131 +356,33 @@ export default function Triptych({ children }: { children?: React.ReactNode }) {
           the homepage inside a file called Triptych. */}
       {children}
 
-      {/* ---- BLOCK 2 — OPAQUE. The shutter. --------------------------------
-          bg-brand-purple-dark with no transparency anywhere in it. This is the
-          block that hides the fixed picture, and it is the only one that has a
-          background at all. */}
-      <div data-block="" className="relative flex min-h-[86svh] items-center bg-brand-purple-dark lg:min-h-[92svh]">
-        {/* The two seams. Short — 5rem — so the plane still reads as a plane.
-            Any longer and the purple becomes a fade, which is the opposite of
-            an interruption. They hang outside the block, over the transparent
-            neighbours, so the shutter closes softly on a moving picture. */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 -top-20 h-20 bg-gradient-to-b from-transparent to-brand-purple-dark"
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 -bottom-20 h-20 bg-gradient-to-t from-transparent to-brand-purple-dark"
-        />
-        <div
-          aria-hidden="true"
-          className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand-gold/35 to-transparent"
-        />
-        <div
-          aria-hidden="true"
-          className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-brand-gold/35 to-transparent"
-        />
+      {/* ---- BLOCK 2 IS GONE ----------------------------------------------
 
-        {/* ==================================================================
-            TWO SLOGANS HAVE STOOD HERE AND BOTH WERE ASKED TO GO.
+              "remove this section"
 
-            FIRST: NOBILITY. PROFESSIONALISM. GODLINESS., three stacked lines at
-            up to 6rem — the largest type anywhere on this site.
+          It was the counted facts on an opaque plane: 41 programmes at seven
+          rem, then 2007 / 5 faculties / 19 staff, the accreditation line and a
+          link to /accreditation.
 
-                "This concept of nobility professionality and Godliness must be
-                 complete reduce to a single Line not so much significant."
+          Removing it costs less than it looks, because almost nothing in it was
+          only there. "41 programmes, from a one-year certificate to a
+          doctorate, on campus in Buea and Douala and online worldwide" opens
+          the faculties section one screen later, and the five faculties are
+          listed there with their own counts rather than summed into one number.
+          The accreditation line is repeated verbatim at the foot of the closing
+          scene, where a reader about to fill in a form actually needs it. What
+          genuinely leaves the homepage is the founding year, the staff count
+          and the route to /accreditation — all three still reachable from the
+          About band's "Our history and mission" and from the navigation.
 
-            THEN: "Education is owed, not sold", which was smaller and better
-            written and still the same species of thing.
-
-                "the sections where we find the words nobilty professionalism
-                 and godliness and Education is owned and not sold should be
-                 replace with any of the sections with informations and not
-                 what i see"
-
-            The second note is the one that identifies what was actually wrong,
-            and it is not the size of the type. This is the OPAQUE plane in the
-            middle of a pinned map — the one moment the reader is held still
-            with nothing else to look at, and the most expensive position on the
-            homepage. Spending it on a sentence that cannot be checked is the
-            waste. Every university believes in nobility; every university would
-            say education is owed. A reader learns nothing from either, and a
-            reader who has just been shown a world map is owed something better
-            than a motto in return for stopping.
-
-            SO IT CARRIES THE FACTS, and they are the only ones on this site
-            that can be evidenced. Every figure is COUNTED by
-            institutionalFacts() from the published catalogue, the faculty list,
-            the staff rosters and the founding year — nothing here is typed in,
-            so nothing here can drift out of step with the prospectus or age on
-            the front page the way "15 Years Experience" did.
-
-            This absorbs the At a glance band, which was the first section after
-            the hero and one of the three the university called not good. It was
-            a scoreboard on cream in the position that should have been carrying
-            the argument. The numbers are better here: framed by the world
-            rather than announced at a visitor who has not yet been given a
-            reason to care how many programmes there are.
-
-            The motto survives as ONE 11px line at the foot, which is where a
-            motto belongs — present and attributable, not pretending to be the
-            reason anybody should come.
-            ================================================================== */}
-        <div className="mx-auto w-full max-w-5xl px-6 py-24 text-center sm:px-10 lg:px-16">
-          <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.34em] text-brand-gold">
-            {lead.label}
-          </p>
-          <p className="mt-4 font-heading text-[clamp(4rem,10vw,7.5rem)] font-bold leading-[0.85] tracking-[-0.045em]">
-            {lead.value}
-          </p>
-          <p className="mx-auto mt-7 max-w-2xl font-heading text-[clamp(1.15rem,2.3vw,1.6rem)] font-bold leading-snug [text-wrap:balance]">
-            across {facultyCount} schools and faculties, taught in Buea, Douala and online
-            worldwide.
-          </p>
-
-          {/* The rest, small and in one row. They are context for the figure
-              above, so they are set as context rather than as rivals to it —
-              four numbers at equal weight is a scoreboard, and a reader ranks a
-              scoreboard by reading none of it. */}
-          <dl className="mx-auto mt-14 flex max-w-3xl flex-wrap justify-center gap-x-14 gap-y-8 border-t border-white/15 pt-10">
-            {rest.map((f) => (
-              <div key={f.label} title={f.source}>
-                <dt className="sr-only">{f.label}</dt>
-                <dd>
-                  <span className="block font-heading text-[26px] font-bold leading-none">
-                    {f.value}
-                  </span>
-                  <span className="mt-2.5 block max-w-[10rem] font-sans text-[10.5px] font-semibold uppercase leading-snug tracking-[0.16em] text-white/60">
-                    {f.label}
-                  </span>
-                </dd>
-              </div>
-            ))}
-          </dl>
-
-          <p className="mx-auto mt-12 max-w-2xl text-[15px] leading-relaxed text-white/75">
-            Accredited by the Ministry of Higher Education of Cameroon since {established}.
-            Every figure here is counted from the university&rsquo;s own catalogue and
-            rosters, never estimated.
-          </p>
-
-          <Link
-            href="/accreditation"
-            className="group mt-9 inline-flex items-center gap-3 rounded-full border-2 border-white/30 px-7 py-3.5 font-heading text-[14.5px] font-bold text-white transition duration-300 hover:border-brand-gold hover:text-brand-gold"
-          >
-            Recognition and accreditation
-            <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">
-              →
-            </span>
-          </Link>
-
-          {/* The motto. One line, 11px, and deliberately no larger. */}
-          <p className="mt-16 font-sans text-[11px] font-semibold uppercase tracking-[0.34em] text-brand-gold">
-            Nobility · Professionalism · Godliness
-          </p>
-        </div>
-      </div>
+          THE COMPOSITION STILL HAS ITS INTERRUPTION. Block 2 was the shutter
+          that closed over the map between two windows, and the shutter is still
+          there: the pathway ladder inside this window is opaque purple, so the
+          reader still gets ground, interruption, ground. What changed is that
+          the interrupting block is now one the page needed anyway rather than
+          one built to do the interrupting. check-scenes asserts this directly —
+          see the note there on why "the MIDDLE block is opaque" became "some
+          opaque block separates the first from the last". */}
 
       {/* ---- BLOCK 3 — transparent. The photograph returns. ----------------
           Not the same crop as block 1, and that is the whole effect: the reader

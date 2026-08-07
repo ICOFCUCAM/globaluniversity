@@ -258,6 +258,36 @@ for (const chapter of triptychs) {
       // invariant was never "one image in this section"; it is "one image IS
       // the pinned ground".
       images: el.querySelectorAll('[data-pinned-ground] img').length,
+      // Is there anything opaque BETWEEN the first block and the last one?
+      //
+      // This used to be "the middle block is opaque", which was right while the
+      // composition was exactly three blocks. The facts plane that was the
+      // middle block has been removed, and the interruption is now the pathway
+      // ladder that the page slots into the window — an element this check
+      // knows nothing about and should not have to.
+      //
+      // So the invariant is stated as what it always meant: the pinned picture
+      // must be INTERRUPTED before it returns. Anything between the first and
+      // last block with a fully opaque background satisfies it; if nothing
+      // does, the reader sees one continuous window and the composition has
+      // silently become an ordinary parallax band.
+      interrupted: (() => {
+        const first = blocks[0];
+        const last = blocks[blocks.length - 1];
+        if (!first || !last || first === last) return false;
+        const between = [...el.children].filter((n) => {
+          const pos = first.compareDocumentPosition(n);
+          const pos2 = last.compareDocumentPosition(n);
+          return (
+            (pos & Node.DOCUMENT_POSITION_FOLLOWING) !== 0 &&
+            (pos2 & Node.DOCUMENT_POSITION_PRECEDING) !== 0
+          );
+        });
+        const opaqueSomewhere = (n) =>
+          alphaOf(n) >= 0.999 ||
+          [...n.querySelectorAll('*')].some((c) => alphaOf(c) >= 0.999);
+        return between.some(opaqueSomewhere);
+      })(),
       blocks: blocks.length,
       alphas: blocks.map(alphaOf),
     };
@@ -327,8 +357,8 @@ for (const chapter of triptychs) {
   if (shape.images === 1) pass('exactly one image is the pinned ground');
   else fail(`${chapter}: ${shape.images} images inside [data-pinned-ground] — the ground is duplicated`);
 
-  if (shape.blocks === 3) pass('three blocks');
-  else fail(`${chapter}: ${shape.blocks} content blocks, expected 3`);
+  if (shape.blocks >= 2) pass(`${shape.blocks} statement blocks`);
+  else fail(`${chapter}: ${shape.blocks} content blocks — a window needs at least a lid and a pane`);
 
   if (reads.every((r) => r.loaded)) pass('the photograph actually loaded');
   else fail(`${chapter}: the photograph never loaded — a blank band reports 0px drift too`);
@@ -350,9 +380,13 @@ for (const chapter of triptychs) {
   if (travel > 150) pass(`the blocks travel across it (${travel}px)`);
   else fail(`${chapter}: the blocks only travel ${travel}px — nothing crosses anything`);
 
-  const [a, b, c] = shape.alphas;
-  if (b >= 0.999) pass('the middle block is opaque — it hides the photograph');
-  else fail(`${chapter}: the middle block's background alpha is ${b} — it cannot interrupt anything`);
+  const a = shape.alphas[0];
+  const c = shape.alphas[shape.alphas.length - 1];
+  if (shape.interrupted) pass('something opaque interrupts the picture before it returns');
+  else
+    fail(
+      `${chapter}: nothing opaque sits between the first block and the last — the picture is never interrupted, so this is a parallax band rather than a window`,
+    );
 
   // BLOCK 1 IS DELIBERATELY OPAQUE NOW. It used to be a window, and the
   // university asked for solid ground directly under the hero — running a

@@ -149,9 +149,20 @@ const images = (ground.match(/<Image\b/g) || []).length + (ground.match(/<img\b/
 if (images === 1) ok('    exactly one image is the pinned ground');
 else bad(`Triptych: ${images} images inside data-pinned-ground — the pinned ground must be exactly one picture`);
 
-if (/bg-brand-purple-dark lg:min-h/.test(tri) || /min-h-\[\d+svh\][^"]*bg-brand-purple-dark/.test(tri))
-  ok('    the middle block carries an opaque background');
-else bad('Triptych: no opaque background on the middle block — nothing can interrupt the photograph');
+// THE INTERRUPTION IS NO LONGER ASSERTED HERE, deliberately.
+//
+// This checked that the middle block carried an opaque background, which was
+// the right static proxy while the composition was exactly three blocks of its
+// own. The facts plane that was the middle block has been removed, and the
+// thing that now interrupts the picture is the pathway ladder the PAGE slots
+// into the window — a different file, which this test cannot see and should not
+// try to.
+//
+// A static test that guesses at that would either pass by accident or fail a
+// correct page. check-scenes.mjs asserts it properly against the rendered
+// document: "something opaque sits between the first block and the last". What
+// stays here is what static text can actually prove — that the mechanism
+// holding the picture still is intact.
 
 // The count assertion. A new pinned component that is not listed above gets no
 // protection at all, and the failure would be silent — so the list is checked
