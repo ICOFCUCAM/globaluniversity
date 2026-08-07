@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { Grain } from '@/components/Atmosphere';
 
@@ -47,20 +48,51 @@ import { Grain } from '@/components/Atmosphere';
 // cross-fading images. This is a server component with one image.
 //
 // ===========================================================================
-// AND NO PHOTOGRAPH AT ALL NOW
+// THE PHOTOGRAPHS ARE BACK, AND NOT AS A BACKGROUND
 // ===========================================================================
 //
-// It went from four ceremony photographs, to one, to none. The four were
-// dishonest — nothing in the library shows engineering being taught, so the
-// Faculty of Engineering was illustrated by a graduation. The one that
-// replaced them was honest but pointless: buried under a 93% scrim, it was
-// unreadable as a picture while still making the type work harder.
+// This section went from four ceremony photographs, to one, to none. The four
+// were dishonest — nothing in the library shows engineering being taught, so
+// the Faculty of Engineering was illustrated by a graduation. The one that
+// replaced them was honest but pointless: buried under a 93% scrim, unreadable
+// as a picture while still making the type work harder.
 //
-// A photograph dimmed until it is safe to set text on is not photography. It
-// is expensive texture. Commissioning one teaching photograph per faculty
-// remains the highest-value change available to this page, and only the
-// university can make it — until then this section is type on a ground, which
-// is what an index should be anyway.
+// Both of those were the same mistake in two sizes: a photograph used as a
+// GROUND, dimmed until it was safe to set words on. The university has now
+// asked for pictures here again, and pointed at its own /faculty page, where
+// each faculty carries an image. So the pictures return in the only way that
+// was ever defensible — each one is its own frame, at its own edge of the row,
+// with nothing set on top of it. Nothing is dimmed, because nothing has to be.
+//
+// The honesty problem is unchanged and is handled honestly. These are still
+// ceremony photographs: robes, hoodings, congregations. They are not pictures
+// of engineering being taught, and they are captioned as what they are —
+// "a hooding at the 2024 congregation", not "engineering students at work".
+// A reader is shown the university, truthfully, beside each discipline.
+// Commissioning one teaching photograph per faculty remains the highest-value
+// change available to this page and only the university can make it.
+//
+// ===========================================================================
+// WHY THIS IS NOT A CARD GRID
+// ===========================================================================
+//
+// The /faculty page uses cards: rounded corners, shadow, white plate, image
+// with the title laid over it, a button at the bottom. That is the correct
+// pattern there — it is an index of six equivalent things a reader is choosing
+// between, and cards are good at "these are the options".
+//
+// The instruction here was explicit that it must not look like SaaS, and a
+// grid of shadowed rounded cards with an image on top and a link at the bottom
+// is precisely the SaaS feature-grid. So this stays a ROW INDEX and gains a
+// picture per row: full-bleed rows separated by hairlines, no boxes, no
+// shadows, no radius, the numeral and the discipline at title size, the image
+// a tall narrow crop at the outer edge. A rule groups without containing,
+// which is the difference between editorial and a component library.
+//
+// The rows ALTERNATE the image side. With five rows all imaged on the left the
+// eye runs down a single column of pictures and the type becomes a caption;
+// alternating makes the reader cross the page five times and keeps the words
+// the subject.
 // ---------------------------------------------------------------------------
 
 export interface FacultyScene {
@@ -77,9 +109,10 @@ export interface FacultyScene {
   name: string;
   mission: string;
   count: number;
-  /** Retained on the type so page.tsx keeps naming them; unused here now. */
-  src?: string;
-  alt?: string;
+  /** The faculty's photograph. Its own frame at the edge of the row — never a
+   *  ground under the type. */
+  src: string;
+  alt: string;
   focal?: string;
 }
 
@@ -96,7 +129,7 @@ export default function FacultyScenes({
       data-on-dark=""
       data-chapter="Faculties"
       aria-labelledby="faculties-heading"
-      className="relative z-10 flex min-h-[100svh] items-center overflow-hidden bg-brand-purple-dark py-24 text-white sm:py-28"
+      className="relative z-10 overflow-hidden bg-brand-purple-dark py-24 text-white sm:py-28"
     >
       {/* NO PHOTOGRAPH BEHIND THIS SECTION.
 
@@ -120,7 +153,7 @@ export default function FacultyScenes({
           id="faculties-heading"
           className="mt-7 max-w-3xl font-heading text-[clamp(1.9rem,4vw,3.1rem)] font-bold leading-[1.1] tracking-[-0.02em] text-white [text-wrap:balance]"
         >
-          Four disciplines. One standard.
+          Five disciplines. One standard.
         </h2>
         {/* The scale of the catalogue, stated once. It used to be the opening
             line of a separate programme teaser that then listed the same four
@@ -132,60 +165,112 @@ export default function FacultyScenes({
         </p>
 
         <ul className="mt-14">
-          {faculties.map((f, i) => (
-            <li key={f.id}>
-              <Link
-                href={`/faculty/${f.slug}`}
-                // The whole row is the link — not a trailing "Explore" that
-                // makes the reader aim at eleven characters. `group` drives the
-                // hover and focus states below; focus-visible sits on the row
-                // so a keyboard reader sees the same target a mouse does.
-                className="group grid items-baseline gap-x-8 gap-y-3 border-t border-white/15 py-8 transition-colors duration-300 hover:border-brand-gold/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold focus-visible:ring-offset-4 focus-visible:ring-offset-brand-purple-dark lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_auto]"
-              >
-                <span className="flex items-baseline gap-5">
+          {faculties.map((f, i) => {
+            // Alternating sides. See the header: five pictures stacked in one
+            // column turn the type into captions.
+            const imageRight = i % 2 === 1;
+            return (
+              <li key={f.id}>
+                <Link
+                  href={`/faculty/${f.slug}`}
+                  // The whole row is the link — not a trailing "Explore" that
+                  // makes the reader aim at eleven characters. `group` drives
+                  // the hover and focus states; focus-visible sits on the row
+                  // so a keyboard reader sees the same target a mouse does.
+                  // THE COLUMN TEMPLATE SWAPS WITH THE ORDER, and it has to.
+                  // The first build alternated only the `order` of the three
+                  // cells against a fixed [15rem, 1fr, auto] template, so on
+                  // reversed rows the photograph landed in the `auto` column
+                  // and collapsed to nothing while the heading was squeezed
+                  // into 15rem and wrapped to three lines. It looked like the
+                  // image had failed to load. `order` moves what is IN a
+                  // column; it does not move the column.
+                  className={`group grid items-center gap-x-10 gap-y-6 border-t border-white/15 py-9 transition-colors duration-300 hover:border-brand-gold/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold focus-visible:ring-offset-4 focus-visible:ring-offset-brand-purple-dark ${
+                    imageRight
+                      ? 'lg:grid-cols-[auto_minmax(0,1fr)_minmax(0,15rem)]'
+                      : 'lg:grid-cols-[minmax(0,15rem)_minmax(0,1fr)_auto]'
+                  }`}
+                >
+                  {/* THE PHOTOGRAPH. Its own frame, no radius, no shadow, no
+                      plate — nothing is set on it, so it needs no scrim and
+                      runs at full strength. A thin gold rule on the outer edge
+                      ties it to the row without boxing it in. */}
                   <span
-                    aria-hidden="true"
-                    // /75 rather than /40. The numerals are aria-hidden and
-                    // decorative, so WCAG arguably exempts them — but a sighted
-                    // reader uses them to keep their place, which makes them
-                    // information for exactly the people who can see them.
-                    // Measured 3.10:1 at /40 against a 4.5 requirement; raising
-                    // them costs nothing and settles the argument.
-                    className="font-heading text-[11px] font-bold tracking-[0.34em] text-brand-gold/75 transition-colors duration-300 group-hover:text-brand-gold"
+                    className={`relative block h-40 w-full overflow-hidden sm:h-44 lg:h-32 ${
+                      imageRight ? 'lg:order-3' : 'lg:order-1'
+                    }`}
                   >
-                    {String(i + 1).padStart(2, '0')}
+                    <Image
+                      src={f.src}
+                      alt={f.alt}
+                      fill
+                      sizes="(min-width:1024px) 15rem, 100vw"
+                      quality={80}
+                      loading="lazy"
+                      className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+                      style={{ objectPosition: f.focal ?? '50% 40%' }}
+                    />
+                    <span
+                      aria-hidden="true"
+                      className="absolute inset-0 bg-brand-purple/25 mix-blend-multiply transition-opacity duration-500 group-hover:opacity-0"
+                    />
+                    <span
+                      aria-hidden="true"
+                      className={`absolute inset-y-0 w-px bg-brand-gold/45 transition-colors duration-300 group-hover:bg-brand-gold ${
+                        imageRight ? 'right-0' : 'left-0'
+                      }`}
+                    />
                   </span>
-                  <span className="font-heading text-[clamp(1.7rem,3.4vw,2.9rem)] font-bold uppercase leading-[0.98] tracking-[-0.03em] text-white transition-colors duration-300 group-hover:text-brand-gold">
-                    {f.name}
-                  </span>
-                </span>
 
-                <span className="text-[14.5px] leading-relaxed text-white/80">{f.mission}</span>
-
-                <span className="flex items-center gap-6 whitespace-nowrap">
-                  <span className="font-sans text-[12px] font-semibold uppercase tracking-[0.2em] text-brand-gold">
-                    {f.count} {f.count === 1 ? 'programme' : 'programmes'}
+                  <span className={`min-w-0 ${imageRight ? 'lg:order-1' : 'lg:order-2'}`}>
+                    <span className="flex items-baseline gap-5">
+                      <span
+                        aria-hidden="true"
+                        // /75 rather than /40. The numerals are aria-hidden and
+                        // decorative, so WCAG arguably exempts them — but a
+                        // sighted reader uses them to keep their place, which
+                        // makes them information for exactly the people who can
+                        // see them. Measured 3.10:1 at /40 against a 4.5
+                        // requirement; raising them costs nothing.
+                        className="font-heading text-[11px] font-bold tracking-[0.34em] text-brand-gold/75 transition-colors duration-300 group-hover:text-brand-gold"
+                      >
+                        {String(i + 1).padStart(2, '0')}
+                      </span>
+                      <span className="font-heading text-[clamp(1.5rem,2.9vw,2.4rem)] font-bold uppercase leading-[1] tracking-[-0.03em] text-white transition-colors duration-300 group-hover:text-brand-gold">
+                        {f.name}
+                      </span>
+                    </span>
+                    <span className="mt-3 block max-w-2xl text-[14.5px] leading-relaxed text-white/80">
+                      {f.mission}
+                    </span>
                   </span>
+
                   <span
-                    aria-hidden="true"
-                    // /60 measured 4.19:1 against the unphotographed purple ground, just
-                    // under the 4.5 an arrow at 20px needs. It is aria-hidden and
-                    // decorative, so WCAG arguably lets it go — but it is the affordance
-                    // that tells a sighted reader the row is a link, which makes it
-                    // information for precisely the people who can see it.
-                    className="font-heading text-xl text-brand-gold/85 transition-all duration-300 group-hover:translate-x-1.5 group-hover:text-brand-gold"
+                    className={`flex items-center gap-6 whitespace-nowrap ${
+                      imageRight ? 'lg:order-2 lg:justify-self-end' : 'lg:order-3'
+                    }`}
                   >
-                    →
+                    <span className="font-sans text-[12px] font-semibold uppercase tracking-[0.2em] text-brand-gold">
+                      {f.count} {f.count === 1 ? 'programme' : 'programmes'}
+                    </span>
+                    <span
+                      aria-hidden="true"
+                      // /85 rather than /60. It is decorative and aria-hidden,
+                      // so WCAG arguably lets it go — but it is the affordance
+                      // that tells a sighted reader the row is a link, which
+                      // makes it information for precisely the people who can
+                      // see it.
+                      className="font-heading text-xl text-brand-gold/85 transition-all duration-300 group-hover:translate-x-1.5 group-hover:text-brand-gold"
+                    >
+                      →
+                    </span>
                   </span>
-                </span>
-                {/* Named for screen readers, which otherwise hear four links
-                    that all begin with a number. */}
-                <span className="sr-only">— explore {f.name}</span>
-              </Link>
-            </li>
-          ))}
+                </Link>
+              </li>
+            );
+          })}
         </ul>
-        <div aria-hidden="true" className="border-t border-white/15" />
+
         {/* MOVED HERE FROM THE PROGRAMME TEASER, which is deleted. A button
             that opens the full catalogue belongs beside the disciplines it
             opens, not in a section of its own two screens earlier. */}

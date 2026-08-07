@@ -8,7 +8,6 @@ import PathwayLadder from '@/components/home/PathwayLadder';
 import FacultyScenes from '@/components/home/FacultyScenes';
 import { ALL_PROGRAMMES, facultyById, programmesByFaculty } from '@/content/programmeCatalogue';
 import StudyHere from '@/components/home/StudyHere';
-import Fellowship from '@/components/home/Fellowship';
 import ChancellorWord from '@/components/home/ChancellorWord';
 import Triptych from '@/components/home/Triptych';
 import FinalScene from '@/components/home/FinalScene';
@@ -149,7 +148,6 @@ export default async function HomePage() {
             it. See Triptych.tsx on why anything placed here must carry no
             background of its own. */}
         <PathwayLadder />
-        <Fellowship />
       </Triptych>
 
       {/* ACADEMICS BEFORE PEOPLE. This sat after the Chancellor, which put a
@@ -178,6 +176,19 @@ export default async function HomePage() {
             src: '/images/graduation-2024/grad-2024-doctoral-portrait.jpg',
             alt: 'A doctoral graduate of ICOF Global University in academic dress',
             focal: '50% 16%',
+          },
+          {
+            // Added with the School of Ministry. Its count comes from the
+            // catalogue like every other, so if the university moves an award
+            // in or out the number here follows without anybody editing it.
+            id: 'ministry',
+            slug: 'school-of-ministry',
+            name: 'School of Ministry',
+            mission: facultyById('ministry')!.mission,
+            count: programmesByFaculty('ministry').length,
+            src: '/images/graduation-2024/grad-2024-hooding.jpg',
+            alt: 'A hooding at the ICOF Global University 2024 congregation',
+            focal: '50% 34%',
           },
           {
             id: 'engineering',

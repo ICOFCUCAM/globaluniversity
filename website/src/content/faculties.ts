@@ -198,21 +198,15 @@ export const facultyList: Faculty[] = [
       { title: 'Certificate of Theology', level: 'Certificate', slug: 'certificate-in-theology' },
       { title: 'Certificate of Christian Education', level: 'Certificate', slug: 'certificate-in-christian-education' },
       { title: 'Diploma in Theology', level: 'Diploma', slug: 'diploma-in-theology' },
-      { title: 'Diploma in Ministry', level: 'Diploma', slug: 'diploma-in-ministry' },
-      { title: 'Diploma in Christian Leadership', level: 'Diploma', slug: 'diploma-in-christian-leadership' },
       { title: 'Bachelor of Theology (B.Th.)', level: 'Bachelor', slug: 'bachelor-of-theology' },
       { title: 'Bachelor of Divinity (B.D.)', level: 'Bachelor', slug: 'divinity' },
-      { title: 'Bachelor of Ministry (B.Min.)', level: 'Bachelor', slug: 'bachelor-of-ministry' },
       { title: 'Bachelor of Christian Education', level: 'Bachelor', slug: 'bachelor-of-christian-education' },
       { title: 'Master of Theology (M.Th.)', level: 'Master', slug: 'master-of-theology' },
       { title: 'Master of Divinity (M.Div.)', level: 'Master', slug: 'master-of-divinity' },
-      { title: 'Masters in Evangelism and Mission', level: 'Master', slug: 'masters-evangelism-mission' },
-      { title: 'Master of Arts in Christian Leadership', level: 'Master', slug: 'master-of-arts-christian-leadership' },
       { title: 'Master of Arts in Black Liberation Theology', level: 'Master', slug: 'black-liberation-theology' },
       { title: 'Doctor of Philosophy (Ph.D.) in Theology', level: 'Doctorate', slug: 'doctor-of-philosophy-theology' },
       { title: 'Doctor of Theology (D.Th.)', level: 'Doctorate', slug: 'doctor-of-theology' },
       { title: 'Doctor of Systematic Theology (DSTh)', level: 'Doctorate', slug: 'doctor-of-systematic-theology' },
-      { title: 'Doctor of Ministry (D.Min.)', level: 'Doctorate', slug: 'doctor-of-ministry' },
     ],
     researchStrengths: [
       'Biblical Theology',
@@ -301,6 +295,54 @@ export const facultyList: Faculty[] = [
       { label: 'Master of Theology', href: '/master-of-theology' },
       { label: 'M.A. Black Liberation Theology', href: '/black-liberation-theology' },
       { label: 'Roots of Faith (position paper)', href: '/roots-of-faith' },
+    ],
+  },
+  {
+    // =====================================================================
+    // THE SCHOOL OF MINISTRY — opened on the university's instruction.
+    //
+    // Nothing here is invented. The six awards below MOVED from the Faculty
+    // of Theology's list; they are the same six the `school` field now points
+    // here in site.ts, and the division is the one the catalogue's own
+    // summaries already drew — training to DO the work of ministry, as
+    // against studying the discipline of theology. The Faculty of Theology
+    // keeps Theology, Divinity, Christian Education, Black Liberation
+    // Theology and its three research doctorates.
+    //
+    // The prose is written from those six programme records and from what the
+    // university already publishes about ministerial formation. It claims no
+    // dean, no campus of its own, no partnerships and no research centres,
+    // because none of those are on record for it — a new school with an
+    // invented faculty roster would be the worst thing this page could carry.
+    // =====================================================================
+    slug: 'school-of-ministry',
+    name: 'School of Ministry',
+    shortName: 'Ministry',
+    campus: 'Buea, Cameroon · Online worldwide',
+    image: '/images/graduation-2024/grad-2024-hooding.jpg',
+    standsFor:
+      'To form pastors, evangelists and church leaders for the work itself — the congregation, the mission field, and the organisation that carries them.',
+    description: [
+      'The School of Ministry trains for practice rather than for the library. Where the Faculty of Theology reads the discipline, this school prepares the people who will stand in a pulpit on Sunday, sit with a family in a crisis on Monday, and answer to a board on Tuesday.',
+      'Its awards run from the diploma to the practitioner doctorate, and each level articulates into the next. Teaching covers preaching, pastoral care, discipleship, worship, evangelism and mission, together with the governance, stewardship and ethics of authority that a growing ministry demands of whoever leads it.',
+      'Most of its students are already serving. The school is built around that: study is available online and on campus in Buea, and admission is enrolment, so a minister may begin from the date of their offer without standing down from the work they are being trained for.',
+    ],
+    programSchool: 'School of Ministry',
+    awards: [
+      { title: 'Diploma in Ministry', level: 'Diploma', slug: 'diploma-in-ministry' },
+      { title: 'Diploma in Christian Leadership', level: 'Diploma', slug: 'diploma-in-christian-leadership' },
+      { title: 'Bachelor of Ministry (B.Min.)', level: 'Bachelor', slug: 'bachelor-of-ministry' },
+      { title: 'Masters in Evangelism and Mission', level: 'Master', slug: 'masters-evangelism-mission' },
+      { title: 'Master of Arts in Christian Leadership', level: 'Master', slug: 'master-of-arts-christian-leadership' },
+      { title: 'Doctor of Ministry (D.Min.)', level: 'Doctorate', slug: 'doctor-of-ministry' },
+    ],
+    careers: [
+      'Pastoral ministry',
+      'Church planting and mission',
+      'Evangelism',
+      'Chaplaincy',
+      'Denominational and ministry administration',
+      'Faith-based organisations',
     ],
   },
   {

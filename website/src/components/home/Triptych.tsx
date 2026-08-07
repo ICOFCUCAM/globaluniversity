@@ -1,6 +1,17 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { Grain } from '@/components/Atmosphere';
 import { institutionalFacts } from '@/content/institutionalFacts';
+
+/**
+ * The university's own paragraph about itself and the fellowship it belongs to,
+ * from content/site.ts. Quoted, not rewritten: the American spellings
+ * ("endeavors", "prioritizing") are the institution's own and correcting them
+ * here would put this page out of step with every other place the passage
+ * appears.
+ */
+const ABOUT =
+  'The International Circle of Faith (ICOF) represents a contemporary movement committed to reviving and perpetuating the original apostolic message, authority, power, and anointing. With a global reach, ICOF unites ministers and ministries worldwide under a common vision of unity, prioritizing collaboration over division. Emerging from the core principles of ICOF, ICOF Global University endeavors to provide accredited education and training. Since its inception in 2007, our institution has been dedicated to nurturing professionals across various domains, championing excellence in education and service to humanity.';
 
 // ---------------------------------------------------------------------------
 // THE SIGNATURE COMPOSITION — one photograph held still, three blocks driven
@@ -184,7 +195,7 @@ export default function Triptych({ children }: { children?: React.ReactNode }) {
           rather than floating letterboxed in the middle. The world is meant to
           be the architecture of this section, not a picture of a world placed
           inside it. */}
-      <div aria-hidden="true" className="fixed inset-0 -z-20">
+      <div aria-hidden="true" data-pinned-ground="" className="fixed inset-0 -z-20">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/images/flat-world.svg"
@@ -233,49 +244,90 @@ export default function Triptych({ children }: { children?: React.ReactNode }) {
         the North Pole and cut at 60° south, with Africa at the foot.
       </span>
 
-      {/* ---- BLOCK 1 — OPAQUE. The claim, on solid ground. -----------------
+      {/* ---- BLOCK 1 — OPAQUE. About the university. -----------------------
 
-              "immidiately after the hero, the next block should not be
-               transparent"
+              "this image 1 replaces image 2"
 
-          It was transparent, and the map began the instant the hero ended.
-          That is one dissolve too early. The hero is itself a composed image —
-          a building, a crest, a headline over photography — and running a
-          second picture straight underneath it gives the reader two
-          photographic environments back to back with nothing solid between
-          them. The page never lands before it starts moving again.
+          It carried one line — "A university without borders." — on flat
+          purple. Handsome, and a poster rather than a section: a reader who has
+          just been told what this place is for arrives at a slogan, learns
+          nothing, and scrolls.
 
-          So the claim sits on brand-purple, one step LIGHTER than the
-          purple-dark of the hero above it and of the facts plane below. That
-          matters: the same colour would have made the hero look as though it
-          had simply carried on for another half screen, and the seam would
-          have vanished along with the sense that a new chapter had begun.
+          It is the About band now, which is the section the university asked
+          for: what this institution is, where it came from, and two ways into
+          the depth. Opaque, as instructed for the block directly under the
+          hero, and on CREAM rather than purple — the hero above and the facts
+          plane below are both dark, and three dark sections in a row is one
+          long section. The cream is the first light ground on the page and it
+          is what makes this read as a new chapter rather than a continuation.
 
-          The map now first appears at the pathways ladder, which is where the
-          university asked to see it. The composition reads:
+          THE PARAGRAPH IS THE UNIVERSITY'S OWN, from content/site.ts, where it
+          has described the relationship with the fellowship since before this
+          rebuild. It is not rewritten. A heritage claim is the last thing a
+          homepage should improve on.
 
-              opaque claim -> white row -> WORLD -> WORLD -> opaque facts
-              -> WORLD
+          AND THE FELLOWSHIP SECTION IS GONE WITH IT. That section made this
+          exact claim over the map, in the university's own words, one screen
+          later. Two sections, one paragraph, one page — the fault this redesign
+          has removed twice already. The claim belongs here, at the top, where a
+          reader meets it first. */}
+      <div data-block="" className="relative bg-brand-cream py-20 text-brand-ink dark:bg-[#181121] dark:text-white sm:py-24">
+        <div className="mx-auto w-full max-w-7xl px-6 sm:px-10 lg:px-16">
+          <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-20">
+            <div>
+              <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.34em] text-brand-gold-ink dark:text-brand-gold">
+                About the university
+              </p>
 
-          No plate here either. A plate is a darkened patch for seating words
-          on a picture; over a flat, opaque ground it is a stain and nothing
-          else. */}
-      <div data-block="" className="relative flex min-h-[52svh] items-end bg-brand-purple lg:min-h-[56svh]">
-        {/* The seam into the white row below, so the purple does not end at a
-            ruled line. */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-brand-gold/35 to-transparent"
-        />
+              <h2
+                id="triptych-heading"
+                className="mt-5 font-heading text-[clamp(1.9rem,4.2vw,3.2rem)] font-bold leading-[1.06] tracking-[-0.02em] text-brand-purple dark:text-white [text-wrap:balance]"
+              >
+                A university in pursuit of a brighter future
+              </h2>
 
-        <div className="mx-auto w-full max-w-7xl px-6 pb-20 sm:px-10 lg:px-16 lg:pb-24">
-          <div className="max-w-xl">
-            <h2
-              id="triptych-heading"
-              className="font-heading text-[clamp(2.1rem,5vw,3.8rem)] font-bold leading-[1.04] tracking-[-0.03em] [text-wrap:balance]"
-            >
-              A university without borders.
-            </h2>
+              <span
+                aria-hidden="true"
+                className="mt-7 block h-[3px] w-20 rounded-full bg-brand-gold"
+              />
+
+              <p className="mt-8 max-w-xl text-[15.5px] leading-relaxed text-brand-muted dark:text-white/75 sm:text-[16.5px]">
+                {ABOUT}
+              </p>
+
+              <div className="mt-10 flex flex-wrap gap-4">
+                <Link
+                  href="/about"
+                  className="rounded-full bg-brand-purple px-8 py-4 font-heading text-[15px] font-bold text-white transition duration-300 hover:bg-brand-purple-dark dark:bg-brand-gold dark:text-brand-purple dark:hover:bg-brand-gold-deep"
+                >
+                  Our history and mission
+                </Link>
+                <Link
+                  href="/governance"
+                  className="rounded-full border-2 border-brand-purple/30 px-8 py-4 font-heading text-[15px] font-bold text-brand-purple transition duration-300 hover:border-brand-purple dark:border-white/30 dark:text-white dark:hover:border-brand-gold dark:hover:text-brand-gold"
+                >
+                  Leadership and governance
+                </Link>
+              </div>
+            </div>
+
+            {/* The photograph runs past the right edge of the container on wide
+                screens — a crop of a larger scene rather than a picture sized
+                to a slot, and the one thing keeping this off the "heading,
+                paragraph, two buttons, image in a box" pattern. */}
+            <div className="relative h-72 overflow-hidden sm:h-96 lg:-mr-16 lg:h-full lg:min-h-[26rem] xl:-mr-24">
+              <Image
+                src="/images/graduation-2024/grad-2024-procession-hall.jpg"
+                alt="The 2024 congregation of ICOF Global University in the assembly hall at Buea"
+                fill
+                sizes="(min-width:1024px) 48vw, 100vw"
+                quality={84}
+                loading="lazy"
+                className="object-cover"
+                style={{ objectPosition: '50% 45%' }}
+              />
+              <div aria-hidden="true" className="absolute inset-0 bg-brand-purple/18 mix-blend-multiply" />
+            </div>
           </div>
         </div>
       </div>

@@ -249,7 +249,15 @@ for (const chapter of triptychs) {
       return p.length > 3 ? p[3] : 1;
     };
     return {
-      images: el.querySelectorAll('img').length,
+      // SCOPED TO THE PINNED GROUND, not to the whole window.
+      //
+      // This counted every image inside the section and asserted one, which was
+      // right while the window held nothing but the map. It now also holds an
+      // About band with a photograph of its own — content, not a second copy of
+      // the ground — and the check failed a composition that was correct. The
+      // invariant was never "one image in this section"; it is "one image IS
+      // the pinned ground".
+      images: el.querySelectorAll('[data-pinned-ground] img').length,
       blocks: blocks.length,
       alphas: blocks.map(alphaOf),
     };
@@ -277,7 +285,7 @@ for (const chapter of triptychs) {
           const el = [...document.querySelectorAll('[data-triptych]')].find(
             (n) => (n.getAttribute('data-chapter') || '(unnamed)') === c,
           );
-          const img = el && el.querySelector('img');
+          const img = el && el.querySelector('[data-pinned-ground] img');
           return !!img && img.complete && img.naturalWidth > 0;
         },
         chapter,
@@ -290,7 +298,7 @@ for (const chapter of triptychs) {
         const el = [...document.querySelectorAll('[data-triptych]')].find(
           (n) => (n.getAttribute('data-chapter') || '(unnamed)') === c,
         );
-        const img = el.querySelector('img');
+        const img = el.querySelector('[data-pinned-ground] img');
         const ir = img.getBoundingClientRect();
         const first = el.querySelector('h2');
         return {
@@ -316,8 +324,8 @@ for (const chapter of triptychs) {
 
   console.log(`  ${chapter}`);
 
-  if (shape.images === 1) pass('one photograph, not one per block');
-  else fail(`${chapter}: ${shape.images} images — the composition is duplicated, not shared`);
+  if (shape.images === 1) pass('exactly one image is the pinned ground');
+  else fail(`${chapter}: ${shape.images} images inside [data-pinned-ground] — the ground is duplicated`);
 
   if (shape.blocks === 3) pass('three blocks');
   else fail(`${chapter}: ${shape.blocks} content blocks, expected 3`);

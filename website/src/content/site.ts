@@ -662,7 +662,7 @@ export const programs: Program[] = [
     slug: 'diploma-in-ministry',
     title: 'Diploma in Ministry',
     level: 'Diploma',
-    school: 'Faculty of Theology',
+    school: 'School of Ministry',
     image: '/images/graduation-2024/grad-2024-graduands-line.jpg',
     summary:
       'Practical ministerial formation at diploma level for those already serving in local churches — preaching, pastoral care, church administration and evangelism — leading on to the Bachelor of Ministry or the Bachelor of Theology.',
@@ -672,7 +672,7 @@ export const programs: Program[] = [
     slug: 'diploma-in-christian-leadership',
     title: 'Diploma in Christian Leadership',
     level: 'Diploma',
-    school: 'Faculty of Theology',
+    school: 'School of Ministry',
     image: '/images/graduation-2024/grad-2024-graduands-scrolls.jpg',
     summary:
       'Leadership formation for those carrying responsibility in churches, ministries and Christian organisations. Where the Diploma in Ministry forms the pastor, this diploma forms the leader — governance, stewardship, team building and the handling of conflict, grounded in a biblical understanding of servant leadership.',
@@ -702,7 +702,7 @@ export const programs: Program[] = [
     slug: 'bachelor-of-ministry',
     title: 'Bachelor of Ministry',
     level: 'Bachelor',
-    school: 'Faculty of Theology',
+    school: 'School of Ministry',
     image: '/images/graduation-2024/grad-2024-procession-hall.jpg',
     summary:
       'The practical route to ministry, and a distinct award from the Bachelor of Divinity. The B.Min. is built for those already serving: supervised placement runs throughout, and the emphasis falls on preaching, pastoral care, discipleship, church administration and mission rather than on the biblical languages.',
@@ -743,7 +743,7 @@ export const programs: Program[] = [
     slug: 'masters-evangelism-mission',
     title: 'Masters in Evangelism and Mission',
     level: 'Master',
-    school: 'Faculty of Theology',
+    school: 'School of Ministry',
     image: '/images/graduation-2024/grad-2024-faculty-robes.jpg',
     summary:
       'Missiology and the practice of evangelism for those sent to plant, to cross cultures and to reach communities that the church has not yet reached — with particular attention to mission within and from Africa.',
@@ -753,7 +753,7 @@ export const programs: Program[] = [
     slug: 'master-of-arts-christian-leadership',
     title: 'Master of Arts in Christian Leadership',
     level: 'Master',
-    school: 'Faculty of Theology',
+    school: 'School of Ministry',
     image: '/images/graduation-2024/grad-2024-congregation-row.jpg',
     summary:
       'Advanced leadership study for those directing churches, denominations, Christian organisations and NGOs. The degree treats leadership itself as the object of study — organisational strategy, change, governance and ethics — and concludes with a supervised leadership research project.',
@@ -812,7 +812,7 @@ export const programs: Program[] = [
     slug: 'doctor-of-ministry',
     title: 'Doctor of Ministry',
     level: 'Doctorate',
-    school: 'Faculty of Theology',
+    school: 'School of Ministry',
     image: '/images/graduation-2024/grad-2024-doctoral-gold.jpg',
     summary:
       'The professional doctorate for practising ministers, in Christian Counseling and Administration. Study is grounded in the candidate’s own ministry context, and the final project addresses a problem in that context rather than a question in the literature alone.',

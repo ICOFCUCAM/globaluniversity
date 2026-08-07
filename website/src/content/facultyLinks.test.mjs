@@ -20,12 +20,16 @@
 // faculties, four identical links. Naming the real slugs made the links useful
 // and made this test necessary.
 //
-// It also checks the count. The homepage says four disciplines while the site
-// has five faculty pages — the fifth is the School of Theology, Douala, which
-// is the same discipline at another campus rather than a fifth subject. That is
-// a defensible editorial choice and not a defensible silent one, so it is
-// asserted here: if a genuinely new faculty is added, this fails and somebody
-// has to decide whether the homepage should say five.
+// It also checks the count, and that check has now done its job once. It read
+// "four disciplines, five pages — the fifth is Douala, the same discipline at
+// another campus", and it said: if a genuinely new faculty is added, this fails
+// and somebody has to decide whether the homepage should say five.
+//
+// A genuinely new faculty was added. The university asked for a School of
+// Ministry, six awards moved into it from the Faculty of Theology, and the
+// decision was taken: the homepage says FIVE disciplines and the site has SIX
+// faculty pages, the sixth still being Douala. The assertion is updated rather
+// than deleted, so the next new faculty trips it too.
 // ---------------------------------------------------------------------------
 
 import { execFileSync } from 'node:child_process';
@@ -70,7 +74,7 @@ const block = page.slice(page.indexOf('<FacultyScenes'), page.indexOf('/>', page
 const slugs = [...block.matchAll(/slug: '([^']+)'/g)].map((m) => m[1]);
 const ids = [...block.matchAll(/id: '([^']+)'/g)].map((m) => m[1]);
 
-check('the homepage names four disciplines', slugs.length, 4);
+check('the homepage names five disciplines', slugs.length, 5);
 check('…and one catalogue id for each', ids.length, slugs.length);
 
 const realSlugs = new Set(F.facultyList.map((f) => f.slug));
@@ -87,9 +91,16 @@ for (const id of ids) {
 
 // The count the homepage asserts about itself.
 check(
-  'the site has five faculty pages, four disciplines plus Douala',
+  'the site has six faculty pages, five disciplines plus Douala',
   F.facultyList.map((f) => f.slug).sort(),
-  ['education', 'engineering-technology', 'gibmas', 'theology-buea', 'theology-douala'],
+  [
+    'education',
+    'engineering-technology',
+    'gibmas',
+    'school-of-ministry',
+    'theology-buea',
+    'theology-douala',
+  ],
 );
 
 // No duplicates — a copy-paste in the scene list would otherwise show the same

@@ -131,17 +131,23 @@ const tri = readFileSync(join(here, 'Triptych.tsx'), 'utf8')
   .replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
 console.log('\n  Triptych shape\n');
 
-// Counted in the rendered JSX only. The header comment of that file quotes
-// "<Image fill>" while explaining the version this replaced, and counting that
-// reported a duplicated composition in a file that has exactly one picture.
+// COUNTED INSIDE THE PINNED GROUND ONLY.
 //
-// Both spellings count. The pinned ground is now a generated SVG map drawn with
-// a plain <img> — next/image would need dangerouslyAllowSVG enabled site-wide
-// to pass it, and has nothing to offer a vector file anyway. Counting only
-// <Image> reported ZERO pictures in a composition built entirely around one.
-const images = (tri.match(/<Image\b/g) || []).length + (tri.match(/<img\b/g) || []).length;
-if (images === 1) ok('    one photograph, not one per block');
-else bad(`Triptych: ${images} <Image> elements — the composition is duplicated, not shared`);
+// This counted every <Image>/<img> in the rendered JSX and asserted one, which
+// was right while the window held nothing but the map. The window now also
+// holds an About band with a photograph of its own — content, not a second copy
+// of the ground — and the check failed a composition that was correct. The
+// invariant was never "one image in this file"; it is "one image IS the pinned
+// ground", so the count is scoped to the marked layer.
+//
+// Comments are still stripped first: the header of that file quotes
+// "<Image fill>" while explaining the version it replaced, and counting that
+// reported a duplicated composition in a file with exactly one picture.
+const groundStart = tri.indexOf('data-pinned-ground');
+const ground = groundStart === -1 ? '' : tri.slice(groundStart, tri.indexOf('</div>', groundStart));
+const images = (ground.match(/<Image\b/g) || []).length + (ground.match(/<img\b/g) || []).length;
+if (images === 1) ok('    exactly one image is the pinned ground');
+else bad(`Triptych: ${images} images inside data-pinned-ground — the pinned ground must be exactly one picture`);
 
 if (/bg-brand-purple-dark lg:min-h/.test(tri) || /min-h-\[\d+svh\][^"]*bg-brand-purple-dark/.test(tri))
   ok('    the middle block carries an opaque background');

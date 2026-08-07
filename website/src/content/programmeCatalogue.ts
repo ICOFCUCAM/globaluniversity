@@ -124,6 +124,46 @@ export const FACULTIES: FacultyProfile[] = [
 
 FACULTIES.push(
   {
+    // ===================================================================
+    // THE SCHOOL OF MINISTRY — added on the university's instruction.
+    //
+    // A new school needs programmes, and inventing programmes is the one
+    // thing this repository will not do. So nothing was created: six awards
+    // that already existed MOVED here from the Faculty of Theology, chosen on
+    // a single distinction the catalogue already draws in its own summaries —
+    // whether an award trains somebody to DO the work of ministry or to STUDY
+    // the discipline of theology.
+    //
+    //   Diploma in Ministry — "directed at the work itself: preaching,
+    //     pastoral care, discipleship, worship and the ordinary
+    //     administration of a congregation"
+    //   Diploma in Christian Leadership — governance, stewardship, planning,
+    //     conflict, the ethics of authority
+    //   Bachelor of Ministry (B.Min.)
+    //   Masters in Evangelism and Mission
+    //   Master of Arts in Christian Leadership
+    //   Doctor of Ministry (D.Min.) — the practitioner doctorate
+    //
+    // What deliberately did NOT move: Theology, Divinity, Christian
+    // Education, Black Liberation Theology, the Ph.D., the D.Th. and the
+    // D.S.Th. Those are academic awards in the discipline and the Faculty of
+    // Theology keeps them, which is also why its count falls from 18 to 12
+    // rather than collapsing.
+    //
+    // THE ALLOCATION IS A JUDGEMENT AND IT IS FLAGGED. The university asked
+    // for the school; it did not say which awards belong to it. This split is
+    // defensible from the published summaries and it is reversible in one
+    // file — the `school` field in site.ts is the only thing that decides it.
+    // If the university wants a different division, that is where it changes.
+    // ===================================================================
+    id: 'ministry',
+    name: 'School of Ministry',
+    mission:
+      'Forming pastors, evangelists and church leaders for the work itself — the congregation, the mission field and the organisation that carries them.',
+    blurb:
+      'The School of Ministry trains for practice rather than for the library. Its awards run from the diploma to the practitioner doctorate and cover preaching, pastoral care, discipleship, evangelism, mission and the governance of a growing ministry.',
+  },
+  {
     id: 'education',
     name: 'Faculty of Education',
     mission:
@@ -141,8 +181,18 @@ export const DIPLOMA_DURATION = 'One to two academic years';
 const theology = (
   slug: string, title: string, summary: string, description: string[],
   careers: string[], pathway: string, icon: string,
+  // THE FACULTY IS AN ARGUMENT NOW, defaulting to theology.
+  //
+  // The diploma programmes are built here rather than derived from site.ts, so
+  // their faculty was hardcoded — which meant reassigning the Diploma in
+  // Ministry and the Diploma in Christian Leadership to the new School of
+  // Ministry in site.ts moved four awards and silently left two behind. The
+  // homepage reported "4 programmes" for a school that has six, and nothing
+  // failed: both numbers were counted correctly from a catalogue that was
+  // wrong. Two sources of truth for one fact, and only one of them was edited.
+  facultyId: string = 'theology',
 ): Programme => ({
-  slug, title, facultyId: 'theology', award: 'Diploma',
+  slug, title, facultyId, award: 'Diploma',
   // 180, on the university's instruction, correcting the 120 seeded in
   // migration 006. See DIPLOMA_CREDITS below for the note this carries.
   credits: 180, creditsPublished: true,
@@ -194,6 +244,7 @@ export const DIPLOMA_PROGRAMMES: Programme[] = [
     ],
     ['Minister in training', 'Pastoral care worker', 'Youth and discipleship leader', 'Missions worker'],
     'Bachelor of Ministry', '🕊',
+    'ministry',
   ),
   theology(
     'diploma-in-christian-leadership', 'Diploma in Christian Leadership',
@@ -204,6 +255,7 @@ export const DIPLOMA_PROGRAMMES: Programme[] = [
     ],
     ['Ministry leader', 'Church administrator', 'Faith-based NGO coordinator', 'Departmental head'],
     'Bachelor of Christian Leadership', '⛪',
+    'ministry',
   ),
 
   /* --- Engineering and Technology ------------------------------------- */
@@ -540,6 +592,9 @@ const LEVEL_DURATION: Record<string, string> = {
 
 const FACULTY_ID: Record<string, string> = {
   'Faculty of Theology': 'theology',
+  // Added on the university's instruction to open a School of Ministry. See
+  // the FACULTIES entry below for what moved into it and what did not.
+  'School of Ministry': 'ministry',
   'Faculty of Education': 'education',
   'Faculty of Engineering and Technology': 'engineering',
   'Global Institute of Business and Management Science (GIBMAS)': 'business',
