@@ -62,11 +62,29 @@ export default function HeroCopy() {
         ))}
       </p>
 
-      <h1 className="mt-[clamp(1.25rem,3.2vh,2rem)] font-heading text-[clamp(2.4rem,min(6.4vw,9vh),5rem)] font-bold leading-[1.02] tracking-[-0.028em] text-transparent [background-image:linear-gradient(168deg,#ffffff_28%,#f7e6b4_70%,#e9c14a_100%)] [background-clip:text] [-webkit-background-clip:text] [text-wrap:balance]">
+      {/* key={line} REMOUNTS the node on every rotation, which is what replays
+          the animation — a CSS animation on a node that merely changes its text
+          runs once, on first paint, and never again. So the headline used to
+          hard-cut between slides while everything around it was easing.
+
+          The paragraph follows 90ms behind. A stagger that small is not read as
+          two events; it is read as one movement with a direction, which is the
+          difference between a slideshow and a page that is composed.
+
+          Reduced motion is handled globally: globals.css resets opacity and
+          transform on anything matching animate-*, so the swap becomes an
+          instant cut rather than a frozen half-faded line. */}
+      <h1 key={`t${line}`} className="animate-rise mt-[clamp(1.25rem,3.2vh,2rem)] font-heading text-[clamp(2.4rem,min(6.4vw,9vh),5rem)] font-bold leading-[1.02] tracking-[-0.028em] text-transparent [background-image:linear-gradient(168deg,#ffffff_28%,#f7e6b4_70%,#e9c14a_100%)] [background-clip:text] [-webkit-background-clip:text] [text-wrap:balance]">
         {slide.title}
       </h1>
 
-      <p className="mt-[clamp(1rem,2.6vh,1.75rem)] max-w-xl text-[clamp(1rem,1.9vh,1.25rem)] leading-relaxed text-white/80">{slide.text}</p>
+      <p
+        key={`b${line}`}
+        style={{ animationDelay: '90ms' }}
+        className="animate-rise mt-[clamp(1rem,2.6vh,1.75rem)] max-w-xl text-[clamp(1rem,1.9vh,1.25rem)] leading-relaxed text-white/80"
+      >
+        {slide.text}
+      </p>
 
       <div className="mt-[clamp(1.5rem,3.4vh,2.5rem)] flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:gap-4">
         <Magnetic strength={9}>
