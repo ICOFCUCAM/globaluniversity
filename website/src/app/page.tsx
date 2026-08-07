@@ -213,6 +213,13 @@ export default async function HomePage() {
           as one route rather than five unrelated cards. */}
       <PathwayLadder />
 
+      {/* THE PROGRAMME FINDER.
+          This replaced four featured cards and a link to a list of forty-one
+          rows. Nobody chooses a degree by reading an index — see the component
+          for how somebody actually chooses, and for why nothing here is
+          labelled AI. */}
+      <ProgrammeFinder />
+
       {/* Chancellor's welcome — the site opened with this on the original iguc.net */}
       {/* The Chancellor's word. The photograph is the room he speaks in — see
           ChancellorWord.tsx and Cinematic.tsx for why the ceremony is the
@@ -229,13 +236,6 @@ export default async function HomePage() {
           deliberately empty because there are no consented, attributable
           student quotations, and inventing them was refused. A component that
           draws nothing is not a section. It returns when real ones exist. */}
-
-      {/* THE PROGRAMME FINDER.
-          This replaced four featured cards and a link to a list of forty-one
-          rows. Nobody chooses a degree by reading an index — see the component
-          for how somebody actually chooses, and for why nothing here is
-          labelled AI. */}
-      <ProgrammeFinder />
 
       {/* Research & Innovation */}
       {/* data-on-dark, not just bg-brand-purple. The focus-ring rules in

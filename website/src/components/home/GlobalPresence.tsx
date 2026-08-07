@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import FixedWindow from './FixedWindow';
+
 import { flatWorldSvg } from '@/lib/flatWorld';
 import { CAMPUSES } from '@/content/institutionalFacts';
 
@@ -72,42 +72,32 @@ import { CAMPUSES } from '@/content/institutionalFacts';
 // can actually evidence; see UNIVERSITY_PLACES in src/lib/flatWorld.ts.
 const WORLD = flatWorldSvg({
   size: 640,
-  colour: '#f7dc79',
+  colour: '#4a3570',
   inset: 0.92,
-  landOpacity: 0.34,
+  landOpacity: 0.20,
   places: true,
   id: 'presence',
 });
 
 export default function GlobalPresence() {
   return (
-    <FixedWindow
-      src="/images/graduation-2024/grad-2024-procession-hall.jpg"
-      alt="The academic procession entering the hall at the ICOF Global University 2024 congregation"
-      anchor="left"
-      focal="50% 40%"
-      exposure={0.48}
-      height={118}
-      chapter="Where we are"
+    <section
+      data-chapter="Where we are"
+      aria-labelledby="presence-heading"
+      className="relative z-10 overflow-hidden bg-brand-cream py-24 dark:bg-[#181121] sm:py-32"
     >
-      {/* The world, behind and to the right of the copy. Decorative here — the
-          places it marks are all named in the list below, so a reader who
-          cannot see it loses nothing. */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute right-0 top-1/2 hidden w-[38rem] -translate-y-1/2 translate-x-[18%] opacity-[0.5] lg:block"
-        dangerouslySetInnerHTML={{ __html: WORLD }}
-      />
-
-      <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.34em] text-brand-gold">
+      <div className="mx-auto grid max-w-7xl items-center gap-14 px-6 sm:px-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)] lg:gap-20 lg:px-16">
+        {/* ---- the copy, first cell ------------------------------------- */}
+        <div>
+      <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.34em] text-brand-gold-ink dark:text-brand-gold">
         09 — Where we are
       </p>
 
-      <h2 className="mt-8 font-heading text-[clamp(2.2rem,5.4vw,4.2rem)] font-bold leading-[1.04] tracking-[-0.03em] text-white [text-wrap:balance]">
+      <h2 className="mt-8 font-heading text-[clamp(2.2rem,5.4vw,4.2rem)] font-bold leading-[1.04] tracking-[-0.03em] text-brand-purple dark:text-white [text-wrap:balance]">
         One university. No borders.
       </h2>
 
-      <p className="mt-8 max-w-lg text-[15px] leading-relaxed text-white/90 sm:text-base">
+      <p className="mt-8 max-w-lg text-[15px] leading-relaxed text-brand-muted dark:text-white/80 sm:text-base">
         Two campuses in Cameroon, a professional development centre in Nigeria, and every
         programme taught online to students on every continent. Wherever you study with us,
         you are a full member of this university — the same faculty, the same examinations,
@@ -116,12 +106,12 @@ export default function GlobalPresence() {
 
       <ul className="mt-10 grid gap-x-10 gap-y-5 sm:grid-cols-2">
         {CAMPUSES.map((c) => (
-          <li key={c.city} className="border-l-2 border-brand-gold/40 pl-4">
-            <p className="font-heading text-[17px] font-bold leading-tight text-white">
+          <li key={c.city} className="border-l-2 border-brand-gold-deep pl-4 dark:border-brand-gold/40">
+            <p className="font-heading text-[17px] font-bold leading-tight text-brand-purple dark:text-white">
               {c.city}
-              <span className="ml-2 font-sans text-[12px] font-normal text-white/60">{c.country}</span>
+              <span className="ml-2 font-sans text-[12px] font-normal text-brand-muted dark:text-white/60">{c.country}</span>
             </p>
-            <p className="mt-1 text-[13px] leading-snug text-white/75">{c.role}</p>
+            <p className="mt-1 text-[13px] leading-snug text-brand-muted dark:text-white/75">{c.role}</p>
           </li>
         ))}
         {/* No hand-written "Online" entry here. CAMPUSES already carries one —
@@ -134,7 +124,7 @@ export default function GlobalPresence() {
       <div className="mt-11 flex flex-wrap items-center gap-x-8 gap-y-4">
         <Link
           href="/campus-life"
-          className="group inline-flex items-center gap-3 border-b border-brand-gold/40 pb-1 font-heading text-[15px] font-bold text-brand-gold transition duration-300 hover:border-brand-gold hover:text-white"
+          className="group inline-flex items-center gap-3 border-b border-brand-gold-deep pb-1 font-heading text-[15px] font-bold text-brand-gold-ink transition duration-300 hover:border-brand-gold-ink hover:text-brand-purple dark:text-brand-gold dark:hover:text-white"
         >
           Campus life
           <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">
@@ -143,7 +133,7 @@ export default function GlobalPresence() {
         </Link>
         <Link
           href="/online-learning"
-          className="group inline-flex items-center gap-3 border-b border-white/25 pb-1 font-heading text-[15px] font-bold text-white/85 transition duration-300 hover:border-brand-gold hover:text-brand-gold"
+          className="group inline-flex items-center gap-3 border-b border-brand-purple/25 pb-1 font-heading text-[15px] font-bold text-brand-purple transition duration-300 hover:border-brand-gold-ink hover:text-brand-gold-ink dark:border-white/25 dark:text-white/85 dark:hover:text-brand-gold"
         >
           How online study works
           <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">
@@ -151,6 +141,21 @@ export default function GlobalPresence() {
           </span>
         </Link>
       </div>
-    </FixedWindow>
+        </div>
+
+        {/* ---- the world, second cell --------------------------------------
+            Order-first on small screens so the figure introduces the section
+            rather than trailing it; on desktop it sits to the right of the
+            copy where the reading eye arrives last.
+
+            Decorative: every place it marks is named in the list above, so a
+            reader who cannot see it loses nothing. */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none order-first mx-auto w-full max-w-[26rem] lg:order-none lg:max-w-[32rem] lg:translate-x-[4%]"
+          dangerouslySetInnerHTML={{ __html: WORLD }}
+        />
+      </div>
+    </section>
   );
 }
