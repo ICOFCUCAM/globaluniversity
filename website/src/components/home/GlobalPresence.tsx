@@ -80,7 +80,7 @@ export default function GlobalPresence() {
       <div className="mx-auto max-w-7xl px-6 sm:px-10 lg:px-16">
         <div>
       <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.34em] text-brand-gold-ink dark:text-brand-gold">
-        09 — Where we are
+        A global university
       </p>
 
       <h2 className="mt-8 font-heading text-[clamp(2.2rem,5.4vw,4.2rem)] font-bold leading-[1.04] tracking-[-0.03em] text-brand-purple dark:text-white [text-wrap:balance]">

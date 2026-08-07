@@ -107,7 +107,7 @@ export default function FacultyScenes({ faculties }: { faculties: FacultyScene[]
 
       <div className="relative mx-auto w-full max-w-7xl px-6 sm:px-10 lg:px-16">
         <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.34em] text-brand-gold">
-          04 — The knowledge
+          Schools and faculties
         </p>
         <h2
           id="faculties-heading"

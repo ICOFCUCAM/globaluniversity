@@ -9,7 +9,7 @@ import PathwayLadder from '@/components/home/PathwayLadder';
 import FacultyScenes from '@/components/home/FacultyScenes';
 import { facultyById, programmesByFaculty } from '@/content/programmeCatalogue';
 import StudyHere from '@/components/home/StudyHere';
-import ProgrammeFinder from '@/components/home/ProgrammeFinder';
+import ProgrammeTeaser from '@/components/home/ProgrammeTeaser';
 import ChancellorWord from '@/components/home/ChancellorWord';
 import GlobalMovement from '@/components/home/GlobalMovement';
 import Formation from '@/components/home/Formation';
@@ -198,12 +198,15 @@ export default async function HomePage() {
           as one route rather than five unrelated cards. */}
       <PathwayLadder />
 
-      {/* THE PROGRAMME FINDER.
-          This replaced four featured cards and a link to a list of forty-one
-          rows. Nobody chooses a degree by reading an index — see the component
-          for how somebody actually chooses, and for why nothing here is
-          labelled AI. */}
-      <ProgrammeFinder />
+      {/* A DOORWAY, NOT THE ROOM. The full programme finder — search field,
+          three filter groups, live counts and six programmes in full — was the
+          most useful interaction on the site and it was the Programs page. A
+          homepage that contains another page has stopped being a front door.
+
+          The finder is untouched at /programs. This states the scale, names the
+          four disciplines with their real counts, and sends the reader in
+          already narrowed. See ProgrammeTeaser.tsx. */}
+      <ProgrammeTeaser />
 
       {/* MOVED. This sat immediately after the statistics band, so the page
           went from a quiet cream count straight into a full-bleed fixed-window

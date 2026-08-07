@@ -85,7 +85,7 @@ export default function FinalScene() {
 
       <div className="relative mx-auto w-full max-w-4xl px-6 text-center sm:px-10">
         <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.34em] text-brand-gold">
-          11 — Your future
+          Admissions
         </p>
 
         <h2 className="mt-8 font-heading text-[clamp(2.6rem,7vw,5.4rem)] font-bold leading-[1.02] tracking-[-0.03em] text-white [text-wrap:balance]">

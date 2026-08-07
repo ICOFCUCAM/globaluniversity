@@ -46,7 +46,18 @@ export interface SplitProps {
   /** Purple duotone + grain over the photograph. */
   treat?: boolean;
   chapter?: string;
-  /** The scene numeral, e.g. "06". Omit to leave the scene unnumbered. */
+  /**
+   * A small label above the copy. It began life as a scene NUMERAL — "06 — THE
+   * PEOPLE" — and every section had one.
+   *
+   * That was a mistake worth naming. Numbering the sections made the homepage
+   * read as a demonstration of its own structure rather than as a university:
+   * a reader does not need to be told they have reached section six of eleven,
+   * and a page that keeps announcing its own scaffolding is a page more
+   * interested in how it was built than in who it is for. The numbers are gone
+   * everywhere; this prop survives for the rare case where a genuine label
+   * helps orientation.
+   */
   index?: string;
   className?: string;
   children: React.ReactNode;

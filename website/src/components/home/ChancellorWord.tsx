@@ -57,7 +57,6 @@ export default function ChancellorWord() {
       side="left"
       focal="50% 30%"
       chapter="Chancellor"
-      index="06 — THE PEOPLE"
     >
       <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.34em] text-brand-gold">
         A word from our Chancellor

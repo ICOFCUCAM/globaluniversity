@@ -119,7 +119,7 @@ export default function VerificationDemo() {
         <div className="grid items-start gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,480px)] lg:gap-20">
           <div>
             <p className="font-sans text-xs font-semibold uppercase tracking-[0.25em] text-brand-gold">
-              10 — Recognition you can verify
+              Recognition
             </p>
             <h2
               id="verify-heading"
