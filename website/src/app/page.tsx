@@ -7,7 +7,6 @@ import Hero from '@/components/home/Hero';
 import Reveal from '@/components/Reveal';
 import { getHomePage, getPrograms } from '@/lib/data';
 import { site } from '@/content/site';
-import { chancellor, welcomeExcerpt } from '@/content/welcome';
 import { quickIconMap } from '@/components/Icons';
 import { Aurora, Grain, Seam } from '@/components/Atmosphere';
 import KineticText from '@/components/KineticText';
@@ -25,6 +24,7 @@ import Voices from '@/components/home/Voices';
 import GlobalNetwork from '@/components/home/GlobalNetwork';
 import ProgrammeFinder from '@/components/home/ProgrammeFinder';
 import VerificationDemo from '@/components/home/VerificationDemo';
+import ChancellorWord from '@/components/home/ChancellorWord';
 
 // THE THREE PILLARS ARE THE THREE WORDS OF THE MOTTO.
 //
@@ -290,98 +290,10 @@ export default async function HomePage() {
       <PathwayLadder />
 
       {/* Chancellor's welcome — the site opened with this on the original iguc.net */}
-      <section data-chapter="Welcome" className="relative overflow-hidden bg-brand-purple-dark py-24 text-white sm:py-32">
-        <Image
-          src="/images/wp/g-hall.jpg"
-          alt=""
-          fill
-          className="object-cover opacity-[0.14]"
-          quality={60}
-          sizes="100vw"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-brand-purple-dark via-brand-purple-dark/95 to-brand-purple/85" />
-        <Aurora tone="dual" intensity={0.9} />
-        <Grain />
-        <Seam />
-        <Seam flip />
-
-        <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-[minmax(0,300px)_minmax(0,1fr)] lg:gap-16">
-          <Reveal>
-            <figure className="group relative mx-auto w-56 lg:w-full">
-              {/* Conic halo behind the plate — the portrait sits lit rather
-                  than pasted onto the band. */}
-              <span
-                aria-hidden="true"
-                className="absolute -inset-3 animate-crest rounded-[1.4rem] opacity-70 blur-md"
-                style={{
-                  background:
-                    'conic-gradient(from 0deg, transparent 0deg, rgba(247,220,121,0.55) 80deg, rgba(87,84,154,0.5) 170deg, transparent 260deg, transparent 360deg)',
-                }}
-              />
-              <div className="relative aspect-[4/5] overflow-hidden rounded-2xl shadow-lift-lg ring-1 ring-brand-gold/30">
-                <Image
-                  src={chancellor.image}
-                  alt={`${chancellor.name}, Chancellor of ICOF Global University`}
-                  fill
-                  className="object-cover object-top transition duration-[1200ms] ease-out group-hover:scale-[1.06]"
-                  sizes="(min-width:1024px) 300px, 224px"
-                />
-                {/* Gradient floor so the plate reads as attached, not overlaid */}
-                <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-brand-purple-dark/70 to-transparent" />
-              </div>
-              {/* Gold plate, as an inscribed portrait would carry */}
-              <figcaption className="absolute -bottom-4 left-1/2 w-[88%] -translate-x-1/2 rounded-lg bg-brand-gold px-4 py-2 text-center shadow-gold">
-                <p className="font-heading text-[13px] font-bold leading-tight text-brand-purple">
-                  {chancellor.name}
-                </p>
-                <p className="font-sans text-[9px] font-semibold uppercase tracking-[0.16em] text-brand-purple/75">
-                  Chancellor
-                </p>
-              </figcaption>
-            </figure>
-          </Reveal>
-
-          <Reveal delay={120}>
-            <p className="mb-3 font-sans text-xs font-semibold uppercase tracking-[0.25em] text-brand-gold">
-              Welcome
-            </p>
-            <KineticText className="font-heading text-display font-bold text-white [text-wrap:balance]">
-              A word from our Chancellor
-            </KineticText>
-            <div className="mt-5 h-[3px] w-16 rounded bg-brand-gold" />
-
-            {/* The quotation mark is positioned, not floated: a float re-flows
-                only the first two lines and leaves the paragraph ragged. */}
-            <blockquote className="relative mt-8 max-w-2xl pl-10">
-              <span
-                aria-hidden="true"
-                className="absolute -top-5 left-0 select-none font-heading text-[5.5rem] leading-none text-brand-gold/30"
-              >
-                &ldquo;
-              </span>
-              <p className="text-lg leading-relaxed text-white/90 sm:text-xl">{welcomeExcerpt}</p>
-            </blockquote>
-
-            <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-4">
-              <div>
-                <p className="font-heading text-lg font-bold text-brand-gold">{chancellor.name}</p>
-                <p className="text-sm text-white/65">
-                  Presiding Bishop, International Circle of Faith
-                </p>
-              </div>
-              <Link
-                href="/welcome"
-                className="group inline-flex items-center gap-2 rounded-full border-2 border-brand-gold px-7 py-3 font-heading text-sm font-semibold text-brand-gold transition hover:bg-brand-gold hover:text-brand-purple"
-              >
-                Read the Full Welcome
-                <span aria-hidden="true" className="transition-transform group-hover:translate-x-1">
-                  →
-                </span>
-              </Link>
-            </div>
-          </Reveal>
-        </div>
-      </section>
+      {/* The Chancellor's word. The photograph is the room he speaks in — see
+          ChancellorWord.tsx and Cinematic.tsx for why the ceremony is the
+          ground and his portrait is not. */}
+      <ChancellorWord />
 
       {/* What a week here actually looks like — the question that decides
           whether a working adult with a family applies. */}
