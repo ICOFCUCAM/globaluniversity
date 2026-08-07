@@ -320,11 +320,18 @@ blockquote {
   }
 }
 
-/* ---- Premium chrome ---- */
-::selection {
-  background: #f7dc79;
-  color: #422e59;
-}
+/* ---- Premium chrome ----
+
+   THE SECOND ::selection RULE IS GONE. There were two, 180 lines apart, and
+   they disagreed: the first set the selected text to #1d1428, the second to
+   #422e59. The later one won everywhere, so the considered value was dead and
+   the accidental one shipped — the kind of defect that survives forever because
+   both rules look correct in isolation and neither is wrong enough to notice.
+   The remaining rule is the one written with a reason beside it, and it uses
+   the theme token rather than a hex literal so it cannot drift from the palette.
+
+   scroll-behavior: smooth stays here; the reduced-motion block above overrides
+   it with !important for readers who ask for that. */
 html {
   scroll-behavior: smooth;
 }
