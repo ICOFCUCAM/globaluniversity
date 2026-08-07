@@ -134,7 +134,12 @@ console.log('\n  Triptych shape\n');
 // Counted in the rendered JSX only. The header comment of that file quotes
 // "<Image fill>" while explaining the version this replaced, and counting that
 // reported a duplicated composition in a file that has exactly one picture.
-const images = (tri.match(/<Image\b/g) || []).length;
+//
+// Both spellings count. The pinned ground is now a generated SVG map drawn with
+// a plain <img> — next/image would need dangerouslyAllowSVG enabled site-wide
+// to pass it, and has nothing to offer a vector file anyway. Counting only
+// <Image> reported ZERO pictures in a composition built entirely around one.
+const images = (tri.match(/<Image\b/g) || []).length + (tri.match(/<img\b/g) || []).length;
 if (images === 1) ok('    one photograph, not one per block');
 else bad(`Triptych: ${images} <Image> elements — the composition is duplicated, not shared`);
 

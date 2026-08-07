@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import { Grain } from '@/components/Atmosphere';
 
@@ -104,19 +103,16 @@ import { Grain } from '@/components/Atmosphere';
 // preference. It is the only kind of text this treatment can carry.
 // ---------------------------------------------------------------------------
 
-/** Flat, light, fixed with the picture. Keeps the photograph; carries no text. */
-const TINT = 'rgba(148,114,220,0.42)';
-
 /**
  * The plate behind the words. Feathers to nothing well before the edges, so the
- * photograph at the margins is untouched and the darkness is spent only where
- * the words already are.
+ * map at the margins is untouched and the darkness is spent only where the
+ * words already are.
  */
 const plate = (at: string) =>
   `radial-gradient(ellipse 64% 70% at ${at},` +
-  ' rgba(11,5,24,0.56) 0%,' +
-  ' rgba(14,7,30,0.34) 48%,' +
-  ' rgba(16,8,34,0.10) 78%,' +
+  ' rgba(11,5,24,0.38) 0%,' +
+  ' rgba(14,7,30,0.22) 48%,' +
+  ' rgba(16,8,34,0.07) 78%,' +
   ' rgba(16,8,34,0) 100%)';
 
 export default function Triptych() {
@@ -134,35 +130,47 @@ export default function Triptych() {
       className="relative z-10 bg-brand-purple-dark text-white"
       style={{ clipPath: 'inset(0)' }}
     >
-      {/* THE ONE PHOTOGRAPH. A full viewport of it, stationary, seen through
+      {/* THE WORLD, PINNED. A full viewport of it, stationary, seen through
           whichever blocks are transparent at this moment.
-          `fill` sets position:absolute on the <img>, which is why it is wrapped
-          in the fixed div rather than being fixed itself. */}
+
+          A plain <img>, not next/image: the source is an SVG, and next/image
+          would need dangerouslyAllowSVG turned on for the whole site to pass it
+          through — a global relaxation of the image pipeline to serve one file
+          this repository generates itself. It is also pointless here. There is
+          no responsive srcset to build and no format to negotiate: one vector
+          file is exact at every width, which is the entire reason it replaced a
+          photograph.
+
+          object-cover, so the disc bleeds off the top and bottom of the frame
+          rather than floating letterboxed in the middle. The world is meant to
+          be the architecture of this section, not a picture of a world placed
+          inside it. */}
       <div aria-hidden="true" className="fixed inset-0 -z-20">
-        <Image
-          src="/images/graduation-2024/grad-2024-congregation-full.jpg"
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/images/flat-world.svg"
           alt=""
-          fill
-          sizes="100vw"
-          quality={86}
-          loading="lazy"
-          className="object-cover"
-          style={{ objectPosition: '52% 38%' }}
+          className="h-full w-full object-cover"
+          style={{ objectPosition: '50% 50%' }}
         />
       </div>
-      {/* Fixed with the picture, not with the blocks. A wash that scrolled while
-          the photograph stayed put would slide its own shading across the image
-          — the failure that makes most parallax bands look wrong at one end. */}
-      <div aria-hidden="true" className="fixed inset-0 -z-10" style={{ background: TINT }} />
+      {/* NO VIOLET WASH HERE, and the omission is deliberate.
+          The tint exists on the photographic bands to hold a luminous picture
+          down far enough for white text. This ground is gold line-work on
+          near-black: there is nothing to hold down, and a wash over it would
+          only mute the coastlines that are the whole point of the upgrade. The
+          plate under each block of copy is doing correspondingly less work too
+          — 0.38 rather than 0.56. */}
       <div aria-hidden="true" className="fixed inset-0 -z-10">
-        <Grain opacity={0.07} />
+        <Grain opacity={0.06} />
       </div>
 
-      {/* The photograph is decorative — the meaning is in the words — but the
-          alt has to live on a real element, because the picture above is
+      {/* The map is decorative — the meaning is in the words — but the
+          description has to live on a real element, because the figure above is
           aria-hidden and its alt would never be announced. */}
       <span className="sr-only">
-        The academic body of ICOF Global University at the 2024 congregation.
+        A map of the world on the azimuthal equidistant projection, centred on
+        the North Pole and cut at 60° south, with Africa at the foot.
       </span>
 
       {/* ---- BLOCK 1 — transparent. The photograph reads. ------------------
@@ -209,22 +217,46 @@ export default function Triptych() {
           className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-brand-gold/35 to-transparent"
         />
 
-        <div className="mx-auto w-full max-w-7xl px-6 py-24 text-center sm:px-10 lg:px-16">
-          {/* An eyebrow is legible HERE and nowhere else in this composition,
-              because this is the one block with a solid ground under it —
-              gold on #2a1c3d, not gold on a photograph. */}
-          <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.34em] text-brand-gold">
-            What we believe
+        {/* ==================================================================
+            WHAT THIS BLOCK USED TO BE, AND WHY IT IS NOT THAT ANY MORE.
+
+            NOBILITY. PROFESSIONALISM. GODLINESS. stood here in three stacked
+            lines at up to 6rem — the largest type anywhere on this site. The
+            university's instruction was plain:
+
+                "This concept of nobility professionality and Godliness must be
+                 complete reduce to a single Line not so much significant."
+
+            It is right, and the reason is worth keeping. Three abstract nouns
+            at display size make a claim no reader can check. Set that large,
+            they are the loudest thing on the page and the emptiest — a motto
+            occupying the position of an argument. Every institution has three
+            such words; none of them distinguishes anything.
+
+            So the motto is now ONE quiet line at 11px, below the statement,
+            where a motto belongs: present, attributable, and not pretending to
+            be the reason anybody should come here.
+
+            THE STATEMENT THAT REPLACED IT IS NOT NEW COPY. "Education owed, not
+            sold" was the Nobility panel of the convictions band — the block the
+            university has now asked to be removed from the homepage. It is the
+            one line in that band that says something falsifiable about how this
+            place behaves, so it survives the block it came from, compressed to
+            a sentence. That is what "compress it" looks like when it is done to
+            the argument rather than to the type size.
+            ================================================================== */}
+        <div className="mx-auto w-full max-w-4xl px-6 py-24 text-center sm:px-10 lg:px-16">
+          <p className="font-heading text-[clamp(2rem,5.2vw,4rem)] font-bold leading-[1.06] tracking-[-0.03em] [text-wrap:balance]">
+            Education is owed, not sold.
           </p>
-          {/* The motto, at the largest size anywhere on the site. This block
-              exists to be the pause in the photograph — three words and nothing
-              else, and the emptiness around them is the point. */}
-          <p className="mt-12 font-heading text-[clamp(2.4rem,7.5vw,6rem)] font-bold uppercase leading-[1.02] tracking-[-0.04em]">
-            Nobility.
-            <br />
-            Professionalism.
-            <br />
-            Godliness.
+          <p className="mx-auto mt-9 max-w-xl text-[15.5px] leading-relaxed text-white/75 sm:text-[16.5px]">
+            Accredited higher education within reach of working adults, ministers and
+            first-generation students — in Cameroon, across Africa, and anywhere a
+            connection reaches.
+          </p>
+          {/* The motto. One line, 11px, and deliberately no larger. */}
+          <p className="mt-14 font-sans text-[11px] font-semibold uppercase tracking-[0.34em] text-brand-gold">
+            Nobility · Professionalism · Godliness
           </p>
         </div>
       </div>
