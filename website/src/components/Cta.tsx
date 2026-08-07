@@ -9,7 +9,33 @@ export default async function Cta() {
   const cta = await getCta();
   return (
     <section className="relative overflow-hidden py-20 text-center text-white sm:py-24">
-      <Image src="/images/wp/footer-building.jpg" alt="" fill loading="lazy" quality={60} className="object-cover" sizes="100vw" />
+      {/* THE CAMBRIDGE PHOTOGRAPH IS GONE.
+          This band used /images/wp/footer-building.jpg — a 2560px photograph of
+          an English collegiate quadrangle, inherited from the WordPress theme.
+          It is the highest-resolution image in the repository, which is exactly
+          why it kept being reached for, and it is a picture of Cambridge.
+
+          An African university showing an English college as its own backdrop
+          is not a stock-photo problem, it is a credibility problem: anyone who
+          recognises the building — and Cambridge is among the most recognisable
+          architecture on earth — reads it as borrowing someone else's campus.
+
+          Replaced with the university's own engraved ground, which is vector,
+          resolves at any size, and is the same artwork as the certificate. */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0"
+        style={{
+          backgroundImage:
+            'radial-gradient(ellipse 110% 80% at 20% 15%, rgba(120,102,186,0.45), transparent 62%),'
+            + 'radial-gradient(ellipse 95% 75% at 84% 80%, rgba(233,193,74,0.16), transparent 64%)',
+        }}
+      />
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 opacity-[0.06]"
+        style={{ backgroundImage: 'repeating-linear-gradient(104deg, #f7dc79 0 1px, transparent 1px 22px)' }}
+      />
       {/* Order matters: atmosphere sits ON the photograph, then a scrim goes
           over the atmosphere. Putting the aurora last washed the whole band
           out — its purple field is lighter than the ground it was tinting. */}

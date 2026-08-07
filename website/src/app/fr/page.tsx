@@ -117,7 +117,18 @@ export default function FrenchHome() {
       </Section>
 
       <section className="relative overflow-hidden py-20 text-center text-white sm:py-24">
-        <Image src="/images/wp/footer-building.jpg" alt="" fill className="object-cover" sizes="100vw" />
+        {/* Voir Cta.tsx : la photographie précédente était un collège de
+            Cambridge, héritée du thème WordPress. Remplacée par le fond gravé
+            de l'université, qui est vectoriel. */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0"
+          style={{
+            backgroundImage:
+              'radial-gradient(ellipse 110% 80% at 20% 15%, rgba(120,102,186,0.45), transparent 62%),'
+              + 'radial-gradient(ellipse 95% 75% at 84% 80%, rgba(233,193,74,0.16), transparent 64%)',
+          }}
+        />
         <div className="absolute inset-0 bg-gradient-to-b from-brand-purple/85 to-brand-purple-dark/95" />
         <div className="relative mx-auto max-w-3xl px-4">
           <h2 className="font-heading text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
