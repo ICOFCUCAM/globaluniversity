@@ -69,7 +69,22 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#422e59',
+  // ONE THEME COLOUR WAS THE WRONG ANSWER TO A QUESTION WITH TWO SIDES.
+  //
+  // This is the colour a phone paints its own chrome with — the status bar and
+  // the address bar on iOS and Android. It was a single #422e59, which is
+  // brand-purple: not the colour at the top of the page in EITHER theme. In
+  // light mode the utility bar above the header is purple-dark; in dark mode
+  // the page ground is near-black. So on every phone the browser furniture sat
+  // a shade off the site it was framing, which is the sort of thing nobody
+  // reports and everybody feels.
+  //
+  // Two entries, matched to what is actually painted at scroll position zero,
+  // so the chrome and the page read as one surface.
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#322244' },
+    { media: '(prefers-color-scheme: dark)', color: '#120c1a' },
+  ],
 };
 
 // schema.org structured data so search engines show the university as an
