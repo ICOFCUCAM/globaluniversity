@@ -44,16 +44,16 @@ const ABOUT =
 //     block 1   OPAQUE        the About band, on solid ground — see below
 //     the slot  MIXED         whatever the page puts in the window; today the
 //                             pathway ladder, whose second row is opaque purple
-//                             and is therefore the interruption
+//     block 2   OPAQUE        the plane that interrupts the picture; the page
+//                             decides what stands on it, and today that is the
+//                             Chancellor's welcome
 //     block 3   transparent   the fixed picture, showing a different part of
 //                             itself than it would have at the top, because the
 //                             reader has travelled and the picture has not
 //
-// THERE IS NO BLOCK 2 ANY MORE. It held the counted facts on an opaque plane
-// and the university asked for it to go. The composition keeps its shutter
-// because the ladder inside the window is opaque — ground, interruption,
-// ground — which is why check-scenes now asserts "SOME opaque block separates
-// the first from the last" rather than "the middle block is opaque".
+// BLOCK 2 HELD THE COUNTED FACTS, WAS DELETED, AND IS BACK AS A SLOT. The
+// instruction was "replaced, not removed": the facts had to go, the plane did
+// not. It takes whatever the page gives it.
 //
 // BLOCK 1 STARTED AS A WINDOW AND IS NOW A LID. It was transparent, so the map
 // began the instant the hero ended:
@@ -161,7 +161,16 @@ const plate = (at: string) =>
   ' rgba(16,8,34,0.08) 76%,' +
   ' rgba(16,8,34,0) 100%)';
 
-export default function Triptych({ children }: { children?: React.ReactNode }) {
+export default function Triptych({
+  children,
+  plane,
+}: {
+  /** Sections that sit INSIDE the window, between the first block and the
+   *  plane. Anything here must carry no background of its own. */
+  children?: React.ReactNode;
+  /** What stands on the opaque plane that interrupts the picture. */
+  plane?: React.ReactNode;
+}) {
   return (
     <section
       data-on-dark=""
@@ -356,33 +365,53 @@ export default function Triptych({ children }: { children?: React.ReactNode }) {
           the homepage inside a file called Triptych. */}
       {children}
 
-      {/* ---- BLOCK 2 IS GONE ----------------------------------------------
+      {/* ---- BLOCK 2 — OPAQUE. Whatever the page puts on the plane. --------
 
-              "remove this section"
+              "i wanted this part replaced but not removed"
+              "replace with this"  [the Chancellor's welcome]
 
-          It was the counted facts on an opaque plane: 41 programmes at seven
-          rem, then 2007 / 5 faculties / 19 staff, the accreditation line and a
-          link to /accreditation.
+          The counted facts stood here and were removed. Removing the SLOT with
+          them was the wrong reading: this is the one moment on the page where
+          the reader is held still with nothing else to look at, between two
+          views of the world, and a composition that goes ground → ground →
+          picture has lost its pause.
 
-          Removing it costs less than it looks, because almost nothing in it was
-          only there. "41 programmes, from a one-year certificate to a
-          doctorate, on campus in Buea and Douala and online worldwide" opens
-          the faculties section one screen later, and the five faculties are
-          listed there with their own counts rather than summed into one number.
-          The accreditation line is repeated verbatim at the foot of the closing
-          scene, where a reader about to fill in a form actually needs it. What
-          genuinely leaves the homepage is the founding year, the staff count
-          and the route to /accreditation — all three still reachable from the
-          About band's "Our history and mission" and from the navigation.
+          So the plane is a SLOT now, like the window above it, and the page
+          decides what stands on it. Today that is the Chancellor's welcome,
+          which was a separate band three sections further down.
 
-          THE COMPOSITION STILL HAS ITS INTERRUPTION. Block 2 was the shutter
-          that closed over the map between two windows, and the shutter is still
-          there: the pathway ladder inside this window is opaque purple, so the
-          reader still gets ground, interruption, ground. What changed is that
-          the interrupting block is now one the page needed anyway rather than
-          one built to do the interrupting. check-scenes asserts this directly —
-          see the note there on why "the MIDDLE block is opaque" became "some
-          opaque block separates the first from the last". */}
+          It is the right thing to put here for a reason beyond the
+          instruction. Everything else in this composition is the institution
+          speaking about itself in the third person — what it is, how far its
+          awards go, where it reaches. The plane interrupts that with one named
+          person saying why the place exists, in his own words, with his face
+          beside them. A pause is more than a gap in the picture; it is a change
+          of voice.
+
+          The wrapper carries the opaque background so the interruption holds
+          even if a future occupant of this slot is transparent. */}
+      <div data-block="" className="relative bg-brand-purple-dark">
+        {/* The two seams. Short — 5rem — so the plane still reads as a plane.
+            Any longer and the purple becomes a fade, which is the opposite of
+            an interruption. */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 -top-20 h-20 bg-gradient-to-b from-transparent to-brand-purple-dark"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 -bottom-20 h-20 bg-gradient-to-t from-transparent to-brand-purple-dark"
+        />
+        <div
+          aria-hidden="true"
+          className="absolute inset-x-0 top-0 z-10 h-px bg-gradient-to-r from-transparent via-brand-gold/35 to-transparent"
+        />
+        <div
+          aria-hidden="true"
+          className="absolute inset-x-0 bottom-0 z-10 h-px bg-gradient-to-r from-transparent via-brand-gold/35 to-transparent"
+        />
+        {plane}
+      </div>
 
       {/* ---- BLOCK 3 — transparent. The photograph returns. ----------------
           Not the same crop as block 1, and that is the whole effect: the reader

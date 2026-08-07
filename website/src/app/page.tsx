@@ -138,7 +138,7 @@ export default async function HomePage() {
           Triptych.tsx, including the resolution cost it knowingly accepts and
           why it is not built on FixedWindow. Used ONCE on the page: the effect
           becomes ordinary the second time. */}
-      <Triptych>
+      <Triptych plane={<ChancellorWord />}>
         {/* INSIDE THE WINDOW. Both of these used to be white sections between
             the faculties and the triptych, and the map began only when the
             triptych did. They are transparent now and set for a dark ground, so
@@ -267,11 +267,11 @@ export default async function HomePage() {
           already narrowed. See ProgrammeTeaser.tsx. */}
 
 
-      {/* Chancellor's welcome — the site opened with this on the original iguc.net */}
-      {/* The Chancellor's word. The photograph is the room he speaks in — see
-          ChancellorWord.tsx and Cinematic.tsx for why the ceremony is the
-          ground and his portrait is not. */}
-      <ChancellorWord />
+      {/* The Chancellor's welcome is INSIDE the world window now, standing on
+          the opaque plane that interrupts the map — see Triptych.tsx. It was a
+          separate band here; it is the pause in the composition instead, which
+          is the one place on this page where the institution stops describing
+          itself in the third person and a named person says why it exists. */}
 
 
       {/* What studying here involves. This is StudentExperience and the Online
