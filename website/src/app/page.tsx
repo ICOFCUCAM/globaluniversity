@@ -173,9 +173,9 @@ export default async function HomePage() {
             name: 'Theology',
             mission: facultyById('theology')!.mission,
             count: programmesByFaculty('theology').length,
-            src: '/images/graduation-2024/grad-2024-platform-party.jpg',
-            alt: 'The platform party of the ICOF Global University 2024 congregation in doctoral robes',
-            focal: '48% 34%',
+            src: '/images/graduation-2024/grad-academic-body.jpg',
+            alt: 'The academic body of ICOF Global University in doctoral robes at a congregation',
+            focal: '50% 36%',
           },
           {
             // Added with the School of Ministry. Its count comes from the
@@ -206,9 +206,9 @@ export default async function HomePage() {
             name: 'Business & Management',
             mission: facultyById('business')!.mission,
             count: programmesByFaculty('business').length,
-            src: '/images/graduation-2024/grad-2024-faculty-robes.jpg',
-            alt: 'Faculty of ICOF Global University in doctoral robes at the 2024 congregation',
-            focal: '46% 32%',
+            src: '/images/graduation-2024/grad-faculty-line.jpg',
+            alt: 'Faculty of ICOF Global University in doctoral robes at a congregation',
+            focal: '50% 34%',
           },
           {
             id: 'education',

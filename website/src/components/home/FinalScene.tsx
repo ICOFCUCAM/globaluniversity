@@ -50,9 +50,22 @@ import { ALL_PROGRAMMES } from '@/content/programmeCatalogue';
 // vignette, no 52% opacity and no scrim, and it can be shown at full strength
 // for the first time on this page.
 //
-// The source is 1080×720 into a panel about 690px wide — well inside what these
-// files carry, and the subjects are six full-length figures rather than a face,
-// so nothing is being asked to hold up at a size it cannot.
+// ===========================================================================
+// AND THE PICTURE IS NOW THE ACT ITSELF
+// ===========================================================================
+//
+// It closed on six graduands standing with their scrolls — people who had
+// finished, which was the right idea. The university then supplied the moment
+// rather than the aftermath: a graduand taking the certificate and shaking the
+// hand that confers it, with the Chancellor in blue regalia behind. A group
+// standing afterwards says they finished; this says the university conferred
+// it, which is the thing a reader at the application form is deciding to trust.
+//
+// It is also, by some distance, the best FILE in the library. 2048×1536 against
+// the 1080×720 everything else is, which means it is the only photograph here
+// that carries a 690px panel at 2× without being upscaled at all — and this is
+// the panel where that matters most, because faces at close range are what the
+// eye is least forgiving about.
 // ---------------------------------------------------------------------------
 
 export default function FinalScene() {
@@ -73,19 +86,18 @@ export default function FinalScene() {
           stripe. */}
       <div className="relative min-h-[46svh] overflow-hidden lg:min-h-0">
         <Image
-          src="/images/graduation-2024/grad-2024-graduands-scrolls.jpg"
-          alt="Graduands of ICOF Global University in doctoral robes, holding their scrolls at the 2024 congregation"
+          src="/images/graduation-2024/grad-conferral-handshake.jpg"
+          alt="A graduand of ICOF Global University receiving their certificate and shaking hands at the congregation"
           fill
           sizes="(min-width:1024px) 48vw, 100vw"
           quality={88}
           loading="lazy"
           className="object-cover"
-          // 30%, not 50%. The panel is taller than the source is, so
-          // object-cover crops vertically — at centre it took the caps off the
-          // graduands at the top and spent a quarter of the frame on paving at
-          // the bottom. The subjects of this photograph are six people and
-          // their scrolls; the floor is not in the argument.
-          style={{ objectPosition: '50% 30%' }}
+          // The handshake and the certificate are just right of centre and a
+          // little below the middle of the frame; the panel is taller than the
+          // source, so this keeps them in it rather than cropping to the
+          // ceiling and the window glare.
+          style={{ objectPosition: '46% 52%' }}
         />
         {/* A light purple multiply only — enough to bind the frame to the
             institution's colour, nowhere near enough to dim it. There is no

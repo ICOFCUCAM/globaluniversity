@@ -313,14 +313,14 @@ export default function Triptych({ children }: { children?: React.ReactNode }) {
                 paragraph, two buttons, image in a box" pattern. */}
             <div className="relative h-72 overflow-hidden sm:h-96 lg:-mr-16 lg:h-full lg:min-h-[26rem] xl:-mr-24">
               <Image
-                src="/images/graduation-2024/grad-2024-procession-hall.jpg"
-                alt="The 2024 congregation of ICOF Global University in the assembly hall at Buea"
+                src="/images/graduation-2024/grad-platform-high-table.jpg"
+                alt="The platform party of ICOF Global University standing at the high table during a congregation"
                 fill
                 sizes="(min-width:1024px) 48vw, 100vw"
                 quality={84}
                 loading="lazy"
                 className="object-cover"
-                style={{ objectPosition: '50% 45%' }}
+                style={{ objectPosition: '50% 40%' }}
               />
               <div aria-hidden="true" className="absolute inset-0 bg-brand-purple/18 mix-blend-multiply" />
             </div>
