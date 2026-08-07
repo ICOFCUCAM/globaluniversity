@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { Grain } from '@/components/Atmosphere';
 import { publicCrest } from '@/lib/publicCrest';
 import { UNIVERSITY } from '@/lib/constants';
-import { institutionalFacts, type Fact } from '@/content/institutionalFacts';
 
 // ---------------------------------------------------------------------------
 // 01 — IMPACT. The hero, rebuilt as an asymmetric editorial composition.
@@ -44,6 +43,29 @@ import { institutionalFacts, type Fact } from '@/content/institutionalFacts';
 // appears at scale, which is what a hero is for.
 //
 // ===========================================================================
+// WHAT WAS TAKEN OUT, AND WHY THAT IS THE POINT
+// ===========================================================================
+//
+// This carried a four-column statistics strip: 2007, 41 programmes, 5 schools,
+// 19 staff. Every number was real and computed, and all four are still on the
+// page — one section down, where they now have room.
+//
+// They were removed because the hero had SIX layers of information in one
+// viewport: eyebrow, sub-eyebrow, headline, paragraph, two buttons, four
+// statistics. A hero with six things in it has no first thing. The reader's eye
+// arrives and has to choose where to start, and a composition that asks the
+// reader to choose has already lost the moment it was built for.
+//
+// The reference the university pointed at puts ONE sentence in this space and
+// nothing else. That is the discipline being copied — not the layout, the
+// restraint. Four items here now: who this is, what it is for, one line of
+// substance, two ways in.
+//
+// The statistics were also the reason the hero overflowed its own viewport at
+// 1280x800. Removing them fixed a measurement problem and a composition problem
+// with one cut, which is usually the sign that the cut was the right one.
+//
+// ===========================================================================
 // WHY THE PHOTOGRAPH IS A PROCESSION AND NOT A PORTRAIT
 // ===========================================================================
 //
@@ -53,11 +75,6 @@ import { institutionalFacts, type Fact } from '@/content/institutionalFacts';
 // off. The eye follows the line out of frame, which is the effect the crop is
 // for.
 // ---------------------------------------------------------------------------
-
-// Computed at module scope on the server. institutionalFacts() counts rosters
-// and catalogues rather than returning typed numbers, so these four cannot
-// drift from what the rest of the site says.
-const FACTS: Fact[] = institutionalFacts();
 
 const CREST = publicCrest({
   size: 600,
@@ -132,7 +149,7 @@ export default function HeroScene() {
           opacity, tying the flat band to the university's own device. */}
       <div
         aria-hidden="true"
-        className="absolute inset-0 -z-10 opacity-[0.06]"
+        className="absolute inset-0 -z-10 opacity-[0.035]"
         style={{ backgroundImage: 'repeating-linear-gradient(104deg, #f7dc79 0 1px, transparent 1px 26px)' }}
       />
       <div aria-hidden="true" className="absolute inset-0 -z-10">
@@ -192,34 +209,6 @@ export default function HeroScene() {
           {/* The institutional strip. Four counted facts, not four claims —
               every one of these is computed from a roster or a catalogue in
               src/content, never typed. See institutionalFacts.ts. */}
-          {/* THE STRIP SITS BELOW THE FOLD ON SHORT VIEWPORTS, DELIBERATELY.
-              At 1280x800 the hero measures 890px and the four facts fall about
-              90px under the line. That is the right trade: the primary action
-              clears the fold at every size tested (1440x950, 1280x800,
-              390x844), and evidence of scale is worth having in full a little
-              way down rather than truncated to three facts at the top.
-
-              A four-column grid that BREAKS OUT of the max-w-2xl type block.
-              As a flex-wrap row inside 672px the fourth fact — "19 academic and
-              administrative staff", the longest label of the four — dropped to
-              a second line and was clipped by the bottom of the viewport. Four
-              facts on one line is the whole point of the strip; three facts and
-              an orphan is just an accident. */}
-          <dl className="mt-8 grid max-w-3xl grid-cols-2 gap-x-8 gap-y-5 border-t border-white/15 pt-6 sm:mt-12 sm:gap-y-7 sm:grid-cols-4 sm:gap-x-6 sm:pt-8">
-            {FACTS.map((p) => (
-              <div key={p.label}>
-                <dt className="sr-only">{p.label}</dt>
-                <dd>
-                  <span className="block font-heading text-[26px] font-bold leading-none text-brand-gold sm:text-[30px]">
-                    {p.value}
-                  </span>
-                  <span className="mt-2 block font-sans text-[10px] font-semibold uppercase leading-snug tracking-[0.16em] text-white/65">
-                    {p.label}
-                  </span>
-                </dd>
-              </div>
-            ))}
-          </dl>
         </div>
       </div>
     </section>

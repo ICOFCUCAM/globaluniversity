@@ -29,6 +29,11 @@ import { institutionalFacts } from '@/content/institutionalFacts';
 
 export default function ProofBand() {
   const facts = institutionalFacts();
+  // The programme count leads; the rest are its context. Found by label rather
+  // than by index so a reordering of institutionalFacts() cannot silently
+  // promote the wrong number to eight rem.
+  const lead = facts.find((f) => /programme/i.test(f.label)) ?? facts[0];
+  const rest = facts.filter((f) => f !== lead);
 
   return (
     <section
@@ -42,49 +47,80 @@ export default function ProofBand() {
       data-chapter="At a glance"
       className="relative border-y border-brand-sand/70 bg-brand-cream dark:border-white/10 dark:bg-[#181121]"
     >
-      <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-16">
-        <dl className="grid grid-cols-2 gap-x-6 gap-y-10 sm:gap-y-12 lg:grid-cols-4">
-          {facts.map((f) => (
-            <div key={f.label} className="group text-center" title={f.source}>
-              {/* The visible label is the <dd>'s own text; the <dt> is
-                  sr-only because a screen reader reading "Established" then
-                  "2007" in the natural dl order is correct, whereas a sighted
-                  reader wants the figure first and large. Both get the pairing,
-                  in the order each finds natural.
+      {/* ================================================================
+          ONE NUMBER LEADS, THREE FOLLOW QUIETLY.
 
-                  `title` carries the provenance sentence — where the number
-                  comes from — on hover. It is a supplement, never the only
-                  copy of anything: the same sentence is under the band. */}
-              <dt className="sr-only">{f.label}</dt>
-              <dd>
-                <span className="block font-heading text-[2.75rem] font-bold leading-none tracking-[-0.02em] text-brand-purple dark:text-white sm:text-[3.25rem]">
-                  {f.value}
-                </span>
-                <span
-                  aria-hidden="true"
-                  className="mx-auto mt-4 block h-[2px] w-8 rounded-full bg-gradient-to-r from-brand-gold-deep to-brand-gold transition-all duration-500 group-hover:w-14"
-                />
-                <span className="mt-4 block font-sans text-[11px] font-semibold uppercase leading-snug tracking-[0.14em] text-brand-muted dark:text-white/55 sm:text-[12px]">
-                  {f.label}
-                </span>
-              </dd>
-            </div>
-          ))}
-        </dl>
+          This was four statistics in an even row, each with a rule under it and
+          each the same size — a scoreboard. Four things of equal weight are
+          four things a reader has to rank for themselves, and most rank them by
+          not reading any of them.
 
-        {/* The line that turns a row of numbers into a claim somebody stands
-            behind. Universities publish statistics constantly and almost none
-            of them say where they came from; saying so is cheap and it is
-            exactly the signal an accreditor, a partner institution or a careful
-            parent is looking for. */}
-        <p className="mt-12 text-center font-sans text-[12.5px] leading-relaxed text-brand-muted dark:text-white/50">
-          Every figure on this page is counted from the university&rsquo;s own published
-          catalogue and records.{' '}
-          <Link href="/accreditation" className="font-semibold text-brand-purple underline decoration-brand-gold decoration-2 underline-offset-4 transition hover:text-brand-purple-dark dark:text-brand-gold dark:hover:text-white">
-            Read our accreditation
-          </Link>
-          .
-        </p>
+          The reference the university pointed at leads with a single figure at
+          enormous scale, gives it a short label above and a sentence of context
+          beside it, and lets everything else sit small. That is not a layout
+          trick; it is an editorial decision about which fact does the work.
+
+          Here the lead is the programme count, because it is the number that
+          answers the question a prospective student actually has — "is there
+          enough here for me" — and because it is the one figure on the page
+          that grows every time the university opens a course. The founding
+          year, the faculty count and the staff count are context for it, not
+          rivals to it.
+
+          All four are still counted by institutionalFacts() from the catalogue
+          and the rosters. None is typed.
+          ================================================================ */}
+      <div className="mx-auto max-w-7xl px-6 py-20 sm:px-10 sm:py-24 lg:px-16">
+        <div className="grid gap-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1fr)] lg:items-center lg:gap-20">
+          <div>
+            <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.28em] text-brand-muted dark:text-white/55">
+              {lead.label}
+            </p>
+            <p className="mt-3 font-heading text-[clamp(4.5rem,11vw,8.5rem)] font-bold leading-[0.85] tracking-[-0.045em] text-brand-purple dark:text-white">
+              {lead.value}
+            </p>
+            <p className="mt-5 font-heading text-[clamp(1.15rem,2vw,1.5rem)] font-bold leading-snug text-brand-purple/85 dark:text-white/85">
+              across {rest[1]?.value ?? ''} schools and faculties, taught in Buea, Douala and
+              online worldwide.
+            </p>
+          </div>
+
+          <div>
+            <p className="text-[15.5px] leading-relaxed text-brand-muted dark:text-white/70 sm:text-[17px]">
+              Accredited by the Ministry of Higher Education of Cameroon since{' '}
+              {rest[0]?.value ?? ''} — and every figure on this page is counted from the
+              university&rsquo;s own catalogue and rosters, never estimated.
+            </p>
+
+            <Link
+              href="/accreditation"
+              className="group mt-8 inline-flex items-center gap-3 rounded-full border-2 border-brand-purple/25 px-7 py-3.5 font-heading text-[14.5px] font-bold text-brand-purple transition duration-300 hover:border-brand-purple dark:border-white/30 dark:text-white dark:hover:border-brand-gold dark:hover:text-brand-gold"
+            >
+              Recognition and accreditation
+              <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">
+                →
+              </span>
+            </Link>
+
+            {/* The remaining facts, small and in one line. They are context for
+                the figure above, so they are set as context. */}
+            <dl className="mt-12 flex flex-wrap gap-x-10 gap-y-5 border-t border-brand-purple/12 pt-7 dark:border-white/12">
+              {rest.map((f) => (
+                <div key={f.label} title={f.source}>
+                  <dt className="sr-only">{f.label}</dt>
+                  <dd>
+                    <span className="block font-heading text-[24px] font-bold leading-none text-brand-purple dark:text-white">
+                      {f.value}
+                    </span>
+                    <span className="mt-2 block max-w-[9rem] font-sans text-[10.5px] font-semibold uppercase leading-snug tracking-[0.14em] text-brand-muted dark:text-white/55">
+                      {f.label}
+                    </span>
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        </div>
       </div>
     </section>
   );
