@@ -103,6 +103,7 @@ export default function VerificationDemo() {
       data-chapter="Verification"
       aria-labelledby="verify-heading"
       className="relative overflow-hidden bg-[#150f1e] py-24 text-white sm:py-32"
+      data-on-dark=""
     >
       {/* A field of fine rules, as on the certificate's engine-turned ground. */}
       <div

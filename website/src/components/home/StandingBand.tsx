@@ -30,6 +30,7 @@ export default function StandingBand() {
       data-chapter="Standing"
       aria-labelledby="standing-heading"
       className="relative overflow-hidden bg-brand-purple-dark py-24 text-white sm:py-32"
+      data-on-dark=""
     >
       <Image
         src="/images/wp/g-hall.jpg"

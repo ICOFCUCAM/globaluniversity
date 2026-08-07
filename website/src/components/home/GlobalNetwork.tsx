@@ -42,6 +42,10 @@ export default function GlobalNetwork() {
       data-chapter="Global network"
       aria-labelledby="network-heading"
       className="relative overflow-hidden bg-brand-purple-dark py-24 text-white sm:py-32"
+      // Marks the whole band as a dark surface so the focus ring inverts
+      // inside it — see globals.css. Without it a keyboard user tabbing the
+      // globe's node list gets an ink-coloured ring on an ink-coloured ground.
+      data-on-dark=""
     >
       <Aurora tone="dual" intensity={0.8} fields={2} />
       <Grain opacity={0.05} />
