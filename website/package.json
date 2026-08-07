@@ -15,7 +15,8 @@
     "test:approval": "node src/lib/resultsWorkflow.test.mjs",
     "test:policies": "node src/lib/writePolicies.test.mjs",
     "test:publicart": "node src/lib/publicArt.test.mjs",
-    "test": "npm run test:grading && npm run test:fees && npm run test:seal && npm run test:certificate && npm run test:routes && npm run test:approval && npm run test:policies && npm run test:publicart"
+    "test:world": "node src/lib/flatWorld.test.mjs",
+    "test": "npm run test:grading && npm run test:fees && npm run test:seal && npm run test:certificate && npm run test:routes && npm run test:approval && npm run test:policies && npm run test:publicart && npm run test:world"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

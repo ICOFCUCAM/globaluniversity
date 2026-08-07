@@ -1,4 +1,4 @@
-import { WORLD, type Ring } from './worldCoastlines';
+import { landPath, graticule } from './flatWorld';
 
 // ---------------------------------------------------------------------------
 // THE PUBLIC CREST.
@@ -65,44 +65,13 @@ import { WORLD, type Ring } from './worldCoastlines';
 // simpler argument, and a sufficient one.
 // ---------------------------------------------------------------------------
 
-/**
- * The azimuthal equidistant world — the projection on the United Nations
- * emblem. Centred on the North Pole and cut at 60°S, with 20°E running straight
- * down the sheet so that Africa sits at the foot of the figure.
- *
- * WHY A FLAT WORLD RATHER THAN A SPHERE. A globe shows one hemisphere. Turned
- * to Africa's longitude it shows Africa, Europe, Arabia and very little else,
- * and the university's claim is not that it is in Africa — it is that it is
- * global. This projection puts every continent on the disc at once.
- *
- * Antarctica is absent because the cut is at 60°S: on an azimuthal equidistant
- * projection centred on the pole, the south pole is not a point but the whole
- * outer rim, so Antarctica can only be drawn as a smear round the edge.
- */
-function project(lon: number, lat: number, cx: number, cy: number, radius: number): [number, number] {
-  const r = ((90 - lat) / 150) * radius;
-  // Degrees east of the meridian that runs straight down the sheet.
-  const t = ((lon - 20) * Math.PI) / 180;
-  // WHICH WAY EAST TURNS. Seen from above the North Pole, longitude increases
-  // ANTICLOCKWISE — and on a screen, where y grows downward, anticlockwise from
-  // straight-down is towards the right. So east of 20°E swings right: Asia to
-  // the right of Africa, the Americas to the upper left.
-  //
-  // Get the sign of the sine wrong and this becomes the view from INSIDE the
-  // globe — Asia on the left, the Americas on the right. It still looks like a
-  // world, which is exactly why a mirrored map survives review: nobody
-  // double-checks a continent they recognise. The test is Eurasia to the RIGHT
-  // of Africa.
-  return [cx + r * Math.sin(t), cy + r * Math.cos(t)];
-}
-
-function ringPath(ring: Ring, cx: number, cy: number, radius: number): string {
-  const pts = ring.map(([lon, lat]) => {
-    const [x, y] = project(lon, lat, cx, cy, radius);
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  });
-  return `M${pts.join('L')}Z`;
-}
+// The world itself lives in src/lib/flatWorld.ts — the azimuthal equidistant
+// projection from the United Nations emblem, Africa at the foot. It was written
+// here and has been lifted out, unchanged, because it is the most reusable
+// piece of identity this university owns and it should not be reachable only
+// through the crest. See that file for why this projection and not a globe, and
+// for the sign of the sine that decides whether Eurasia is left or right of
+// Africa.
 
 export interface PublicCrestOptions {
   /** Coordinate space. The figure is self-similar, so this is not a size on screen. */
@@ -156,15 +125,8 @@ export function publicCrest(opts: PublicCrestOptions): string {
 
   // Graticule: parallels at 60°N, 30°N, the equator and 30°S, and a meridian
   // every thirty degrees. Enough to read as a map, not enough to become a net.
-  const parallels = [60, 30, 0, -30]
-    .map((lat) => `<circle cx="${c}" cy="${c}" r="${(((90 - lat) / 150) * rMap).toFixed(1)}"/>`)
-    .join('');
-  const meridians = Array.from({ length: 12 }, (_, i) => {
-    const [x, y] = project(i * 30, -60, c, c, rMap);
-    return `<line x1="${c}" y1="${c}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"/>`;
-  }).join('');
-
-  const land = WORLD.map((ring) => ringPath(ring, c, c, rMap)).join(' ');
+  const grat = graticule(c, c, rMap);
+  const land = landPath(c, c, rMap);
 
   // Two lozenges, at the SIDES only — where the top legend ends and the footer
   // begins. They are the punctuation of the band: without them the name and the
@@ -215,7 +177,7 @@ export function publicCrest(opts: PublicCrestOptions): string {
 
     // The world.
     + `<circle cx="${c}" cy="${c}" r="${rMap.toFixed(1)}" fill="url(#${id}-sea)" stroke="none"/>`
-    + `<g stroke="${colour}" stroke-opacity="0.34" stroke-width="${(S * 0.0028).toFixed(2)}">${parallels}${meridians}</g>`
+    + `<g stroke="${colour}" stroke-opacity="0.34" stroke-width="${(S * 0.0028).toFixed(2)}">${grat}</g>`
     + `<path d="${land}" fill="${colour}" fill-opacity="0.92" fill-rule="evenodd" `
     + `stroke="${colour}" stroke-width="${(S * 0.0035).toFixed(2)}" stroke-linejoin="round"/>`
     + `<circle cx="${c}" cy="${c}" r="${rMap.toFixed(1)}" stroke-width="${(S * 0.0055).toFixed(2)}" stroke-opacity="0.75"/>`
