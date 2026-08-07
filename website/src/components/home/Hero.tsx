@@ -129,12 +129,23 @@ export default function Hero() {
       <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-4 py-[clamp(2.75rem,7vh,7.5rem)] sm:px-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,480px)] lg:gap-16">
         <HeroCopy />
 
-        {/* ---- the device -------------------------------------------------
-            Decorative here: everything it says in microtext — the university's
-            name, the motto, the founding year — is set in readable type in the
-            column beside it, so a screen reader that announced the figure would
-            be reading the same words a second time. */}
-        <div aria-hidden="true" className="relative mx-auto w-full max-w-[min(520px,58vh)]">
+        {/* ---- the crest --------------------------------------------------
+            Decorative: everything it says — the university's name, the founding
+            year — is set in readable type in the column beside it, so a screen
+            reader that announced the figure would be reading the same words a
+            second time.
+
+            ON A PHONE IT IS A MASTHEAD, NOT A FIGURE. Left at full width it
+            became a 390px disc below the buttons: four hundred pixels of
+            scrolling between the call to action and the first real content,
+            spent on something the reader had already looked at. So on narrow
+            screens it moves ABOVE the copy at a modest 200px, where a crest
+            over a name is the oldest masthead there is, and only becomes the
+            right-hand subject once there is a column to put it in. */}
+        <div
+          aria-hidden="true"
+          className="relative order-first mx-auto w-full max-w-[200px] lg:order-none lg:max-w-[min(520px,58vh)]"
+        >
           {/* The dark disc the device is struck on. Gold hairlines on a
               mid-purple field have very little to push against; dropping the
               ground beneath them by a couple of stops is what turns a wire
