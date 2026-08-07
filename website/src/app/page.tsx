@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Section, SectionHeading, Eyebrow } from '@/components/Section';
-import Cta from '@/components/Cta';
 import Hero from '@/components/home/Hero';
 import Reveal from '@/components/Reveal';
 import { getHomePage, getPrograms } from '@/lib/data';
@@ -28,6 +27,7 @@ import VerificationDemo from '@/components/home/VerificationDemo';
 import ChancellorWord from '@/components/home/ChancellorWord';
 import GlobalMovement from '@/components/home/GlobalMovement';
 import Formation from '@/components/home/Formation';
+import FinalScene from '@/components/home/FinalScene';
 
 // The motto's three words are no longer copy in this file. They live in
 // src/components/home/Formation.tsx, which tells them one at a time at the
@@ -711,7 +711,11 @@ export default async function HomePage() {
         </p>
       </Section>
 
-      <Cta />
+      {/* The last scene. Cta.tsx still closes the other eighteen pages — see
+          FinalScene.tsx for why a policy page has not earned a cinematic
+          ending, and why the closing photograph is families rather than a
+          building. */}
+      <FinalScene />
     </>
   );
 }
