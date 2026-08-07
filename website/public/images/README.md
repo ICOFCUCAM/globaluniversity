@@ -56,3 +56,39 @@ Same rule as anywhere: the university needs to own the photograph or have
 permission to publish it. That includes photographs of identifiable people —
 students and staff on a public website is a consent question, not a technical
 one.
+
+
+---
+
+## PHOTOGRAPHY AUDIT — what may be used where
+
+Ninety-seven photographs; **three exceed 1600px wide**, and two of those three
+must not be used at all.
+
+| File | Size | Verdict |
+|---|---|---|
+| `wp/footer-building.jpg` | 2560×1754 | **DO NOT USE.** A Cambridge college. An African university showing an English quadrangle as its own backdrop reads as borrowing someone else's campus. Removed from the footer, the CTA band and the French homepage. |
+| `landing-bg.jpg` | 1920×1080 | **Avoid.** Stock: hands on a laptop, nowhere in particular, no connection to this university. |
+| `wp/sunday-ayah.jpg` | 2035×2048 | Portrait. Fine at portrait sizes. |
+
+Everything authentic — the 2024 congregation, the campus, the faculty — is
+**1080×720 or smaller**.
+
+### The rule
+
+**Show a photograph at the size its pixels can carry. Build anything larger out
+of vector.**
+
+- Contained frames up to ~500px displayed: fine, even at 2× device pixel ratio.
+- Card headers up to ~600px: acceptable.
+- **Full-bleed heroes and full-width bands: no.** A 972px source across a
+  1440px viewport is a 1.5× upscale before the pixel ratio doubles it. This is
+  why the old hero looked soft, and why it is now typographic — see
+  `src/components/home/Hero.tsx`.
+
+### What would change this
+
+One commissioned photography session: the campus, a classroom, a laboratory, a
+library, faculty teaching. Shot at 3000px or wider. That single change unlocks
+full-bleed imagery across the whole site and is the highest-value thing the
+university can do for the design that no amount of code can substitute for.
