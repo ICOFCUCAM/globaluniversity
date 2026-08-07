@@ -237,6 +237,19 @@ export default function LivingGlobe({ className = '' }: { className?: string }) 
       if (visible) raf = requestAnimationFrame(frame);
     };
 
+    // A hidden TAB is not the same as an off-screen element, and
+    // IntersectionObserver does not report it: a globe scrolled into view in a
+    // background tab keeps requesting frames forever. On a laptop that is the
+    // difference between a site somebody leaves open and one they close.
+    const onVisibility = () => {
+      if (document.hidden) {
+        if (raf) { cancelAnimationFrame(raf); raf = 0; }
+      } else if (visible && !raf) {
+        raf = requestAnimationFrame(frame);
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
     const io = new IntersectionObserver(
       ([e]) => {
         visible = e.isIntersecting;
@@ -255,6 +268,7 @@ export default function LivingGlobe({ className = '' }: { className?: string }) 
     return () => {
       io.disconnect();
       ro.disconnect();
+      document.removeEventListener('visibilitychange', onVisibility);
       if (raf) cancelAnimationFrame(raf);
     };
   }, [draw, reduced]);
