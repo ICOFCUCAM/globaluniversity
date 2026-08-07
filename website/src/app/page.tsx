@@ -11,8 +11,7 @@ import { facultyById, programmesByFaculty } from '@/content/programmeCatalogue';
 import StudyHere from '@/components/home/StudyHere';
 import ProgrammeTeaser from '@/components/home/ProgrammeTeaser';
 import ChancellorWord from '@/components/home/ChancellorWord';
-import GlobalMovement from '@/components/home/GlobalMovement';
-import Formation from '@/components/home/Formation';
+import Triptych from '@/components/home/Triptych';
 import FinalScene from '@/components/home/FinalScene';
 import GlobalPresence from '@/components/home/GlobalPresence';
 
@@ -202,32 +201,21 @@ export default async function HomePage() {
           already narrowed. See ProgrammeTeaser.tsx. */}
       <ProgrammeTeaser />
 
-      {/* MOVED. This sat immediately after the statistics band, so the page
-          went from a quiet cream count straight into a full-bleed fixed-window
-          photograph — the heaviest visual device on the site arriving two
-          screens in, before the reader had been told anything. It now follows
-          the academic block, where the claim it makes ("this university belongs
-          to something larger") lands after the reader knows what the university
-          teaches, and where the fixed window is the first big picture rather
-          than an interruption of the first small one. */}
-      {/* Who this university belongs to, before what it offers. The fellowship
-          is the reason "A Global University" is a description rather than an
-          aspiration — see GlobalMovement.tsx, including what it refuses to
-          claim about ICOF's size. */}
-      <GlobalMovement />
+      {/* THE SIGNATURE COMPOSITION. One photograph passing behind three
+          blocks — visible, interrupted by an architectural plane of university
+          purple carrying the motto, then visible again. It absorbs the
+          fellowship band and the convictions, which were making the identity
+          claim and the formation claim in two separate places. See
+          Triptych.tsx, including the resolution cost it knowingly accepts and
+          why it is not built on FixedWindow. Used ONCE on the page: the effect
+          becomes ordinary the second time. */}
+      <Triptych />
 
-      {/* University overview */}
       {/* Chancellor's welcome — the site opened with this on the original iguc.net */}
       {/* The Chancellor's word. The photograph is the room he speaks in — see
           ChancellorWord.tsx and Cinematic.tsx for why the ceremony is the
           ground and his portrait is not. */}
       <ChancellorWord />
-
-      {/* The motto, as a scene rather than a specification. Three convictions
-          told one at a time over photography that changes beneath them — see
-          Formation.tsx for why three boxes in a row was the wrong figure for a
-          motto, and why nothing inside it is a link. */}
-      <Formation />
 
       {/* What studying here involves. This is StudentExperience and the Online
           Learning band merged — see StudyHere.tsx, including the verbatim
