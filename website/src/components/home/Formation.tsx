@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import { Crown, Briefcase, ShieldCheck } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
@@ -56,8 +55,6 @@ const CONVICTIONS = [
     body:
       'We bring accredited higher education within reach of working adults, ministers and '
       + 'first-generation students — in Cameroon, across Africa, and anywhere a connection reaches.',
-    src: '/images/graduation-2024/grad-2024-graduands-scrolls.jpg',
-    focal: '50% 32%',
   },
   {
     word: 'Professionalism',
@@ -66,8 +63,6 @@ const CONVICTIONS = [
     body:
       'Our faculty hold the highest qualifications and real-world experience. Theory is applied '
       + 'from the first semester because it was practised before it was taught.',
-    src: '/images/graduation-2024/grad-2024-faculty-robes.jpg',
-    focal: '50% 30%',
   },
   {
     word: 'Godliness',
@@ -76,8 +71,6 @@ const CONVICTIONS = [
     body:
       'Founded within the International Circle of Faith, we hold that rigorous scholarship and '
       + 'formed character belong together.',
-    src: '/images/graduation-2024/grad-2024-hooding.jpg',
-    focal: '50% 34%',
   },
 ];
 
@@ -108,50 +101,55 @@ export default function Formation() {
           />
         </div>
 
-        <div className="mt-16 grid overflow-hidden rounded-sm shadow-lift-lg ring-1 ring-brand-purple/10 sm:mt-20 md:grid-cols-3">
-          {CONVICTIONS.map(({ word, icon: Icon, title, body, src, focal }, i) => (
+        {/* ================================================================
+            NO PHOTOGRAPHS HERE ANY MORE.
+
+            This was three dark photographic panels butted into a block. It read
+            better than the cards it replaced and it was still wrong, for the
+            reason the university put plainly: an image should never be a block.
+            Three rectangles of dimmed photograph side by side ARE blocks — the
+            butted edges and the shared scrim made them one object, but an
+            object made of three cropped rectangles is still a grid of tiles
+            wearing a different border.
+
+            The photographs were also doing nothing. All three were ceremony
+            shots under an 90% wash, indistinguishable from one another at that
+            opacity, chosen for atmosphere and delivering none. Nobody could
+            have told you what was in them.
+
+            What a motto needs is room and rules, not pictures. Three columns
+            separated by full-height hairlines on the cream ground, the icon
+            engraved rather than filled, the word at scale, and white space
+            doing the work the scrims were doing badly.
+            ================================================================ */}
+        <div className="mt-16 grid gap-y-14 sm:mt-20 md:grid-cols-3 md:gap-x-0 md:gap-y-0">
+          {CONVICTIONS.map(({ word, icon: Icon, title, body }, i) => (
             <article
               key={word}
-              className={`relative isolate flex min-h-[22rem] flex-col items-center justify-center px-8 py-14 text-center text-white lg:min-h-[25rem] lg:px-10 ${
-                i > 0 ? 'md:border-l md:border-white/15' : ''
+              className={`px-0 text-center md:px-9 lg:px-12 ${
+                i > 0
+                  ? 'border-t border-brand-purple/12 pt-14 dark:border-white/12 md:border-l md:border-t-0 md:pt-0'
+                  : ''
               }`}
             >
-              <Image
-                src={src}
-                alt=""
-                fill
-                sizes="(min-width:768px) 33vw, 100vw"
-                quality={78}
-                loading="lazy"
-                className="-z-20 object-cover"
-                style={{ objectPosition: focal }}
-              />
-              {/* Heavy and even, unlike the directional scrims on the full-bleed
-                  bands. Each panel is a third of the width carrying a paragraph
-                  at 14px, so there is no part of the picture that is NOT behind
-                  text and nowhere for a gradient to open up. */}
-              <div
+              <Icon
+                size={30}
+                strokeWidth={1.1}
                 aria-hidden="true"
-                className="absolute inset-0 -z-10"
-                style={{
-                  background:
-                    'linear-gradient(180deg, rgba(14,7,30,0.90) 0%, rgba(18,10,36,0.86) 50%, '
-                    + 'rgba(14,7,30,0.92) 100%)',
-                }}
+                className="mx-auto text-brand-gold-ink dark:text-brand-gold"
               />
-              <div aria-hidden="true" className="absolute inset-0 -z-10 bg-brand-purple/25 mix-blend-multiply" />
 
-              <Icon size={34} strokeWidth={1.25} aria-hidden="true" className="text-brand-gold" />
-
-              <h3 className="mt-7 font-sans text-[12px] font-semibold uppercase tracking-[0.3em] text-brand-gold">
+              <h3 className="mt-7 font-sans text-[11.5px] font-semibold uppercase tracking-[0.3em] text-brand-gold-ink dark:text-brand-gold">
                 {word}
               </h3>
 
-              <p className="mt-5 font-heading text-[19px] font-bold leading-snug text-white [text-wrap:balance]">
+              <p className="mt-6 font-heading text-[clamp(1.2rem,2.1vw,1.5rem)] font-bold leading-snug text-brand-purple dark:text-white [text-wrap:balance]">
                 {title}
               </p>
 
-              <p className="mt-5 max-w-xs text-[14px] leading-relaxed text-white/85">{body}</p>
+              <p className="mx-auto mt-5 max-w-[22rem] text-[14.5px] leading-relaxed text-brand-muted dark:text-white/70">
+                {body}
+              </p>
             </article>
           ))}
         </div>

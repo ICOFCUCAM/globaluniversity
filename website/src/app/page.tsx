@@ -136,13 +136,6 @@ export default async function HomePage() {
           go. */}
       <ProofBand />
 
-      {/* Who this university belongs to, before what it offers. The fellowship
-          is the reason "A Global University" is a description rather than an
-          aspiration — see GlobalMovement.tsx, including what it refuses to
-          claim about ICOF's size. */}
-      <GlobalMovement />
-
-      {/* University overview */}
       {/* The About band is gone. It said the university was born of the
           International Circle of Faith and pointed at /about — which is exactly
           what the fellowship scene directly above it says, at scale, over a
@@ -220,6 +213,21 @@ export default async function HomePage() {
           labelled AI. */}
       <ProgrammeFinder />
 
+      {/* MOVED. This sat immediately after the statistics band, so the page
+          went from a quiet cream count straight into a full-bleed fixed-window
+          photograph — the heaviest visual device on the site arriving two
+          screens in, before the reader had been told anything. It now follows
+          the academic block, where the claim it makes ("this university belongs
+          to something larger") lands after the reader knows what the university
+          teaches, and where the fixed window is the first big picture rather
+          than an interruption of the first small one. */}
+      {/* Who this university belongs to, before what it offers. The fellowship
+          is the reason "A Global University" is a description rather than an
+          aspiration — see GlobalMovement.tsx, including what it refuses to
+          claim about ICOF's size. */}
+      <GlobalMovement />
+
+      {/* University overview */}
       {/* Chancellor's welcome — the site opened with this on the original iguc.net */}
       {/* The Chancellor's word. The photograph is the room he speaks in — see
           ChancellorWord.tsx and Cinematic.tsx for why the ceremony is the

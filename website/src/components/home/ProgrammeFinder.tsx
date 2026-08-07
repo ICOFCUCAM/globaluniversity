@@ -162,7 +162,7 @@ export default function ProgrammeFinder() {
     >
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="mx-auto max-w-3xl text-center">
-          <p className="font-sans text-xs font-semibold uppercase tracking-[0.25em] text-brand-gold-deep">
+          <p className="font-sans text-xs font-semibold uppercase tracking-[0.25em] text-brand-gold-ink">
             Find your programme
           </p>
           <h2
@@ -191,7 +191,7 @@ export default function ProgrammeFinder() {
           </label>
 
           <fieldset className="mt-9">
-            <legend className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-gold-deep">
+            <legend className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-gold-ink">
               What are you drawn to?
             </legend>
             <div className="mt-4 flex flex-wrap gap-2.5">
@@ -213,7 +213,7 @@ export default function ProgrammeFinder() {
 
           <div className="mt-8 grid gap-8 sm:grid-cols-2">
             <fieldset>
-              <legend className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-gold-deep">
+              <legend className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-gold-ink">
                 How much time do you have?
               </legend>
               <div className="mt-4 flex flex-wrap gap-2.5">
@@ -234,7 +234,7 @@ export default function ProgrammeFinder() {
             </fieldset>
 
             <fieldset>
-              <legend className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-gold-deep">
+              <legend className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-gold-ink">
                 How would you study?
               </legend>
               <div className="mt-4 flex flex-wrap gap-2.5">
@@ -295,64 +295,78 @@ export default function ProgrammeFinder() {
             , who can tell you what is planned as well as what is running.
           </p>
         ) : (
-          <div className="mt-14 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {shown.map(({ p, because }, i) => {
-              const faculty = FACULTIES.find((f) => f.id === p.facultyId);
-              return (
-                <article
-                  key={p.slug}
-                  style={{ animationDelay: `${i * 45}ms` }}
-                  className="group relative flex animate-rise flex-col rounded-2xl border border-[#e6ddcb] bg-white p-6 focus-within:border-brand-gold focus-within:ring-2 focus-within:ring-brand-gold/60 transition duration-500 hover:-translate-y-1 hover:border-brand-gold hover:shadow-lift-lg dark:border-white/10 dark:bg-white/[0.04] dark:hover:border-brand-gold/50"
-                >
-                  <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-gold-deep">
-                    {p.award} · {faculty?.name.replace('Faculty of ', '') ?? ''}
-                  </p>
-                  <h3 className="mt-2.5 font-heading text-xl font-bold leading-snug text-brand-purple dark:text-white">
-                    <Link href={programmeHref(p.slug)}>
-                      <span className="absolute inset-0" aria-hidden="true" />
-                      {p.title}
-                    </Link>
-                  </h3>
-                  <p className="mt-3 flex-1 text-[15px] leading-relaxed text-brand-muted dark:text-white/60">
-                    {p.summary}
-                  </p>
+          <>
+            {/* ==============================================================
+                RESULTS AS ROWS, NOT CARDS.
 
-                  <dl className="mt-5 flex flex-wrap gap-x-6 gap-y-2 border-t border-[#efe8db] pt-4 dark:border-white/10">
-                    <div>
-                      <dt className="sr-only">Duration</dt>
-                      <dd className="font-sans text-[12px] text-brand-muted dark:text-white/55">
-                        {p.duration}
-                      </dd>
-                    </div>
-                    {p.credits !== undefined && (
-                      <div>
-                        <dt className="sr-only">Credits</dt>
-                        <dd className="font-sans text-[12px] text-brand-muted dark:text-white/55">
-                          {p.credits} ECTS
-                        </dd>
-                      </div>
-                    )}
-                  </dl>
+                This was a three-column grid of bordered white tiles, each with
+                a label, a heading, a summary, a rule, two metadata items and a
+                set of pills. Six of those made a wall of boxes in the middle of
+                a page whose entire redesign has been about removing exactly
+                that.
 
-                  {/* WHY IT MATCHED. A recommendation with no reason is an
-                      instruction, and a visitor who cannot see the reasoning
-                      cannot tell a good match from a random one. */}
-                  {because.length > 0 && (
-                    <ul className="mt-4 flex flex-wrap gap-1.5">
-                      {Array.from(new Set(because)).slice(0, 3).map((b) => (
-                        <li
-                          key={b}
-                          className="rounded-full bg-brand-cream px-2.5 py-1 font-sans text-[11px] text-brand-purple/75 dark:bg-white/[0.07] dark:text-white/60"
+                Rows fix it for a reason beyond taste: a card grid asks the
+                reader to compare across two axes at once, which is why every
+                card has to repeat the same six fields in the same order. A list
+                is read down one axis, so each row carries only what
+                distinguishes it — award, title, one line, duration — and the
+                eye scans titles without re-reading the scaffolding six times.
+
+                Hairlines, no borders, no shadows, no lift. The whole row is the
+                link, as in the faculty index.
+                ============================================================== */}
+            <ul className="mt-12">
+              {shown.map(({ p, because }, i) => {
+                const faculty = FACULTIES.find((f) => f.id === p.facultyId);
+                return (
+                  <li key={p.slug} style={{ animationDelay: `${i * 40}ms` }} className="animate-rise">
+                    <Link
+                      href={programmeHref(p.slug)}
+                      className="group grid items-baseline gap-x-8 gap-y-2 border-t border-[#e6ddcb] py-6 transition-colors duration-300 hover:border-brand-gold-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold focus-visible:ring-offset-2 dark:border-white/12 dark:hover:border-brand-gold/50 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1.35fr)_auto]"
+                    >
+                      <span>
+                        <span className="block font-sans text-[10px] font-semibold uppercase tracking-[0.18em] text-brand-gold-ink dark:text-brand-gold">
+                          {p.award} · {faculty?.name.replace('Faculty of ', '') ?? ''}
+                        </span>
+                        <span className="mt-2 block font-heading text-[19px] font-bold leading-snug text-brand-purple transition-colors duration-300 group-hover:text-brand-gold-ink dark:text-white dark:group-hover:text-brand-gold">
+                          {p.title}
+                        </span>
+                      </span>
+
+                      <span className="text-[14.5px] leading-relaxed text-brand-muted dark:text-white/65">
+                        {p.summary}
+                      </span>
+
+                      <span className="flex items-center gap-6 whitespace-nowrap">
+                        <span className="font-sans text-[12px] text-brand-muted dark:text-white/55">
+                          {p.duration}
+                          {p.credits !== undefined ? ` · ${p.credits} ECTS` : ''}
+                        </span>
+                        <span
+                          aria-hidden="true"
+                          className="font-heading text-lg text-brand-gold-ink/50 transition-all duration-300 group-hover:translate-x-1 group-hover:text-brand-gold-ink dark:text-brand-gold/50 dark:group-hover:text-brand-gold"
                         >
-                          {b}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </article>
-              );
-            })}
-          </div>
+                          →
+                        </span>
+                      </span>
+
+                      {/* WHY IT MATCHED, kept. A recommendation with no reason
+                          is an instruction, and a reader who cannot see the
+                          reasoning cannot tell a good match from a random one.
+                          A plain line now rather than a row of pills — pills are
+                          small cards. */}
+                      {because.length > 0 && (
+                        <span className="font-sans text-[11.5px] text-brand-muted/80 dark:text-white/45 lg:col-span-3">
+                          Matched on {Array.from(new Set(because)).slice(0, 3).join(' · ').toLowerCase()}
+                        </span>
+                      )}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+            <div aria-hidden="true" className="border-t border-[#e6ddcb] dark:border-white/12" />
+          </>
         )}
 
         {results.length > shown.length && (

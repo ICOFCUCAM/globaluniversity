@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import { Grain } from '@/components/Atmosphere';
 
@@ -48,17 +47,20 @@ import { Grain } from '@/components/Atmosphere';
 // cross-fading images. This is a server component with one image.
 //
 // ===========================================================================
-// THE HONEST LIMITATION, CARRIED FORWARD
+// AND NO PHOTOGRAPH AT ALL NOW
 // ===========================================================================
 //
-// There is now ONE photograph rather than four, and that is a quiet
-// improvement in truthfulness as well as weight: the four images were all
-// ceremony photographs, so the Faculty of Engineering was being illustrated by
-// a graduation. Nothing in the library shows engineering being taught, a
-// business seminar, or a classroom. One honest atmosphere photograph is better
-// than four that imply a specificity they do not have. Commissioning one
-// teaching photograph per faculty remains the highest-value change available
-// to this page, and only the university can make it.
+// It went from four ceremony photographs, to one, to none. The four were
+// dishonest — nothing in the library shows engineering being taught, so the
+// Faculty of Engineering was illustrated by a graduation. The one that
+// replaced them was honest but pointless: buried under a 93% scrim, it was
+// unreadable as a picture while still making the type work harder.
+//
+// A photograph dimmed until it is safe to set text on is not photography. It
+// is expensive texture. Commissioning one teaching photograph per faculty
+// remains the highest-value change available to this page, and only the
+// university can make it — until then this section is type on a ground, which
+// is what an index should be anyway.
 // ---------------------------------------------------------------------------
 
 export interface FacultyScene {
@@ -89,26 +91,16 @@ export default function FacultyScenes({ faculties }: { faculties: FacultyScene[]
       aria-labelledby="faculties-heading"
       className="relative z-10 flex min-h-[100svh] items-center overflow-hidden bg-brand-purple-dark py-24 text-white sm:py-28"
     >
-      <Image
-        src="/images/graduation-2024/grad-2024-procession-line.jpg"
-        alt=""
-        fill
-        sizes="100vw"
-        quality={80}
-        loading="lazy"
-        className="-z-20 object-cover"
-        style={{ objectPosition: '50% 32%' }}
-      />
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 -z-10"
-        style={{
-          background:
-            'linear-gradient(180deg, rgba(12,6,26,0.93) 0%, rgba(14,7,30,0.88) 50%, '
-            + 'rgba(12,6,26,0.94) 100%)',
-        }}
-      />
-      <div aria-hidden="true" className="absolute inset-0 -z-10 bg-brand-purple/20 mix-blend-multiply" />
+      {/* NO PHOTOGRAPH BEHIND THIS SECTION.
+
+          It carried a full-bleed procession shot under a 93% scrim, which is
+          the worst of both: the picture was unreadable as a picture and the
+          type still had to fight it. A photograph dimmed until it is safe to
+          set text on is not photography, it is expensive texture.
+
+          The four disciplines are a typographic index. What they need is a
+          quiet ground and room, not a picture behind them — and the sections
+          on either side are already carrying real imagery. */}
       <div aria-hidden="true" className="absolute inset-0 -z-10">
         <Grain opacity={0.07} />
       </div>
@@ -161,7 +153,12 @@ export default function FacultyScenes({ faculties }: { faculties: FacultyScene[]
                   </span>
                   <span
                     aria-hidden="true"
-                    className="font-heading text-xl text-brand-gold/60 transition-all duration-300 group-hover:translate-x-1.5 group-hover:text-brand-gold"
+                    // /60 measured 4.19:1 against the unphotographed purple ground, just
+                    // under the 4.5 an arrow at 20px needs. It is aria-hidden and
+                    // decorative, so WCAG arguably lets it go — but it is the affordance
+                    // that tells a sighted reader the row is a link, which makes it
+                    // information for precisely the people who can see it.
+                    className="font-heading text-xl text-brand-gold/85 transition-all duration-300 group-hover:translate-x-1.5 group-hover:text-brand-gold"
                   >
                     →
                   </span>
