@@ -337,6 +337,52 @@ html {
 }
 
 /* ---------------------------------------------------------------------------
+   HIGH CONTRAST AND FORCED COLOURS.
+
+   Two settings this site had never answered, both of which break exactly the
+   compositions it is proudest of.
+
+   FORCED COLOURS (Windows High Contrast, and the Firefox/Edge equivalents)
+   replaces every text and background colour with the reader's own pair — and
+   leaves IMAGES alone. On an ordinary page that is fine. On this one the world
+   map is pinned behind two windows of white display type, so the type is
+   forced to the user's foreground colour and the picture stays exactly where it
+   was: text on a photograph, with the one thing that made it legible — the
+   author's control of both colours — taken away. The same is true of every
+   decorative wash, plate and grain layer in that composition.
+
+   So in forced colours the pinned ground and the window's decorative layers are
+   hidden. The words then sit on the reader's own background, which is the whole
+   point of the setting. Nothing of meaning is lost: every one of those layers
+   is aria-hidden already, and the map is captioned in the screen-reader text
+   beside it.
+
+   The gold pill buttons also lose their fill in forced colours, which would
+   leave "Begin your application" as bare text among other bare text. A border
+   in currentColor keeps them reading as buttons.
+
+   PREFERS-CONTRAST: MORE is the softer request, and the honest answer to it
+   here is the same one: drop the picture behind the type rather than darken it
+   further. This page has spent its whole redesign refusing to bury photographs
+   under scrims to make text safe; a reader who asks for more contrast should
+   get the words, not a heavier scrim.
+--------------------------------------------------------------------------- */
+@media (forced-colors: active), (prefers-contrast: more) {
+  [data-pinned-ground],
+  [data-triptych] > [aria-hidden='true'],
+  [data-block] > [aria-hidden='true'] {
+    display: none !important;
+  }
+}
+
+@media (forced-colors: active) {
+  a[class*='rounded-full'],
+  button[class*='rounded-full'] {
+    border: 1px solid currentColor;
+  }
+}
+
+/* ---------------------------------------------------------------------------
    ANCHORS MUST CLEAR THE STICKY HEADER.
 
    The header is fixed and about 98px tall. Nothing on this site set
