@@ -109,8 +109,12 @@ export default function ScrollRail() {
             over the dark purple hero and over every other [data-on-dark] band:
             a faint ghost of a label that read as a rendering fault rather than
             as an index. */}
-        <span className={`absolute right-[3px] top-0 h-full w-px ${onDark ? 'bg-white/20' : 'bg-brand-purple/12'}`} />
         <span
+          aria-hidden="true"
+          className={`absolute right-[3px] top-0 h-full w-px ${onDark ? 'bg-white/20' : 'bg-brand-purple/12'}`}
+        />
+        <span
+          aria-hidden="true"
           className="absolute right-[3px] top-0 w-px origin-top bg-gradient-to-b from-brand-gold to-brand-gold-deep transition-transform duration-200"
           style={{ height: '100%', transform: `scaleY(${progress})` }}
         />
@@ -118,8 +122,29 @@ export default function ScrollRail() {
         {chapters.map((c, i) => (
           <button
             key={c.id}
+            type="button"
             onClick={() => document.getElementById(c.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
             className="pointer-events-auto group flex items-center gap-2.5"
+            // aria-current marks WHICH chapter the reader is in. Sighted
+            // readers get that from the enlarged gold dot and the label that
+            // slides in; a screen-reader user reaching this rail with a virtual
+            // cursor was given nine identically-announced buttons and no way to
+            // tell which one described where they already were.
+            aria-current={i === active ? 'true' : undefined}
+            // An explicit name, because the visible label is opacity-0 for
+            // every inactive chapter. It is still in the accessible tree — an
+            // opacity of nought does not remove it — so this is belt and
+            // braces rather than a fix, but it also states the ACTION rather
+            // than the destination, which is what a button should announce.
+            aria-label={`Go to ${c.label}`}
+            // tabIndex={-1} IS DELIBERATE AND IS A COMPROMISE, recorded rather
+            // than left to be rediscovered. This rail duplicates navigation
+            // that already exists in the header and in the page itself, and
+            // putting nine more stops in front of the main content would cost
+            // every keyboard user on every page load to serve a shortcut.
+            // Screen-reader users can still reach and activate these with a
+            // virtual cursor. Sighted keyboard-only users cannot, and that is
+            // the part of this trade that is not free.
             tabIndex={-1}
           >
             <span
