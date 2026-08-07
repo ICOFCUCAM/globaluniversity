@@ -44,7 +44,7 @@ const LEVELS = ['Certificate', 'Diploma', 'Bachelor', 'Master', 'Doctorate'] as 
 function Part({ id, n, title, children }: { id: string; n: string; title: string; children: React.ReactNode }) {
   return (
     <section id={id} className="catalog-part scroll-mt-28 border-t border-brand-sand pt-12">
-      <p className="font-sans text-[11px] font-bold uppercase tracking-[0.22em] text-brand-gold-deep">Part {n}</p>
+      <p className="font-sans text-[11px] font-bold uppercase tracking-[0.22em] text-brand-gold-ink">Part {n}</p>
       <h2 className="mt-2 font-heading text-3xl font-bold text-brand-purple [text-wrap:balance]">{title}</h2>
       <div className="mt-8">{children}</div>
     </section>
@@ -58,7 +58,7 @@ function P({ children }: { children: React.ReactNode }) {
 function Awaiting({ title, body, needs }: { title: string; body: string; needs: string[] }) {
   return (
     <div className="mt-6 rounded-2xl border border-dashed border-brand-gold/60 bg-brand-cream/70 p-6">
-      <p className="font-sans text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold-deep">In preparation</p>
+      <p className="font-sans text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold-ink">In preparation</p>
       <h3 className="mt-2 font-heading text-lg font-bold text-brand-purple">{title}</h3>
       <p className="mt-3 text-[15px] leading-relaxed text-brand-muted">{body}</p>
       <ul className="mt-4 space-y-2">
@@ -163,7 +163,7 @@ export default function FacultyHandbookPage({ params }: { params: { slug: string
                 )}
                 <div>
                   <p className="font-heading text-lg font-bold text-brand-purple">{lead.name}</p>
-                  <p className="mt-1 font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-gold-deep">
+                  <p className="mt-1 font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-gold-ink">
                     {f.leadTitle ?? lead.role} · {f.shortName}
                   </p>
                 </div>
@@ -207,7 +207,7 @@ export default function FacultyHandbookPage({ params }: { params: { slug: string
             </P>
             {ladder.map((r) => (
               <div key={r.level} className="mt-7">
-                <h3 className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-brand-gold-deep">
+                <h3 className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-brand-gold-ink">
                   {r.level}
                 </h3>
                 <ul className="mt-3 space-y-3">

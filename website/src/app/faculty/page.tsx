@@ -50,7 +50,7 @@ function PersonCard({ person, size = 'md' }: { person: { name: string; role: str
       <h3 className="mt-4 font-heading font-semibold leading-snug text-brand-purple [text-wrap:balance]">
         {person.name}
       </h3>
-      <p className="mt-0.5 font-sans text-[11px] font-semibold uppercase tracking-[0.1em] text-brand-gold-deep">
+      <p className="mt-0.5 font-sans text-[11px] font-semibold uppercase tracking-[0.1em] text-brand-gold-ink">
         {person.role}
       </p>
       {person.bio && <p className="mx-auto mt-2.5 max-w-xs text-xs leading-relaxed text-brand-muted">{person.bio}</p>}

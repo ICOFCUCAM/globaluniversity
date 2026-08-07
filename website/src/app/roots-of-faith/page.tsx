@@ -83,7 +83,7 @@ export default function RootsOfFaithPage() {
                   {b.points?.map((p) => (
                     <li key={p.label ?? p.text} className="border-l-[3px] border-brand-sand pl-5 transition hover:border-brand-gold">
                       {p.label && (
-                        <span className="block font-sans text-[11px] font-bold uppercase tracking-[0.14em] text-brand-gold-deep">
+                        <span className="block font-sans text-[11px] font-bold uppercase tracking-[0.14em] text-brand-gold-ink">
                           {p.label}
                         </span>
                       )}

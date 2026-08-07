@@ -177,7 +177,7 @@ export default function ArchitecturePage() {
                   <div className="flex-1 pt-1">
                     <div className="flex flex-wrap items-baseline gap-x-3">
                       <h3 className="font-heading text-[17px] font-bold text-brand-purple">{l.label}</h3>
-                      <span className="font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-brand-gold-deep">
+                      <span className="font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-brand-gold-ink">
                         {l.owner}
                       </span>
                     </div>
@@ -233,14 +233,14 @@ export default function ArchitecturePage() {
                   <div className="min-w-0 flex-1">
                     <h3 className="font-heading text-lg font-bold text-brand-purple">{o.name}</h3>
                     <p className="mt-1 text-sm text-brand-muted">{o.controls}</p>
-                    <p className="mt-1.5 font-sans text-[10px] uppercase tracking-[0.12em] text-brand-gold-deep">
+                    <p className="mt-1.5 font-sans text-[10px] uppercase tracking-[0.12em] text-brand-gold">
                       {o.roles.map((r) => roleLabels[r]).join(' · ')}
                     </p>
                   </div>
                 </div>
                 <div className="grid gap-6 px-6 py-5 sm:grid-cols-3">
                   <div>
-                    <p className="font-sans text-[10px] font-bold uppercase tracking-[0.16em] text-brand-gold-deep">Responsibilities</p>
+                    <p className="font-sans text-[10px] font-bold uppercase tracking-[0.16em] text-brand-gold-ink">Responsibilities</p>
                     <ul className="mt-3 space-y-1.5">
                       {o.responsibilities.map((r) => (
                         <li key={r} className="text-[13px] leading-relaxed text-brand-muted">{r}</li>
@@ -248,7 +248,7 @@ export default function ArchitecturePage() {
                     </ul>
                   </div>
                   <div>
-                    <p className="font-sans text-[10px] font-bold uppercase tracking-[0.16em] text-brand-gold-deep">Dashboard</p>
+                    <p className="font-sans text-[10px] font-bold uppercase tracking-[0.16em] text-brand-gold-ink">Dashboard</p>
                     <ul className="mt-3 space-y-1.5">
                       {o.dashboard.map((d) => (
                         <li key={d} className="text-[13px] leading-relaxed text-brand-muted">{d}</li>
@@ -303,7 +303,7 @@ export default function ArchitecturePage() {
                   </li>
                 ))}
               </ol>
-              <p className="mt-5 font-sans text-[10px] font-bold uppercase tracking-[0.16em] text-brand-gold-deep">
+              <p className="mt-5 font-sans text-[10px] font-bold uppercase tracking-[0.16em] text-brand-gold-ink">
                 Writes
               </p>
               <p className="mt-1.5 text-[14px] text-brand-muted">{w.writes.join(' · ')}</p>

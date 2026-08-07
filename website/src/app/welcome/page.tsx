@@ -64,7 +64,7 @@ export default function WelcomePage() {
               </div>
               <div className="mt-5 border-l-[3px] border-brand-gold pl-4">
                 <p className="font-heading text-lg font-bold text-brand-purple">{chancellor.name}</p>
-                <p className="text-sm font-semibold uppercase tracking-wide text-brand-gold-deep">
+                <p className="text-sm font-semibold uppercase tracking-wide text-brand-gold-ink">
                   {chancellor.role}
                 </p>
                 <p className="mt-2 text-sm leading-relaxed text-brand-muted">{chancellor.credentials}</p>
@@ -152,7 +152,7 @@ export default function WelcomePage() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="font-heading text-lg font-bold text-brand-purple">{viceChancellor.name}</p>
-                <p className="text-sm font-semibold uppercase tracking-wide text-brand-gold-deep">
+                <p className="text-sm font-semibold uppercase tracking-wide text-brand-gold-ink">
                   {viceChancellor.role}
                 </p>
                 <a

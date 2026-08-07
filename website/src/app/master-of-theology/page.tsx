@@ -116,7 +116,7 @@ export default function MasterOfTheologyPage() {
             <Reveal key={`${s.year}-${s.label}`} delay={si * 60}>
               <div>
                 <div className="flex items-baseline gap-3">
-                  <span className="font-sans text-[10px] font-bold uppercase tracking-[0.2em] text-brand-gold-deep">{s.year}</span>
+                  <span className="font-sans text-[10px] font-bold uppercase tracking-[0.2em] text-brand-gold-ink">{s.year}</span>
                   <h3 className="font-heading text-xl font-bold text-brand-purple">{s.label}</h3>
                 </div>
                 <div className="mt-4 divide-y divide-brand-sand overflow-hidden rounded-2xl border border-brand-sand bg-brand-cream">

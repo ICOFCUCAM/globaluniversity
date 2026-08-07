@@ -50,7 +50,7 @@ const PARTS = [
 function Part({ id, n, title, children }: { id: string; n: string; title: string; children: React.ReactNode }) {
   return (
     <section id={id} className="catalog-part scroll-mt-28 border-t border-brand-sand pt-12">
-      <p className="font-sans text-[11px] font-bold uppercase tracking-[0.22em] text-brand-gold-deep">Part {n}</p>
+      <p className="font-sans text-[11px] font-bold uppercase tracking-[0.22em] text-brand-gold-ink">Part {n}</p>
       <h2 className="mt-2 font-heading text-3xl font-bold text-brand-purple [text-wrap:balance]">{title}</h2>
       <div className="mt-8">{children}</div>
     </section>
@@ -107,7 +107,7 @@ export default function ProspectusPage() {
       <div className="mx-auto max-w-4xl px-4 py-14 sm:px-6 sm:py-20">
         <blockquote className="border-l-2 border-brand-gold/60 pl-6">
           <p className="font-heading text-[21px] font-semibold leading-[1.55] text-brand-purple">{welcomeExcerpt}</p>
-          <footer className="mt-3 font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-gold-deep">
+          <footer className="mt-3 font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-gold-ink">
             Bishop Bernie L Wade, PhD · Chancellor
           </footer>
         </blockquote>
@@ -149,7 +149,7 @@ export default function ProspectusPage() {
               {stats.map((s) => (
                 <div key={s.label} className="bg-white px-5 py-6 text-center">
                   <dd className="font-heading text-2xl font-bold tabular text-brand-purple">{s.value}</dd>
-                  <dt className="mt-1 font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-brand-gold-deep">
+                  <dt className="mt-1 font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-brand-gold-ink">
                     {s.label}
                   </dt>
                 </div>
@@ -182,7 +182,7 @@ export default function ProspectusPage() {
                 </div>
                 <div className="flex-1">
                   <h3 className="font-heading text-[17px] font-bold text-brand-purple">{f.name}</h3>
-                  <p className="mt-1 font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-gold-deep">
+                  <p className="mt-1 font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-gold-ink">
                     {f.campus}
                   </p>
                   <p className="mt-2.5 text-[15px] leading-relaxed text-brand-muted">{f.standsFor}</p>
@@ -201,7 +201,7 @@ export default function ProspectusPage() {
             </P>
             {byLevel.map((l) => (
               <div key={l.level} className="mt-8">
-                <h3 className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-brand-gold-deep">
+                <h3 className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-brand-gold-ink">
                   {l.level}
                 </h3>
                 <ul className="mt-3 flex flex-wrap gap-2.5">

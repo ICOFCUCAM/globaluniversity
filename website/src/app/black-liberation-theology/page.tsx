@@ -323,7 +323,7 @@ export default function BlackLiberationTheologyPage() {
               ['Total credits', bltProgramme.credits],
             ].map(([k, v]) => (
               <div key={k} className="bg-white px-6 py-5 text-center">
-                <dt className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-gold-deep">
+                <dt className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-gold-ink">
                   {k}
                 </dt>
                 <dd className="mt-1.5 font-heading text-lg font-bold text-brand-purple">{v}</dd>
@@ -339,7 +339,7 @@ export default function BlackLiberationTheologyPage() {
             <Reveal key={`${sem.year}-${sem.label}`} delay={si * 60}>
               <div>
                 <div className="flex items-baseline gap-3">
-                  <span className="font-sans text-[10px] font-bold uppercase tracking-[0.2em] text-brand-gold-deep">
+                  <span className="font-sans text-[10px] font-bold uppercase tracking-[0.2em] text-brand-gold-ink">
                     {sem.year}
                   </span>
                   <h3 className="font-heading text-xl font-bold text-brand-purple">{sem.label}</h3>
@@ -389,7 +389,7 @@ export default function BlackLiberationTheologyPage() {
         <div className="mx-auto mt-14 max-w-4xl">
           <div className="flex items-baseline gap-3">
             <h3 className="font-heading text-xl font-bold text-brand-purple">Elective courses</h3>
-            <span className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-gold-deep">
+            <span className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-gold-ink">
               Choose four
             </span>
           </div>

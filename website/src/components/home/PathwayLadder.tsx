@@ -34,7 +34,7 @@ export default function PathwayLadder() {
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <Reveal>
           <div className="mx-auto max-w-3xl text-center">
-            <p className="font-sans text-xs font-semibold uppercase tracking-[0.25em] text-brand-gold-deep">
+            <p className="font-sans text-xs font-semibold uppercase tracking-[0.25em] text-brand-gold-ink">
               Academic pathways
             </p>
             <h2
@@ -81,7 +81,7 @@ export default function PathwayLadder() {
                       <span className="absolute inset-0" aria-hidden="true" />
                       {step.award}
                     </Link>
-                    <p className="mt-1.5 font-sans text-[11px] font-semibold uppercase tracking-[0.12em] text-brand-gold-deep">
+                    <p className="mt-1.5 font-sans text-[11px] font-semibold uppercase tracking-[0.12em] text-brand-gold-ink">
                       {step.duration}
                     </p>
                     <p className="mt-3 text-[15px] leading-relaxed text-brand-muted dark:text-white/60">{step.note}</p>

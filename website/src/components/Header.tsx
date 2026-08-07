@@ -45,7 +45,7 @@ function DesktopItem({ item }: { item: NavItem }) {
             <div className={`grid gap-x-6 gap-y-5 p-6 ${cols >= 3 ? 'grid-cols-3' : 'grid-cols-2'}`}>
               {item.groups.map((g) => (
                 <div key={g.heading}>
-                  <p className="mb-2 font-sans text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold-deep">
+                  <p className="mb-2 font-sans text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold-ink">
                     {g.heading}
                   </p>
                   <ul className="space-y-1">

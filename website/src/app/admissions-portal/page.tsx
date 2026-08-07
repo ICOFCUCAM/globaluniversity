@@ -171,7 +171,7 @@ export default function AdmissionsPortalPage() {
                   {j.n}
                 </span>
                 <div className="flex-1 pt-1">
-                  <p className="font-sans text-[10px] font-bold uppercase tracking-[0.16em] text-brand-gold-deep">
+                  <p className="font-sans text-[10px] font-bold uppercase tracking-[0.16em] text-brand-gold">
                     {j.who}
                   </p>
                   <h3 className="mt-1 font-heading text-lg font-bold text-brand-purple">{j.title}</h3>

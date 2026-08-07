@@ -71,7 +71,7 @@ export default function DocumentsPage() {
           ].map(([v, k]) => (
             <div key={k} className="bg-white px-6 py-6 text-center">
               <dd className="font-heading text-3xl font-bold tabular text-brand-purple">{v}</dd>
-              <dt className="mt-1 font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-gold-deep">
+              <dt className="mt-1 font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-gold-ink">
                 {k}
               </dt>
             </div>
@@ -141,7 +141,7 @@ export default function DocumentsPage() {
 
                   <div className="grid gap-6 px-6 py-5 sm:grid-cols-2">
                     <div>
-                      <p className="font-sans text-[10px] font-bold uppercase tracking-[0.16em] text-brand-gold-deep">
+                      <p className="font-sans text-[10px] font-bold uppercase tracking-[0.16em] text-brand-gold-ink">
                         Contents
                       </p>
                       <ul className="mt-3 space-y-1.5">
@@ -155,7 +155,7 @@ export default function DocumentsPage() {
                     </div>
                     {d.needs && (
                       <div>
-                        <p className="font-sans text-[10px] font-bold uppercase tracking-[0.16em] text-brand-gold-deep">
+                        <p className="font-sans text-[10px] font-bold uppercase tracking-[0.16em] text-brand-gold-ink">
                           Required from the university
                         </p>
                         <ul className="mt-3 space-y-1.5">

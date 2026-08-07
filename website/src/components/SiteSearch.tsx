@@ -100,7 +100,7 @@ export default function SiteSearch() {
                   className="block border-b border-brand-cream px-5 py-3 transition last:border-0 hover:bg-brand-cream"
                 >
                   <p className="font-heading text-sm font-semibold text-brand-purple">{r.title}</p>
-                  <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-wide text-brand-gold-deep">
+                  <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-wide text-brand-gold-ink">
                     {r.section}
                   </p>
                 </Link>

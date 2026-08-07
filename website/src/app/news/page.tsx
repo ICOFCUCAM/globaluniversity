@@ -31,7 +31,7 @@ export default async function NewsPage() {
                   <Image src={n.image} alt={n.title} fill className="object-cover" sizes="(min-width:768px) 33vw, 100vw" />
                 </div>
                 <div className="p-5">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-brand-gold-deep">{n.category}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-brand-gold-ink">{n.category}</p>
                   <h2 className="mt-1 font-heading text-lg font-semibold text-brand-purple">{n.title}</h2>
                   <p className="mt-2 text-sm leading-relaxed text-brand-muted">{n.excerpt}</p>
                 </div>

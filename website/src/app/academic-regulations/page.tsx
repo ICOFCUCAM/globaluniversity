@@ -45,7 +45,7 @@ const PARTS = [
 function Part({ id, n, title, children }: { id: string; n: string; title: string; children: React.ReactNode }) {
   return (
     <section id={id} className="catalog-part scroll-mt-28 border-t border-brand-sand pt-12">
-      <p className="font-sans text-[11px] font-bold uppercase tracking-[0.22em] text-brand-gold-deep">Part {n}</p>
+      <p className="font-sans text-[11px] font-bold uppercase tracking-[0.22em] text-brand-gold-ink">Part {n}</p>
       <h2 className="mt-2 font-heading text-3xl font-bold text-brand-purple [text-wrap:balance]">{title}</h2>
       <div className="mt-8">{children}</div>
     </section>
@@ -80,7 +80,7 @@ function Table({ head, children }: { head: string[]; children: React.ReactNode }
         <thead className="bg-brand-cream">
           <tr>
             {head.map((h) => (
-              <th key={h} className="px-5 py-3 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-brand-gold-deep">
+              <th key={h} className="px-5 py-3 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-brand-gold-ink">
                 {h}
               </th>
             ))}
@@ -284,7 +284,7 @@ export default function AcademicRegulationsPage() {
                   <td className="px-5 py-3 text-brand-muted">
                     {f.item}
                     {f.optional && (
-                      <span className="ml-2 rounded-full bg-brand-cream px-2 py-0.5 font-sans text-[9px] font-bold uppercase tracking-[0.1em] text-brand-gold-deep">
+                      <span className="ml-2 rounded-full bg-brand-cream px-2 py-0.5 font-sans text-[9px] font-bold uppercase tracking-[0.1em] text-brand-gold-ink">
                         Optional
                       </span>
                     )}
@@ -338,7 +338,7 @@ export default function AcademicRegulationsPage() {
             <ol className="mt-7 space-y-5">
               {sourceNotes.map((n, i) => (
                 <li key={n.issue} className="rounded-2xl border border-dashed border-brand-gold/60 bg-brand-cream/70 p-6">
-                  <p className="font-sans text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold-deep">
+                  <p className="font-sans text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold-ink">
                     Note {i + 1}
                   </p>
                   <h3 className="mt-2 font-heading text-[17px] font-bold text-brand-purple">{n.issue}</h3>

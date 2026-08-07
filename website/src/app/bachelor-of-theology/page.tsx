@@ -120,7 +120,7 @@ export default function BachelorOfTheologyPage() {
         <dl className="mx-auto grid max-w-6xl grid-cols-2 gap-px bg-brand-sand/60 lg:grid-cols-3">
           {facts.map(([k, v]) => (
             <div key={k} className="bg-white px-6 py-5">
-              <dt className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-gold-deep">{k}</dt>
+              <dt className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-gold-ink">{k}</dt>
               <dd className="mt-1.5 font-heading text-[15px] font-bold leading-snug text-brand-purple">{v}</dd>
             </div>
           ))}
@@ -203,7 +203,7 @@ export default function BachelorOfTheologyPage() {
             <thead>
               <tr className="bg-brand-cream">
                 {['Year', 'Semester', 'Courses', 'Credits'].map((h) => (
-                  <th key={h} className="px-6 py-4 text-left font-sans text-[10px] font-bold uppercase tracking-[0.16em] text-brand-gold-deep">{h}</th>
+                  <th key={h} className="px-6 py-4 text-left font-sans text-[10px] font-bold uppercase tracking-[0.16em] text-brand-gold-ink">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -241,7 +241,7 @@ export default function BachelorOfTheologyPage() {
             <Reveal key={`${sem.year}-${sem.label}`} delay={si * 50}>
               <div>
                 <div className="flex items-baseline gap-3">
-                  <span className="font-sans text-[10px] font-bold uppercase tracking-[0.2em] text-brand-gold-deep">
+                  <span className="font-sans text-[10px] font-bold uppercase tracking-[0.2em] text-brand-gold-ink">
                     {sem.year}
                   </span>
                   <h3 className="font-heading text-xl font-bold text-brand-purple">{sem.label}</h3>
@@ -263,7 +263,7 @@ export default function BachelorOfTheologyPage() {
                           </span>
                         </summary>
                         <div className="px-6 pb-6 pl-[6.5rem]">
-                          <p className="mb-3 font-sans text-[10px] font-bold uppercase tracking-[0.16em] text-brand-gold-deep">
+                          <p className="mb-3 font-sans text-[10px] font-bold uppercase tracking-[0.16em] text-brand-gold-ink">
                             {c.units.length} units
                           </p>
                           <ol className="grid gap-x-6 gap-y-1.5 sm:grid-cols-2">

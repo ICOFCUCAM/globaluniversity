@@ -59,7 +59,7 @@ const PARTS = [
 function Part({ id, n, title, children }: { id: string; n: string; title: string; children: React.ReactNode }) {
   return (
     <section id={id} className="catalog-part scroll-mt-28 border-t border-brand-sand pt-12">
-      <p className="font-sans text-[11px] font-bold uppercase tracking-[0.22em] text-brand-gold-deep">
+      <p className="font-sans text-[11px] font-bold uppercase tracking-[0.22em] text-brand-gold-ink">
         Part {n}
       </p>
       <h2 className="mt-2 font-heading text-3xl font-bold text-brand-purple [text-wrap:balance]">{title}</h2>
@@ -97,7 +97,7 @@ function Bullets({ items }: { items: string[] }) {
 function AwaitingAdoption({ title, needs, body }: { title: string; needs: string[]; body: string }) {
   return (
     <div className="mt-6 rounded-2xl border border-dashed border-brand-gold/60 bg-brand-cream/70 p-6">
-      <p className="font-sans text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold-deep">
+      <p className="font-sans text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold-ink">
         In preparation
       </p>
       <h4 className="mt-2 font-heading text-lg font-bold text-brand-purple">{title}</h4>
@@ -212,7 +212,7 @@ export default function AcademicCatalogPage() {
               </div>
               <div className="flex-1">
                 <p className="font-heading text-lg font-bold text-brand-purple">{chancellor.name}</p>
-                <p className="mt-1 font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-gold-deep">
+                <p className="mt-1 font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-gold-ink">
                   {chancellor.role}
                 </p>
                 <p className="mt-2 text-sm text-brand-muted">{chancellor.credentials}</p>
@@ -229,7 +229,7 @@ export default function AcademicCatalogPage() {
               </div>
               <div className="flex-1">
                 <p className="font-heading text-lg font-bold text-brand-purple">{viceChancellor.name}</p>
-                <p className="mt-1 font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-gold-deep">
+                <p className="mt-1 font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-gold-ink">
                   {viceChancellor.role}
                 </p>
                 <p className="mt-3 text-[15px] leading-relaxed text-brand-muted">{viceChancellor.note}</p>
@@ -277,8 +277,8 @@ export default function AcademicCatalogPage() {
               <table className="w-full text-left text-[15px]">
                 <thead className="bg-brand-cream">
                   <tr>
-                    <th className="px-5 py-3 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-brand-gold-deep">Name</th>
-                    <th className="px-5 py-3 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-brand-gold-deep">Office</th>
+                    <th className="px-5 py-3 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-brand-gold-ink">Name</th>
+                    <th className="px-5 py-3 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-brand-gold-ink">Office</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-brand-sand/70">
@@ -326,7 +326,7 @@ export default function AcademicCatalogPage() {
             {facultyList.map((f) => (
               <div key={f.slug} className="mt-8 first:mt-0">
                 <h3 className="font-heading text-lg font-bold text-brand-purple">{f.name}</h3>
-                <p className="mt-1 font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-gold-deep">
+                <p className="mt-1 font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-gold-ink">
                   {f.campus}
                   {f.leadName ? ` · ${f.leadTitle ?? 'Dean'}: ${f.leadName}` : ''}
                 </p>
@@ -384,8 +384,8 @@ export default function AcademicCatalogPage() {
               <table className="w-full text-left text-[15px]">
                 <thead className="bg-brand-cream">
                   <tr>
-                    <th className="px-5 py-3 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-brand-gold-deep">Item</th>
-                    <th className="px-5 py-3 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-brand-gold-deep">Fee</th>
+                    <th className="px-5 py-3 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-brand-gold-ink">Item</th>
+                    <th className="px-5 py-3 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-brand-gold-ink">Fee</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-brand-sand/70">
@@ -418,8 +418,8 @@ export default function AcademicCatalogPage() {
               <table className="w-full min-w-[26rem] text-left text-[15px]">
                 <thead className="bg-brand-cream">
                   <tr>
-                    <th className="px-5 py-3 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-brand-gold-deep">Withdrawal within</th>
-                    <th className="px-5 py-3 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-brand-gold-deep">Refund</th>
+                    <th className="px-5 py-3 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-brand-gold-ink">Withdrawal within</th>
+                    <th className="px-5 py-3 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-brand-gold-ink">Refund</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-brand-sand/70">
@@ -465,7 +465,7 @@ export default function AcademicCatalogPage() {
                 <thead className="bg-brand-cream">
                   <tr>
                     {['Grade', 'Descriptor', 'Percentage', 'Points'].map((h) => (
-                      <th key={h} className="px-5 py-3 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-brand-gold-deep">{h}</th>
+                      <th key={h} className="px-5 py-3 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-brand-gold-ink">{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -600,7 +600,7 @@ export default function AcademicCatalogPage() {
                 )}
                 {g.levels.map((l) => (
                   <div key={l.level} className="mt-7">
-                    <h4 className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-brand-gold-deep">
+                    <h4 className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-brand-gold-ink">
                       {l.level}
                     </h4>
                     <div className="mt-3 space-y-5">
@@ -619,7 +619,7 @@ export default function AcademicCatalogPage() {
                 ))}
                 {g.courses.length > 0 && (
                   <div className="mt-7">
-                    <h4 className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-brand-gold-deep">
+                    <h4 className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-brand-gold-ink">
                       Course codes
                     </h4>
                     <div className="mt-3 overflow-hidden rounded-2xl border border-brand-sand">

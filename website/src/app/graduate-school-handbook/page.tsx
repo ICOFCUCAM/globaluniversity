@@ -24,7 +24,7 @@ const PARTS = [
 function Part({ id, n, title, children }: { id: string; n: string; title: string; children: React.ReactNode }) {
   return (
     <section id={id} className="catalog-part scroll-mt-28 border-t border-brand-sand pt-12">
-      <p className="font-sans text-[11px] font-bold uppercase tracking-[0.22em] text-brand-gold-deep">Part {n}</p>
+      <p className="font-sans text-[11px] font-bold uppercase tracking-[0.22em] text-brand-gold-ink">Part {n}</p>
       <h2 className="mt-2 font-heading text-3xl font-bold text-brand-purple [text-wrap:balance]">{title}</h2>
       <div className="mt-8">{children}</div>
     </section>
@@ -51,7 +51,7 @@ function List({ items }: { items: string[] }) {
 function Awaiting({ title, needs }: { title: string; needs: string[] }) {
   return (
     <div className="mt-6 rounded-2xl border border-dashed border-brand-gold/60 bg-brand-cream/70 p-6">
-      <p className="font-sans text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold-deep">In preparation</p>
+      <p className="font-sans text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold-ink">In preparation</p>
       <h3 className="mt-2 font-heading text-lg font-bold text-brand-purple">{title}</h3>
       <ul className="mt-4 space-y-2">
         {needs.map((n) => (
@@ -190,7 +190,7 @@ export default function GraduateSchoolHandbookPage() {
                   <h3 className="font-heading text-xl font-bold text-brand-purple">
                     {d.award} <span className="text-brand-gold-deep">({d.abbreviation})</span>
                   </h3>
-                  <p className="mt-1 font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-gold-deep">
+                  <p className="mt-1 font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-gold-ink">
                     {d.duration}
                   </p>
                   {d.overview.map((p, i) => (
@@ -202,7 +202,7 @@ export default function GraduateSchoolHandbookPage() {
                   </P>
                   <div className="mt-6 grid gap-6 sm:grid-cols-2">
                     <div className="rounded-2xl border border-brand-sand bg-brand-cream p-5">
-                      <p className="font-sans text-[10px] font-bold uppercase tracking-[0.16em] text-brand-gold-deep">
+                      <p className="font-sans text-[10px] font-bold uppercase tracking-[0.16em] text-brand-gold-ink">
                         Core courses
                       </p>
                       <ul className="mt-3 space-y-1.5">
@@ -212,7 +212,7 @@ export default function GraduateSchoolHandbookPage() {
                       </ul>
                     </div>
                     <div className="rounded-2xl border border-brand-sand bg-white p-5">
-                      <p className="font-sans text-[10px] font-bold uppercase tracking-[0.16em] text-brand-gold-deep">
+                      <p className="font-sans text-[10px] font-bold uppercase tracking-[0.16em] text-brand-gold-ink">
                         Elective courses (sample)
                       </p>
                       <ul className="mt-3 space-y-1.5">
@@ -255,7 +255,7 @@ export default function GraduateSchoolHandbookPage() {
           </Part>
 
           <Part id="methods" n="IV" title="Research Methodologies">
-            <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-gold-deep">
+            <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-gold-ink">
               Module {thesisModule.code}
             </p>
             <h3 className="mt-2 font-heading text-xl font-bold text-brand-purple">{thesisModule.title}</h3>

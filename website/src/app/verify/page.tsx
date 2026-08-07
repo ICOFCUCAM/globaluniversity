@@ -71,7 +71,7 @@ function VerifyInner() {
 
   return (
     <div className="mx-auto max-w-xl px-4 py-20 text-center">
-      <p className="mb-5 inline-flex items-center gap-2.5 rounded-full border border-brand-gold-deep/30 bg-brand-cream px-4 py-1.5 font-sans text-[10px] font-semibold uppercase tracking-[0.2em] text-brand-gold-deep">
+      <p className="mb-5 inline-flex items-center gap-2.5 rounded-full border border-brand-gold-deep/30 bg-brand-cream px-4 py-1.5 font-sans text-[10px] font-semibold uppercase tracking-[0.2em] text-brand-gold-ink">
         <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-brand-gold-deep" />
         Official verification
       </p>
@@ -103,7 +103,7 @@ function VerifyInner() {
             onSubmit={(e) => { e.preventDefault(); void lookUpNumber(number); }}
             className="mt-7 rounded-2xl border border-brand-sand bg-white p-5"
           >
-            <label htmlFor="credential-number" className="block font-sans text-[11px] font-bold uppercase tracking-[0.14em] text-brand-gold-deep">
+            <label htmlFor="credential-number" className="block font-sans text-[11px] font-bold uppercase tracking-[0.14em] text-brand-gold-ink">
               Credential number
             </label>
             <div className="mt-2 flex flex-wrap gap-2">

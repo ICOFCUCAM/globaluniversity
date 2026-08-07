@@ -682,7 +682,7 @@ export default function ApplyForm() {
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-brand-gold-deep">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-brand-gold-ink">
                 Application for admission
               </p>
               <p className="mt-1 font-heading text-xl font-bold text-brand-purple">

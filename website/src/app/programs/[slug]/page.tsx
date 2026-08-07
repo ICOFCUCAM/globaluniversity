@@ -94,7 +94,7 @@ export default async function ProgramDetailPage({ params }: { params: { slug: st
         <Section className="bg-white">
           <div className="mx-auto max-w-4xl">
             <h2 className="font-heading text-2xl font-bold text-brand-purple">Course Structure</h2>
-            <p className="mt-2 font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-gold-deep">
+            <p className="mt-2 font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-gold-ink">
               {curriculum.duration} · {curriculum.terms.reduce((n, t) => n + t.courses.length, 0)} courses
             </p>
             {curriculum.note && (
@@ -121,7 +121,7 @@ export default async function ProgramDetailPage({ params }: { params: { slug: st
                 <div key={term.label} className="mt-10">
                   <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-brand-sand pb-2">
                     <h3 className="font-heading text-lg font-bold text-brand-purple">{term.label}</h3>
-                    <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.12em] text-brand-gold-deep">
+                    <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.12em] text-brand-gold-ink">
                       {term.courses.length} courses
                       {total !== undefined ? ` · ${total} ${curriculum.creditUnit}` : ''}
                     </p>
@@ -133,7 +133,7 @@ export default async function ProgramDetailPage({ params }: { params: { slug: st
                           <span className="font-mono text-xs font-bold text-brand-gold-deep">{c.code}</span>
                           <span className="font-heading text-[16px] font-bold text-brand-purple">{c.title}</span>
                           {c.credits !== undefined && (
-                            <span className="rounded-full bg-brand-cream px-2.5 py-0.5 font-sans text-[10px] font-bold uppercase tracking-[0.1em] text-brand-gold-deep">
+                            <span className="rounded-full bg-brand-cream px-2.5 py-0.5 font-sans text-[10px] font-bold uppercase tracking-[0.1em] text-brand-gold-ink">
                               {c.credits} {curriculum.creditUnit === 'ECTS' ? 'ECTS' : 'cr'}
                             </span>
                           )}
@@ -184,7 +184,7 @@ export default async function ProgramDetailPage({ params }: { params: { slug: st
                   <Image src={p.image} alt={p.title} fill className="object-cover transition duration-500 group-hover:scale-105" sizes="(min-width:640px) 33vw, 100vw" />
                 </div>
                 <div className="p-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-brand-gold-deep">{p.level}</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-brand-gold-ink">{p.level}</p>
                   <p className="mt-0.5 font-heading text-sm font-semibold text-brand-purple">{p.title}</p>
                 </div>
               </Link>

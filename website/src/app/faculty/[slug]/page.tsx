@@ -207,7 +207,7 @@ export default function FacultyDetailPage({ params }: { params: { slug: string }
             {stats.map(([v, k]) => (
               <div key={k} className="bg-white px-6 py-6 text-center">
                 <dd className="font-heading text-3xl font-bold tabular text-brand-purple">{v}</dd>
-                <dt className="mt-1 font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-gold-deep">
+                <dt className="mt-1 font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-gold-ink">
                   {k}
                 </dt>
               </div>
@@ -263,7 +263,7 @@ export default function FacultyDetailPage({ params }: { params: { slug: string }
                   )}
                   <figcaption className="mt-4">
                     <p className="font-heading text-lg font-bold leading-snug text-brand-purple">{lead.name}</p>
-                    <p className="mt-1 font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-gold-deep">
+                    <p className="mt-1 font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-gold-ink">
                       {f.leadTitle ?? lead.role} · {f.shortName}
                     </p>
                   </figcaption>
@@ -444,7 +444,7 @@ export default function FacultyDetailPage({ params }: { params: { slug: string }
                     {i + 1}
                   </span>
                   <div className="flex-1 pt-1">
-                    <h3 className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-brand-gold-deep">
+                    <h3 className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-brand-gold">
                       {rung.level}
                     </h3>
                     <ul className="mt-3 flex flex-wrap gap-2.5">
@@ -467,7 +467,7 @@ export default function FacultyDetailPage({ params }: { params: { slug: string }
                             className="inline-flex items-center gap-2 rounded-full border border-dashed border-brand-sand px-4 py-2 font-heading text-sm font-semibold text-brand-muted"
                           >
                             {a.title}
-                            <span className="font-sans text-[9px] font-bold uppercase tracking-[0.12em] text-brand-gold-deep">
+                            <span className="font-sans text-[9px] font-bold uppercase tracking-[0.12em] text-brand-gold-ink">
                               Details to follow
                             </span>
                           </li>
@@ -598,7 +598,7 @@ export default function FacultyDetailPage({ params }: { params: { slug: string }
                   {c.level}
                 </span>
                 {c.online && (
-                  <span className="rounded-full bg-white px-2.5 py-1 font-sans text-[9px] font-bold uppercase tracking-[0.12em] text-brand-gold-deep">
+                  <span className="rounded-full bg-white px-2.5 py-1 font-sans text-[9px] font-bold uppercase tracking-[0.12em] text-brand-gold-ink">
                     Online
                   </span>
                 )}
@@ -704,7 +704,7 @@ export default function FacultyDetailPage({ params }: { params: { slug: string }
               ['Telephone', contact.phone],
             ].map(([k, v]) => (
               <div key={k} className="rounded-2xl border border-brand-sand bg-brand-cream p-6">
-                <p className="font-sans text-[10px] font-bold uppercase tracking-[0.16em] text-brand-gold-deep">{k}</p>
+                <p className="font-sans text-[10px] font-bold uppercase tracking-[0.16em] text-brand-gold-ink">{k}</p>
                 <p className="mt-2 text-[15px] leading-relaxed text-brand-purple">{v}</p>
               </div>
             ))}

@@ -45,7 +45,7 @@ export default async function AboutPage() {
                   />
                 </div>
                 <h3 className="mt-5 font-heading text-lg font-bold text-brand-purple">{person.name}</h3>
-                <p className="mt-0.5 font-sans text-[11px] font-semibold uppercase tracking-[0.1em] text-brand-gold-deep">
+                <p className="mt-0.5 font-sans text-[11px] font-semibold uppercase tracking-[0.1em] text-brand-gold-ink">
                   {person.role}
                 </p>
                 <p className="mt-2.5 text-sm leading-relaxed text-brand-muted">{person.bio}</p>

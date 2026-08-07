@@ -27,7 +27,7 @@ const PARTS = [
 function Part({ id, n, title, children }: { id: string; n: string; title: string; children: React.ReactNode }) {
   return (
     <section id={id} className="catalog-part scroll-mt-28 border-t border-brand-sand pt-12">
-      <p className="font-sans text-[11px] font-bold uppercase tracking-[0.22em] text-brand-gold-deep">Part {n}</p>
+      <p className="font-sans text-[11px] font-bold uppercase tracking-[0.22em] text-brand-gold-ink">Part {n}</p>
       <h2 className="mt-2 font-heading text-3xl font-bold text-brand-purple [text-wrap:balance]">{title}</h2>
       <div className="mt-8">{children}</div>
     </section>
@@ -54,7 +54,7 @@ function Rules({ items }: { items: string[] }) {
 function Awaiting({ title, needs }: { title: string; needs: string[] }) {
   return (
     <div className="mt-6 rounded-2xl border border-dashed border-brand-gold/60 bg-brand-cream/70 p-6">
-      <p className="font-sans text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold-deep">In preparation</p>
+      <p className="font-sans text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold-ink">In preparation</p>
       <h3 className="mt-2 font-heading text-lg font-bold text-brand-purple">{title}</h3>
       <ul className="mt-4 space-y-2">
         {needs.map((n) => (
@@ -210,8 +210,8 @@ export default function StudentHandbookPage() {
               <table className="w-full min-w-[26rem] text-left text-[15px]">
                 <thead className="bg-brand-cream">
                   <tr>
-                    <th className="px-5 py-3 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-brand-gold-deep">Withdrawal within</th>
-                    <th className="px-5 py-3 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-brand-gold-deep">Refund</th>
+                    <th className="px-5 py-3 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-brand-gold-ink">Withdrawal within</th>
+                    <th className="px-5 py-3 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-brand-gold-ink">Refund</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-brand-sand/70">

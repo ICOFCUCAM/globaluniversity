@@ -59,7 +59,7 @@ export default function ErpPage() {
           ].map(([v, k]) => (
             <div key={k} className="bg-white px-6 py-6 text-center">
               <dd className="font-heading text-3xl font-bold tabular text-brand-purple">{v}</dd>
-              <dt className="mt-1 font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-gold-deep">
+              <dt className="mt-1 font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-gold-ink">
                 {k}
               </dt>
             </div>
@@ -109,7 +109,7 @@ export default function ErpPage() {
             for people who already know it, never the only thing carrying the meaning.
           </p>
 
-          <h3 className="mt-10 font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-brand-gold-deep">
+          <h3 className="mt-10 font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-brand-gold-ink">
             The forward path
           </h3>
           <ol className="mt-5 space-y-3">
@@ -134,7 +134,7 @@ export default function ErpPage() {
             ))}
           </ol>
 
-          <h3 className="mt-10 font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-brand-gold-deep">
+          <h3 className="mt-10 font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-brand-gold-ink">
             Outcomes
           </h3>
           <ul className="mt-5 space-y-3">
@@ -195,7 +195,7 @@ export default function ErpPage() {
                   </div>
                   <div className="grid gap-6 bg-white px-6 py-5 sm:grid-cols-3">
                     <div>
-                      <p className="font-sans text-[10px] font-bold uppercase tracking-[0.16em] text-brand-gold-deep">Specified</p>
+                      <p className="font-sans text-[10px] font-bold uppercase tracking-[0.16em] text-brand-gold-ink">Specified</p>
                       <ul className="mt-3 space-y-1.5">
                         {m.functions.map((f) => (
                           <li key={f} className="text-[13px] leading-relaxed text-brand-muted">{f}</li>
