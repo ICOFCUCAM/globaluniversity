@@ -4,7 +4,6 @@ import HeroScene from '@/components/home/HeroScene';
 import { getPrograms } from '@/lib/data';
 import { site } from '@/content/site';
 import ScrollRail from '@/components/ScrollRail';
-import ProofBand from '@/components/home/ProofBand';
 import PathwayLadder from '@/components/home/PathwayLadder';
 import FacultyScenes from '@/components/home/FacultyScenes';
 import { facultyById, programmesByFaculty } from '@/content/programmeCatalogue';
@@ -120,12 +119,20 @@ export default async function HomePage() {
           read a sentence. It cost 0.16 of a screen and taught nobody
           anything. */}
 
-      {/* The proof band. A visitor's second question — after "what is this
-          place for" — is "why should I believe you", and nothing answered it
-          above the fold. Every figure is computed from the catalogue rather
-          than typed; see ProofBand for what was there before and why it had to
-          go. */}
-      <ProofBand />
+      {/* THE PROOF BAND IS GONE FROM HERE, AND ITS NUMBERS ARE NOT.
+
+          It was a statistics scoreboard on cream, first after the hero, and it
+          was one of the three sections the university called not good. The
+          position is the most valuable on the page and it was spending it on
+          four figures presented to somebody who had not yet been given a reason
+          to care how many programmes there are.
+
+          The figures themselves were never the problem — they are the only
+          numbers on this site that can be evidenced, all counted by
+          institutionalFacts() rather than typed. They now carry the OPAQUE
+          middle plane of the triptych, framed by the world map on either side,
+          where a reader meets them having already been told what this place
+          claims to be. See Triptych.tsx. */}
 
       {/* The About band is gone. It said the university was born of the
           International Circle of Faith and pointed at /about — which is exactly

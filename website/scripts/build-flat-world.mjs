@@ -175,75 +175,164 @@ const area = (pts) => {
   return Math.abs(a / 2);
 };
 
-const topo = JSON.parse(readFileSync(join(root, 'node_modules/world-atlas/land-50m.json'), 'utf8'));
-const land = feature(topo, topo.objects.land);
+const load = (file, key) => {
+  const topo = JSON.parse(readFileSync(join(root, `node_modules/world-atlas/${file}`), 'utf8'));
+  return feature(topo, topo.objects[key]);
+};
 
-const polygons = [];
-for (const geom of land.type === 'FeatureCollection' ? land.features : [land]) {
-  const g = geom.geometry || geom;
-  const list = g.type === 'MultiPolygon' ? g.coordinates : [g.coordinates];
-  for (const poly of list) polygons.push(...poly);
-}
+const ringsOf = (fc) => {
+  const out = [];
+  for (const geom of fc.type === 'FeatureCollection' ? fc.features : [fc]) {
+    const g = geom.geometry || geom;
+    if (!g) continue;
+    const list = g.type === 'MultiPolygon' ? g.coordinates : [g.coordinates];
+    for (const poly of list) out.push(...poly);
+  }
+  return out;
+};
 
-let kept = 0;
-let dropped = 0;
-let points = 0;
-const paths = [];
+const polygons = ringsOf(load('land-50m.json', 'land'));
 
-for (const ring of polygons) {
-  const clipped = clipSouth(ring);
-  if (clipped.length < 4) {
-    dropped++;
-    continue;
+// ---------------------------------------------------------------------------
+// THE BORDERS.
+//
+// Coastline alone answers "is this the world". Borders answer "is this a map",
+// and at the size this is drawn — a whole viewport — the difference is the
+// difference between a logo and a document. Africa in outline is a shape; Africa
+// with its fifty-four countries in it is a place where things happen.
+//
+// Drawn from the country rings rather than from a separate boundary layer,
+// because the country outlines include the coast: stroked at a lower opacity
+// and UNDER the coastline, the shared edges simply reinforce the coast and the
+// interior edges become the borders. One dataset, no seam-matching, and no
+// possibility of a border that misses its own coastline by half a pixel.
+// ---------------------------------------------------------------------------
+const countryRings = ringsOf(load('countries-50m.json', 'countries'));
+
+const build = (rings, { tol, minArea }) => {
+  const paths = [];
+  let kept = 0;
+  let dropped = 0;
+  let points = 0;
+  for (const ring of rings) {
+    const clipped = clipSouth(ring);
+    if (clipped.length < 4) {
+      dropped++;
+      continue;
+    }
+    const projected = simplify(densify(clipped).map(([lon, lat]) => project(lon, lat)), tol);
+    if (projected.length < 4 || area(projected) < minArea) {
+      dropped++;
+      continue;
+    }
+    kept++;
+    points += projected.length;
+    paths.push('M' + projected.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join('L') + 'Z');
   }
-  const projected = simplify(
-    densify(clipped).map(([lon, lat]) => project(lon, lat)),
-    0.6,
-  );
-  if (projected.length < 4) {
-    dropped++;
-    continue;
-  }
-  // Below roughly a 3-unit square at 2000 across, an island is smaller than the
-  // coastline stroke that would draw it.
-  if (area(projected) < 9) {
-    dropped++;
-    continue;
-  }
-  kept++;
-  points += projected.length;
-  paths.push('M' + projected.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join('L') + 'Z');
-}
+  return { d: paths.join(' '), kept, dropped, points };
+};
+
+// The coastline carries the finer tolerance because it is the line the eye
+// reads; the borders are texture and can be coarser without anyone noticing,
+// which keeps a fifty-fold increase in ring count from becoming a fifty-fold
+// increase in bytes. Islands below roughly a 3-unit square at 2000 across are
+// smaller than the stroke that would draw them.
+const coast = build(polygons, { tol: 0.45, minArea: 6 });
+const borders = build(countryRings, { tol: 1.1, minArea: 26 });
 
 const GOLD = '#f7dc79';
 
-// The graticule. Four parallels and twelve meridians — enough to read as a map,
-// not enough to become a radar screen, which is the commonest way this
-// projection is spoiled.
-const parallels = [60, 30, 0, -30]
-  .map((lat) => `<circle cx="${C}" cy="${C}" r="${(((90 - lat) / (90 - SOUTH_CUT)) * R).toFixed(1)}"/>`)
+const rAt = (lat) => (((90 - lat) / (90 - SOUTH_CUT)) * R).toFixed(1);
+
+// ---------------------------------------------------------------------------
+// THE GRATICULE, IN TWO WEIGHTS.
+//
+// The commonest way this projection is spoiled is a dense even net — it stops
+// being a world and becomes a radar screen. But an even net is also mute: every
+// circle says the same thing, so none of them says anything.
+//
+// So the lines are ranked. The equator is drawn heavier than its neighbours
+// because it is the one parallel a reader can name; the tropics and the Arctic
+// Circle are drawn dashed and fainter, because they are real lines with real
+// meaning that must not compete with the coast. Twenty-four meridians rather
+// than twelve, at half the weight — dense enough to model a sphere, light
+// enough to stay behind the land.
+// ---------------------------------------------------------------------------
+const equator = `<circle cx="${C}" cy="${C}" r="${rAt(0)}" stroke="${GOLD}" stroke-opacity="0.30" stroke-width="2.4" fill="none"/>`;
+
+const plainParallels = [75, 60, 45, 30, 15, -15, -30, -45]
+  .map((lat) => `<circle cx="${C}" cy="${C}" r="${rAt(lat)}"/>`)
   .join('');
-const meridians = Array.from({ length: 12 }, (_, i) => {
-  const [x, y] = project(i * 30, SOUTH_CUT);
+
+// 23.44° and 66.56° — the tropics and the polar circle, the only parallels on
+// a map that are consequences of the planet rather than conveniences of tens.
+const named = [23.44, -23.44, 66.56]
+  .map((lat) => `<circle cx="${C}" cy="${C}" r="${rAt(lat)}"/>`)
+  .join('');
+
+const meridians = Array.from({ length: 24 }, (_, i) => {
+  const [x, y] = project(i * 15, SOUTH_CUT);
   return `<line x1="${C}" y1="${C}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"/>`;
+}).join('');
+
+// ---------------------------------------------------------------------------
+// WHERE THIS UNIVERSITY ACTUALLY TEACHES FROM.
+//
+// Three marks, and no more. Buea and Douala are campuses; the Nigerian site is
+// a professional development centre. There is no mark for a country a student
+// merely lives in and none for a country the fellowship reaches — a mark on a
+// map reads as an establishment, and putting one where there is no
+// establishment is the easiest false claim a university website can make and
+// the hardest for a reader to catch.
+//
+// Kept in step with UNIVERSITY_PLACES in src/lib/flatWorld.ts.
+// ---------------------------------------------------------------------------
+const PLACES = [
+  { lon: 9.24, lat: 4.16 },
+  { lon: 9.71, lat: 4.05 },
+  { lon: 7.49, lat: 9.06 },
+];
+const places = PLACES.map(({ lon, lat }) => {
+  const [x, y] = project(lon, lat);
+  return (
+    `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="7" fill="${GOLD}" fill-opacity="0.95"/>` +
+    `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="20" fill="none" stroke="${GOLD}" stroke-opacity="0.5" stroke-width="2.5"/>` +
+    `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="40" fill="none" stroke="${GOLD}" stroke-opacity="0.2" stroke-width="2"/>`
+  );
 }).join('');
 
 const svg =
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${S} ${S}" width="${S}" height="${S}" fill="none" role="presentation">` +
-  `<defs><radialGradient id="sea" cx="50%" cy="46%" r="62%">` +
+  `<defs>` +
+  `<radialGradient id="sea" cx="50%" cy="46%" r="62%">` +
   `<stop offset="0%" stop-color="${GOLD}" stop-opacity="0.10"/>` +
   `<stop offset="100%" stop-color="${GOLD}" stop-opacity="0.02"/>` +
-  `</radialGradient></defs>` +
+  `</radialGradient>` +
+  // The land is lit from the pole outward rather than filled flat, so the disc
+  // reads as a sphere seen from above instead of a sticker.
+  `<radialGradient id="landfill" cx="50%" cy="50%" r="60%">` +
+  `<stop offset="0%" stop-color="${GOLD}" stop-opacity="0.26"/>` +
+  `<stop offset="100%" stop-color="${GOLD}" stop-opacity="0.10"/>` +
+  `</radialGradient>` +
+  `</defs>` +
   `<circle cx="${C}" cy="${C}" r="${R.toFixed(1)}" fill="url(#sea)"/>` +
-  `<g stroke="${GOLD}" stroke-opacity="0.22" stroke-width="2" fill="none">${parallels}${meridians}</g>` +
-  `<path d="${paths.join(' ')}" fill="${GOLD}" fill-opacity="0.16" fill-rule="evenodd" ` +
-  `stroke="${GOLD}" stroke-opacity="0.72" stroke-width="2.2" stroke-linejoin="round"/>` +
+  `<g stroke="${GOLD}" stroke-opacity="0.13" stroke-width="1.4" fill="none">${plainParallels}${meridians}</g>` +
+  `<g stroke="${GOLD}" stroke-opacity="0.20" stroke-width="1.6" stroke-dasharray="10 14" fill="none">${named}</g>` +
+  equator +
+  // Borders UNDER the coast, so shared edges reinforce the coastline instead of
+  // doubling it, and only the interior lines read as borders.
+  `<path d="${borders.d}" fill="none" stroke="${GOLD}" stroke-opacity="0.26" stroke-width="1.5" stroke-linejoin="round"/>` +
+  `<path d="${coast.d}" fill="url(#landfill)" fill-rule="evenodd" ` +
+  `stroke="${GOLD}" stroke-opacity="0.78" stroke-width="2.2" stroke-linejoin="round"/>` +
   `<circle cx="${C}" cy="${C}" r="${R.toFixed(1)}" stroke="${GOLD}" stroke-width="3.5" stroke-opacity="0.6"/>` +
+  places +
   `</svg>`;
 
 mkdirSync(join(root, 'public/images'), { recursive: true });
 writeFileSync(join(root, 'public/images/flat-world.svg'), svg);
 
 console.log(
-  `flat-world.svg  ${kept} rings, ${points} points, ${(svg.length / 1024).toFixed(0)}KB  (${dropped} rings below the ink)`,
+  `flat-world.svg  coast ${coast.kept} rings / ${coast.points} points, ` +
+    `borders ${borders.kept} rings / ${borders.points} points, ` +
+    `${(svg.length / 1024).toFixed(0)}KB`,
 );

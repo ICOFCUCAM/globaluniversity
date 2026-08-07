@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Grain } from '@/components/Atmosphere';
+import { institutionalFacts } from '@/content/institutionalFacts';
 
 // ---------------------------------------------------------------------------
 // THE SIGNATURE COMPOSITION — one photograph held still, three blocks driven
@@ -116,6 +117,17 @@ const plate = (at: string) =>
   ' rgba(16,8,34,0) 100%)';
 
 export default function Triptych() {
+  const facts = institutionalFacts();
+  // Found by label rather than by index, so a reordering of institutionalFacts()
+  // cannot silently promote the wrong number to seven rem. The programme count
+  // leads because it answers the question a prospective student actually has —
+  // is there enough here for me — and because it is the one figure that grows
+  // every time the university opens a course.
+  const lead = facts.find((f) => /programme/i.test(f.label)) ?? facts[0];
+  const rest = facts.filter((f) => f !== lead);
+  const facultyCount = facts.find((f) => /faculties/i.test(f.label))?.value ?? '';
+  const established = facts.find((f) => /established/i.test(f.label))?.value ?? '';
+
   return (
     <section
       data-on-dark=""
@@ -195,7 +207,7 @@ export default function Triptych() {
           bg-brand-purple-dark with no transparency anywhere in it. This is the
           block that hides the fixed picture, and it is the only one that has a
           background at all. */}
-      <div className="relative flex min-h-[62svh] items-center bg-brand-purple-dark lg:min-h-[66svh]">
+      <div className="relative flex min-h-[86svh] items-center bg-brand-purple-dark lg:min-h-[92svh]">
         {/* The two seams. Short — 5rem — so the plane still reads as a plane.
             Any longer and the purple becomes a fade, which is the opposite of
             an interruption. They hang outside the block, over the transparent
@@ -218,44 +230,100 @@ export default function Triptych() {
         />
 
         {/* ==================================================================
-            WHAT THIS BLOCK USED TO BE, AND WHY IT IS NOT THAT ANY MORE.
+            TWO SLOGANS HAVE STOOD HERE AND BOTH WERE ASKED TO GO.
 
-            NOBILITY. PROFESSIONALISM. GODLINESS. stood here in three stacked
-            lines at up to 6rem — the largest type anywhere on this site. The
-            university's instruction was plain:
+            FIRST: NOBILITY. PROFESSIONALISM. GODLINESS., three stacked lines at
+            up to 6rem — the largest type anywhere on this site.
 
                 "This concept of nobility professionality and Godliness must be
                  complete reduce to a single Line not so much significant."
 
-            It is right, and the reason is worth keeping. Three abstract nouns
-            at display size make a claim no reader can check. Set that large,
-            they are the loudest thing on the page and the emptiest — a motto
-            occupying the position of an argument. Every institution has three
-            such words; none of them distinguishes anything.
+            THEN: "Education is owed, not sold", which was smaller and better
+            written and still the same species of thing.
 
-            So the motto is now ONE quiet line at 11px, below the statement,
-            where a motto belongs: present, attributable, and not pretending to
-            be the reason anybody should come here.
+                "the sections where we find the words nobilty professionalism
+                 and godliness and Education is owned and not sold should be
+                 replace with any of the sections with informations and not
+                 what i see"
 
-            THE STATEMENT THAT REPLACED IT IS NOT NEW COPY. "Education owed, not
-            sold" was the Nobility panel of the convictions band — the block the
-            university has now asked to be removed from the homepage. It is the
-            one line in that band that says something falsifiable about how this
-            place behaves, so it survives the block it came from, compressed to
-            a sentence. That is what "compress it" looks like when it is done to
-            the argument rather than to the type size.
+            The second note is the one that identifies what was actually wrong,
+            and it is not the size of the type. This is the OPAQUE plane in the
+            middle of a pinned map — the one moment the reader is held still
+            with nothing else to look at, and the most expensive position on the
+            homepage. Spending it on a sentence that cannot be checked is the
+            waste. Every university believes in nobility; every university would
+            say education is owed. A reader learns nothing from either, and a
+            reader who has just been shown a world map is owed something better
+            than a motto in return for stopping.
+
+            SO IT CARRIES THE FACTS, and they are the only ones on this site
+            that can be evidenced. Every figure is COUNTED by
+            institutionalFacts() from the published catalogue, the faculty list,
+            the staff rosters and the founding year — nothing here is typed in,
+            so nothing here can drift out of step with the prospectus or age on
+            the front page the way "15 Years Experience" did.
+
+            This absorbs the At a glance band, which was the first section after
+            the hero and one of the three the university called not good. It was
+            a scoreboard on cream in the position that should have been carrying
+            the argument. The numbers are better here: framed by the world
+            rather than announced at a visitor who has not yet been given a
+            reason to care how many programmes there are.
+
+            The motto survives as ONE 11px line at the foot, which is where a
+            motto belongs — present and attributable, not pretending to be the
+            reason anybody should come.
             ================================================================== */}
-        <div className="mx-auto w-full max-w-4xl px-6 py-24 text-center sm:px-10 lg:px-16">
-          <p className="font-heading text-[clamp(2rem,5.2vw,4rem)] font-bold leading-[1.06] tracking-[-0.03em] [text-wrap:balance]">
-            Education is owed, not sold.
+        <div className="mx-auto w-full max-w-5xl px-6 py-24 text-center sm:px-10 lg:px-16">
+          <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.34em] text-brand-gold">
+            {lead.label}
           </p>
-          <p className="mx-auto mt-9 max-w-xl text-[15.5px] leading-relaxed text-white/75 sm:text-[16.5px]">
-            Accredited higher education within reach of working adults, ministers and
-            first-generation students — in Cameroon, across Africa, and anywhere a
-            connection reaches.
+          <p className="mt-4 font-heading text-[clamp(4rem,10vw,7.5rem)] font-bold leading-[0.85] tracking-[-0.045em]">
+            {lead.value}
           </p>
+          <p className="mx-auto mt-7 max-w-2xl font-heading text-[clamp(1.15rem,2.3vw,1.6rem)] font-bold leading-snug [text-wrap:balance]">
+            across {facultyCount} schools and faculties, taught in Buea, Douala and online
+            worldwide.
+          </p>
+
+          {/* The rest, small and in one row. They are context for the figure
+              above, so they are set as context rather than as rivals to it —
+              four numbers at equal weight is a scoreboard, and a reader ranks a
+              scoreboard by reading none of it. */}
+          <dl className="mx-auto mt-14 flex max-w-3xl flex-wrap justify-center gap-x-14 gap-y-8 border-t border-white/15 pt-10">
+            {rest.map((f) => (
+              <div key={f.label} title={f.source}>
+                <dt className="sr-only">{f.label}</dt>
+                <dd>
+                  <span className="block font-heading text-[26px] font-bold leading-none">
+                    {f.value}
+                  </span>
+                  <span className="mt-2.5 block max-w-[10rem] font-sans text-[10.5px] font-semibold uppercase leading-snug tracking-[0.16em] text-white/60">
+                    {f.label}
+                  </span>
+                </dd>
+              </div>
+            ))}
+          </dl>
+
+          <p className="mx-auto mt-12 max-w-2xl text-[15px] leading-relaxed text-white/75">
+            Accredited by the Ministry of Higher Education of Cameroon since {established}.
+            Every figure here is counted from the university&rsquo;s own catalogue and
+            rosters, never estimated.
+          </p>
+
+          <Link
+            href="/accreditation"
+            className="group mt-9 inline-flex items-center gap-3 rounded-full border-2 border-white/30 px-7 py-3.5 font-heading text-[14.5px] font-bold text-white transition duration-300 hover:border-brand-gold hover:text-brand-gold"
+          >
+            Recognition and accreditation
+            <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">
+              →
+            </span>
+          </Link>
+
           {/* The motto. One line, 11px, and deliberately no larger. */}
-          <p className="mt-14 font-sans text-[11px] font-semibold uppercase tracking-[0.34em] text-brand-gold">
+          <p className="mt-16 font-sans text-[11px] font-semibold uppercase tracking-[0.34em] text-brand-gold">
             Nobility · Professionalism · Godliness
           </p>
         </div>
