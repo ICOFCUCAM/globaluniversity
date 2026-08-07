@@ -6,6 +6,7 @@ import { Section, SectionHeading } from '@/components/Section';
 import PageBanner from '@/components/PageBanner';
 import Cta from '@/components/Cta';
 import { getPrograms } from '@/lib/data';
+import ProgrammeFinder from '@/components/home/ProgrammeFinder';
 
 export const metadata = { title: 'Programs & Degrees' };
 
@@ -16,6 +17,18 @@ export default async function ProgramsPage() {
   return (
     <>
       <PageBanner title="Programs & Degrees" image="/images/graduation.jpg" />
+
+      {/* THE PROGRAMME FINDER, restored to the page it belongs on.
+          It was removed from the homepage — correctly, because a homepage that
+          contains the Programs page has stopped being a front door — and the
+          commit that removed it said it was "untouched at /programs". That was
+          wrong: this page was a plain server-rendered catalogue with no
+          filtering, so taking the finder off the homepage deleted the best
+          interaction on the site rather than moving it.
+          Caught by a pre-merge check of whether the destination pages actually
+          carried what they were said to carry. */}
+      <ProgrammeFinder />
+
       <Section>
         <SectionHeading eyebrow="Degrees & Programs">Course catalog</SectionHeading>
         <p className="mx-auto mb-12 max-w-3xl text-center text-brand-muted">

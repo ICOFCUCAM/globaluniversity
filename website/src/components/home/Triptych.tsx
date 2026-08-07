@@ -116,40 +116,54 @@ export default function Triptych() {
           className="absolute inset-0 -z-10"
           style={{ background: 'linear-gradient(180deg, rgba(140,108,214,0.30) 0%, rgba(112,80,186,0.40) 100%)' }}
         />
-        {/* THE PLATE, and why it has to be this strong.
-            The tint is deliberately light so the photograph stays luminous —
-            which puts the gold eyebrow on a lavender ground at 2.04:1 against a
-            4.5 requirement. Gold is a light ink; on a light tint it has nowhere
-            to go. The plate is therefore doing ALL of the contrast work, and it
-            is sized to the copy rather than to the block: 62% wide, feathered to
-            nothing well before the frame edge, so the photograph at the margins
-            is untouched and only the corner carrying words goes dark. */}
+        {/* THE PLATE — AND THE MISTAKE IT WAS TALKED INTO.
+            When the gold eyebrow measured 2.04:1 the response was to drive this
+            plate from 0.70 to 0.86 to 0.94, which is a near-black wash: the
+            photograph was buried to rescue one 11px label. That is precisely
+            the fault this university corrected once already on the fixed-window
+            bands — a picture dimmed until it is safe to set text on is not a
+            picture — and it was repeated here, with a comment praising the
+            plate for "doing all the contrast work" while it did the damage.
+            The contrast was then actually solved by changing the INK: white
+            instead of gold, 5.12:1. Once the ink carried it the plate had no
+            job left, and it should have come straight back down. It is 0.56
+            now — enough to seat the words, light enough that the robes and
+            faces behind them still read.
+            The lesson, written where the next person will hit it: when a light
+            ground fails a light ink, change the ink. Darkening the ground is
+            the answer that always works and always costs the photograph. */}
         <div
           aria-hidden="true"
           className="absolute inset-0 -z-10"
           style={{
             background:
-              'radial-gradient(ellipse 62% 68% at 24% 78%, rgba(9,4,20,0.94) 0%, rgba(12,6,26,0.74) 46%, rgba(16,8,34,0.18) 78%, rgba(16,8,34,0) 100%)',
+              'radial-gradient(ellipse 62% 68% at 24% 78%, rgba(11,5,24,0.56) 0%, rgba(14,7,30,0.34) 48%, rgba(16,8,34,0.10) 78%, rgba(16,8,34,0) 100%)',
           }}
         />
 
         <div className="mx-auto w-full max-w-7xl px-6 pb-20 sm:px-10 lg:px-16 lg:pb-24">
           <div className="max-w-xl">
-            {/* WHITE, NOT GOLD, and only in the two photographic blocks.
-                With the tint kept light enough for the photograph to read, gold
-                on it measured 4.26:1 against a 4.5 requirement — and the only
-                way to close that with gold was to darken the plate until the
-                picture went, which is the one thing this composition exists to
-                avoid. White on the same ground is 5.12:1.
-                It is also better discipline: gold now appears once in this
-                composition, on the purple plane, where nothing competes with
-                it. A colour used everywhere is not an accent. */}
-            <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.34em] text-white/95">
-              Who we are
-            </p>
+            {/* NO EYEBROW HERE, and the reason is the whole argument of this
+                composition.
+
+                It read "Who we are" at 11px. On a tint light enough for the
+                photograph to stay luminous it measured 2.04:1 in gold and
+                3.12:1 in white, against a 4.5 requirement — and white is the
+                lightest ink there is. Neither the ink nor the ground had
+                anywhere left to go.
+
+                Which means small text simply cannot live on a luminous
+                photograph. The brief asked for "a small amount of LARGE
+                editorial text over the image", and that is not a stylistic
+                preference: it is the only kind of text the treatment can carry.
+                The heading below is 3.8rem and clears its requirement easily.
+
+                The label was also scaffolding — the same species as the
+                numbered section markers already removed. A composition that has
+                to caption its own blocks is not composed. */}
             <h2
               id="triptych-heading"
-              className="mt-6 font-heading text-[clamp(2.1rem,5vw,3.8rem)] font-bold leading-[1.04] tracking-[-0.03em] [text-wrap:balance]"
+              className="font-heading text-[clamp(2.1rem,5vw,3.8rem)] font-bold leading-[1.04] tracking-[-0.03em] [text-wrap:balance]"
             >
               A university without borders.
             </h2>
@@ -208,16 +222,13 @@ export default function Triptych() {
           className="absolute inset-0 -z-10"
           style={{
             background:
-              'radial-gradient(ellipse 62% 68% at 76% 26%, rgba(9,4,20,0.94) 0%, rgba(12,6,26,0.74) 46%, rgba(16,8,34,0.18) 78%, rgba(16,8,34,0) 100%)',
+              'radial-gradient(ellipse 62% 68% at 76% 26%, rgba(11,5,24,0.56) 0%, rgba(14,7,30,0.34) 48%, rgba(16,8,34,0.10) 78%, rgba(16,8,34,0) 100%)',
           }}
         />
 
         <div className="mx-auto w-full max-w-7xl px-6 pt-20 sm:px-10 lg:px-16 lg:pt-24">
           <div className="ml-auto max-w-xl lg:text-right">
-            <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.34em] text-white/95">
-              Where we are going
-            </p>
-            <h3 className="mt-6 font-heading text-[clamp(1.9rem,4.4vw,3.3rem)] font-bold leading-[1.06] tracking-[-0.03em] [text-wrap:balance]">
+            <h3 className="font-heading text-[clamp(1.9rem,4.4vw,3.3rem)] font-bold leading-[1.06] tracking-[-0.03em] [text-wrap:balance]">
               Preparing people for the world that is coming.
             </h3>
             <Link
