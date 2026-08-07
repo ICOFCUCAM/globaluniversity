@@ -153,9 +153,9 @@ export default function VerificationDemo() {
               <ShieldCheck size={20} className="text-brand-gold" aria-hidden="true" />
               Verify a credential
             </h3>
-            <p className="mt-2.5 text-[15px] leading-relaxed text-white/60">
+            <p id="cred-id-hint" className="mt-2.5 text-[15px] leading-relaxed text-white/60">
               This is the live register, not a demonstration. Type an identifier from any ICOF
-              Global University document.
+              Global University document — for example IGUC-BTH-26A9-K4X2.
             </p>
 
             <form onSubmit={check} className="mt-7">
@@ -170,6 +170,12 @@ export default function VerificationDemo() {
                   placeholder="IGUC-BTH-26A9-…"
                   spellCheck={false}
                   autoComplete="off"
+                  autoCapitalize="characters"
+                  // The identifier alphabet is Crockford minus I, L, O and U, so
+                  // it is always upper case. Telling the keyboard that saves a
+                  // phone user four shift presses and prevents the lower-case
+                  // entry that would fail a lookup for no visible reason.
+                  aria-describedby="cred-id-hint"
                   className="min-w-0 flex-1 rounded-xl border border-white/15 bg-[#0f0a17] px-4 py-3.5 font-mono text-[15px] tracking-wide text-white outline-none transition placeholder:text-white/25 focus:border-brand-gold"
                 />
                 <button
@@ -183,7 +189,13 @@ export default function VerificationDemo() {
               </div>
             </form>
 
-            <div className="mt-6 min-h-[7rem]" role="status" aria-live="polite">
+            {/* The whole point of this panel is the answer, and the answer
+                arrives asynchronously. Without a live region a screen reader
+                user presses Check and the page appears not to respond.
+                min-h reserves the space so the layout does not jump when the
+                result lands — a shift under a button somebody just pressed is
+                how a mis-click happens. */}
+            <div className="mt-6 min-h-[7rem]" role="status" aria-live="polite" aria-atomic="true">
               {result.kind === 'idle' && (
                 <p className="text-[14px] leading-relaxed text-white/40">
                   Nothing is stored and nothing is sent to a third party. The check runs against
