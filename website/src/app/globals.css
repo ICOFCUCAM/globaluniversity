@@ -377,6 +377,40 @@ html {
 
 
 /* ---------------------------------------------------------------------------
+   SMALL SCREENS.
+
+   The homepage is designed at 1440px and read at 390px. Three things break in
+   that translation, and none is caught by resizing a desktop browser because
+   the desktop has a mouse, a fast connection and a large tap target by default.
+   --------------------------------------------------------------------------- */
+@media (max-width: 640px) {
+  /* 1. Display type set for a 1440px measure overflows a phone. The clamp in
+        the type scale handles most of it; these two are set in fixed rem and
+        do not participate. */
+  .text-display-xl { font-size: clamp(2.25rem, 11vw, 4.5rem); line-height: 1.04; }
+  .text-display { font-size: clamp(1.85rem, 8vw, 3rem); line-height: 1.1; }
+
+  /* 2. Every interactive element clears 44px, the smallest target a thumb hits
+        reliably. The chips in the programme finder sit at 38px, which is the
+        commonest near-miss in this whole design. */
+  a, button, [role='button'], summary, input, select {
+    min-height: 44px;
+  }
+  /* Inline links inside a paragraph are exempt: a 44px line box inside running
+     prose would double the leading of any paragraph containing a link. */
+  p a, li a, blockquote a, dd a {
+    min-height: 0;
+  }
+
+  /* 3. Long identifiers and URLs — credential numbers, email addresses in the
+        footer — force horizontal scroll on a narrow viewport, and a page that
+        scrolls sideways feels broken in a way nothing else does. */
+  .font-mono, a[href^='mailto:'] {
+    overflow-wrap: anywhere;
+  }
+}
+
+/* ---------------------------------------------------------------------------
    SAVE-DATA.
 
    A browser sends Save-Data: on when the reader has asked their operating
