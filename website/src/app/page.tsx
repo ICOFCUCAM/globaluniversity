@@ -37,6 +37,38 @@ export const metadata: Metadata = {
     url: site.url,
     siteName: site.name,
     type: 'website',
+    // THERE WAS NO og:image AT ALL.
+    //
+    // Every share of this homepage — WhatsApp, LinkedIn, Facebook, Slack,
+    // iMessage — rendered as a bare grey card with a title and a URL. On a
+    // site whose entire redesign is an argument about photography, the one
+    // picture most people saw first was no picture.
+    //
+    // twitter:image existed and pointed at a 960x720 congregation photograph,
+    // which is 4:3 against the 1.91:1 every platform crops to: top and bottom
+    // sliced off, no control over what survived.
+    //
+    // So the card is COMPOSED rather than cropped. 1200x630, the conferral
+    // photograph on the left with the crest over it, the university's own
+    // purple and gold on the right with the name and one line of substance —
+    // generated from the real fonts and the real palette by
+    // scripts/build-og-card.mjs, so it can be regenerated when either changes
+    // rather than becoming a stale artefact nobody can rebuild.
+    images: [
+      {
+        url: `${site.url}/images/og-home.jpg`,
+        width: 1200,
+        height: 630,
+        alt: 'ICOF Global University — a graduand receiving their certificate at the congregation',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: `${site.name} — A Global University`,
+    description:
+      'Accredited degrees taught from Buea, Douala and online worldwide.',
+    images: [`${site.url}/images/og-home.jpg`],
   },
 };
 
