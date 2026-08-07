@@ -2,7 +2,10 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ShieldCheck, ScanLine, Fingerprint, Globe2, Loader2, ArrowRight } from 'lucide-react';
+import { UNIVERSITY } from '@/lib/constants';
+import { partners } from '@/content/site';
 
 // ---------------------------------------------------------------------------
 // LIVE CREDENTIAL VERIFICATION.
@@ -100,7 +103,7 @@ export default function VerificationDemo() {
 
   return (
     <section
-      data-chapter="Verification"
+      data-chapter="Recognition"
       aria-labelledby="verify-heading"
       className="relative overflow-hidden bg-[#150f1e] py-24 text-white sm:py-32"
       data-on-dark=""
@@ -116,17 +119,30 @@ export default function VerificationDemo() {
         <div className="grid items-start gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,480px)] lg:gap-20">
           <div>
             <p className="font-sans text-xs font-semibold uppercase tracking-[0.25em] text-brand-gold">
-              Credential verification
+              10 — Recognition you can verify
             </p>
             <h2
               id="verify-heading"
               className="mt-4 font-heading text-display font-bold [text-wrap:balance]"
             >
-              A degree is worth what someone else can confirm
+              Recognised, and able to prove it
             </h2>
             <div className="mt-6 h-[3px] w-16 rounded-full bg-gradient-to-r from-brand-gold-deep to-brand-gold" />
 
-            <p className="mt-8 text-lg leading-relaxed text-white/80">
+            {/* THE ACCREDITATION STATEMENT LIVES HERE NOW, AND ONLY HERE.
+                It was the opening of a separate Standing band that sat directly
+                above this one. The two were one argument split in half: Standing
+                claimed the recognition, this section proved it, and Standing's
+                own body copy ended on the sentence "A degree is only worth what
+                someone else can confirm" — which was, word for word, this
+                section's headline. Two bands, 1.97 screens, and the second
+                repeated the first's closing line as its opening one.
+                Claim and proof now sit in one place, in that order. */}
+            <p className="mt-8 text-lg leading-relaxed text-white/85">
+              {UNIVERSITY.name} is accredited by the Ministry of Higher Education of Cameroon
+              (MINESUP), and has been continuously accredited since {UNIVERSITY.established}.
+            </p>
+            <p className="mt-5 text-lg leading-relaxed text-white/80">
               Every certificate and transcript this university issues carries an identifier sealed
               with a cryptographic key. Anyone holding the document can check it against the
               university&rsquo;s own register in a few seconds — and the university cannot quietly
@@ -146,6 +162,44 @@ export default function VerificationDemo() {
                 </li>
               ))}
             </ul>
+
+            {/* Carried over from the Standing band this section absorbed: the
+                route to the full accreditation statement, and the partners.
+                The logos are here rather than dropped because they are the one
+                thing Standing carried that this section did not already say —
+                recognition is a claim, a named partner is a witness to it. */}
+            <div className="mt-12 flex flex-wrap gap-4">
+              <Link
+                href="/accreditation"
+                className="group inline-flex items-center justify-center gap-2.5 rounded-full bg-brand-gold px-8 py-4 font-heading text-[15px] font-bold text-brand-purple-dark shadow-gold transition duration-300 hover:bg-brand-gold-deep"
+              >
+                Accreditation &amp; partnership
+                <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">
+                  →
+                </span>
+              </Link>
+            </div>
+
+            {partners.length > 0 && (
+              <div className="mt-12 border-t border-white/10 pt-9">
+                <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-brand-gold">
+                  Recognised alongside
+                </p>
+                <ul className="mt-7 grid grid-cols-3 items-center gap-x-6 gap-y-8">
+                  {partners.map((p) => (
+                    <li key={p.name} className="flex items-center justify-center">
+                      <Image
+                        src={p.image}
+                        alt={p.name}
+                        width={96}
+                        height={48}
+                        className="h-10 w-auto object-contain opacity-60 brightness-0 invert transition duration-500 hover:opacity-100 hover:brightness-100 hover:invert-0"
+                      />
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
 
           {/* ---- the working panel --------------------------------------- */}
@@ -197,8 +251,12 @@ export default function VerificationDemo() {
                 result lands — a shift under a button somebody just pressed is
                 how a mis-click happens. */}
             <div className="mt-6 min-h-[7rem]" role="status" aria-live="polite" aria-atomic="true">
+              {/* white/40 measured 3.77:1 against this panel and needed 4.5. It
+                  is 14px, so it gets no large-text allowance — and it is a
+                  privacy assurance, which is the last line on the page that
+                  should be hard to read. */}
               {result.kind === 'idle' && (
-                <p className="text-[14px] leading-relaxed text-white/40">
+                <p className="text-[14px] leading-relaxed text-white/60">
                   Nothing is stored and nothing is sent to a third party. The check runs against
                   this university&rsquo;s register and nowhere else.
                 </p>

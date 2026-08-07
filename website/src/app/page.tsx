@@ -17,7 +17,6 @@ import ProofBand from '@/components/home/ProofBand';
 import PathwayLadder from '@/components/home/PathwayLadder';
 import FacultyScenes from '@/components/home/FacultyScenes';
 import { facultyById, programmesByFaculty } from '@/content/programmeCatalogue';
-import StandingBand from '@/components/home/StandingBand';
 import StudentExperience from '@/components/home/StudentExperience';
 import Voices from '@/components/home/Voices';
 import ProgrammeFinder from '@/components/home/ProgrammeFinder';
@@ -268,8 +267,10 @@ export default async function HomePage() {
             name: 'Education',
             mission: facultyById('education')!.mission,
             count: programmesByFaculty('education').length,
-            src: '/images/graduation-2024/grad-2024-graduands-group.jpg',
-            alt: 'Graduands of ICOF Global University gathered after the 2024 congregation',
+            // Was grad-2024-graduands-group.jpg — removed from the homepage at
+            // the university's request.
+            src: '/images/graduation-2024/grad-2024-academics-seated.jpg',
+            alt: 'Academics of ICOF Global University seated at the 2024 congregation',
             focal: '50% 30%',
           },
         ]}
@@ -456,7 +457,10 @@ export default async function HomePage() {
           the standing IS, rather than a strip of logos asking the visitor to
           infer a relationship. See StandingBand for the wording constraint the
           university asked for. */}
-      <StandingBand />
+      {/* StandingBand is gone. It claimed the recognition and this section
+          proves it — and its closing sentence was, word for word, this
+          section's headline. Claim and proof are now one section, in that
+          order. See VerificationDemo.tsx. */}
 
       {/* The university already had cryptographically sealed credentials that
           anyone could verify, hidden three clicks deep. It is the most
