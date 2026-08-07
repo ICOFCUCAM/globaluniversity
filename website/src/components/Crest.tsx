@@ -35,9 +35,19 @@ export default function Crest({
           }}
         />
       )}
+      {/* alt="" AND aria-hidden, not alt="" alone.
+          The mark is always set beside the university's name in type, so its
+          alt is correctly empty — announcing "ICOF Global University" twice in
+          a row is worse than announcing it once. But an empty alt only removes
+          the image from the accessible NAME; the element itself is still in the
+          tree, which is why an audit that looks for undescribed images finds it
+          and a reviewer has to work out each time whether it is a bug. Marking
+          it decorative says what was meant, and takes it out of the tree
+          properly. */}
       <Image
         src="/images/site-icon.png"
         alt=""
+        aria-hidden="true"
         width={size}
         height={size}
         priority={priority}
