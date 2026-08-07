@@ -26,35 +26,44 @@ export default function PathwayLadder() {
     <section
       data-chapter="Pathways"
       aria-labelledby="pathways-heading"
-      // No background and no overflow-hidden on the SECTION. The rows below
-      // carry their own grounds, and overflow-hidden is the kind of property
-      // that gets upgraded to `contain` or paired with a transform later —
-      // either of which would re-anchor the pinned map inside the window this
-      // section now lives in. See Triptych.tsx.
+      // No background on the SECTION — both rows now carry their own, and both
+      // are opaque. And no overflow-hidden: it is the kind of property that
+      // gets upgraded to `contain` or paired with a transform later, either of
+      // which would re-anchor the pinned map inside the window this section
+      // still lives in. See Triptych.tsx.
       className="relative"
     >
       {/* ==================================================================
-          TWO ROWS: ONE WHITE, ONE TRANSPARENT.
+          TWO ROWS, BOTH OPAQUE: ONE CREAM, ONE PURPLE.
+
+          This arrived at its shape in two corrections and both are worth
+          keeping, because the second reverses half of the first.
 
               "this section is too big. divide into to rows. the first white
                and the second transparent"
 
-          As one transparent block this was a screen and a half of dark, with
-          a heading, a paragraph, five columns and two buttons all floating on
-          the same map. Everything was equally weightless, so nothing led, and
-          the map — which is meant to be an environment — became a texture
-          behind an entire section of copy.
+          As one transparent block it was a screen and a half of dark, with a
+          heading, a paragraph, five columns and two buttons all floating on the
+          same map. Everything was equally weightless, so nothing led, and the
+          map — which is meant to be an environment — had become a texture
+          behind an entire section of copy. Splitting it gave the heading a
+          ground of its own and confined the darkness to the ladder.
 
-          Splitting it fixes both at once. The white row is a hard, opaque
-          edge: it stops the dark, gives the heading a ground of its own, and
-          makes the map's return in the second row an event rather than a
-          continuation. And the darkness is now spent only where it earns
-          something — on the ladder itself, where the five awards sit over the
-          world they can be taken from.
+              "Dont make this section transparent"
 
-          The white row is a LID over the pinned map for its own height, which
-          is exactly what a lid is for here. That is the one case where a
-          background inside this window is correct rather than a mistake.
+          And then the ladder itself came off the map. That is the right call
+          and it is the same judgement one step further: five awards, five
+          durations, five descriptions and two buttons is DENSE information, and
+          dense information does not belong on a picture. The map was showing
+          through gaps between five columns of small type — not an environment,
+          a distraction competing with the one thing in this section a reader
+          has to be able to scan.
+
+          What the window keeps is where it earns its place: the fellowship,
+          which makes a geographic claim over a geographic ground, and the
+          closing statement. Two uses, both of them arguments the picture is
+          actually making. The map is not weaker for appearing less; a pinned
+          photograph that is behind everything is behind nothing.
           ================================================================== */}
 
       {/* ---- ROW 1 — white. The claim. ---------------------------------- */}
@@ -88,7 +97,7 @@ export default function PathwayLadder() {
         />
       </div>
 
-      {/* ---- ROW 2 — transparent. The ladder, over the world. ------------
+      {/* ---- ROW 2 — opaque purple. The ladder, on its own ground. -------
 
           data-on-dark IS ON THIS ROW, NOT ON THE SECTION, and it matters.
           ScrollRail decides its palette GEOMETRICALLY — it asks whether a
@@ -98,8 +107,8 @@ export default function PathwayLadder() {
           on the cream row at 1.24:1. Gold is a light ink; on cream it is
           decoration pretending to be text.
 
-          On the row, the rail reads light while it is beside the white and dark
-          while it is beside the map, which is what the attribute has always
+          On the row, the rail reads light while it is beside the cream and dark
+          while it is beside the purple, which is what the attribute has always
           meant: "this band is dark even in the light theme". */}
       {/* THE PADDING IS PART OF THE HALVING, NOT AN AFTERTHOUGHT.
           py-20 here was 160px of the 507 this row used to occupy — a third of
@@ -107,7 +116,7 @@ export default function PathwayLadder() {
           hairline doing the separating. A band that is deliberately compact
           does not need the vertical breathing room of a band that is
           deliberately spacious. */}
-      <div data-on-dark="" className="relative py-6 text-white">
+      <div data-on-dark="" className="relative bg-brand-purple-dark py-6 text-white">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           {/* The rail. On large screens it is a horizontal journey with a line
               running through it; below that it stacks, because a five-step
