@@ -158,7 +158,20 @@ export default function ProgrammeFinder() {
     <section
       data-chapter="Find a programme"
       aria-labelledby="finder-heading"
-      className="bg-white py-24 dark:bg-[#150f1e] sm:py-32"
+      // ONE GROUND, ONE STEP, ONE TOP RULE.
+      //
+      // This follows the pathway ladder, which is also white and also carried
+      // py-24/sm:py-32. Two adjacent sections on the SAME background, each
+      // contributing full vertical padding, put about 250px of empty white
+      // between the ladder's buttons and this heading — and because there was
+      // no colour change to explain it, the shared ground did not read as
+      // continuous. It read as a section that had come apart.
+      //
+      // The two are deliberately paired: "start where you are" and "find the
+      // one that fits" are a single step in a reader's thinking. So the join is
+      // now a join — no doubled padding, and a hairline that says these belong
+      // together rather than a void that says something is missing.
+      className="border-t border-[#eee7db] bg-white pb-24 pt-16 dark:border-white/10 dark:bg-[#150f1e] sm:pb-32 sm:pt-20"
     >
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="mx-auto max-w-3xl text-center">
@@ -344,7 +357,7 @@ export default function ProgrammeFinder() {
                         </span>
                         <span
                           aria-hidden="true"
-                          className="font-heading text-lg text-brand-gold-ink/50 transition-all duration-300 group-hover:translate-x-1 group-hover:text-brand-gold-ink dark:text-brand-gold/50 dark:group-hover:text-brand-gold"
+                          className="font-heading text-lg text-brand-gold-ink transition-all duration-300 group-hover:translate-x-1 group-hover:text-brand-gold-ink dark:text-brand-gold/50 dark:group-hover:text-brand-gold"
                         >
                           →
                         </span>

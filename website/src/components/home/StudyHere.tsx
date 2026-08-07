@@ -98,7 +98,7 @@ export default function StudyHere() {
                 >
                   <span
                     aria-hidden="true"
-                    className="font-heading text-[11px] font-bold tracking-[0.34em] text-brand-gold-ink/70 dark:text-brand-gold/70"
+                    className="font-heading text-[11px] font-bold tracking-[0.34em] text-brand-gold-ink dark:text-brand-gold/80"
                   >
                     {String(i + 1).padStart(2, '0')}
                   </span>

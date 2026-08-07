@@ -26,7 +26,10 @@ export default function PathwayLadder() {
     <section
       data-chapter="Pathways"
       aria-labelledby="pathways-heading"
-      className="relative overflow-hidden bg-white py-24 dark:bg-[#150f1e] sm:py-32"
+      // Reduced bottom padding: the programme finder sits directly beneath
+      // this on the same white ground and the two are one step. See the note in
+      // ProgrammeFinder.tsx about the 250px void this pair used to leave.
+      className="relative overflow-hidden bg-white pb-16 pt-24 dark:bg-[#150f1e] sm:pb-20 sm:pt-32"
     >
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <Reveal>
