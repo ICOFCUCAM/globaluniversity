@@ -346,10 +346,21 @@ for (const chapter of triptychs) {
   if (b >= 0.999) pass('the middle block is opaque — it hides the photograph');
   else fail(`${chapter}: the middle block's background alpha is ${b} — it cannot interrupt anything`);
 
-  if (a < 0.02 && c < 0.02) pass('the outer blocks have no background of their own');
+  // BLOCK 1 IS DELIBERATELY OPAQUE NOW. It used to be a window, and the
+  // university asked for solid ground directly under the hero — running a
+  // second photographic environment straight after a composed hero gives the
+  // reader two pictures back to back with nothing to land on. So the assertion
+  // is not "the outer blocks are windows" any more; it is that the LAST block
+  // is, because that is the one that has to bring the picture back after the
+  // interruption. A composition where nothing is transparent after the middle
+  // plane is not a window at all, and that is the failure worth catching.
+  if (a >= 0.999) pass('the first block is opaque — the page lands before the map begins');
+  else fail(`${chapter}: the first block's alpha is ${a} — it is transparent directly under the hero`);
+
+  if (c < 0.02) pass('the last block is a window — the map returns after the interruption');
   else
     fail(
-      `${chapter}: outer block alphas are ${a} and ${c} — a background on a block that is meant to be a window will hide the photograph`,
+      `${chapter}: the last block's alpha is ${c} — a background on the block that is meant to bring the picture back hides it instead`,
     );
 }
 

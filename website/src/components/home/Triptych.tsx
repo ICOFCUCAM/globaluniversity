@@ -31,11 +31,22 @@ import { institutionalFacts } from '@/content/institutionalFacts';
 // stands behind the words at the end of the scroll than at the beginning, and
 // the middle block passes over it like a shutter closing and opening again.
 //
-//     block 1   transparent   the fixed photograph reads through a violet wash
-//     block 2   OPAQUE        the photograph is behind an architectural plane
-//     block 3   transparent   the same fixed photograph, now showing a
+//     block 1   OPAQUE        the claim, on solid ground — see below
+//     the slot  transparent   whatever the page puts in the window
+//     block 2   OPAQUE        the picture is behind an architectural plane
+//     block 3   transparent   the same fixed picture, now showing a
 //                             different part of itself, because the reader
 //                             has travelled and the picture has not
+//
+// BLOCK 1 STARTED AS A WINDOW AND IS NOW A LID. It was transparent, so the map
+// began the instant the hero ended:
+//
+//     "immidiately after the hero, the next block should not be transparent"
+//
+// One dissolve too early. The hero is itself a composed image — a building, a
+// crest, a headline over photography — and a second picture straight underneath
+// gives the reader two photographic environments back to back with nothing
+// solid between them. The page never lands before it starts moving again.
 //
 // ===========================================================================
 // HOW THE IMAGE IS HELD STILL
@@ -59,8 +70,8 @@ import { institutionalFacts } from '@/content/institutionalFacts';
 // would delete the effect without touching a line of it.
 //
 // scripts/check-scenes.mjs measures the picture's viewport rectangle at three
-// scroll depths and fails on any drift at all, and separately proves the middle
-// block is opaque and the outer two are not.
+// scroll depths and fails on any drift at all, and separately proves the first
+// two blocks are opaque and the last one is a window.
 //
 // ===========================================================================
 // WHAT PINNING FIXED, BESIDES THE EFFECT
@@ -222,11 +233,40 @@ export default function Triptych({ children }: { children?: React.ReactNode }) {
         the North Pole and cut at 60° south, with Africa at the foot.
       </span>
 
-      {/* ---- BLOCK 1 — transparent. The photograph reads. ------------------
-          No background of any kind: everything behind this block is the fixed
-          picture. Only the plate, which travels with the words. */}
-      <div data-block="" className="relative flex min-h-[56svh] items-end lg:min-h-[62svh]">
-        <div aria-hidden="true" className="absolute inset-0 -z-[5]" style={{ background: plate('24% 58%') }} />
+      {/* ---- BLOCK 1 — OPAQUE. The claim, on solid ground. -----------------
+
+              "immidiately after the hero, the next block should not be
+               transparent"
+
+          It was transparent, and the map began the instant the hero ended.
+          That is one dissolve too early. The hero is itself a composed image —
+          a building, a crest, a headline over photography — and running a
+          second picture straight underneath it gives the reader two
+          photographic environments back to back with nothing solid between
+          them. The page never lands before it starts moving again.
+
+          So the claim sits on brand-purple, one step LIGHTER than the
+          purple-dark of the hero above it and of the facts plane below. That
+          matters: the same colour would have made the hero look as though it
+          had simply carried on for another half screen, and the seam would
+          have vanished along with the sense that a new chapter had begun.
+
+          The map now first appears at the pathways ladder, which is where the
+          university asked to see it. The composition reads:
+
+              opaque claim -> white row -> WORLD -> WORLD -> opaque facts
+              -> WORLD
+
+          No plate here either. A plate is a darkened patch for seating words
+          on a picture; over a flat, opaque ground it is a stain and nothing
+          else. */}
+      <div data-block="" className="relative flex min-h-[52svh] items-end bg-brand-purple lg:min-h-[56svh]">
+        {/* The seam into the white row below, so the purple does not end at a
+            ruled line. */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-brand-gold/35 to-transparent"
+        />
 
         <div className="mx-auto w-full max-w-7xl px-6 pb-20 sm:px-10 lg:px-16 lg:pb-24">
           <div className="max-w-xl">
