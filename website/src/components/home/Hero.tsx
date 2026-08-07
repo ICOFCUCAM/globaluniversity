@@ -183,6 +183,14 @@ export default function Hero() {
           />
         </div>
       </div>
+
+      {/* ---- NO SCROLL CUE, AND WHY ---------------------------------------
+          A bouncing chevron was built here and then taken out again. The
+          quick-links nav below the hero is pulled up over this edge with
+          -mt-14, so it already breaks the hero's bottom boundary — the reader
+          can see content continuing under the fold, which is the only thing a
+          scroll cue is for. The chevron sat underneath that nav, covered, doing
+          nothing. Two affordances for one job, and the weaker one on top. */}
     </section>
   );
 }

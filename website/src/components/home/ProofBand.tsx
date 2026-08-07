@@ -32,6 +32,12 @@ export default function ProofBand() {
 
   return (
     <section
+      // A real id, not one the scroll rail invents on mount. The hero links
+      // down to this section, and a link whose target only exists after a
+      // client component has hydrated is broken for anyone who lands with
+      // JavaScript still in flight — which on a slow connection is everyone,
+      // for the first second.
+      id="at-a-glance"
       aria-label="The university at a glance"
       data-chapter="At a glance"
       className="relative border-y border-brand-sand/70 bg-brand-cream dark:border-white/10 dark:bg-[#181121]"
