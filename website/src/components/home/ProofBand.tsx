@@ -39,7 +39,16 @@ export default function ProofBand() {
       <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-16">
         <dl className="grid grid-cols-2 gap-x-6 gap-y-10 sm:gap-y-12 lg:grid-cols-4">
           {facts.map((f) => (
-            <div key={f.label} className="group text-center">
+            <div key={f.label} className="group text-center" title={f.source}>
+              {/* The visible label is the <dd>'s own text; the <dt> is
+                  sr-only because a screen reader reading "Established" then
+                  "2007" in the natural dl order is correct, whereas a sighted
+                  reader wants the figure first and large. Both get the pairing,
+                  in the order each finds natural.
+
+                  `title` carries the provenance sentence — where the number
+                  comes from — on hover. It is a supplement, never the only
+                  copy of anything: the same sentence is under the band. */}
               <dt className="sr-only">{f.label}</dt>
               <dd>
                 <span className="block font-heading text-[2.75rem] font-bold leading-none tracking-[-0.02em] text-brand-purple dark:text-white sm:text-[3.25rem]">
