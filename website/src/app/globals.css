@@ -335,6 +335,29 @@ blockquote {
 html {
   scroll-behavior: smooth;
 }
+
+/* ---------------------------------------------------------------------------
+   ANCHORS MUST CLEAR THE STICKY HEADER.
+
+   The header is fixed and about 98px tall. Nothing on this site set
+   scroll-margin, so every in-page landing — the skip link, the scroll rail's
+   chapter jumps, any :target from a shared URL — put the destination at scroll
+   position zero and then let the header cover the top 98px of it. The reader
+   arrives at a section whose heading is behind the navigation and has to scroll
+   UP to read what they just jumped to.
+
+   It is the classic sticky-header defect: invisible in development, because
+   nobody tests a page by clicking its own anchors, and immediately obvious to
+   anybody who follows a link to a section.
+
+   7.5rem rather than 6.125rem — the header height plus enough air that the
+   heading has a margin above it rather than touching the chrome.
+--------------------------------------------------------------------------- */
+:target,
+[data-chapter],
+main [id] {
+  scroll-margin-top: 7.5rem;
+}
 @media print {
   header, footer, .print\:hidden, [aria-label='Chat with us on WhatsApp'] {
     display: none !important;
