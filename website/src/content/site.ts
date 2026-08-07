@@ -185,6 +185,18 @@ export const site = {
         },
       ],
     },
+    // RESEARCH IS TOP-LEVEL, not buried under Academics.
+    //
+    // It was one of eighteen links inside the Academics mega-menu, which is a
+    // reasonable place for a course listing and the wrong place for the thing
+    // that separates a university from a college. An institution whose primary
+    // navigation offers no route to its research is telling every academic
+    // reader what it thinks of its own scholarship, and telling them in the
+    // one element that appears on every page of the site.
+    //
+    // Six top-level items, still. The instruction was to prioritise, not to
+    // expand: this is the sixth and there is no seventh.
+    { label: 'Research', href: '/research' },
     { label: 'Contact', href: '/contact' },
   ],
 };

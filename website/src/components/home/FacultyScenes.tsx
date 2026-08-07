@@ -83,7 +83,14 @@ export interface FacultyScene {
   focal?: string;
 }
 
-export default function FacultyScenes({ faculties }: { faculties: FacultyScene[] }) {
+export default function FacultyScenes({
+  faculties,
+  total,
+}: {
+  faculties: FacultyScene[];
+  /** Programmes in the whole catalogue. Counted by the caller, never typed. */
+  total: number;
+}) {
   return (
     <section
       data-on-dark=""
@@ -115,6 +122,14 @@ export default function FacultyScenes({ faculties }: { faculties: FacultyScene[]
         >
           Four disciplines. One standard.
         </h2>
+        {/* The scale of the catalogue, stated once. It used to be the opening
+            line of a separate programme teaser that then listed the same four
+            disciplines with the same four counts as the rows below — one fact,
+            two sections, one page. */}
+        <p className="mt-6 max-w-xl text-[15.5px] leading-relaxed text-white/70 sm:text-[17px]">
+          {total} programmes, from a one-year certificate to a doctorate, on campus in Buea and
+          Douala and online worldwide.
+        </p>
 
         <ul className="mt-14">
           {faculties.map((f, i) => (
@@ -171,6 +186,29 @@ export default function FacultyScenes({ faculties }: { faculties: FacultyScene[]
           ))}
         </ul>
         <div aria-hidden="true" className="border-t border-white/15" />
+        {/* MOVED HERE FROM THE PROGRAMME TEASER, which is deleted. A button
+            that opens the full catalogue belongs beside the disciplines it
+            opens, not in a section of its own two screens earlier. */}
+        <div className="mt-14 flex flex-wrap items-center gap-5">
+          <Link
+            href="/programs"
+            className="group inline-flex items-center gap-3 rounded-full bg-brand-gold px-8 py-4 font-heading text-[15px] font-bold text-brand-purple transition duration-300 hover:bg-brand-gold-deep"
+          >
+            Explore all programmes
+            <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">
+              →
+            </span>
+          </Link>
+          <Link
+            href="/admissions"
+            className="group inline-flex items-center gap-3 rounded-full border-2 border-white/35 px-8 py-4 font-heading text-[15px] font-bold text-white transition duration-300 hover:border-brand-gold hover:text-brand-gold"
+          >
+            Entry requirements
+            <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">
+              →
+            </span>
+          </Link>
+        </div>
       </div>
     </section>
   );

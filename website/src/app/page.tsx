@@ -6,9 +6,9 @@ import { site } from '@/content/site';
 import ScrollRail from '@/components/ScrollRail';
 import PathwayLadder from '@/components/home/PathwayLadder';
 import FacultyScenes from '@/components/home/FacultyScenes';
-import { facultyById, programmesByFaculty } from '@/content/programmeCatalogue';
+import { ALL_PROGRAMMES, facultyById, programmesByFaculty } from '@/content/programmeCatalogue';
 import StudyHere from '@/components/home/StudyHere';
-import ProgrammeTeaser from '@/components/home/ProgrammeTeaser';
+import Fellowship from '@/components/home/Fellowship';
 import ChancellorWord from '@/components/home/ChancellorWord';
 import Triptych from '@/components/home/Triptych';
 import FinalScene from '@/components/home/FinalScene';
@@ -149,8 +149,70 @@ export default async function HomePage() {
             it. See Triptych.tsx on why anything placed here must carry no
             background of its own. */}
         <PathwayLadder />
-        <ProgrammeTeaser />
+        <Fellowship />
       </Triptych>
+
+      {/* ACADEMICS BEFORE PEOPLE. This sat after the Chancellor, which put a
+          reader who had just been shown the university’s claim, its awards
+          and its numbers in front of a portrait before they were told what
+          they could actually study. The order is now claim → pathway →
+          heritage → evidence → SUBJECTS → the people who teach them.
+
+          It also absorbed the programme teaser, which named these same four
+          disciplines with these same four counts one screen earlier. */}
+      {/* The four disciplines, one at a time at the size of a title card. The
+          slugs below are the REAL faculty pages, not the catalogue ids — those
+          two datasets use different keys, and the card grid this replaces
+          sidestepped the mismatch by linking all four to the index. See
+          FacultyScenes.tsx, and facultyLinks.test.mjs, which fails if any of
+          these stops resolving to a page. */}
+      <FacultyScenes
+        total={ALL_PROGRAMMES.length}
+        faculties={[
+          {
+            id: 'theology',
+            slug: 'theology-buea',
+            name: 'Theology',
+            mission: facultyById('theology')!.mission,
+            count: programmesByFaculty('theology').length,
+            src: '/images/graduation-2024/grad-2024-doctoral-portrait.jpg',
+            alt: 'A doctoral graduate of ICOF Global University in academic dress',
+            focal: '50% 16%',
+          },
+          {
+            id: 'engineering',
+            slug: 'engineering-technology',
+            name: 'Engineering & Technology',
+            mission: facultyById('engineering')!.mission,
+            count: programmesByFaculty('engineering').length,
+            src: '/images/graduation-2024/grad-2024-award-presentation.jpg',
+            alt: 'An award being presented at the ICOF Global University 2024 congregation',
+            focal: '50% 30%',
+          },
+          {
+            id: 'business',
+            slug: 'gibmas',
+            name: 'Business & Management',
+            mission: facultyById('business')!.mission,
+            count: programmesByFaculty('business').length,
+            src: '/images/graduation-2024/grad-2024-masters-caps.jpg',
+            alt: "Master's graduates of ICOF Global University in caps and gowns",
+            focal: '50% 32%',
+          },
+          {
+            id: 'education',
+            slug: 'education',
+            name: 'Education',
+            mission: facultyById('education')!.mission,
+            count: programmesByFaculty('education').length,
+            // Was grad-2024-graduands-group.jpg — removed from the homepage at
+            // the university's request.
+            src: '/images/graduation-2024/grad-2024-academics-seated.jpg',
+            alt: 'Academics of ICOF Global University seated at the 2024 congregation',
+            focal: '50% 30%',
+          },
+        ]}
+      />
 
       {/* The quick-links row is gone. Six routes in a card grid immediately
           under the hero, every one already in the header navigation two lines
@@ -200,58 +262,6 @@ export default async function HomePage() {
           ground and his portrait is not. */}
       <ChancellorWord />
 
-      {/* The four disciplines, one at a time at the size of a title card. The
-          slugs below are the REAL faculty pages, not the catalogue ids — those
-          two datasets use different keys, and the card grid this replaces
-          sidestepped the mismatch by linking all four to the index. See
-          FacultyScenes.tsx, and facultyLinks.test.mjs, which fails if any of
-          these stops resolving to a page. */}
-      <FacultyScenes
-        faculties={[
-          {
-            id: 'theology',
-            slug: 'theology-buea',
-            name: 'Theology',
-            mission: facultyById('theology')!.mission,
-            count: programmesByFaculty('theology').length,
-            src: '/images/graduation-2024/grad-2024-doctoral-portrait.jpg',
-            alt: 'A doctoral graduate of ICOF Global University in academic dress',
-            focal: '50% 16%',
-          },
-          {
-            id: 'engineering',
-            slug: 'engineering-technology',
-            name: 'Engineering & Technology',
-            mission: facultyById('engineering')!.mission,
-            count: programmesByFaculty('engineering').length,
-            src: '/images/graduation-2024/grad-2024-award-presentation.jpg',
-            alt: 'An award being presented at the ICOF Global University 2024 congregation',
-            focal: '50% 30%',
-          },
-          {
-            id: 'business',
-            slug: 'gibmas',
-            name: 'Business & Management',
-            mission: facultyById('business')!.mission,
-            count: programmesByFaculty('business').length,
-            src: '/images/graduation-2024/grad-2024-masters-caps.jpg',
-            alt: "Master's graduates of ICOF Global University in caps and gowns",
-            focal: '50% 32%',
-          },
-          {
-            id: 'education',
-            slug: 'education',
-            name: 'Education',
-            mission: facultyById('education')!.mission,
-            count: programmesByFaculty('education').length,
-            // Was grad-2024-graduands-group.jpg — removed from the homepage at
-            // the university's request.
-            src: '/images/graduation-2024/grad-2024-academics-seated.jpg',
-            alt: 'Academics of ICOF Global University seated at the 2024 congregation',
-            focal: '50% 30%',
-          },
-        ]}
-      />
 
       {/* What studying here involves. This is StudentExperience and the Online
           Learning band merged — see StudyHere.tsx, including the verbatim
