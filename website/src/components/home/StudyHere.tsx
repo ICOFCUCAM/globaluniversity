@@ -35,36 +35,30 @@ import Link from 'next/link';
 // different job, no repeated sentence.
 // ---------------------------------------------------------------------------
 
+// THREE WORDS AND A LINE EACH.
+//
+// This carried three full promises at three sentences apiece and a six-item
+// list of portal capabilities — live classes, assignments, examinations, GPA,
+// fees, credentials. All of it true and all of it the Online Learning page.
+//
+// A reader on the homepage is not choosing a virtual learning environment.
+// They are asking whether a university built for full-time nineteen-year-olds
+// has any room for them, and that is answered in three words. The detail is one
+// click away, where somebody who has decided to look will actually read it.
 const PROMISES = [
   {
-    title: 'Study without leaving your life',
-    body:
-      'Online, on campus in Buea or Douala, or blended between the two. Most of our students are '
-      + 'working adults, ministers and parents, and the timetable is built for people who cannot '
-      + 'stop everything for three years.',
+    word: 'Flexible',
+    body: 'Online, on campus in Buea or Douala, or blended — built for people who cannot stop everything for three years.',
   },
   {
     // Deliberately NOT "Taught by people who have done it" — see the header.
-    title: 'Your questions reach your lecturer',
-    body:
-      'You raise a question and the reply comes from the person teaching the course, not from an '
-      + 'assistant — including after hours.',
+    word: 'Personal',
+    body: 'Your questions reach the person teaching the course, not an assistant.',
   },
   {
-    title: 'Begin the day you are admitted',
-    body:
-      'Admission is enrolment here. You may start studying from the date of your offer, before any '
-      + 'fee is settled, so nobody loses a semester waiting on a transfer to clear.',
+    word: 'Global',
+    body: 'Begin the day you are admitted, from wherever you already are.',
   },
-];
-
-const PORTAL = [
-  'Live and recorded classes',
-  'Assignments and submissions',
-  'Computer-based examinations',
-  'Automatic GPA and transcripts',
-  'Fees and payment records',
-  'QR-verifiable credentials',
 ];
 
 export default function StudyHere() {
@@ -75,7 +69,7 @@ export default function StudyHere() {
       className="relative z-10 overflow-hidden bg-white py-24 dark:bg-[#150f1e] sm:py-32"
     >
       <div className="mx-auto max-w-7xl px-6 sm:px-10 lg:px-16">
-        <div className="grid gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)] lg:gap-20">
+        <div className="grid items-center gap-14 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.85fr)] lg:gap-20">
           {/* ---- what it is like ------------------------------------------ */}
           <div>
             <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.34em] text-brand-gold-ink dark:text-brand-gold">
@@ -85,94 +79,55 @@ export default function StudyHere() {
               id="study-heading"
               className="mt-5 font-heading text-[clamp(1.9rem,4vw,3.1rem)] font-bold leading-[1.1] tracking-[-0.02em] text-brand-purple dark:text-white [text-wrap:balance]"
             >
-              Built for people who cannot stop everything.
+              Designed around your life.
             </h2>
 
-            <dl className="mt-12">
-              {PROMISES.map((p, i) => (
-                <div
-                  key={p.title}
-                  className={`grid gap-x-6 gap-y-2 py-7 sm:grid-cols-[auto_minmax(0,1fr)] ${
-                    i > 0 ? 'border-t border-brand-purple/12 dark:border-white/12' : ''
-                  }`}
-                >
-                  <span
-                    aria-hidden="true"
-                    className="font-heading text-[11px] font-bold tracking-[0.34em] text-brand-gold-ink dark:text-brand-gold/80"
-                  >
-                    {String(i + 1).padStart(2, '0')}
-                  </span>
-                  <div>
-                    <dt className="font-heading text-[19px] font-bold leading-snug text-brand-purple dark:text-white">
-                      {p.title}
-                    </dt>
-                    <dd className="mt-2.5 text-[15px] leading-relaxed text-brand-muted dark:text-white/70">
-                      {p.body}
-                    </dd>
-                  </div>
+            <dl className="mt-12 grid gap-x-10 gap-y-9 sm:grid-cols-3">
+              {PROMISES.map((p) => (
+                <div key={p.word} className="border-t border-brand-purple/15 pt-6 dark:border-white/15">
+                  <dt className="font-heading text-[19px] font-bold leading-snug text-brand-purple dark:text-white">
+                    {p.word}
+                  </dt>
+                  <dd className="mt-3 text-[14.5px] leading-relaxed text-brand-muted dark:text-white/70">
+                    {p.body}
+                  </dd>
                 </div>
               ))}
             </dl>
+
+            <div className="mt-12 flex flex-wrap gap-4">
+              <Link
+                href="/online-learning"
+                className="group inline-flex items-center gap-3 border-b border-brand-gold-deep pb-1 font-heading text-[15px] font-bold text-brand-gold-ink transition duration-300 hover:text-brand-purple dark:border-brand-gold/40 dark:text-brand-gold dark:hover:text-white"
+              >
+                How online study works
+                <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">→</span>
+              </Link>
+              <Link
+                href="/campus-life"
+                className="group inline-flex items-center gap-3 border-b border-brand-purple/25 pb-1 font-heading text-[15px] font-bold text-brand-purple transition duration-300 hover:border-brand-gold-ink hover:text-brand-gold-ink dark:border-white/25 dark:text-white/85 dark:hover:text-brand-gold"
+              >
+                Campus life
+                <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">→</span>
+              </Link>
+            </div>
           </div>
 
-          {/* ---- what you get, over a photograph that breaks the grid ------ */}
-          <div className="relative">
-            {/* The photograph runs past the right edge of the container on wide
-                screens — see the negative right margin. It is a crop of a
-                larger scene rather than a picture sized to a slot, which is the
-                difference between an image the layout contains and an image the
-                layout is built around. */}
-            <div className="relative h-64 overflow-hidden sm:h-80 lg:-mr-16 lg:h-[22rem] xl:-mr-24">
-              <Image
-                src="/images/graduation-2024/grad-2024-registration-desk.jpg"
-                alt="Students at the registration desk of ICOF Global University"
-                fill
-                sizes="(min-width:1024px) 45vw, 100vw"
-                quality={82}
-                loading="lazy"
-                className="object-cover"
-                style={{ objectPosition: '50% 42%' }}
-              />
-              <div aria-hidden="true" className="absolute inset-0 bg-brand-purple/25 mix-blend-multiply" />
-            </div>
-
-            <div className="mt-10">
-              <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.28em] text-brand-gold-ink dark:text-brand-gold">
-                One portal, everything in it
-              </p>
-              <ul className="mt-6 grid gap-x-8 gap-y-3.5 sm:grid-cols-2">
-                {PORTAL.map((f) => (
-                  <li
-                    key={f}
-                    className="flex items-start gap-3 text-[14.5px] leading-snug text-brand-muted dark:text-white/70"
-                  >
-                    <span
-                      aria-hidden="true"
-                      className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-brand-gold-ink dark:bg-brand-gold"
-                    />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-
-              <div className="mt-10 flex flex-wrap gap-4">
-                <Link
-                  href="/online-learning"
-                  className="rounded-full bg-brand-purple px-7 py-3.5 font-heading text-[14.5px] font-bold text-white transition duration-300 hover:bg-brand-purple-dark dark:bg-brand-gold dark:text-brand-purple dark:hover:bg-brand-gold-deep"
-                >
-                  How online study works
-                </Link>
-                <Link
-                  href="/campus-life"
-                  className="group inline-flex items-center gap-2.5 rounded-full border-2 border-brand-purple/25 px-7 py-3.5 font-heading text-[14.5px] font-bold text-brand-purple transition duration-300 hover:border-brand-purple dark:border-white/30 dark:text-white dark:hover:border-brand-gold dark:hover:text-brand-gold"
-                >
-                  Campus life
-                  <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">
-                    →
-                  </span>
-                </Link>
-              </div>
-            </div>
+          {/* The photograph, now the whole second cell. It runs past the right
+              edge of the container on wide screens — a crop of a larger scene
+              rather than a picture sized to a slot. */}
+          <div className="relative h-72 overflow-hidden sm:h-96 lg:-mr-16 lg:h-full lg:min-h-[26rem] xl:-mr-24">
+            <Image
+              src="/images/graduation-2024/grad-2024-registration-desk.jpg"
+              alt="Students at the registration desk of ICOF Global University"
+              fill
+              sizes="(min-width:1024px) 45vw, 100vw"
+              quality={82}
+              loading="lazy"
+              className="object-cover"
+              style={{ objectPosition: '50% 42%' }}
+            />
+            <div aria-hidden="true" className="absolute inset-0 bg-brand-purple/25 mix-blend-multiply" />
           </div>
         </div>
       </div>

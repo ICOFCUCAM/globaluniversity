@@ -134,12 +134,6 @@ export default async function HomePage() {
           photograph. Two consecutive sections making one claim is the fault
           this redesign exists to remove. /about is reached from there. */}
 
-      {/* The motto, as a scene rather than a specification. Three convictions
-          told one at a time over photography that changes beneath them — see
-          Formation.tsx for why three boxes in a row was the wrong figure for a
-          motto, and why nothing inside it is a link. */}
-      <Formation />
-
       {/* The four disciplines, one at a time at the size of a title card. The
           slugs below are the REAL faculty pages, not the catalogue ids — those
           two datasets use different keys, and the card grid this replaces
@@ -229,6 +223,12 @@ export default async function HomePage() {
           ground and his portrait is not. */}
       <ChancellorWord />
 
+      {/* The motto, as a scene rather than a specification. Three convictions
+          told one at a time over photography that changes beneath them — see
+          Formation.tsx for why three boxes in a row was the wrong figure for a
+          motto, and why nothing inside it is a link. */}
+      <Formation />
+
       {/* What studying here involves. This is StudentExperience and the Online
           Learning band merged — see StudyHere.tsx, including the verbatim
           duplicate headline that survived six redesigns because both halves
@@ -286,25 +286,25 @@ export default async function HomePage() {
             Scholarship in service of society
           </h2>
           <p className="mt-7 max-w-2xl text-[15.5px] leading-relaxed text-white/75">
-            Our research programme is young and is being built deliberately. These are the three
-            places it is happening now, each with the council or centre answerable for it.
+            Our research programme is young and is being built deliberately — three places, each
+            with the council or centre answerable for it.
           </p>
 
           <ul className="mt-16">
             {[
               {
                 t: 'Dissertation Council',
-                b: 'Doctoral research in theology, ministry and counseling, examined under Professor Emeritus Arch Bishop Godfred Anyere Tah.',
+                b: 'Doctoral research examined under Professor Emeritus Arch Bishop Godfred Anyere Tah.',
                 href: '/degrees/doctoral',
               },
               {
                 t: 'PPDI-RC, Nigeria',
-                b: 'Applied research and training in behavioral therapy, agritech, digital business and community development.',
+                b: 'Applied research in behavioral therapy, agritech and community development.',
                 href: '/ppdirc',
               },
               {
                 t: 'Theology & African Society',
-                b: 'From liberation theology to criminology — faculty publishing at the intersection of faith and the social questions facing African communities.',
+                b: 'Faculty publishing where faith meets the social questions facing African communities.',
                 href: '/research',
               },
             ].map((r, i) => (
@@ -336,6 +336,14 @@ export default async function HomePage() {
             ))}
           </ul>
           <div aria-hidden="true" className="border-t border-white/15" />
+
+          <Link
+            href="/research"
+            className="group mt-12 inline-flex items-center gap-3 border-b border-brand-gold/40 pb-1 font-heading text-[15px] font-bold text-brand-gold transition duration-300 hover:border-brand-gold hover:text-white"
+          >
+            Explore research
+            <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">→</span>
+          </Link>
         </div>
       </section>
 
