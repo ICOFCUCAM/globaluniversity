@@ -108,12 +108,28 @@ import { institutionalFacts } from '@/content/institutionalFacts';
  * The plate behind the words. Feathers to nothing well before the edges, so the
  * map at the margins is untouched and the darkness is spent only where the
  * words already are.
+ *
+ * THE GEOMETRY IS NOT DECORATIVE. It was `ellipse 64% 70% at 24% 74%`, which
+ * puts the ellipse's centre three quarters of the way down a transparent block
+ * and gives it a vertical radius of 70% — so at the bottom edge the gradient is
+ * only 37% of the way out from its centre and still painting at roughly 0.30
+ * alpha. The block ends there and the plate is cut off mid-fade, leaving a hard
+ * horizontal band across the map at the seam between two blocks that are both
+ * supposed to be windows onto the same picture.
+ *
+ * Nothing in the CSS is wrong; the gradient is doing exactly what it was told.
+ * It is only visible because the map behind it is continuous across the seam,
+ * which is the whole point of the composition — the same edge over a per-block
+ * background would have been invisible forever.
+ *
+ * So the vertical radius plus the offset now reach 100% and no further: the
+ * plate arrives at zero exactly at the boundary it is not allowed to cross.
  */
 const plate = (at: string) =>
-  `radial-gradient(ellipse 64% 70% at ${at},` +
-  ' rgba(11,5,24,0.38) 0%,' +
-  ' rgba(14,7,30,0.22) 48%,' +
-  ' rgba(16,8,34,0.07) 78%,' +
+  `radial-gradient(ellipse 62% 44% at ${at},` +
+  ' rgba(11,5,24,0.40) 0%,' +
+  ' rgba(14,7,30,0.24) 46%,' +
+  ' rgba(16,8,34,0.08) 76%,' +
   ' rgba(16,8,34,0) 100%)';
 
 export default function Triptych({ children }: { children?: React.ReactNode }) {
@@ -206,6 +222,24 @@ export default function Triptych({ children }: { children?: React.ReactNode }) {
         the North Pole and cut at 60° south, with Africa at the foot.
       </span>
 
+      {/* ---- BLOCK 1 — transparent. The photograph reads. ------------------
+          No background of any kind: everything behind this block is the fixed
+          picture. Only the plate, which travels with the words. */}
+      <div data-block="" className="relative flex min-h-[56svh] items-end lg:min-h-[62svh]">
+        <div aria-hidden="true" className="absolute inset-0 -z-[5]" style={{ background: plate('24% 58%') }} />
+
+        <div className="mx-auto w-full max-w-7xl px-6 pb-20 sm:px-10 lg:px-16 lg:pb-24">
+          <div className="max-w-xl">
+            <h2
+              id="triptych-heading"
+              className="font-heading text-[clamp(2.1rem,5vw,3.8rem)] font-bold leading-[1.04] tracking-[-0.03em] [text-wrap:balance]"
+            >
+              A university without borders.
+            </h2>
+          </div>
+        </div>
+      </div>
+
       {/* ---- WHATEVER THE PAGE PUTS INSIDE THE WINDOW ---------------------
 
           The window used to begin at block 1. The university asked for it to
@@ -220,29 +254,19 @@ export default function Triptych({ children }: { children?: React.ReactNode }) {
           background is not transparent, it is a white lid on the window, and
           the map simply stops existing for its whole height.
 
-          This is a slot rather than an import so page.tsx still shows what the
+          IT SITS AFTER BLOCK 1, NOT BEFORE IT, and the order is the argument of
+          the chapter. This composition is now the second thing on the page, so
+          the first words a reader meets after the hero should be the claim —
+          "A university without borders" — and not a five-step ladder of awards.
+          Claim, then how far the awards go, then how much there is, then the
+          counted evidence, then the promise. Put the ladder first and the
+          chapter opens with an administrative diagram.
+
+          A slot rather than an import so page.tsx still shows what the
           composition contains, in order, at a glance. A component that reached
           out and rendered two named sections of its own would hide the shape of
           the homepage inside a file called Triptych. */}
       {children}
-
-      {/* ---- BLOCK 1 — transparent. The photograph reads. ------------------
-          No background of any kind: everything behind this block is the fixed
-          picture. Only the plate, which travels with the words. */}
-      <div data-block="" className="relative flex min-h-[56svh] items-end lg:min-h-[62svh]">
-        <div aria-hidden="true" className="absolute inset-0 -z-[5]" style={{ background: plate('24% 74%') }} />
-
-        <div className="mx-auto w-full max-w-7xl px-6 pb-20 sm:px-10 lg:px-16 lg:pb-24">
-          <div className="max-w-xl">
-            <h2
-              id="triptych-heading"
-              className="font-heading text-[clamp(2.1rem,5vw,3.8rem)] font-bold leading-[1.04] tracking-[-0.03em] [text-wrap:balance]"
-            >
-              A university without borders.
-            </h2>
-          </div>
-        </div>
-      </div>
 
       {/* ---- BLOCK 2 — OPAQUE. The shutter. --------------------------------
           bg-brand-purple-dark with no transparency anywhere in it. This is the
@@ -376,7 +400,7 @@ export default function Triptych({ children }: { children?: React.ReactNode }) {
           at all, so a different part of the congregation now stands behind the
           words. */}
       <div data-block="" className="relative flex min-h-[56svh] items-start lg:min-h-[62svh]">
-        <div aria-hidden="true" className="absolute inset-0 -z-[5]" style={{ background: plate('76% 30%') }} />
+        <div aria-hidden="true" className="absolute inset-0 -z-[5]" style={{ background: plate('76% 44%') }} />
 
         <div className="mx-auto w-full max-w-7xl px-6 pt-20 sm:px-10 lg:px-16 lg:pt-24">
           <div className="ml-auto max-w-xl lg:text-right">

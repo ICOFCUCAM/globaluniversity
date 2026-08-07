@@ -113,6 +113,45 @@ export default async function HomePage() {
           the decision. */}
       <HeroScene />
 
+      {/* SECOND ON THE PAGE, AND THIS IS THE THIRD THING TO OCCUPY THE SLOT.
+
+          It has held a quick-links row, then a statistics scoreboard, then the
+          faculties index — and the university rejected all three:
+
+              "after the hero it is not good to go to schools and faculties"
+
+          Right, and the fault is the same one each time. A reader who has just
+          been told what this place is for asks "why should I believe you", not
+          "how is it organised". A list of four schools is an ORG CHART: it
+          answers a question nobody has yet, in the most valuable position on
+          the page, and it reads as a directory rather than as a university.
+
+          So the world window comes second. The reader gets the claim, then how
+          far the awards go, then how much there is, then the counted evidence,
+          then the promise — with one pinned map behind all of it. The
+          faculties still exist and are two sections down, where a reader who
+          has decided this is serious goes looking for their own subject. */}
+      {/* THE SIGNATURE COMPOSITION. One photograph passing behind three
+          blocks — visible, interrupted by an architectural plane of university
+          purple carrying the motto, then visible again. It absorbs the
+          fellowship band and the convictions, which were making the identity
+          claim and the formation claim in two separate places. See
+          Triptych.tsx, including the resolution cost it knowingly accepts and
+          why it is not built on FixedWindow. Used ONCE on the page: the effect
+          becomes ordinary the second time. */}
+      <Triptych>
+        {/* INSIDE THE WINDOW. Both of these used to be white sections between
+            the faculties and the triptych, and the map began only when the
+            triptych did. They are transparent now and set for a dark ground, so
+            the pinned world runs behind the academic ladder and the programme
+            doorway as well — the reader meets the map a screen and a half
+            earlier and it stays behind them until the middle plane closes over
+            it. See Triptych.tsx on why anything placed here must carry no
+            background of its own. */}
+        <PathwayLadder />
+        <ProgrammeTeaser />
+      </Triptych>
+
       {/* The quick-links row is gone. Six routes in a card grid immediately
           under the hero, every one already in the header navigation two lines
           above it — the same destinations offered twice before the reader has
@@ -139,6 +178,27 @@ export default async function HomePage() {
           what the fellowship scene directly above it says, at scale, over a
           photograph. Two consecutive sections making one claim is the fault
           this redesign exists to remove. /about is reached from there. */}
+
+
+      {/* The ladder. The commonest reason somebody does not apply is believing
+          the only door they can reach is the wrong one; this shows the awards
+          as one route rather than five unrelated cards. */}
+
+      {/* A DOORWAY, NOT THE ROOM. The full programme finder — search field,
+          three filter groups, live counts and six programmes in full — was the
+          most useful interaction on the site and it was the Programs page. A
+          homepage that contains another page has stopped being a front door.
+
+          The finder is untouched at /programs. This states the scale, names the
+          four disciplines with their real counts, and sends the reader in
+          already narrowed. See ProgrammeTeaser.tsx. */}
+
+
+      {/* Chancellor's welcome — the site opened with this on the original iguc.net */}
+      {/* The Chancellor's word. The photograph is the room he speaks in — see
+          ChancellorWord.tsx and Cinematic.tsx for why the ceremony is the
+          ground and his portrait is not. */}
+      <ChancellorWord />
 
       {/* The four disciplines, one at a time at the size of a title card. The
           slugs below are the REAL faculty pages, not the catalogue ids — those
@@ -192,46 +252,6 @@ export default async function HomePage() {
           },
         ]}
       />
-
-      {/* The ladder. The commonest reason somebody does not apply is believing
-          the only door they can reach is the wrong one; this shows the awards
-          as one route rather than five unrelated cards. */}
-
-      {/* A DOORWAY, NOT THE ROOM. The full programme finder — search field,
-          three filter groups, live counts and six programmes in full — was the
-          most useful interaction on the site and it was the Programs page. A
-          homepage that contains another page has stopped being a front door.
-
-          The finder is untouched at /programs. This states the scale, names the
-          four disciplines with their real counts, and sends the reader in
-          already narrowed. See ProgrammeTeaser.tsx. */}
-
-      {/* THE SIGNATURE COMPOSITION. One photograph passing behind three
-          blocks — visible, interrupted by an architectural plane of university
-          purple carrying the motto, then visible again. It absorbs the
-          fellowship band and the convictions, which were making the identity
-          claim and the formation claim in two separate places. See
-          Triptych.tsx, including the resolution cost it knowingly accepts and
-          why it is not built on FixedWindow. Used ONCE on the page: the effect
-          becomes ordinary the second time. */}
-      <Triptych>
-        {/* INSIDE THE WINDOW. Both of these used to be white sections between
-            the faculties and the triptych, and the map began only when the
-            triptych did. They are transparent now and set for a dark ground, so
-            the pinned world runs behind the academic ladder and the programme
-            doorway as well — the reader meets the map a screen and a half
-            earlier and it stays behind them until the middle plane closes over
-            it. See Triptych.tsx on why anything placed here must carry no
-            background of its own. */}
-        <PathwayLadder />
-        <ProgrammeTeaser />
-      </Triptych>
-
-      {/* Chancellor's welcome — the site opened with this on the original iguc.net */}
-      {/* The Chancellor's word. The photograph is the room he speaks in — see
-          ChancellorWord.tsx and Cinematic.tsx for why the ceremony is the
-          ground and his portrait is not. */}
-      <ChancellorWord />
 
       {/* What studying here involves. This is StudentExperience and the Online
           Learning band merged — see StudyHere.tsx, including the verbatim
