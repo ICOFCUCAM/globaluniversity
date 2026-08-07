@@ -173,9 +173,9 @@ export default async function HomePage() {
             name: 'Theology',
             mission: facultyById('theology')!.mission,
             count: programmesByFaculty('theology').length,
-            src: '/images/graduation-2024/grad-2024-doctoral-portrait.jpg',
-            alt: 'A doctoral graduate of ICOF Global University in academic dress',
-            focal: '50% 16%',
+            src: '/images/graduation-2024/grad-2024-platform-party.jpg',
+            alt: 'The platform party of the ICOF Global University 2024 congregation in doctoral robes',
+            focal: '48% 34%',
           },
           {
             // Added with the School of Ministry. Its count comes from the
@@ -186,9 +186,9 @@ export default async function HomePage() {
             name: 'School of Ministry',
             mission: facultyById('ministry')!.mission,
             count: programmesByFaculty('ministry').length,
-            src: '/images/graduation-2024/grad-2024-hooding.jpg',
-            alt: 'A hooding at the ICOF Global University 2024 congregation',
-            focal: '50% 34%',
+            src: '/images/graduation-2024/grad-2024-graduands-celebrating.jpg',
+            alt: 'Graduands of ICOF Global University with their families after the 2024 congregation',
+            focal: '52% 30%',
           },
           {
             id: 'engineering',
@@ -196,9 +196,9 @@ export default async function HomePage() {
             name: 'Engineering & Technology',
             mission: facultyById('engineering')!.mission,
             count: programmesByFaculty('engineering').length,
-            src: '/images/graduation-2024/grad-2024-award-presentation.jpg',
-            alt: 'An award being presented at the ICOF Global University 2024 congregation',
-            focal: '50% 30%',
+            src: '/images/graduation-2024/grad-2024-doctoral-gold.jpg',
+            alt: 'A doctoral graduate of ICOF Global University in blue and gold academic dress',
+            focal: '54% 22%',
           },
           {
             id: 'business',
@@ -206,9 +206,9 @@ export default async function HomePage() {
             name: 'Business & Management',
             mission: facultyById('business')!.mission,
             count: programmesByFaculty('business').length,
-            src: '/images/graduation-2024/grad-2024-masters-caps.jpg',
-            alt: "Master's graduates of ICOF Global University in caps and gowns",
-            focal: '50% 32%',
+            src: '/images/graduation-2024/grad-2024-faculty-robes.jpg',
+            alt: 'Faculty of ICOF Global University in doctoral robes at the 2024 congregation',
+            focal: '46% 32%',
           },
           {
             id: 'education',
@@ -218,9 +218,9 @@ export default async function HomePage() {
             count: programmesByFaculty('education').length,
             // Was grad-2024-graduands-group.jpg — removed from the homepage at
             // the university's request.
-            src: '/images/graduation-2024/grad-2024-academics-seated.jpg',
-            alt: 'Academics of ICOF Global University seated at the 2024 congregation',
-            focal: '50% 30%',
+            src: '/images/graduation-2024/grad-2024-hooding.jpg',
+            alt: 'A hooding at the ICOF Global University 2024 congregation',
+            focal: '50% 32%',
           },
         ]}
       />

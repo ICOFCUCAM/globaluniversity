@@ -319,7 +319,7 @@ export const facultyList: Faculty[] = [
     name: 'School of Ministry',
     shortName: 'Ministry',
     campus: 'Buea, Cameroon · Online worldwide',
-    image: '/images/graduation-2024/grad-2024-hooding.jpg',
+    image: '/images/graduation-2024/grad-2024-graduands-celebrating.jpg',
     standsFor:
       'To form pastors, evangelists and church leaders for the work itself — the congregation, the mission field, and the organisation that carries them.',
     description: [

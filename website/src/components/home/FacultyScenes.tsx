@@ -187,8 +187,8 @@ export default function FacultyScenes({
                   // column; it does not move the column.
                   className={`group grid items-center gap-x-10 gap-y-6 border-t border-white/15 py-9 transition-colors duration-300 hover:border-brand-gold/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold focus-visible:ring-offset-4 focus-visible:ring-offset-brand-purple-dark ${
                     imageRight
-                      ? 'lg:grid-cols-[auto_minmax(0,1fr)_minmax(0,15rem)]'
-                      : 'lg:grid-cols-[minmax(0,15rem)_minmax(0,1fr)_auto]'
+                      ? 'lg:grid-cols-[auto_minmax(0,1fr)_minmax(0,17rem)]'
+                      : 'lg:grid-cols-[minmax(0,17rem)_minmax(0,1fr)_auto]'
                   }`}
                 >
                   {/* THE PHOTOGRAPH. Its own frame, no radius, no shadow, no
@@ -196,7 +196,7 @@ export default function FacultyScenes({
                       runs at full strength. A thin gold rule on the outer edge
                       ties it to the row without boxing it in. */}
                   <span
-                    className={`relative block h-40 w-full overflow-hidden sm:h-44 lg:h-32 ${
+                    className={`relative block h-44 w-full overflow-hidden sm:h-52 lg:h-40 ${
                       imageRight ? 'lg:order-3' : 'lg:order-1'
                     }`}
                   >
@@ -204,7 +204,7 @@ export default function FacultyScenes({
                       src={f.src}
                       alt={f.alt}
                       fill
-                      sizes="(min-width:1024px) 15rem, 100vw"
+                      sizes="(min-width:1024px) 17rem, 100vw"
                       quality={80}
                       loading="lazy"
                       className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
