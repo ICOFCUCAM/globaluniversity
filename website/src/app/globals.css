@@ -154,16 +154,12 @@ blockquote {
   background: linear-gradient(90deg, theme('colors.brand.gold-deep'), theme('colors.brand.gold'));
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.001ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
-    scroll-behavior: auto !important;
-  }
-}
+/* The reduced-motion rules live in ONE place, further down this file. There
+   were two blocks: this one, which only collapsed durations, and a later one
+   that also resets transform and opacity and switches the ambient loops off
+   entirely. Both matched, the later one won every shared declaration, and the
+   earlier one existed only to be overridden — which is how a future edit gets
+   made to the block that has no effect. */
 
 /* ---- Student portal (shadcn/ui) design tokens ---- */
 @layer base {
