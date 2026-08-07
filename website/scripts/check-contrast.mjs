@@ -452,17 +452,40 @@ const run = async () => {
     // ground that exists in no browser. Stepping the real viewport down the
     // page measures what a reader actually sees, fixed layers included.
     const measured = [];
-    const { vh, docH } = await page.evaluate(() => ({
-      vh: window.innerHeight,
-      docH: document.documentElement.scrollHeight,
-    }));
+    const { vh, docH, headerH } = await page.evaluate(() => {
+      const h = document.querySelector('header');
+      return {
+        vh: window.innerHeight,
+        docH: document.documentElement.scrollHeight,
+        // The header is FIXED. Anything under it in a viewport screenshot is
+        // photographed as the header, not as its own ground.
+        headerH: h ? Math.ceil(h.getBoundingClientRect().height) : 0,
+      };
+    });
     const done = new Set();
-    for (let top = 0; top < docH; top += vh) {
+    // ============================================================
+    // THE HEADER BAND IS EXCLUDED, AND THIS WAS A REAL FALSE-POSITIVE ENGINE.
+    //
+    // The step used to be a full viewport, and an item qualified if it fell
+    // anywhere inside it. So any line box that happened to land in the top 98px
+    // of a step was screenshotted with the fixed header sitting on top of it —
+    // and measured against purple. On /contact that reported three headings as
+    // "rgb(66,46,89) on rgb(56,38,76), 1.14:1": brand-purple text on
+    // brand-purple-dark. The text is on a WHITE card and measures about 9:1.
+    // The ratio was real, the ground was the navigation bar.
+    //
+    // Stepping by (vh - headerH) and requiring the box to sit below the header
+    // band means every element is eventually caught in a step where nothing is
+    // covering it. The overlap costs one extra screenshot every few steps.
+    // ============================================================
+    const band = headerH + 8;
+    const step = Math.max(200, vh - band);
+    for (let top = 0; top < docH; top += step) {
       const due = items.filter((it, i) => {
         if (done.has(i)) return false;
-        // Fully inside this viewport, so no line box is cut in half by the
-        // frame edge and measured against the wrong half of its ground.
-        const fits = it.rects.every((r) => r.y >= top && r.y + r.h <= top + vh);
+        // Fully inside this viewport AND clear of the fixed header, so no line
+        // box is cut by the frame edge or photographed through the navigation.
+        const fits = it.rects.every((r) => r.y >= top + band && r.y + r.h <= top + vh);
         if (fits) done.add(i);
         return fits;
       });
