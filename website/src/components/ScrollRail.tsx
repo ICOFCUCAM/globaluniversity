@@ -52,10 +52,19 @@ export default function ScrollRail() {
         // is viewport-relative and reflows nothing here; there are a handful of
         // dark bands, and this runs inside the same rAF as everything else.
         const y = window.innerHeight / 2;
-        setOnDark(darkBands.some((b) => {
-          const r = b.getBoundingClientRect();
-          return r.top <= y && r.bottom >= y;
-        }));
+        setOnDark(
+          // In dark mode EVERY band is dark, whether or not it is marked
+          // [data-on-dark] — that attribute means "this section is dark even in
+          // the light theme", not "this section is dark". Testing only for the
+          // attribute left the rail painting dark purple on near-black down the
+          // whole of the dark theme, which is the same bug it was written to
+          // fix, one theme over.
+          document.documentElement.classList.contains('dark')
+          || darkBands.some((b) => {
+            const r = b.getBoundingClientRect();
+            return r.top <= y && r.bottom >= y;
+          }),
+        );
 
         // The rail indexes the chapters. While the reader is still in the hero
         // they have not reached the first one, and a rail that reports "At a
@@ -68,9 +77,17 @@ export default function ScrollRail() {
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', onScroll);
+
+    // Switching theme changes the rail's palette without moving the page, so
+    // scroll and resize are not enough to catch it. ThemeToggle sets the class
+    // on <html>; this watches for exactly that and nothing else.
+    const themeWatch = new MutationObserver(onScroll);
+    themeWatch.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
     return () => {
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onScroll);
+      themeWatch.disconnect();
     };
   }, []);
 
