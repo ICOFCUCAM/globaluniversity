@@ -101,7 +101,13 @@ export default function PathwayLadder() {
           On the row, the rail reads light while it is beside the white and dark
           while it is beside the map, which is what the attribute has always
           meant: "this band is dark even in the light theme". */}
-      <div data-on-dark="" className="relative py-16 text-white sm:py-20">
+      {/* THE PADDING IS PART OF THE HALVING, NOT AN AFTERTHOUGHT.
+          py-20 here was 160px of the 507 this row used to occupy — a third of
+          it, spent on air at a seam that already has a white row and a gold
+          hairline doing the separating. A band that is deliberately compact
+          does not need the vertical breathing room of a band that is
+          deliberately spacious. */}
+      <div data-on-dark="" className="relative py-6 text-white">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           {/* The rail. On large screens it is a horizontal journey with a line
               running through it; below that it stacks, because a five-step
@@ -110,33 +116,42 @@ export default function PathwayLadder() {
           <div className="relative">
             <span
               aria-hidden="true"
-              className="absolute left-6 top-0 hidden h-full w-px bg-gradient-to-b from-white/10 via-brand-gold/45 to-white/10 sm:block lg:left-0 lg:top-[2.15rem] lg:h-px lg:w-full lg:bg-gradient-to-r"
+              className="absolute left-[1.125rem] top-0 hidden h-full w-px bg-gradient-to-b from-white/10 via-brand-gold/45 to-white/10 sm:block lg:left-0 lg:top-[1.125rem] lg:h-px lg:w-full lg:bg-gradient-to-r"
             />
 
-            <ol className="relative grid gap-8 sm:gap-10 lg:grid-cols-5 lg:gap-6">
+            <ol className="relative grid gap-7 sm:grid-cols-2 lg:grid-cols-5 lg:gap-6">
               {PATHWAY.map((step, i) => (
                 <Reveal key={step.award} delay={i * 90}>
-                  <li className="group relative flex gap-5 rounded-xl focus-within:ring-2 focus-within:ring-brand-gold focus-within:ring-offset-4 sm:pl-0 lg:block">
-                    <span
-                      aria-hidden="true"
-                      className="relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 border-white/30 bg-white/10 font-heading text-base font-bold text-white shadow-sm transition duration-500 group-hover:-translate-y-1 group-hover:border-brand-gold group-hover:bg-brand-purple group-hover:text-brand-gold group-hover:shadow-lift lg:mx-auto"
-                    >
-                      {i + 1}
-                    </span>
-
-                    <div className="min-w-0 lg:mt-6 lg:text-center">
+                  <li className="group relative rounded-xl focus-within:ring-2 focus-within:ring-brand-gold focus-within:ring-offset-4">
+                    {/* THE NUMBER IS INLINE WITH THE AWARD, NOT STACKED ABOVE IT.
+                        Stacked, each step cost a 3rem node plus a 1.5rem gap
+                        before a single word of it was read — 72px of vertical
+                        space per column, in a row that had five columns and
+                        therefore paid for it once. Beside the name it costs
+                        nothing: the node is shorter than the line of type it
+                        sits next to, so the whole rail row is now the height of
+                        one heading. That is where half of this section's height
+                        went, and no information left with it. */}
+                    <span className="flex items-center gap-3.5">
+                      <span
+                        aria-hidden="true"
+                        className="relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-white/30 bg-brand-purple-dark font-heading text-[13px] font-bold text-white transition duration-500 group-hover:border-brand-gold group-hover:text-brand-gold"
+                      >
+                        {i + 1}
+                      </span>
                       <Link
                         href={step.href}
-                        className="font-heading text-xl font-bold text-white transition group-hover:text-brand-gold"
+                        className="font-heading text-[19px] font-bold leading-tight text-white transition group-hover:text-brand-gold"
                       >
                         <span className="absolute inset-0" aria-hidden="true" />
                         {step.award}
                       </Link>
-                      <p className="mt-1.5 font-sans text-[11px] font-semibold uppercase tracking-[0.12em] text-brand-gold">
-                        {step.duration}
-                      </p>
-                      <p className="mt-3 text-[15px] leading-relaxed text-white/70">{step.note}</p>
-                    </div>
+                    </span>
+
+                    <p className="mt-3 font-sans text-[10.5px] font-semibold uppercase tracking-[0.12em] text-brand-gold">
+                      {step.duration}
+                    </p>
+                    <p className="mt-2 text-[13.5px] leading-snug text-white/70">{step.note}</p>
                   </li>
                 </Reveal>
               ))}
@@ -144,7 +159,7 @@ export default function PathwayLadder() {
           </div>
 
           <Reveal delay={200}>
-            <div className="mt-14 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+            <div className="mt-6 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
               <Link
                 href="/programs"
                 className="group inline-flex items-center gap-2.5 rounded-full bg-brand-gold px-8 py-4 font-heading text-[15px] font-bold text-brand-purple shadow-lift transition duration-300 ease-enter hover:bg-brand-gold-deep hover:shadow-lift-lg active:scale-[0.98] active:duration-75"
