@@ -17,7 +17,8 @@
     "test:publicart": "node src/lib/publicArt.test.mjs",
     "test:world": "node src/lib/flatWorld.test.mjs",
     "test:faculty": "node src/content/facultyLinks.test.mjs",
-    "test": "npm run test:grading && npm run test:fees && npm run test:seal && npm run test:certificate && npm run test:routes && npm run test:approval && npm run test:policies && npm run test:publicart && npm run test:world && npm run test:faculty"
+    "test": "npm run test:grading && npm run test:fees && npm run test:seal && npm run test:certificate && npm run test:routes && npm run test:approval && npm run test:policies && npm run test:publicart && npm run test:world && npm run test:fixedwindow && npm run test:faculty",
+    "test:fixedwindow": "node src/components/home/fixedWindow.test.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
