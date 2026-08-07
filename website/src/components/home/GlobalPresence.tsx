@@ -79,12 +79,24 @@ export default function GlobalPresence() {
     >
       <div className="mx-auto max-w-7xl px-6 sm:px-10 lg:px-16">
         <div>
+      {/* THE HEADING CHANGED BECAUSE THE PAGE STARTED SAYING IT TWICE.
+          This read "One university. No borders." Two sections above it, over a
+          map of every continent, the window now says "A university without
+          borders." — the same claim, in almost the same words, and the second
+          time a reader meets it they do not hear emphasis, they hear a page
+          that is not listening to itself.
+
+          The statement belongs over the map, where the picture is evidence for
+          it. What belongs HERE is the thing the map cannot show: that the
+          degree is the same wherever it is taken. That is the harder claim, it
+          is the one a distance student actually needs, and the paragraph below
+          has been making it all along without a heading that agreed. */}
       <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.34em] text-brand-gold-ink dark:text-brand-gold">
-        A global university
+        Where we teach from
       </p>
 
       <h2 className="mt-8 font-heading text-[clamp(2.2rem,5.4vw,4.2rem)] font-bold leading-[1.04] tracking-[-0.03em] text-brand-purple dark:text-white [text-wrap:balance]">
-        One university. No borders.
+        Four places. One degree.
       </h2>
 
       <p className="mt-8 max-w-2xl text-[15px] leading-relaxed text-brand-muted dark:text-white/80 sm:text-base">
