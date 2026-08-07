@@ -44,6 +44,8 @@ const ABOUT =
 //     block 1   OPAQUE        the About band, on solid ground — see below
 //     the slot  MIXED         whatever the page puts in the window; today the
 //                             pathway ladder, whose second row is opaque purple
+//     window 1  transparent   the map, before the pause — "A university
+//                             without borders"
 //     block 2   OPAQUE        the plane that interrupts the picture; the page
 //                             decides what stands on it, and today that is the
 //                             Chancellor's welcome
@@ -364,6 +366,41 @@ export default function Triptych({
           out and rendered two named sections of its own would hide the shape of
           the homepage inside a file called Triptych. */}
       {children}
+
+      {/* ---- THE FIRST WINDOW — transparent. The world, before the pause. --
+
+              "the transparent section showing the flatmap must be between
+               these two rows"
+
+          Right, and it fixes a rhythm fault rather than adding decoration. The
+          composition ran opaque → opaque → opaque → glass: the About band, the
+          ladder and the plane in an unbroken run, with the picture appearing
+          once at the very end. A window that only opens on the way out is not a
+          window, it is a coda. The map now appears BEFORE the pause and again
+          after it, so the plane is genuinely an interruption of something
+          rather than the last solid thing before a reveal.
+
+          WHAT IT CARRIES CAME BACK FROM THE CUTTING-ROOM FLOOR. "A university
+          without borders." stood in block 1 on flat purple and was replaced,
+          correctly, because a slogan on an empty ground is a poster rather than
+          a section. Nothing was wrong with the sentence — it was in the wrong
+          place. It is a claim about REACH, and here it is set on a map of every
+          continent at once with Africa at its foot. The picture is the evidence
+          for the words, which is the only good reason to put words on a
+          picture.
+
+          Centred and mid-height, because the closing statement below is
+          right-aligned and high. Two identical windows would read as one long
+          band interrupted by an accident. */}
+      <div data-block="" className="relative flex min-h-[52svh] items-center lg:min-h-[56svh]">
+        <div aria-hidden="true" className="absolute inset-0 -z-[5]" style={{ background: plate('50% 50%') }} />
+
+        <div className="mx-auto w-full max-w-7xl px-6 py-20 text-center sm:px-10 lg:px-16">
+          <p className="mx-auto max-w-3xl font-heading text-[clamp(2.1rem,5.4vw,4rem)] font-bold leading-[1.04] tracking-[-0.03em] [text-wrap:balance]">
+            A university without borders.
+          </p>
+        </div>
+      </div>
 
       {/* ---- BLOCK 2 — OPAQUE. Whatever the page puts on the plane. --------
 
