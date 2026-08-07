@@ -208,6 +208,150 @@ for (const chapter of windows) {
   else fail(`${chapter}: the copy reaches ${highest}px, under the ${headerH}px header — reduce the band height`);
 }
 
+// -------------------------------------------------------------------------
+// THE TRIPTYCH — one pinned photograph, three blocks driven across it.
+//
+// This has its own probe rather than reusing the fixed-window one because its
+// copy is NOT centred in the band: block 1's heading is meant to leave the top
+// of the screen entirely as the reader travels, so the "copy clears the header"
+// assertion above would fail a composition that is behaving exactly as designed.
+//
+// What has to be true instead is the thing the first build got wrong. It is not
+// enough for the picture to be present and shared — it must be PINNED, and the
+// three blocks must differ in opacity in the right order. A parent-scoped
+// background passes "one image, spans all three blocks" perfectly and is still
+// the wrong composition, because nothing crosses anything.
+//
+// So: exactly one photograph, stationary to the pixel, and a middle block whose
+// background is fully opaque between two that have no background at all.
+// -------------------------------------------------------------------------
+const triptychs = await page.evaluate(() =>
+  [...document.querySelectorAll('[data-triptych]')].map((el) => el.getAttribute('data-chapter') || '(unnamed)'),
+);
+
+if (triptychs.length) console.log('\nTriptych\n');
+
+for (const chapter of triptychs) {
+  const shape = await page.evaluate((c) => {
+    const el = [...document.querySelectorAll('[data-triptych]')].find(
+      (n) => (n.getAttribute('data-chapter') || '(unnamed)') === c,
+    );
+    // The content blocks: direct children that are not the decorative fixed
+    // layers and not the screen-reader caption.
+    const blocks = [...el.children].filter(
+      (n) => n.getAttribute('aria-hidden') !== 'true' && !n.classList.contains('sr-only'),
+    );
+    const alphaOf = (n) => {
+      const m = getComputedStyle(n).backgroundColor.match(/rgba?\(([^)]+)\)/);
+      if (!m) return 0;
+      const p = m[1].split(/[,\s/]+/).filter(Boolean).map(Number);
+      return p.length > 3 ? p[3] : 1;
+    };
+    return {
+      images: el.querySelectorAll('img').length,
+      blocks: blocks.length,
+      alphas: blocks.map(alphaOf),
+    };
+  }, chapter);
+
+  const reads = [];
+  for (const f of [0.05, 0.5, 0.95]) {
+    await page.evaluate(
+      ([c, frac]) => {
+        const el = [...document.querySelectorAll('[data-triptych]')].find(
+          (n) => (n.getAttribute('data-chapter') || '(unnamed)') === c,
+        );
+        const r = el.getBoundingClientRect();
+        const top = window.scrollY + r.top;
+        window.scrollTo({
+          top: top + Math.max(r.height - window.innerHeight, 0) * frac,
+          behavior: 'instant',
+        });
+      },
+      [chapter, f],
+    );
+    await page
+      .waitForFunction(
+        (c) => {
+          const el = [...document.querySelectorAll('[data-triptych]')].find(
+            (n) => (n.getAttribute('data-chapter') || '(unnamed)') === c,
+          );
+          const img = el && el.querySelector('img');
+          return !!img && img.complete && img.naturalWidth > 0;
+        },
+        chapter,
+        { timeout: 15000 },
+      )
+      .catch(() => {});
+    await page.waitForTimeout(250);
+    reads.push(
+      await page.evaluate((c) => {
+        const el = [...document.querySelectorAll('[data-triptych]')].find(
+          (n) => (n.getAttribute('data-chapter') || '(unnamed)') === c,
+        );
+        const img = el.querySelector('img');
+        const ir = img.getBoundingClientRect();
+        const first = el.querySelector('h2');
+        return {
+          loaded: img.complete && img.naturalWidth > 0,
+          atViewport:
+            Math.abs(ir.top) <= 2 &&
+            Math.abs(ir.height - document.documentElement.clientHeight) <= 4 &&
+            Math.abs(ir.width - document.documentElement.clientWidth) <= 4,
+          imgTop: Math.round(ir.top),
+          imgLeft: Math.round(ir.left),
+          copyTop: first ? Math.round(first.getBoundingClientRect().top) : 0,
+        };
+      }, chapter),
+    );
+  }
+  if (process.env.DEBUG_SCENES) console.log('    debug:', JSON.stringify({ shape, reads }));
+
+  const drift =
+    Math.max(...reads.map((r) => r.imgTop)) -
+    Math.min(...reads.map((r) => r.imgTop)) +
+    (Math.max(...reads.map((r) => r.imgLeft)) - Math.min(...reads.map((r) => r.imgLeft)));
+  const travel = Math.max(...reads.map((r) => r.copyTop)) - Math.min(...reads.map((r) => r.copyTop));
+
+  console.log(`  ${chapter}`);
+
+  if (shape.images === 1) pass('one photograph, not one per block');
+  else fail(`${chapter}: ${shape.images} images — the composition is duplicated, not shared`);
+
+  if (shape.blocks === 3) pass('three blocks');
+  else fail(`${chapter}: ${shape.blocks} content blocks, expected 3`);
+
+  if (reads.every((r) => r.loaded)) pass('the photograph actually loaded');
+  else fail(`${chapter}: the photograph never loaded — a blank band reports 0px drift too`);
+
+  if (reads.every((r) => r.atViewport)) pass('it is pinned to the viewport at every depth');
+  else
+    fail(
+      `${chapter}: the photograph is not viewport-sized at the viewport origin (top ${reads
+        .map((r) => r.imgTop)
+        .join('/')}) — this is a shared background that scrolls, not a pinned one`,
+    );
+
+  if (drift <= 2) pass(`the photograph is stationary (${drift}px drift)`);
+  else
+    fail(
+      `${chapter}: the photograph moved ${drift}px — an ancestor has gained transform/filter/will-change/contain, or the image is no longer fixed`,
+    );
+
+  if (travel > 150) pass(`the blocks travel across it (${travel}px)`);
+  else fail(`${chapter}: the blocks only travel ${travel}px — nothing crosses anything`);
+
+  const [a, b, c] = shape.alphas;
+  if (b >= 0.999) pass('the middle block is opaque — it hides the photograph');
+  else fail(`${chapter}: the middle block's background alpha is ${b} — it cannot interrupt anything`);
+
+  if (a < 0.02 && c < 0.02) pass('the outer blocks have no background of their own');
+  else
+    fail(
+      `${chapter}: outer block alphas are ${a} and ${c} — a background on a block that is meant to be a window will hide the photograph`,
+    );
+}
+
 await browser.close();
 console.log('');
 if (failures) {

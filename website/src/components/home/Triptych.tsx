@@ -3,88 +3,142 @@ import Link from 'next/link';
 import { Grain } from '@/components/Atmosphere';
 
 // ---------------------------------------------------------------------------
-// THE SIGNATURE COMPOSITION — photograph, interruption, photograph.
+// THE SIGNATURE COMPOSITION — one photograph held still, three blocks driven
+// across it.
 //
 // ===========================================================================
-// ONE IMAGE ON THE PARENT. THREE CHILDREN THAT ONLY OWN THEIR OWN OVERLAY.
+// THE CORRECTION THAT PRODUCED THIS FILE
 // ===========================================================================
 //
-// The requirement is spatial continuity: the reader must perceive
-// IMAGE → COLOUR → IMAGE, not three sections that happen to share a picture.
+// The first build of this satisfied the letter of the brief and missed the
+// point of it. It put ONE <Image fill> on the section and let three children
+// carry their own overlays, so the picture was continuous across all three
+// blocks — block 3 showed exactly what it would show if block 2 were glass.
+// Structurally guaranteed, measured, and correct in every respect except the
+// one that mattered:
 //
-// That is guaranteed here by construction rather than by matching values. The
-// photograph is a single <Image fill> on the SECTION, so it is laid out once
-// across the whole composition. The three blocks are content layers with
-// nothing but their own background:
+//     "the background image does not stick. you move and scroll the three
+//      containers across the image background"
 //
-//   block 1   translucent lavender   the photograph reads
-//   block 2   opaque purple          the photograph is behind an architectural plane
-//   block 3   translucent lavender   the same photograph continues, uninterrupted
+// A parent-scoped background is laid out ONCE and then travels with the page.
+// The picture and the blocks move together, so nothing crosses anything —
+// scrolling reveals no more of the photograph at the bottom of the composition
+// than it did at the top. It is a shared background. It is not a scene.
 //
-// Because there is one image element sized to the parent, block 3 shows exactly
-// the part of the picture it would show if block 2 were glass. No
-// background-position is set per block, nothing is duplicated, nothing is
-// cropped independently — the continuity is not maintained, it is structural,
-// and it cannot drift when a block's height changes.
+// What is being asked for is the opposite relationship. The photograph does not
+// belong to the section at all: it is pinned to the VIEWPORT and does not move,
+// and the three blocks are driven up across it. A different part of the picture
+// stands behind the words at the end of the scroll than at the beginning, and
+// the middle block passes over it like a shutter closing and opening again.
 //
-// This is why the composition is NOT built on FixedWindow, which already exists
-// and already puts one photograph behind several blocks. FixedWindow locks the
-// image to the VIEWPORT: the picture stays still and the page travels over it,
-// which is a different effect and cannot produce a middle block that hides the
-// image while the two outer blocks stay registered to each other.
-//
-// ===========================================================================
-// THE BOUNDARIES ARE THE WHOLE JOB
-// ===========================================================================
-//
-// Three stacked rectangles would be a failure of this brief. The purple plane
-// meets the photograph through a short gradient at each edge — long enough to
-// read as designed, short enough that the plane still reads as a plane rather
-// than a fade. A gold hairline sits on each seam.
-//
-// The type is asymmetric on purpose: block 1 sits low and left, block 2 is
-// centred and enormous, block 3 sits high and right. The eye crosses the
-// composition diagonally rather than running down a column, which is what stops
-// three full-height blocks from feeling like three scrolls of the same thing.
+//     block 1   transparent   the fixed photograph reads through a violet wash
+//     block 2   OPAQUE        the photograph is behind an architectural plane
+//     block 3   transparent   the same fixed photograph, now showing a
+//                             different part of itself, because the reader
+//                             has travelled and the picture has not
 //
 // ===========================================================================
-// THE RESOLUTION COST, STATED RATHER THAN HIDDEN
+// HOW THE IMAGE IS HELD STILL
 // ===========================================================================
 //
-// This is the one place on the page where the repository's photography is
-// pushed past the rule the rest of it follows.
+//   the section   position: relative; clip-path: inset(0)
+//   the picture   position: fixed; inset: 0     (one viewport of photograph)
 //
-// A tall container scales an image by HEIGHT under object-cover, and the first
-// build of this made that mistake plainly: at 175svh the composition was 1862px
-// tall, a 1080×720 source was scaled 2.6×, and between that and a heavy tint the
-// photograph was effectively invisible in the two blocks built to show it. A
-// composition whose whole point is IMAGE → COLOUR → IMAGE had become
-// COLOUR → COLOUR → COLOUR.
+// `clip-path` clips every descendant including fixed ones, so the viewport-sized
+// picture is only ever visible through this section. It is the same mechanism
+// as FixedWindow.tsx, and the reasoning there applies here in full: NOT
+// `background-attachment: fixed`, which iOS Safari has silently ignored for a
+// decade, on the single most common device these students will use.
 //
-// Now ~146svh, about 1390px, so the scale is near 1.9× — and the tint is light
-// enough to be a tint rather than a scrim.
+// THE SUBTLETY THAT BREAKS IT: clip-path clips fixed descendants but does not
+// become their containing block. `transform`, `filter`, `backdrop-filter`,
+// `perspective`, `contain`, or `will-change` on any of those WOULD become one —
+// at which point `position: fixed` behaves as `position: absolute`, the picture
+// scrolls with the section, and this file quietly reverts to the version it
+// replaces. A later hand adding `will-change: transform` "for performance"
+// would delete the effect without touching a line of it.
 //
-// It is knowingly accepted here for one reason: the brief asks for a LIGHT
-// lavender treatment so the photograph stays luminous, and a light treatment is
-// exactly the one that shows softness. So this section will look better than any
-// other on the page the day a commissioned photograph arrives, and slightly
-// softer than it should until then. The taller sources in the library are a
-// memorial portrait and personal photographs — not usable as a decorative
-// ground at any resolution.
+// scripts/check-scenes.mjs measures the picture's viewport rectangle at three
+// scroll depths and fails on any drift at all, and separately proves the middle
+// block is opaque and the outer two are not.
 //
-// If that trade is judged wrong, the fix is one line: reduce the block heights.
+// ===========================================================================
+// WHAT PINNING FIXED, BESIDES THE EFFECT
+// ===========================================================================
+//
+// The previous build carried a knowingly-accepted resolution cost, written out
+// at length: a parent-scoped image is scaled to the height of the WHOLE
+// composition, so a 1080×720 source stretched to 1501px was a 2.1× upscale, and
+// the section that most needed a luminous photograph had the softest one.
+//
+// A fixed picture is one viewport tall no matter how long the composition runs.
+// The same source now covers ~900px — about 1.25× — and the blocks can be as
+// tall as the scene needs without touching the image quality at all. The cost
+// disappeared with the mistake that caused it.
+//
+// ===========================================================================
+// THE WASH, AND THE MISTAKE THIS UNIVERSITY HAS NOW MADE TWICE
+// ===========================================================================
+//
+// The tint is a LIGHT violet, lighter than most of what it covers, so it lifts
+// the frame into lavender rather than pushing it toward black. It is flat, not
+// a gradient: a gradient over a stationary picture would light one end of the
+// image differently from the other as the blocks travelled across it, which is
+// exactly the artefact a pinned photograph should not have. It is fixed with
+// the picture for the same reason.
+//
+// The plate — a soft ellipse of darkness behind the words only — is NOT fixed,
+// because it belongs to the words and has to travel with them.
+//
+// The plate is 0.56 and stays there. When a gold eyebrow measured 2.04:1 on the
+// first build, the plate was driven 0.70 → 0.86 → 0.94 to rescue it, which is a
+// near-black wash: the photograph was buried to save one 11px label. That is
+// the fault this university corrected once already on the fixed-window bands,
+// and repeating it here earned the note that produced this rewrite. The
+// contrast was then solved properly by changing the INK to white — and the
+// label was removed altogether, because small text cannot live on a luminous
+// photograph at all. White is the lightest ink there is and it still measured
+// 3.12:1 against a 4.5 requirement.
+//
+// Hence: only LARGE type sits on the picture here. That is not a stylistic
+// preference. It is the only kind of text this treatment can carry.
 // ---------------------------------------------------------------------------
+
+/** Flat, light, fixed with the picture. Keeps the photograph; carries no text. */
+const TINT = 'rgba(148,114,220,0.42)';
+
+/**
+ * The plate behind the words. Feathers to nothing well before the edges, so the
+ * photograph at the margins is untouched and the darkness is spent only where
+ * the words already are.
+ */
+const plate = (at: string) =>
+  `radial-gradient(ellipse 64% 70% at ${at},` +
+  ' rgba(11,5,24,0.56) 0%,' +
+  ' rgba(14,7,30,0.34) 48%,' +
+  ' rgba(16,8,34,0.10) 78%,' +
+  ' rgba(16,8,34,0) 100%)';
 
 export default function Triptych() {
   return (
     <section
       data-on-dark=""
       data-chapter="The university"
+      data-triptych=""
       aria-labelledby="triptych-heading"
-      className="relative isolate bg-brand-purple-dark text-white"
+      // relative z-10 so this paints in the positioned layer like every other
+      // section — see Section.tsx on why an unpositioned band goes underneath
+      // everything it is meant to sit beside.
+      //
+      // NO `isolate`, NO transform, NO will-change. See the header.
+      className="relative z-10 bg-brand-purple-dark text-white"
+      style={{ clipPath: 'inset(0)' }}
     >
-      {/* THE ONE PHOTOGRAPH. Laid out across the entire composition. */}
-      <div aria-hidden="true" className="absolute inset-0 -z-20 overflow-hidden">
+      {/* THE ONE PHOTOGRAPH. A full viewport of it, stationary, seen through
+          whichever blocks are transparent at this moment.
+          `fill` sets position:absolute on the <img>, which is why it is wrapped
+          in the fixed div rather than being fixed itself. */}
+      <div aria-hidden="true" className="fixed inset-0 -z-20">
         <Image
           src="/images/graduation-2024/grad-2024-congregation-full.jpg"
           alt=""
@@ -93,74 +147,32 @@ export default function Triptych() {
           quality={86}
           loading="lazy"
           className="object-cover"
-          style={{ objectPosition: '52% 34%' }}
+          style={{ objectPosition: '52% 38%' }}
         />
       </div>
-      <div aria-hidden="true" className="absolute inset-0 -z-10">
-        <Grain opacity={0.06} />
+      {/* Fixed with the picture, not with the blocks. A wash that scrolled while
+          the photograph stayed put would slide its own shading across the image
+          — the failure that makes most parallax bands look wrong at one end. */}
+      <div aria-hidden="true" className="fixed inset-0 -z-10" style={{ background: TINT }} />
+      <div aria-hidden="true" className="fixed inset-0 -z-10">
+        <Grain opacity={0.07} />
       </div>
-      {/* The photograph is decorative here — the composition's meaning is in the
-          words — but a reader using a screen reader should still be told what
-          the page is showing them. */}
+
+      {/* The photograph is decorative — the meaning is in the words — but the
+          alt has to live on a real element, because the picture above is
+          aria-hidden and its alt would never be announced. */}
       <span className="sr-only">
         The academic body of ICOF Global University at the 2024 congregation.
       </span>
 
-      {/* ---- BLOCK 1 — the photograph reads ------------------------------- */}
-      <div className="relative flex min-h-[46svh] items-end lg:min-h-[50svh]">
-        {/* Translucent lavender, not a dark scrim. Light enough that the robes
-            and faces stay legible; even, so the picture is not lit unevenly
-            across a block that is only part of a larger frame. */}
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 -z-10"
-          style={{ background: 'linear-gradient(180deg, rgba(140,108,214,0.30) 0%, rgba(112,80,186,0.40) 100%)' }}
-        />
-        {/* THE PLATE — AND THE MISTAKE IT WAS TALKED INTO.
-            When the gold eyebrow measured 2.04:1 the response was to drive this
-            plate from 0.70 to 0.86 to 0.94, which is a near-black wash: the
-            photograph was buried to rescue one 11px label. That is precisely
-            the fault this university corrected once already on the fixed-window
-            bands — a picture dimmed until it is safe to set text on is not a
-            picture — and it was repeated here, with a comment praising the
-            plate for "doing all the contrast work" while it did the damage.
-            The contrast was then actually solved by changing the INK: white
-            instead of gold, 5.12:1. Once the ink carried it the plate had no
-            job left, and it should have come straight back down. It is 0.56
-            now — enough to seat the words, light enough that the robes and
-            faces behind them still read.
-            The lesson, written where the next person will hit it: when a light
-            ground fails a light ink, change the ink. Darkening the ground is
-            the answer that always works and always costs the photograph. */}
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 -z-10"
-          style={{
-            background:
-              'radial-gradient(ellipse 62% 68% at 24% 78%, rgba(11,5,24,0.56) 0%, rgba(14,7,30,0.34) 48%, rgba(16,8,34,0.10) 78%, rgba(16,8,34,0) 100%)',
-          }}
-        />
+      {/* ---- BLOCK 1 — transparent. The photograph reads. ------------------
+          No background of any kind: everything behind this block is the fixed
+          picture. Only the plate, which travels with the words. */}
+      <div className="relative flex min-h-[56svh] items-end lg:min-h-[62svh]">
+        <div aria-hidden="true" className="absolute inset-0 -z-[5]" style={{ background: plate('24% 74%') }} />
 
         <div className="mx-auto w-full max-w-7xl px-6 pb-20 sm:px-10 lg:px-16 lg:pb-24">
           <div className="max-w-xl">
-            {/* NO EYEBROW HERE, and the reason is the whole argument of this
-                composition.
-
-                It read "Who we are" at 11px. On a tint light enough for the
-                photograph to stay luminous it measured 2.04:1 in gold and
-                3.12:1 in white, against a 4.5 requirement — and white is the
-                lightest ink there is. Neither the ink nor the ground had
-                anywhere left to go.
-
-                Which means small text simply cannot live on a luminous
-                photograph. The brief asked for "a small amount of LARGE
-                editorial text over the image", and that is not a stylistic
-                preference: it is the only kind of text the treatment can carry.
-                The heading below is 3.8rem and clears its requirement easily.
-
-                The label was also scaffolding — the same species as the
-                numbered section markers already removed. A composition that has
-                to caption its own blocks is not composed. */}
             <h2
               id="triptych-heading"
               className="font-heading text-[clamp(2.1rem,5vw,3.8rem)] font-bold leading-[1.04] tracking-[-0.03em] [text-wrap:balance]"
@@ -171,11 +183,15 @@ export default function Triptych() {
         </div>
       </div>
 
-      {/* ---- BLOCK 2 — the architectural plane ---------------------------- */}
-      <div className="relative flex min-h-[54svh] items-center bg-brand-purple-dark lg:min-h-[58svh]">
+      {/* ---- BLOCK 2 — OPAQUE. The shutter. --------------------------------
+          bg-brand-purple-dark with no transparency anywhere in it. This is the
+          block that hides the fixed picture, and it is the only one that has a
+          background at all. */}
+      <div className="relative flex min-h-[62svh] items-center bg-brand-purple-dark lg:min-h-[66svh]">
         {/* The two seams. Short — 5rem — so the plane still reads as a plane.
             Any longer and the purple becomes a fade, which is the opposite of
-            an interruption. */}
+            an interruption. They hang outside the block, over the transparent
+            neighbours, so the shutter closes softly on a moving picture. */}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-x-0 -top-20 h-20 bg-gradient-to-b from-transparent to-brand-purple-dark"
@@ -194,12 +210,15 @@ export default function Triptych() {
         />
 
         <div className="mx-auto w-full max-w-7xl px-6 py-24 text-center sm:px-10 lg:px-16">
+          {/* An eyebrow is legible HERE and nowhere else in this composition,
+              because this is the one block with a solid ground under it —
+              gold on #2a1c3d, not gold on a photograph. */}
           <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.34em] text-brand-gold">
             What we believe
           </p>
           {/* The motto, at the largest size anywhere on the site. This block
-              exists to be the pause in the photograph — it has three words and
-              nothing else, and the emptiness around them is the point. */}
+              exists to be the pause in the photograph — three words and nothing
+              else, and the emptiness around them is the point. */}
           <p className="mt-12 font-heading text-[clamp(2.4rem,7.5vw,6rem)] font-bold uppercase leading-[1.02] tracking-[-0.04em]">
             Nobility.
             <br />
@@ -210,30 +229,30 @@ export default function Triptych() {
         </div>
       </div>
 
-      {/* ---- BLOCK 3 — the photograph continues --------------------------- */}
-      <div className="relative flex min-h-[46svh] items-start lg:min-h-[50svh]">
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 -z-10"
-          style={{ background: 'linear-gradient(180deg, rgba(112,80,186,0.40) 0%, rgba(140,108,214,0.30) 100%)' }}
-        />
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 -z-10"
-          style={{
-            background:
-              'radial-gradient(ellipse 62% 68% at 76% 26%, rgba(11,5,24,0.56) 0%, rgba(14,7,30,0.34) 48%, rgba(16,8,34,0.10) 78%, rgba(16,8,34,0) 100%)',
-          }}
-        />
+      {/* ---- BLOCK 3 — transparent. The photograph returns. ----------------
+          Not the same crop as block 1, and that is the whole effect: the reader
+          has travelled roughly a viewport and a half, the picture has not moved
+          at all, so a different part of the congregation now stands behind the
+          words. */}
+      <div className="relative flex min-h-[56svh] items-start lg:min-h-[62svh]">
+        <div aria-hidden="true" className="absolute inset-0 -z-[5]" style={{ background: plate('76% 30%') }} />
 
         <div className="mx-auto w-full max-w-7xl px-6 pt-20 sm:px-10 lg:px-16 lg:pt-24">
           <div className="ml-auto max-w-xl lg:text-right">
             <h3 className="font-heading text-[clamp(1.9rem,4.4vw,3.3rem)] font-bold leading-[1.06] tracking-[-0.03em] [text-wrap:balance]">
               Preparing people for the world that is coming.
             </h3>
+            {/* WHITE, not gold, and this is the rule the composition is built
+                on rather than a colour preference. This link is 15px — small
+                text — and it sits on a photograph deliberately kept luminous.
+                Gold is a LIGHT ink (#f7dc79 is 0.73 relative luminance); on a
+                ground light enough to still be a photograph it cannot reach
+                4.5:1, and the only ways to rescue it are to darken the picture
+                or enlarge the text. The gold is spent on the hover border,
+                where nothing has to be read. */}
             <Link
               href="/about"
-              className="group mt-10 inline-flex items-center gap-3 border-b border-brand-gold/40 pb-1 font-heading text-[15px] font-bold text-brand-gold transition duration-300 hover:border-brand-gold hover:text-white"
+              className="group mt-10 inline-flex items-center gap-3 border-b border-white/45 pb-1 font-heading text-[15px] font-bold text-white transition duration-300 hover:border-brand-gold"
             >
               Explore the university
               <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">
