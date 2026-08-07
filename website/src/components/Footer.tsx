@@ -30,9 +30,9 @@ export default function Footer() {
         </div>
 
         <div>
-          <h3 className="font-heading text-sm font-semibold uppercase tracking-wider text-brand-gold after:mt-3 after:block after:h-[2px] after:w-8 after:rounded-full after:bg-brand-gold/40">
+          <h2 className="font-heading text-sm font-semibold uppercase tracking-wider text-brand-gold after:mt-3 after:block after:h-[2px] after:w-8 after:rounded-full after:bg-brand-gold/40">
             Explore
-          </h3>
+          </h2>
           <ul className="mt-4 space-y-2 text-sm">
             {site.nav.map((item) => (
               <li key={item.href + item.label}>
@@ -55,9 +55,9 @@ export default function Footer() {
         </div>
 
         <div>
-          <h3 className="font-heading text-sm font-semibold uppercase tracking-wider text-brand-gold after:mt-3 after:block after:h-[2px] after:w-8 after:rounded-full after:bg-brand-gold/40">
+          <h2 className="font-heading text-sm font-semibold uppercase tracking-wider text-brand-gold after:mt-3 after:block after:h-[2px] after:w-8 after:rounded-full after:bg-brand-gold/40">
             Student Portals
-          </h3>
+          </h2>
           <ul className="mt-4 space-y-2 text-sm">
             {site.portals.map((p) => (
               <li key={p.href}>
@@ -70,9 +70,9 @@ export default function Footer() {
         </div>
 
         <div>
-          <h3 className="font-heading text-sm font-semibold uppercase tracking-wider text-brand-gold after:mt-3 after:block after:h-[2px] after:w-8 after:rounded-full after:bg-brand-gold/40">
+          <h2 className="font-heading text-sm font-semibold uppercase tracking-wider text-brand-gold after:mt-3 after:block after:h-[2px] after:w-8 after:rounded-full after:bg-brand-gold/40">
             Get in Touch
-          </h3>
+          </h2>
           <ul className="mt-4 space-y-2 text-sm text-white/80">
             <li>{site.address}</li>
             <li>
