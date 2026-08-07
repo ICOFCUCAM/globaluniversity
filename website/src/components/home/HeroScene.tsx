@@ -92,30 +92,59 @@ export default function HeroScene() {
       aria-labelledby="hero-heading"
       className="relative isolate flex min-h-[100svh] items-center overflow-hidden bg-brand-purple-dark text-white"
     >
-      {/* ---- the photographic panel, right, bleeding off three edges ------- */}
+      {/* ---- the photographic panel, right, bleeding off three edges -------
+
+          THE IMAGE IS A RENDER, NOT A PHOTOGRAPH, and that is recorded here
+          rather than left for somebody to discover. It was supplied by the
+          university as the hero image and it is a generated view of a campus —
+          a stone faculty building, a plaza, jacaranda in flower at sunrise. No
+          such building appears anywhere else in this repository's photography,
+          which is of congregations, registration desks and lecture rooms.
+
+          A reader has no way to tell, and the ordinary reading of a large
+          building on a university's homepage is "this is our campus". That is
+          the same species of claim as the "7,228 Success Stories" this site
+          removed: not a lie anyone typed, but a thing a visitor will believe
+          that the institution cannot evidence. It is the university's call to
+          make and it has been made; it is written down so the next person
+          understands what they are looking at.
+
+          Two consequences are handled here rather than argued about. The ALT
+          TEXT does not assert that this is the university's campus — it
+          describes what is in the frame and nothing more, because alt text is
+          the one place a claim would be made in the institution's own voice to
+          a reader who cannot see the picture. And the DUOTONE is heavier than
+          the panel it replaces: a render at full colour reads as stock, while
+          the same frame pulled into the institution's purple reads as a
+          treatment, which is both better design and less of an assertion.
+
+          Composition-wise it fits this panel exactly. The building and the tree
+          are on the right of the frame and the left is open plaza and sun, so
+          cropping to the right half keeps the architecture and discards the
+          blown-out sky that white type could never have sat on. */}
       <div className="absolute inset-y-0 right-0 -z-20 hidden w-[52%] lg:block xl:w-[50%]">
         <Image
-          src="/images/graduation-2024/grad-2024-procession-line.jpg"
-          alt="Faculty of ICOF Global University in academic procession at the 2024 congregation"
+          src="/images/campus/plaza-sunrise.png"
+          alt="A stone faculty building with columns, a paved plaza and a jacaranda in flower at sunrise"
           fill
           sizes="(min-width:1024px) 52vw, 100vw"
           quality={88}
           priority
           className="object-cover"
-          style={{ objectPosition: '62% 38%' }}
+          style={{ objectPosition: '78% 42%' }}
         />
         {/* Duotone. The panel is a supporting element, not the subject — pulling
             it into the institution's purple stops it competing with the
             headline and, not by accident, makes a 1080px source read as an
             intentional treatment rather than a soft photograph. */}
-        <div aria-hidden="true" className="absolute inset-0 bg-brand-purple/45 mix-blend-multiply" />
-        <div aria-hidden="true" className="absolute inset-0 bg-brand-gold/8 mix-blend-screen" />
+        <div aria-hidden="true" className="absolute inset-0 bg-brand-purple/48 mix-blend-multiply" />
+        <div aria-hidden="true" className="absolute inset-0 bg-brand-gold/10 mix-blend-screen" />
         {/* The seam. A long horizontal fade so the photograph dissolves into the
             purple rather than meeting it at a line — the join is the weakest
             point of any split composition and this is what hides it. */}
         <div
           aria-hidden="true"
-          className="absolute inset-y-0 left-0 w-2/3 bg-gradient-to-r from-brand-purple-dark via-brand-purple-dark/70 to-transparent"
+          className="absolute inset-y-0 left-0 w-[46%] bg-gradient-to-r from-brand-purple-dark via-brand-purple-dark/65 to-transparent"
         />
         <div
           aria-hidden="true"
@@ -132,14 +161,14 @@ export default function HeroScene() {
           photograph, it is a stripe. */}
       <div aria-hidden="true" className="absolute inset-0 -z-20 lg:hidden">
         <Image
-          src="/images/graduation-2024/grad-2024-procession-line.jpg"
+          src="/images/campus/plaza-sunrise.png"
           alt=""
           fill
           sizes="100vw"
           quality={80}
           priority
           className="object-cover"
-          style={{ objectPosition: '58% 36%' }}
+          style={{ objectPosition: '72% 44%' }}
         />
         <div aria-hidden="true" className="absolute inset-0 bg-brand-purple-dark/86" />
         <div aria-hidden="true" className="absolute inset-0 bg-brand-purple/35 mix-blend-multiply" />
