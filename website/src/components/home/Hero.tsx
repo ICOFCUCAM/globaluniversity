@@ -142,10 +142,18 @@ export default function Hero() {
             screens it moves ABOVE the copy at a modest 200px, where a crest
             over a name is the oldest masthead there is, and only becomes the
             right-hand subject once there is a column to put it in. */}
-        <div
-          aria-hidden="true"
-          className="relative order-first mx-auto w-full max-w-[200px] lg:order-none lg:max-w-[min(520px,58vh)]"
-        >
+        <div className="order-first w-full lg:order-none">
+          {/* aria-hidden covers the FIGURE only, not the whole column. The
+              drawing is decorative — its name and founding year are set in
+              readable type elsewhere on the page, so announcing it would read
+              the same words twice — but the motto below it is words the
+              university means, and it stays in the accessibility tree.
+
+              This inner div also keeps the absolutely-positioned disc and glow
+              anchored to the crest's own square box. Hung off the column
+              instead, they would stretch to include the motto and the disc
+              would sit low and oval. */}
+          <div aria-hidden="true" className="relative mx-auto w-full max-w-[176px] lg:max-w-[min(520px,58vh)]">
           {/* The dark disc the device is struck on. Gold hairlines on a
               mid-purple field have very little to push against; dropping the
               ground beneath them by a couple of stops is what turns a wire
@@ -181,6 +189,26 @@ export default function Hero() {
             style={{ filter: 'drop-shadow(0 0 18px rgba(233,193,74,0.20))' }}
             dangerouslySetInnerHTML={{ __html: CREST }}
           />
+          </div>
+
+          {/* THE MOTTO, BENEATH THE MARK.
+              It used to sit in the text column as a second row of tracked-out
+              capitals directly under "A Global University" — two pieces of
+              throat-clearing before the reader reached a sentence that said
+              anything. Under the crest it is a caption to the mark, which is
+              where a motto is struck on a real seal, and it is legible rather
+              than being the reason the headline starts 60px lower.
+
+              This is NOT aria-hidden, unlike the crest above it: the motto is
+              words the university means, not decoration. */}
+          <p className="mt-4 flex flex-wrap items-center justify-center sm:mt-6 gap-x-3 gap-y-1.5 font-sans text-[10px] font-semibold uppercase tracking-[0.24em] text-brand-gold sm:text-[11px] sm:tracking-[0.3em]">
+            {UNIVERSITY.motto.replace(/&/g, '·').split(/[,·]/).map((word, wi) => (
+              <span key={word} className="flex items-center gap-3">
+                {wi > 0 && <span aria-hidden="true" className="h-1 w-1 rounded-full bg-brand-gold/70" />}
+                {word.trim()}
+              </span>
+            ))}
+          </p>
         </div>
       </div>
 

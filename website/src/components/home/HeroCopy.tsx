@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { heroSlides } from '@/content/site';
 import { HERO_ASSURANCES } from '@/content/institutionalFacts';
-import { UNIVERSITY } from '@/lib/constants';
 import Magnetic from '@/components/Magnetic';
 
 // ---------------------------------------------------------------------------
@@ -49,17 +48,15 @@ export default function HeroCopy() {
       onFocusCapture={() => setPaused(true)}
       onBlurCapture={() => setPaused(false)}
     >
-      <p className="font-heading text-[13px] font-bold uppercase tracking-[0.42em] text-white/85 sm:text-[15px] sm:tracking-[0.5em]">
+      {/* ONE line of capitals before the headline, not two.
+          The motto used to sit here as a second all-caps row, so a reader met
+          two pieces of tracked-out throat-clearing before reaching a sentence
+          that said anything. It has moved to where a motto belongs — beneath
+          the crest, in Hero.tsx, which is the same place it would be struck on
+          a real seal. */}
+      <p className="flex items-center gap-4 font-heading text-[13px] font-bold uppercase tracking-[0.42em] text-white/85 sm:text-[15px] sm:tracking-[0.5em]">
         A Global University
-      </p>
-
-      <p className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-1.5 font-sans text-[10px] font-semibold uppercase tracking-[0.22em] text-brand-gold sm:text-[11px] sm:tracking-[0.26em]">
-        {UNIVERSITY.motto.replace(/&/g, '·').split(/[,·]/).map((word, wi) => (
-          <span key={word} className="flex items-center gap-3">
-            {wi > 0 && <span aria-hidden="true" className="h-1 w-1 rounded-full bg-brand-gold/70" />}
-            {word.trim()}
-          </span>
-        ))}
+        <span aria-hidden="true" className="hidden h-px w-12 bg-gradient-to-r from-brand-gold to-transparent sm:block" />
       </p>
 
       {/* key={line} REMOUNTS the node on every rotation, which is what replays
