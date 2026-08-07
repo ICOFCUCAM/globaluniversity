@@ -292,7 +292,18 @@ const SAMPLE = async ({ shot, items, scrollY }) => {
   const all = ctx.getImageData(0, 0, bitmap.width, bitmap.height).data;
   const W = bitmap.width;
   const H = bitmap.height;
-  const at = (x, y) => {
+  // NAMED `pixelAt`, NOT `at`, and the rename is the whole of a real bug.
+  //
+  // There were two `const at` in this function: this one, and a percentile
+  // helper 30 lines below. Both are function-scoped, so the later declaration
+  // put the earlier name in the temporal dead zone for the entire body — every
+  // call threw "Cannot access 'at' before initialization", and the checker died
+  // on every route before measuring anything.
+  //
+  // It shipped that way because the only routes it had been run against since
+  // the rewrite were ones where it timed out first, so the crash never
+  // surfaced. A tool that is never green is a tool nobody notices is broken.
+  const pixelAt = (x, y) => {
     const i = (y * W + x) * 4;
     return [all[i], all[i + 1], all[i + 2]];
   };
@@ -300,8 +311,19 @@ const SAMPLE = async ({ shot, items, scrollY }) => {
   const results = [];
 
   for (const item of items) {
+    // Luminance AND the pixel it came from, kept in step.
+    //
+    // The first version kept only the luminances and reported the FIRST pixel
+    // it happened to sample as "the background". Those are different things:
+    // the verdict comes from a decile of the whole line box, and the colour
+    // printed beside it came from one corner. On /contact that reported gold
+    // on rgb(66,46,89) at 1.27:1 — a ratio that is impossible for those two
+    // colours, because the ratio was measured against the real ground and the
+    // colour was picked from an icon. A number and a colour that disagree are
+    // worse than either alone: they send whoever is reading the output to the
+    // wrong element.
     const lums = [];
-    let sample = null;
+    const pixels = [];
     for (const r of item.rects) {
       // Document coordinates -> this viewport's coordinates.
       const x0 = Math.max(0, Math.round(r.x));
@@ -315,18 +337,21 @@ const SAMPLE = async ({ shot, items, scrollY }) => {
       const sy = Math.max(1, Math.floor((y1 - y0) / 8));
       for (let y = y0; y < y1; y += sy) {
         for (let x = x0; x < x1; x += sx) {
-          const px = at(x, y);
+          const px = pixelAt(x, y);
           lums.push(lum(px[0], px[1], px[2]));
-          if (!sample) sample = px;
+          pixels.push(px);
         }
       }
     }
     if (lums.length < 4) continue;
 
-    lums.sort((a, b) => a - b);
-    const at = (p) => lums[Math.min(lums.length - 1, Math.floor(p * lums.length))];
-    const lo = at(0.1);
-    const hi = at(0.9);
+    // Sort the pairs together so a decile still knows which pixel it was.
+    const order = lums.map((L, i) => i).sort((a, b) => lums[a] - lums[b]);
+    const at = (q) => order[Math.min(order.length - 1, Math.floor(q * order.length))];
+    const loI = at(0.1);
+    const hiI = at(0.9);
+    const lo = lums[loI];
+    const hi = lums[hiI];
 
     // The ink, composited onto each tail of the ground. An alpha-faded ink
     // lands somewhere between itself and what it sits on, so it must be
@@ -345,7 +370,10 @@ const SAMPLE = async ({ shot, items, scrollY }) => {
       return lum(r * a + gv * (1 - a), g * a + gv * (1 - a), b * a + gv * (1 - a));
     };
 
-    const worst = Math.min(ratioL(inkOn(lo), lo), ratioL(inkOn(hi), hi));
+    const rLo = ratioL(inkOn(lo), lo);
+    const rHi = ratioL(inkOn(hi), hi);
+    const worst = Math.min(rLo, rHi);
+    const worstPx = rLo <= rHi ? pixels[loI] : pixels[hiI];
     const required = item.large ? 3 : 4.5;
 
     results.push({
@@ -355,7 +383,8 @@ const SAMPLE = async ({ shot, items, scrollY }) => {
       required,
       // How much the ground moves under one line. Wide means a photograph.
       spread: Math.round((hi - lo) * 100) / 100,
-      bg: sample ? `rgb(${sample[0]}, ${sample[1]}, ${sample[2]})` : '?',
+      // The ground the VERDICT came from, not a corner of the box.
+      bg: worstPx ? `rgb(${worstPx[0]}, ${worstPx[1]}, ${worstPx[2]})` : '?',
       pass: worst >= required,
     });
   }
