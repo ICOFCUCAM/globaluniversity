@@ -54,9 +54,21 @@ export default function HeroCopy() {
           that said anything. It has moved to where a motto belongs — beneath
           the crest, in Hero.tsx, which is the same place it would be struck on
           a real seal. */}
+      {/* "A Global University" alone was true and said nothing a hundred other
+          institutions could not say. The second line is the part that is only
+          true here: this university is the higher-education expression of a
+          global Christian fellowship, and that relationship — not the
+          accreditation certificate — is what makes "global" mean something
+          before the reader has scrolled once.
+
+          Two weights, one block: the tracked-out capitals are the identity, the
+          line beneath is the provenance. */}
       <p className="flex items-center gap-4 font-heading text-[13px] font-bold uppercase tracking-[0.42em] text-white/85 sm:text-[15px] sm:tracking-[0.5em]">
         A Global University
         <span aria-hidden="true" className="hidden h-px w-12 bg-gradient-to-r from-brand-gold to-transparent sm:block" />
+      </p>
+      <p className="mt-3 font-sans text-[12px] leading-relaxed text-white/60 sm:text-[13.5px]">
+        of the International Circle of Faith
       </p>
 
       {/* key={line} REMOUNTS the node on every rotation, which is what replays

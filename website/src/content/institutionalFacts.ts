@@ -103,14 +103,23 @@ export function institutionalFacts(): Fact[] {
 /**
  * The line under the hero buttons.
  *
- * Shorter than the band and doing a different job: the band is evidence of
- * scale, this is evidence of standing. Every clause is checkable — the
- * accreditation against MINESUP's own register, the location against the
- * university's address, the modes against any programme page.
+ * WHY THE ACCREDITATION SENTENCE IS NOT HERE ANY MORE.
+ *
+ * "Accredited by the Ministry of Higher Education since 2007" was said four
+ * times on one page: in this line, under the proof band, in full in the
+ * standing band, and again in the footer. A claim repeated four times does not
+ * become four times as credible. It reads as a university with one thing to say
+ * — and it crowds out the thing that actually distinguishes this institution,
+ * which is that it is the higher-education expression of a global fellowship.
+ *
+ * So the accreditation is now stated ONCE on the homepage, in full and with its
+ * regulator named, in the standing band where a sceptical reader goes looking
+ * for it. What survives here is what the hero is for: who this is, where it
+ * reaches, and since when. Every clause is still checkable.
  */
 export const HERO_ASSURANCES: string[] = [
-  `Accredited by the Ministry of Higher Education since ${UNIVERSITY.established}`,
-  'Campuses in Buea and Douala · Centre in Nigeria',
+  `Founded ${UNIVERSITY.established} within the International Circle of Faith`,
+  'Buea · Douala · Nigeria',
   'Every programme online, worldwide',
 ];
 

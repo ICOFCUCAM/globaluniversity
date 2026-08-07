@@ -48,7 +48,7 @@ export default function ChancellorWord() {
       // words on top do not say.
       alt="Faculty and graduands of ICOF Global University in full academic dress at the 2024 congregation"
       anchor="left"
-      focal="50% 32%"
+      focal="50% 26%"
       exposure={0.55}
       height="tall"
       chapter="Chancellor"

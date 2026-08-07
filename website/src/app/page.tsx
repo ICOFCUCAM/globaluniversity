@@ -25,6 +25,7 @@ import GlobalNetwork from '@/components/home/GlobalNetwork';
 import ProgrammeFinder from '@/components/home/ProgrammeFinder';
 import VerificationDemo from '@/components/home/VerificationDemo';
 import ChancellorWord from '@/components/home/ChancellorWord';
+import GlobalMovement from '@/components/home/GlobalMovement';
 
 // THE THREE PILLARS ARE THE THREE WORDS OF THE MOTTO.
 //
@@ -207,6 +208,12 @@ export default async function HomePage() {
           than typed; see ProofBand for what was there before and why it had to
           go. */}
       <ProofBand />
+
+      {/* Who this university belongs to, before what it offers. The fellowship
+          is the reason "A Global University" is a description rather than an
+          aspiration — see GlobalMovement.tsx, including what it refuses to
+          claim about ICOF's size. */}
+      <GlobalMovement />
 
       {/* University overview */}
       <Section chapter="About" className="dark:bg-[#150f1e]">
