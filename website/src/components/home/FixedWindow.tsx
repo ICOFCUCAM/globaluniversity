@@ -136,11 +136,24 @@ export interface FixedWindowProps {
 // them is the whole trick.
 // ---------------------------------------------------------------------------
 
-/** The even violet tint. Keeps the photograph; does not carry the text. */
+/**
+ * The even violet tint. Keeps the photograph; does not carry the text.
+ *
+ * THE VALUES ARE READ OFF THE REFERENCE, not invented. The wash there is a
+ * LIGHT periwinkle — whites go lavender and mid-tones lift rather than sink, so
+ * a grey conference room reads as violet daylight. The first attempt at this
+ * used rgba(96,64,163), which is a dark plum: it tinted correctly and still
+ * dimmed the picture, because it is darker than most of what it sits on. A tint
+ * that only ever subtracts light is a scrim wearing a colour.
+ *
+ * These stops are lighter than the photographs they cover, so the wash lifts
+ * the frame into violet instead of pushing it toward black. That is the whole
+ * difference between the reference look and a purple scrim, and it is why the
+ * plate underneath the copy has to do all of the contrast work alone.
+ */
 function tint(exposure: number): string {
-  // Lower exposure = more violet, more picture lost. 0.5 is the reference look.
-  const a = (0.72 - exposure * 0.34).toFixed(3);
-  return `linear-gradient(180deg, rgba(96,64,163,${a}) 0%, rgba(74,48,132,${a}) 100%)`;
+  const a = (0.70 - exposure * 0.26).toFixed(3);
+  return `linear-gradient(180deg, rgba(152,118,224,${a}) 0%, rgba(122,90,196,${a}) 100%)`;
 }
 
 /** The soft plate behind the copy. Carries the text; barely touches the frame. */

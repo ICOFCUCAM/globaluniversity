@@ -149,26 +149,57 @@ for (const chapter of windows) {
       const top = window.scrollY + r.top;
       window.scrollTo({ top: top + Math.max(r.height - window.innerHeight, 0) * frac, behavior: 'instant' });
     }, [chapter, f]);
-    await page.waitForTimeout(420);
+    // Wait for the picture, don't guess. These are lazy, and sampling on a
+    // timer measures whatever happened to have arrived — which is how a
+    // working band gets reported as a blank one.
+    await page.waitForFunction((c) => {
+      const el = [...document.querySelectorAll('[data-fixed-window]')]
+        .find((n) => (n.getAttribute('data-chapter') || '(unnamed)') === c);
+      const img = el && el.querySelector('img');
+      return !!img && img.complete && img.naturalWidth > 0;
+    }, chapter, { timeout: 15000 }).catch(() => {});
+    await page.waitForTimeout(250);
     reads.push(await page.evaluate((c) => {
       const el = [...document.querySelectorAll('[data-fixed-window]')]
         .find((n) => (n.getAttribute('data-chapter') || '(unnamed)') === c);
       const img = el.querySelector('img');
       const copy = el.querySelector('h1, h2, h3, p');
+      const ir = img.getBoundingClientRect();
       return {
-        imgTop: Math.round(img.getBoundingClientRect().top),
-        imgLeft: Math.round(img.getBoundingClientRect().left),
+        // Liveness, checked before geometry. An image that never loaded, or one
+        // that has been re-anchored off screen, reports 0px drift — the same
+        // reading a perfectly working fixed window gives. Drift alone cannot
+        // tell the two apart, so it must never be the only assertion.
+        loaded: img.complete && img.naturalWidth > 0,
+        // clientWidth/clientHeight, not innerWidth/innerHeight: the latter
+        // include the scrollbar gutter, so a correct full-bleed image measures
+        // ~15px narrower than the window wherever scrollbars take space, and
+        // the check would fail a page that is fine.
+        atViewport: Math.abs(ir.top) <= 2
+          && Math.abs(ir.height - document.documentElement.clientHeight) <= 4
+          && Math.abs(ir.width - document.documentElement.clientWidth) <= 4,
+        imgTop: Math.round(ir.top),
+        imgLeft: Math.round(ir.left),
         copyTop: Math.round(el.querySelector('div.relative').getBoundingClientRect().top),
         firstTextTop: copy ? Math.round(copy.getBoundingClientRect().top) : 0,
       };
     }, chapter));
   }
+  if (process.env.DEBUG_SCENES) console.log('    debug reads:', JSON.stringify(reads));
   const drift = Math.max(...reads.map((r) => r.imgTop)) - Math.min(...reads.map((r) => r.imgTop))
     + Math.max(...reads.map((r) => r.imgLeft)) - Math.min(...reads.map((r) => r.imgLeft));
   const travel = Math.max(...reads.map((r) => r.copyTop)) - Math.min(...reads.map((r) => r.copyTop));
   const highest = Math.min(...reads.map((r) => r.firstTextTop));
 
   console.log(`  ${chapter}`);
+  // Liveness FIRST. A photograph that never loaded, or that is parked off
+  // screen, reports 0px drift and would otherwise sail through the check that
+  // is supposed to prove the technique works. Ask a broken build to look
+  // broken before asking a working one to look right.
+  if (reads.every((r) => r.loaded)) pass('the photograph actually loaded');
+  else fail(`${chapter}: the photograph never loaded — a blank band cannot be a fixed window, and it reports 0px drift`);
+  if (reads.every((r) => r.atViewport)) pass('it fills the viewport at every depth');
+  else fail(`${chapter}: the photograph is not viewport-sized at the viewport origin (top ${reads.map((r) => r.imgTop).join('/')}) — position:fixed has been re-anchored, so this is an ordinary scrolling band`);
   if (drift <= 2) pass(`the photograph is stationary (${drift}px drift across the band)`);
   else fail(`${chapter}: the photograph moved ${drift}px — an ancestor has gained transform/filter/will-change/contain and this is no longer a fixed window`);
   if (travel > 150) pass(`the copy travels across it (${travel}px)`);
