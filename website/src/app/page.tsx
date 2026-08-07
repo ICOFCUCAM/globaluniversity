@@ -178,7 +178,7 @@ export default async function HomePage() {
       <GlobalMovement />
 
       {/* University overview */}
-      <Section chapter="About" className="dark:bg-[#150f1e]">
+      <Section chapter="About" className="bg-white dark:bg-[#150f1e]">
         <div className="grid items-center gap-12 lg:grid-cols-2">
           <Reveal>
             <Eyebrow>About the University</Eyebrow>

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import Cinematic from './Cinematic';
+import PinnedScene from './PinnedScene';
 import { UNIVERSITY } from '@/lib/constants';
 
 // ---------------------------------------------------------------------------
@@ -30,6 +30,16 @@ import { UNIVERSITY } from '@/lib/constants';
 // one of those would be the obvious thing to put in a band like this and not
 // one of them can be evidenced from anything in this system.
 //
+// ---------------------------------------------------------------------------
+// AND WHY IT IS PINNED
+//
+// This is the first claim the page makes about identity, and the one a reader
+// is most likely to skim, because "part of a global movement" is the kind of
+// sentence every institution writes. Holding the frame takes the choice away:
+// the academic body stays in front of them for two thirds of a screen longer
+// than a band would, and then the university's own story rises across it.
+// ---------------------------------------------------------------------------
+//
 // The two things said below are both checkable: the university stands within
 // ICOF, which its own charter and every prospectus states; and the university
 // teaches from Buea, Douala, its Nigerian centre and online, which any
@@ -39,13 +49,13 @@ import { UNIVERSITY } from '@/lib/constants';
 
 export default function GlobalMovement() {
   return (
-    <Cinematic
+    <PinnedScene
       src="/images/graduation-2024/grad-2024-congregation-row.jpg"
       alt="Members of the ICOF Global University academic body in doctoral and faculty robes"
       anchor="right"
       focal="52% 24%"
       exposure={0.5}
-      height="tall"
+      hold={175}
       chapter="The fellowship"
     >
       <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.34em] text-brand-gold">
@@ -85,6 +95,6 @@ export default function GlobalMovement() {
           </span>
         </Link>
       </div>
-    </Cinematic>
+    </PinnedScene>
   );
 }

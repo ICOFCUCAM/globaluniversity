@@ -76,7 +76,33 @@ export function Section({
        runs 120–160px between bands. The cost is scroll length, which is not a
        cost: a visitor who is interested scrolls, and one who is not left at the
        hero either way. */
-    <section id={id} data-chapter={chapter} className={`py-20 sm:py-28 lg:py-32 ${className}`}>
+    /* RELATIVE AND OPAQUE, ALWAYS — this is what lets a section CROSS a pinned
+       scene instead of disappearing behind it.
+
+       A pinned scene (see PinnedScene.tsx) holds a photograph in a sticky child
+       while the reader scrolls past it, and the following section is supposed to
+       rise up over that held frame. That only works if the following section
+       paints ABOVE it, and a section with a background but no `position` does
+       not: an unpositioned background paints in the block-background layer,
+       underneath every positioned element on the page. The pinned frame would
+       sit on top of the very section meant to cover it.
+
+       That failure is close to undiagnosable from the symptom — the page looks
+       like the sticky is "stuck" or the z-index is wrong, when in fact the
+       covering element never entered the positioned layer at all. So `relative
+       z-10` lives here rather than being remembered at each call site.
+
+       The default background matters for the same reason and is easier to
+       forget: a transparent section crossing a photograph shows the photograph
+       through its own text. It is applied only when the caller has not set one,
+       so the many sections with deliberate backgrounds are untouched. */
+    <section
+      id={id}
+      data-chapter={chapter}
+      className={`relative z-10 py-20 sm:py-28 lg:py-32 ${
+        /\bbg-/.test(className) ? '' : 'bg-white dark:bg-[#150f1e] '
+      }${className}`}
+    >
       <div className="mx-auto max-w-7xl px-4 sm:px-6">{children}</div>
     </section>
   );
