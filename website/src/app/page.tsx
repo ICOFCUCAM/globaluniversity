@@ -3,7 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Section, SectionHeading, Eyebrow } from '@/components/Section';
 import Cta from '@/components/Cta';
-import HeroSlider from '@/components/HeroSlider';
+import Hero from '@/components/home/Hero';
 import Reveal from '@/components/Reveal';
 import { getHomePage, getPrograms } from '@/lib/data';
 import { site } from '@/content/site';
@@ -97,7 +97,7 @@ export default async function HomePage() {
   // statistics they carried are retired — see ProofBand — and the faculty tiles
   // are now built from the catalogue by FacultyShowcase, so the count on the
   // card cannot disagree with the page it links to.
-  const { heroSlides, quickLinks, about, events, news, homeFeatures, homeFaqs } =
+  const { quickLinks, about, events, news, homeFeatures, homeFaqs } =
     await getHomePage();
   const allPrograms = await getPrograms();
   const programs = allPrograms.slice(0, 4);
@@ -164,8 +164,12 @@ export default async function HomePage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(homeLd) }} />
       <ScrollRail />
 
-      {/* Hero */}
-      <HeroSlider slides={heroSlides} />
+      {/* THE HERO.
+          No longer a full-bleed photograph. Of ninety-seven images in this
+          repository three exceed 1600px wide, and the two that do are stock —
+          one of them a Cambridge college. See Hero.tsx for the arithmetic and
+          the decision. */}
+      <Hero />
 
       {/* Quick links — the six routes most visitors arrive wanting */}
       <nav aria-label="Quick links" className="relative z-10 -mt-14 px-4">
