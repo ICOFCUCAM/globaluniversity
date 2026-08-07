@@ -133,12 +133,19 @@ export default function Header() {
         className="absolute inset-x-0 bottom-0 h-[2px] origin-left bg-gradient-to-r from-brand-gold-deep via-brand-gold to-brand-gold-deep transition-transform duration-150"
         style={{ transform: `scaleX(${progress})` }}
       />
-      <a
-        href="#main"
-        className="sr-only focus:not-sr-only focus:absolute focus:z-[60] focus:bg-brand-gold focus:px-4 focus:py-2 focus:text-brand-purple"
-      >
-        Skip to content
-      </a>
+      {/* THE SKIP LINK LIVES IN layout.tsx, NOT HERE.
+
+          There were two, on every page of the site: "Skip to main content"
+          emitted by the layout and "Skip to content" emitted by this header,
+          both pointing at #main and both the first things a keyboard user met.
+          The second one does nothing the first has not already done — it is
+          reached only by tabbing PAST the skip link, which is the one moment
+          nobody needs a second offer of the same escape.
+
+          Two of them is worse than one for a specific reason. A screen-reader
+          user listening to the top of the page hears the same instruction
+          twice in slightly different words and has to work out whether the
+          second goes somewhere else. It does not. */}
 
       {/* Audience utility bar */}
       <div className="hidden border-b border-white/10 bg-brand-purple-dark/60 lg:block">
