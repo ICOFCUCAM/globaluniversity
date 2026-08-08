@@ -4,6 +4,10 @@
 //   node scripts/build-migration-run.mjs 006 010 011 012
 //   -> docs/migrations/RUN.sql
 //
+//   node scripts/build-migration-run.mjs --out=RUN-ALL.sql 000 003 004 005 \
+//        006 007 008 009 010 011 012
+//   -> docs/migrations/RUN-ALL.sql   (the whole schema from nothing)
+//
 // ===========================================================================
 // WHY
 // ===========================================================================
@@ -43,7 +47,10 @@ import { fileURLToPath } from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url));
 const dir = join(here, '../docs/migrations');
 
-const wanted = process.argv.slice(2);
+const argv = process.argv.slice(2);
+const outFlag = argv.find((a) => a.startsWith('--out='));
+const OUT = outFlag ? outFlag.slice('--out='.length) : 'RUN.sql';
+const wanted = argv.filter((a) => !a.startsWith('--'));
 if (!wanted.length) {
   console.error('Usage: node scripts/build-migration-run.mjs 006 010 011 012');
   process.exit(1);
@@ -63,6 +70,19 @@ const files = wanted.map((n) => {
   }
   return match[0];
 });
+
+// 000 IS 001 AND 002 MERGED, and listing it alongside them would run the same
+// DDL twice. Harmless — every statement in all three is idempotent — but it
+// wastes minutes on a big schema and, worse, it tells whoever reads the output
+// that the file is confused about what it contains. Its own header says: "If
+// you run this, you do not need either of those files."
+if (wanted.includes('000') && (wanted.includes('001') || wanted.includes('002'))) {
+  console.error(
+    'Refusing to build: 000_complete.sql IS 001 and 002 merged. List 000 alone, '
+    + 'or list 001 and 002 without it — never both.',
+  );
+  process.exit(1);
+}
 
 // THE ORDER IS THE ORDER GIVEN, and it is checked rather than trusted. Someone
 // typing "011 006" means it, or has made exactly the mistake this file exists
@@ -96,13 +116,13 @@ const out = `-- ================================================================
 --
 -- GENERATED FILE. DO NOT EDIT.
 --   Generator: scripts/build-migration-run.mjs
---   Rebuild:   node scripts/build-migration-run.mjs ${wanted.join(' ')}
+--   Rebuild:   node scripts/build-migration-run.mjs ${outFlag ? outFlag + ' ' : ''}${wanted.join(' ')}
 --
 -- ---------------------------------------------------------------------------
 -- HOW TO RUN IT
 --
 -- Supabase SQL editor: paste the whole file and run once.
--- psql:                psql "<connection string>" -f docs/migrations/RUN.sql
+-- psql:                psql "<connection string>" -f docs/migrations/${OUT}
 --
 -- Every migration in it is idempotent and destroys nothing, so running it twice
 -- is safe. It is NOT wrapped in a transaction: each file is written to run
@@ -116,7 +136,24 @@ const out = `-- ================================================================
 -- found rather than changing it silently. A notice is information, not a
 -- warning. An ERROR is a real failure and stops the run.
 --
--- ---------------------------------------------------------------------------
+${wanted.includes('000') ? `-- ---------------------------------------------------------------------------
+-- BEFORE YOU RUN THIS ONE — it starts from an empty database
+--
+-- 000_complete.sql appoints two administrators, and it can only appoint an
+-- account that already exists. Create them first:
+--
+--   Dashboard -> Authentication -> Users -> Add user   (tick "Auto Confirm User")
+--     superadmin@iguc.net   system custody
+--     tchamer@aol.com       day-to-day administration
+--
+-- Running the file before they exist is harmless. It simply appoints nobody,
+-- and you re-run that section afterwards.
+--
+-- AND AFTERWARDS, DO THE SECURITY CHECK at the foot of 000. Until it passes,
+-- any signed-in student can make themselves a Superadministrator from the
+-- browser console. That is not a formality.
+--
+` : ''}-- ---------------------------------------------------------------------------
 -- AFTERWARDS
 --
 -- Run docs/migrations/VERIFY.sql to see what landed.
@@ -124,5 +161,6 @@ const out = `-- ================================================================
 ${parts.join('\n')}
 `;
 
-writeFileSync(join(dir, 'RUN.sql'), out);
-console.log(`docs/migrations/RUN.sql  ${files.join(' → ')}  (${(out.length / 1024).toFixed(1)}KB)`);
+writeFileSync(join(dir, OUT), out);
+console.log(`docs/migrations/${OUT}  ${files.length} files, ${(out.length / 1024).toFixed(1)}KB`);
+console.log(`  ${files.join('\n  ')}`);
