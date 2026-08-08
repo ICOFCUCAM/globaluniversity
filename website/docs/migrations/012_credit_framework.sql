@@ -8,8 +8,15 @@
 -- THE RULING
 --
 --   "Diploma is 120. 180 is degree."
+--   "Masters is 120 credits."
 --
--- The University settled a figure that had been stated three different ways:
+-- Three of the five award levels now carry a direct ruling. The Doctorate
+-- carries no credit figure, which is the normal state for an award examined by
+-- thesis; the Certificate has not been ruled on and is deliberately absent from
+-- this file rather than set to the 60 the School of Ministry framework
+-- proposes.
+--
+-- The Diploma is the one that had been stated three different ways:
 --
 --   120   seeded here by migration 006 when the awards table was created
 --   180   instructed afterwards, and published on the site ever since
@@ -68,6 +75,21 @@ update awards
  where kind = 'bachelors'
    and credits_required <> 180;
 
+-- 2b -----------------------------------------------------------------------
+-- The master's is 120.
+--
+-- No master's award has a row in this table yet, so today this updates nothing
+-- — and it is written anyway, for two reasons. A database that HAS one seeded
+-- by hand is corrected, and the assertion in section 4 then holds the level for
+-- every master's award created afterwards. A migration that only fixes rows it
+-- expects to find is a migration that silently skips the installation that
+-- differs, which is the only installation worth writing it for.
+
+update awards
+   set credits_required = 120
+ where kind = 'masters'
+   and credits_required <> 120;
+
 -- 3 ------------------------------------------------------------------------
 -- Has anything already been conferred under the old figure?
 --
@@ -118,7 +140,11 @@ begin
   select count(*) into bad
     from awards
    where (kind = 'diploma'   and credits_required <> 120)
-      or (kind = 'bachelors' and credits_required <> 180);
+      or (kind = 'bachelors' and credits_required <> 180)
+      or (kind = 'masters'   and credits_required <> 120);
+  -- 'certificate' and 'doctorate' are absent on purpose. No credit figure has
+  -- been ruled for the certificate, and a doctorate examined by thesis is not
+  -- credit-rated; asserting a value for either would invent a regulation.
   if bad > 0 then
     raise exception '% award(s) still disagree with the credit ruling', bad;
   end if;

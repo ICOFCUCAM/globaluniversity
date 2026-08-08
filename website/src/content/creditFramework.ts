@@ -79,14 +79,20 @@ export interface AwardLevel {
 /**
  * The award ladder.
  *
- * TWO RUNGS ARE RULED AND THREE ARE THE FRAMEWORK'S, and `source` says which is
- * which on every row. The Diploma and the Bachelor carry a direct ruling from
- * the University — "Diploma is 120. 180 is degree." The Certificate and the
- * Master come from §25 of the School of Ministry academic framework, which sets
- * out the ladder for that School; nothing contradicts them and they are very
- * likely intended to govern the institution, but "very likely intended" is not
- * a regulation and the difference matters at the moment somebody relies on it.
- * See the second entry in CREDIT_QUESTIONS.
+ * THREE RUNGS ARE RULED AND ONE IS NOT, and `source` says which is which on
+ * every row.
+ *
+ * The Diploma, the Bachelor and the Master carry a direct ruling from the
+ * University — "Diploma is 120. 180 is degree." and "Masters is 120 credits."
+ * The Doctorate carries no figure, which is the normal state for an award
+ * examined by thesis rather than a gap.
+ *
+ * The CERTIFICATE at 60 is the one rung still resting on §25 of the School of
+ * Ministry academic framework, which sets out the ladder for that School.
+ * Nothing contradicts it and it is very likely intended to govern the
+ * institution, but "very likely intended" is not a regulation and the
+ * difference matters at the moment somebody relies on it. See the second entry
+ * in CREDIT_QUESTIONS.
  */
 export const AWARD_LADDER: AwardLevel[] = [
   {
@@ -123,7 +129,7 @@ export const AWARD_LADDER: AwardLevel[] = [
     ects: 120,
     duration: 'One to two years',
     purpose: 'Advanced professional specialisation or theological scholarship.',
-    source: 'School of Ministry academic framework §25.',
+    source: 'Ruled by the University: “Masters is 120 credits.” Framework §25 agrees.',
   },
   {
     level: 'Doctorate',
@@ -171,18 +177,18 @@ export const CREDIT_QUESTIONS: CreditQuestion[] = [
   },
   {
     id: 'ladder-scope',
-    finding: 'Two rungs are ruled; the Certificate and the Master are still one School’s statement.',
+    finding: 'One rung left — the Certificate is still the School of Ministry’s statement.',
     detail:
-      'The Diploma at 120 and the Bachelor at 180 now carry a direct ruling from the University. '
-      + 'The Certificate at 60 and the Master at 120 still come from §25 of the School of Ministry '
+      'The Diploma at 120, the Bachelor at 180 and the Master at 120 now carry a direct ruling '
+      + 'from the University. The Certificate at 60 still comes from §25 of the School of Ministry '
       + 'framework, which describes the progression that School should build. Nothing contradicts '
-      + 'them, and the Master’s figure is separately corroborated by the catalogue, which has '
-      + 'applied 120 to every master’s programme since before this framework arrived. But neither '
-      + 'has been adopted as a University-wide regulation, so neither can yet be quoted as one to '
-      + 'an accreditor.',
+      + 'it — 60 ECTS is one full-time year and sits correctly below a 120-credit diploma — but it '
+      + 'has not been adopted as a University-wide regulation, so it cannot yet be quoted as one '
+      + 'to an accreditor. No certificate programme on this site publishes a credit figure at all.',
     recommendation:
-      'Rule on the Certificate and the Master in the same words as the Diploma, and the ladder is '
-      + 'a University credit regulation rather than four figures with three provenances.',
+      'Rule on the Certificate in the same words as the other three, and the ladder becomes a '
+      + 'University credit regulation rather than four figures with two provenances. Until then '
+      + 'the certificates publish no figure, which is the honest state and not an omission.',
   },
   {
     id: 'two-credit-systems',

@@ -73,6 +73,17 @@ check('the Certificate is 60 ECTS', F.ectsFor('Certificate'), 60);
 check('the Bachelor is 180 ECTS', F.ectsFor('Bachelor'), 180);
 check('the Master is 120 ECTS', F.ectsFor('Master'), 120);
 
+// WHICH RUNGS THE UNIVERSITY HAS ACTUALLY RULED ON.
+//
+// Not pedantry. A figure a university has ruled can be quoted to an accreditor;
+// a figure inferred from one school's framework cannot, and the two look
+// identical in a table. `source` is what carries the difference, so it is
+// asserted rather than trusted to survive an edit.
+const ruled = F.AWARD_LADDER.filter((a) => /Ruled by the University/.test(a.source)).map((a) => a.level);
+check('three rungs carry a direct ruling', ruled, ['Diploma', 'Bachelor', 'Master']);
+check('…and the Certificate is still the framework’s statement',
+  /framework §25/.test(F.AWARD_LADDER.find((a) => a.level === 'Certificate').source), true);
+
 // The ladder must agree with the degree the University actually publishes. If
 // the B.Min. were ever restructured to a different total, a ladder that still
 // said 180 would be describing a degree nobody offers.
@@ -129,14 +140,43 @@ const publishedBlock = cat.slice(cat.indexOf('const PUBLISHED_CREDITS'), cat.ind
 check('…and no diploma overrides it per-programme',
   /'diploma-[a-z-]+':\s*\d+/.test(publishedBlock), false);
 
+// "Masters is 120 credits" — the third ruling, and the one the catalogue was
+// already applying before it was ruled. Read from the catalogue, so a change
+// there without a change to the ladder fails.
+const masters = [...new Set(
+  C.ALL_PROGRAMMES.filter((p) => p.award === "Master's" && p.credits !== undefined).map((p) => p.credits),
+)];
+check('every master’s carries 120', masters, [120]);
+check('…and none is left without a figure',
+  C.ALL_PROGRAMMES.filter((p) => p.award === "Master's" && p.credits === undefined).map((p) => p.slug), []);
+check('the ladder and the catalogue agree on the master’s',
+  F.ectsFor('Master'), masters[0]);
+
+// THE CERTIFICATE PUBLISHES NOTHING, AND THAT IS THE ASSERTION.
+//
+// The framework proposes 60 and the University has not ruled. The likely answer
+// is the dangerous one here: a certificate card printing 60 would state a
+// regulation nobody made, and it would be indistinguishable from one that had
+// been. So the absence is checked, and this line is what somebody must delete
+// deliberately when the ruling comes.
+const certs = C.ALL_PROGRAMMES.filter((p) => p.award === 'Certificate');
+check('no certificate publishes a credit figure, because none has been ruled',
+  certs.filter((p) => p.credits !== undefined).map((p) => p.slug), []);
+console.log(`      ${certs.length} certificates, none with a figure — awaiting a ruling`);
+
 // The database half. Unreachable from here, so what is checked is that the
 // migration which carries it exists and says the right thing.
 const mig = readFileSync(new URL('../../docs/migrations/012_credit_framework.sql', import.meta.url).pathname, 'utf8');
 check('migration 012 sets every diploma award to 120',
   /kind = 'diploma'[\s\S]{0,80}credits_required/.test(mig) && /set credits_required = 120/.test(mig), true);
 check('…and every bachelor’s award to 180', /set credits_required = 180/.test(mig), true);
+check('…and every master’s award to 120', /kind = 'masters'/.test(mig), true);
 check('…and refuses to leave a disagreeing award behind',
   /raise exception .*disagree with the credit ruling/.test(mig), true);
+// The certificate must NOT be asserted in the migration either. A value there
+// would invent the regulation the ladder is careful not to invent.
+check('…and asserts nothing about the certificate',
+  /kind = 'certificate'/.test(mig), false);
 
 console.log('\nThe questions are on record\n');
 

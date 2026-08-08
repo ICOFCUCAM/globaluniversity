@@ -19,12 +19,18 @@ import { programs as SITE_PROGRAMS } from './site';
 //
 // WHAT IS DELIBERATELY ABSENT, AND WHY THAT MATTERS MORE THAN WHAT IS HERE.
 //
-//   CREDITS ARE OMITTED WHERE THE UNIVERSITY HAS NOT PUBLISHED THEM. The
-//   Diploma in Theology is stated at 120 ECTS on the university's own programme
-//   page and is recorded here as such. For the technology and business
-//   diplomas no credit figure has ever been published anywhere this system can
-//   read, so `credits` is left undefined and the page omits the line rather
-//   than printing a number.
+//   CREDITS ARE OMITTED WHERE THE UNIVERSITY HAS NOT PUBLISHED THEM, and that
+//   line has moved as the university has ruled. It once described the
+//   technology and business diplomas, which carried no figure at all because
+//   none had ever been stated for them. The university has since ruled on award
+//   LEVELS — "Diploma is 120. 180 is degree." and "Masters is 120 credits." —
+//   and a level ruling reaches every programme at that level, so those diplomas
+//   now carry 120 like the rest.
+//
+//   WHAT STILL CARRIES NOTHING is the certificate. No figure has been ruled for
+//   it and none is inferred: the School of Ministry framework proposes 60, and
+//   a proposal from one school is not a University regulation. The cards omit
+//   the line rather than printing the likely answer.
 //
 //   A credit value is a REGULATORY CLAIM. It determines whether another
 //   institution grants advanced standing, whether a ministry of education
@@ -558,6 +564,13 @@ const PUBLISHED_CREDITS: Record<string, number> = {
  * somebody notices the list is short.
  */
 const LEVEL_CREDITS: Partial<Record<AwardLevel, number>> = {
+  // RULED BY THE UNIVERSITY: "Masters is 120 credits."
+  //
+  // The figure was already here, applied to the level rather than to one
+  // programme, on an earlier statement. It now carries a direct ruling as well,
+  // which changes nothing about the number and everything about what may be
+  // said of it: a figure a university has ruled can be quoted to an accreditor,
+  // and a figure inferred from a school's framework cannot.
   "Master's": 120,
   // RULED BY THE UNIVERSITY: "Diploma is 120. 180 is degree."
   //
@@ -600,15 +613,17 @@ const LEVEL_CREDITS: Partial<Record<AwardLevel, number>> = {
  * register stating 180 that would now disagree with its own award. Had there
  * been, reissuing them would be a decision for the Senate and not a migration.
  *
- * THE MASTER'S AT 120. Applies to all six master's programmes, including the
- * Master of Project Management, which sits under GIBMAS rather than Theology
- * but is recorded at master's level and so takes the master's figure. If
- * business master's are meant to differ, give that programme its own entry in
- * PUBLISHED_CREDITS above.
+ * THE MASTER'S AT 120, ON THE UNIVERSITY'S RULING. Applies to all six master's
+ * programmes, including the Master of Project Management, which sits under
+ * GIBMAS rather than Theology but is recorded at master's level and so takes
+ * the master's figure. If business master's are meant to differ, give that
+ * programme its own entry in PUBLISHED_CREDITS above.
  *
  * No master's award has a row in the `awards` table yet, so nothing in the
- * graduation check contradicts this. When one is created it needs
- * `credits_required = 120` or the two will disagree.
+ * graduation check can contradict this today. Migration 012 sets every existing
+ * master's award to 120 and asserts it, so the first one created after that
+ * migration runs still needs `credits_required = 120` at insert — the ruling is
+ * enforced on rows that exist, not on rows nobody has written yet.
  */
 
 const LEVEL_DURATION: Record<string, string> = {
