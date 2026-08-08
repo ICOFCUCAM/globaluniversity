@@ -5,3 +5,6 @@ out/
 .env.local
 *.tsbuildinfo
 next-env.d.ts
+
+# Compiled output from the library tests (node src/lib/*.test.mjs).
+.test-build/

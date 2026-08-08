@@ -20,7 +20,9 @@
     "test:bmin": "node src/content/bachelorOfMinistry.test.mjs",
     "test:prereq": "node src/lib/prerequisites.test.mjs",
     "test:credits": "node src/content/creditFramework.test.mjs",
-    "test": "npm run test:grading && npm run test:fees && npm run test:seal && npm run test:certificate && npm run test:routes && npm run test:approval && npm run test:policies && npm run test:publicart && npm run test:world && npm run test:fixedwindow && npm run test:faculty && npm run test:bmin && npm run test:prereq && npm run test:credits",
+    "test:social": "node src/lib/social.test.mjs",
+    "test:authority": "node src/lib/credentialAuthority.test.mjs",
+    "test": "npm run test:grading && npm run test:fees && npm run test:seal && npm run test:certificate && npm run test:routes && npm run test:approval && npm run test:policies && npm run test:publicart && npm run test:world && npm run test:fixedwindow && npm run test:faculty && npm run test:bmin && npm run test:prereq && npm run test:credits && npm run test:social && npm run test:authority",
     "test:fixedwindow": "node src/components/home/fixedWindow.test.mjs"
   },
   "dependencies": {
