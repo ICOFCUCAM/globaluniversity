@@ -38,6 +38,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { runQuery } from '@/lib/runQuery';
 import { PLATFORM_PROFILES, type Platform, type TargetState } from '@/lib/social';
 import { Info, Loader2 } from 'lucide-react';
 
@@ -56,11 +57,11 @@ export default function PublishingAnalytics() {
 
   const load = useCallback(async () => {
     const since = new Date(Date.now() - WINDOW_DAYS * 24 * 3600 * 1000).toISOString();
-    const { data, error } = await supabase
+    const { data, error } = await runQuery(supabase
       .from('social_posts')
       .select('created_at, submitted_at, approved_at, published_at, social_post_targets(status, social_accounts(platform))')
       .gte('created_at', since)
-      .limit(500);
+      .limit(500));
 
     if (error) { setRows([]); return; }
 

@@ -48,6 +48,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { runQuery } from '@/lib/runQuery';
 import { can } from '@/lib/roles';
 import type { UserRole } from '@/lib/types';
 import {
@@ -101,11 +102,11 @@ export default function CredentialAuthority({ role }: { role?: UserRole }) {
   const isAuthority = can(role, 'amend-issued-credential');
 
   const load = useCallback(async () => {
-    const { data, error } = await supabase
+    const { data, error } = await runQuery(supabase
       .from('credentials_issued')
       .select('id, credential_id, version, supersedes_id, kind, holder_name, award, classification, programme, status, issued_at, content_hash')
       .order('issued_at', { ascending: false })
-      .limit(400);
+      .limit(400));
 
     if (error) {
       setNotReady(
@@ -200,7 +201,7 @@ export default function CredentialAuthority({ role }: { role?: UserRole }) {
   );
 
   const tabs: Array<{ id: Tab; label: string; icon: React.ReactNode; count?: number }> = [
-    { id: 'register', label: 'Register', icon: <BadgeCheck size={15} />, count: awards.length },
+    { id: 'register', label: 'Register', icon: <BadgeCheck size={15} />, count: notReady ? undefined : awards.length },
     ...(isAuthority ? [{
       id: 'corrections' as Tab,
       label: 'Correction requests',
@@ -281,9 +282,15 @@ export default function CredentialAuthority({ role }: { role?: UserRole }) {
               <Loader2 size={18} className="mt-6 animate-spin text-[#9c93ad]" />
             ) : awards.length === 0 ? (
               <p className="mt-6 text-sm text-[#6b6076] dark:text-[#9c93ad]">
-                {query
-                  ? 'Nothing on the register matches that.'
-                  : 'The University has not issued any credential yet.'}
+                {/* AN EMPTY LIST AFTER A FAILED READ IS A LIE. "The University
+                    has not issued any credential yet" is a statement about the
+                    register; "I could not read it" is a statement about the
+                    connection, and a registrar needs to know which. */}
+                {notReady
+                  ? 'The register could not be read, so this is not a statement that it is empty.'
+                  : query
+                    ? 'Nothing on the register matches that.'
+                    : 'The University has not issued any credential yet.'}
               </p>
             ) : (
               <ul className="mt-3 space-y-2">
@@ -746,7 +753,7 @@ function CredentialTypes({ onDone, onError }: { onDone: (t: string) => void; onE
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
-    const { data } = await supabase.from('credential_types').select('*').order('created_at', { ascending: false });
+    const { data } = await runQuery(supabase.from('credential_types').select('*').order('created_at', { ascending: false }));
     setTypes(data ?? []);
   }, []);
   useEffect(() => { void load(); }, [load]);

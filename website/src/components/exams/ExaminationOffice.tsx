@@ -27,6 +27,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { runQuery } from '@/lib/runQuery';
 import { can, type Capability } from '@/lib/roles';
 import type { UserRole } from '@/lib/types';
 import {
@@ -63,11 +64,11 @@ export default function ExaminationOffice({ role }: { role?: UserRole }) {
   const holds = useCallback((c: string) => can(role, c as Capability), [role]);
 
   const load = useCallback(async () => {
-    const { data, error } = await supabase
+    const { data, error } = await runQuery(supabase
       .from('examinations')
       .select('id, title, mode, status, course_code, duration_minutes, opens_at, closes_at, total_marks, exam_sessions(id)')
       .order('created_at', { ascending: false })
-      .limit(80);
+      .limit(80));
 
     if (error) {
       setNotReady(
@@ -234,7 +235,12 @@ export default function ExaminationOffice({ role }: { role?: UserRole }) {
       {rows === null ? <Loader2 size={18} className="animate-spin text-[#9c93ad]" />
         : rows.length === 0 ? (
           <p className="rounded-xl border border-dashed border-[#ece7de] p-8 text-center text-sm text-[#6b6076] dark:border-[#2e2637] dark:text-[#9c93ad]">
-            No examination has been set yet.
+            {/* See CredentialAuthority: an empty list after a failed read tells
+                the Examination Office there is no diet, which is a different
+                and much more alarming thing than "I could not find out". */}
+            {notReady
+              ? 'The examinations could not be read, so this is not a statement that none are set.'
+              : 'No examination has been set yet.'}
           </p>
         ) : (
           <ul className="space-y-3">

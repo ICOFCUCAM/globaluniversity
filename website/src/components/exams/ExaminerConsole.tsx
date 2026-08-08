@@ -33,6 +33,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { runQuery } from '@/lib/runQuery';
 import { can, type Capability } from '@/lib/roles';
 import type { UserRole } from '@/lib/types';
 import {
@@ -76,7 +77,7 @@ export default function ExaminerConsole({ role }: { role?: UserRole }) {
   const holds = useCallback((c: string) => can(role, c as Capability), [role]);
 
   const load = useCallback(async () => {
-    const { data, error } = await supabase
+    const { data, error } = await runQuery(supabase
       .from('exam_sessions')
       .select(
         'id, candidate_name, student_number, status, started_at, paused_ms, paused_at, extra_minutes, '
@@ -84,7 +85,7 @@ export default function ExaminerConsole({ role }: { role?: UserRole }) {
         + 'exam_events(id, kind, source, severity, occurred_at)',
       )
       .in('status', ['checks', 'ready', 'in_progress', 'paused'])
-      .limit(60);
+      .limit(60));
 
     if (error) {
       setNotReady(
@@ -170,7 +171,17 @@ export default function ExaminerConsole({ role }: { role?: UserRole }) {
       <div>
         <h1 className="font-heading text-xl font-bold text-[#422e59] dark:text-[#e4dcf0]">Examiner console</h1>
         <p className="mt-1 text-sm text-[#6b6076] dark:text-[#9c93ad]">
-          Sittings under way now. {ordered.length} live.
+          {/* NEVER ASSERT A COUNT THIS SCREEN DOES NOT HAVE.
+              This read "0 live" both while the query was running and after it
+              had failed. On a proctoring console that is not cosmetic: a
+              proctor reading "0 live" walks away from a room full of
+              candidates. Loading and failing say so; only a successful empty
+              read is allowed to claim nothing is running. */}
+          {rows === null
+            ? 'Loading the sittings under way…'
+            : notReady
+              ? 'The sittings could not be read.'
+              : `Sittings under way now. ${ordered.length} live.`}
         </p>
       </div>
 
@@ -210,7 +221,15 @@ export default function ExaminerConsole({ role }: { role?: UserRole }) {
         {/* ---------------------------------------------------------------- */}
         <section>
           {rows === null ? <Loader2 size={18} className="animate-spin text-[#9c93ad]" />
-            : ordered.length === 0 ? (
+            : notReady ? (
+              // NOT "no examinations". The difference between "nothing is
+              // running" and "I could not find out" is the whole of this
+              // screen's usefulness.
+              <p className="rounded-xl border border-[#e9c14a]/40 bg-[#e9c14a]/10 p-6 text-center text-sm text-[#6b6076] dark:text-[#9c93ad]">
+                The sittings could not be read, so this list is not a statement that none are
+                running.
+              </p>
+            ) : ordered.length === 0 ? (
               <p className="rounded-xl border border-dashed border-[#ece7de] p-6 text-center text-sm text-[#6b6076] dark:border-[#2e2637] dark:text-[#9c93ad]">
                 No examination is under way.
               </p>

@@ -32,6 +32,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { runQuery } from '@/lib/runQuery';
 import {
   requirementsFor, mayStart, MODE_PROFILES,
   type ExamMode, type Readiness, type SessionState,
@@ -74,11 +75,11 @@ export default function SitExamination() {
 
   // -------------------------------------------------------------------------
   const load = useCallback(async () => {
-    const { data } = await supabase
+    const { data } = await runQuery(supabase
       .from('examinations')
       .select('id, title, mode, duration_minutes, total_marks, course_code, opens_at, closes_at')
       .in('status', ['published', 'in_progress'])
-      .order('opens_at', { ascending: true });
+      .order('opens_at', { ascending: true }));
 
     setExams((data ?? []).map((e: Record<string, any>) => ({
       id: String(e.id), title: e.title, mode: e.mode,

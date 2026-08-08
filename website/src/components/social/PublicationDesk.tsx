@@ -29,6 +29,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { runQuery } from '@/lib/runQuery';
 import { can, type Capability } from '@/lib/roles';
 import type { UserRole } from '@/lib/types';
 import {
@@ -79,7 +80,7 @@ export default function PublicationDesk({
   const holds = useCallback((c: string) => can(role, c as Capability), [role]);
 
   const load = useCallback(async () => {
-    const { data, error } = await supabase
+    const { data, error } = await runQuery(supabase
       .from('social_posts')
       .select(
         'id, body, author_id, status, approval_state, review_note, scheduled_for, created_at, '
@@ -87,7 +88,7 @@ export default function PublicationDesk({
         + 'social_post_targets(id, status, attempts, last_error, social_accounts(handle, platform))',
       )
       .order('created_at', { ascending: false })
-      .limit(60);
+      .limit(60));
 
     if (error) {
       setNotReady(

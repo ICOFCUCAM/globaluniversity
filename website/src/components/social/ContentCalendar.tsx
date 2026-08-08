@@ -32,6 +32,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { runQuery } from '@/lib/runQuery';
 import { statusFromTargets, type TargetState, type ApprovalState } from '@/lib/social';
 import { ChevronLeft, ChevronRight, Loader2, AlertTriangle } from 'lucide-react';
 
@@ -63,12 +64,12 @@ export default function ContentCalendar({ onOpen }: { onOpen?: (id: string) => v
     const from = new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1).toISOString();
     const to = new Date(cursor.getFullYear(), cursor.getMonth() + 2, 1).toISOString();
 
-    const { data, error } = await supabase
+    const { data, error } = await runQuery(supabase
       .from('social_posts')
       .select('id, body, status, approval_state, scheduled_for, published_at, created_at, social_post_targets(status)')
       .or(`scheduled_for.gte.${from},published_at.gte.${from}`)
       .lte('created_at', to)
-      .limit(400);
+      .limit(400));
 
     if (error) {
       setNotReady(
