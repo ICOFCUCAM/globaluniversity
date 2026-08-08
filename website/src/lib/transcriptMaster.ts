@@ -35,6 +35,44 @@
 // ---------------------------------------------------------------------------
 
 import type { TranscriptData, TranscriptYear } from '@/lib/types';
+import type { TranscriptKind } from '@/lib/transcriptTypes';
+
+/** One credit accepted from another institution, and where it came from. */
+export interface TransferCredit {
+  institution: string;
+  courseCode?: string | null;
+  courseTitle: string;
+  credits: number;
+  creditsAccepted: number;
+  accepted: boolean;
+}
+
+/** An honour the University has recorded. Never computed — see migration 019. */
+export interface Honour {
+  kind: string;
+  title: string;
+  academicYear?: string | null;
+  awardedOn?: string | null;
+}
+
+/** The conferral, which is an act of the Senate and carries its date. */
+export interface Conferral {
+  award: string;
+  senateApprovedOn?: string | null;
+  conferredOn: string;
+  convocationOn?: string | null;
+  classification?: string | null;
+  graduationNumber?: string | null;
+  certificateCredentialId?: string | null;
+}
+
+/** A change of academic standing. Printed on the internal record only. */
+export interface StandingEvent {
+  from?: string | null;
+  to: string;
+  reason: string;
+  decidedAt: string;
+}
 
 /**
  * Everything the master sheet prints beyond the marks themselves.
@@ -62,6 +100,64 @@ export interface TranscriptMasterData extends TranscriptData {
   /** Printed beside the award, as the original sets it. */
   studentAddress?: string | null;
   superseded?: boolean;
+
+  /* --- Which document this is ------------------------------------------ */
+
+  /** Official, unofficial, interim, graduation, internal, or for evaluation. */
+  transcriptKind?: TranscriptKind;
+
+  /* --- Identity, from the student's master record ----------------------- */
+
+  /** The teaching location. A university with more than one must say which. */
+  campus?: string | null;
+  nationality?: string | null;
+  /** on-campus | online | distance | blended */
+  modeOfStudy?: string | null;
+  admittedOn?: string | null;
+  completedOn?: string | null;
+
+  /* --- The award, which is three things and not one --------------------- */
+
+  /** "Bachelor of Theology" — the instrument. */
+  award?: string | null;
+  /** "Theology" — the field of study. */
+  programme?: string | null;
+  /** "Christian Leadership", where the programme has one. */
+  specialization?: string | null;
+  faculty?: string | null;
+  /** "2024–2027", derived from admission and completion. */
+  academicPeriod?: string | null;
+
+  /* --- The summary a reader outside the University relies on ------------ */
+
+  /** good-standing | warning | probation | … Empty when nobody has assessed. */
+  academicStanding?: string | null;
+  /** "In progress" | "Completed" | "Withdrawn". */
+  degreeStatus?: string | null;
+  /**
+   * Credits accepted from elsewhere, and where from.
+   *
+   * KEPT SEPARATE FROM THE SEMESTER RECORD, because a transfer credit was not
+   * taught or examined by this University and folding it into a semester
+   * table would have the University reporting a mark it never awarded.
+   */
+  transferCredits?: TransferCredit[];
+  honours?: Honour[];
+  conferral?: Conferral | null;
+  standingHistory?: StandingEvent[];
+  /** Registry working notes. Printed on the internal record only. */
+  internalNotes?: string | null;
+  /**
+   * What the University's rule on repeated courses is, in words, or null when
+   * it has not ruled.
+   *
+   * PRINTED WHEN A REPEAT IS ON THE RECORD. A transcript showing the same
+   * course twice with two grades, and not saying which counts, is a document
+   * the reader has to guess at — and the two readings differ by a class of
+   * award.
+   */
+  repeatRule?: string | null;
+
   /**
    * Where images resolve from.
    *
@@ -199,6 +295,37 @@ export function masterFromCredential(
     superseded: row.status === 'replaced',
     assetBase: opts.assetBase,
     sealSrc: opts.sealSrc,
+
+    // --- Everything the sealed snapshot carries beyond the marks ----------
+    //
+    // ALL OF IT FROM `facts`, for the same reason the marks are. A transcript
+    // reissued in 2031 must show the campus the student studied at and the
+    // standing they held when it was issued, not what the student record says
+    // by then — people transfer campus and standing changes.
+    transcriptKind: (s(facts.transcript_kind) || 'official') as TranscriptKind,
+    campus: s(facts.campus) || null,
+    nationality: s(facts.nationality) || null,
+    modeOfStudy: s(facts.mode_of_study) || null,
+    admittedOn: s(facts.admitted_on) ? formatIssued(s(facts.admitted_on)) : null,
+    completedOn: s(facts.completed_on) ? formatIssued(s(facts.completed_on)) : null,
+
+    award: s(facts.award_title) || s(row.award) || null,
+    programme: programme || null,
+    specialization: s(facts.specialization) || null,
+    faculty: s(facts.faculty) || null,
+    academicPeriod: s(facts.academic_period)
+      || academicPeriod(s(facts.admitted_on), s(facts.completed_on)),
+
+    academicStanding: standingLabel(s(facts.academic_standing)),
+    degreeStatus: s(facts.degree_status) || null,
+    transferCredits: Array.isArray(facts.transfer_credits)
+      ? (facts.transfer_credits as TransferCredit[]) : [],
+    honours: Array.isArray(facts.honours) ? (facts.honours as Honour[]) : [],
+    conferral: (facts.conferral as Conferral | undefined) ?? null,
+    standingHistory: Array.isArray(facts.standing_history)
+      ? (facts.standing_history as StandingEvent[]) : [],
+    internalNotes: s(facts.internal_notes) || null,
+    repeatRule: repeatRuleWording(s(facts.repeat_rule)),
   };
 }
 
@@ -258,11 +385,31 @@ export interface Sheet {
  */
 export const SLOTS_PER_SHEET = 2;
 
-export function paginate(years: readonly TranscriptYear[]): Sheet[] {
-  const slots: Array<{ year: TranscriptYear } | { closing: true }> = [
-    ...years.map((year) => ({ year })),
-    { closing: true as const },
-  ];
+export function paginate(
+  years: readonly TranscriptYear[],
+  /**
+   * How many slots the closing block needs.
+   *
+   * ONE FOR A BARE CLOSE — the totals, the offices and the signature line.
+   * TWO once it also carries transfer credits, honours or a conferral, because
+   * those are three more ruled blocks and they do not fit beside a year's
+   * table. The caller decides from what it actually has to print, rather than
+   * this file guessing.
+   */
+  closingSlots: number = 1,
+): Sheet[] {
+  const closing = Math.min(SLOTS_PER_SHEET, Math.max(1, Math.floor(closingSlots)));
+
+  type Slot = { year: TranscriptYear } | { closing: true } | { filler: true };
+  const slots: Slot[] = years.map((year) => ({ year }));
+
+  // A CLOSING BLOCK THAT NEEDS A WHOLE SHEET MUST START ON ONE. Without this
+  // pad, a two-slot close beginning halfway through a sheet would run over the
+  // fold — and the sheet after it would be blank paper carrying a page number.
+  if (closing === SLOTS_PER_SHEET) {
+    while (slots.length % SLOTS_PER_SHEET !== 0) slots.push({ filler: true });
+  }
+  for (let i = 0; i < closing; i += 1) slots.push({ closing: true });
 
   const sheets: Sheet[] = [];
   for (let i = 0; i < slots.length; i += SLOTS_PER_SHEET) {
@@ -271,6 +418,8 @@ export function paginate(years: readonly TranscriptYear[]): Sheet[] {
       years: chunk
         .filter((x): x is { year: TranscriptYear } => 'year' in x)
         .map((x) => x.year),
+      // Printed once. A second slot only reserves the room beside the first,
+      // and the pad above guarantees both fall on the same sheet.
       closing: chunk.some((x) => 'closing' in x),
     });
   }
@@ -344,4 +493,85 @@ export function programmeProgress({ creditsEarned, creditsRequired }: ProgressIn
       ? `Programme complete — ${earned} of ${creditsRequired} credits earned.`
       : `${earned} of ${creditsRequired} credits earned · ${remaining} outstanding.`,
   };
+}
+
+
+/* ------------------------------------------------------------------ */
+/* WORDS FOR THE THINGS THE DATABASE HOLDS AS CODES                    */
+/* ------------------------------------------------------------------ */
+
+/**
+ * "2024–2027" from two dates.
+ *
+ * OPEN-ENDED WHILE THE PROGRAMME RUNS. "2024–" is honest about a student still
+ * studying; "2024–2027" on an interim transcript would state a completion that
+ * has not happened, and an expected date is not a fact about the record.
+ */
+export function academicPeriod(admitted: string, completed: string): string | null {
+  const from = admitted.slice(0, 4);
+  if (!/^\d{4}$/.test(from)) return null;
+  const to = completed.slice(0, 4);
+  return /^\d{4}$/.test(to) ? `${from}–${to}` : `${from}–`;
+}
+
+/**
+ * Academic standing in the words a reader outside the University understands.
+ *
+ * AN UNRECORDED STANDING PRINTS NOTHING. Not "Unknown", not "—", and above all
+ * not "Good Standing": a transcript saying the University has looked at a
+ * record and found it sound is a favourable statement, and making it by
+ * default is making it about students nobody has assessed.
+ */
+export function standingLabel(code: string): string | null {
+  switch (code) {
+    case 'good-standing': return 'Good Standing';
+    case 'warning':       return 'Academic Warning';
+    case 'probation':     return 'Academic Probation';
+    case 'suspended':     return 'Suspended';
+    case 'graduated':     return 'Graduated';
+    case 'withdrawn':     return 'Withdrawn';
+    case 'dismissed':     return 'Dismissed';
+    default:              return null;
+  }
+}
+
+/**
+ * What the University's repeat rule means, in a sentence a stranger can act on.
+ *
+ * NULL WHEN THERE IS NO RULE, and the document then says so in its own words
+ * rather than implying one. Migration 019 leaves `repeat_rule` unset on
+ * purpose: defaulting to "the latest attempt replaces the earlier one" would
+ * quietly raise the GPA of every student who has ever failed anything, under a
+ * rule nobody made.
+ */
+export function repeatRuleWording(rule: string): string | null {
+  switch (rule) {
+    case 'all-attempts-count':
+      return 'Where a course was repeated, every attempt is shown and every attempt counts '
+        + 'toward the cumulative grade point average.';
+    case 'latest-replaces':
+      return 'Where a course was repeated, every attempt is shown; the most recent attempt '
+        + 'replaces earlier ones in the cumulative grade point average.';
+    case 'best-replaces':
+      return 'Where a course was repeated, every attempt is shown; the highest attempt replaces '
+        + 'earlier ones in the cumulative grade point average.';
+    case 'excluded-from-gpa':
+      return 'Where a course was repeated, every attempt is shown; earlier attempts are recorded '
+        + 'as academic attempts and are excluded from the cumulative grade point average.';
+    default:
+      return null;
+  }
+}
+
+/**
+ * Credits accepted from other institutions.
+ *
+ * ACCEPTED ONLY. A credit offered and refused is on the student's file and is
+ * not on their transcript — printing it would suggest the University counted
+ * something it declined.
+ */
+export function transferAccepted(credits: readonly TransferCredit[] | undefined): number {
+  return (credits ?? [])
+    .filter((c) => c.accepted)
+    .reduce((t, c) => t + (Number(c.creditsAccepted) || 0), 0);
 }

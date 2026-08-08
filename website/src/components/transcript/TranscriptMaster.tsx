@@ -65,11 +65,12 @@
 
 import React from 'react';
 import { UNIVERSITY, IMAGES } from '@/lib/constants';
-import { GRADING_SCALE } from '@/lib/grading';
+import { GRADING_SCALE, MAX_GRADE_POINT } from '@/lib/grading';
 import { specialGrades, courseClassification } from '@/content/regulations';
 import type { CredentialDesign } from '@/lib/credentialTemplate';
-import { paginate } from '@/lib/transcriptMaster';
+import { paginate, transferAccepted } from '@/lib/transcriptMaster';
 import type { TranscriptMasterData } from '@/lib/transcriptMaster';
+import { profileFor } from '@/lib/transcriptTypes';
 
 export type { TranscriptMasterData } from '@/lib/transcriptMaster';
 import { seedFrom, securityGroundUri, microtextBandUri } from '@/lib/credentialArt';
@@ -215,7 +216,18 @@ export default function TranscriptMaster({
   // THE RULE LIVES IN transcriptMaster.ts, not here, because the preview
   // wrappers need the sheet count to size their box — and a second copy of the
   // rule in a screen is how a preview ends up disagreeing with the document.
-  const sheets = paginate(data.years);
+  //
+  // AND THE CLOSING BLOCK IS NOT ALWAYS ONE SLOT. Once it carries transfer
+  // credits, honours or a conferral it is three further ruled blocks, and it
+  // takes a sheet of its own rather than being squeezed beside a year.
+  const profile = profileFor(data.transcriptKind);
+  const closingSlots =
+    (data.transferCredits?.length ?? 0) > 0
+    || (data.honours?.length ?? 0) > 0
+    || (profile.showsGraduation && data.conferral)
+    || (profile.showsStandingHistory && (data.standingHistory?.length ?? 0) > 0)
+      ? 2 : 1;
+  const sheets = paginate(data.years, closingSlots);
 
   return (
     <div id="icof-transcript">
@@ -262,6 +274,7 @@ export default function TranscriptMaster({
           microtext={microtext}
           ink={ink}
           rule={rule}
+          profile={profile}
           years={sheet.years}
           first={i === 0}
           last={sheet.closing}
@@ -274,11 +287,13 @@ export default function TranscriptMaster({
 }
 
 function Sheet({
-  design, data, specimen, ground, watermark, microtext, ink, rule, years, first, last, page, of,
+  design, data, specimen, profile, ground, watermark, microtext, ink, rule,
+  years, first, last, page, of,
 }: {
   design: CredentialDesign;
   data: TranscriptMasterData;
   specimen?: boolean;
+  profile: ReturnType<typeof profileFor>;
   ground: string; watermark: string; microtext: string; ink: string; rule: string;
   years: TranscriptMasterData['years'];
   first: boolean; last: boolean; page: number; of: number;
@@ -308,15 +323,23 @@ function Sheet({
           alt=""
           style={{
             width: MM(165), height: MM(165), objectFit: 'contain',
-            // Pale enough to read the marks through, present enough to be seen
-            // at arm's length. The original sits at roughly this weight.
-            opacity: 0.13,
+            // 7%. IT WAS 13, AND THAT WAS TOO MUCH — on a sheet where the
+            // record ends halfway down, the device read as an illustration
+            // rather than as the paper's own mark, and the University asked for
+            // "a very light, large seal behind the academic table… it should
+            // never interfere with reading the grades".
+            opacity: 0.07,
           }}
         />
       </div>
 
       {data.superseded && <Overprint text="SUPERSEDED" colour="rgba(160,40,40,.15)" />}
       {specimen && <Overprint text="SPECIMEN" colour="rgba(120,40,40,.13)" />}
+      {/* UNOFFICIAL and INTERNAL are bands, not footnotes. A copy whose status
+          can be cropped off is a copy that will be. */}
+      {!specimen && profile.overprint && (
+        <Overprint text={profile.overprint} colour="rgba(120,40,40,.13)" />
+      )}
 
       <div style={{
         position: 'relative', border: RULE_MAJOR, padding: MM(3.5),
@@ -330,6 +353,28 @@ function Sheet({
             straight on the Year Three table with no header at all — a running
             head there would be furniture the instrument does not have. The
             credential number in the foot identifies the sheet. */}
+        {/* THE RUNNING HEAD, ON EVERY SHEET INCLUDING THE FIRST.
+            The 2017 instrument has none — its second page opens straight on
+            Year Three — and I left it out for that reason. The University has
+            since ruled otherwise, and it is right: pages are separated,
+            photocopied and faxed one at a time, and a middle sheet with no
+            institution, no student number and no page count is a sheet nobody
+            can place. It names the document too, so an unofficial copy says
+            what it is on every page rather than only the one carrying the
+            band. */}
+        <div style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
+          gap: MM(4), fontSize: '6pt', fontFamily: TABLE_FACE, letterSpacing: '.02em',
+          borderBottom: RULE, paddingBottom: MM(0.8), marginBottom: MM(1.2), flex: '0 0 auto',
+        }}>
+          <span><strong>{UNIVERSITY.name}</strong> — {profile.title}</span>
+          <span>
+            {data.studentNumber ? `Student No. ${data.studentNumber} · ` : ''}
+            {data.credentialId ? `${data.credentialId} · ` : ''}
+            Page {page} of {of}
+          </span>
+        </div>
+
         {first && <Masthead design={design} data={data} ink={ink} rule={rule} />}
 
         {/* THE FULL-WIDTH STRIP the original rules across under the masthead:
@@ -341,6 +386,21 @@ function Sheet({
             fontFamily: TABLE_FACE,
           }}>
             {UNIVERSITY.name}. For more information, visit {UNIVERSITY.email} · {UNIVERSITY.website}
+          </p>
+        )}
+
+        {/* WHAT THE READER IS HOLDING, IN A SENTENCE. Every kind has one. A
+            document that does not say what it is invites the reader to assume
+            the strongest reading of it, and for an unofficial copy that
+            assumption is the whole risk. */}
+        {first && (
+          <p style={{
+            margin: 0, borderLeft: RULE, borderRight: RULE, borderBottom: RULE,
+            padding: '0.7mm 2mm', fontSize: '5.6pt', lineHeight: 1.4, flex: '0 0 auto',
+            fontFamily: TABLE_FACE,
+            background: profile.sealed ? 'transparent' : 'rgba(160,40,40,.06)',
+          }}>
+            {profile.statement}
           </p>
         )}
 
@@ -382,19 +442,83 @@ function Sheet({
         {last && (
           <>
             <div style={{
-              marginTop: MM(4), fontFamily: TABLE_FACE,
+              marginTop: MM(3), fontFamily: TABLE_FACE,
               flex: '1 1 auto', display: 'flex', flexDirection: 'column', minHeight: 0,
             }}>
-              <div style={{ display: 'flex', gap: MM(14), fontSize: '9pt', fontWeight: 700 }}>
-                <span>Study Total Credit&nbsp;&nbsp;&nbsp;{data.totalCredits}</span>
-                <span>Total Credit Earned&nbsp;&nbsp;&nbsp;{data.creditsEarned ?? data.totalCredits}</span>
-              </div>
-              <div style={{ marginTop: MM(3), fontSize: '11pt', fontWeight: 700 }}>
-                Cumulative GPA&nbsp;&nbsp;&nbsp;&nbsp;{data.cgpa.toFixed(2)}
-                {data.classification && (
-                  <span style={{ marginLeft: MM(10), fontSize: '9pt' }}>{data.classification}</span>
-                )}
-              </div>
+              {/* --- Credits accepted from elsewhere ---------------------- */}
+              {/* NOT FOLDED INTO A SEMESTER. These were taught and examined by
+                  another institution; putting them in a semester table would
+                  have this University reporting a mark it never awarded. They
+                  are counted separately, and the institution is named, because
+                  a credit with no source is one a receiving registrar cannot
+                  weigh. */}
+              {(data.transferCredits?.length ?? 0) > 0 && (
+                <TransferBlock credits={data.transferCredits!} ink={ink} />
+              )}
+
+              {/* --- The summary a stranger reads first -------------------- */}
+              <AcademicSummary data={data} ink={ink} brand={design.brand} />
+
+              {/* --- Honours, recorded rather than computed ---------------- */}
+              {(data.honours?.length ?? 0) > 0 && (
+                <div style={{ marginTop: MM(2.5), border: RULE, padding: `${MM(1)} ${MM(2)}` }}>
+                  <p style={{ margin: 0, fontSize: '6pt', letterSpacing: '.08em', opacity: 0.85 }}>
+                    HONOURS AND DISTINCTIONS
+                  </p>
+                  {data.honours!.map((h, i) => (
+                    <p key={`${h.title}-${i}`} style={{ margin: '0.4mm 0 0', fontSize: '7.4pt' }}>
+                      <strong>{h.title}</strong>
+                      {h.academicYear ? ` · ${h.academicYear}` : ''}
+                      {h.awardedOn ? ` · awarded ${h.awardedOn}` : ''}
+                    </p>
+                  ))}
+                </div>
+              )}
+
+              {/* --- The conferral, which is an act of the Senate ---------- */}
+              {profile.showsGraduation && data.conferral && (
+                <ConferralBlock conferral={data.conferral} brand={design.brand} />
+              )}
+
+              {/* --- Registry-only material ------------------------------- */}
+              {profile.showsStandingHistory && (data.standingHistory?.length ?? 0) > 0 && (
+                <div style={{ marginTop: MM(2.5), border: RULE, padding: `${MM(1)} ${MM(2)}` }}>
+                  <p style={{ margin: 0, fontSize: '6pt', letterSpacing: '.08em', opacity: 0.85 }}>
+                    ACADEMIC STANDING HISTORY — INTERNAL
+                  </p>
+                  {data.standingHistory!.map((e, i) => (
+                    <p key={i} style={{ margin: '0.3mm 0 0', fontSize: '6.6pt' }}>
+                      {e.decidedAt} · {e.from ? `${e.from} → ` : ''}{e.to} · {e.reason}
+                    </p>
+                  ))}
+                </div>
+              )}
+              {profile.showsInternalNotes && data.internalNotes && (
+                <p style={{
+                  margin: `${MM(2)} 0 0`, border: RULE, padding: `${MM(1)} ${MM(2)}`,
+                  fontSize: '6.6pt', lineHeight: 1.4,
+                }}>
+                  <strong>Registry note.</strong> {data.internalNotes}
+                </p>
+              )}
+
+              {/* --- What a repeated course does to the average ------------ */}
+              {/* PRINTED WHEN THE UNIVERSITY HAS A RULE, and printed as an
+                  absence when it does not. A transcript showing one course
+                  twice with two grades, silent on which counts, is a document
+                  the reader has to guess at — and the two readings can differ
+                  by a class of award. */}
+              {hasRepeat(data) && (
+                <p style={{
+                  margin: `${MM(2)} 0 0`, fontSize: '5.8pt', lineHeight: 1.4, opacity: 0.9,
+                }}>
+                  <strong>Repeated courses. </strong>
+                  {data.repeatRule
+                    ?? 'This record contains more than one attempt at a course. The University has '
+                     + 'not yet published a rule on how repeated attempts affect the cumulative '
+                     + 'average, so every attempt shown is included in it.'}
+                </p>
+              )}
 
               {/* END OF RECORD. A registrar's convention, and not decoration:
                   it is what stops a sheet being added to a transcript after
@@ -415,13 +539,23 @@ function Sheet({
                   mysteriously short. It also states the approval rule, because
                   a reader comparing this against another sheet needs to know
                   that marks still in the chain are absent by design. */}
+              {/* AND IT MUST NOT CONTRADICT THE BLOCK ABOVE IT. This sentence
+                  read "…not in itself a statement that an award has been
+                  conferred" directly beneath a DEGREE AWARDED block stating the
+                  conferral date and the Senate's resolution. One of the two was
+                  wrong on every graduation transcript. The disclaimer belongs
+                  to a record with no conferral on it, which is what it was
+                  written for. */}
               <p style={{
                 margin: `${MM(2)} 0 0`, fontSize: '5.6pt', lineHeight: 1.45,
                 fontFamily: TABLE_FACE, opacity: 0.85,
               }}>
                 This is the holder’s record as it stood on the date of issue, and covers only
-                results approved by the University. It is not in itself a statement that the
-                programme has been completed or that an award has been conferred.
+                results approved by the University.
+                {data.conferral
+                  ? ' The award named above was conferred by the Senate on the date stated.'
+                  : ' It is not in itself a statement that the programme has been completed or '
+                    + 'that an award has been conferred.'}
               </p>
 
               {/* THE OFFICES, as the original closes: two named on the left,
@@ -522,17 +656,42 @@ function Masthead({
     border: RULE, padding: '0.3mm 1.4mm', verticalAlign: 'top', fontFamily: TABLE_FACE,
   };
   const lab: React.CSSProperties = {
-    ...cell, fontSize: '6pt', fontWeight: 400, opacity: 0.9, textAlign: 'left',
-    borderBottom: 'none', padding: '0.35mm 1.6mm 0',
+    ...cell, fontSize: '5.6pt', fontWeight: 400, opacity: 0.9, textAlign: 'left',
+    borderBottom: 'none', padding: '0.3mm 1.6mm 0',
   };
   const val: React.CSSProperties = {
     // THE VALUES FILL THE CELL. In the original the particulars are set large
     // and bold and the box is drawn to them; mine had small type floating in a
     // tall box, which is what "the characters completely fill this section"
     // was pointing at.
-    ...cell, fontSize: '10pt', fontWeight: 700, borderTop: 'none',
-    padding: '0 1.6mm 0.5mm', whiteSpace: 'nowrap', letterSpacing: '.01em',
+    //
+    // 9pt, NOT 10. The grid now carries twelve particulars rather than eight —
+    // nationality, campus, study mode and the admission date were added — and
+    // at 10pt a long campus name pushed the block wider than the masthead.
+    ...cell, fontSize: '9pt', fontWeight: 700, borderTop: 'none',
+    padding: '0 1.6mm 0.4mm', whiteSpace: 'nowrap', letterSpacing: '.01em',
   };
+
+  const profile = profileFor(data.transcriptKind);
+
+  /** Two rows of the grid: four headings, then the four values under them. */
+  const band = (cells: [string, React.ReactNode][], key: string) => (
+    <React.Fragment key={key}>
+      <tr>{cells.map(([label]) => <th key={label} style={lab}>{label}</th>)}</tr>
+      <tr>
+        {cells.map(([label, value]) => (
+          <td
+            key={label}
+            style={label === 'Stu No'
+              ? { ...val, fontFamily: 'ui-monospace, Menlo, monospace' }
+              : val}
+          >
+            {value || '—'}
+          </td>
+        ))}
+      </tr>
+    </React.Fragment>
+  );
 
   return (
     <>
@@ -564,77 +723,122 @@ function Masthead({
         justifyContent: 'center', textAlign: 'center', padding: '0.8mm 2mm',
       }}>
         <h1 style={{
-          margin: 0, fontSize: '23pt', letterSpacing: '.005em', fontWeight: 400,
+          margin: 0, fontSize: '21pt', letterSpacing: '.005em', fontWeight: 400,
           color: design.brand, lineHeight: 1.05, whiteSpace: 'nowrap',
         }}>
           {UNIVERSITY.name}
         </h1>
-        <p style={{ margin: '1.1mm 0 0', fontSize: '11pt', color: ink, lineHeight: 1.15 }}>
+        <p style={{ margin: '1mm 0 0', fontSize: '10pt', color: ink, lineHeight: 1.15 }}>
           {UNIVERSITY.headquarters}
         </p>
-        <p style={{ margin: '0.5mm 0 0', fontSize: '11pt', fontWeight: 700, color: ink, lineHeight: 1.15 }}>
+        <p style={{ margin: '0.4mm 0 0', fontSize: '10pt', fontWeight: 700, color: ink, lineHeight: 1.15 }}>
           {UNIVERSITY.descriptor}
         </p>
+        {/* THE TEACHING LOCATION, where it differs from the seat of the
+            University. A receiving institution assessing the award needs to
+            know where the study happened, and the name of the University alone
+            does not answer it. */}
+        {data.campus && (
+          <p style={{ margin: '0.4mm 0 0', fontSize: '8pt', color: ink, lineHeight: 1.15, fontFamily: TABLE_FACE }}>
+            Teaching location: {data.campus}
+          </p>
+        )}
       </div>
 
       <table style={{ borderCollapse: 'collapse', flex: '0 0 auto' }}>
         <tbody>
-          <tr>
-            <th style={lab}>Surname</th><th style={lab}>First Names</th><th style={lab}>Middle Name</th>
-            <th style={lab}>Stu No</th>
-          </tr>
-          <tr>
-            <td style={val}>{data.student.last_name || '—'}</td>
-            <td style={val}>{data.student.first_name || '—'}</td>
-            <td style={val}>{(data.student as { middle_name?: string }).middle_name || '—'}</td>
-            <td style={{ ...val, fontFamily: 'ui-monospace, Menlo, monospace' }}>
-              {data.studentNumber ?? data.student.matric_no ?? '—'}
-            </td>
-          </tr>
-          <tr>
-            <th style={lab}>Date of Birth</th><th style={lab}>Place of Birth</th>
-            <th style={lab}>Sex</th><th style={lab}>Date of Issue</th>
-          </tr>
-          <tr>
-            <td style={val}>{data.dateOfBirth || '—'}</td>
-            <td style={val}>{data.placeOfBirth || '—'}</td>
-            <td style={val}>{data.sex || '—'}</td>
-            <td style={val}>{data.issuedOn || '—'}</td>
-          </tr>
+          {band([
+            ['Surname', data.student.last_name],
+            ['First Names', data.student.first_name],
+            ['Middle Name', (data.student as { middle_name?: string }).middle_name],
+            ['Stu No', data.studentNumber ?? data.student.matric_no],
+          ], 'names')}
+          {band([
+            ['Date of Birth', data.dateOfBirth],
+            ['Place of Birth', data.placeOfBirth],
+            ['Sex', data.sex],
+            ['Nationality', data.nationality],
+          ], 'birth')}
+          {band([
+            ['Admitted', data.admittedOn],
+            ['Completed', data.completedOn],
+            ['Study Mode', modeLabel(data.modeOfStudy)],
+            ['Date of Issue', data.issuedOn],
+          ], 'dates')}
         </tbody>
       </table>
       </div>
 
-      {/* THE TITLE BAR — a narrow full-width bordered row, not a heading. */}
+      {/* THE TITLE BAR — a narrow full-width bordered row, not a heading. It
+          names the DOCUMENT rather than the genre, so an interim transcript and
+          a final one are not both headed "Student Transcript". */}
       <div style={{
         borderLeft: RULE, borderRight: RULE, borderBottom: RULE,
         padding: '0.4mm 2mm', textAlign: 'center', fontSize: '8.5pt', letterSpacing: '.02em',
       }}>
-        Student Transcript
+        {profile.title}
       </div>
 
-      {/* THE DEGREE ROW — the award on the left, the holder's address on the
-          right, both inside the same rectangular grid. */}
+      {/* THE PROGRAMME, AS THREE THINGS AND NOT ONE.
+          The award is the instrument, the programme is the field, the
+          specialization is the concentration within it — and a sheet that
+          prints only "Bachelor of Theology" leaves a receiving institution
+          unable to tell a general degree from a specialised one. The University
+          asked for this explicitly, and said why: it matters most once there
+          are many specializations. */}
       <div style={{
         borderLeft: RULE, borderRight: RULE, borderBottom: RULE, display: 'flex',
       }}>
         <div style={{ flex: '1 1 0', padding: '0.4mm 2mm 0.7mm', textAlign: 'center', minWidth: 0 }}>
-          <p style={{ margin: 0, fontSize: '5.8pt', opacity: 0.85 }}>Degree / Diploma Offered</p>
-          <p style={{ margin: '0.2mm 0 0', fontSize: '14pt', fontWeight: 700, color: design.brand, lineHeight: 1.1 }}>
-            {data.student.degree_type || data.student.program || data.department?.name}
+          <p style={{ margin: 0, fontSize: '5.8pt', opacity: 0.85 }}>Award Conferred / Programme of Study</p>
+          <p style={{ margin: '0.2mm 0 0', fontSize: '13pt', fontWeight: 700, color: design.brand, lineHeight: 1.1 }}>
+            {data.award || data.student.degree_type || data.student.program || data.department?.name}
           </p>
         </div>
+
         <div style={{
-          flex: '0 0 42%', borderLeft: RULE, padding: '0.4mm 2mm 0.7mm', fontFamily: TABLE_FACE,
+          flex: '0 0 30%', borderLeft: RULE, padding: '0.4mm 2mm 0.7mm', fontFamily: TABLE_FACE,
+          fontSize: '6.4pt', lineHeight: 1.35, minWidth: 0,
+        }}>
+          <Field label="Programme" value={data.programme || data.student.program} />
+          <Field label="Specialization" value={data.specialization} />
+          <Field label="Faculty" value={data.faculty || data.department?.faculty} />
+          <Field label="Academic Period" value={data.academicPeriod} />
+        </div>
+
+        <div style={{
+          flex: '0 0 26%', borderLeft: RULE, padding: '0.4mm 2mm 0.7mm', fontFamily: TABLE_FACE,
+          minWidth: 0,
         }}>
           <p style={{ margin: 0, fontSize: '6pt', opacity: 0.9 }}>Student Address</p>
-          <p style={{ margin: '0.2mm 0 0', fontSize: '10pt', fontWeight: 700, lineHeight: 1.15 }}>
+          <p style={{ margin: '0.2mm 0 0', fontSize: '8.5pt', fontWeight: 700, lineHeight: 1.2 }}>
             {data.studentAddress || '—'}
           </p>
         </div>
       </div>
     </>
   );
+}
+
+/** A label and its value on one line, for the compact programme column. */
+function Field({ label, value }: { label: string; value?: string | null }) {
+  return (
+    <p style={{ margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+      <span style={{ opacity: 0.8 }}>{label}: </span>
+      <strong>{value || '—'}</strong>
+    </p>
+  );
+}
+
+/** The study mode in the words a reader outside the University uses. */
+function modeLabel(mode: string | null | undefined): string {
+  switch (mode) {
+    case 'on-campus': return 'On-campus';
+    case 'online':    return 'Online';
+    case 'distance':  return 'Distance';
+    case 'blended':   return 'Blended';
+    default:          return '';
+  }
 }
 
 function GradeSystem({ ink, rule }: { ink: string; rule: string }) {
@@ -853,6 +1057,201 @@ function YearTable({
       </tbody>
     </table>
   );
+}
+
+/**
+ * Credits accepted from another institution.
+ *
+ * NAMED, NOT TOTALLED. "Transfer credit: 24" tells a receiving registrar
+ * nothing they can act on; the institution and the course are what let them
+ * decide whether to accept the same credit onward.
+ */
+function TransferBlock({
+  credits, ink,
+}: { credits: readonly NonNullable<TranscriptMasterData['transferCredits']>[number][]; ink: string }) {
+  const th: React.CSSProperties = {
+    fontSize: '5.8pt', fontWeight: 400, textAlign: 'left', padding: '0.4mm 1mm',
+    borderBottom: RULE_MAJOR, borderLeft: RULE, borderRight: RULE, color: ink,
+  };
+  const td: React.CSSProperties = {
+    fontSize: '7pt', padding: '0.3mm 1mm', borderLeft: RULE, borderRight: RULE, color: ink,
+  };
+
+  return (
+    <table style={{
+      width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed',
+      fontFamily: TABLE_FACE, marginBottom: MM(2.5), border: RULE_MAJOR,
+    }}>
+      <colgroup>
+        <col style={{ width: '26%' }} /><col style={{ width: '12%' }} />
+        <col style={{ width: '34%' }} /><col style={{ width: '14%' }} />
+        <col style={{ width: '14%' }} />
+      </colgroup>
+      <thead>
+        <tr>
+          <th style={th}>Transfer Credit — Institution</th>
+          <th style={th}>Course Code</th>
+          <th style={th}>Course Title</th>
+          <th style={{ ...th, textAlign: 'right' }}>Credits Offered</th>
+          <th style={{ ...th, textAlign: 'right' }}>Credits Accepted</th>
+        </tr>
+      </thead>
+      <tbody>
+        {credits.map((c, i) => (
+          <tr key={`${c.institution}-${i}`}>
+            <td style={td}>{c.institution}</td>
+            <td style={{ ...td, fontFamily: 'ui-monospace, Menlo, monospace' }}>{c.courseCode || '—'}</td>
+            <td style={td}>{c.courseTitle}</td>
+            <td style={{ ...td, textAlign: 'right' }}>{c.credits}</td>
+            {/* A REFUSED CREDIT IS SHOWN AS REFUSED, not omitted and not zero.
+                Zero reads as an arithmetic result; "not accepted" is a
+                decision, and the student is entitled to see that it was made. */}
+            <td style={{ ...td, textAlign: 'right' }}>
+              {c.accepted ? c.creditsAccepted : 'not accepted'}
+            </td>
+          </tr>
+        ))}
+        <tr>
+          <td colSpan={4} style={{ ...td, borderTop: RULE_MAJOR, fontWeight: 700, padding: '0.6mm 1mm' }}>
+            Total transfer credit accepted toward the programme
+          </td>
+          <td style={{
+            ...td, borderTop: RULE_MAJOR, fontWeight: 700, textAlign: 'right', padding: '0.6mm 1mm',
+          }}>
+            {transferAccepted(credits)}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  );
+}
+
+/**
+ * The block an employer, a registrar or an immigration officer reads first.
+ *
+ * EVERY FIGURE IS LABELLED IN FULL. "Credits: 180" is ambiguous between
+ * attempted and earned, and the difference is the entire question for a
+ * student who has failed something. The GPA carries its scale — 3.42 out of
+ * 4.00 — because a reader abroad cannot assume the denominator, and a 3.42
+ * on a 5.00 scale is a different student.
+ */
+function AcademicSummary({
+  data, ink, brand,
+}: { data: TranscriptMasterData; ink: string; brand: string }) {
+  const cell: React.CSSProperties = {
+    fontSize: '7.4pt', padding: '0.5mm 2mm', borderLeft: RULE, borderRight: RULE, color: ink,
+  };
+  const head: React.CSSProperties = {
+    // LEFT, EXPLICITLY. A `th` centres by default, so every heading floated
+    // away from the figure beneath it and the block read as two unrelated rows.
+    ...cell, fontSize: '5.8pt', fontWeight: 400, opacity: 0.85, borderBottom: 'none',
+    padding: '0.5mm 2mm 0', textAlign: 'left',
+  };
+  const value: React.CSSProperties = {
+    ...cell, fontWeight: 700, borderTop: 'none', padding: '0 2mm 0.6mm',
+  };
+
+  const transfer = transferAccepted(data.transferCredits);
+
+  return (
+    <div style={{ border: RULE_MAJOR, fontFamily: TABLE_FACE }}>
+      <p style={{
+        margin: 0, padding: '0.5mm 2mm', fontSize: '6.2pt', letterSpacing: '.1em',
+        borderBottom: RULE, fontWeight: 700,
+      }}>
+        ACADEMIC SUMMARY
+      </p>
+      <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+        <tbody>
+          <tr>
+            <th style={head}>Credits attempted</th>
+            <th style={head}>Credits earned</th>
+            {/* AND WHETHER IT IS COUNTED IN THE TWO FIGURES TO ITS LEFT.
+                It is not: those total the courses this University taught and
+                examined. A reader who assumes otherwise is out by the whole
+                transfer block. */}
+            {transfer > 0 && <th style={head}>Transfer credit (not in the totals at left)</th>}
+            <th style={head}>Cumulative GPA</th>
+            <th style={head}>Academic standing</th>
+            <th style={head}>Degree status</th>
+          </tr>
+          <tr>
+            <td style={value}>{data.totalCredits}</td>
+            <td style={value}>{data.creditsEarned ?? data.totalCredits}</td>
+            {transfer > 0 && <td style={value}>{transfer}</td>}
+            <td style={{ ...value, color: brand }}>
+              {data.cgpa.toFixed(2)} / {MAX_GRADE_POINT.toFixed(2)}
+            </td>
+            {/* NOTHING, NOT "UNKNOWN", when the University has not assessed
+                the record. See standingLabel. */}
+            <td style={value}>{data.academicStanding || '—'}</td>
+            <td style={value}>{data.degreeStatus || '—'}</td>
+          </tr>
+        </tbody>
+      </table>
+      {data.classification && (
+        <p style={{
+          margin: 0, padding: '0.5mm 2mm 0.8mm', fontSize: '8pt', fontWeight: 700,
+          borderTop: RULE, color: brand,
+        }}>
+          Classification: {data.classification}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/**
+ * The conferral.
+ *
+ * THE SENATE'S DATE IS PRINTED BESIDE THE CONFERRAL DATE, because the Senate
+ * resolving to confer is the authority for the award and the conferral is its
+ * execution. A degree date with no resolution behind it is the University
+ * asserting an award it cannot show it decided to make.
+ */
+function ConferralBlock({
+  conferral, brand,
+}: { conferral: NonNullable<TranscriptMasterData['conferral']>; brand: string }) {
+  return (
+    <div style={{
+      marginTop: MM(2.5), border: RULE_MAJOR, padding: `${MM(1)} ${MM(2)}`,
+      fontFamily: TABLE_FACE,
+    }}>
+      <p style={{ margin: 0, fontSize: '6.2pt', letterSpacing: '.1em', fontWeight: 700 }}>
+        DEGREE AWARDED
+      </p>
+      <p style={{ margin: '0.5mm 0 0', fontSize: '11pt', fontWeight: 700, color: brand, lineHeight: 1.1 }}>
+        {conferral.award}
+      </p>
+      <p style={{ margin: '0.5mm 0 0', fontSize: '7pt', lineHeight: 1.4 }}>
+        Conferred {conferral.conferredOn}
+        {conferral.senateApprovedOn && ` · by resolution of the Senate of ${conferral.senateApprovedOn}`}
+        {conferral.convocationOn && ` · presented at convocation ${conferral.convocationOn}`}
+        {conferral.classification && ` · ${conferral.classification}`}
+      </p>
+      {(conferral.graduationNumber || conferral.certificateCredentialId) && (
+        <p style={{ margin: '0.3mm 0 0', fontSize: '6.2pt', fontFamily: 'ui-monospace, Menlo, monospace' }}>
+          {conferral.graduationNumber && `Graduation no. ${conferral.graduationNumber}`}
+          {conferral.graduationNumber && conferral.certificateCredentialId && ' · '}
+          {conferral.certificateCredentialId && `Certificate ${conferral.certificateCredentialId}`}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** Is any course on this record sat more than once? */
+function hasRepeat(data: TranscriptMasterData): boolean {
+  const seen = new Set<string>();
+  for (const y of data.years) {
+    for (const sem of y.semesters) {
+      for (const c of sem.courses) {
+        if (seen.has(c.code)) return true;
+        seen.add(c.code);
+      }
+    }
+  }
+  return false;
 }
 
 /**

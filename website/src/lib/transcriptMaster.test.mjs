@@ -276,4 +276,27 @@ check('it carries no seal code, because nothing sealed it',
   check('no course appears twice', new Set(codes).size, codes.length);
 }
 
+
+
+console.log('\nA closing block that needs its own sheet\n');
+
+// TWO SLOTS FOR A CLOSE that also carries transfer credits, honours and a
+// conferral. The pad is what stops it running over the fold.
+check('three years and a full close is three sheets',
+  paginate([yr(1), yr(2), yr(3)], 2).length, 3);
+check('two years and a full close is two sheets',
+  paginate([yr(1), yr(2)], 2).length, 2);
+check('one year and a full close is two sheets',
+  paginate([yr(1)], 2).length, 2);
+check('the close is printed once and only once',
+  paginate([yr(1), yr(2), yr(3)], 2).filter((s) => s.closing).length, 1);
+check('…and it is the last sheet that carries it',
+  paginate([yr(1), yr(2), yr(3)], 2).map((s) => s.closing), [false, false, true]);
+// NO BLANK PAGE. The padded slot must not become a sheet with a page number
+// and nothing on it.
+check('the padded sheet still carries a year rather than being blank',
+  paginate([yr(1), yr(2), yr(3)], 2).map((s) => s.years.length), [2, 1, 0]);
+check('a one-slot close is unchanged by the new argument',
+  paginate([yr(1), yr(2), yr(3)], 1).length, paginate([yr(1), yr(2), yr(3)]).length);
+
 process.exit(failures === 0 ? 0 : 1);

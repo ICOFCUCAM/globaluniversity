@@ -33,6 +33,7 @@
 // ---------------------------------------------------------------------------
 
 import { bthCurriculum } from '@/content/bachelorOfTheology';
+import { UNIVERSITY } from '@/lib/constants';
 import { GRADING_SCALE } from '@/lib/grading';
 import { getClassification } from '@/lib/grading';
 import type { TranscriptCourse, TranscriptSemester, TranscriptYear } from '@/lib/types';
@@ -155,5 +156,62 @@ export const SPECIMEN_TRANSCRIPT: TranscriptMasterData = (() => {
     studentAddress: null,
     transcribedFrom: null,
     superseded: false,
+
+    // --- The blocks the University asked the transcript to carry ----------
+    //
+    // NOTHING INSTITUTIONAL IS INVENTED HERE. The award, the faculty and the
+    // study mode are the Bachelor of Theology's own, as published. There is no
+    // specialization because the University has not declared one for this
+    // programme, and a specimen that showed a concentration this degree does
+    // not offer would be teaching the registry to expect a field that cannot
+    // be filled. The transferring institution is named as a specimen for the
+    // same reason: naming a real college would put a real institution's name
+    // on a fictional student's record.
+    transcriptKind: 'official',
+    campus: UNIVERSITY.headquarters,
+    nationality: 'Specimen',
+    modeOfStudy: 'online',
+    admittedOn: '1 September 2023',
+    completedOn: '15 July 2026',
+    award: 'Bachelor of Theology',
+    programme: 'Theology',
+    specialization: null,
+    faculty: 'Faculty of Theology',
+    academicPeriod: '2023–2026',
+    academicStanding: 'Good Standing',
+    degreeStatus: 'Completed',
+    transferCredits: [
+      {
+        institution: 'Specimen Theological College',
+        courseCode: 'OTS110',
+        courseTitle: 'Old Testament Survey',
+        credits: 6,
+        creditsAccepted: 5,
+        accepted: true,
+      },
+      {
+        institution: 'Specimen Theological College',
+        courseCode: 'PHL101',
+        courseTitle: 'Introduction to Philosophy',
+        credits: 5,
+        creditsAccepted: 0,
+        accepted: false,
+      },
+    ],
+    honours: [
+      { kind: 'deans-list', title: 'Dean’s List', academicYear: '2024/2025', awardedOn: '30 June 2025' },
+    ],
+    conferral: {
+      award: 'Bachelor of Theology',
+      senateApprovedOn: '2 July 2026',
+      conferredOn: '15 July 2026',
+      convocationOn: '18 July 2026',
+      classification: getClassification(cgpa),
+      graduationNumber: 'SPECIMEN',
+      certificateCredentialId: 'SPECIMEN',
+    },
+    standingHistory: [],
+    internalNotes: null,
+    repeatRule: null,
   };
 })();

@@ -179,7 +179,15 @@ with checks(sort, migration, file, does, probe) as (values
                      where schemaname = 'public' and tablename = 'students'
                        and policyname = 'students_superadmin_delete')
         and exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-                     where n.nspname = 'public' and p.proname = 'guard_application_delete')$$)
+                     where n.nspname = 'public' and p.proname = 'guard_application_delete')$$),
+
+  (19, '019', '019_academic_record.sql',
+   'Study mode, campus, specialization, repeated attempts, transfer credit, honours, conferral, standing.',
+   $$select exists (select 1 from information_schema.columns
+                     where table_schema = 'public' and table_name = 'students'
+                       and column_name = 'mode_of_study')
+        and to_regclass('public.transfer_credits') is not null
+        and to_regclass('public.academic_policy') is not null$$)
 )
 select
   c.migration,
@@ -218,7 +226,8 @@ with checks(sort, migration, file, probe) as (values
   (15, '015', '015_examination_and_proctoring.sql',      $$select to_regclass('public.exam_sessions') is not null and to_regclass('public.exam_marks') is not null$$),
   (16, '016', '016_examination_papers.sql',              $$select to_regclass('public.exam_sessions_mine') is not null$$),
   (17, '017', '017_secret_store.sql',                    $$select to_regclass('public.secret_store') is not null$$),
-  (18, '018', '018_delete_application.sql',              $$select exists (select 1 from pg_policies where schemaname='public' and tablename='students' and policyname='students_superadmin_delete') and exists (select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='guard_application_delete')$$)
+  (18, '018', '018_delete_application.sql',              $$select exists (select 1 from pg_policies where schemaname='public' and tablename='students' and policyname='students_superadmin_delete') and exists (select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='guard_application_delete')$$),
+  (19, '019', '019_academic_record.sql',                 $$select to_regclass('public.transfer_credits') is not null and to_regclass('public.academic_policy') is not null and exists (select 1 from information_schema.columns where table_schema='public' and table_name='students' and column_name='mode_of_study')$$)
 ), outstanding as (
   select migration, file from checks where not pg_temp.probe(probe) order by sort
 )
