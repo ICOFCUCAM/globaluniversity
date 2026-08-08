@@ -565,3 +565,140 @@ export function markEdited(variant: Variant, editorId: string): Variant {
 export function retryable<T extends { state: TargetState }>(targets: T[]): T[] {
   return targets.filter((t) => t.state === 'failed');
 }
+
+// ---------------------------------------------------------------------------
+// APPROVAL — "review once"
+// ---------------------------------------------------------------------------
+
+export const APPROVAL_STATES = ['draft', 'submitted', 'approved', 'rejected'] as const;
+export type ApprovalState = (typeof APPROVAL_STATES)[number];
+
+/**
+ * Who may move a post's approval, and to where.
+ *
+ * SEPARATE FROM THE POST'S STATUS, because they answer different questions.
+ * `status` says where the post is mechanically — draft, scheduled, publishing,
+ * published. `approval_state` says whether a person with authority to speak for
+ * the University has read the words and agreed to them. A post can be approved
+ * and scheduled at once, and folding them into one column would force a choice
+ * between the two.
+ *
+ * THE AUTHOR IS NOT THE APPROVER. Enforced here so the button is not drawn, in
+ * the route so it cannot be posted, and by a trigger in migration 014 so it
+ * cannot be reached at all. `canApprove` below is the rule; the trigger is the
+ * control.
+ */
+export const APPROVAL_TRANSITIONS: Record<
+  ApprovalState,
+  Array<{ to: ApprovalState; capability: string; label: string }>
+> = {
+  draft: [
+    { to: 'submitted', capability: 'compose-social-post', label: 'Send for review' },
+  ],
+  submitted: [
+    { to: 'approved', capability: 'approve-social-post', label: 'Approve' },
+    { to: 'rejected', capability: 'approve-social-post', label: 'Send back' },
+    { to: 'draft', capability: 'compose-social-post', label: 'Withdraw' },
+  ],
+  // An approved post is published, not re-approved. Reopening it would let the
+  // words change after somebody signed them off, which is the one thing an
+  // approval step exists to prevent.
+  approved: [],
+  rejected: [
+    { to: 'draft', capability: 'compose-social-post', label: 'Reopen and edit' },
+  ],
+};
+
+export interface ApprovalMove {
+  from: ApprovalState;
+  to: ApprovalState;
+  /** Who is asking. Compared against the post's author for self-approval. */
+  actorId: string;
+  authorId: string;
+  /** Every capability this person holds — checked against the transition. */
+  holds: (capability: string) => boolean;
+  note?: string | null;
+}
+
+export interface ApprovalVerdict {
+  allowed: boolean;
+  reason?: string;
+}
+
+export function canApprove(move: ApprovalMove): ApprovalVerdict {
+  const available = APPROVAL_TRANSITIONS[move.from];
+  if (!available) return { allowed: false, reason: `${move.from} is not an approval state.` };
+
+  if (available.length === 0) {
+    return {
+      allowed: false,
+      reason: 'An approved post is published, not re-approved. Withdraw it and start again if the '
+        + 'words need to change.',
+    };
+  }
+
+  const transition = available.find((t) => t.to === move.to);
+  if (!transition) {
+    return { allowed: false, reason: `A ${move.from} post cannot go straight to ${move.to}.` };
+  }
+
+  if (!move.holds(transition.capability)) {
+    return { allowed: false, reason: `You may not ${transition.label.toLowerCase()}.` };
+  }
+
+  // THE RULE 014 ENFORCES IN THE DATABASE.
+  if (move.to === 'approved' && move.actorId === move.authorId) {
+    return {
+      allowed: false,
+      reason: 'You wrote this post, so you cannot be the one who approves it. Another '
+        + 'administrator has to read it first — that is what the review step is for.',
+    };
+  }
+
+  // The same asymmetry as the credential correction workflow: an approval needs
+  // no explanation, a rejection does. Without one the author is guessing which
+  // sentence was the problem, and usually resubmits the post unchanged.
+  if (move.to === 'rejected' && !move.note?.trim()) {
+    return { allowed: false, reason: 'Say what needs to change, so the author is not guessing.' };
+  }
+
+  return { allowed: true };
+}
+
+/** What this person can do with a post in this state — used to draw the buttons. */
+export function approvalMovesFor(
+  state: ApprovalState,
+  holds: (capability: string) => boolean,
+) {
+  return (APPROVAL_TRANSITIONS[state] ?? []).filter((t) => holds(t.capability));
+}
+
+/**
+ * May this post be published now?
+ *
+ * APPROVAL IS REQUIRED ONLY WHEN THE UNIVERSITY HAS SOMEBODY TO DO IT. A
+ * deployment with exactly one administrator would otherwise have a Command
+ * Centre nothing can ever leave — the author cannot approve their own post, and
+ * there is nobody else. So the caller passes whether a second approver exists,
+ * and a single-administrator university publishes directly with the post marked
+ * 'draft' rather than being locked out of its own accounts.
+ *
+ * That is a real trade-off and it is recorded rather than hidden: the
+ * publication log shows which posts went out without a second reader.
+ */
+export function readyToPublish(post: {
+  approvalState: ApprovalState;
+  approversAvailable: boolean;
+}): { ready: boolean; reason?: string } {
+  if (!post.approversAvailable) return { ready: true };
+  if (post.approvalState === 'approved') return { ready: true };
+  if (post.approvalState === 'rejected') {
+    return { ready: false, reason: 'This post was sent back for changes and has not been approved.' };
+  }
+  return {
+    ready: false,
+    reason: post.approvalState === 'submitted'
+      ? 'This post is waiting for another administrator to read it.'
+      : 'Send this post for review before publishing it.',
+  };
+}

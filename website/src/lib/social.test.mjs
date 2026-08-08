@@ -362,3 +362,106 @@ console.log(failures === 0
   ? '\nAn administrator cannot post as a colleague, and no post leaves without its checks.'
   : `\n${failures} failed`);
 process.exit(failures === 0 ? 0 : 1);
+
+console.log('\nThe author of a post cannot be the one who approves it\n');
+
+const ADMIN = 'admin-who-writes';
+const OTHER = 'admin-who-reads';
+const ALL_CAPS = () => true;
+const NO_APPROVAL = (c) => c !== 'approve-social-post';
+
+const approving = (actorId, authorId, from, to, holds = ALL_CAPS, note) =>
+  S.canApprove({ from, to, actorId, authorId, holds, note });
+
+check(
+  'a colleague may approve a submitted post',
+  approving(OTHER, ADMIN, 'submitted', 'approved').allowed,
+  true,
+);
+check(
+  'the author may NOT approve their own',
+  approving(ADMIN, ADMIN, 'submitted', 'approved').allowed,
+  false,
+);
+check(
+  '…and the reason says why, rather than just refusing',
+  /that is what the review step is for/.test(approving(ADMIN, ADMIN, 'submitted', 'approved').reason),
+  true,
+);
+check(
+  'somebody without the approval capability cannot approve either',
+  approving(OTHER, ADMIN, 'submitted', 'approved', NO_APPROVAL).allowed,
+  false,
+);
+
+check(
+  'sending back requires a note',
+  approving(OTHER, ADMIN, 'submitted', 'rejected').allowed,
+  false,
+);
+check(
+  '…and with one, it is allowed',
+  approving(OTHER, ADMIN, 'submitted', 'rejected', ALL_CAPS, 'The date is wrong.').allowed,
+  true,
+);
+
+check(
+  'a draft cannot skip review and become approved',
+  approving(OTHER, ADMIN, 'draft', 'approved').allowed,
+  false,
+);
+check(
+  'an approved post cannot be reopened — the words would change after signing',
+  approving(OTHER, ADMIN, 'approved', 'draft').allowed,
+  false,
+);
+check(
+  'a rejected post can be reopened by its author',
+  approving(ADMIN, ADMIN, 'rejected', 'draft').allowed,
+  true,
+);
+check(
+  'an author may withdraw their own submission',
+  approving(ADMIN, ADMIN, 'submitted', 'draft').allowed,
+  true,
+);
+
+check(
+  'the buttons an approver sees on a submitted post',
+  S.approvalMovesFor('submitted', ALL_CAPS).map((m) => m.to).sort(),
+  ['approved', 'draft', 'rejected'],
+);
+check(
+  'somebody who can only compose sees no approval buttons',
+  S.approvalMovesFor('submitted', NO_APPROVAL).map((m) => m.to),
+  ['draft'],
+);
+check('an approved post offers nobody anything', S.approvalMovesFor('approved', ALL_CAPS), []);
+
+console.log('\nA one-administrator University is not locked out of its own accounts\n');
+
+check(
+  'with nobody able to approve, a post publishes without review',
+  S.readyToPublish({ approvalState: 'draft', approversAvailable: false }).ready,
+  true,
+);
+check(
+  'with an approver available, an unreviewed post does not',
+  S.readyToPublish({ approvalState: 'draft', approversAvailable: true }).ready,
+  false,
+);
+check(
+  '…and one waiting on review says so',
+  S.readyToPublish({ approvalState: 'submitted', approversAvailable: true }).reason,
+  'This post is waiting for another administrator to read it.',
+);
+check(
+  '…and one sent back says that instead',
+  /sent back for changes/.test(S.readyToPublish({ approvalState: 'rejected', approversAvailable: true }).reason),
+  true,
+);
+check(
+  'an approved post is ready',
+  S.readyToPublish({ approvalState: 'approved', approversAvailable: true }).ready,
+  true,
+);

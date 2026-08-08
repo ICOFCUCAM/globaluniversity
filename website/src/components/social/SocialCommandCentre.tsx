@@ -48,15 +48,17 @@ import { supabase } from '@/lib/supabase';
 import { can } from '@/lib/roles';
 import type { UserRole } from '@/lib/types';
 import {
-  PLATFORMS, PLATFORM_PROFILES, resolveTargets, problemsWith, canPublish,
-  bodyFor, describeOutcome, statusFromTargets,
+  PLATFORMS, PLATFORM_PROFILES, resolveTargets, problemsWith, canPublish, bodyFor,
   type Platform, type SocialAccount, type ChannelChoice, type DraftPost,
-  type Variant, type PostMedia, type TargetState,
+  type Variant, type PostMedia,
 } from '@/lib/social';
 import {
   Loader2, Send, Sparkles, AlertTriangle, Building2, User, Users,
   CalendarClock, Image as ImageIcon, Info, CheckCircle2, XCircle, Link2,
+  PenLine, CalendarDays, ClipboardCheck,
 } from 'lucide-react';
+import ContentCalendar from './ContentCalendar';
+import PublicationDesk from './PublicationDesk';
 
 // ---------------------------------------------------------------------------
 
@@ -81,19 +83,12 @@ const CHOICES: Array<{ id: ChannelChoice; label: string; note: string; icon: Rea
   },
 ];
 
-interface LogRow {
-  id: string;
-  body: string;
-  status: string;
-  createdAt: string;
-  states: TargetState[];
-  handles: string[];
-}
+type Tab = 'compose' | 'calendar' | 'desk';
 
 export default function SocialCommandCentre({ role, userId }: { role?: UserRole; userId?: string }) {
+  const [tab, setTab] = useState<Tab>('compose');
   const [accounts, setAccounts] = useState<SocialAccount[] | null>(null);
   const [notReady, setNotReady] = useState<string | null>(null);
-  const [log, setLog] = useState<LogRow[]>([]);
 
   const [body, setBody] = useState('');
   const [linkUrl, setLinkUrl] = useState('');
@@ -103,6 +98,9 @@ export default function SocialCommandCentre({ role, userId }: { role?: UserRole;
   const [variants, setVariants] = useState<Variant[]>([]);
   const [scheduledFor, setScheduledFor] = useState('');
 
+  // Whether anybody else can approve this administrator's posts. Decides what
+  // the button says — see GET /api/social/publish.
+  const [needsReview, setNeedsReview] = useState(false);
   const [drafting, setDrafting] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [message, setMessage] = useState<{ tone: 'ok' | 'bad'; text: string } | null>(null);
@@ -152,23 +150,20 @@ export default function SocialCommandCentre({ role, userId }: { role?: UserRole;
       // in the browser needs it, and a field that is never read cannot leak.
     })));
 
-    const posts = await supabase
-      .from('social_posts')
-      .select('id, body, status, created_at, social_post_targets(status, social_accounts(handle))')
-      .order('created_at', { ascending: false })
-      .limit(15);
-
-    setLog((posts.data ?? []).map((p: any) => ({
-      id: String(p.id),
-      body: p.body ?? '',
-      status: p.status,
-      createdAt: p.created_at,
-      states: (p.social_post_targets ?? []).map((t: any) => t.status as TargetState),
-      handles: (p.social_post_targets ?? []).map((t: any) => t.social_accounts?.handle).filter(Boolean),
-    })));
   }, []);
 
   useEffect(() => { void load(); }, [load]);
+
+  useEffect(() => {
+    void (async () => {
+      const { data: session } = await supabase.auth.getSession();
+      const res = await fetch('/api/social/publish', {
+        headers: { authorization: `Bearer ${session.session?.access_token ?? ''}` },
+      });
+      const out = await res.json().catch(() => null);
+      if (out?.ok) setNeedsReview(Boolean(out.needsReview));
+    })();
+  }, []);
 
   // -------------------------------------------------------------------------
 
@@ -300,6 +295,37 @@ export default function SocialCommandCentre({ role, userId }: { role?: UserRole;
           Write once, review once, publish everywhere. What each network receives is shown before it is sent.
         </p>
       </header>
+
+      {/* THREE VIEWS OF THE SAME PIPELINE, in the order the work happens:
+          write it, see when it goes out, watch what happened to it. The
+          publication history lives on the desk with the review queue rather
+          than under the composer, because a failed destination needs a Retry
+          button beside it and the composer is not where anybody looks for one. */}
+      <nav className="flex flex-wrap gap-1 border-b border-[#ece7de] dark:border-[#2e2637]">
+        {([
+          { id: 'compose', label: 'Compose', icon: <PenLine size={15} /> },
+          { id: 'calendar', label: 'Calendar', icon: <CalendarDays size={15} /> },
+          { id: 'desk', label: 'Review & history', icon: <ClipboardCheck size={15} /> },
+        ] as const).map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => setTab(t.id)}
+            className={`-mb-px flex items-center gap-2 border-b-2 px-3 py-2 text-sm ${
+              tab === t.id
+                ? 'border-[#7a4bbd] font-semibold text-[#241a30] dark:text-[#f3efe7]'
+                : 'border-transparent text-[#6b6076] dark:text-[#9c93ad]'
+            }`}
+          >
+            {t.icon}{t.label}
+          </button>
+        ))}
+      </nav>
+
+      {tab === 'calendar' && <ContentCalendar onOpen={() => setTab('desk')} />}
+      {tab === 'desk' && <PublicationDesk role={role} userId={userId} />}
+      {tab === 'compose' && (
+        <>
 
       {notReady && (
         <div className="flex items-start gap-3 rounded-xl border border-[#e9c14a]/40 bg-[#e9c14a]/10 p-4 text-sm">
@@ -516,9 +542,14 @@ export default function SocialCommandCentre({ role, userId }: { role?: UserRole;
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#241a30] px-4 py-3 text-sm font-semibold text-white disabled:opacity-40 dark:bg-[#e9c14a] dark:text-[#241a30]"
           >
             {publishing ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-            {scheduledFor ? 'Schedule' : 'Publish'}
+            {needsReview ? 'Send for review' : scheduledFor ? 'Schedule' : 'Publish'}
             {resolution.targets.length > 0 && ` to ${resolution.targets.length}`}
           </button>
+          {needsReview && (
+            <p className="text-center text-xs text-[#9c93ad]">
+              Another administrator reads it before it goes out. You cannot approve your own post.
+            </p>
+          )}
           {!mayPublish && (
             <p className="text-center text-xs text-[#9c93ad]">
               You may compose, but publishing is held by another role.
@@ -526,35 +557,8 @@ export default function SocialCommandCentre({ role, userId }: { role?: UserRole;
           )}
         </aside>
       </div>
-
-      {/* ------------------------------------------------------------------ */}
-      {/* THE PUBLICATION LOG                                                */}
-      {/* ------------------------------------------------------------------ */}
-      <section className="rounded-2xl border border-[#ece7de] bg-white p-5 dark:border-[#2e2637] dark:bg-[#1b1723]">
-        <h2 className="text-sm font-semibold text-[#241a30] dark:text-[#f3efe7]">Recent publications</h2>
-        {log.length === 0 ? (
-          <p className="mt-2 text-sm text-[#6b6076] dark:text-[#9c93ad]">
-            Nothing has been published through the Command Centre yet.
-          </p>
-        ) : (
-          <ul className="mt-3 divide-y divide-[#ece7de] dark:divide-[#2e2637]">
-            {log.map((row) => (
-              <li key={row.id} className="py-3">
-                <p className="line-clamp-2 text-sm text-[#241a30] dark:text-[#f3efe7]">{row.body}</p>
-                <p className="mt-1 text-xs text-[#6b6076] dark:text-[#9c93ad]">
-                  {new Date(row.createdAt).toLocaleString('en-GB')} · {describeOutcome(row.states)}
-                  {statusFromTargets(row.states) === 'partially_failed' && (
-                    <span className="ml-1 font-semibold text-[#a07c12]">Needs attention.</span>
-                  )}
-                </p>
-                {row.handles.length > 0 && (
-                  <p className="mt-0.5 text-xs text-[#9c93ad]">{row.handles.join(' · ')}</p>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+        </>
+      )}
     </div>
   );
 }

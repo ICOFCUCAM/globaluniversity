@@ -114,6 +114,13 @@ export const OPERATIONAL_CAPABILITIES = [
   // the university talking about itself, which is an administrator's job.
   'compose-social-post',
   'publish-social-post',
+  // APPROVING IS NOT PUBLISHING, and they are separate on purpose. Migration
+  // 014 refuses to let an author approve their own post — the same separation
+  // 005 required of certificate designs and 009 of grades. An announcement is
+  // the institution speaking, and one person writing, approving and sending it
+  // alone is how an unconsidered sentence ends up on six networks under the
+  // University's name.
+  'approve-social-post',
   // Connecting YOUR OWN account is operational and personal. It appears in an
   // administrator's own settings and nowhere else: nobody may connect, revoke
   // or post through another person's account, and the database enforces that

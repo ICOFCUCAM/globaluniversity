@@ -47,6 +47,8 @@
 
 import { NextResponse } from 'next/server';
 import { guard } from '@/lib/adminAuth';
+import { can } from '@/lib/roles';
+import type { UserRole } from '@/lib/types';
 import {
   resolveTargets, problemsWith, canPublish,
   type SocialAccount, type ChannelChoice, type Platform,
@@ -63,6 +65,30 @@ interface Body {
   platforms?: Platform[];
   variants?: Variant[];
   scheduledFor?: string | null;
+}
+
+/**
+ * Will a post written by this caller need approving before it goes out?
+ *
+ * SO THE BUTTON CAN TELL THE TRUTH BEFORE IT IS PRESSED. A control marked
+ * "Publish" that actually sends the announcement for review is a small lie, and
+ * the administrator finds out only after they believe the job is done. The
+ * composer asks this on load and labels itself accordingly.
+ */
+export async function GET(request: Request) {
+  const g = await guard(request, 'compose-social-post');
+  if (!g.ok) return NextResponse.json({ ok: false, error: g.error }, { status: g.status });
+  const { admin, caller } = g;
+
+  const { data: staff } = await admin
+    .from('profiles')
+    .select('id, role, suspended_at')
+    .neq('id', caller.id);
+
+  const approvers = (staff ?? []).filter((p: Record<string, any>) =>
+    !p.suspended_at && can(p.role as UserRole, 'approve-social-post'));
+
+  return NextResponse.json({ ok: true, needsReview: approvers.length > 0, approvers: approvers.length });
 }
 
 export async function POST(request: Request) {
@@ -149,6 +175,27 @@ export async function POST(request: Request) {
   }
 
   // -------------------------------------------------------------------------
+  // IS THERE ANYBODY WHO COULD APPROVE THIS?
+  //
+  // The author may not approve their own post — 014 enforces it in the database
+  // — so a University with exactly one administrator would have a Command
+  // Centre nothing could ever leave. That is a worse failure than an
+  // unreviewed post: the institution would be locked out of its own accounts.
+  //
+  // So the requirement is conditional on somebody else being able to meet it.
+  // Counted from the roster rather than assumed, and counted EXCLUDING the
+  // author, because an approver who is also the author is not a second reader.
+  const { data: staff } = await admin
+    .from('profiles')
+    .select('id, role, suspended_at')
+    .neq('id', caller.id);
+
+  const approvers = (staff ?? []).filter((p: Record<string, any>) =>
+    !p.suspended_at && can(p.role as UserRole, 'approve-social-post'));
+
+  const needsReview = approvers.length > 0;
+
+  // -------------------------------------------------------------------------
   // WRITE THE POST.
   //
   // `include_personal` is set from the resolution rather than from the request.
@@ -164,7 +211,13 @@ export async function POST(request: Request) {
       link_url: draft.linkUrl,
       include_personal: resolution.includePersonal,
       scheduled_for: draft.scheduledFor,
-      status: draft.scheduledFor ? 'scheduled' : 'publishing',
+      // A POST AWAITING REVIEW IS NOT 'publishing'. Marking it so would put it
+      // on the calendar as though it were going out, and the communications
+      // office would find out on the day that it never left.
+      status: needsReview ? 'draft' : (draft.scheduledFor ? 'scheduled' : 'publishing'),
+      approval_state: needsReview ? 'submitted' : 'draft',
+      submitted_by: needsReview ? caller.id : null,
+      submitted_at: needsReview ? new Date().toISOString() : null,
     })
     .select('id')
     .single();
@@ -222,6 +275,13 @@ export async function POST(request: Request) {
   // and the database's copy disagreed, which is a fault worth stopping for
   // rather than working around.
   // -------------------------------------------------------------------------
+  // THE DESTINATIONS ARE WRITTEN EVEN WHEN THE POST IS AWAITING REVIEW.
+  //
+  // They are the record of where it WILL go, which is exactly what the reviewer
+  // needs to see — approving text without knowing it is going to the
+  // University's LinkedIn and to the author's own X account is not a review.
+  // Nothing is dispatched from a target until the post is approved; `status`
+  // stays 'pending' either way.
   const { error: targetErr } = await admin.from('social_post_targets').insert(
     resolution.targets.map((t) => ({
       post_id: postId,
@@ -267,20 +327,30 @@ export async function POST(request: Request) {
     },
   });
 
-  const dispatched = await dispatch();
+  const dispatched = needsReview ? false : await dispatch();
+  const where = `${resolution.targets.length} ${resolution.targets.length === 1 ? 'account' : 'accounts'}`;
 
   return NextResponse.json({
     ok: true,
     postId,
     targets: resolution.targets.length,
     skipped: resolution.skipped,
-    summary: draft.scheduledFor
-      ? `Scheduled for ${resolution.targets.length} ${resolution.targets.length === 1 ? 'account' : 'accounts'}.`
-      : dispatched
-        ? `Published to ${resolution.targets.length}.`
-        : `Queued for ${resolution.targets.length} ${resolution.targets.length === 1 ? 'account' : 'accounts'}. `
-          + 'Nothing has left the University yet: no platform application is connected. '
-          + 'See docs/SOCIAL-CONNECTIONS.md.',
+    awaitingReview: needsReview,
+    summary: needsReview
+      // SAID PLAINLY, because the administrator pressed a button marked
+      // Publish. Leaving them to infer from a green tick that their
+      // announcement has NOT gone out is how a graduation goes unannounced.
+      ? `Sent for review — it has NOT been published. ${approvers.length === 1
+          ? 'One other administrator'
+          : `${approvers.length} other administrators`} can approve it, and it will go to ${where} `
+        + 'once one of them has. You cannot approve your own post.'
+      : draft.scheduledFor
+        ? `Scheduled for ${where}.`
+        : dispatched
+          ? `Published to ${resolution.targets.length}.`
+          : `Queued for ${where}. `
+            + 'Nothing has left the University yet: no platform application is connected. '
+            + 'See docs/SOCIAL-CONNECTIONS.md.',
   });
 }
 
