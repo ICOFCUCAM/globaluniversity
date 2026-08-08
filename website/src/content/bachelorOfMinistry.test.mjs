@@ -138,6 +138,51 @@ for (const [i, s] of B.bminSemesters.entries()) {
   }
 }
 
+console.log('\nThe terminology policy\n');
+
+// ENFORCED, NOT TRUSTED.
+//
+// The university directed that the School of Ministry use Yahuah for the
+// Creator, Yahusha for the Messiah and the Ruach HaQodesh for the Spirit. A
+// policy that lives only in a paragraph is a policy that survives exactly until
+// the next course is added by somebody who has not read it, and the failure is
+// invisible: one course title in a table of thirty-four.
+//
+// So the source file is read as text and the forbidden forms are searched for
+// directly. This is the only assertion in the suite that reads the file rather
+// than the module, because what is being checked is the wording itself.
+const { readFileSync } = await import('node:fs');
+const src = readFileSync(new URL('./bachelorOfMinistry.ts', import.meta.url).pathname, 'utf8');
+
+// Strip the header and the policy note, which QUOTE the old forms in order to
+// record what was changed. A test that flagged its own changelog would force
+// the record to be deleted to make the test pass.
+const body = src.slice(src.indexOf('export const bminTerminology'));
+
+for (const [forbidden, use] of [['Jesus', 'Yahusha'], ['Holy Spirit', 'the Ruach HaQodesh']]) {
+  if (!body.includes(forbidden)) ok(`    no "${forbidden}" in the School’s own voice — it says ${use}`);
+  else bad(`"${forbidden}" appears in the curriculum; the School of Ministry terminology policy requires ${use}`);
+}
+
+check('Yahuah names the Creator', body.includes('Yahuah'), true);
+check('Yahusha names the Messiah', body.includes('Yahusha'), true);
+check('the Ruach HaQodesh names the Spirit', body.includes('Ruach HaQodesh'), true);
+
+// THE OTHER HALF OF THE POLICY, and the half a find-and-replace would destroy.
+// The policy governs the NAMES of the Creator and the Messiah. It does not
+// rename the faith, and it expressly preserves scholarly terminology. A future
+// sweep that turned "Christian doctrine" into something else, or renamed
+// Christology, would be a confessional and an academic change nobody asked for.
+check('the faith is still called Christian', body.includes('Christian'), true);
+check('the academic disciplines keep their own names', body.includes('Christology'), true);
+
+check('the policy itself is published', typeof B.bminTerminology === 'string' && B.bminTerminology.includes('Yahuah'), true);
+check(
+  'and so is the theological statement',
+  typeof B.bminTheologicalStatement === 'string' && B.bminTheologicalStatement.includes('Ruach HaQodesh'),
+  true,
+);
+
 console.log('\nWhat is published about what is unresolved\n');
 
 // The findings are part of the deliverable. If somebody deletes one from the

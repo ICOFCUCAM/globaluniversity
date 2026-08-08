@@ -39,6 +39,13 @@
 // they already exist.
 // ---------------------------------------------------------------------------
 
+import {
+  bminTerminology,
+  bminTheologicalStatement,
+  bminVision,
+  bminMission,
+} from '@/content/bachelorOfMinistry';
+
 /** One award the faculty says it offers, at a given level. */
 export interface FacultyAward {
   title: string;
@@ -327,6 +334,20 @@ export const facultyList: Faculty[] = [
       'Its awards run from the diploma to the practitioner doctorate, and each level articulates into the next. Teaching covers preaching, pastoral care, discipleship, worship, evangelism and mission, together with the governance, stewardship and ethics of authority that a growing ministry demands of whoever leads it.',
       'Most of its students are already serving. The school is built around that: study is available online and on campus in Buea, and admission is enrolment, so a minister may begin from the date of their offer without standing down from the work they are being trained for.',
     ],
+    // THE SCHOOL'S OWN THEOLOGY AND ITS TERMINOLOGY, on the School's own page.
+    //
+    // Both are the university's words, from the School of Ministry academic
+    // framework. The terminology paragraph is here rather than only in the
+    // curriculum because this page is where a reader arrives first: somebody
+    // who meets "Yahusha the Messiah" in a course title without having been
+    // told why reads it as a mistake on the website, which is the opposite of
+    // what a deliberate confessional choice deserves.
+    //
+    // Derived from bachelorOfMinistry.ts rather than retyped, so the School
+    // cannot state one policy here and observe another in its curriculum.
+    standsForBody: [bminTheologicalStatement, bminTerminology],
+    vision: bminVision,
+    mission: [bminMission],
     programSchool: 'School of Ministry',
     degrees: [
       { label: 'Bachelor of Ministry — full curriculum', href: '/bachelor-of-ministry' },

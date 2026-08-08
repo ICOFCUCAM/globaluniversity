@@ -115,6 +115,57 @@ export const bmin = {
     + 'capable and practically effective in the Church and society.',
 };
 
+// ---------------------------------------------------------------------------
+// THE TERMINOLOGY POLICY, AND WHY IT IS A POLICY AND NOT A FIND-AND-REPLACE.
+//
+// The university directed that the School of Ministry use Yahuah for the
+// Creator, Yahusha for the Messiah and the Ruach HaQodesh for the Spirit. Five
+// places in the curriculum carried other forms and now carry these:
+//
+//   BIB 102  "Explain the ministry of Jesus"           → of Yahusha
+//   BIB 104  "Life and Ministry of Jesus Christ"       → of Yahusha the Messiah
+//   BIB 104  "…mission of Jesus"                       → of Yahusha
+//   THE 101  "God … Christ … Holy Spirit"              → Yahuah … Yahusha the
+//                                                        Messiah … the Ruach
+//                                                        HaQodesh
+//   THE 102  "Theology of God, Christ and the Holy Spirit"
+//                                                      → Theology of Yahuah,
+//                                                        Yahusha and the Ruach
+//                                                        HaQodesh
+//
+// WHAT WAS DELIBERATELY LEFT ALONE, under the policy's own second sentence.
+//
+//   "Christian" — in Christian ministry, Christian doctrine, Christian
+//   leadership, Christian education. The policy governs the NAMES of the
+//   Creator and the Messiah. It does not rename the faith, and a school that
+//   silently stopped calling its own doctrine Christian would have made a
+//   confessional change nobody asked for.
+//
+//   "Christology" and "Pneumatology" in THE 102's description. These are the
+//   names of academic disciplines, not names for a person, and the policy
+//   expressly preserves scholarly terminology "when necessary for accurate
+//   scholarly engagement". A student reading a reading list, sitting an
+//   external examination or transferring credit meets these words; a course
+//   description that renamed them would be describing a discipline that no
+//   library catalogues.
+//
+// The distinction is enforced rather than trusted: bachelorOfMinistry.test.mjs
+// fails on "Jesus" or "Holy Spirit" anywhere in this file's own voice, and
+// asserts that "Christian" and "Christology" are still present.
+// ---------------------------------------------------------------------------
+
+export const bminTerminology =
+  'The theological language of the School of Ministry uses Yahuah for the Creator and '
+  + 'Yahusha for the Messiah. Where biblical, historical or academic sources employ other '
+  + 'names or transliterations, the original terminology may be retained when necessary for '
+  + 'accurate scholarly engagement, with the University’s preferred terminology used in the '
+  + 'University’s own theological exposition.';
+
+export const bminTheologicalStatement =
+  'The School of Ministry teaches that Yahuah is the Creator and that Yahusha is the Messiah, '
+  + 'through whom Yahuah’s redemptive purpose is revealed and accomplished, and that the '
+  + 'Ruach HaQodesh empowers the people of Yahuah for holy living, witness, service and ministry.';
+
 export const bminIdentity = [
   'The School of Ministry of ICOF Global University exists to equip men and women for effective Christian service, leadership and ministry in the Church, Christian organizations, missions and wider society.',
   'The School recognizes that contemporary ministry extends beyond the pulpit. Effective ministry requires biblical knowledge, theological understanding, spiritual formation, leadership, administration, communication, technology, financial stewardship, education, pastoral care, evangelism and practical service.',
@@ -275,7 +326,7 @@ export const bminSemesters: BminSemester[] = [
         outcomes: [
           'Explain the historical setting of the New Testament.',
           'Identify major literary genres.',
-          'Explain the ministry of Jesus.',
+          'Explain the ministry of Yahusha.',
           'Describe the development of the early Church.',
           'Identify major theological themes.',
         ],
@@ -292,7 +343,7 @@ export const bminSemesters: BminSemester[] = [
         prerequisite: 'None',
         requires: [],
         description:
-          'Introduction to foundational Christian doctrines including God, humanity, sin, Christ, salvation, Holy Spirit, Church and final things.',
+          'Introduction to foundational Christian doctrines including Yahuah, humanity, sin, Yahusha the Messiah, salvation, the Ruach HaQodesh, the Church and final things.',
         assessment: [
           { item: 'Essays', weight: 30 },
           { item: 'Class presentations', weight: 10 },
@@ -354,7 +405,7 @@ export const bminSemesters: BminSemester[] = [
       },
       {
         code: 'THE 102',
-        title: 'Theology of God, Christ and the Holy Spirit',
+        title: 'Theology of Yahuah, Yahusha and the Ruach HaQodesh',
         ects: 5,
         prerequisite: 'THE 101',
         requires: ['THE 101'],
@@ -362,12 +413,12 @@ export const bminSemesters: BminSemester[] = [
       },
       {
         code: 'BIB 104',
-        title: 'Life and Ministry of Jesus Christ',
+        title: 'Life and Ministry of Yahusha the Messiah',
         ects: 5,
         prerequisite: 'BIB 102',
         requires: ['BIB 102'],
         description:
-          'Study of the person, teaching, ministry, death, resurrection and mission of Jesus.',
+          'Study of the person, teaching, ministry, death, resurrection and mission of Yahusha.',
       },
       {
         code: 'MIN 102',

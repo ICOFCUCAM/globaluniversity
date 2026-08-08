@@ -38,6 +38,8 @@ import {
   bminSemesters,
   bminSupportPrinciple,
   bminSupportSpecialisations,
+  bminTerminology,
+  bminTheologicalStatement,
   bminTotalEcts,
   bminTrackCourseCount,
   bminTracks,
@@ -218,6 +220,27 @@ export default function BachelorOfMinistryPage() {
             </div>
 
             <aside className="space-y-8">
+              {/* THE THEOLOGICAL STATEMENT AND THE TERMINOLOGY POLICY.
+                  Together, and directly under the School's own account of
+                  itself, because the second explains the first. A reader who
+                  meets "Yahusha the Messiah" in a course title two screens
+                  below and has not been told why is a reader who thinks the
+                  site has a typo. */}
+              <div className="rounded-2xl border-l-[3px] border-brand-gold-deep bg-brand-purple-dark p-6 text-white dark:border-brand-gold">
+                <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.24em] text-brand-gold">
+                  What the School teaches
+                </p>
+                <p className="mt-3 font-heading text-[15px] font-bold leading-relaxed">
+                  {bminTheologicalStatement}
+                </p>
+                <p className="mt-5 border-t border-white/20 pt-4 font-sans text-[11px] font-semibold uppercase tracking-[0.24em] text-brand-gold">
+                  Terminology
+                </p>
+                <p className="mt-2.5 text-[13px] leading-relaxed text-white/80">
+                  {bminTerminology}
+                </p>
+              </div>
+
               <div>
                 <Eyebrow>The curriculum integrates</Eyebrow>
                 <ul className="mt-3 flex flex-wrap gap-2">
