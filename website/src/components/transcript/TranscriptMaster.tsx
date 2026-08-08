@@ -357,35 +357,69 @@ function Overprint({ text, colour }: { text: string; colour: string }) {
 function Masthead({
   design, data, ink, rule,
 }: { design: CredentialDesign; data: TranscriptMasterData; ink: string; rule: string }) {
+  // A BORDERED GRID READ ACROSS, not a stack of label/value pairs. The original
+  // sets Surname, First Names and Middle Name as three columns with the heading
+  // above each value, and boxes the student number and sex apart at the right.
+  // Reading down a list is not the same document.
+  const cell: React.CSSProperties = {
+    border: `0.5pt solid ${ink}`, padding: '0.6mm 1.4mm', verticalAlign: 'top',
+  };
+  const lab: React.CSSProperties = {
+    ...cell, fontSize: '4.8pt', fontWeight: 400, opacity: 0.85, textAlign: 'left',
+    borderBottom: 'none', paddingBottom: 0,
+  };
+  const val: React.CSSProperties = {
+    ...cell, fontSize: '7pt', fontWeight: 700, borderTop: 'none', paddingTop: '0.2mm',
+    whiteSpace: 'nowrap',
+  };
+
   return (
-    <div style={{ display: 'flex', gap: MM(4), alignItems: 'flex-start', flex: '0 0 auto' }}>
+    <div style={{ display: 'flex', gap: MM(3), alignItems: 'flex-start', flex: '0 0 auto' }}>
       <div style={{ flex: '1 1 0', minWidth: 0 }}>
-        <h1 style={{ margin: 0, fontSize: '14pt', letterSpacing: '.02em', fontWeight: 400, color: design.brand }}>
+        <h1 style={{ margin: 0, fontSize: '15pt', letterSpacing: '.01em', fontWeight: 400, color: design.brand }}>
           {UNIVERSITY.name}
         </h1>
-        <p style={{ margin: '0.5mm 0 0', fontSize: '6pt', color: ink, opacity: 0.8 }}>
-          {UNIVERSITY.headquarters} · {UNIVERSITY.descriptor}
+        <p style={{ margin: '0.4mm 0 0', fontSize: '6.4pt', fontWeight: 700, color: ink }}>
+          {UNIVERSITY.headquarters}
         </p>
-        <p style={{ margin: '2mm 0 0', fontSize: '6.6pt', letterSpacing: '.18em', textTransform: 'uppercase' }}>
+        <p style={{ margin: '0.2mm 0 0', fontSize: '6.4pt', fontWeight: 700, color: ink }}>
+          {UNIVERSITY.descriptor}
+        </p>
+        <p style={{ margin: '2.2mm 0 0', fontSize: '7pt', letterSpacing: '.06em' }}>
           Student Transcript
         </p>
-        <p style={{ margin: '0.3mm 0 0', fontSize: '5.4pt', letterSpacing: '.1em', textTransform: 'uppercase', opacity: 0.7 }}>
-          Degree / diploma offered
+        <p style={{ margin: '1.4mm 0 0', fontSize: '5.4pt', opacity: 0.8 }}>
+          Degree / Diploma Offered
         </p>
-        <p style={{ margin: '0.5mm 0 0', fontSize: '11pt', fontWeight: 700, color: design.brand }}>
+        <p style={{ margin: '0.3mm 0 0', fontSize: '12pt', fontWeight: 700, color: design.brand }}>
           {data.student.degree_type || data.student.program || data.department?.name}
         </p>
       </div>
-      <table style={{ borderCollapse: 'collapse', fontSize: '6pt', flex: '0 0 auto' }}>
+
+      <table style={{ borderCollapse: 'collapse', flex: '0 0 auto' }}>
         <tbody>
-          <Particular label="Surname" value={data.student.last_name} rule={rule} />
-          <Particular label="First names" value={data.student.first_name} rule={rule} />
-          <Particular label="Middle name" value={(data.student as { middle_name?: string }).middle_name ?? '—'} rule={rule} />
-          <Particular label="Student no." value={data.studentNumber ?? data.student.matric_no} rule={rule} mono />
-          <Particular label="Date of birth" value={data.dateOfBirth ?? '—'} rule={rule} />
-          <Particular label="Place of birth" value={data.placeOfBirth ?? '—'} rule={rule} />
-          <Particular label="Sex" value={data.sex ?? '—'} rule={rule} />
-          <Particular label="Date of issue" value={data.issuedOn ?? '—'} rule={rule} />
+          <tr>
+            <th style={lab}>Surname</th><th style={lab}>First Names</th><th style={lab}>Middle Name</th>
+            <th style={lab}>Stu No</th>
+          </tr>
+          <tr>
+            <td style={val}>{data.student.last_name || '—'}</td>
+            <td style={val}>{data.student.first_name || '—'}</td>
+            <td style={val}>{(data.student as { middle_name?: string }).middle_name || '—'}</td>
+            <td style={{ ...val, fontFamily: 'ui-monospace, Menlo, monospace' }}>
+              {data.studentNumber ?? data.student.matric_no ?? '—'}
+            </td>
+          </tr>
+          <tr>
+            <th style={lab}>Date of Birth</th><th style={lab}>Place of Birth</th>
+            <th style={lab}>Sex</th><th style={lab}>Date of Issue</th>
+          </tr>
+          <tr>
+            <td style={val}>{data.dateOfBirth || '—'}</td>
+            <td style={val}>{data.placeOfBirth || '—'}</td>
+            <td style={val}>{data.sex || '—'}</td>
+            <td style={val}>{data.issuedOn || '—'}</td>
+          </tr>
         </tbody>
       </table>
     </div>
@@ -423,30 +457,59 @@ function RunningHead({
 }
 
 function GradeSystem({ ink, rule }: { ink: string; rule: string }) {
+  // VERTICAL LISTS IN TWO BOXES, as the original prints them — "AVERAGE" down
+  // the left in two sub-columns, the registrar's codes down the right. Set
+  // inline as running text it reads as a footnote; the original gives it the
+  // weight of a key, because that is what it is.
+  const half = Math.ceil(GRADING_SCALE.length / 2);
+  const box: React.CSSProperties = {
+    border: `0.5pt solid ${ink}`, padding: '1mm 1.6mm', fontSize: '5pt', lineHeight: 1.55,
+  };
   return (
     <div style={{
-      marginTop: MM(2), display: 'flex', gap: MM(4), flexWrap: 'wrap', flex: '0 0 auto',
-      borderTop: `0.5pt solid ${rule}`, borderBottom: `0.5pt solid ${rule}`, padding: `${MM(1.2)} 0`,
+      marginTop: MM(1.8), display: 'flex', gap: MM(2), flex: '0 0 auto', alignItems: 'stretch',
     }}>
-      <Legend title="Grade system">
-        {GRADING_SCALE.map((g) => (
-          <span key={g.grade} style={{ marginRight: MM(2.4) }}>
-            <strong>{g.grade}</strong> {g.gradePoint.toFixed(2)} · {g.minScore}–{g.maxScore}%
-          </span>
+      <div style={{ ...box, display: 'flex', gap: MM(3) }}>
+        {[GRADING_SCALE.slice(0, half), GRADING_SCALE.slice(half)].map((col, i) => (
+          <div key={i}>
+            {i === 0 && (
+              <p style={{ margin: '0 0 0.4mm', fontSize: '4.8pt', letterSpacing: '.1em', opacity: 0.8 }}>
+                AVERAGE
+              </p>
+            )}
+            {i !== 0 && <p style={{ margin: '0 0 0.4mm', fontSize: '4.8pt' }}>&nbsp;</p>}
+            {col.map((g) => (
+              <div key={g.grade} style={{ whiteSpace: 'nowrap' }}>
+                <strong style={{ display: 'inline-block', width: MM(4) }}>{g.grade}</strong>
+                {g.gradePoint.toFixed(2)}GPA {g.minScore}–{g.maxScore}%
+              </div>
+            ))}
+          </div>
         ))}
-      </Legend>
-      <Legend title="Registrar’s codes">
-        {REGISTRAR_CODES.map((c) => (
-          <span key={c.code} style={{ marginRight: MM(2) }}>
-            <strong>{c.code}</strong> {c.meaning}
-          </span>
-        ))}
-        {COURSE_STANDING.map((c) => (
-          <span key={c.code} style={{ marginRight: MM(2) }}>
-            <strong>{c.code}:</strong> {c.meaning}
-          </span>
-        ))}
-      </Legend>
+      </div>
+
+      <div style={{ ...box, display: 'flex', gap: MM(3) }}>
+        <div>
+          <p style={{ margin: '0 0 0.4mm', fontSize: '4.8pt', letterSpacing: '.1em', opacity: 0.8 }}>
+            GRADE SYSTEM
+          </p>
+          {REGISTRAR_CODES.map((c) => (
+            <div key={c.code} style={{ whiteSpace: 'nowrap' }}>
+              <strong style={{ display: 'inline-block', width: MM(4) }}>{c.code}</strong>
+              0GPA {c.meaning.toUpperCase()}
+            </div>
+          ))}
+        </div>
+        <div>
+          <p style={{ margin: '0 0 0.4mm', fontSize: '4.8pt' }}>&nbsp;</p>
+          {COURSE_STANDING.map((c) => (
+            <div key={c.code} style={{ whiteSpace: 'nowrap' }}>
+              <strong style={{ display: 'inline-block', width: MM(4) }}>{c.code}:</strong>
+              {c.meaning.toUpperCase()}
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -459,11 +522,11 @@ function SemesterBlock({
 }) {
   const th: React.CSSProperties = {
     fontSize: '5pt', textTransform: 'uppercase', letterSpacing: '.03em',
-    padding: '0.5mm 0.6mm', borderBottom: `0.5pt solid ${rule}`, textAlign: 'left',
+    padding: '0.5mm 0.6mm', border: `0.4pt solid ${ink}`, textAlign: 'left',
     color: ink, fontWeight: 700,
   };
   const td: React.CSSProperties = {
-    fontSize: '5.8pt', padding: '0.4mm 0.6mm', borderBottom: '0.2pt solid rgba(0,0,0,.09)', color: ink,
+    fontSize: '5.8pt', padding: '0.35mm 0.6mm', border: `0.4pt solid ${ink}`, color: ink,
   };
   const num: React.CSSProperties = { ...td, textAlign: 'right' };
 
@@ -511,8 +574,8 @@ function SemesterBlock({
             </tr>
           ))}
           <tr>
-            <td colSpan={4} style={{ ...td, fontWeight: 700, borderTop: `0.5pt solid ${rule}` }}>
-              GPA credit earned
+            <td colSpan={4} style={{ ...td, fontWeight: 700, borderTop: `0.4pt solid ${ink}` }}>
+              GPA Credit Earned
             </td>
             {/* CREDITS HERE, GPA ON THE NEXT ROW — as the original separates
                 them. Printing the GPA on both made the two closing rows read
@@ -522,8 +585,8 @@ function SemesterBlock({
             </td>
           </tr>
           <tr>
-            <td colSpan={6} style={{ ...td, fontStyle: 'italic', borderBottom: 'none' }}>Semester GPA</td>
-            <td style={{ ...num, fontWeight: 700, borderBottom: 'none' }}>{s.gpa.toFixed(2)}</td>
+            <td colSpan={6} style={{ ...td, fontWeight: 700 }}>Semester GPA</td>
+            <td style={{ ...num, fontWeight: 700 }}>{s.gpa.toFixed(2)}</td>
           </tr>
         </tbody>
       </table>
