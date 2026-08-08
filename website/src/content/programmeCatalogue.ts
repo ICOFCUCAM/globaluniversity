@@ -193,9 +193,11 @@ const theology = (
   facultyId: string = 'theology',
 ): Programme => ({
   slug, title, facultyId, award: 'Diploma',
-  // 180, on the university's instruction, correcting the 120 seeded in
-  // migration 006. See DIPLOMA_CREDITS below for the note this carries.
-  credits: 180, creditsPublished: true,
+  // NO PER-PROGRAMME FIGURE ANY MORE. This said 180 for every diploma built by
+  // this factory. The university has since ruled that the Diploma level is 120
+  // ECTS and 180 is the degree, and a level ruling belongs against the level:
+  // see LEVEL_CREDITS. Leaving 180 here would have overridden it silently,
+  // because a per-programme figure always beats a level default.
   duration: DIPLOMA_DURATION,
   modes: ['Online', 'On campus', 'Blended'],
   summary, description, careers, pathway, icon,
@@ -523,12 +525,16 @@ export const LEVEL_COPY: Record<AwardLevel, LevelCopy> = {
  * list to keep in step with the first, and the first time they drifted the site
  * would describe the same degree two ways on two pages.
  *
- * CREDITS COME FROM THE AWARDS TABLE, on the university's instruction. Migration
- * 006 seeds the two figures the university has published — Bachelor of Theology
- * 180 ECTS, Diploma of Theology 120 — and those are used. The curriculum in
- * curricula.ts totals 87 credits over four semesters for the same degree; it is
- * a partial curriculum in different units, and the published figure is the one
- * that governs.
+ * CREDITS ARE THE FIGURES THE UNIVERSITY HAS PUBLISHED, and they agree with
+ * what migration 006 seeds into the `awards` table — Bachelor of Theology 180
+ * ECTS, Diploma of Theology 120. The two are kept in step by hand and checked
+ * by creditFramework.test.mjs, which reads both. They are not read from the
+ * database at render time: this catalogue is static, and a public page must not
+ * depend on a query to say what a degree is worth.
+ *
+ * The curriculum in curricula.ts totals 87 credits over four semesters for the
+ * Bachelor of Theology. That is a partial curriculum in different units, and
+ * the published figure is the one that governs.
  *
  * Every other award has no published figure, so no figure is printed. See the
  * header of this file for why that matters more than filling the card.
@@ -536,7 +542,8 @@ export const LEVEL_COPY: Record<AwardLevel, LevelCopy> = {
 const PUBLISHED_CREDITS: Record<string, number> = {
   'bachelor-of-theology': 180,
   'bachelor-of-ministry': 180,
-  'diploma-in-theology': 180,
+  // 'diploma-in-theology' was here at 180 and is gone. The diploma figure is a
+  // LEVEL ruling now, not a fact about one programme — see LEVEL_CREDITS.
 };
 
 /**
@@ -552,25 +559,46 @@ const PUBLISHED_CREDITS: Record<string, number> = {
  */
 const LEVEL_CREDITS: Partial<Record<AwardLevel, number>> = {
   "Master's": 120,
+  // RULED BY THE UNIVERSITY: "Diploma is 120. 180 is degree."
+  //
+  // Stated against the level, exactly as the master's is, and for the same
+  // reason: the university set a figure for an award level, not for one
+  // programme. Every diploma now carries it — including the technology and
+  // business diplomas, which previously published no figure at all because
+  // none had been stated.
+  //
+  // IF ANY DIPLOMA DIFFERS, IT NEEDS ITS OWN ENTRY IN PUBLISHED_CREDITS, which
+  // always beats the level. The technology diplomas in particular are short,
+  // practical programmes and 120 ECTS is two full-time years; if the university
+  // means something else by "diploma" there, that is the place to say so.
+  Diploma: 120,
 };
 
 /**
  * TWO NOTES THE UNIVERSITY SHOULD SEE RATHER THAN NUMBERS I QUIETLY ADJUSTED.
  *
- * THE DIPLOMA AT 180. Recorded on the university's instruction. Two things
- * follow, and neither is a reason to change it back — they are reasons to look:
+ * THE DIPLOMA IS 120, AND THE HISTORY IS KEPT BECAUSE IT MATTERS.
  *
- *   Migration 006 seeded the Diploma of Theology at 120 in the `awards` table,
- *   and that table is what the graduation check reads. The migration file is
- *   updated for fresh installs; a database that has already run it needs
- *   `update awards set credits_required = 180 where code = 'DTH';` or the site
- *   will advertise 180 while the system requires 120 to graduate.
+ * This figure has been stated three times. Migration 006 seeded the Diploma of
+ * Theology at 120. The university then instructed 180, and this note recorded
+ * two consequences of that — one of them being that "180 credits puts the
+ * diploma level with the bachelor's, and sits oddly beside a stated duration of
+ * one to two academic years". The School of Ministry academic framework then
+ * restated 120 within a ladder of Certificate 60, Bachelor 180, Master 120, and
+ * the university has now ruled: "Diploma is 120. 180 is degree."
  *
- *   180 credits puts the diploma level with the bachelor's, and sits oddly
- *   beside a stated duration of one to two academic years — 180 ECTS is
- *   normally three years of full-time study. If the diploma really runs to 180
- *   the duration wording is what wants revisiting; if the duration is right,
- *   the figure is. The site prints what it was told either way.
+ * So the figure returns to 120 and moves from a per-programme entry to a LEVEL
+ * one, because that is the form the ruling took.
+ *
+ * WHAT A RUNNING DATABASE NEEDS. `awards.credits_required` is what the
+ * graduation check reads, and an installation that ran the 180 version of
+ * migration 006 is still requiring 180 to confer a diploma. Migration 012
+ * corrects it, and 006 is corrected for fresh installs.
+ *
+ * NOTHING IS RETROSPECTIVE, and this was checked rather than assumed: no
+ * credential has been issued from this system, so there is no diploma in the
+ * register stating 180 that would now disagree with its own award. Had there
+ * been, reissuing them would be a decision for the Senate and not a migration.
  *
  * THE MASTER'S AT 120. Applies to all six master's programmes, including the
  * Master of Project Management, which sits under GIBMAS rather than Theology
@@ -644,7 +672,25 @@ export const ALL_PROGRAMMES: Programme[] = (() => {
       icon: LEVEL_ICON[sp.level] ?? '🎓',
       };
     });
-  return [...DIPLOMA_PROGRAMMES, ...derived];
+  // THE LEVEL DEFAULT HAS TO REACH BOTH PATHS, AND IT DID NOT.
+  //
+  // `credits` was resolved only inside the `.map` above — the path that builds
+  // a programme from site.ts. The hand-written diplomas skip that entirely and
+  // were carrying a per-programme 180 instead, so the omission never showed.
+  //
+  // Moving the diploma figure to LEVEL_CREDITS on the university's ruling
+  // removed that 180 and left twenty-one diplomas publishing no credit value at
+  // all — the ruling reaching the ladder, the framework and the database, and
+  // silently not reaching the catalogue cards. Nothing threw; the cards simply
+  // stopped printing a figure, which is indistinguishable from "no figure has
+  // been stated" and is precisely the state this file exists to avoid faking.
+  //
+  // So the resolution runs over EVERY programme, in the same order as before:
+  // the programme's own published figure, then the level, then nothing.
+  return [...DIPLOMA_PROGRAMMES, ...derived].map((p) => {
+    const credits = PUBLISHED_CREDITS[p.slug] ?? p.credits ?? LEVEL_CREDITS[p.award];
+    return { ...p, credits, creditsPublished: credits !== undefined };
+  });
 })();
 
 export const programmesByAward = (award: AwardLevel) =>

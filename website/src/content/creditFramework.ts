@@ -8,48 +8,57 @@
 // ===========================================================================
 //
 // Credit values were scattered. `PUBLISHED_CREDITS` in programmeCatalogue.ts
-// held two programmes; a `DIPLOMA_CREDITS` constant held a level default; the
+// held three programmes; `LEVEL_CREDITS` beside it held level defaults; the
 // Bachelor of Theology stated 180 ECTS in its own content module; the Bachelor
 // of Ministry states 180 ECTS in its own; and migration 006 seeded a third
 // figure into the database. Five places, no single statement of what the
 // University's award levels are worth.
 //
-// That is survivable while the numbers agree. They do not.
+// That is survivable while the numbers agree. They did not — see below — and
+// the disagreement was only findable once they were written down together.
 //
 // ===========================================================================
-// THE DIPLOMA IS SPECIFIED TWICE, AT DIFFERENT VALUES
+// THE DIPLOMA CONFLICT, AND HOW IT WAS SETTLED
 // ===========================================================================
 //
-// This is the finding, and it is the reason to read this file rather than the
-// reason to skim it.
+// This file was written to hold a disagreement open. The Diploma had been
+// specified three times:
 //
-//   180 ECTS   programmeCatalogue.ts sets every Diploma to 180 and publishes
-//              the figure. Its comment records the provenance: "180, on the
-//              university's instruction, correcting the 120 seeded in
-//              migration 006."
+//   120 ECTS   seeded by migration 006 when the awards table was created
+//   180 ECTS   instructed afterwards, and published by the site ever since
+//   120 ECTS   restated by the School of Ministry academic framework §25,
+//              inside a ladder of Certificate 60, Bachelor 180, Master 120
 //
-//   120 ECTS   §25 of the School of Ministry academic framework, supplied in
-//              August 2026, states "Diploma in Ministry — 120 ECTS —
-//              Professional ministry preparation", within a ladder that also
-//              gives Certificate 60, Bachelor 180 and Master 120.
+// The site published 180 and changed nothing, because a credit value governs
+// transfer, articulation, the transcript and the certificate, and choosing
+// between two contradictory instructions from the university is not a decision
+// a website makes on the university's behalf.
 //
-// Both are the university's own instruction. The second is later. Neither is
-// obviously a slip: 120 ECTS is the conventional European two-year diploma and
-// sits correctly in a 60/120/180 ladder, while 180 was issued as a deliberate
-// correction of exactly the figure the new framework now restates.
+// THE UNIVERSITY HAS NOW RULED: "Diploma is 120. 180 is degree."
 //
-// SO NOTHING HAS BEEN CHANGED. A credit value is the single most load-bearing
-// number a university publishes — it governs transfer, articulation, the
-// transcript and the certificate — and picking between two contradictory
-// instructions is not a decision a website should make on the university's
-// behalf. The site continues to publish 180 for diplomas, which is what it
-// published yesterday; the conflict is recorded in CREDIT_QUESTIONS below and
-// on the page, and the ladder is stated once so the next figure has somewhere
-// to go.
+// So the Diploma carries 120 and the ladder is complete at every level the
+// university has spoken to. The history above is kept rather than tidied away —
+// this figure has moved twice, and the next person to find a 180 in an old
+// export needs to know which way it went and when.
 //
-// The cost of guessing wrong is not a wrong number on a page. It is a graduate
-// whose diploma is rejected on transfer because the credit stated on their
-// transcript is not the credit the university now says the award carries.
+// WHAT THE RULING TOUCHED, all of it recorded in CREDIT_QUESTIONS below:
+//
+//   The catalogue. The figure moved from a per-programme entry to a LEVEL one,
+//   because that is the form the ruling took. Every diploma now carries 120,
+//   including the technology and business diplomas that previously published no
+//   figure at all.
+//
+//   The database. `awards.credits_required` is what the graduation audit reads.
+//   Migration 006 is corrected for fresh installs, and migration 012 corrects a
+//   database that already ran the 180 version — without which the audit would
+//   refuse to graduate a diploma student who has completed the 120 credits the
+//   award now requires, and the refusal would look like an incomplete record
+//   rather than a stale figure.
+//
+//   Nothing retrospective, and this was checked rather than assumed. No
+//   credential has been issued from this system, so no sealed diploma states a
+//   figure the university has now moved. Migration 012 re-checks at run time
+//   and raises a notice rather than editing a conferred document.
 // ---------------------------------------------------------------------------
 
 export type CreditUnit = 'ECTS' | 'credit hours';
@@ -68,14 +77,16 @@ export interface AwardLevel {
 }
 
 /**
- * The award ladder, as the School of Ministry academic framework states it.
+ * The award ladder.
  *
- * PUBLISHED AS THE FRAMEWORK'S STATEMENT, not as a University-wide regulation,
- * because that is what it is. §25 sets out the ladder for the School of
- * Ministry. It is the most complete statement of an award ladder this
- * university has supplied, and it is very likely intended to govern the
- * institution — but "very likely intended" is not a regulation, and the
- * difference matters at exactly the moment somebody relies on it.
+ * TWO RUNGS ARE RULED AND THREE ARE THE FRAMEWORK'S, and `source` says which is
+ * which on every row. The Diploma and the Bachelor carry a direct ruling from
+ * the University — "Diploma is 120. 180 is degree." The Certificate and the
+ * Master come from §25 of the School of Ministry academic framework, which sets
+ * out the ladder for that School; nothing contradicts them and they are very
+ * likely intended to govern the institution, but "very likely intended" is not
+ * a regulation and the difference matters at the moment somebody relies on it.
+ * See the second entry in CREDIT_QUESTIONS.
  */
 export const AWARD_LADDER: AwardLevel[] = [
   {
@@ -87,24 +98,25 @@ export const AWARD_LADDER: AwardLevel[] = [
   },
   {
     level: 'Diploma',
-    // NULL, DELIBERATELY, AND IT IS THE ONLY NULL IN THIS TABLE.
+    // 120, ON THE UNIVERSITY'S RULING. This cell was null while two figures
+    // were in play; a page showing "under review" told the truth, and a page
+    // showing a number would have picked a side. The side has now been picked
+    // by the institution, so the number goes in.
     //
-    // Not because no figure exists but because two do — 180 in the published
-    // catalogue, 120 in the framework — and printing either here would resolve
-    // by publication a conflict the University has not resolved by decision.
-    // A page that shows this cell as "under review" is telling the truth; one
-    // that shows a number is picking a side.
-    ects: null,
+    // It also restores the coherence the 180 broke: 120 ECTS is two full-time
+    // years, which matches the stated duration below, where 180 is three and
+    // put the diploma level with the bachelor's.
+    ects: 120,
     duration: 'One to two years',
     purpose: 'Professional preparation, and advanced standing towards a degree.',
-    source: 'Contested — see CREDIT_QUESTIONS. The site publishes 180 ECTS.',
+    source: 'Ruled by the University: “Diploma is 120. 180 is degree.” Framework §25 agrees.',
   },
   {
     level: 'Bachelor',
     ects: 180,
     duration: 'Three years · six semesters',
     purpose: 'The full undergraduate degree, and the gateway to graduate study.',
-    source: 'Stated for both the B.Th. and the B.Min., and by the framework §25.',
+    source: 'Ruled by the University: “180 is degree.” Carried by the B.Th. and the B.Min.',
   },
   {
     level: 'Master',
@@ -143,32 +155,34 @@ export interface CreditQuestion {
 export const CREDIT_QUESTIONS: CreditQuestion[] = [
   {
     id: 'diploma-credit-value',
-    finding: 'The Diploma is specified at two different credit values.',
+    finding: 'Settled — the Diploma is 120 ECTS and the degree is 180.',
     detail:
-      'The programme catalogue publishes 180 ECTS for every diploma, on an instruction that '
-      + 'expressly corrected an earlier figure of 120. The School of Ministry academic framework, '
-      + 'supplied later, states 120 ECTS for the Diploma in Ministry within a ladder of '
-      + 'Certificate 60, Bachelor 180 and Master 120. Both are the University’s own instruction '
-      + 'and the site has changed neither, because a credit value governs transfer, articulation, '
-      + 'the transcript and the certificate.',
+      'The figure had been stated three times: 120 when the awards table was created, 180 by a '
+      + 'later instruction and published by the site ever since, and 120 again by the School of '
+      + 'Ministry framework §25. The University has ruled: “Diploma is 120. 180 is degree.” The '
+      + 'catalogue, the award ladder and the database now all carry it, and the figure is stated '
+      + 'against the LEVEL rather than against one programme, which is the form the ruling took.',
     recommendation:
-      'Rule once, for the whole University, and say whether the ruling is retrospective. If the '
-      + 'answer is 120, every diploma already issued at 180 needs a decision of its own — that is '
-      + 'the part that gets forgotten, and it is the part a graduate discovers at a transfer desk.',
+      'Two things follow and neither is automatic. Every diploma now inherits 120, including the '
+      + 'technology and business diplomas that previously published no figure — if any of those is '
+      + 'meant to differ it needs its own entry in PUBLISHED_CREDITS. And an installation that ran '
+      + 'the 180 version of migration 006 must run migration 012, or its graduation audit will '
+      + 'still demand 180 to confer a diploma.',
   },
   {
     id: 'ladder-scope',
-    finding: 'The award ladder is stated by one School, not by the University.',
+    finding: 'Two rungs are ruled; the Certificate and the Master are still one School’s statement.',
     detail:
-      'The 60 / 120 / 180 / 120 ladder above comes from §25 of the School of Ministry framework, '
-      + 'which describes the progression that School should build. It is the most complete '
-      + 'statement of an award ladder the University has supplied, and nothing contradicts it — '
-      + 'but it has not been adopted as a University-wide regulation, so it cannot yet be quoted '
-      + 'as one to an accreditor.',
+      'The Diploma at 120 and the Bachelor at 180 now carry a direct ruling from the University. '
+      + 'The Certificate at 60 and the Master at 120 still come from §25 of the School of Ministry '
+      + 'framework, which describes the progression that School should build. Nothing contradicts '
+      + 'them, and the Master’s figure is separately corroborated by the catalogue, which has '
+      + 'applied 120 to every master’s programme since before this framework arrived. But neither '
+      + 'has been adopted as a University-wide regulation, so neither can yet be quoted as one to '
+      + 'an accreditor.',
     recommendation:
-      'Adopt it as a University credit regulation, or state where it does not apply. The '
-      + 'engineering and business diplomas in particular carry no published credit value at all, '
-      + 'and a ladder that governs them would give them one.',
+      'Rule on the Certificate and the Master in the same words as the Diploma, and the ladder is '
+      + 'a University credit regulation rather than four figures with three provenances.',
   },
   {
     id: 'two-credit-systems',

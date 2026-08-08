@@ -739,21 +739,19 @@ export default function BachelorOfMinistryPage() {
             })}
           </ol>
 
-          {/* THE ONE FIGURE IN THIS TABLE THAT THE SITE CONTRADICTS.
-              The ladder above is the framework's, and it puts the Diploma at
-              120 ECTS. Every diploma in the programme catalogue publishes 180,
-              on an instruction that expressly corrected an earlier 120. Both
-              are the university's own word and neither has been changed.
-              Printing the framework's ladder without saying so would leave a
-              reader with two numbers from one institution and no way to know
-              the university is aware of it. */}
+          {/* THE FIGURE THIS TABLE AND THE SITE ONCE DISAGREED ON.
+              The ladder puts the Diploma at 120 ECTS; every diploma in the
+              programme catalogue published 180, on an instruction that had
+              expressly corrected an earlier 120. The University has ruled, and
+              the note stays rather than being deleted — a reader who saw the
+              old figure, or who holds a document carrying it, is owed the
+              sentence that says which way it went. */}
           <div className="mt-8 max-w-3xl border-l-2 border-brand-gold-deep pl-5 dark:border-brand-gold/50">
             <p className="font-heading text-[14px] font-bold text-brand-purple dark:text-white">
               {CREDIT_QUESTIONS[0].finding}
             </p>
             <p className="mt-2 text-[13.5px] leading-relaxed text-brand-muted dark:text-white/75">
-              {CREDIT_QUESTIONS[0].detail} The ladder above states the framework’s figure; the
-              University’s diploma pages state 180. The ruling is pending.
+              {CREDIT_QUESTIONS[0].detail}
             </p>
           </div>
 
