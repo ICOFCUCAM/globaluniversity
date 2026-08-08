@@ -42,6 +42,7 @@
 // ---------------------------------------------------------------------------
 
 import { NextResponse } from 'next/server';
+import { signContentHash } from '@/lib/documentSignature';
 import { guard, audit } from '@/lib/adminAuth';
 import {
   newCredentialId, contentHash, sealAward, awardFields, verificationQrSvg, AWARD_FORMAT,
@@ -199,9 +200,15 @@ export async function POST(request: Request) {
   // RETURNS THE ROW ID. The issue screen needs it to offer the three outputs
   // — print, PDF, email — on the certificate it has just minted, rather than
   // sending the registrar to the register to find the row they just created.
+  // Signed with the University's own key, so a receiving institution can check
+  // the certificate without trusting this website. See documentSignature.ts.
+  const signed = signContentHash(hash);
+
   const { data: registered, error: regErr } = await admin.from('credentials_issued').insert({
     credential_id: credentialId,
     kind: 'certificate',
+    signature: signed.signature,
+    signing_key_id: signed.keyId,
     student_id: student.id,
     student_number: student.student_number ?? student.matric_no,
     holder_name: holderName,

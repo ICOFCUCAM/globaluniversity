@@ -66,6 +66,7 @@ import SpecimenGallery from '@/components/studio/SpecimenGallery';
 import CertificateGenerator from '@/components/certificate/CertificateGenerator';
 import TranscriptGenerator from '@/components/transcript/TranscriptGenerator';
 import ManualTranscript from '@/components/transcript/ManualTranscript';
+import TranscriptRequestQueue from '@/components/credentials/TranscriptRequestQueue';
 import { PageHeader } from '@/components/ui/portal';
 import { FOCUS } from '@/lib/portalTheme';
 
@@ -189,6 +190,12 @@ export default function CredentialsWorkspace({ role }: { role?: UserRole }) {
 
       {area === 'issue' && (
         <div className="space-y-8">
+          {/* WHAT STUDENTS HAVE ASKED FOR, ABOVE THE WORK. A request that
+              arrives as an email to whoever happens to read it is answered when
+              somebody remembers; a queue has a length, and a length is a thing
+              an office can be held to. */}
+          <TranscriptRequestQueue />
+
           <CertificateGenerator embedded />
           {/* THE TRANSCRIPT IS THE OTHER HALF OF ISSUING, and it was nowhere
               near this screen. It is the document employers and other

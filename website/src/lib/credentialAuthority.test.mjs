@@ -340,10 +340,30 @@ console.log('\nThe library and the migration agree\n');
 
 const sql = readFileSync(join(root, 'docs/migrations/013_social_and_credential_authority.sql'), 'utf8');
 
-const actionsInDb = (sql.match(/action\s+text not null check \(action in\s*\n?([\s\S]*?)\)\),/) ?? [])[1];
+// THE VOCABULARY IS SET BY 013 AND EXTENDED BY 020, so the check reads both.
+// Reading only 013 is what made this test fail the day 'voided' was added — the
+// action WAS accepted by the database, by a constraint the test did not know
+// existed. A vocabulary check that looks at one of two definitions reports a
+// disagreement that is not there, and would miss one that is.
+const sql020 = readFileSync(
+  join(root, 'docs/migrations/020_signature_void_and_grading.sql'), 'utf8',
+);
+
+const actionsIn013 = (sql.match(/action\s+text not null check \(action in\s*\n?([\s\S]*?)\)\),/) ?? [])[1] ?? '';
+const actionsIn020 = (sql020.match(/check \(action in\s*\n?([\s\S]*?)\)\);/) ?? [])[1] ?? '';
+const actionsInDb = `${actionsIn013}\n${actionsIn020}`;
+
 check(
   'every audit action the code writes is one the database accepts',
-  A.AUDIT_ACTIONS.filter((a) => !new RegExp(`'${a}'`).test(actionsInDb ?? '')),
+  A.AUDIT_ACTIONS.filter((a) => !new RegExp(`'${a}'`).test(actionsInDb)),
+  [],
+);
+// AND THE LATER CONSTRAINT DID NOT DROP ANY. 020 replaces 013's constraint
+// rather than adding to it — a check constraint cannot be extended in place —
+// so an action left out of the rewrite would be silently un-recordable.
+check(
+  'and the constraint 020 rewrites still admits everything 013 did',
+  (actionsIn013.match(/'[a-z_]+'/g) ?? []).filter((a) => !actionsIn020.includes(a)),
   [],
 );
 

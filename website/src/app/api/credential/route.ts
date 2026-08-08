@@ -51,6 +51,7 @@
 import { NextResponse } from 'next/server';
 import { createHmac, createHash, timingSafeEqual } from 'node:crypto';
 import { guard, adminClient } from '@/lib/adminAuth';
+import { signingIdentity, verifyWithOwnKey } from '@/lib/documentSignature';
 
 export const runtime = 'nodejs';
 
@@ -164,11 +165,23 @@ export async function GET(request: Request) {
 }
 
 export interface RegisterVerdict {
-  /** 'issued' | 'revoked' | 'replaced' | 'not-registered' | 'unavailable' */
+  /** 'issued' | 'revoked' | 'replaced' | 'void' | 'not-registered' | 'unavailable' */
   status: string;
   issuedOn?: string | null;
   revokedOn?: string | null;
   revocationReason?: string | null;
+  /** Set when the University issued the document in error. Not a revocation. */
+  voidedOn?: string | null;
+  voidReason?: string | null;
+  /**
+   * The independent signature check, reported apart from the register because
+   * the two answer different questions and can disagree.
+   */
+  signature?: {
+    state: 'valid' | 'invalid' | 'absent' | 'unverifiable';
+    note: string;
+    keyId?: string;
+  };
   templateVersion?: number | null;
   /**
    * Whether the presented payload still hashes to what the register recorded.
@@ -226,7 +239,7 @@ async function lookUpRegister(payload: Record<string, unknown> | null): Promise<
   // would have looked like a forger.
   const { data: versions, error } = await admin
     .from('credentials_issued')
-    .select('status, issued_at, revoked_at, revocation_reason, template_version, content_hash, version')
+    .select('status, issued_at, revoked_at, revocation_reason, template_version, content_hash, version, signature, signing_key_id, void_reason, voided_at')
     .eq('credential_id', id)
     .order('version', { ascending: false });
 
@@ -252,6 +265,31 @@ async function lookUpRegister(payload: Record<string, unknown> | null): Promise<
   const current = versions.find((v) => v.status !== 'replaced') ?? versions[0];
   const hashMatches = scanned !== null;
 
+  // ---------------------------------------------------------------------
+  // VOID IS NOT REVOKED, AND THE ENQUIRER MUST BE TOLD WHICH.
+  //
+  // Revoked is a finding against the holder: the University withdrew the
+  // award. Void says the University issued this document in error — wrong
+  // student, duplicate, issued against an unapproved record — and the holder
+  // did nothing. Reporting a clerk's mistake as a revocation puts a permanent
+  // public mark on a student who has not earned one.
+  // ---------------------------------------------------------------------
+  if (current.status === 'void') {
+    return {
+      status: 'void',
+      issuedOn: current.issued_at,
+      voidedOn: current.voided_at,
+      voidReason: current.void_reason,
+      templateVersion: current.template_version,
+      hashMatches,
+      signature: signatureVerdict(current),
+      note:
+        'This document was VOIDED by the University: it was issued in error and should not be '
+        + 'relied on. This is not a finding against the holder — any award they hold is '
+        + 'unaffected, and the University will issue a correct document on request.',
+    };
+  }
+
   // Revocation applies to the award, not to a print of it.
   if (current.status === 'revoked') {
     return {
@@ -261,6 +299,7 @@ async function lookUpRegister(payload: Record<string, unknown> | null): Promise<
       revocationReason: current.revocation_reason,
       templateVersion: current.template_version,
       hashMatches,
+      signature: signatureVerdict(current),
       note: 'This credential was issued and has since been REVOKED by the university. It no longer stands.',
     };
   }
@@ -304,10 +343,73 @@ async function lookUpRegister(payload: Record<string, unknown> | null): Promise<
     issuedOn: scanned!.issued_at,
     templateVersion: scanned!.template_version,
     hashMatches: true,
+    signature: signatureVerdict(scanned!),
     note: versions.length > 1
       ? `Issued by ICOF Global University and current on its register (version ${scanned!.version ?? 1}).`
       : 'Issued by ICOF Global University and current on its register.',
   };
+}
+
+/**
+ * Whether the independent signature checks out, in terms an enquirer can act on.
+ *
+ * REPORTED SEPARATELY FROM THE REGISTER, because the two answer different
+ * questions and can disagree. The register says "the University issued this";
+ * the signature says "and here is proof you can check yourself, offline,
+ * without trusting this website".
+ *
+ * AN ABSENT SIGNATURE IS NOT A FAILED ONE. Credentials issued before the
+ * University held a signing key carry none, and reporting those as unsigned
+ * failures would tell an employer that a genuine degree was suspect.
+ */
+function signatureVerdict(row: {
+  content_hash?: string | null;
+  signature?: string | null;
+  signing_key_id?: string | null;
+}): { state: 'valid' | 'invalid' | 'absent' | 'unverifiable'; note: string; keyId?: string } {
+  if (!row.signature) {
+    return {
+      state: 'absent',
+      note: 'This credential carries the University’s seal but no detached signature. Its '
+        + 'authenticity is established by this register, which is the University’s primary '
+        + 'record.',
+    };
+  }
+
+  const id = signingIdentity();
+  if (!id) {
+    return {
+      state: 'unverifiable',
+      note: 'A signature is recorded but this server holds no public key to check it against.',
+      keyId: row.signing_key_id ?? undefined,
+    };
+  }
+  if (row.signing_key_id && row.signing_key_id !== id.keyId) {
+    // A ROTATED KEY IS NOT A FORGERY. Saying so is the difference between "we
+    // cannot check this here" and "this is fake".
+    return {
+      state: 'unverifiable',
+      note: `Signed with key ${row.signing_key_id}, which is not the key this server currently `
+        + 'holds. The University publishes its retired keys; the signature can still be checked '
+        + 'against the right one.',
+      keyId: row.signing_key_id,
+    };
+  }
+
+  const ok = verifyWithOwnKey(String(row.content_hash ?? ''), row.signature);
+  return ok
+    ? {
+      state: 'valid',
+      keyId: id.keyId,
+      note: 'The University’s signature over this credential is valid. Anyone can repeat this '
+        + 'check offline with the public key published at /api/credential/key.',
+    }
+    : {
+      state: 'invalid',
+      keyId: id.keyId,
+      note: 'A signature is recorded against this credential and it does NOT verify. Treat the '
+        + 'document as invalid and contact the University.',
+    };
 }
 
 /**

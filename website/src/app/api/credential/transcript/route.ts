@@ -41,6 +41,7 @@ import {
 } from '@/lib/documentSecurity';
 import { buildTranscript, canIssueTranscript, creditsEarned } from '@/lib/transcript';
 import { can } from '@/lib/roles';
+import { signContentHash } from '@/lib/documentSignature';
 import { UNIVERSITY } from '@/lib/constants';
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? process.env.SITE_URL ?? UNIVERSITY.website;
@@ -240,9 +241,17 @@ export async function POST(request: Request) {
       .join('|'),
   });
 
+  // SIGNED WITH THE UNIVERSITY'S OWN KEY, so the document can be checked by
+  // somebody who has never heard of this website. Absent key, absent signature,
+  // and the credential is issued and sealed exactly as before — see
+  // documentSignature.ts for why refusing here would be the wrong trade.
+  const signed = signContentHash(hash);
+
   const { data: registered, error: regErr } = await admin.from('credentials_issued').insert({
     credential_id: credentialId,
     kind: 'transcript',
+    signature: signed.signature,
+    signing_key_id: signed.keyId,
     student_id: student.id,
     student_number: student.student_number ?? student.matric_no,
     holder_name: holderName,
@@ -460,9 +469,13 @@ async function transcribe(
     courses: usable.map((c: typeof usable[number]) => `${c.year}.${c.semester}:${c.code}:${c.grade}:${c.creditUnit}`).join('|'),
   });
 
+  const signed = signContentHash(hash);
+
   const { data: registered, error: regErr } = await admin.from('credentials_issued').insert({
     credential_id: credentialId,
     kind: 'transcript',
+    signature: signed.signature,
+    signing_key_id: signed.keyId,
     // NO student_id. There is no record in this database to point at — that is
     // the whole reason this path exists. Inventing a student row to satisfy a
     // foreign key would put a person on the register who never enrolled here

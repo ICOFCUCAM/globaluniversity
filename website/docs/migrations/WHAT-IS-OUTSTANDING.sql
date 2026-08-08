@@ -187,7 +187,14 @@ with checks(sort, migration, file, does, probe) as (values
                      where table_schema = 'public' and table_name = 'students'
                        and column_name = 'mode_of_study')
         and to_regclass('public.transfer_credits') is not null
-        and to_regclass('public.academic_policy') is not null$$)
+        and to_regclass('public.academic_policy') is not null$$),
+
+  (20, '020', '020_signature_void_and_grading.sql',
+   'A detached Ed25519 signature, voiding as distinct from revoking, and a versioned grading scale.',
+   $$select exists (select 1 from information_schema.columns
+                     where table_schema = 'public' and table_name = 'credentials_issued'
+                       and column_name = 'signature')
+        and to_regclass('public.grading_scales') is not null$$)
 )
 select
   c.migration,
@@ -227,7 +234,8 @@ with checks(sort, migration, file, probe) as (values
   (16, '016', '016_examination_papers.sql',              $$select to_regclass('public.exam_sessions_mine') is not null$$),
   (17, '017', '017_secret_store.sql',                    $$select to_regclass('public.secret_store') is not null$$),
   (18, '018', '018_delete_application.sql',              $$select exists (select 1 from pg_policies where schemaname='public' and tablename='students' and policyname='students_superadmin_delete') and exists (select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='guard_application_delete')$$),
-  (19, '019', '019_academic_record.sql',                 $$select to_regclass('public.transfer_credits') is not null and to_regclass('public.academic_policy') is not null and exists (select 1 from information_schema.columns where table_schema='public' and table_name='students' and column_name='mode_of_study')$$)
+  (19, '019', '019_academic_record.sql',                 $$select to_regclass('public.transfer_credits') is not null and to_regclass('public.academic_policy') is not null and exists (select 1 from information_schema.columns where table_schema='public' and table_name='students' and column_name='mode_of_study')$$),
+  (20, '020', '020_signature_void_and_grading.sql',      $$select to_regclass('public.grading_scales') is not null and exists (select 1 from information_schema.columns where table_schema='public' and table_name='credentials_issued' and column_name='signature')$$)
 ), outstanding as (
   select migration, file from checks where not pg_temp.probe(probe) order by sort
 )

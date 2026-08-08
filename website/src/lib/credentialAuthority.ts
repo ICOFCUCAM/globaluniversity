@@ -542,6 +542,11 @@ export function render(source: string, values: Record<string, string | null | un
  */
 export const AUDIT_ACTIONS = [
   'issued', 'corrected', 'reissued', 'revoked', 'reinstated',
+  // VOIDED IS NOT REVOKED. Revoking withdraws the award and is a finding
+  // against the holder; voiding says the University issued the document in
+  // error and the holder is not at fault. One vocabulary entry each, so the
+  // trail can never blur them.
+  'voided',
   'printed', 'emailed', 'template_created', 'template_published',
   'type_created', 'correction_requested', 'correction_reviewed',
   'correction_approved', 'correction_rejected',
@@ -605,6 +610,8 @@ export function describeEvent(e: AuditEvent): string {
       return `${who} approved the correction against${ref}${why}`;
     case 'correction_rejected':
       return `${who} rejected the correction against${ref}${why}`;
+    case 'voided':
+      return `${who} voided${ref} as issued in error${why}`;
     default:
       return `${who} acted on${ref}`;
   }
@@ -620,6 +627,9 @@ export function describeEvent(e: AuditEvent): string {
  */
 export const REASON_REQUIRED: AuditAction[] = [
   'corrected', 'reissued', 'revoked', 'reinstated', 'correction_rejected',
+  // A document withdrawn from use with no stated reason is one nobody can be
+  // asked about afterwards.
+  'voided',
 ];
 
 export function needsReason(action: AuditAction): boolean {
