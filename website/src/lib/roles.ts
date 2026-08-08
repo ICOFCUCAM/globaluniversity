@@ -221,6 +221,11 @@ export const OPERATIONAL_CAPABILITIES = [
   // degree more easily than it can confer one has the balance the wrong way
   // round. This change makes issuing easier, not revoking.
   'issue-credential',
+  // Sending a sealed credential to an address that is NOT the holder's — a
+  // receiving university, an employer's verification desk. Separate from
+  // emailing it to the student, because it is the University disclosing
+  // somebody's academic record to a third party.
+  'forward-credential',
   // Which programmes the university is currently admitting to. An academic
   // decision — what the faculty is ready to teach this year — not an
   // administrative one, which is why it is not in the Admissions Officer's set.
@@ -311,6 +316,19 @@ export const SYSTEM_CAPABILITIES = [
   // mishandled. That is exactly the class of act this hierarchy exists to keep
   // out of an operational role.
   'delete-application',
+  // TRANSCRIBING A RECORD THE SYSTEM NEVER HELD.
+  //
+  // A transcript for a year that predates this database cannot be derived from
+  // marks — there are none. It has to be typed from a paper register, and the
+  // University then seals it and stands behind it.
+  //
+  // That is a genuinely different act from issuing a transcript, and it is the
+  // Superadministrator's alone: everything the approval chain exists to
+  // guarantee — that four offices saw each mark — is absent by construction.
+  // The safeguard is not a signature; it is that the document says on its face
+  // that it was transcribed from an archived record, and the register says so
+  // for ever.
+  'transcribe-historical-record',
   // Held by the three approving offices, and deliberately NOT by the
   // Superadministrator who designs. An approval you give to your own work is a
   // countersignature, not a control.
@@ -407,6 +425,7 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
     // And issuing the certificate itself. The Registry keeps the academic
     // record and produces the instrument that attests to it.
     'issue-credential',
+    'forward-credential',
     'set-admission-openings',
   ],
 
@@ -426,6 +445,7 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
     // alone.
     'publish-results',
     'issue-credential',
+    'forward-credential',
     'set-admission-openings',
   ],
 

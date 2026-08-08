@@ -44,6 +44,7 @@
 // ---------------------------------------------------------------------------
 
 import { NextResponse } from 'next/server';
+import { can } from '@/lib/roles';
 import { guard } from '@/lib/adminAuth';
 import { send, mailConfigured } from '@/lib/mailer';
 import { UNIVERSITY } from '@/lib/constants';
@@ -139,6 +140,36 @@ export async function POST(request: Request) {
   // EMAIL
   // -------------------------------------------------------------------------
   let to = input.to?.trim();
+  /** Set when the address is not the holder's own — a receiving university. */
+  let forwarding = false;
+
+  if (to) {
+    // THE HOLE THIS CLOSES. The comment below has always warned that "a
+    // caller-supplied address on a route that delivers a sealed credential is
+    // a way to have the University post somebody's degree to a stranger" — and
+    // the code then accepted `input.to` from anyone who could email at all.
+    //
+    // Forwarding to a receiving university is a real and necessary act, so the
+    // answer is not to refuse it; it is to make it a distinct permission, held
+    // by the registry offices whose work it is, and to say in the trail that
+    // the record went to a third party rather than to the student.
+    const { data: holder } = credential.student_id
+      ? await admin.from('students').select('email').eq('id', credential.student_id).maybeSingle()
+      : { data: null };
+
+    forwarding = (holder?.email ?? '').toLowerCase() !== to.toLowerCase();
+
+    if (forwarding && !can(caller.role, 'forward-credential')) {
+      return NextResponse.json({
+        ok: false,
+        error: 'not-permitted:forward-credential',
+        detail:
+          'This address is not the holder’s own, so sending it would disclose their academic '
+          + 'record to a third party. Your role may send a credential to the student it belongs '
+          + 'to; forwarding it elsewhere is the registry’s to do.',
+      }, { status: 403 });
+    }
+  }
 
   if (!to) {
     // FROM THE STUDENT RECORD, not from the request, whenever there is a
@@ -219,17 +250,25 @@ export async function POST(request: Request) {
     credential_ref: credential.credential_id,
     action: 'emailed',
     to_version: credential.version ?? 1,
-    reason: `Sent to ${to}`,
+    // NAMES THE THIRD PARTY AS A THIRD PARTY. "Sent to admissions@other.edu"
+    // and "sent to the graduate" are different disclosures and the trail has
+    // to be readable as such years later, when nobody remembers whose address
+    // that was.
+    reason: forwarding
+      ? `Forwarded to ${to} — not the holder’s own address`
+      : `Sent to ${to}`,
     actor_id: caller.id,
     actor_role: caller.role,
     actor_email: caller.email,
     document_hash: credential.content_hash,
-    detail: { to },
+    detail: { to, forwarded: forwarding },
   });
 
   return NextResponse.json({
     ok: true,
-    message: `Sent to ${to} and recorded on the audit trail.`,
+    message: forwarding
+      ? `Forwarded to ${to}. Recorded on the audit trail as a disclosure to a third party.`
+      : `Sent to ${to} and recorded on the audit trail.`,
   });
 }
 
@@ -464,6 +503,10 @@ function renderTranscript(
   .superseded span { font-size: 44pt; color: rgba(160,40,40,.16); font-weight: bold;
                      transform: rotate(-24deg); letter-spacing: .12em; }
   .none { text-align: center; font-style: italic; color: #6b6076; padding: 10mm 0; }
+  /* PRINTED, NOT JUST STORED. A provenance held only in the database is a
+     safeguard nobody reading the document can see. */
+  .transcribed { margin-top: 5mm; border: .8pt solid #b99a3e; background: #fdf7e8;
+                 padding: 3mm 4mm; font-size: 8.5pt; line-height: 1.45; }
 </style></head>
 <body><div class="sheet">
   ${c.status === 'replaced' ? '<div class="superseded"><span>SUPERSEDED</span></div>' : ''}
@@ -486,6 +529,15 @@ function renderTranscript(
       ${rows || '<tr><td colspan="5" class="none">No courses were recorded on this transcript.</td></tr>'}
     </tbody>
   </table>
+
+  ${facts.source === 'transcribed' ? `
+  <div class="transcribed">
+    <strong>Transcribed from an archived record.</strong>
+    The marks below were not recorded in the University's current academic system and did not pass
+    through its approval chain. They were transcribed from: ${e(facts.source_record ?? 'an unstated source')}.
+    This document carries the University's seal and may be verified; what it attests to is a
+    faithful transcription of that record.
+  </div>` : ''}
 
   <div class="totals">
     <div>Credits attempted: <strong>${e(facts.credits_attempted ?? '—')}</strong></div>
