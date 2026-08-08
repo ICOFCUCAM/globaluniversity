@@ -41,37 +41,15 @@ import register from '@/content/universityPlaces.json';
 // emblem makes the same cut for the same reason.
 // ---------------------------------------------------------------------------
 
-/** The meridian that runs straight down the sheet. Africa sits on it. */
-export const DOWN_MERIDIAN = 20;
-
-/** The southern cut. Everything below this latitude is off the disc. */
-export const SOUTH_CUT = -60;
-
-/**
- * Longitude and latitude to a point on the disc.
- *
- * WHICH WAY EAST TURNS. Seen from above the North Pole, longitude increases
- * ANTICLOCKWISE — and on a screen, where y grows downward, anticlockwise from
- * straight-down is towards the right. So east of 20°E swings right: Asia to the
- * right of Africa, the Americas to the upper left.
- *
- * Get the sign of the sine wrong and this becomes the view from INSIDE the
- * globe — Asia on the left, the Americas on the right. It still looks like a
- * world, which is exactly why a mirrored map survives review: nobody
- * double-checks a continent they recognise. The test is Eurasia to the RIGHT of
- * Africa.
- */
-export function projectFlatWorld(
-  lon: number,
-  lat: number,
-  cx: number,
-  cy: number,
-  radius: number,
-): [number, number] {
-  const r = ((90 - lat) / (90 - SOUTH_CUT)) * radius;
-  const t = ((lon - DOWN_MERIDIAN) * Math.PI) / 180;
-  return [cx + r * Math.sin(t), cy + r * Math.cos(t)];
-}
+// THE PROJECTION ITSELF LIVES IN ./azimuthal.ts and is re-exported here
+// unchanged, so every existing import of this module keeps working.
+//
+// It was split out because the homepage's locations map needs the trigonometry
+// in the BROWSER, to place six pins over the generated flat-world.svg, and
+// importing it from this file would have shipped ten thousand coastline points
+// to every visitor in order to compute six coordinates.
+export { DOWN_MERIDIAN, SOUTH_CUT, projectFlatWorld } from './azimuthal';
+import { SOUTH_CUT, projectFlatWorld } from './azimuthal';
 
 /** One landmass as a closed SVG path. */
 export function ringPath(ring: Ring, cx: number, cy: number, radius: number): string {
@@ -131,15 +109,15 @@ export const UNIVERSITY_PLACES: {
   establishment: boolean;
   lon: number;
   lat: number;
-}[] = register.places
-  .filter((p): p is typeof p & { lon: number; lat: number } => p.lon !== null && p.lat !== null)
-  .map((p) => ({
-    name: p.name ?? p.country,
-    kind: p.kind,
+}[] = register.nations.flatMap((n) =>
+  n.sites.map((p) => ({
+    name: p.name ?? n.country,
+    kind: n.kind,
     establishment: p.establishment,
     lon: p.lon,
     lat: p.lat,
-  }));
+  })),
+);
 
 export interface FlatWorldOptions {
   /** Coordinate space. The figure is self-similar; this is not a size on screen. */

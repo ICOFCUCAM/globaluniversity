@@ -2,7 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Grain } from '@/components/Atmosphere';
 import { ALL_PROGRAMMES } from '@/content/programmeCatalogue';
-import { NATIONS, inWords } from '@/content/institutionalFacts';
+import { TEACHING_NATIONS } from '@/content/institutionalFacts';
 
 // ---------------------------------------------------------------------------
 // THE LAST SCENE — the point of decision.
@@ -147,7 +147,8 @@ export default function FinalScene() {
               to start now or next year. */}
           <p className="mt-8 max-w-lg text-[15.5px] leading-relaxed text-white/85 sm:text-[17px]">
             Applications are open across all {total} programmes — on campus in Buea and Douala,
-            in-country across {inWords(NATIONS.length)} nations, or online from wherever you already are.
+            at our teaching locations in {TEACHING_NATIONS.slice(0, -1).join(', ')} and{' '}
+            {TEACHING_NATIONS[TEACHING_NATIONS.length - 1]}, or online from wherever you already are.
             Admission is enrolment: you may begin studying from the date of your offer.
           </p>
 
@@ -173,14 +174,18 @@ export default function FinalScene() {
               and the only place on this page the accreditation is repeated — a
               reader about to fill in a form is entitled to it here even though
               the claim is made in full further up. */}
-          {/* The nations come from the register rather than being typed here.
-              This line read "Buea · Douala · Nigeria · Online worldwide" and
-              would have gone on reading it after the university restated its
-              reach; a reassurance line that contradicts the hero two screens
-              above is worse than no reassurance line. */}
+          {/* THE ACCREDITATION IS CAMEROON'S, AND THIS LINE USED TO IMPLY IT
+              WAS EVERYWHERE. It listed five nations immediately after
+              "Accredited by the Ministry of Higher Education since 2007",
+              which reads as five accreditations by a ministry that grants one.
+              The university raised exactly this about the locations section —
+              "avoid saying Five nations. One degree unless the university can
+              substantiate the accreditation/degree status in each of those
+              countries" — and the same objection lands here. The regulator is
+              named, its campuses are named, and nothing else is claimed. */}
           <p className="mt-11 border-t border-white/15 pt-7 font-sans text-[12.5px] leading-relaxed text-white/70">
-            Accredited by the Ministry of Higher Education since 2007 · {NATIONS.join(' · ')} ·
-            Online worldwide
+            Accredited by the Ministry of Higher Education since 2007 · Campuses at Buea and
+            Douala · Online worldwide
           </p>
         </div>
       </div>

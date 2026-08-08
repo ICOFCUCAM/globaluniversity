@@ -295,7 +295,7 @@ const meridians = Array.from({ length: 24 }, (_, i) => {
 // ---------------------------------------------------------------------------
 const PLACES = JSON.parse(
   readFileSync(join(root, 'src/content/universityPlaces.json'), 'utf8'),
-).places.filter((p) => p.lon !== null && p.lat !== null);
+).nations.flatMap((n) => n.sites);
 
 const places = PLACES.map(({ lon, lat, establishment }) => {
   const [x, y] = project(lon, lat);

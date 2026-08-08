@@ -105,59 +105,78 @@ export function institutionalFacts(): Fact[] {
 // WHERE THE UNIVERSITY TEACHES FROM.
 //
 // Read from src/content/universityPlaces.json, which is also what the map draws
-// and what scripts/build-flat-world.mjs plots. The three lists used to be three
-// lists; the header of that file says why they are now one.
-//
-// The university restated its reach in nations rather than towns — "Cameroon,
-// the USA, Zambia, Nigeria, South Africa and worldwide" — and then asked that
-// the campuses list and the map pins follow. They do, from here.
+// and what scripts/build-flat-world.mjs plots. The header of that file says why
+// the nation is the unit and why each one states its own kind.
 // ---------------------------------------------------------------------------
 
-export interface Place {
+export interface PlaceSite {
   /** The site, where the university names one. Null where it has named only the nation. */
   name: string | null;
-  country: string;
-  kind: string;
-  /** Can the university name a site here? Decides the mark on the map. */
-  establishment: boolean;
   role: string;
   address: string | null;
   map: string | null;
-  lon: number | null;
-  lat: number | null;
+  /** Can the university name a site here? Decides the mark on the map. */
+  establishment: boolean;
+  lon: number;
+  lat: number;
 }
 
-export const CAMPUSES: readonly Place[] = register.places;
+export interface Nation {
+  id: string;
+  country: string;
+  /** What the university has in this country — a campus, a centre, a presence, online. */
+  kind: string;
+  /** The same, short enough for a selector tab. See the register's header. */
+  shortKind: string;
+  /** A second line where the university gave one, e.g. the ICOF headquarters. */
+  subKind?: string;
+  blurb: string;
+  /** Null where no page exists yet. Never a link to a page that is not there. */
+  href: string | null;
+  linkLabel: string | null;
+  sites: PlaceSite[];
+}
+
+export const NATIONS_FULL: Nation[] = register.nations as Nation[];
+
+/** Every named or marked place, flattened, for anything that wants a list. */
+export const CAMPUSES: readonly PlaceSite[] = NATIONS_FULL.flatMap((n) => n.sites);
 
 /**
- * The nations, in the register's order, without the online entry.
+ * The countries the university teaches from, in the register's order.
  *
- * COUNTED, NEVER TYPED — the same discipline as every figure above it. A
- * homepage heading that says "five nations" and a list that shows six is the
- * cheapest way to make a reader stop believing the rest of the page, and it is
- * the failure mode of every count on a website that is written by hand.
+ * WITHOUT THE ONLINE ENTRY, which is not a country. Filtered on having a site
+ * with a coordinate rather than on its name, so an entry cannot be counted as a
+ * nation unless it is somewhere a map could put it.
  */
-export const NATIONS: string[] = CAMPUSES
-  // The online entry has no coordinate, which is precisely what makes it not a
-  // nation. Filtering on that rather than on its name means an entry cannot be
-  // counted as a nation unless it is somewhere a map could put it.
-  .filter((p) => p.lat !== null)
-  .map((p) => p.country)
-  .filter((c, i, all) => all.indexOf(c) === i);
+export const NATIONS: string[] = NATIONS_FULL
+  .filter((n) => n.sites.length > 0)
+  .map((n) => n.country);
+
+/**
+ * The nations where the university states it TEACHES in-country.
+ *
+ * NOT the same list as NATIONS, and the difference is the whole point. NATIONS
+ * includes Nigeria, where the university has a professional development and
+ * research centre and says plainly that it is not a teaching campus. Prose that
+ * says "taught in five nations" has therefore made a claim the register itself
+ * contradicts — which is exactly what the university objected to.
+ */
+export const TEACHING_NATIONS: string[] = NATIONS_FULL
+  .filter((n) => n.kind === 'International teaching presence')
+  .map((n) => n.country);
 
 /**
  * A small count as a word.
  *
- * WHY A HEADING MUST NOT PRINT A DIGIT. "5 nations. One degree." set in the
- * display serif at 4rem does not read as a sentence; it reads as a spec, and it
- * disagrees with itself — the second half of the same line spells "One". Every
- * other count on this site under a dozen is spelled, which is ordinary
- * publishing practice and the reason a prospectus reads like a document rather
- * than a dashboard.
+ * WHY A HEADING MUST NOT PRINT A DIGIT. "4 decisions the University has still to
+ * take" set in the display serif does not read as a sentence; it reads as a
+ * spec. Every other count on this site under a dozen is spelled, which is
+ * ordinary publishing practice and the reason a prospectus reads like a
+ * document rather than a dashboard.
  *
  * The point is to spell the number WITHOUT typing it. The count still comes
- * from the register; only its spelling is looked up, so the heading cannot say
- * "five" while the list below it shows six.
+ * from the data; only its spelling is looked up.
  */
 const COUNT_WORDS = [
   'no', 'one', 'two', 'three', 'four', 'five', 'six',
@@ -170,12 +189,6 @@ export const inWordsCapped = (n: number): string => {
   const w = inWords(n);
   return w.charAt(0).toUpperCase() + w.slice(1);
 };
-
-/** The register grouped for display: one nation, the sites within it. */
-export const PLACES_BY_NATION: { country: string; sites: readonly Place[] }[] = CAMPUSES
-  .map((p) => p.country)
-  .filter((c, i, all) => all.indexOf(c) === i)
-  .map((country) => ({ country, sites: CAMPUSES.filter((p) => p.country === country) }));
 
 /**
  * The line under the hero buttons.
