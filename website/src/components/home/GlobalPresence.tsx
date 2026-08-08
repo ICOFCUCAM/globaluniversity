@@ -232,11 +232,25 @@ export default function GlobalPresence() {
             shown ? 'opacity-100' : 'opacity-0'
           }`}
         >
+          {/* A GROUND FOR THE ENGRAVING, and it was not needed until the
+              photograph changed.
+              Over the previous frame — a wall and a floor — a 22% gold line had
+              flat, quiet areas to register against. The academic body is
+              saturated regalia from edge to edge: crimson, cobalt, yellow. A
+              fine gold stroke over a yellow gown is invisible, and over the
+              crimson it reads as noise rather than as a map. Asked directly
+              whether the map was visible, the honest answer was barely.
+              So the disc gets a soft dark radial of its own, confined to where
+              the disc is and fading to nothing well before the faces. It is the
+              "translucent plate where necessary for readability" the brief
+              allows, applied to the geography instead of the type — and with
+              something to sit on, the line can carry more weight. */}
+          <div className="absolute inset-[-6%] rounded-full bg-[radial-gradient(circle_at_50%_50%,rgba(14,8,24,0.62)_0%,rgba(14,8,24,0.46)_46%,rgba(14,8,24,0.18)_74%,transparent_92%)]" />
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/images/flat-world.svg"
             alt=""
-            className="h-full w-full opacity-[0.22] mix-blend-screen"
+            className="relative h-full w-full opacity-[0.55] mix-blend-screen"
           />
 
           {/* The network and the marks, in the same coordinate space. */}
@@ -255,8 +269,8 @@ export default function GlobalPresence() {
                   <path
                     key={m.country}
                     d={`M${x1} ${y1} Q${mx} ${my} ${x2} ${y2}`}
-                    strokeWidth={0.22}
-                    strokeOpacity={0.5}
+                    strokeWidth={0.26}
+                    strokeOpacity={0.75}
                     pathLength={1}
                     strokeDasharray={1}
                     strokeDashoffset={shown ? 0 : 1}
@@ -279,7 +293,7 @@ export default function GlobalPresence() {
                       transition: `opacity 700ms ease-out ${700 + i * 130}ms`,
                     }}
                   >
-                    <circle cx={x} cy={y} r={2.6} fill="#f7dc79" fillOpacity={0.12} />
+                    <circle cx={x} cy={y} r={2.8} fill="#f7dc79" fillOpacity={0.16} />
                     {/* A named site is a filled dot; a nation is an open ring.
                         The same distinction the register draws everywhere. */}
                     {m.establishment ? (
