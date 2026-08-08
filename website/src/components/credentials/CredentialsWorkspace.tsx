@@ -65,6 +65,7 @@ import CredentialStudio from '@/components/studio/CredentialStudio';
 import SpecimenGallery from '@/components/studio/SpecimenGallery';
 import CertificateGenerator from '@/components/certificate/CertificateGenerator';
 import TranscriptGenerator from '@/components/transcript/TranscriptGenerator';
+import ManualTranscript from '@/components/transcript/ManualTranscript';
 import { PageHeader } from '@/components/ui/portal';
 import { FOCUS } from '@/lib/portalTheme';
 
@@ -203,6 +204,13 @@ export default function CredentialsWorkspace({ role }: { role?: UserRole }) {
               cleared the approval chain, and nothing still under deliberation.
             </p>
             <TranscriptGenerator embedded />
+
+            {/* Drawn only for the Superadministrator, and the route checks
+                again. See ManualTranscript for why this is the most carefully
+                guarded screen in the system. */}
+            <div className="mt-6">
+              <ManualTranscript role={actualRole} />
+            </div>
           </div>
         </div>
       )}
