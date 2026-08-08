@@ -252,31 +252,25 @@ function Sheet({
         {/* --- The record: a row per year, a column per semester ------------ */}
         <div style={{ flex: '1 1 auto', marginTop: MM(2), minHeight: 0 }}>
           {years.map((y) => (
-            <div key={y.year} style={{ display: 'flex', gap: MM(2), marginBottom: MM(2) }}>
-              {/* THE YEAR LABEL DOWN THE LEFT, as the original sets it — one
-                  cell spanning both semesters, so the eye reads a year across
-                  rather than hunting for repeated headings. */}
-              <div style={{
-                flex: '0 0 auto', width: MM(17), borderRight: `0.5pt solid ${rule}`,
-                paddingRight: MM(1.5), display: 'flex', alignItems: 'flex-start',
-              }}>
-                <span style={{
-                  fontSize: '8.4pt', fontWeight: 700, textTransform: 'uppercase',
-                  letterSpacing: '.08em', color: design.brand,
-                }}>
-                  {y.year ? `Year ${inWords(y.year)}` : 'Unplaced'}
-                </span>
-              </div>
-              <div style={{
-                flex: '1 1 0', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: MM(3), minWidth: 0,
-              }}>
-                {[0, 1].map((slot) => {
-                  const s = y.semesters[slot];
-                  return s
-                    ? <SemesterBlock key={slot} s={s} ink={ink} rule={rule} brand={design.brand} />
-                    : <div key={slot} />;
-                })}
-              </div>
+            <div key={y.year} style={{
+              display: 'grid', gridTemplateColumns: '1fr 1fr', gap: MM(2.5), marginBottom: MM(2),
+            }}>
+              {[0, 1].map((slot) => {
+                const s2 = y.semesters[slot];
+                return s2 ? (
+                  <SemesterBlock
+                    key={slot}
+                    s={s2}
+                    ink={ink}
+                    rule={rule}
+                    brand={design.brand}
+                    // Named on the first block of the year only, as the
+                    // original does — it labels the row, not each half of it.
+                    yearLabel={slot === 0 ? (y.year ? `Year ${inWords(y.year)}` : 'Unplaced') : ''}
+                    termLabel={`${slot === 0 ? 'First' : 'Second'} Semester`}
+                  />
+                ) : <div key={slot} />;
+              })}
             </div>
           ))}
         </div>
@@ -526,83 +520,79 @@ function GradeSystem({ ink, rule }: { ink: string; rule: string }) {
 }
 
 function SemesterBlock({
-  s, ink, rule, brand,
+  s, ink, rule, brand, yearLabel, termLabel,
 }: {
   s: TranscriptMasterData['years'][number]['semesters'][number];
   ink: string; rule: string; brand: string;
+  yearLabel?: string; termLabel: string;
 }) {
+  // A TWO-ROW HEADER, as the original sets it. "Year One" sits ABOVE "Subject
+  // Codes" and the term above "Name of Courses", while each numeric heading is
+  // one tall cell spanning both rows. Flattening it to a single row of column
+  // names — which is what the first version did — loses the thing that makes
+  // this a register rather than a spreadsheet.
+  const box = `0.4pt solid ${ink}`;
   const th: React.CSSProperties = {
-    fontSize: '6pt', textTransform: 'uppercase', letterSpacing: '.03em',
-    padding: '0.8mm 1mm', border: `0.4pt solid ${ink}`, textAlign: 'left', verticalAlign: 'bottom',
-    color: ink, fontWeight: 700,
+    fontSize: '5.8pt', padding: '0.7mm 1mm', border: box, textAlign: 'left',
+    color: ink, fontWeight: 700, verticalAlign: 'bottom', lineHeight: 1.15,
   };
   const td: React.CSSProperties = {
     fontSize: '7pt', padding: '0.5mm 1mm', color: ink,
-    borderLeft: `0.4pt solid ${ink}`, borderRight: `0.4pt solid ${ink}`,
+    borderLeft: box, borderRight: box,
   };
   const num: React.CSSProperties = { ...td, textAlign: 'right' };
+  const foot: React.CSSProperties = { ...td, fontWeight: 700, borderTop: box, borderBottom: box };
 
   return (
-    <div style={{ minWidth: 0 }}>
-      <p style={{
-        margin: 0, fontSize: '7.4pt', fontWeight: 700, textTransform: 'uppercase',
-        letterSpacing: '.06em', color: brand,
-      }}>
-        Semester {s.semester || '—'}
-      </p>
-      <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: MM(0.6), tableLayout: 'fixed' }}>
-        <colgroup>
-          <col style={{ width: '16%' }} /><col />
-          <col style={{ width: '9%' }} /><col style={{ width: '9%' }} />
-          <col style={{ width: '9%' }} /><col style={{ width: '9%' }} /><col style={{ width: '10%' }} />
-        </colgroup>
-        <thead>
-          <tr>
-            {/* The original's seven columns, in its order and with its meanings. */}
-            <th style={th}>Code</th>
-            <th style={th}>Name of course</th>
-            <th style={{ ...th, textAlign: 'right' }}>Cr val</th>
-            <th style={{ ...th, textAlign: 'right' }}>Grade</th>
-            <th style={{ ...th, textAlign: 'right' }}>Cr earn</th>
-            <th style={{ ...th, textAlign: 'right' }}>Cr GPA</th>
-            <th style={{ ...th, textAlign: 'right' }}>Gr pts</th>
+    <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+      <colgroup>
+        <col style={{ width: '17%' }} /><col />
+        <col style={{ width: '9%' }} /><col style={{ width: '9%' }} />
+        <col style={{ width: '9%' }} /><col style={{ width: '9%' }} /><col style={{ width: '10%' }} />
+      </colgroup>
+      <thead>
+        <tr>
+          {/* The year names the block; the term names the sitting. */}
+          <th style={{ ...th, fontSize: '6.6pt', color: brand, textTransform: 'uppercase', letterSpacing: '.05em' }}>
+            {yearLabel ?? ''}
+          </th>
+          <th style={{ ...th, fontSize: '6.6pt', color: brand }}>{termLabel}</th>
+          <th style={{ ...th, textAlign: 'right' }} rowSpan={2}>Credit<br />Values</th>
+          <th style={{ ...th, textAlign: 'right' }} rowSpan={2}>Grade</th>
+          <th style={{ ...th, textAlign: 'right' }} rowSpan={2}>Credit<br />Earned</th>
+          <th style={{ ...th, textAlign: 'right' }} rowSpan={2}>Credit<br />GPA</th>
+          <th style={{ ...th, textAlign: 'right' }} rowSpan={2}>Grade<br />Points</th>
+        </tr>
+        <tr>
+          <th style={th}>Subject<br />Codes</th>
+          <th style={th}>Name of Courses</th>
+        </tr>
+      </thead>
+      <tbody>
+        {s.courses.map((c) => (
+          <tr key={c.code}>
+            <td style={{ ...td, fontFamily: 'ui-monospace, Menlo, monospace' }}>{c.code}</td>
+            <td style={td}>{c.title}</td>
+            <td style={num}>{c.creditUnit}</td>
+            <td style={num}>{c.grade}</td>
+            {/* Credit earned is not credit value: a failed course is attempted
+                and not earned, and the original prints both. */}
+            <td style={num}>{c.gradePoint > 0 ? c.creditUnit : 0}</td>
+            <td style={num}>{c.gradePoint > 0 ? c.creditUnit : 0}</td>
+            {/* The grade point, not the quality point. */}
+            <td style={num}>{c.gradePoint.toFixed(2)}</td>
           </tr>
-        </thead>
-        <tbody>
-          {s.courses.map((c) => (
-            <tr key={c.code}>
-              <td style={{ ...td, fontFamily: 'ui-monospace, Menlo, monospace' }}>{c.code}</td>
-              <td style={td}>{c.title}</td>
-              <td style={num}>{c.creditUnit}</td>
-              <td style={num}>{c.grade}</td>
-              {/* Credit earned is not credit value: a failed course is attempted
-                  and not earned, and the original prints both so the difference
-                  is legible. */}
-              <td style={num}>{c.gradePoint > 0 ? c.creditUnit : 0}</td>
-              <td style={num}>{c.gradePoint > 0 ? c.creditUnit : 0}</td>
-              {/* The grade point, not the quality point — 3.33, as the
-                  University's own sheet prints it. */}
-              <td style={num}>{c.gradePoint.toFixed(2)}</td>
-            </tr>
-          ))}
-          <tr>
-            <td colSpan={4} style={{ ...td, fontWeight: 700, borderTop: `0.4pt solid ${ink}` }}>
-              GPA Credit Earned
-            </td>
-            {/* CREDITS HERE, GPA ON THE NEXT ROW — as the original separates
-                them. Printing the GPA on both made the two closing rows read
-                as the same figure stated twice. */}
-            <td colSpan={3} style={{ ...num, fontWeight: 700, borderTop: `0.5pt solid ${rule}` }}>
-              {s.totalCredits}
-            </td>
-          </tr>
-          <tr>
-            <td colSpan={6} style={{ ...td, fontWeight: 700 }}>Semester GPA</td>
-            <td style={{ ...num, fontWeight: 700 }}>{s.gpa.toFixed(2)}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+        ))}
+        {/* One closing row: credits on the left, the GPA on the right, both
+            labelled — as the original rules it. */}
+        <tr>
+          <td colSpan={2} style={foot}>GPA Credit Earned</td>
+          <td colSpan={2} style={{ ...foot, textAlign: 'right' }}>{s.totalCredits}</td>
+          <td colSpan={2} style={foot}>Semester GPA</td>
+          <td style={{ ...foot, textAlign: 'right' }}>{s.gpa.toFixed(2)}</td>
+        </tr>
+      </tbody>
+    </table>
   );
 }
 
