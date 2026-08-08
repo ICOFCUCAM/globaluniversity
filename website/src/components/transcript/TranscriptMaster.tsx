@@ -130,6 +130,21 @@ const MM = (n: number) => `${n}mm`;
 // screen arrives at the registrar as floating columns of figures. The print
 // block below forces it.
 const RULE = '0.5pt solid #4d4d4d';
+
+/**
+ * The table's typeface.
+ *
+ * ARIAL, NOT THE DOCUMENT'S SERIF — and this is the last thing that was
+ * wrong. The original was produced in Microsoft Word, whose tables are set in
+ * a sans-serif by default, and every figure and course name on it is Arial
+ * while the masthead above stays serif. Setting the grid in Georgia made it
+ * read as modern typesetting rather than as this instrument, whatever the
+ * rules were doing.
+ *
+ * Helvetica and the generic sans follow it for machines without Arial, which
+ * is most of the servers this renders on.
+ */
+const TABLE_FACE = 'Arial, Helvetica, "Liberation Sans", sans-serif';
 /** Outer border and major section boundaries — a shade heavier. */
 const RULE_MAJOR = '0.75pt solid #333333';
 
@@ -419,7 +434,7 @@ function Masthead({
   // above each value, and boxes the student number and sex apart at the right.
   // Reading down a list is not the same document.
   const cell: React.CSSProperties = {
-    border: RULE, padding: '0.6mm 1.4mm', verticalAlign: 'top',
+    border: RULE, padding: '0.6mm 1.4mm', verticalAlign: 'top', fontFamily: TABLE_FACE,
   };
   const lab: React.CSSProperties = {
     ...cell, fontSize: '5.6pt', fontWeight: 400, opacity: 0.85, textAlign: 'left',
@@ -613,19 +628,19 @@ function YearTable({
 }) {
   const hair = RULE;
   const th: React.CSSProperties = {
-    fontSize: '5.6pt', padding: '0.55mm 1mm', textAlign: 'left',
+    fontSize: '6.2pt', padding: '0.55mm 1mm', textAlign: 'left',
     color: ink, fontWeight: 400, verticalAlign: 'bottom', lineHeight: 1.15,
-    border: hair,
+    border: hair, fontFamily: TABLE_FACE,
   };
   const td: React.CSSProperties = {
-    fontSize: '6.8pt', padding: '0.32mm 1mm', color: ink,
+    fontSize: '7.4pt', padding: '0.32mm 1mm', color: ink, fontFamily: TABLE_FACE,
     // Left and right only on the body cells: the courses run as an unbroken
     // column of figures inside one tall box, as the original sets them.
     borderLeft: hair, borderRight: hair,
   };
   const num: React.CSSProperties = { ...td, textAlign: 'right' };
   const foot: React.CSSProperties = {
-    ...td, fontSize: '6.4pt', padding: '0.7mm 1mm', borderTop: hair,
+    ...td, fontSize: '7pt', padding: '0.7mm 1mm', borderTop: hair,
   };
 
   const pair = [semesters[0], semesters[1]];
