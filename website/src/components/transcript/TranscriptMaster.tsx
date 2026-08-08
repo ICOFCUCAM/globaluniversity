@@ -615,10 +615,12 @@ function YearTable({
   const th: React.CSSProperties = {
     fontSize: '5.6pt', padding: '0.55mm 1mm', textAlign: 'left',
     color: ink, fontWeight: 400, verticalAlign: 'bottom', lineHeight: 1.15,
-    borderLeft: hair, borderRight: hair,
+    border: hair,
   };
   const td: React.CSSProperties = {
     fontSize: '6.8pt', padding: '0.32mm 1mm', color: ink,
+    // Left and right only on the body cells: the courses run as an unbroken
+    // column of figures inside one tall box, as the original sets them.
     borderLeft: hair, borderRight: hair,
   };
   const num: React.CSSProperties = { ...td, textAlign: 'right' };
@@ -647,7 +649,16 @@ function YearTable({
 
   return (
     <table style={{
-      width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', marginBottom: MM(2.5),
+      width: '100%',
+      // SEPARATE, NOT COLLAPSED — this is the thing I kept missing. Each cell
+      // in the original is its OWN rectangle with a hairline gap to the next,
+      // not a shared edge in a merged grid. That gap is why the ruling reads
+      // as a registrar's ledger and why every collapsed version I tried
+      // looked like a spreadsheet no matter what weight or colour I gave it.
+      borderCollapse: 'separate',
+      borderSpacing: '0.6mm 0',
+      tableLayout: 'fixed',
+      marginBottom: MM(2.5),
     }}>
       <colgroup>
         {[0, 1].map((i) => (
