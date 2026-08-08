@@ -63,7 +63,7 @@ import { UNIVERSITY } from '@/lib/constants';
 import { GRADING_SCALE } from '@/lib/grading';
 import type { CredentialDesign } from '@/lib/credentialTemplate';
 import type { TranscriptData } from '@/lib/types';
-import { seedFrom, securityGroundUri, microtextBandUri } from '@/lib/credentialArt';
+import { seedFrom, securityGroundUri, microtextBandUri, globeInRosetteUri } from '@/lib/credentialArt';
 
 /**
  * The registrar's codes, as printed on the University's own transcript.
@@ -131,6 +131,16 @@ export default function TranscriptMaster({
 }) {
   const seed = seedFrom(data.credentialId ?? 'IGUC-SPECIMEN');
   const ground = securityGroundUri(seed, 96, design.brand, UNIVERSITY.shortName, 0.05);
+  // THE WATERMARK, WHICH WAS MISSING ENTIRELY.
+  //
+  // The original carries a large central device across the whole sheet — the
+  // globe, the ring of the University's words, the motto — printed pale enough
+  // to read the marks through. What this had instead was the fine security
+  // ground, a repeating tile, which is a different thing serving a different
+  // purpose: the ground defeats a flatbed copier, the watermark says whose
+  // document this is at arm's length. A transcript needs both.
+  const watermark = globeInRosetteUri(seed, 900, design.brand, 0.055);
+
   const microtext = microtextBandUri(
     `${UNIVERSITY.name} · ${data.credentialId ?? 'SPECIMEN'} · `, 900, 10, design.accent, 3.4,
   );
@@ -170,6 +180,7 @@ export default function TranscriptMaster({
           data={data}
           specimen={specimen}
           ground={ground}
+          watermark={watermark}
           microtext={microtext}
           ink={ink}
           rule={rule}
@@ -185,12 +196,12 @@ export default function TranscriptMaster({
 }
 
 function Sheet({
-  design, data, specimen, ground, microtext, ink, rule, years, first, last, page, of,
+  design, data, specimen, ground, watermark, microtext, ink, rule, years, first, last, page, of,
 }: {
   design: CredentialDesign;
   data: TranscriptMasterData;
   specimen?: boolean;
-  ground: string; microtext: string; ink: string; rule: string;
+  ground: string; watermark: string; microtext: string; ink: string; rule: string;
   years: TranscriptMasterData['years'];
   first: boolean; last: boolean; page: number; of: number;
 }) {
@@ -206,6 +217,16 @@ function Sheet({
       <div style={{
         position: 'absolute', inset: 0, backgroundImage: `url("${ground}")`, pointerEvents: 'none',
       }} />
+
+      {/* Centred, large, and behind everything. Sized to the sheet's height so
+          it reads as the paper's own device rather than as an image dropped on
+          top of the record. */}
+      <div style={{
+        position: 'absolute', inset: 0, display: 'flex', alignItems: 'center',
+        justifyContent: 'center', pointerEvents: 'none', overflow: 'hidden',
+      }}>
+        <img src={watermark} alt="" style={{ width: MM(185), height: MM(185), opacity: 0.85 }} />
+      </div>
 
       {data.superseded && <Overprint text="SUPERSEDED" colour="rgba(160,40,40,.15)" />}
       {specimen && <Overprint text="SPECIMEN" colour="rgba(120,40,40,.13)" />}
@@ -249,29 +270,17 @@ function Sheet({
           </p>
         )}
 
-        {/* --- The record: a row per year, a column per semester ------------ */}
+        {/* --- The record: one ruled box per year ---------------------------- */}
         <div style={{ flex: '1 1 auto', marginTop: MM(2), minHeight: 0 }}>
           {years.map((y) => (
-            <div key={y.year} style={{
-              display: 'grid', gridTemplateColumns: '1fr 1fr', gap: MM(2.5), marginBottom: MM(2),
-            }}>
-              {[0, 1].map((slot) => {
-                const s2 = y.semesters[slot];
-                return s2 ? (
-                  <SemesterBlock
-                    key={slot}
-                    s={s2}
-                    ink={ink}
-                    rule={rule}
-                    brand={design.brand}
-                    // Named on the first block of the year only, as the
-                    // original does — it labels the row, not each half of it.
-                    yearLabel={slot === 0 ? (y.year ? `Year ${inWords(y.year)}` : 'Unplaced') : ''}
-                    termLabel={`${slot === 0 ? 'First' : 'Second'} Semester`}
-                  />
-                ) : <div key={slot} />;
-              })}
-            </div>
+            <YearTable
+              key={y.year}
+              year={y.year}
+              semesters={y.semesters}
+              ink={ink}
+              brand={design.brand}
+              yearLabel={y.year ? `Year ${inWords(y.year)}` : 'Unplaced'}
+            />
           ))}
         </div>
 
@@ -519,77 +528,127 @@ function GradeSystem({ ink, rule }: { ink: string; rule: string }) {
   );
 }
 
-function SemesterBlock({
-  s, ink, rule, brand, yearLabel, termLabel,
+/**
+ * One academic year: both semesters inside a SINGLE ruled box.
+ *
+ * ---------------------------------------------------------------------------
+ * THE LINES ARE THE THING, AND THEY ARE NOT ORDINARY
+ * ---------------------------------------------------------------------------
+ *
+ * Three properties of the original's ruling, each of which I had wrong before:
+ *
+ *   ONE BOX PER YEAR, NOT TWO. The first and second semesters share an outer
+ *   border and a single full-width closing row that reads
+ *   "GPA Credit Earned 24 · Semester GPA 2.96 · GPA Credit Earned 26 ·
+ *   Semester GPA 3.25" straight across. Two side-by-side boxes with their own
+ *   footers is a different document.
+ *
+ *   HAIRLINES. 0.25pt, not the 0.4pt I had. At 0.4 the grid dominates the
+ *   figures; the original's rules are almost incidental, which is why the eye
+ *   reads the marks first.
+ *
+ *   NO HORIZONTAL RULES BETWEEN COURSES. Verticals run the full height of the
+ *   block, horizontals appear only under the header and above the footer, so
+ *   each column reads as a continuous list of figures.
+ */
+function YearTable({
+  year, semesters, ink, brand, yearLabel,
 }: {
-  s: TranscriptMasterData['years'][number]['semesters'][number];
-  ink: string; rule: string; brand: string;
-  yearLabel?: string; termLabel: string;
+  year: number;
+  semesters: TranscriptMasterData['years'][number]['semesters'];
+  ink: string; brand: string; yearLabel: string;
 }) {
-  // A TWO-ROW HEADER, as the original sets it. "Year One" sits ABOVE "Subject
-  // Codes" and the term above "Name of Courses", while each numeric heading is
-  // one tall cell spanning both rows. Flattening it to a single row of column
-  // names — which is what the first version did — loses the thing that makes
-  // this a register rather than a spreadsheet.
-  const box = `0.4pt solid ${ink}`;
+  const hair = `0.25pt solid ${ink}`;
   const th: React.CSSProperties = {
-    fontSize: '5.8pt', padding: '0.7mm 1mm', border: box, textAlign: 'left',
-    color: ink, fontWeight: 700, verticalAlign: 'bottom', lineHeight: 1.15,
+    fontSize: '5.6pt', padding: '0.55mm 1mm', textAlign: 'left',
+    color: ink, fontWeight: 400, verticalAlign: 'bottom', lineHeight: 1.15,
+    borderLeft: hair, borderRight: hair,
   };
   const td: React.CSSProperties = {
-    fontSize: '7pt', padding: '0.5mm 1mm', color: ink,
-    borderLeft: box, borderRight: box,
+    fontSize: '6.8pt', padding: '0.32mm 1mm', color: ink,
+    borderLeft: hair, borderRight: hair,
   };
   const num: React.CSSProperties = { ...td, textAlign: 'right' };
-  const foot: React.CSSProperties = { ...td, fontWeight: 700, borderTop: box, borderBottom: box };
+  const foot: React.CSSProperties = {
+    ...td, fontSize: '6.4pt', padding: '0.7mm 1mm', borderTop: hair,
+  };
+
+  const pair = [semesters[0], semesters[1]];
+  const rows = Math.max(pair[0]?.courses.length ?? 0, pair[1]?.courses.length ?? 0);
+
+  const headFor = (i: number, s?: typeof pair[number]) => (
+    <>
+      <th style={{ ...th, fontSize: '6pt', color: brand, borderTop: hair }}>
+        {i === 0 ? yearLabel : `Year ${inWords(year)}`}
+      </th>
+      <th style={{ ...th, fontSize: '6pt', color: brand, borderTop: hair }}>
+        {i === 0 ? 'First' : 'Second'} Semester
+      </th>
+      {['Credit\nValues', 'Grade', 'Credit\nEarned', 'Credit\nGPA', 'Grade\nPoints'].map((h) => (
+        <th key={h} rowSpan={2} style={{ ...th, textAlign: 'right', borderTop: hair, borderBottom: hair }}>
+          {h.split('\n').map((line, k) => <React.Fragment key={k}>{line}<br /></React.Fragment>)}
+        </th>
+      ))}
+    </>
+  );
 
   return (
-    <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+    <table style={{
+      width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', marginBottom: MM(2.5),
+    }}>
       <colgroup>
-        <col style={{ width: '17%' }} /><col />
-        <col style={{ width: '9%' }} /><col style={{ width: '9%' }} />
-        <col style={{ width: '9%' }} /><col style={{ width: '9%' }} /><col style={{ width: '10%' }} />
+        {[0, 1].map((i) => (
+          <React.Fragment key={i}>
+            <col style={{ width: '7%' }} /><col style={{ width: '15%' }} />
+            <col style={{ width: '5.6%' }} /><col style={{ width: '5%' }} />
+            <col style={{ width: '5.6%' }} /><col style={{ width: '5.2%' }} />
+            <col style={{ width: '5.6%' }} />
+          </React.Fragment>
+        ))}
       </colgroup>
       <thead>
+        <tr>{headFor(0, pair[0])}{headFor(1, pair[1])}</tr>
         <tr>
-          {/* The year names the block; the term names the sitting. */}
-          <th style={{ ...th, fontSize: '6.6pt', color: brand, textTransform: 'uppercase', letterSpacing: '.05em' }}>
-            {yearLabel ?? ''}
-          </th>
-          <th style={{ ...th, fontSize: '6.6pt', color: brand }}>{termLabel}</th>
-          <th style={{ ...th, textAlign: 'right' }} rowSpan={2}>Credit<br />Values</th>
-          <th style={{ ...th, textAlign: 'right' }} rowSpan={2}>Grade</th>
-          <th style={{ ...th, textAlign: 'right' }} rowSpan={2}>Credit<br />Earned</th>
-          <th style={{ ...th, textAlign: 'right' }} rowSpan={2}>Credit<br />GPA</th>
-          <th style={{ ...th, textAlign: 'right' }} rowSpan={2}>Grade<br />Points</th>
-        </tr>
-        <tr>
-          <th style={th}>Subject<br />Codes</th>
-          <th style={th}>Name of Courses</th>
+          {[0, 1].map((i) => (
+            <React.Fragment key={i}>
+              <th style={{ ...th, borderBottom: hair }}>Subject<br />Codes</th>
+              <th style={{ ...th, borderBottom: hair }}>Name of Courses</th>
+            </React.Fragment>
+          ))}
         </tr>
       </thead>
       <tbody>
-        {s.courses.map((c) => (
-          <tr key={c.code}>
-            <td style={{ ...td, fontFamily: 'ui-monospace, Menlo, monospace' }}>{c.code}</td>
-            <td style={td}>{c.title}</td>
-            <td style={num}>{c.creditUnit}</td>
-            <td style={num}>{c.grade}</td>
-            {/* Credit earned is not credit value: a failed course is attempted
-                and not earned, and the original prints both. */}
-            <td style={num}>{c.gradePoint > 0 ? c.creditUnit : 0}</td>
-            <td style={num}>{c.gradePoint > 0 ? c.creditUnit : 0}</td>
-            {/* The grade point, not the quality point. */}
-            <td style={num}>{c.gradePoint.toFixed(2)}</td>
+        {Array.from({ length: rows }, (_, r) => (
+          <tr key={r}>
+            {[0, 1].map((i) => {
+              const c = pair[i]?.courses[r];
+              return (
+                <React.Fragment key={i}>
+                  <td style={{ ...td, fontFamily: 'ui-monospace, Menlo, monospace' }}>{c?.code ?? ''}</td>
+                  <td style={td}>{c?.title ?? ''}</td>
+                  <td style={num}>{c ? c.creditUnit : ''}</td>
+                  <td style={num}>{c ? c.grade : ''}</td>
+                  {/* Credit earned is not credit value — a failed course is
+                      attempted and not earned, and the original prints both. */}
+                  <td style={num}>{c ? (c.gradePoint > 0 ? c.creditUnit : 0) : ''}</td>
+                  <td style={num}>{c ? (c.gradePoint > 0 ? c.creditUnit : 0) : ''}</td>
+                  {/* The grade point, not the quality point. */}
+                  <td style={num}>{c ? c.gradePoint.toFixed(2) : ''}</td>
+                </React.Fragment>
+              );
+            })}
           </tr>
         ))}
-        {/* One closing row: credits on the left, the GPA on the right, both
-            labelled — as the original rules it. */}
+        {/* ONE ROW ACROSS BOTH SEMESTERS. */}
         <tr>
-          <td colSpan={2} style={foot}>GPA Credit Earned</td>
-          <td colSpan={2} style={{ ...foot, textAlign: 'right' }}>{s.totalCredits}</td>
-          <td colSpan={2} style={foot}>Semester GPA</td>
-          <td style={{ ...foot, textAlign: 'right' }}>{s.gpa.toFixed(2)}</td>
+          {[0, 1].map((i) => (
+            <React.Fragment key={i}>
+              <td colSpan={2} style={foot}>GPA Credit Earned</td>
+              <td style={{ ...foot, textAlign: 'right' }}>{pair[i]?.totalCredits ?? ''}</td>
+              <td colSpan={3} style={foot}>Semester GPA</td>
+              <td style={{ ...foot, textAlign: 'right' }}>{pair[i] ? pair[i]!.gpa.toFixed(2) : ''}</td>
+            </React.Fragment>
+          ))}
         </tr>
       </tbody>
     </table>
