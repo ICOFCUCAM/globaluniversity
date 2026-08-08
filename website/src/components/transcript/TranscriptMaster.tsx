@@ -516,14 +516,25 @@ function Masthead({
         <img src={IMAGES.seal} alt="" style={{ width: MM(21), height: MM(21), objectFit: 'contain' }} />
       </div>
 
-      <div style={{ flex: '1 1 0', minWidth: 0 }}>
-        <h1 style={{ margin: 0, fontSize: '19pt', letterSpacing: '.01em', fontWeight: 400, color: design.brand, lineHeight: 1.1 }}>
+      {/* CENTRED AND FILLING THE BOX, as the benchmark sets it — the name
+          across the full width of the cell with the two address lines centred
+          beneath it. Left-aligned, the block sat against one edge and left the
+          rest of a wide cell empty, which is what "this information is supposed
+          to fill the whole box" was pointing at. */}
+      <div style={{
+        flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column',
+        justifyContent: 'center', textAlign: 'center', padding: '0.8mm 2mm',
+      }}>
+        <h1 style={{
+          margin: 0, fontSize: '23pt', letterSpacing: '.005em', fontWeight: 400,
+          color: design.brand, lineHeight: 1.05, whiteSpace: 'nowrap',
+        }}>
           {UNIVERSITY.name}
         </h1>
-        <p style={{ margin: '0.6mm 0 0', fontSize: '9pt', color: ink, lineHeight: 1.2 }}>
+        <p style={{ margin: '1.1mm 0 0', fontSize: '11pt', color: ink, lineHeight: 1.15 }}>
           {UNIVERSITY.headquarters}
         </p>
-        <p style={{ margin: '0.3mm 0 0', fontSize: '9pt', fontWeight: 700, color: ink, lineHeight: 1.2 }}>
+        <p style={{ margin: '0.5mm 0 0', fontSize: '11pt', fontWeight: 700, color: ink, lineHeight: 1.15 }}>
           {UNIVERSITY.descriptor}
         </p>
       </div>
