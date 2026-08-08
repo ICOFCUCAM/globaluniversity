@@ -44,7 +44,19 @@ University subscribes to rather than something this repository can contain.
 | **Daily** | `DAILY_API_KEY`, `DAILY_DOMAIN` | Hosted. Fastest to stand up; recordings live on their infrastructure. |
 | **Twilio Video** | `TWILIO_ACCOUNT_SID`, `TWILIO_API_KEY`, `TWILIO_API_SECRET` | Hosted, wide network reach — useful where candidates are on poor connections. |
 
-Until one is set, the examiner console **says so** rather than drawing camera
+**LiveKit is implemented.** Set its three variables and the console mints join
+tokens — one room per sitting, six-hour expiry, and a candidate who can publish
+their camera and screen but **subscribe to nothing**, so candidates cannot watch
+each other. Daily and Twilio remain options; each needs an adapter against the
+`ProctoringAdapter` interface, and until one exists a deployment configured for
+them reports itself honestly rather than showing panels that never connect.
+
+One thing LiveKit will not do is delete. It writes recordings to the
+University's own storage and has no further hold on them, so
+`destroyRecording` says so rather than silently doing nothing — the retention
+job reads `exam_recordings.retention_until` and acts against the storage bucket.
+
+Until a provider is set, the examiner console **says so** rather than drawing camera
 panels with nothing behind them. A dead video tile is worse than an honest
 message: the examiner believes they are watching, the candidate believes they
 are being watched, and nobody finds out for weeks.

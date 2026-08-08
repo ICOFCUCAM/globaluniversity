@@ -87,6 +87,23 @@ export default function ConnectedAccounts({ role }: { role?: UserRole }) {
 
   useEffect(() => { void load(); }, [load]);
 
+  // THE CALLBACK REDIRECTS BACK HERE WITH ITS ANSWER. Read once and then
+  // cleared from the address bar, so a refresh does not repeat a stale message
+  // — and so the detail, which can name a provider's own refusal, is not left
+  // sitting in a URL somebody might paste into a support ticket.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const outcome = params.get('social');
+    if (!outcome) return;
+    setMessage({
+      tone: outcome === 'connected' ? 'ok' : 'bad',
+      text: params.get('detail') ?? (outcome === 'connected' ? 'Connected.' : 'The connection failed.'),
+    });
+    params.delete('social'); params.delete('detail');
+    const rest = params.toString();
+    window.history.replaceState({}, '', `${window.location.pathname}${rest ? `?${rest}` : ''}`);
+  }, []);
+
   async function act(payload: Record<string, unknown>, label: string) {
     setBusy(label);
     setMessage(null);
@@ -211,7 +228,11 @@ export default function ConnectedAccounts({ role }: { role?: UserRole }) {
               key={r.platform}
               type="button"
               disabled={busy === r.platform}
-              onClick={() => void act({ action: 'connect', scope: 'personal', platform: r.platform }, r.platform)}
+              // A FULL PAGE NAVIGATION, not a fetch. The provider's consent
+              // screen is a page the administrator has to see and read — it is
+              // where they are told what they are granting — and it cannot be
+              // shown inside an XHR.
+              onClick={() => { window.location.href = `/api/social/oauth/start?platform=${r.platform}&scope=personal`; }}
               title={r.configured ? undefined : `${r.app} Missing: ${r.missing.join(', ')}`}
               className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium ${
                 r.configured

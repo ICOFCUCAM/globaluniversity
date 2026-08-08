@@ -81,13 +81,40 @@ export interface ProctoringStatus {
   requirements: ProviderRequirement[];
 }
 
+/**
+ * The adapter for whichever provider is configured.
+ *
+ * LiveKit is implemented; Daily and Twilio are listed above as options the
+ * University may prefer, and each would be another module exporting the same
+ * interface. Returning null rather than throwing keeps "no provider" an
+ * ordinary path rather than an exception handler.
+ */
+export async function proctoringAdapter(
+  env: NodeJS.ProcessEnv = process.env,
+): Promise<ProctoringAdapter | null> {
+  const provider = configuredProvider(env);
+  if (provider?.id === 'livekit') {
+    const { liveKitAdapter } = await import('@/lib/proctoringLiveKit');
+    return liveKitAdapter(env);
+  }
+  return null;
+}
+
 export function proctoringStatus(env: NodeJS.ProcessEnv = process.env): ProctoringStatus {
   const provider = configuredProvider(env);
   if (provider) {
+    // ONLY LIVEKIT HAS AN ADAPTER. A deployment configured for Daily would
+    // otherwise report itself live and then fail to produce a join token — the
+    // camera panels would say "Connecting…" for ever.
+    const implemented = provider.id === 'livekit';
     return {
-      live: true,
+      live: implemented,
       provider: provider.name,
-      detail: `Live supervision runs on ${provider.name}.`,
+      detail: implemented
+        ? `Live supervision runs on ${provider.name}.`
+        : `${provider.name} is configured, but only LiveKit has an adapter in this system. `
+          + 'Either set LiveKit\'s variables instead, or add an adapter for '
+          + `${provider.name} against the ProctoringAdapter interface below.`,
       requirements: PROVIDERS,
     };
   }

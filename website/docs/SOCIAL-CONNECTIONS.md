@@ -116,11 +116,42 @@ by hand.
 
 ---
 
+## One more variable, and it is not optional
+
+```
+SECRET_STORE_KEY      openssl rand -base64 48
+SOCIAL_REDIRECT_URI   https://<your-domain>/api/social/oauth/callback
+```
+
+`SECRET_STORE_KEY` seals every stored token. Without it **no account can be
+connected at all** — the flow refuses before sending anybody to a consent
+screen, rather than obtaining a permission it cannot store.
+
+Register `SOCIAL_REDIRECT_URI` with each provider as the app's redirect address.
+A mismatch here is the single commonest cause of a failed connection, and the
+provider's own words are carried back to the screen so you can see it.
+
+It is deliberately **not** `CREDENTIAL_SECRET`. That key seals certificates and
+must never be rotated casually — rotating it would invalidate every credential's
+verification. This one can be rotated whenever you like, at the cost of
+re-authorising the social connections: an afternoon, not a catastrophe.
+
 ## Where the tokens go
 
-**Not in the database.** `social_accounts.token_ref` is a pointer into a secret
-store; the column that holds it is named `token_ref` rather than `token` so that
-nobody adds one by mistake.
+**Not in the database.** `social_accounts.token_ref` points into `secret_store`,
+whose rows hold AES-256-GCM ciphertext and nothing else. The key lives in the
+environment, so a database dump is ciphertext and a leaked dump is not a leaked
+token.
+
+That table has row-level security enabled and **no policy at all** — it is
+unreadable through the publishable key by construction rather than by a rule
+somebody could widen. Migration 017 asserts that no policy exists, so adding one
+breaks the check on purpose.
+
+What this does **not** defend against: an attacker who obtains both the database
+and the deployment's environment has the tokens. It defends against the failure
+that actually happens — an export, a backup on a laptop, an over-broad policy, a
+SELECT in a debug endpoint.
 
 An OAuth refresh token is a standing permission to speak as the University. In
 an application table, it is exposed by every future `SELECT` bug, every
