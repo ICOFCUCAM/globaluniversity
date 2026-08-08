@@ -150,6 +150,20 @@ export default function GlobalPresence() {
     >
       {/* ---- LAYER 1 + 2: THE PINNED CANVAS ---------------------------- */}
       <div aria-hidden="true" data-pinned-ground className="fixed inset-0 -z-20">
+        {/* ---- THE HEADS WERE ALMOST CUT, AND THE CROP COULD NOT FIX IT ----
+            The photograph filled the viewport, so its top 7.5rem ran underneath
+            the fixed header and the top row of academic caps met the purple
+            band. Shifting object-position could not rescue it: the source is 3:2
+            against a wider viewport, so cover crops only about 60px of height in
+            total and there is not 120px of slack to give.
+
+            So the picture starts BELOW the header instead. The outer layer still
+            says `fixed inset-0` — that is the pinned mechanism and the canary
+            checks for it — and the photograph sits in a box inset from the top
+            by the header's own height. The strip behind the header is the
+            section's purple, which is what the header is, so there is no seam.
+            Every cap now has air above it. */}
+        <div className="absolute inset-x-0 bottom-0 top-[5.25rem] sm:top-[7.5rem]">
         <Image
           src={PHOTO}
           alt=""
@@ -162,13 +176,18 @@ export default function GlobalPresence() {
           quality={90}
           loading="lazy"
           className="object-cover"
-          // 50% 30%. The source is 3:2 and the viewport is wider, so cover
-          // trims about 45px of height in total and almost the whole frame
-          // survives on a desktop. The 30% pulls the faces up out of the middle
-          // so the paving falls where the type goes. On a phone the crop is
-          // horizontal instead and 50% keeps the centre of the group.
-          style={{ objectPosition: '50% 30%' }}
+          // 50% 18%, biased to the TOP of the source, so what little height
+          // cover trims comes off the paving at the foot and never off the caps.
+          // On a phone the crop is horizontal instead and 50% holds the centre.
+          //
+          // AND A LITTLE PUNCH BACK. saturate and contrast on the IMAGE, which
+          // is a descendant of the fixed layer and so cannot re-anchor it — the
+          // same filter on an ANCESTOR would silently unpin the whole thing.
+          // Doctoral regalia is the most colourful thing this university owns
+          // and the treatment below had been muting it.
+          style={{ objectPosition: '50% 18%', filter: 'saturate(1.12) contrast(1.05)' }}
         />
+        </div>
 
         {/* ---- THE TREATMENT, AND WHY IT IS ART DIRECTION AND NOT A COVER-UP
             The source is 1080x720 and the university does not hold the
@@ -196,10 +215,22 @@ export default function GlobalPresence() {
             A VIGNETTE. The corners are where interpolation is least forgiving
             and where nothing is happening; darkening them puts the remaining
             sharpness where the faces are. */}
-        <div className="absolute inset-0 bg-brand-purple/20 mix-blend-multiply" />
-        <div className="absolute inset-0 bg-brand-gold/[0.07] mix-blend-screen" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_74%_74%_at_58%_44%,transparent_0%,transparent_52%,rgba(16,9,26,0.45)_100%)]" />
-        <Grain opacity={0.13} />
+        {/* ---- AND IT HAD GONE WAXY, WHICH IS THE OPPOSITE OF THE POINT ----
+            The treatment was tuned for the previous photograph, where the
+            subject was one figure against a wall. Carried onto eighteen people
+            in crimson, cobalt and yellow it did real damage: a 20% purple
+            multiply mutes every one of those colours, a gold screen over it
+            lifts the blacks and flattens the frame, and grain at 0.13 in overlay
+            puts a plastic sheen on skin. Together they made a photograph of real
+            people look like a rendering of them.
+
+            So the multiply drops to 8% — enough to bind the frame to the
+            institution's colour and no more — the gold screen is gone, the grain
+            is halved, and the vignette is pulled back. The regalia is allowed to
+            be as loud as it actually is. */}
+        <div className="absolute inset-0 bg-brand-purple/[0.08] mix-blend-multiply" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_84%_84%_at_56%_42%,transparent_0%,transparent_62%,rgba(16,9,26,0.28)_100%)]" />
+        <Grain opacity={0.06} />
 
         {/* NOT A FULL-FRAME SCRIM — a SHAPED one.
             The brief is explicit that the photograph must stay luminous rather
