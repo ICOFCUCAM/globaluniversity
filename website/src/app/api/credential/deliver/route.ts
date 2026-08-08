@@ -317,6 +317,16 @@ async function renderCredential(c: Record<string, any>): Promise<string> {
   const e = (s: unknown) => String(s ?? '')
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
+  // A TRANSCRIPT IS NOT A CERTIFICATE AND MUST NOT BE PRINTED AS ONE.
+  //
+  // This function rendered a landscape certificate for every `kind` on the
+  // register. Once transcripts could be issued, that meant the University
+  // would email a transcript that said "has been admitted to the degree of"
+  // over a document with no marks on it — a sealed, verifiable statement of
+  // something the record does not say. Portrait, tabular, and it lists the
+  // courses.
+  if (c.kind === 'transcript') return renderTranscript(c, qr, issued, e);
+
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <title>${e(c.credential_id)} — ${e(UNIVERSITY.name)}</title>
@@ -382,6 +392,116 @@ async function renderCredential(c: Record<string, any>): Promise<string> {
       </div>
       <div class="sig">Registrar</div>
     </div>
+  </div>
+</div></body></html>`;
+}
+
+
+/**
+ * The transcript, as it is emailed and printed.
+ *
+ * BUILT FROM THE SNAPSHOT SEALED AT ISSUE — `facts.years` — and never from the
+ * live marks. That is the point of sealing it: a transcript reissued in 2031
+ * must show what the University said in 2026, not what the database says now.
+ * Reading the current results here would make every archived transcript change
+ * silently whenever a mark was corrected.
+ */
+function renderTranscript(
+  c: Record<string, any>,
+  qr: string,
+  issued: string,
+  e: (s: unknown) => string,
+): string {
+  const facts = (c.facts ?? {}) as Record<string, any>;
+  const years = Array.isArray(facts.years) ? facts.years : [];
+
+  const rows = years.map((y: any) => (y.semesters ?? []).map((s: any) => `
+    <tr class="sem"><td colspan="5">Year ${e(y.year || '—')} · Semester ${e(s.semester || '—')}</td></tr>
+    ${(s.courses ?? []).map((k: any) => `
+      <tr>
+        <td><code>${e(k.code)}</code></td>
+        <td>${e(k.title)}</td>
+        <td class="n">${e(k.creditUnit)}</td>
+        <td class="n">${e(k.grade)}</td>
+        <td class="n">${e(Number(k.qualityPoint ?? 0).toFixed(2))}</td>
+      </tr>`).join('')}
+    <tr class="sub"><td colspan="2">Semester total</td>
+      <td class="n">${e(s.totalCredits)}</td><td></td>
+      <td class="n">GPA ${e(Number(s.gpa ?? 0).toFixed(2))}</td></tr>
+  `).join('')).join('');
+
+  return `<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>${e(c.credential_id)} — Academic Transcript</title>
+<style>
+  @page { size: A4 portrait; margin: 14mm; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: Georgia, 'Times New Roman', serif; color: #241a30;
+         background: #efece4; display: flex; justify-content: center; padding: 20px; }
+  .sheet { width: 210mm; min-height: 297mm; background: #fdfcf8; padding: 16mm;
+           position: relative; box-shadow: 0 2px 24px rgba(0,0,0,.14); }
+  @media print { body { background: #fff; padding: 0; } .sheet { box-shadow: none; } }
+  h1 { font-size: 17pt; text-align: center; margin: 0 0 1mm; letter-spacing: .06em;
+       text-transform: uppercase; }
+  .crest { text-align: center; letter-spacing: .2em; text-transform: uppercase;
+           font-size: 9pt; color: #6b6076; }
+  .who { margin: 6mm 0; font-size: 10pt; display: grid; grid-template-columns: 1fr 1fr; gap: 2mm 6mm; }
+  table { width: 100%; border-collapse: collapse; font-size: 9pt; }
+  th, td { padding: 1.6mm 2mm; border-bottom: .4pt solid #ddd6c6; text-align: left; }
+  th { font-size: 8pt; text-transform: uppercase; letter-spacing: .08em; color: #6b6076; }
+  td.n, th.n { text-align: right; }
+  tr.sem td { background: #f2eee6; font-weight: bold; font-size: 8.5pt;
+              text-transform: uppercase; letter-spacing: .06em; }
+  tr.sub td { font-style: italic; color: #4a4256; }
+  .totals { margin-top: 6mm; display: flex; justify-content: space-between;
+            border-top: 1.2pt solid #b99a3e; padding-top: 3mm; font-size: 10pt; }
+  .foot { margin-top: 8mm; display: flex; justify-content: space-between;
+          align-items: flex-end; gap: 8mm; font-size: 8.5pt; color: #6b6076; }
+  .sig { border-top: .8pt solid #241a30; padding-top: 2mm; min-width: 50mm; text-align: center; }
+  code { font-family: ui-monospace, Menlo, monospace; }
+  .superseded { position: absolute; inset: 0; display: flex; align-items: center;
+                justify-content: center; pointer-events: none; }
+  .superseded span { font-size: 44pt; color: rgba(160,40,40,.16); font-weight: bold;
+                     transform: rotate(-24deg); letter-spacing: .12em; }
+  .none { text-align: center; font-style: italic; color: #6b6076; padding: 10mm 0; }
+</style></head>
+<body><div class="sheet">
+  ${c.status === 'replaced' ? '<div class="superseded"><span>SUPERSEDED</span></div>' : ''}
+  <div class="crest">${e(UNIVERSITY.name)}</div>
+  <h1>Academic Transcript of Records</h1>
+
+  <div class="who">
+    <div><strong>${e(c.holder_name)}</strong></div>
+    <div>Student number: <code>${e(c.student_number ?? '—')}</code></div>
+    <div>Programme: ${e(c.programme ?? '—')}</div>
+    <div>Issued: ${e(issued)}</div>
+  </div>
+
+  <table>
+    <thead><tr>
+      <th>Code</th><th>Course</th><th class="n">Credits</th>
+      <th class="n">Grade</th><th class="n">Quality pts</th>
+    </tr></thead>
+    <tbody>
+      ${rows || '<tr><td colspan="5" class="none">No courses were recorded on this transcript.</td></tr>'}
+    </tbody>
+  </table>
+
+  <div class="totals">
+    <div>Credits attempted: <strong>${e(facts.credits_attempted ?? '—')}</strong></div>
+    <div>Credits earned: <strong>${e(facts.credits_earned ?? '—')}</strong></div>
+    <div>CGPA: <strong>${e(Number(facts.cgpa ?? 0).toFixed(2))}</strong></div>
+    <div>${e(c.classification ?? '')}</div>
+  </div>
+
+  <div class="foot">
+    <div class="sig">Registrar</div>
+    <div style="text-align:center">
+      ${qr}
+      <div><code>${e(c.credential_id)}</code></div>
+      <div>Version ${e(c.version ?? 1)} · verify at ${e(SITE.replace(/^https?:\/\//, ''))}/verify</div>
+    </div>
+    <div class="sig">Vice-Chancellor</div>
   </div>
 </div></body></html>`;
 }

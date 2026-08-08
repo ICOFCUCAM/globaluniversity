@@ -1,17 +1,124 @@
 import { SampleDataNotice } from '@/components/ui/portal';
+import { supabase } from '@/lib/supabase';
+import { buildTranscript, canIssueTranscript } from '@/lib/transcript';
+import ProduceCredential from '@/components/credentials/ProduceCredential';
+import { INPUT, LABEL, FOCUS, BTN_SECONDARY } from '@/lib/portalTheme';
 import { useCredentialTemplate } from '@/lib/useCredentialTemplate';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import TranscriptQR from './TranscriptQR';
 import { sampleTranscriptData } from '@/lib/sampleData';
 import { UNIVERSITY, IMAGES } from '@/lib/constants';
 import { getClassification, MAX_GRADE_POINT } from '@/lib/grading';
 import type { TranscriptData } from '@/lib/types';
-import { Download, Printer, Eye, FileText, QrCode } from 'lucide-react';
+import { Download, Printer, Eye, FileText, QrCode, Stamp, Loader2, AlertTriangle, Check } from 'lucide-react';
 
-export default function TranscriptGenerator() {
+interface Enrolled {
+  id: string; matric_no: string; student_number: string | null;
+  first_name: string; middle_name: string | null; last_name: string;
+  program: string | null; degree_type: string | null; status: string;
+}
+
+export default function TranscriptGenerator({ embedded }: { embedded?: boolean } = {}) {
   const transcriptRef = useRef<HTMLDivElement>(null);
-  const [data] = useState<TranscriptData>(sampleTranscriptData);
+  // THE SAMPLE IS THE FALLBACK, NOT THE PRODUCT. This screen used to hold only
+  // `sampleTranscriptData` and had no way to choose a student, so it could
+  // print a handsome document for a person who does not exist and nothing else.
+  const [data, setData] = useState<TranscriptData>(sampleTranscriptData);
+  const [students, setStudents] = useState<Enrolled[] | null>(null);
+  const [chosen, setChosen] = useState<string>('');
+  const [loadingOne, setLoadingOne] = useState(false);
+  const [omitted, setOmitted] = useState<{ reason: string; count: number }[]>([]);
+  const [issuing, setIssuing] = useState(false);
+  const [issued, setIssued] = useState<{ id: string | null; credentialId: string; sealCode: string } | null>(null);
+  const [producing, setProducing] = useState(false);
+  const [note, setNote] = useState<{ tone: 'ok' | 'bad'; text: string } | null>(null);
   const [showPreview, setShowPreview] = useState(true);
+
+  const isReal = chosen !== '';
+  const refusal = isReal ? canIssueTranscript(data) : null;
+
+  useEffect(() => {
+    void (async () => {
+      const { data: rows, error } = await supabase
+        .from('students')
+        .select('id, matric_no, student_number, first_name, middle_name, last_name, program, degree_type, status')
+        .order('last_name');
+      if (error) { setStudents([]); setNote({ tone: 'bad', text: `The register could not be read: ${error.message}` }); return; }
+      setStudents((rows ?? []) as Enrolled[]);
+    })();
+  }, []);
+
+  /** Assemble this student's transcript from their approved marks. */
+  async function choose(id: string) {
+    setChosen(id);
+    setIssued(null);
+    setNote(null);
+    if (!id) { setData(sampleTranscriptData); setOmitted([]); return; }
+
+    const s = students?.find((x) => x.id === id);
+    if (!s) return;
+    setLoadingOne(true);
+    try {
+      const { data: rows, error } = await supabase
+        .from('results')
+        .select('total_score, grade, grade_point, status, courses(code, title, credit_unit, year, semester)')
+        .eq('student_id', id);
+      if (error) {
+        setNote({ tone: 'bad', text: `The marks could not be read: ${error.message}. Nothing is shown below rather than a partial record.` });
+        setData(sampleTranscriptData);
+        return;
+      }
+      const built = buildTranscript({
+        student: { ...s, photo_url: null } as never,
+        department: { name: s.program ?? '', faculty: s.program ?? '' } as never,
+        results: (rows ?? []) as never,
+      });
+      setData(built.data);
+      setOmitted(built.omitted);
+    } finally {
+      setLoadingOne(false);
+    }
+  }
+
+  async function issue() {
+    if (!chosen) return;
+    setIssuing(true);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const res = await fetch('/api/credential/transcript', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: `Bearer ${session.session?.access_token ?? ''}` },
+        body: JSON.stringify({ studentId: chosen, templateVersion: template.version ?? undefined }),
+      }).then((r) => r.json()).catch(() => null);
+
+      if (!res?.ok) { setNote({ tone: 'bad', text: res?.detail ?? res?.error ?? 'It could not be issued.' }); return; }
+      setIssued({ id: res.credential.id, credentialId: res.credential.credentialId, sealCode: res.credential.sealCode });
+      setNote({
+        tone: 'ok',
+        text: `Issued as ${res.credential.credentialId} and entered on the register.`
+          + (res.credential.auditWarning ? ` ${res.credential.auditWarning}` : ''),
+      });
+    } finally {
+      setIssuing(false);
+    }
+  }
+
+  async function produce(action: 'print' | 'email') {
+    if (!issued?.id) return;
+    setProducing(true);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const res = await fetch('/api/credential/deliver', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: `Bearer ${session.session?.access_token ?? ''}` },
+        body: JSON.stringify({ credentialId: issued.id, action }),
+      }).then((r) => r.json()).catch(() => null);
+      if (!res?.ok) { setNote({ tone: 'bad', text: res?.detail ?? res?.error ?? 'It could not be sent.' }); return; }
+      setNote({ tone: 'ok', text: res.message ?? 'Sent, and recorded on the audit trail.' });
+    } finally {
+      setProducing(false);
+    }
+  }
   // The page setup and typeface come from the published transcript design, the
   // same record the certificate reads. Two official documents of one university
   // set in two different faces, because two components each hardcoded their
@@ -51,12 +158,117 @@ export default function TranscriptGenerator() {
 
   return (
     <div className="space-y-6">
-      <SampleDataNotice what="a specimen transcript" />
+      {/* ONLY WHEN IT IS A SPECIMEN. The notice used to be unconditional,
+          which meant it would have gone on saying "specimen" over a real
+          graduate's record. */}
+      {!isReal && <SampleDataNotice what="a specimen transcript" />}
+
+      {!embedded && (
       <div className="flex items-center justify-between">
         <div>
           <h2 className="font-heading text-xl font-bold text-[#422e59] dark:text-[#e4dcf0]">Transcript Generator</h2>
           <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">Generate official academic transcripts</p>
         </div>
+      </div>
+      )}
+
+      {/* --- Choose the student ------------------------------------------ */}
+      <div className="rounded-xl border border-[#ece7de] bg-white p-5 dark:border-[#2e2637] dark:bg-[#1f1a27]">
+        <label className={LABEL} htmlFor="transcript-student">Student</label>
+        <select
+          id="transcript-student"
+          value={chosen}
+          onChange={(e) => void choose(e.target.value)}
+          className={`${INPUT} mt-1 max-w-xl`}
+        >
+          <option value="">— a specimen, for checking the layout —</option>
+          {(students ?? []).map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.last_name} {s.first_name} · {s.student_number ?? s.matric_no} · {s.program ?? 'no programme recorded'}
+            </option>
+          ))}
+        </select>
+        <p className="mt-1.5 text-[11px] leading-relaxed text-[#8a8194]">
+          {students === null
+            ? 'Reading the register…'
+            : students.length === 0
+              ? 'No students are on the register yet, so only the specimen can be shown.'
+              : 'Built from the marks that have cleared the approval chain. Drafts are never printed.'}
+        </p>
+
+        {loadingOne && (
+          <p className="mt-3 flex items-center gap-2 text-sm text-[#6b6076] dark:text-[#9c93ad]">
+            <Loader2 size={14} className="animate-spin" /> Assembling the record…
+          </p>
+        )}
+
+        {/* WHAT IS NOT ON THIS DOCUMENT. A transcript that silently omits half
+            a student's record is the failure this exists to prevent. */}
+        {isReal && omitted.length > 0 && (
+          <div className="mt-3 flex items-start gap-2 rounded-lg border border-[#e9c14a]/40 bg-[#e9c14a]/10 p-3 text-xs text-[#6b6076] dark:text-[#9c93ad]">
+            <AlertTriangle size={14} className="mt-0.5 shrink-0 text-[#a07c12]" />
+            <div>
+              <strong>Not every result is on this transcript.</strong>
+              <ul className="mt-1 list-disc pl-4">
+                {omitted.map((o) => <li key={o.reason}>{o.count} {o.reason}</li>)}
+              </ul>
+            </div>
+          </div>
+        )}
+
+        {refusal && (
+          <p className="mt-3 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-800 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200">
+            <AlertTriangle size={14} className="mt-0.5 shrink-0" /> {refusal}
+          </p>
+        )}
+
+        {note && (
+          <p role="status" className={`mt-3 flex items-start gap-2 rounded-lg p-3 text-xs ${
+            note.tone === 'ok'
+              ? 'border border-emerald-600/30 bg-emerald-600/10 text-emerald-900 dark:text-emerald-200'
+              : 'border border-red-200 bg-red-50 text-red-800 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200'
+          }`}>
+            {note.tone === 'ok' ? <Check size={14} className="mt-0.5 shrink-0" /> : <AlertTriangle size={14} className="mt-0.5 shrink-0" />}
+            {note.text}
+          </p>
+        )}
+
+        {isReal && !refusal && (
+          <div className="mt-4">
+            {issued ? (
+              <p className="font-mono text-xs text-[#6b6076] dark:text-[#9c93ad]">
+                {issued.credentialId} · seal {issued.sealCode}
+              </p>
+            ) : (
+              <button
+                onClick={() => void issue()}
+                disabled={issuing}
+                className={`inline-flex items-center gap-2 rounded-xl bg-[#422e59] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#322244] disabled:opacity-40 ${FOCUS}`}
+              >
+                {issuing ? <><Loader2 size={15} className="animate-spin" /> Issuing…</> : <><Stamp size={15} /> Issue this transcript</>}
+              </button>
+            )}
+            <p className="mt-1.5 max-w-2xl text-[11px] leading-relaxed text-[#8a8194]">
+              Issuing seals this record as it stands and writes it to the register, so it can be
+              verified by a stranger. If the marks are corrected later, the transcript is reissued
+              as a new version — the original is never overwritten.
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* --- Produce it -------------------------------------------------- */}
+      {issued && (
+        <ProduceCredential
+          allowed
+          mayEmail={Boolean(issued.id)}
+          busy={producing}
+          onProduce={handlePrint}
+          onEmail={() => void produce('email')}
+        />
+      )}
+
+      <div className="flex items-center justify-end">
         <div className="flex gap-2">
           <button onClick={() => setShowPreview(!showPreview)}
             className="flex items-center gap-2 px-4 py-2.5 bg-[#f2eee6] text-[#33234a] dark:bg-[#2a2333] dark:text-[#d8d2e2] rounded-xl text-sm font-medium hover:bg-[#e9e3d7] dark:hover:bg-[#332b3d] transition-colors">

@@ -64,6 +64,7 @@ import CredentialAuthority from '@/components/credentials/CredentialAuthority';
 import CredentialStudio from '@/components/studio/CredentialStudio';
 import SpecimenGallery from '@/components/studio/SpecimenGallery';
 import CertificateGenerator from '@/components/certificate/CertificateGenerator';
+import TranscriptGenerator from '@/components/transcript/TranscriptGenerator';
 import { PageHeader } from '@/components/ui/portal';
 import { FOCUS } from '@/lib/portalTheme';
 
@@ -185,7 +186,26 @@ export default function CredentialsWorkspace({ role }: { role?: UserRole }) {
         <p className="max-w-3xl text-sm text-[#6b6076] dark:text-[#9c93ad]">{current.blurb}</p>
       )}
 
-      {area === 'issue' && <CertificateGenerator embedded />}
+      {area === 'issue' && (
+        <div className="space-y-8">
+          <CertificateGenerator embedded />
+          {/* THE TRANSCRIPT IS THE OTHER HALF OF ISSUING, and it was nowhere
+              near this screen. It is the document employers and other
+              universities ask for most often, and until now the University had
+              no record that one had ever been issued. */}
+          <div className="border-t border-[#ded6c8] pt-8 dark:border-[#3d3349]">
+            <h3 className="font-heading text-base font-bold text-[#422e59] dark:text-[#e4dcf0]">
+              Transcript
+            </h3>
+            <p className="mb-4 mt-1 max-w-3xl text-sm text-[#6b6076] dark:text-[#9c93ad]">
+              A transcript is issued to a student who has <em>not</em> finished as well as to a
+              graduate — for a visa, a transfer, an employer. It carries the marks that have
+              cleared the approval chain, and nothing still under deliberation.
+            </p>
+            <TranscriptGenerator embedded />
+          </div>
+        </div>
+      )}
       {area === 'register' && <CredentialAuthority role={actualRole} embedded />}
       {area === 'design' && <CredentialStudio embedded />}
       {area === 'specimens' && <SpecimenGallery />}
