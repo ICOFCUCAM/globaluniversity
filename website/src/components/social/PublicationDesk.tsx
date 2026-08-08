@@ -39,6 +39,7 @@ import {
 import {
   Loader2, RotateCw, CheckCircle2, XCircle, Send, AlertTriangle, Inbox, Sparkles,
 } from 'lucide-react';
+import PublishingAnalytics from './PublishingAnalytics';
 
 interface TargetRow {
   id: string;
@@ -198,6 +199,13 @@ export default function PublicationDesk({
       )}
 
       {/* ------------------------------------------------------------------ */}
+      {/* WHAT THE UNIVERSITY HAS SAID. At the top of the desk rather than on a
+          tab of its own, because a separate analytics screen is visited on the
+          day it is built and never again. */}
+      <section className="rounded-2xl border border-[#ece7de] bg-white p-5 dark:border-[#2e2637] dark:bg-[#1b1723]">
+        <PublishingAnalytics />
+      </section>
+
       <section>
         <h2 className="flex items-center gap-2 font-serif text-lg text-[#241a30] dark:text-[#f3efe7]">
           <Inbox size={17} /> Waiting to be read
