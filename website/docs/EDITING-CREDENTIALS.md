@@ -168,6 +168,24 @@ so neither reads as the complete record.
 
 ---
 
+## A note on deleting, which is not editing
+
+Nothing in this document destroys a record. If you are looking for that:
+
+- **An issued credential** cannot be deleted by anyone. Amend it, which
+  supersedes; or revoke it, which is one-way.
+- **An application** can be deleted, by the **Superadministrator alone**, from
+  the Registrar desk. It requires a reason and the applicant's own reference
+  typed to confirm, the audit entry is written *before* the row is destroyed,
+  and an application that has already been admitted is refused outright —
+  withdrawal is a status, not a deletion. Migration 018 holds that line in the
+  database, service-role callers included.
+
+To refuse an applicant, use **Reject**. That is a decision, it is recorded
+against them, and it leaves them a route to reapply.
+
+---
+
 ## What cannot be changed from anywhere
 
 - **A sealed credential's content.** Amend it; the original survives.

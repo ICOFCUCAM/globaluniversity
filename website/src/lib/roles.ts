@@ -298,6 +298,19 @@ export const SYSTEM_CAPABILITIES = [
   // Connecting the INSTITUTION's accounts, so that every administrator can
   // publish through them without ever holding their credentials.
   'connect-university-social',
+  // DESTROYING AN APPLICATION RECORD.
+  //
+  // Systemic rather than operational, and therefore the Superadministrator's
+  // alone, because it is the only act in the admissions pipeline that leaves
+  // nothing behind. Rejecting an application is a decision and is recorded;
+  // deleting one removes the evidence that the person ever applied — including
+  // what Finance saw, what the Registrar verified and why the Admissions
+  // Office decided as it did.
+  //
+  // An Admissions Officer who could do this could erase a candidate they had
+  // mishandled. That is exactly the class of act this hierarchy exists to keep
+  // out of an operational role.
+  'delete-application',
   // Held by the three approving offices, and deliberately NOT by the
   // Superadministrator who designs. An approval you give to your own work is a
   // countersignature, not a control.

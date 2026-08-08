@@ -112,7 +112,7 @@ as published.
 ## 2. Migrations, in order
 
 **On a database that is already live, run one file: `docs/migrations/RUN.sql`.**
-It carries 006 and 010 through 017 in order. Paste the whole file into the
+It carries 006 and 010 through 018 in order. Paste the whole file into the
 Supabase SQL editor and run it once, or
 
 ```
@@ -126,7 +126,7 @@ statement, and wrapping them would mean a failure in the last one silently
 undoing the first.
 
 **On an empty project, run `docs/migrations/RUN-ALL.sql` instead** — 000 through
-017. Read its header first: 000 appoints two administrators and can only appoint
+018. Read its header first: 000 appoints two administrators and can only appoint
 accounts that already exist, so create them in Authentication → Users first.
 
 Afterwards run `docs/migrations/VERIFY.sql`, which makes 25 checks and reports
@@ -158,6 +158,7 @@ The individual files, for reference:
 | 015 | `015_examination_and_proctoring.sql` | **Fourteen tables, split along the line that matters.** Evidence — events, answers, recordings, identity and device checks — is append-only, enforced by triggers, not by convention. Decisions — session determinations, incidents, findings, marks, reports — are made by people and recorded as theirs. Second reader on findings, second marker on marks, reports immutable once signed. |
 | 016 | `016_examination_papers.sql` | The paper each candidate actually saw, set once and never again. Replaces the own-read policy with a view that omits the paper column, because the paper carries the answer key. |
 | 017 | `017_secret_store.sql` | AES-256-GCM sealed tokens. RLS enabled and **no policy at all** — unreadable through the publishable key by construction rather than by a rule somebody could later widen. The migration asserts no policy exists, so adding one fails the check on purpose. |
+| 018 | `018_delete_application.sql` | **Who may delete an application: the Superadministrator alone.** Nobody could before — `students` had no DELETE policy and RLS refuses an operation with no policy — but "refused because nobody wrote the policy" is silently undone by the next person who widens something unrelated. A trigger backs it for service-role callers, and refuses an admitted student's row outright: withdrawal is a status, not a deletion. |
 
 Each file ends with `select` statements that verify what it did, and 013
 onwards *perform* their rules rather than checking a trigger exists — the proof

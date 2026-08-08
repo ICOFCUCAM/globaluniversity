@@ -27,7 +27,8 @@
     "test:paper": "node src/lib/examPaper.test.mjs",
     "test:secrets": "node src/lib/secretStore.test.mjs",
     "test:specimens": "node src/lib/specimens.test.mjs",
-    "test": "npm run test:grading && npm run test:fees && npm run test:seal && npm run test:certificate && npm run test:routes && npm run test:approval && npm run test:policies && npm run test:publicart && npm run test:world && npm run test:fixedwindow && npm run test:faculty && npm run test:bmin && npm run test:prereq && npm run test:credits && npm run test:social && npm run test:authority && npm run test:exams && npm run test:paper && npm run test:secrets && npm run test:specimens && npm run test:schema",
+    "test:deleteapp": "node src/lib/deleteApplication.test.mjs",
+    "test": "npm run test:grading && npm run test:fees && npm run test:seal && npm run test:certificate && npm run test:routes && npm run test:approval && npm run test:policies && npm run test:publicart && npm run test:world && npm run test:fixedwindow && npm run test:faculty && npm run test:bmin && npm run test:prereq && npm run test:credits && npm run test:social && npm run test:authority && npm run test:exams && npm run test:paper && npm run test:secrets && npm run test:specimens && npm run test:deleteapp && npm run test:schema",
     "test:fixedwindow": "node src/components/home/fixedWindow.test.mjs"
   },
   "dependencies": {
