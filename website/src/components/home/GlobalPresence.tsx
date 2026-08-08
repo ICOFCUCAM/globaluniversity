@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { Grain } from '@/components/Atmosphere';
 import { projectFlatWorld } from '@/lib/azimuthal';
 import { NATIONS_FULL } from '@/content/institutionalFacts';
 
@@ -142,7 +143,11 @@ export default function GlobalPresence() {
           alt=""
           fill
           sizes="100vw"
-          quality={82}
+          // 90, not the usual 82. This file is 1080x720 and 77KB — the
+          // compression budget that matters on a 2048px photograph is noise
+          // here, and every artefact JPEG introduces is one more thing the
+          // upscale then magnifies.
+          quality={90}
           loading="lazy"
           className="object-cover"
           // The handshake is left of centre and the standing graduands fill the
@@ -154,6 +159,37 @@ export default function GlobalPresence() {
           // with the bottles.
           style={{ objectPosition: '48% 34%' }}
         />
+
+        {/* ---- THE TREATMENT, AND WHY IT IS ART DIRECTION AND NOT A COVER-UP
+            The source is 1080x720 and the university does not hold the
+            original. Across a full viewport that is a 1.33x upscale at
+            1440 CSS pixels and 2.67x on a retina display, and bicubic
+            interpolation at that ratio produces a particular kind of ugliness:
+            smooth, waxy, plastic. It does not read as "low resolution", it
+            reads as "cheap".
+
+            THREE THINGS FIX IT, none of which invents detail.
+
+            GRAIN. Fine grain replaces the smooth interpolation with texture
+            the eye reads as photographic. This is what film always had and
+            what every upscale lacks, and it is the single most effective thing
+            available. It is also honest: it adds noise, not fictional detail.
+            An AI upscaler would hallucinate features onto the faces of real
+            people at a real ceremony, which is not something this site will do
+            to a documentary photograph.
+
+            A GRADE. The house pair used on the closing section — a purple
+            multiply and a gold screen. Once an image is visibly graded the eye
+            stops auditing it for texture and starts reading it as treated,
+            which is exactly the register a signature section wants anyway.
+
+            A VIGNETTE. The corners are where interpolation is least forgiving
+            and where nothing is happening; darkening them puts the remaining
+            sharpness where the faces are. */}
+        <div className="absolute inset-0 bg-brand-purple/20 mix-blend-multiply" />
+        <div className="absolute inset-0 bg-brand-gold/[0.07] mix-blend-screen" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_74%_74%_at_58%_44%,transparent_0%,transparent_52%,rgba(16,9,26,0.45)_100%)]" />
+        <Grain opacity={0.13} />
 
         {/* NOT A FULL-FRAME SCRIM — a SHAPED one.
             The brief is explicit that the photograph must stay luminous rather
