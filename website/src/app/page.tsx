@@ -205,9 +205,14 @@ export default async function HomePage() {
             name: 'Theology',
             mission: facultyById('theology')!.mission,
             count: programmesByFaculty('theology').length,
-            src: '/images/graduation-2024/grad-academic-body.jpg',
-            alt: 'The academic body of ICOF Global University in doctoral robes at a congregation',
-            focal: '50% 36%',
+            // MOVED. grad-academic-body.jpg is now the pinned canvas of the
+            // locations section, on the university's instruction, and one
+            // photograph cannot be the ground of one homepage section and a
+            // thumbnail in another — that is the no-image-twice rule failing
+            // within a single page rather than across the site.
+            src: '/images/graduation-2024/grad-2024-graduate-congratulated.jpg',
+            alt: 'A graduate of ICOF Global University in academic dress, congratulated after the congregation',
+            focal: '50% 30%',
           },
           {
             // Added with the School of Ministry. Its count comes from the

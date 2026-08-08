@@ -34,9 +34,11 @@ import { NATIONS_FULL } from '@/content/institutionalFacts';
 // THE THREE LAYERS
 // ===========================================================================
 //
-//   1. THE PHOTOGRAPH. A graduand in doctoral regalia being received by the
-//      platform party at the university's own congregation. People, not
-//      architecture; this institution's own afternoon, not a stock library's.
+//   1. THE PHOTOGRAPH. The university's academic body — eighteen members in
+//      full doctoral regalia at its own congregation, every face to camera.
+//      People, not architecture; this institution's own afternoon, not a stock
+//      library's. The university chose it, and asked that the faces be seen,
+//      which is what decided the composition below.
 //      It is PINNED — position: fixed inside a clip-path: inset(0) section —
 //      the same mechanism the university asked to be preserved everywhere, so
 //      the content travels across it while the picture holds still.
@@ -79,7 +81,17 @@ import { NATIONS_FULL } from '@/content/institutionalFacts';
 // section renders in its finished state and nothing animates.
 // ---------------------------------------------------------------------------
 
-const PHOTO = '/images/graduation-2024/grad-2024-congregation-greeting.jpg';
+// THE ACADEMIC BODY, on the university's instruction — and it changes the
+// composition, not just the src. This is a GROUP PORTRAIT: eighteen members of
+// the academic body in full doctoral regalia, faces across the upper band of
+// the frame, with empty paving in the lower third.
+//
+// A left-anchored ellipse of the kind the previous photograph needed would bury
+// a third of those faces, and the instruction was explicit that the faces must
+// be seen. So the type moves DOWN into the paving, which was carrying nothing,
+// and the scrim is weighted to the foot of the frame instead of its left flank.
+// The faces keep the upper band to themselves.
+const PHOTO = '/images/graduation-2024/grad-academic-body.jpg';
 
 // The disc, in the 0–100 space the overlay SVG uses. 47 is 94% of the
 // half-width, which is the inset the generated flat-world.svg draws at — so a
@@ -150,14 +162,12 @@ export default function GlobalPresence() {
           quality={90}
           loading="lazy"
           className="object-cover"
-          // The handshake is left of centre and the standing graduands fill the
-          // right; this keeps both, and keeps the water bottles on the table
-          // out of the bottom of the frame.
-          // Pushed up and slightly right: the handshake and the graduand's face
-          // are the subject, and the table of water bottles is the bottom-left
-          // corner of the source. A frame centred on the file would have led
-          // with the bottles.
-          style={{ objectPosition: '48% 34%' }}
+          // 50% 30%. The source is 3:2 and the viewport is wider, so cover
+          // trims about 45px of height in total and almost the whole frame
+          // survives on a desktop. The 30% pulls the faces up out of the middle
+          // so the paving falls where the type goes. On a phone the crop is
+          // horizontal instead and 50% keeps the centre of the group.
+          style={{ objectPosition: '50% 30%' }}
         />
 
         {/* ---- THE TREATMENT, AND WHY IT IS ART DIRECTION AND NOT A COVER-UP
@@ -205,10 +215,16 @@ export default function GlobalPresence() {
             legible in a screenshot and not on a screen. The ellipse follows the
             TEXT rather than the frame, so the contrast is bought exactly where
             it is spent. */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_78%_88%_at_12%_46%,rgba(20,11,32,0.94)_0%,rgba(20,11,32,0.86)_34%,rgba(20,11,32,0.52)_62%,rgba(20,11,32,0.12)_86%,transparent_100%)]" />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#1b1029]/70 via-transparent to-[#1b1029]/20" />
-        <div className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-[#1b1029]/85 to-transparent" />
-        <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[#1b1029]/70 to-transparent" />
+        {/* WEIGHTED TO THE FOOT, NOT THE FLANK.
+            The previous photograph had one subject left of centre and took a
+            left-anchored ellipse. A group portrait cannot: an ellipse there
+            buries the faces of the people the picture is of. So the contrast is
+            bought where the type actually sits — low, over the paving — plus a
+            thin band at the very top for the header, and the upper middle of the
+            frame, which is entirely faces, is left almost untouched. */}
+        <div className="absolute inset-x-0 bottom-0 h-[62%] bg-gradient-to-t from-[#150c22]/96 via-[#150c22]/78 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#150c22]/45 via-transparent to-[#150c22]/25" />
+        <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-[#150c22]/75 to-transparent" />
 
         {/* ---- THE GEOGRAPHY, bled off the right edge ---- */}
         <div
@@ -282,7 +298,7 @@ export default function GlobalPresence() {
       {/* ---- LAYER 3: THE CONTENT ------------------------------------- */}
 
       {/* BLOCK ONE — the sentence the homepage is here to say. */}
-      <div className="relative flex min-h-[92svh] items-center px-5 py-28 sm:px-8 lg:px-16">
+      <div className="relative flex min-h-[96svh] items-end px-5 pb-16 pt-40 sm:px-8 lg:px-16">
         <div className="max-w-3xl">
           <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.34em] text-brand-gold">
             Global presence
