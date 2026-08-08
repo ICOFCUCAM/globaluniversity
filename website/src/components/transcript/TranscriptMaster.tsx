@@ -131,6 +131,22 @@ const MM = (n: number) => `${n}mm`;
 // block below forces it.
 const RULE = '0.5pt solid #4d4d4d';
 
+// ---------------------------------------------------------------------------
+// THE TWO LINES ARE NOT THE SAME TONE
+// ---------------------------------------------------------------------------
+//
+// At high magnification each doubled rule resolves into a DARKER line and a
+// PALER one, not two identical strokes. That is Word's table rendering with
+// cell spacing: every cell is drawn with a shallow engraved bevel, dark on the
+// leading edge and light on the trailing one.
+//
+// I had drawn both edges in one colour, which is why the grid still read as
+// flat and mechanical next to the original even once the doubling and the
+// typeface were right. Two tones is what gives it the slight relief of a
+// document that came off a Word template rather than out of a stylesheet.
+const RULE_DARK = '#4a4a4a';
+const RULE_LIGHT = '#b4b4b4';
+
 /**
  * The table's typeface.
  *
@@ -630,17 +646,26 @@ function YearTable({
   const th: React.CSSProperties = {
     fontSize: '6.2pt', padding: '0.55mm 1mm', textAlign: 'left',
     color: ink, fontWeight: 400, verticalAlign: 'bottom', lineHeight: 1.15,
-    border: hair, fontFamily: TABLE_FACE,
+    fontFamily: TABLE_FACE,
+    // Dark leading edge, pale trailing edge — the engraved bevel.
+    borderTop: `0.5pt solid ${RULE_DARK}`,
+    borderLeft: `0.5pt solid ${RULE_DARK}`,
+    borderBottom: `0.5pt solid ${RULE_LIGHT}`,
+    borderRight: `0.5pt solid ${RULE_LIGHT}`,
   };
   const td: React.CSSProperties = {
     fontSize: '7.4pt', padding: '0.32mm 1mm', color: ink, fontFamily: TABLE_FACE,
     // Left and right only on the body cells: the courses run as an unbroken
-    // column of figures inside one tall box, as the original sets them.
-    borderLeft: hair, borderRight: hair,
+    // column of figures inside one tall box, as the original sets them — and
+    // the two edges carry the two tones.
+    borderLeft: `0.5pt solid ${RULE_DARK}`,
+    borderRight: `0.5pt solid ${RULE_LIGHT}`,
   };
   const num: React.CSSProperties = { ...td, textAlign: 'right' };
   const foot: React.CSSProperties = {
-    ...td, fontSize: '7pt', padding: '0.7mm 1mm', borderTop: hair,
+    ...td, fontSize: '7pt', padding: '0.7mm 1mm',
+    borderTop: `0.5pt solid ${RULE_DARK}`,
+    borderBottom: `0.5pt solid ${RULE_LIGHT}`,
   };
 
   const pair = [semesters[0], semesters[1]];
