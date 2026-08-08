@@ -405,6 +405,53 @@ function AwardPanel({
   };
   const actions = actionsFor(version, role ?? 'student');
 
+  /**
+   * Print or email, through the server.
+   *
+   * NOT window.print(). Producing a copy of a sealed credential is on the
+   * University's own list of privileges and must be recorded — a browser print
+   * dialogue leaves no trace anywhere. The server writes the audit entry, then
+   * returns the document, and the browser prints what it is given.
+   */
+  async function deliver(action: 'print' | 'email') {
+    setBusy(true);
+    const { data: session } = await supabase.auth.getSession();
+    const res = await fetch('/api/credential/deliver', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${session.session?.access_token ?? ''}`,
+      },
+      body: JSON.stringify({ credentialId: current.id, action }),
+    });
+    const out = await res.json().catch(() => ({ ok: false, error: 'no-reply' }));
+    setBusy(false);
+
+    if (!out.ok) { onError(out.detail ?? out.error ?? 'That did not work.'); return; }
+
+    if (action === 'print' && out.html) {
+      // A NEW WINDOW, NOT AN IFRAME OR A DATA URL. The document sets @page for
+      // A4 landscape, and printing it inside this page would inherit the
+      // portal's own print rules — producing a certificate with the sidebar
+      // down one side of it.
+      const w = window.open('', '_blank');
+      if (!w) {
+        onError('The browser blocked the print window. Allow pop-ups for this site and try again.');
+        return;
+      }
+      w.document.write(out.html);
+      w.document.close();
+      // Wait for the QR and fonts to settle before the dialogue opens; printing
+      // too early produces a certificate with a blank square where the
+      // verification code should be.
+      w.addEventListener('load', () => w.print());
+      onDone(out.message ?? 'Sent to the printer, and recorded.');
+      return;
+    }
+
+    onDone(out.message ?? 'Done.');
+  }
+
   async function submit() {
     setBusy(true);
     const { data: session } = await supabase.auth.getSession();
@@ -477,13 +524,23 @@ function AwardPanel({
           </button>
         )}
         {actions.includes('print') && (
-          <button type="button" className="inline-flex items-center gap-1.5 rounded-lg border border-[#ece7de] px-3 py-1.5 text-xs text-[#6b6076] dark:border-[#2e2637] dark:text-[#9c93ad]">
-            <Printer size={13} /> Print
+          <button
+            type="button"
+            onClick={() => void deliver('print')}
+            disabled={busy}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[#ece7de] px-3 py-1.5 text-xs text-[#6b6076] disabled:opacity-40 dark:border-[#2e2637] dark:text-[#9c93ad]"
+          >
+            {busy ? <Loader2 size={13} className="animate-spin" /> : <Printer size={13} />} Print
           </button>
         )}
         {actions.includes('email') && (
-          <button type="button" className="inline-flex items-center gap-1.5 rounded-lg border border-[#ece7de] px-3 py-1.5 text-xs text-[#6b6076] dark:border-[#2e2637] dark:text-[#9c93ad]">
-            <Mail size={13} /> Email to student
+          <button
+            type="button"
+            onClick={() => void deliver('email')}
+            disabled={busy}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[#ece7de] px-3 py-1.5 text-xs text-[#6b6076] disabled:opacity-40 dark:border-[#2e2637] dark:text-[#9c93ad]"
+          >
+            {busy ? <Loader2 size={13} className="animate-spin" /> : <Mail size={13} />} Email to student
           </button>
         )}
         <a

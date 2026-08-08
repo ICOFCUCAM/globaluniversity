@@ -23,7 +23,7 @@
 // ---------------------------------------------------------------------------
 
 import { NextResponse } from 'next/server';
-import nodemailer from 'nodemailer';
+import { send, mailConfigured } from '@/lib/mailer';
 import { guard, audit, generatePassword } from '@/lib/adminAuth';
 import { roleLabels, canActOn, capabilitiesOf } from '@/lib/roles';
 import type { UserRole } from '@/lib/types';
@@ -245,10 +245,10 @@ export async function POST(request: Request) {
     },
   });
 
-  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SITE_URL, MAIL_FROM } = process.env;
+  const { SITE_URL } = process.env;
   const portalUrl = `${SITE_URL ?? 'https://iguc.net'}/portal`;
 
-  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
+  if (!mailConfigured()) {
     // The account is real; only delivery is unavailable. Return the password so
     // it can be handed over another way, rather than leaving a new member of
     // staff with an account they never hear about.
@@ -273,25 +273,21 @@ export async function POST(request: Request) {
     canDo: describeCapabilities(role),
   });
 
-  try {
-    const transporter = nodemailer.createTransport({
-      host: SMTP_HOST,
-      port: Number(SMTP_PORT ?? 587),
-      secure: Number(SMTP_PORT ?? 587) === 465,
-      auth: { user: SMTP_USER, pass: SMTP_PASS },
-    });
-    await transporter.sendMail({
-      from: `"ICOF Global University" <${MAIL_FROM || SMTP_USER}>`,
-      to: email,
-      subject: `Your ICOF Global University account — ${roleLabels[role]}`,
-      text: mail.text,
-      html: mail.html,
-    });
-  } catch (e) {
+  const delivery = await send({
+    to: email,
+    // No office suffix: a staff invitation comes from the University itself
+    // rather than from any one desk.
+    office: null,
+    subject: `Your ICOF Global University account — ${roleLabels[role]}`,
+    text: mail.text,
+    html: mail.html,
+  });
+
+  if (!delivery.sent) {
     return NextResponse.json({
       ok: true,
       emailSent: false,
-      error: `email-failed: ${(e as Error).message}`,
+      error: `email-failed: ${delivery.detail}`,
       email,
       password,
       staffNumber,

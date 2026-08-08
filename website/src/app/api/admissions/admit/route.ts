@@ -30,7 +30,7 @@
 // ---------------------------------------------------------------------------
 
 import { NextResponse } from 'next/server';
-import nodemailer from 'nodemailer';
+import { send, mailConfigured } from '@/lib/mailer';
 import { guard, audit, generatePassword } from '@/lib/adminAuth';
 import { admissionPackageHtml, admissionCoveringText } from '@/lib/admissionPackage';
 import { UNIVERSITY } from '@/lib/constants';
@@ -174,7 +174,7 @@ export async function POST(request: Request) {
     },
   });
 
-  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SITE_URL, MAIL_FROM } = process.env;
+  const { SITE_URL } = process.env;
   const portalUrl = `${SITE_URL ?? `https://${UNIVERSITY.website.replace(/^www\./, '')}`}/portal`;
 
   // Dates come out of Postgres as ISO. An admission letter is read by people,
@@ -217,7 +217,9 @@ export async function POST(request: Request) {
   const html = await admissionPackageHtml(packageInput);
   const text = admissionCoveringText(packageInput);
 
-  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
+  // Asked before the work is reported, so the office is told the package could
+  // not be delivered rather than discovering it from a silent absence.
+  if (!mailConfigured()) {
     // The admission stands; only delivery is unavailable. Return the package
     // and the password so the office can pass them on another way, rather than
     // leaving an admitted student who never hears anything.
@@ -233,38 +235,35 @@ export async function POST(request: Request) {
     });
   }
 
-  try {
-    const transporter = nodemailer.createTransport({
-      host: SMTP_HOST,
-      port: Number(SMTP_PORT ?? 587),
-      secure: Number(SMTP_PORT ?? 587) === 465,
-      auth: { user: SMTP_USER, pass: SMTP_PASS },
-    });
-    await transporter.sendMail({
-      from: `"${UNIVERSITY.name} — Office of Admissions" <${MAIL_FROM || SMTP_USER}>`,
-      to: student.email,
-      subject: isConditional
-        ? `Conditional offer of admission — ${UNIVERSITY.name} — ${studentNumber}`
-        : `Offer of admission — ${UNIVERSITY.name} — ${studentNumber}`,
-      text,
-      html: `<pre style="font-family:Georgia,serif;font-size:14px;white-space:pre-wrap">${text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')}</pre>`,
-      attachments: [
-        {
-          // A file they can keep, print and hand to an embassy — not a message
-          // body that renders differently in every client.
-          filename: `ICOF-Admission-Package-${studentNumber}.html`,
-          content: html,
-          contentType: 'text/html; charset=utf-8',
-        },
-      ],
-    });
-  } catch (e) {
+  // One transport for the whole University — see src/lib/mailer.ts. This route
+  // used to build its own, as three others did; the copies had drifted on the
+  // port default and on what they did when the send failed.
+  const delivery = await send({
+    to: student.email,
+    office: 'Office of Admissions',
+    subject: isConditional
+      ? `Conditional offer of admission — ${UNIVERSITY.name} — ${studentNumber}`
+      : `Offer of admission — ${UNIVERSITY.name} — ${studentNumber}`,
+    text,
+    attachments: [
+      {
+        // A file they can keep, print and hand to an embassy — not a message
+        // body that renders differently in every client.
+        filename: `ICOF-Admission-Package-${studentNumber}.html`,
+        content: html,
+        contentType: 'text/html; charset=utf-8',
+      },
+    ],
+  });
+
+  if (!delivery.sent) {
+    // The admission STANDS. Only delivery failed, and the package and password
+    // come back so the office can pass them on another way rather than leaving
+    // an admitted student who never hears anything.
     return NextResponse.json({
       ok: true,
       emailSent: false,
-      error: `email-failed: ${(e as Error).message}`,
+      error: `email-failed: ${delivery.detail}`,
       email: student.email,
       password,
       studentNumber,

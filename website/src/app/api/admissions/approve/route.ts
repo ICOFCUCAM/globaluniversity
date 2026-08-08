@@ -22,13 +22,13 @@ import { NextResponse } from 'next/server';
 import { guard } from '@/lib/adminAuth';
 import { createClient } from '@supabase/supabase-js';
 import { randomBytes } from 'crypto';
-import nodemailer from 'nodemailer';
+import { send, mailConfigured } from '@/lib/mailer';
 // Same project as the browser client, read from the same variable so the two
 // can never point at different databases — which would produce an account
 // created in one project and a status updated in another.
 import { supabaseUrl as SUPABASE_URL } from '@/lib/supabase';
 
-// nodemailer and crypto are Node APIs — this route cannot run on the edge.
+// The mailer and crypto are Node APIs — this route cannot run on the edge.
 export const runtime = 'nodejs';
 
 /**
@@ -321,7 +321,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SITE_URL, MAIL_FROM } = process.env;
+  const { SITE_URL } = process.env;
   const portalUrl = `${SITE_URL ?? 'https://iguc.net'}/portal`;
   const mail = welcomeEmail({
     fullName: fullName || 'Student',
@@ -335,7 +335,7 @@ export async function POST(request: Request) {
     conditions: isConditional ? conditions : undefined,
   });
 
-  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
+  if (!mailConfigured()) {
     // The account exists and the status is correct; only delivery failed.
     // Return the password so the Registrar can pass it on by another route,
     // rather than leaving an approved applicant who never hears anything.
@@ -349,36 +349,26 @@ export async function POST(request: Request) {
     });
   }
 
-  try {
-    const transporter = nodemailer.createTransport({
-      host: SMTP_HOST,
-      port: Number(SMTP_PORT ?? 587),
-      secure: Number(SMTP_PORT ?? 587) === 465,
-      auth: { user: SMTP_USER, pass: SMTP_PASS },
-    });
-    await transporter.sendMail({
-      // The mailbox that authenticates and the address students see need not
-      // be the same. MAIL_FROM lets the university send as its own domain even
-      // where the SMTP account sits elsewhere — a student receiving their
-      // password from an unfamiliar personal address has been handed something
-      // that looks exactly like phishing.
-      //
-      // It must still be a domain whose SPF authorises this mail server, or
-      // receiving servers will treat it as forged. Same domain as SMTP_USER is
-      // always safe; a different one needs the DNS to say so.
-      from: `"ICOF Global University — Office of the Registrar" <${MAIL_FROM || SMTP_USER}>`,
-      to: student.email,
-      subject: isConditional
-        ? 'Welcome to ICOF Global University — conditional admission'
-        : 'Congratulations! Welcome to ICOF Global University',
-      text: mail.text,
-      html: mail.html,
-    });
-  } catch (e) {
+  // One transport for the whole University — see src/lib/mailer.ts, which also
+  // carries the note about MAIL_FROM that used to live here: the mailbox that
+  // authenticates and the address students see need not be the same, but the
+  // From domain must be one whose SPF authorises this mail server or receiving
+  // servers treat it as forged.
+  const delivery = await send({
+    to: student.email,
+    office: 'Office of the Registrar',
+    subject: isConditional
+      ? 'Welcome to ICOF Global University — conditional admission'
+      : 'Congratulations! Welcome to ICOF Global University',
+    text: mail.text,
+    html: mail.html,
+  });
+
+  if (!delivery.sent) {
     return NextResponse.json({
       ok: true,
       emailSent: false,
-      error: `email-failed: ${(e as Error).message}`,
+      error: `email-failed: ${delivery.detail}`,
       email: student.email,
       password,
       studentNumber,

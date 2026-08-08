@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import nodemailer from 'nodemailer';
+import { send, mailConfigured } from '@/lib/mailer';
 import { supabase } from '@/lib/supabase';
 
 export const runtime = 'nodejs';
@@ -152,26 +152,22 @@ export async function POST(request: Request) {
 
   // Channel 2 — email to the admissions office (when SMTP is configured).
   let emailed = false;
-  if (SMTP_HOST && SMTP_USER && SMTP_PASS) {
-    const transporter = nodemailer.createTransport({
-      host: SMTP_HOST,
-      port: Number(SMTP_PORT ?? 465),
-      secure: Number(SMTP_PORT ?? 465) === 465,
-      auth: { user: SMTP_USER, pass: SMTP_PASS },
+  if (mailConfigured()) {
+    const delivery = await send({
+      to: APPLY_TO ?? 'admissions@iguc.net',
+      // Not the University's own name: this goes to the admissions inbox, and
+      // the distinct sender is how that inbox filters it. Preserved exactly.
+      fromName: 'IGUC Online Application',
+      // Likewise the port: this route defaulted to 465 where the others
+      // defaulted to 587. Identical wherever SMTP_PORT is set, which is
+      // everywhere real — but changing it unasked is not this commit's job.
+      fallbackPort: 465,
+      replyTo: applicantEmail,
+      subject: `New application ${appNo}: ${surname} ${firstname} — ${String(form.get('level') ?? '')} ${String(form.get('field') ?? '')}`,
+      text: `A new application was submitted on iguc.net.\n\n${lines.join('\n')}\n`,
+      attachments,
     });
-    try {
-      await transporter.sendMail({
-        from: `"IGUC Online Application" <${MAIL_FROM || SMTP_USER}>`,
-        to: APPLY_TO ?? 'admissions@iguc.net',
-        replyTo: applicantEmail,
-        subject: `New application ${appNo}: ${surname} ${firstname} — ${String(form.get('level') ?? '')} ${String(form.get('field') ?? '')}`,
-        text: `A new application was submitted on iguc.net.\n\n${lines.join('\n')}\n`,
-        attachments,
-      });
-      emailed = true;
-    } catch {
-      emailed = false;
-    }
+    emailed = delivery.sent;
   }
 
   // The application succeeds if at least one channel captured it.
