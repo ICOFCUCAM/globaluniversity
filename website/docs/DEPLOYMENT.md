@@ -111,6 +111,30 @@ as published.
 
 ## 2. Migrations, in order
 
+### First: ask the database what it is missing
+
+Do not work from memory, and do not work from this list. **Run
+`docs/migrations/WHAT-IS-OUTSTANDING.sql`** and let the database answer.
+
+It reads only — nothing is created, written or altered — and returns one row
+per migration marked `RUN`, `NOT RUN` or `skip`, followed by a single verdict
+line naming the outstanding files in the order to run them.
+
+It exists because nothing tracks these files. Supabase's own migration table
+records only what its CLI applied, and every one of these was run by hand in
+the SQL editor, so it has no record of them. The alternative — asking somebody
+which files they remember running — is worse than it sounds: a migration
+missed is a policy that was never created, and a policy that does not exist
+refuses exactly like a policy that does. Nothing looks wrong until the day
+somebody needs it to permit something.
+
+Each row probes for an object only that migration creates: a table, a policy, a
+function, a column, or for 011 and 012 the data the file writes. It cannot tell
+you a migration ran *completely* — a file that failed halfway may still have
+created the object it looks for — which is what `VERIFY.sql` is for, below.
+
+### Then: run what it named
+
 **On a database that is already live, run one file: `docs/migrations/RUN.sql`.**
 It carries 006 and 010 through 018 in order. Paste the whole file into the
 Supabase SQL editor and run it once, or
@@ -129,8 +153,12 @@ undoing the first.
 018. Read its header first: 000 appoints two administrators and can only appoint
 accounts that already exist, so create them in Authentication → Users first.
 
-Afterwards run `docs/migrations/VERIFY.sql`, which makes 25 checks and reports
-what actually landed rather than what should have.
+Afterwards run `docs/migrations/VERIFY.sql`, which makes 27 checks and reports
+what actually landed rather than what should have. Where
+`WHAT-IS-OUTSTANDING.sql` asks whether a migration ran, this asks whether its
+guarantees hold — that examination evidence cannot be rewritten, that nobody
+approves their own post, that a candidate cannot read their own answer key,
+that the secret store has no policy at all.
 
 Some of these raise `NOTICE` deliberately — they report on the state they found
 rather than changing it silently. A notice is information. An `ERROR` is a real

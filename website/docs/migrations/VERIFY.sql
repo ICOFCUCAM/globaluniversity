@@ -345,3 +345,55 @@ select 'policy', policyname
   from pg_policies
  where schemaname = 'public' and tablename = 'exam_sessions'
    and policyname = 'exam_sessions_own_read';
+
+-- 26. THE SECRET STORE IS UNREADABLE BY CONSTRUCTION.            (017)
+--
+-- Expect: rls_enabled = true and policies = 0.
+--
+-- THE ZERO IS THE POINT, and it is the only check in this file where finding
+-- something is the failure. Row-level security refuses every operation on a
+-- table that has no policy, so a store with none cannot be read through the
+-- publishable key by anyone, ever — not by a student, not by an administrator,
+-- not by a Superadministrator. That is stronger than a policy saying "only the
+-- Superadministrator", because there is no rule to widen and no role to
+-- impersonate. The tokens are reachable only by the service role, on the
+-- server, where the decryption key lives.
+--
+-- A policy appearing here later is not a feature somebody added. It is the
+-- guarantee being dismantled.
+select c.relname                as table_name,
+       c.relrowsecurity         as rls_enabled,
+       (select count(*) from pg_policies p
+         where p.schemaname = 'public' and p.tablename = 'secret_store') as policies
+  from pg_class c join pg_namespace n on n.oid = c.relnamespace
+ where n.nspname = 'public' and c.relname = 'secret_store';
+
+-- 27. ONLY THE SUPERADMINISTRATOR MAY DELETE AN APPLICATION.     (018)
+--
+-- Expect: superadmin_delete = 1, delete_policies = 1, guard_trigger = 1.
+--
+-- BOTH HALVES MATTER, and they govern different callers.
+--
+-- The POLICY governs the browser: with the publishable key, only a session
+-- whose profile says superadmin may delete a students row. Before 018 there
+-- was no DELETE policy at all, which also refused everyone — but "refused
+-- because nobody wrote the policy" is silently undone the day somebody widens
+-- something unrelated, and nothing in the schema would record that a rule had
+-- been lost, because there was never a rule.
+--
+-- The TRIGGER governs the service role, which bypasses policies entirely. It
+-- is what refuses the deletion of a student who has been admitted: withdrawal
+-- is a status on a record the University keeps, not the removal of the record.
+--
+-- delete_policies = 1 is worth reading beside superadmin_delete = 1. A second
+-- DELETE policy on students would not replace the first — Postgres ORs
+-- permissive policies together — so an extra row here is a second door.
+select (select count(*) from pg_policies
+         where schemaname = 'public' and tablename = 'students'
+           and policyname = 'students_superadmin_delete')          as superadmin_delete,
+       (select count(*) from pg_policies
+         where schemaname = 'public' and tablename = 'students'
+           and cmd = 'DELETE')                                     as delete_policies,
+       (select count(*) from pg_trigger t join pg_class c on c.oid = t.tgrelid
+         where c.relname = 'students' and t.tgname = 'students_guard_delete'
+           and not t.tgisinternal)                                 as guard_trigger;
