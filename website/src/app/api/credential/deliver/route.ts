@@ -47,9 +47,14 @@ import { NextResponse } from 'next/server';
 import { can } from '@/lib/roles';
 import { guard } from '@/lib/adminAuth';
 import { send, mailConfigured } from '@/lib/mailer';
-import { UNIVERSITY } from '@/lib/constants';
+import { UNIVERSITY, IMAGES } from '@/lib/constants';
 import { verificationQrSvg } from '@/lib/documentSecurity';
 import { CATEGORY_PROFILES, type CredentialCategory } from '@/lib/credentialAuthority';
+import { masterFromCredential } from '@/lib/transcriptMaster';
+import { transcriptDocumentHtml } from '@/lib/transcriptDocumentHtml';
+import {
+  defaultDesign, withDefaults, type CredentialDesign, type CredentialKind,
+} from '@/lib/credentialTemplate';
 
 export const runtime = 'nodejs';
 
@@ -103,7 +108,7 @@ export async function POST(request: Request) {
     }, { status: 409 });
   }
 
-  const html = await renderCredential(credential);
+  const html = await renderCredential(credential, admin);
 
   // -------------------------------------------------------------------------
   // PRINT
@@ -341,7 +346,10 @@ function coveringLetter(i: LetterInput): string {
  * opened years later on a machine with no network — and a certificate that
  * needs the internet to look like a certificate is not a document.
  */
-async function renderCredential(c: Record<string, any>): Promise<string> {
+async function renderCredential(
+  c: Record<string, any>,
+  admin: { from: (t: string) => any },
+): Promise<string> {
   const verifyUrl = `${SITE}/verify?id=${encodeURIComponent(c.credential_id)}`;
   const qr = await verificationQrSvg(verifyUrl, 104).catch(() => '');
 
@@ -364,7 +372,26 @@ async function renderCredential(c: Record<string, any>): Promise<string> {
   // over a document with no marks on it — a sealed, verifiable statement of
   // something the record does not say. Portrait, tabular, and it lists the
   // courses.
-  if (c.kind === 'transcript') return renderTranscript(c, qr, issued, e);
+  //
+  // AND IT IS NOW THE SAME TRANSCRIPT THE REGISTRAR SEES. This branch used to
+  // call a hand-written HTML string in this file — portrait, five columns, no
+  // grade system, no crest, no legend. It has been deleted. `TranscriptMaster`
+  // is rendered here, exactly as the Issue screen and the Studio render it, so
+  // there is one document rather than four.
+  if (c.kind === 'transcript') {
+    const design = await activeDesign(admin, 'transcript');
+    return await transcriptDocumentHtml({
+      design,
+      data: masterFromCredential(c, {
+        qrSvg: qr,
+        // ABSOLUTE, so the crest resolves when the file is opened away from the
+        // site. `sealSrc` below does better still when the PNG can be read off
+        // disk, and this is what stands in when it cannot.
+        assetBase: SITE,
+        sealSrc: await inlineSeal(),
+      }),
+    });
+  }
 
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
@@ -437,123 +464,56 @@ async function renderCredential(c: Record<string, any>): Promise<string> {
 
 
 /**
- * The transcript, as it is emailed and printed.
+ * The published design for a kind of credential, read on the server.
  *
- * BUILT FROM THE SNAPSHOT SEALED AT ISSUE — `facts.years` — and never from the
- * live marks. That is the point of sealing it: a transcript reissued in 2031
- * must show what the University said in 2026, not what the database says now.
- * Reading the current results here would make every archived transcript change
- * silently whenever a mark was corrected.
+ * THE SAME ROW THE STUDIO PUBLISHES AND THE SAME FALLBACK THE PORTAL USES —
+ * `useCredentialTemplate` does exactly this in the browser. A delivery route
+ * that rendered under the built-in default while the Studio previewed a
+ * published design would put the University's approved layout on screen and a
+ * different one in the graduate's inbox.
+ *
+ * A read failure falls back rather than refusing: a deployment that has not run
+ * the templates migration must still be able to hand a graduate their document.
  */
-function renderTranscript(
-  c: Record<string, any>,
-  qr: string,
-  issued: string,
-  e: (s: unknown) => string,
-): string {
-  const facts = (c.facts ?? {}) as Record<string, any>;
-  const years = Array.isArray(facts.years) ? facts.years : [];
+async function activeDesign(
+  admin: { from: (t: string) => any },
+  kind: CredentialKind,
+): Promise<CredentialDesign> {
+  try {
+    const { data } = await admin
+      .from('credential_templates')
+      .select('design')
+      .eq('kind', kind)
+      .eq('is_active', true)
+      .maybeSingle();
+    if (!data?.design) return defaultDesign(kind);
+    return withDefaults(kind, data.design as Partial<CredentialDesign>);
+  } catch {
+    return defaultDesign(kind);
+  }
+}
 
-  const rows = years.map((y: any) => (y.semesters ?? []).map((s: any) => `
-    <tr class="sem"><td colspan="5">Year ${e(y.year || '—')} · Semester ${e(s.semester || '—')}</td></tr>
-    ${(s.courses ?? []).map((k: any) => `
-      <tr>
-        <td><code>${e(k.code)}</code></td>
-        <td>${e(k.title)}</td>
-        <td class="n">${e(k.creditUnit)}</td>
-        <td class="n">${e(k.grade)}</td>
-        <td class="n">${e(Number(k.qualityPoint ?? 0).toFixed(2))}</td>
-      </tr>`).join('')}
-    <tr class="sub"><td colspan="2">Semester total</td>
-      <td class="n">${e(s.totalCredits)}</td><td></td>
-      <td class="n">GPA ${e(Number(s.gpa ?? 0).toFixed(2))}</td></tr>
-  `).join('')).join('');
-
-  return `<!doctype html>
-<html lang="en"><head><meta charset="utf-8">
-<title>${e(c.credential_id)} — Academic Transcript</title>
-<style>
-  @page { size: A4 portrait; margin: 14mm; }
-  * { box-sizing: border-box; }
-  body { margin: 0; font-family: Georgia, 'Times New Roman', serif; color: #241a30;
-         background: #efece4; display: flex; justify-content: center; padding: 20px; }
-  .sheet { width: 210mm; min-height: 297mm; background: #fdfcf8; padding: 16mm;
-           position: relative; box-shadow: 0 2px 24px rgba(0,0,0,.14); }
-  @media print { body { background: #fff; padding: 0; } .sheet { box-shadow: none; } }
-  h1 { font-size: 17pt; text-align: center; margin: 0 0 1mm; letter-spacing: .06em;
-       text-transform: uppercase; }
-  .crest { text-align: center; letter-spacing: .2em; text-transform: uppercase;
-           font-size: 9pt; color: #6b6076; }
-  .who { margin: 6mm 0; font-size: 10pt; display: grid; grid-template-columns: 1fr 1fr; gap: 2mm 6mm; }
-  table { width: 100%; border-collapse: collapse; font-size: 9pt; }
-  th, td { padding: 1.6mm 2mm; border-bottom: .4pt solid #ddd6c6; text-align: left; }
-  th { font-size: 8pt; text-transform: uppercase; letter-spacing: .08em; color: #6b6076; }
-  td.n, th.n { text-align: right; }
-  tr.sem td { background: #f2eee6; font-weight: bold; font-size: 8.5pt;
-              text-transform: uppercase; letter-spacing: .06em; }
-  tr.sub td { font-style: italic; color: #4a4256; }
-  .totals { margin-top: 6mm; display: flex; justify-content: space-between;
-            border-top: 1.2pt solid #b99a3e; padding-top: 3mm; font-size: 10pt; }
-  .foot { margin-top: 8mm; display: flex; justify-content: space-between;
-          align-items: flex-end; gap: 8mm; font-size: 8.5pt; color: #6b6076; }
-  .sig { border-top: .8pt solid #241a30; padding-top: 2mm; min-width: 50mm; text-align: center; }
-  code { font-family: ui-monospace, Menlo, monospace; }
-  .superseded { position: absolute; inset: 0; display: flex; align-items: center;
-                justify-content: center; pointer-events: none; }
-  .superseded span { font-size: 44pt; color: rgba(160,40,40,.16); font-weight: bold;
-                     transform: rotate(-24deg); letter-spacing: .12em; }
-  .none { text-align: center; font-style: italic; color: #6b6076; padding: 10mm 0; }
-  /* PRINTED, NOT JUST STORED. A provenance held only in the database is a
-     safeguard nobody reading the document can see. */
-  .transcribed { margin-top: 5mm; border: .8pt solid #b99a3e; background: #fdf7e8;
-                 padding: 3mm 4mm; font-size: 8.5pt; line-height: 1.45; }
-</style></head>
-<body><div class="sheet">
-  ${c.status === 'replaced' ? '<div class="superseded"><span>SUPERSEDED</span></div>' : ''}
-  <div class="crest">${e(UNIVERSITY.name)}</div>
-  <h1>Academic Transcript of Records</h1>
-
-  <div class="who">
-    <div><strong>${e(c.holder_name)}</strong></div>
-    <div>Student number: <code>${e(c.student_number ?? '—')}</code></div>
-    <div>Programme: ${e(c.programme ?? '—')}</div>
-    <div>Issued: ${e(issued)}</div>
-  </div>
-
-  <table>
-    <thead><tr>
-      <th>Code</th><th>Course</th><th class="n">Credits</th>
-      <th class="n">Grade</th><th class="n">Quality pts</th>
-    </tr></thead>
-    <tbody>
-      ${rows || '<tr><td colspan="5" class="none">No courses were recorded on this transcript.</td></tr>'}
-    </tbody>
-  </table>
-
-  ${facts.source === 'transcribed' ? `
-  <div class="transcribed">
-    <strong>Transcribed from an archived record.</strong>
-    The marks below were not recorded in the University's current academic system and did not pass
-    through its approval chain. They were transcribed from: ${e(facts.source_record ?? 'an unstated source')}.
-    This document carries the University's seal and may be verified; what it attests to is a
-    faithful transcription of that record.
-  </div>` : ''}
-
-  <div class="totals">
-    <div>Credits attempted: <strong>${e(facts.credits_attempted ?? '—')}</strong></div>
-    <div>Credits earned: <strong>${e(facts.credits_earned ?? '—')}</strong></div>
-    <div>CGPA: <strong>${e(Number(facts.cgpa ?? 0).toFixed(2))}</strong></div>
-    <div>${e(c.classification ?? '')}</div>
-  </div>
-
-  <div class="foot">
-    <div class="sig">Registrar</div>
-    <div style="text-align:center">
-      ${qr}
-      <div><code>${e(c.credential_id)}</code></div>
-      <div>Version ${e(c.version ?? 1)} · verify at ${e(SITE.replace(/^https?:\/\//, ''))}/verify</div>
-    </div>
-    <div class="sig">Vice-Chancellor</div>
-  </div>
-</div></body></html>`;
+/**
+ * The University's seal as a data: URI, so an emailed transcript keeps its
+ * watermark on a machine with no network.
+ *
+ * BEST EFFORT, AND SAID SO. `public/` is not guaranteed to be readable from a
+ * serverless function on every host, so this returns undefined when it cannot
+ * read the file and the caller falls back to an absolute URL on the site. The
+ * document is never blocked on it — a transcript that refuses to send because
+ * a watermark could not be embedded would be a worse failure than a watermark
+ * that has to be fetched.
+ */
+let sealCache: string | null | undefined;
+async function inlineSeal(): Promise<string | undefined> {
+  if (sealCache !== undefined) return sealCache ?? undefined;
+  try {
+    const { readFile } = await import('node:fs/promises');
+    const { join } = await import('node:path');
+    const bytes = await readFile(join(process.cwd(), 'public', IMAGES.seal.replace(/^\//, '')));
+    sealCache = `data:image/png;base64,${bytes.toString('base64')}`;
+  } catch {
+    sealCache = null;
+  }
+  return sealCache ?? undefined;
 }

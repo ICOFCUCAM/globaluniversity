@@ -1,29 +1,63 @@
-import { SampleDataNotice } from '@/components/ui/portal';
+'use client';
+
+// ---------------------------------------------------------------------------
+// ISSUING A TRANSCRIPT FROM A STUDENT'S OWN RECORD.
+//
+// ---------------------------------------------------------------------------
+// WHAT THIS SCREEN USED TO DRAW, AND WHY IT IS GONE
+// ---------------------------------------------------------------------------
+//
+// Four hundred lines of inline JSX: a portrait sheet with purple table headers,
+// a hand-drawn SVG standing in for a QR code, striped rows, and a summary panel
+// in indigo. It was a fifth transcript design, and it was the one people
+// actually saw — while the sheet the University spent twelve rounds correcting,
+// `TranscriptMaster`, was rendered by nothing at all.
+//
+// The preview below is now that component, and so is the emailed copy, and so
+// is the Studio's design preview. One document.
+//
+// ---------------------------------------------------------------------------
+// THE SINGLE BUTTON AT THE END OF A PROGRAMME
+// ---------------------------------------------------------------------------
+//
+// The University asked for a transcript that is "generated with a single button
+// at the end of a study program where all studies information for that program
+// is completed". The button existed; nothing offered it. A registrar had to
+// know which student had finished and find them in a list of everyone.
+//
+// So the students whose earned credits meet their award's requirement are now
+// gathered at the top of the screen. It is a PROMPT, not a gate — a transcript
+// is routinely issued mid-programme, for a visa or a transfer, and this refuses
+// nobody. See `programmeProgress`.
+// ---------------------------------------------------------------------------
+
 import { supabase } from '@/lib/supabase';
-import { buildTranscript, canIssueTranscript } from '@/lib/transcript';
+import { buildTranscript, canIssueTranscript, creditsEarned as earnedFrom } from '@/lib/transcript';
 import ProduceCredential from '@/components/credentials/ProduceCredential';
-import { INPUT, LABEL, FOCUS, BTN_SECONDARY } from '@/lib/portalTheme';
+import { TranscriptPreview } from '@/components/transcript/TranscriptMaster';
+import { programmeProgress, type Progress, type TranscriptMasterData } from '@/lib/transcriptMaster';
+import { SPECIMEN_TRANSCRIPT } from '@/lib/transcriptSpecimen';
+import { INPUT, LABEL, FOCUS } from '@/lib/portalTheme';
 import { useCredentialTemplate } from '@/lib/useCredentialTemplate';
-import React, { useEffect, useRef, useState } from 'react';
-import TranscriptQR from './TranscriptQR';
-import { sampleTranscriptData } from '@/lib/sampleData';
-import { UNIVERSITY, IMAGES } from '@/lib/constants';
-import { getClassification, MAX_GRADE_POINT } from '@/lib/grading';
-import type { TranscriptData } from '@/lib/types';
-import { Download, Printer, Eye, FileText, QrCode, Stamp, Loader2, AlertTriangle, Check } from 'lucide-react';
+import { PASS_MARK } from '@/lib/grading';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Printer, Eye, Stamp, Loader2, AlertTriangle, Check, GraduationCap } from 'lucide-react';
 
 interface Enrolled {
   id: string; matric_no: string; student_number: string | null;
   first_name: string; middle_name: string | null; last_name: string;
   program: string | null; degree_type: string | null; status: string;
+  award_id: string | null;
 }
 
+/** How many result rows the completion sweep will read before giving up. */
+const SWEEP_CAP = 5000;
+
 export default function TranscriptGenerator({ embedded }: { embedded?: boolean } = {}) {
-  const transcriptRef = useRef<HTMLDivElement>(null);
-  // THE SAMPLE IS THE FALLBACK, NOT THE PRODUCT. This screen used to hold only
-  // `sampleTranscriptData` and had no way to choose a student, so it could
-  // print a handsome document for a person who does not exist and nothing else.
-  const [data, setData] = useState<TranscriptData>(sampleTranscriptData);
+  // THE SPECIMEN IS THE FALLBACK, NOT THE PRODUCT — and it is now built from
+  // the University's own Bachelor of Theology rather than a Computer Science
+  // programme this institution does not teach.
+  const [data, setData] = useState<TranscriptMasterData>(SPECIMEN_TRANSCRIPT);
   const [students, setStudents] = useState<Enrolled[] | null>(null);
   const [chosen, setChosen] = useState<string>('');
   const [loadingOne, setLoadingOne] = useState(false);
@@ -33,27 +67,96 @@ export default function TranscriptGenerator({ embedded }: { embedded?: boolean }
   const [producing, setProducing] = useState(false);
   const [note, setNote] = useState<{ tone: 'ok' | 'bad'; text: string } | null>(null);
   const [showPreview, setShowPreview] = useState(true);
+  /** student id -> how far through the programme they are. */
+  const [progress, setProgress] = useState<Map<string, Progress> | null>(null);
+  const [sweepNote, setSweepNote] = useState<string | null>(null);
 
   const isReal = chosen !== '';
   const refusal = isReal ? canIssueTranscript(data) : null;
+
+  // The page setup and typeface come from the published transcript design, the
+  // same record the certificate reads. Two official documents of one university
+  // set in two different faces, because two components each hardcoded their
+  // own, is the kind of detail a registrar's office is judged on.
+  const template = useCredentialTemplate('transcript');
 
   useEffect(() => {
     void (async () => {
       const { data: rows, error } = await supabase
         .from('students')
-        .select('id, matric_no, student_number, first_name, middle_name, last_name, program, degree_type, status')
+        .select('id, matric_no, student_number, first_name, middle_name, last_name, program, degree_type, status, award_id')
         .order('last_name');
       if (error) { setStudents([]); setNote({ tone: 'bad', text: `The register could not be read: ${error.message}` }); return; }
       setStudents((rows ?? []) as Enrolled[]);
     })();
   }, []);
 
+  // --- Who has finished ----------------------------------------------------
+  //
+  // ONE SWEEP, NOT ONE QUERY PER STUDENT. And it reports its own limits: if
+  // there are more result rows than the sweep read, the queue is suppressed
+  // rather than shown incomplete, because a queue that quietly omits the
+  // students who have finished is worse than no queue.
+  useEffect(() => {
+    if (!students || students.length === 0) return;
+    void (async () => {
+      const [{ data: rows, error, count }, { data: awards }] = await Promise.all([
+        supabase
+          .from('results')
+          .select('student_id, total_score, courses(credit_unit)', { count: 'exact' })
+          .in('status', ['approved', 'published'])
+          .limit(SWEEP_CAP),
+        supabase.from('awards').select('id, credits_required'),
+      ]);
+
+      if (error) { setSweepNote(`Completion could not be established: ${error.message}`); return; }
+      if ((count ?? 0) > (rows?.length ?? 0)) {
+        setSweepNote(
+          `There are ${count} approved results and this screen reads ${SWEEP_CAP}, so who has `
+          + 'finished cannot be established from one sweep. Choose the student below; issuing is '
+          + 'unaffected.',
+        );
+        return;
+      }
+
+      const required = new Map<string, number>();
+      for (const a of (awards ?? []) as { id: string; credits_required: number }[]) {
+        required.set(a.id, Number(a.credits_required));
+      }
+
+      const earned = new Map<string, number>();
+      for (const r of (rows ?? []) as unknown as {
+        student_id: string; total_score: number | null; courses: { credit_unit: number | null } | null;
+      }[]) {
+        // PASSED COURSES ONLY. A failed course is attempted and not earned, and
+        // counting it would put students in the finished queue who have not.
+        if (Number(r.total_score) < PASS_MARK) continue;
+        earned.set(r.student_id, (earned.get(r.student_id) ?? 0) + Number(r.courses?.credit_unit ?? 0));
+      }
+
+      const map = new Map<string, Progress>();
+      for (const s of students) {
+        map.set(s.id, programmeProgress({
+          creditsEarned: earned.get(s.id) ?? 0,
+          creditsRequired: s.award_id ? required.get(s.award_id) ?? null : null,
+        }));
+      }
+      setProgress(map);
+      setSweepNote(null);
+    })();
+  }, [students]);
+
+  const finished = useMemo(
+    () => (students ?? []).filter((s) => progress?.get(s.id)?.complete),
+    [students, progress],
+  );
+
   /** Assemble this student's transcript from their approved marks. */
   async function choose(id: string) {
     setChosen(id);
     setIssued(null);
     setNote(null);
-    if (!id) { setData(sampleTranscriptData); setOmitted([]); return; }
+    if (!id) { setData(SPECIMEN_TRANSCRIPT); setOmitted([]); return; }
 
     const s = students?.find((x) => x.id === id);
     if (!s) return;
@@ -65,15 +168,26 @@ export default function TranscriptGenerator({ embedded }: { embedded?: boolean }
         .eq('student_id', id);
       if (error) {
         setNote({ tone: 'bad', text: `The marks could not be read: ${error.message}. Nothing is shown below rather than a partial record.` });
-        setData(sampleTranscriptData);
+        setData(SPECIMEN_TRANSCRIPT);
         return;
       }
       const built = buildTranscript({
         student: { ...s, photo_url: null } as never,
         department: { name: s.program ?? '', faculty: s.program ?? '' } as never,
+        // The programme decides whether a class of award is printed at all — a
+        // doctoral candidate's transcript must not carry one.
+        award: s.program ?? undefined,
         results: (rows ?? []) as never,
       });
-      setData(built.data);
+      setData({
+        ...built.data,
+        studentNumber: s.student_number ?? s.matric_no,
+        creditsEarned: earnedFrom((rows ?? []) as never),
+        // NOT YET ISSUED, and the sheet says so rather than printing a blank
+        // where a credential number belongs.
+        credentialId: null,
+        version: 1,
+      });
       setOmitted(built.omitted);
     } finally {
       setLoadingOne(false);
@@ -93,6 +207,12 @@ export default function TranscriptGenerator({ embedded }: { embedded?: boolean }
 
       if (!res?.ok) { setNote({ tone: 'bad', text: res?.detail ?? res?.error ?? 'It could not be issued.' }); return; }
       setIssued({ id: res.credential.id, credentialId: res.credential.credentialId, sealCode: res.credential.sealCode });
+      setData((d) => ({
+        ...d,
+        credentialId: res.credential.credentialId,
+        sealCode: res.credential.sealCode,
+        issuedOn: res.credential.issuedOn ?? d.issuedOn,
+      }));
       setNote({
         tone: 'ok',
         text: `Issued as ${res.credential.credentialId} and entered on the register.`
@@ -103,6 +223,14 @@ export default function TranscriptGenerator({ embedded }: { embedded?: boolean }
     }
   }
 
+  /**
+   * Print or email the sealed document.
+   *
+   * BOTH GO THROUGH THE SERVER. Printing a sealed credential is an auditable
+   * act and a browser print dialogue leaves no trace anywhere — so the route
+   * writes the trail, then hands back the HTML it rendered. That HTML is
+   * `TranscriptMaster`, the same component previewed below.
+   */
   async function produce(action: 'print' | 'email') {
     if (!issued?.id) return;
     setProducing(true);
@@ -114,62 +242,60 @@ export default function TranscriptGenerator({ embedded }: { embedded?: boolean }
         body: JSON.stringify({ credentialId: issued.id, action }),
       }).then((r) => r.json()).catch(() => null);
       if (!res?.ok) { setNote({ tone: 'bad', text: res?.detail ?? res?.error ?? 'It could not be sent.' }); return; }
+      if (action === 'print' && res.html) {
+        const w = window.open('', '_blank');
+        if (!w) { setNote({ tone: 'bad', text: 'The browser blocked the print window. Allow pop-ups and try again.' }); return; }
+        w.document.write(res.html); w.document.close();
+        w.addEventListener('load', () => w.print());
+      }
       setNote({ tone: 'ok', text: res.message ?? 'Sent, and recorded on the audit trail.' });
     } finally {
       setProducing(false);
     }
   }
-  // The page setup and typeface come from the published transcript design, the
-  // same record the certificate reads. Two official documents of one university
-  // set in two different faces, because two components each hardcoded their
-  // own, is the kind of detail a registrar's office is judged on.
-  const template = useCredentialTemplate('transcript');
-
-  function handlePrint() {
-    const content = transcriptRef.current;
-    if (!content) return;
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Academic Transcript - ${data.student.matric_no}</title>
-          <style>
-            @page { size: ${template.design.pageSize} ${template.design.orientation}; margin: 15mm; }
-            body { margin: 0; font-family: ${template.design.fontFamily}; }
-            /* Backgrounds and rules are the document, not decoration. Without
-               this Chrome drops every fill and the seal, and the transcript
-               prints as unbranded text nobody would accept as official. */
-            @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
-            * { box-sizing: border-box; }
-            ${getTranscriptStyles()}
-          </style>
-        </head>
-        <body>${content.innerHTML}</body>
-      </html>
-    `);
-    printWindow.document.close();
-    setTimeout(() => { printWindow.print(); }, 500);
-  }
-
-  // Calculate running CGPA
-  let runningTotalQP = 0;
-  let runningTotalCU = 0;
 
   return (
     <div className="space-y-6">
-      {/* ONLY WHEN IT IS A SPECIMEN. The notice used to be unconditional,
-          which meant it would have gone on saying "specimen" over a real
-          graduate's record. */}
-      {!isReal && <SampleDataNotice what="a specimen transcript" />}
-
       {!embedded && (
-      <div className="flex items-center justify-between">
         <div>
-          <h2 className="font-heading text-xl font-bold text-[#422e59] dark:text-[#e4dcf0]">Transcript Generator</h2>
-          <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">Generate official academic transcripts</p>
+          <h2 className="font-heading text-xl font-bold text-[#422e59] dark:text-[#e4dcf0]">Transcript</h2>
+          <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">
+            Built from the marks that have cleared the approval chain, sealed on the register, and
+            produced as paper, a PDF or an email.
+          </p>
         </div>
-      </div>
+      )}
+
+      {/* --- Who has finished -------------------------------------------- */}
+      {finished.length > 0 && (
+        <div className="rounded-xl border border-emerald-600/30 bg-emerald-600/5 p-5">
+          <h3 className="flex items-center gap-2 text-sm font-bold text-emerald-900 dark:text-emerald-200">
+            <GraduationCap size={16} />
+            {finished.length} student{finished.length === 1 ? ' has' : 's have'} completed a programme
+          </h3>
+          <p className="mt-1 text-[11px] leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">
+            Earned credits meet the award’s requirement. This is a prompt, not a graduation
+            decision — the Senate confers, and the certificate screen runs the full audit.
+          </p>
+          <ul className="mt-3 flex flex-wrap gap-2">
+            {finished.map((s) => (
+              <li key={s.id}>
+                <button
+                  onClick={() => void choose(s.id)}
+                  className={`rounded-lg border border-emerald-600/40 bg-white px-3 py-1.5 text-xs font-medium text-emerald-900 hover:bg-emerald-50 dark:bg-[#1f1a27] dark:text-emerald-200 ${FOCUS}`}
+                >
+                  {s.last_name} {s.first_name} · {progress?.get(s.id)?.percent ?? 100}%
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {sweepNote && (
+        <p className="rounded-lg border border-[#e9c14a]/40 bg-[#e9c14a]/10 p-3 text-xs text-[#6b6076] dark:text-[#9c93ad]">
+          {sweepNote}
+        </p>
       )}
 
       {/* --- Choose the student ------------------------------------------ */}
@@ -195,6 +321,12 @@ export default function TranscriptGenerator({ embedded }: { embedded?: boolean }
               ? 'No students are on the register yet, so only the specimen can be shown.'
               : 'Built from the marks that have cleared the approval chain. Drafts are never printed.'}
         </p>
+
+        {isReal && progress?.get(chosen) && (
+          <p className="mt-2 text-[11px] text-[#6b6076] dark:text-[#9c93ad]">
+            {progress.get(chosen)!.note}
+          </p>
+        )}
 
         {loadingOne && (
           <p className="mt-3 flex items-center gap-2 text-sm text-[#6b6076] dark:text-[#9c93ad]">
@@ -263,232 +395,49 @@ export default function TranscriptGenerator({ embedded }: { embedded?: boolean }
           allowed
           mayEmail={Boolean(issued.id)}
           busy={producing}
-          onProduce={handlePrint}
+          onProduce={() => void produce('print')}
           onEmail={() => void produce('email')}
         />
       )}
 
-      <div className="flex items-center justify-end">
+      {/* --- The sheet ---------------------------------------------------- */}
+      <div className="flex items-center justify-between">
+        <p className="text-[11px] text-[#8a8194]">
+          {issued
+            ? 'The sealed document. Printing it goes through the register and is recorded.'
+            : isReal
+              ? 'This record has not been sealed. Issue it before producing a copy.'
+              : 'A specimen, built from the University’s own Bachelor of Theology.'}
+        </p>
         <div className="flex gap-2">
           <button onClick={() => setShowPreview(!showPreview)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-[#f2eee6] text-[#33234a] dark:bg-[#2a2333] dark:text-[#d8d2e2] rounded-xl text-sm font-medium hover:bg-[#e9e3d7] dark:hover:bg-[#332b3d] transition-colors">
-            <Eye size={16} /> {showPreview ? 'Hide' : 'Show'} Preview
+            className={`flex items-center gap-2 rounded-xl bg-[#f2eee6] px-4 py-2.5 text-sm font-medium text-[#33234a] transition-colors hover:bg-[#e9e3d7] dark:bg-[#2a2333] dark:text-[#d8d2e2] dark:hover:bg-[#332b3d] ${FOCUS}`}>
+            <Eye size={16} /> {showPreview ? 'Hide' : 'Show'} the sheet
           </button>
-          <button onClick={handlePrint}
-            className="flex items-center gap-2 px-4 py-2.5 bg-[#422e59] text-white rounded-xl text-sm font-medium hover:bg-[#322244] transition-colors shadow-lg shadow-purple-900/20">
-            <Download size={16} /> Download PDF
+          {/* UNSEALED COPIES PRINT AS SPECIMENS. A browser print of a record
+              that is not on the register would put an unverifiable University
+              transcript into the world with no audit entry behind it. */}
+          <button
+            onClick={() => window.print()}
+            disabled={!showPreview}
+            className={`flex items-center gap-2 rounded-xl bg-[#422e59] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#322244] disabled:opacity-40 ${FOCUS}`}>
+            <Printer size={16} /> {issued ? 'Print this preview' : 'Print as a specimen'}
           </button>
         </div>
       </div>
 
-      {/* Student Info Card */}
-      <div className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] p-5">
-        <div className="flex items-center gap-4">
-          <img src={data.student.photo_url || IMAGES.students[0]} alt="" className="w-16 h-16 rounded-full object-cover border-2 border-[#ece7f4]" />
-          <div className="flex-1">
-            <h3 className="font-bold text-[#33234a] dark:text-[#e4dcf0]">{data.student.last_name} {data.student.first_name} {data.student.middle_name}</h3>
-            <p className="text-sm text-[#6b6076] dark:text-[#9c93ad] font-mono">{data.student.matric_no}</p>
-          </div>
-          <div className="text-right">
-            <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">{data.student.degree_type} {data.student.program}</p>
-            <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">{data.department.faculty}</p>
-            <div className="mt-1">
-              <span className="text-lg font-bold text-[#422e59]">CGPA: {data.cgpa}</span>
-              <span className="text-xs text-[#a49bb0] dark:text-[#7b7289] ml-2">({getClassification(data.cgpa)})</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Transcript Preview */}
       {showPreview && (
-        <div className="rounded-xl bg-[#f2eee6] dark:bg-[#2a2333] p-8 flex justify-center overflow-auto">
-          <div ref={transcriptRef} className="bg-white shadow-2xl" style={{ width: '210mm', minHeight: '297mm', padding: '15mm', fontFamily: "'Times New Roman', Times, serif", position: 'relative' }}>
-            {/* Watermark */}
-            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%) rotate(-30deg)', opacity: 0.04, fontSize: '80px', fontWeight: 'bold', color: '#422e59', whiteSpace: 'nowrap', pointerEvents: 'none', zIndex: 0 }}>
-              {UNIVERSITY.shortName}
-            </div>
-
-            <div style={{ position: 'relative', zIndex: 1 }}>
-              {/* Header */}
-              <div style={{ textAlign: 'center', marginBottom: '20px', borderBottom: '3px double #422e59', paddingBottom: '15px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', marginBottom: '8px' }}>
-                  <img src={IMAGES.logo} alt="Logo" style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover' }} />
-                  <div>
-                    <h1 style={{ fontSize: '22px', fontWeight: 'bold', color: '#422e59', margin: 0, textTransform: 'uppercase', letterSpacing: '2px' }}>
-                      {UNIVERSITY.name}
-                    </h1>
-                    {/* The seat of the institution, not the campus. A transcript
-                        is read abroad, by an admissions office or an employer
-                        deciding what the award is worth; it has to name the
-                        university that made it. */}
-                    <p style={{ fontSize: '11px', color: '#666', margin: '2px 0' }}>{UNIVERSITY.descriptor}</p>
-                    <p style={{ fontSize: '10px', color: '#888', margin: '1px 0' }}>{UNIVERSITY.headquarters}</p>
-                  </div>
-                  <img src={IMAGES.seal} alt="Seal" style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover' }} />
-                </div>
-                <h2 style={{ fontSize: '16px', fontWeight: 'bold', color: '#333', margin: '8px 0 0', textTransform: 'uppercase', letterSpacing: '4px' }}>
-                  ACADEMIC TRANSCRIPT OF RECORDS
-                </h2>
-              </div>
-
-              {/* Student Bio */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', fontSize: '11px', marginBottom: '15px', padding: '10px', backgroundColor: '#f8f9fa', border: '1px solid #e0e0e0' }}>
-                <div><strong>Name:</strong> {data.student.last_name.toUpperCase()}, {data.student.first_name} {data.student.middle_name}</div>
-                <div><strong>Matric Number:</strong> {data.student.matric_no}</div>
-                <div><strong>Programme:</strong> {data.student.degree_type} {data.student.program}</div>
-                <div><strong>Department:</strong> {data.department.name}</div>
-                <div><strong>Faculty:</strong> {data.department.faculty}</div>
-                <div><strong>Date of Birth:</strong> {data.student.date_of_birth ? new Date(data.student.date_of_birth).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' }) : 'N/A'}</div>
-                <div><strong>Admission Year:</strong> {data.student.admission_year}/{data.student.admission_year + 1}</div>
-                <div><strong>Nationality:</strong> {data.student.nationality}</div>
-                <TranscriptQR student={data.student} />
-              </div>
-
-              {/* Academic Records */}
-              {data.years.map((year) => {
-                return (
-                  <div key={year.year} style={{ marginBottom: '12px' }}>
-                    <h3 style={{ fontSize: '13px', fontWeight: 'bold', color: '#422e59', margin: '10px 0 5px', textTransform: 'uppercase', borderBottom: '1px solid #422e59', paddingBottom: '3px' }}>
-                      Year {year.year} ({data.student.admission_year + year.year - 1}/{data.student.admission_year + year.year} Academic Session)
-                    </h3>
-
-                    {year.semesters.map((sem) => {
-                      runningTotalQP += sem.totalGradePoints;
-                      runningTotalCU += sem.totalCredits;
-                      const cgpa = Number((runningTotalQP / runningTotalCU).toFixed(2));
-
-                      return (
-                        <div key={sem.semester} style={{ marginBottom: '10px' }}>
-                          <h4 style={{ fontSize: '11px', fontWeight: 'bold', color: '#444', margin: '6px 0 4px', textDecoration: 'underline' }}>
-                            {sem.semester === 1 ? 'First' : 'Second'} Semester
-                          </h4>
-                          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
-                            <thead>
-                              <tr style={{ backgroundColor: '#422e59', color: 'white' }}>
-                                <th style={{ padding: '4px 6px', textAlign: 'left', border: '1px solid #422e59' }}>Course Code</th>
-                                <th style={{ padding: '4px 6px', textAlign: 'left', border: '1px solid #422e59' }}>Course Title</th>
-                                <th style={{ padding: '4px 6px', textAlign: 'center', border: '1px solid #422e59' }}>Credit Unit</th>
-                                <th style={{ padding: '4px 6px', textAlign: 'center', border: '1px solid #422e59' }}>Grade</th>
-                                <th style={{ padding: '4px 6px', textAlign: 'center', border: '1px solid #422e59' }}>Grade Point</th>
-                                <th style={{ padding: '4px 6px', textAlign: 'center', border: '1px solid #422e59' }}>Quality Point</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {sem.courses.map((course, ci) => (
-                                <tr key={ci} style={{ backgroundColor: ci % 2 === 0 ? '#fff' : '#f8f9fa' }}>
-                                  <td style={{ padding: '3px 6px', border: '1px solid #ddd', fontWeight: 'bold' }}>{course.code}</td>
-                                  <td style={{ padding: '3px 6px', border: '1px solid #ddd' }}>{course.title}</td>
-                                  <td style={{ padding: '3px 6px', border: '1px solid #ddd', textAlign: 'center' }}>{course.creditUnit}</td>
-                                  <td style={{ padding: '3px 6px', border: '1px solid #ddd', textAlign: 'center', fontWeight: 'bold' }}>{course.grade}</td>
-                                  <td style={{ padding: '3px 6px', border: '1px solid #ddd', textAlign: 'center' }}>{course.gradePoint.toFixed(1)}</td>
-                                  <td style={{ padding: '3px 6px', border: '1px solid #ddd', textAlign: 'center' }}>{course.qualityPoint.toFixed(1)}</td>
-                                </tr>
-                              ))}
-                              {/* Semester Summary */}
-                              <tr style={{ backgroundColor: '#e8eaf6', fontWeight: 'bold' }}>
-                                <td colSpan={2} style={{ padding: '4px 6px', border: '1px solid #ddd', textAlign: 'right' }}>Semester Total</td>
-                                <td style={{ padding: '4px 6px', border: '1px solid #ddd', textAlign: 'center' }}>{sem.totalCredits}</td>
-                                <td colSpan={2} style={{ padding: '4px 6px', border: '1px solid #ddd', textAlign: 'center' }}>GPA: {sem.gpa.toFixed(2)}</td>
-                                <td style={{ padding: '4px 6px', border: '1px solid #ddd', textAlign: 'center' }}>{sem.totalGradePoints.toFixed(1)}</td>
-                              </tr>
-                              <tr style={{ backgroundColor: '#c5cae9', fontWeight: 'bold' }}>
-                                <td colSpan={2} style={{ padding: '4px 6px', border: '1px solid #ddd', textAlign: 'right' }}>Cumulative</td>
-                                <td style={{ padding: '4px 6px', border: '1px solid #ddd', textAlign: 'center' }}>{runningTotalCU}</td>
-                                <td colSpan={2} style={{ padding: '4px 6px', border: '1px solid #ddd', textAlign: 'center' }}>CGPA: {cgpa.toFixed(2)}</td>
-                                <td style={{ padding: '4px 6px', border: '1px solid #ddd', textAlign: 'center' }}>{runningTotalQP.toFixed(1)}</td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              })}
-
-              {/* Summary */}
-              <div style={{ marginTop: '15px', padding: '10px', border: '2px solid #422e59', backgroundColor: '#e8eaf6' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', fontSize: '12px' }}>
-                  <div><strong>Total Credits Earned:</strong> {data.totalCredits}</div>
-                  <div><strong>Final CGPA:</strong> {data.cgpa.toFixed(2)}/{MAX_GRADE_POINT.toFixed(2)}</div>
-                  <div><strong>Classification:</strong> {data.classification}</div>
-                </div>
-              </div>
-
-              {/* QR Code & Verification */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '25px', paddingTop: '15px', borderTop: '1px solid #ddd' }}>
-                <div style={{ fontSize: '10px', color: '#666' }}>
-                  <div style={{ width: '70px', height: '70px', border: '2px solid #422e59', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '4px' }}>
-                    <svg width="50" height="50" viewBox="0 0 50 50">
-                      <rect x="0" y="0" width="15" height="15" fill="#422e59"/>
-                      <rect x="17" y="0" width="5" height="5" fill="#422e59"/>
-                      <rect x="25" y="0" width="5" height="5" fill="#422e59"/>
-                      <rect x="35" y="0" width="15" height="15" fill="#422e59"/>
-                      <rect x="2" y="2" width="11" height="11" fill="white"/>
-                      <rect x="4" y="4" width="7" height="7" fill="#422e59"/>
-                      <rect x="37" y="2" width="11" height="11" fill="white"/>
-                      <rect x="39" y="4" width="7" height="7" fill="#422e59"/>
-                      <rect x="0" y="17" width="5" height="5" fill="#422e59"/>
-                      <rect x="8" y="17" width="5" height="5" fill="#422e59"/>
-                      <rect x="17" y="17" width="5" height="5" fill="#422e59"/>
-                      <rect x="25" y="20" width="5" height="5" fill="#422e59"/>
-                      <rect x="35" y="17" width="5" height="5" fill="#422e59"/>
-                      <rect x="0" y="25" width="5" height="5" fill="#422e59"/>
-                      <rect x="10" y="25" width="5" height="5" fill="#422e59"/>
-                      <rect x="20" y="25" width="5" height="5" fill="#422e59"/>
-                      <rect x="30" y="25" width="5" height="5" fill="#422e59"/>
-                      <rect x="45" y="25" width="5" height="5" fill="#422e59"/>
-                      <rect x="0" y="35" width="15" height="15" fill="#422e59"/>
-                      <rect x="2" y="37" width="11" height="11" fill="white"/>
-                      <rect x="4" y="39" width="7" height="7" fill="#422e59"/>
-                      <rect x="17" y="35" width="5" height="5" fill="#422e59"/>
-                      <rect x="25" y="35" width="5" height="5" fill="#422e59"/>
-                      <rect x="35" y="35" width="5" height="5" fill="#422e59"/>
-                      <rect x="45" y="35" width="5" height="5" fill="#422e59"/>
-                      <rect x="35" y="45" width="5" height="5" fill="#422e59"/>
-                      <rect x="42" y="42" width="8" height="8" fill="#422e59"/>
-                    </svg>
-                  </div>
-                  <p>Scan to verify</p>
-                  <p>Ref: TR-{data.student.matric_no.replace(/\//g, '')}-{new Date().getFullYear()}</p>
-                </div>
-
-                <div style={{ textAlign: 'center', fontSize: '10px' }}>
-                  <div style={{ borderTop: '1px solid #333', width: '180px', paddingTop: '4px', marginBottom: '4px' }}>
-                    <strong>{UNIVERSITY.registrar}</strong>
-                  </div>
-                  <p>Registrar</p>
-                </div>
-
-                <div style={{ textAlign: 'center', fontSize: '10px' }}>
-                  <div style={{ borderTop: '1px solid #333', width: '180px', paddingTop: '4px', marginBottom: '4px' }}>
-                    <strong>{UNIVERSITY.viceChancellor}</strong>
-                  </div>
-                  <p>Vice Chancellor</p>
-                </div>
-              </div>
-
-              {/* Footer */}
-              <div style={{ marginTop: '15px', textAlign: 'center', fontSize: '9px', color: '#999', borderTop: '1px solid #eee', paddingTop: '8px' }}>
-                <p>This transcript is issued without erasure or alteration. Any unauthorized modification renders it invalid.</p>
-                <p>Date of Issue: {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
-                <p>{UNIVERSITY.name} · {UNIVERSITY.descriptor} · {UNIVERSITY.headquarters} · {UNIVERSITY.website}</p>
-              </div>
-            </div>
-          </div>
+        <div className="overflow-auto rounded-xl bg-[#f2eee6] p-6 dark:bg-[#2a2333]">
+          <TranscriptPreview
+            design={template.design}
+            data={data}
+            // A SPECIMEN UNTIL IT IS ON THE REGISTER. The overprint is the
+            // difference between a preview and a document, and a preview that
+            // does not say so is a document.
+            specimen={!issued}
+          />
         </div>
       )}
     </div>
   );
-}
-
-function getTranscriptStyles(): string {
-  return `
-    table { page-break-inside: auto; }
-    tr { page-break-inside: avoid; page-break-after: auto; }
-    @media print {
-      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    }
-  `;
 }

@@ -59,6 +59,22 @@ Ten tabs, and the ones people actually come for:
   `confers`, `degreeLead`, `classificationLead`, `privileges`.
 - **Version control** — every published design, and which is active.
 
+### One transcript, four places
+
+The transcript is drawn by a single component, `TranscriptMaster.tsx`. It is
+what the Studio previews under **Transcript template**, what the Issue screen
+shows before and after sealing, what the manual transcription screen previews
+as you type, and — through `transcriptDocumentHtml.tsx` — what the server
+renders into the file that is printed and emailed.
+
+That matters because it used to be four separate drawings of the same document,
+which meant the sheet the Superadministrator approved in the Studio was not the
+sheet the Registrar previewed, and neither was the one that reached a graduate's
+inbox. **Change the component and all four change together.** If you find
+yourself writing transcript markup anywhere else, that is the fault returning.
+
+What each screen may change is only the data it passes in — never the layout.
+
 ### Publishing does not overwrite anything
 
 Publishing creates a **new version**. Certificates already issued keep the

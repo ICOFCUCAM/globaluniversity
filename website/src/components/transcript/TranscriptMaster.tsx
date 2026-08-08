@@ -1,7 +1,12 @@
-'use client';
-
 // ---------------------------------------------------------------------------
 // THE MASTER TRANSCRIPT — landscape, after the University's own instrument.
+//
+// NO 'use client' DIRECTIVE, DELIBERATELY. This component has no state, no
+// effects and no handlers — it is a pure function of its props — and dropping
+// the directive is what lets the DELIVERY ROUTE render it on the server with
+// renderToStaticMarkup. That is the whole point: the sheet a registrar previews
+// and the sheet a graduate receives by email are now the same code, not two
+// implementations that drift.
 //
 // ---------------------------------------------------------------------------
 // WHERE THIS LAYOUT COMES FROM
@@ -61,57 +66,55 @@
 import React from 'react';
 import { UNIVERSITY, IMAGES } from '@/lib/constants';
 import { GRADING_SCALE } from '@/lib/grading';
+import { specialGrades, courseClassification } from '@/content/regulations';
 import type { CredentialDesign } from '@/lib/credentialTemplate';
-import type { TranscriptData } from '@/lib/types';
+import { paginate } from '@/lib/transcriptMaster';
+import type { TranscriptMasterData } from '@/lib/transcriptMaster';
+
+export type { TranscriptMasterData } from '@/lib/transcriptMaster';
 import { seedFrom, securityGroundUri, microtextBandUri } from '@/lib/credentialArt';
 
 /**
- * The registrar's codes, as printed on the University's own transcript.
+ * The registrar's codes, as the University PUBLISHES them.
  *
- * TRANSCRIBED FROM THE INSTRUMENT, not invented. They belong in
- * `src/content/regulations.ts` beside the grade bands — that file's job is to
- * reproduce what the University publishes — and should move there when the
- * regulations are next revised. They are here for now so the master is
- * complete rather than missing a legend the original carries.
+ * NOT AS THE 2017 SHEET ABBREVIATES THEM. That instrument prints 'A' for absent
+ * and 'N' for no credit; the University's published regulations set the same
+ * ideas as 'NG' (no grade) and 'NC' (no credit), and there is no 'A' at all.
+ *
+ * A legend on a transcript exists so a stranger can look a letter up. Printing
+ * letters that do not appear in the regulations they would look them up in is
+ * the one way a legend can be worse than no legend — so the regulations win,
+ * and this reads from `src/content/regulations.ts` rather than holding a second
+ * copy that can drift from it.
  */
-export const REGISTRAR_CODES: { code: string; meaning: string }[] = [
-  { code: 'WA', meaning: 'Withdrawal with approval' },
-  { code: 'WC', meaning: 'Withdrawal with course' },
-  { code: 'W', meaning: 'Withdrawal' },
-  { code: 'I', meaning: 'Course incomplete' },
-  { code: 'A', meaning: 'Absent' },
-  { code: 'N', meaning: 'No credit' },
-];
+export const REGISTRAR_CODES: { code: string; meaning: string }[] = specialGrades.map((g) => ({
+  code: g.code,
+  // The published meaning is a sentence; the sheet has room for the term.
+  meaning: g.meaning.split('—')[0].trim(),
+}));
 
-/** How a course sits in the programme. Also from the original. */
-export const COURSE_STANDING: { code: string; meaning: string }[] = [
-  { code: 'C', meaning: 'Compulsory' },
-  { code: 'E', meaning: 'Elective' },
-  { code: 'R', meaning: 'Required' },
-];
-
-export interface TranscriptMasterData extends TranscriptData {
-  /** The register's number for this document. */
-  credentialId?: string | null;
-  /** The seal in words, for a reader with no scanner. */
-  sealCode?: string | null;
-  /** Verification QR, as SVG markup. Rendered by the server that signed it. */
-  qrSvg?: string | null;
-  version?: number | null;
-  issuedOn?: string | null;
-  dateOfBirth?: string | null;
-  placeOfBirth?: string | null;
-  sex?: string | null;
-  studentNumber?: string | null;
-  creditsEarned?: number | null;
-  /** Set when the record was transcribed from an archive rather than derived. */
-  transcribedFrom?: string | null;
-  /** Printed beside the award, as the original sets it. */
-  studentAddress?: string | null;
-  superseded?: boolean;
-}
+/** How a course sits in the programme, from the same published source. */
+export const COURSE_STANDING: { code: string; meaning: string }[] = courseClassification.map((c) => ({
+  code: c.code,
+  meaning: c.name,
+}));
 
 const MM = (n: number) => `${n}mm`;
+
+/**
+ * Where an image resolves from.
+ *
+ * '/images/site-icon.png' is right in a browser pointed at the site and wrong
+ * everywhere else. An emailed transcript is opened from a desktop, often years
+ * later, with no site behind it — so the delivery route passes an absolute
+ * origin and the crest still arrives. Anything already absolute, including a
+ * data: URI, is left exactly as it is.
+ */
+function asset(path: string, base?: string): string {
+  if (!base) return path;
+  if (/^[a-z]+:/i.test(path)) return path;
+  return `${base.replace(/\/$/, '')}${path.startsWith('/') ? '' : '/'}${path}`;
+}
 
 // ---------------------------------------------------------------------------
 // THE REGISTRAR'S GRID
@@ -172,17 +175,6 @@ const RULE_MAJOR = '0.7pt solid #8a8a8a';
  */
 const TABLE_FACE = 'Arial, Helvetica, "Liberation Sans", sans-serif';
 
-/**
- * How many academic years fit on a sheet.
- *
- * TWO, AS THE ORIGINAL SETS IT. The University's own transcript runs Year One
- * and Year Two on the first sheet and Year Three, the totals and the signatures
- * on the second. Fitting a three-year record onto one page would mean type too
- * small to read under a photocopier, which is how most transcripts are actually
- * received.
- */
-const YEARS_PER_SHEET = 2;
-
 export default function TranscriptMaster({
   design, data, specimen,
 }: {
@@ -207,7 +199,7 @@ export default function TranscriptMaster({
   // site-icon.png — the Global Revival Network University seal, which is the
   // device the University's own transcript carries. IMAGES.logo is the ICOF
   // arms and a different mark; using it put the wrong seal behind the record.
-  const watermark = IMAGES.seal;
+  const watermark = data.sealSrc ?? asset(IMAGES.seal, data.assetBase);
 
   const microtext = microtextBandUri(
     `${UNIVERSITY.name} · ${data.credentialId ?? 'SPECIMEN'} · `, 900, 10, design.accent, 3.4,
@@ -219,38 +211,11 @@ export default function TranscriptMaster({
   // PAGINATED BY YEAR, not by however many blocks happen to fit. A year is the
   // unit a transcript is read in, and a sheet that breaks Year Two across two
   // pages is one a registrar has to reassemble.
-  // ---------------------------------------------------------------------
-  // PAGINATION THAT STRETCHES TO THE PROGRAMME
   //
-  // A certificate programme runs one year, a diploma two, a bachelor's three.
-  // The sheet count follows the record rather than a fixed assumption.
-  //
-  // THE CLOSING BLOCK COSTS A SLOT. The totals, the offices and the signature
-  // line take roughly the height of one year's table, so they are paginated as
-  // if they were a year. Without that the last sheet overflows and the totals
-  // print over the final Semester GPA row — which is exactly what happened
-  // when the rule was "two years a sheet, closing block wherever it lands".
-  //
-  //   one year    → 1 sheet   (the year and the closing block)
-  //   two years   → 2 sheets  (both years, then the closing block)
-  //   three years → 2 sheets  (two years, then the third with the closing)
-  //   four years  → 3 sheets, and so on
-  const SLOTS_PER_SHEET = 2;
-  const slots: Array<{ year: (typeof data.years)[number] } | { closing: true }> =
-    [...data.years.map((year) => ({ year })), { closing: true as const }];
-
-  const sheets: Array<{
-    years: typeof data.years;
-    closing: boolean;
-  }> = [];
-  for (let i = 0; i < slots.length; i += SLOTS_PER_SHEET) {
-    const chunk = slots.slice(i, i + SLOTS_PER_SHEET);
-    sheets.push({
-      years: chunk.filter((x): x is { year: (typeof data.years)[number] } => 'year' in x)
-        .map((x) => x.year),
-      closing: chunk.some((x) => 'closing' in x),
-    });
-  }
+  // THE RULE LIVES IN transcriptMaster.ts, not here, because the preview
+  // wrappers need the sheet count to size their box — and a second copy of the
+  // rule in a screen is how a preview ends up disagreeing with the document.
+  const sheets = paginate(data.years);
 
   return (
     <div id="icof-transcript">
@@ -273,6 +238,16 @@ export default function TranscriptMaster({
           /* EACH SHEET ITS OWN PAGE. Without this the browser flows them
              together and the second year's block is cut in half by the fold. */
           .icof-sheet + .icof-sheet { break-before: page; page-break-before: always; }
+          /* A PREVIEW IS SCALED DOWN TO FIT A SCREEN. A PRINT IS NOT.
+             Without this the sheet printed at whatever percentage the screen
+             happened to be showing it at — a transcript on two-thirds of an A4
+             page — because a transform on an ancestor scales the print too, and
+             because it becomes the containing block for the absolute
+             positioning above. Both are undone here. */
+          .icof-scale { transform: none !important; }
+          .icof-preview-box {
+            width: auto !important; height: auto !important; overflow: visible !important;
+          }
         }
       `}</style>
 
@@ -384,7 +359,13 @@ function Sheet({
         )}
 
         {/* --- The record: one ruled box per year ---------------------------- */}
-        <div style={{ flex: '1 1 auto', marginTop: MM(2), minHeight: 0 }}>
+        {/* THE RECORD TAKES THE HEIGHT IT NEEDS, no more. It used to be the
+            flexible element, which pushed the totals to the bottom of the last
+            sheet and left a hand's width of blank paper between the final
+            Semester GPA row and the Study Total Credit line. The closing block
+            below flexes instead: the totals follow the record, and only the
+            signatures fall to the foot, where a signature belongs. */}
+        <div style={{ flex: '0 0 auto', marginTop: MM(2), minHeight: 0 }}>
           {years.map((y) => (
             <YearTable
               key={y.year}
@@ -400,7 +381,10 @@ function Sheet({
         {/* --- Closing block, on the last sheet only ----------------------- */}
         {last && (
           <>
-            <div style={{ marginTop: MM(4), fontFamily: TABLE_FACE }}>
+            <div style={{
+              marginTop: MM(4), fontFamily: TABLE_FACE,
+              flex: '1 1 auto', display: 'flex', flexDirection: 'column', minHeight: 0,
+            }}>
               <div style={{ display: 'flex', gap: MM(14), fontSize: '9pt', fontWeight: 700 }}>
                 <span>Study Total Credit&nbsp;&nbsp;&nbsp;{data.totalCredits}</span>
                 <span>Total Credit Earned&nbsp;&nbsp;&nbsp;{data.creditsEarned ?? data.totalCredits}</span>
@@ -412,17 +396,52 @@ function Sheet({
                 )}
               </div>
 
+              {/* END OF RECORD. A registrar's convention, and not decoration:
+                  it is what stops a sheet being added to a transcript after
+                  issue. Without it, page 2 of 2 ending mid-table and page 2 of
+                  3 look the same to a reader holding only the pages they were
+                  given. */}
+              <p style={{
+                margin: `${MM(3)} 0 0`, fontSize: '6.4pt', letterSpacing: '.16em',
+                textAlign: 'center', fontFamily: TABLE_FACE,
+                borderTop: RULE, paddingTop: MM(1),
+              }}>
+                * * *  END OF TRANSCRIPT  * * *
+              </p>
+
+              {/* WHAT THIS DOCUMENT COVERS AND WHEN. A transcript is routinely
+                  issued mid-programme — for a visa, a transfer, a scholarship —
+                  and one that does not say so reads as a final record that is
+                  mysteriously short. It also states the approval rule, because
+                  a reader comparing this against another sheet needs to know
+                  that marks still in the chain are absent by design. */}
+              <p style={{
+                margin: `${MM(2)} 0 0`, fontSize: '5.6pt', lineHeight: 1.45,
+                fontFamily: TABLE_FACE, opacity: 0.85,
+              }}>
+                This is the holder’s record as it stood on the date of issue, and covers only
+                results approved by the University. It is not in itself a statement that the
+                programme has been completed or that an award has been conferred.
+              </p>
+
               {/* THE OFFICES, as the original closes: two named on the left,
                   the Registrar's signature line on the right. Every name comes
                   from the credential design, never from the reference sheet —
-                  those officers held post in 2020 and may not now. */}
+                  those officers held post in 2020 and may not now.
+                  WITH A FALLBACK, because a design with no signatories was
+                  printing an empty column where the offices belong. The
+                  University's own record of who holds the two offices stands in
+                  until the Studio's Signatures & seal panel is filled. */}
+              {/* The gap that carries the signatures to the foot of the sheet. */}
+              <div style={{ flex: '1 1 auto', minHeight: MM(6) }} />
+
               <div style={{
-                marginTop: MM(9), display: 'flex', justifyContent: 'space-between',
+                display: 'flex', justifyContent: 'space-between',
                 alignItems: 'flex-end', gap: MM(6),
               }}>
                 <div style={{ fontSize: '9pt', fontWeight: 700 }}>
-                  {(design.signatories ?? []).slice(0, 2).map((sig, i) => (
-                    <p key={`${sig.name}-${i}`} style={{ margin: i === 0 ? 0 : `${MM(3)} 0 0` }}>
+                  {signatoriesFor(design).map((sig, i) => (
+                    <p key={`${sig.office}-${i}`} style={{ margin: i === 0 ? 0 : `${MM(3)} 0 0` }}>
                       {sig.office}: {sig.name}
                     </p>
                   ))}
@@ -528,7 +547,11 @@ function Masthead({
         flex: '0 0 auto', borderRight: RULE, padding: MM(0.8),
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
-        <img src={IMAGES.seal} alt="" style={{ width: MM(21), height: MM(21), objectFit: 'contain' }} />
+        <img
+          src={data.sealSrc ?? asset(IMAGES.seal, data.assetBase)}
+          alt=""
+          style={{ width: MM(21), height: MM(21), objectFit: 'contain' }}
+        />
       </div>
 
       {/* CENTRED AND FILLING THE BOX, as the benchmark sets it — the name
@@ -801,7 +824,14 @@ function YearTable({
                   {/* Credit earned is not credit value — a failed course is
                       attempted and not earned, and the original prints both. */}
                   <td style={num}>{c ? (c.gradePoint > 0 ? c.creditUnit : 0) : ''}</td>
-                  <td style={num}>{c ? (c.gradePoint > 0 ? c.creditUnit : 0) : ''}</td>
+                  {/* CREDIT GPA IS CREDIT × GRADE POINT — the quality point.
+                      This column printed the credit earned a second time, so
+                      two of the seven columns carried the same figure on every
+                      row and the sheet lost the one number that lets a reader
+                      check the Semester GPA for themselves: these sum to the
+                      total the GPA is divided from. A column that duplicates
+                      its neighbour is a column that says nothing. */}
+                  <td style={num}>{c ? c.qualityPoint.toFixed(2) : ''}</td>
                   {/* The grade point, not the quality point. */}
                   <td style={num}>{c ? c.gradePoint.toFixed(2) : ''}</td>
                 </React.Fragment>
@@ -825,37 +855,65 @@ function YearTable({
   );
 }
 
-function Particular({
-  label, value, rule, mono,
-}: { label: string; value: React.ReactNode; rule: string; mono?: boolean }) {
-  return (
-    <tr>
-      <th style={{
-        textAlign: 'left', fontSize: '5pt', textTransform: 'uppercase', letterSpacing: '.06em',
-        padding: '0.45mm 1.6mm 0.45mm 0', opacity: 0.7, fontWeight: 400,
-        borderBottom: `0.2pt solid ${rule}33`, whiteSpace: 'nowrap',
-      }}>{label}</th>
-      <td style={{
-        fontSize: '6.2pt', fontWeight: 700, padding: '0.45mm 0', whiteSpace: 'nowrap',
-        borderBottom: `0.2pt solid ${rule}33`,
-        fontFamily: mono ? 'ui-monospace, Menlo, monospace' : undefined,
-      }}>{value || '—'}</td>
-    </tr>
-  );
-}
-
-function Legend({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div style={{ flex: '1 1 0', minWidth: MM(88) }}>
-      <p style={{ margin: 0, fontSize: '5pt', textTransform: 'uppercase', letterSpacing: '.1em', opacity: 0.7 }}>
-        {title}
-      </p>
-      <p style={{ margin: '0.5mm 0 0', fontSize: '5.2pt', lineHeight: 1.45 }}>{children}</p>
-    </div>
-  );
+/**
+ * The two offices printed at the close.
+ *
+ * The published design is the authority. When it names nobody — which is every
+ * deployment until the Studio's Signatures & seal panel is filled in — the
+ * University's own record of who holds the offices stands in, rather than the
+ * sheet printing a blank where two names belong. Neither list is ever taken
+ * from the 2017 reference scan.
+ */
+function signatoriesFor(design: CredentialDesign): { name: string; office: string }[] {
+  const named = (design.signatories ?? []).filter((s) => s.name?.trim());
+  if (named.length > 0) return named.slice(0, 2);
+  return [
+    { office: 'Vice-Chancellor', name: UNIVERSITY.viceChancellor },
+    { office: 'Registrar', name: UNIVERSITY.registrar },
+  ];
 }
 
 /** "One", "Two", "Three" — as the original labels its years. */
 function inWords(n: number): string {
   return ['Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven'][n] ?? String(n);
+}
+
+
+/**
+ * The sheet, scaled to fit a screen.
+ *
+ * WHY THIS IS A COMPONENT AND NOT THREE INLINE WRAPPERS. Each screen that
+ * previewed the transcript wrapped it in its own `transform: scale(...)`, and
+ * each got the same two faults: a transform does not shrink the element's
+ * layout box, so every preview left a screen's worth of blank space beneath it;
+ * and a transform on an ancestor scales the PRINT as well, so pressing print
+ * from a preview produced an A4 sheet with the transcript on two-thirds of it.
+ *
+ * The box below is sized from the same pagination the document uses, and the
+ * print block above undoes both the scale and the box.
+ */
+export function TranscriptPreview({
+  design, data, specimen, scale = 0.72,
+}: {
+  design: CredentialDesign;
+  data: TranscriptMasterData;
+  specimen?: boolean;
+  scale?: number;
+}) {
+  const sheets = paginate(data.years).length;
+  return (
+    <div
+      className="icof-preview-box"
+      style={{
+        width: `calc(297mm * ${scale})`,
+        // 210mm of sheet plus the 6mm gap each one carries beneath it.
+        height: `calc(216mm * ${sheets} * ${scale})`,
+        overflow: 'hidden',
+      }}
+    >
+      <div className="icof-scale" style={{ transform: `scale(${scale})`, transformOrigin: 'top left' }}>
+        <TranscriptMaster design={design} data={data} specimen={specimen} />
+      </div>
+    </div>
+  );
 }

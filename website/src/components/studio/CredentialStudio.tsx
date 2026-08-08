@@ -51,7 +51,8 @@ import {
   type CredentialKind,
 } from '@/lib/credentialTemplate';
 import CertificateDocument from '@/components/certificate/CertificateDocument';
-import TranscriptDocument from '@/components/transcript/TranscriptDocument';
+import { TranscriptPreview } from '@/components/transcript/TranscriptMaster';
+import { SPECIMEN_TRANSCRIPT } from '@/lib/transcriptSpecimen';
 import { uvLayerSvg } from '@/lib/credentialArt';
 import ApprovalQueue from './ApprovalQueue';
 import { WORDING_KEYS, TITLE_FONTS } from '@/lib/credentialTemplate';
@@ -82,42 +83,6 @@ const SECTIONS = [
 ] as const;
 
 type SectionId = (typeof SECTIONS)[number]['id'];
-
-const SAMPLE_TRANSCRIPT = {
-  fullName: 'Grace Nalova Meyembi',
-  studentNumber: 'ICOF202600451',
-  dateOfBirth: '14 March 2004',
-  programme: 'Bachelor of Theology',
-  faculty: 'Faculty of Theology and Christian Counselling',
-  admitted: 'September 2023',
-  completed: 'July 2026',
-  terms: [
-    {
-      label: 'Year 1 · First Semester',
-      courses: [
-        { code: 'THE101', title: 'Introduction to Systematic Theology', credits: 3, grade: 'A', points: 4.0 },
-        { code: 'BIB105', title: 'Old Testament Survey', credits: 3, grade: 'A-', points: 3.67 },
-        { code: 'CCN110', title: 'Foundations of Christian Counselling', credits: 3, grade: 'B+', points: 3.33 },
-      ],
-      credits: 9,
-      gpa: 3.67,
-    },
-    {
-      label: 'Year 1 · Second Semester',
-      courses: [
-        { code: 'THE102', title: 'Doctrine of God', credits: 3, grade: 'A', points: 4.0 },
-        { code: 'BIB106', title: 'New Testament Survey', credits: 3, grade: 'B+', points: 3.33 },
-      ],
-      credits: 6,
-      gpa: 3.67,
-    },
-  ],
-  totalCredits: 15,
-  cgpa: 3.67,
-  classification: 'First Class Honours',
-  credentialId: 'IGUC-TRN-26A9-F8K2-P19D',
-  sealCode: 'ICOF-7T2M-XQ4V-K93B',
-};
 
 interface VersionRow {
   id: string;
@@ -299,7 +264,12 @@ export default function CredentialStudio({ embedded }: { embedded?: boolean } = 
   }
 
   const preview = kind === 'transcript'
-    ? <TranscriptDocument design={design} data={SAMPLE_TRANSCRIPT} specimen />
+    // THE DOCUMENT THE UNIVERSITY ACTUALLY ISSUES. This previewed
+    // TranscriptDocument.tsx — a third layout again, over a Computer Science
+    // record — so the Superadministrator approved a design nobody ever
+    // received. It is now the same component the Issue screen and the emailed
+    // copy render, over the University's own Bachelor of Theology.
+    ? <TranscriptPreview design={design} data={SPECIMEN_TRANSCRIPT} scale={0.7} specimen />
     : <CertificateDocument design={design} data={SAMPLE} previewGuides specimen />;
 
   return (

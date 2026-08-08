@@ -63,6 +63,17 @@ export async function POST(request: Request) {
      */
     manual?: {
       holderName?: string;
+      /**
+       * The name in the three columns the sheet prints.
+       *
+       * Typed apart rather than split from `holderName`, because a surname is
+       * not recoverable from a full name — two-word surnames are ordinary, and
+       * a wrong guess prints the wrong word under "Surname" on a sealed
+       * document that cannot be corrected without reissuing it.
+       */
+      surname?: string;
+      firstNames?: string;
+      middleName?: string;
       studentNumber?: string;
       programme?: string;
       /** Where the figures came from. Required, and printed on the document. */
@@ -242,6 +253,14 @@ export async function POST(request: Request) {
     // years later even if the marks are since corrected.
     facts: {
       ...awardFields(facts),
+      // THE NAME IN THREE PARTS, because the transcript prints Surname, First
+      // Names and Middle Name as three columns and a single string cannot be
+      // split back with certainty. "Grace Nalova Meyembi" is one surname or
+      // two depending on the family, and guessing puts the wrong word under
+      // "Surname" on a sealed document.
+      holder_surname: student.last_name ?? '',
+      holder_first_names: student.first_name ?? '',
+      holder_middle_name: student.middle_name ?? '',
       cgpa: transcript.cgpa,
       credits_attempted: transcript.totalCredits,
       credits_earned: earned,
@@ -319,7 +338,13 @@ async function transcribe(
   body: { manual?: any; templateVersion?: number },
 ): Promise<Response> {
   const m = body.manual ?? {};
-  const holderName = String(m.holderName ?? '').trim();
+  const surname = String(m.surname ?? '').trim();
+  const firstNames = String(m.firstNames ?? '').trim();
+  const middleName = String(m.middleName ?? '').trim();
+  // The parts are the record; the full name is assembled from them so the two
+  // can never disagree. A caller that only knows the whole name still works.
+  const holderName = [firstNames, middleName, surname].filter(Boolean).join(' ')
+    || String(m.holderName ?? '').trim();
   const sourceRecord = String(m.sourceRecord ?? '').trim();
   const rows = Array.isArray(m.rows) ? m.rows : [];
 
@@ -368,7 +393,12 @@ async function transcribe(
   // reused rather than reimplemented, so a transcribed transcript and a
   // derived one cannot compute a GPA differently.
   const { data: transcript } = buildTranscript({
-    student: { first_name: holderName, last_name: '', matric_no: m.studentNumber ?? '' } as never,
+    student: {
+      first_name: firstNames || holderName,
+      middle_name: middleName,
+      last_name: surname,
+      matric_no: m.studentNumber ?? '',
+    } as never,
     department: { name: m.programme ?? '' } as never,
     // APPLIED ON THE SERVER TOO. The screen suppresses the class for a
     // doctorate, but the screen is not the control — a request that omitted it
@@ -455,9 +485,20 @@ async function transcribe(
       // when the row was actually written, so a back-dated transcript can
       // never be read as evidence the University issued it then.
       transcribed_on: today,
+      holder_surname: surname,
+      holder_first_names: firstNames,
+      holder_middle_name: middleName,
       cgpa: transcript.cgpa,
       credits_attempted: transcript.totalCredits,
-      credits_earned: transcript.totalCredits,
+      // EARNED IS NOT ATTEMPTED. This recorded every credit as earned, so a
+      // transcribed record carrying an F printed the same figure in both
+      // totals and overstated what the holder had passed. A transcribed row
+      // has no percentage to compare against a pass mark, so the grade point
+      // is the evidence: zero points is a fail on the University's scale.
+      credits_earned: usable.reduce(
+        (t: number, c: typeof usable[number]) => (c.gradePoint > 0 ? t + c.creditUnit : t),
+        0,
+      ),
       years: transcript.years,
     },
     content_hash: hash,

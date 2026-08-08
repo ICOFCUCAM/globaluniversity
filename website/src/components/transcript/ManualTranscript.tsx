@@ -49,6 +49,8 @@ import { courses as CATALOGUE } from '@/content/courses';
 import { awardKindOf, awardWording, nominalYears } from '@/lib/awards';
 import { buildTranscript, canIssueTranscript } from '@/lib/transcript';
 import ProduceCredential from '@/components/credentials/ProduceCredential';
+import { TranscriptPreview } from '@/components/transcript/TranscriptMaster';
+import { useCredentialTemplate } from '@/lib/useCredentialTemplate';
 import { INPUT, LABEL, FOCUS, CARD, BTN_SECONDARY } from '@/lib/portalTheme';
 
 interface Row {
@@ -81,7 +83,13 @@ export default function ManualTranscript({ role }: { role?: UserRole }) {
 }
 
 function Form() {
-  const [holderName, setHolderName] = React.useState('');
+  // THE NAME IN THREE PARTS, as the sheet prints it. One box holding
+  // "Grace Nalova Meyembi" cannot be split back into Surname / First Names /
+  // Middle Name with any certainty — two-word surnames are ordinary — and a
+  // wrong split is printed under a seal that cannot be edited afterwards.
+  const [surname, setSurname] = React.useState('');
+  const [firstNames, setFirstNames] = React.useState('');
+  const [middleName, setMiddleName] = React.useState('');
   const [studentNumber, setStudentNumber] = React.useState('');
   // CHOSEN FROM THE CATALOGUE, NOT TYPED. A free-text programme is how a
   // sealed University transcript ends up naming a qualification the University
@@ -102,6 +110,13 @@ function Form() {
   const [note, setNote] = React.useState<{ tone: 'ok' | 'bad'; text: string } | null>(null);
 
   const [nextKey, setNextKey] = React.useState(4);
+
+  const holderName = [firstNames, middleName, surname]
+    .map((p) => p.trim()).filter(Boolean).join(' ');
+
+  // The published design, so what is typed here previews under the same
+  // template the Registrar's screen and the emailed copy use.
+  const template = useCredentialTemplate('transcript');
 
   // The level follows the programme, and everything else follows the level.
   const chosen = CATALOGUE.find((c) => c.title === programme);
@@ -126,7 +141,12 @@ function Form() {
   // uses. An operator who cannot see the GPA until after the document is on the
   // register is being asked to seal a number they have not read.
   const preview = React.useMemo(() => buildTranscript({
-    student: { first_name: holderName || 'Unnamed', last_name: '', matric_no: studentNumber } as never,
+    student: {
+      first_name: firstNames.trim(),
+      middle_name: middleName.trim(),
+      last_name: surname.trim(),
+      matric_no: studentNumber,
+    } as never,
     department: { name: programme } as never,
     award: programme || undefined,
     results: filled.map((r) => ({
@@ -142,11 +162,11 @@ function Form() {
         semester: Number(r.semester) || 0,
       },
     })) as never,
-  }), [filled, holderName, studentNumber, programme]);
+  }), [filled, firstNames, middleName, surname, studentNumber, programme]);
 
   const sourceShort = sourceRecord.trim().length < MIN_SOURCE;
   const refusal = filled.length > 0 ? canIssueTranscript(preview.data) : null;
-  const blocked = !holderName.trim() || !programme || sourceShort || filled.length === 0 || Boolean(refusal);
+  const blocked = !surname.trim() || !firstNames.trim() || !programme || sourceShort || filled.length === 0 || Boolean(refusal);
 
   async function issue() {
     setBusy(true);
@@ -158,7 +178,10 @@ function Form() {
         headers: { 'content-type': 'application/json', authorization: `Bearer ${session.session?.access_token ?? ''}` },
         body: JSON.stringify({
           manual: {
-            holderName: holderName.trim(),
+            surname: surname.trim(),
+            firstNames: firstNames.trim(),
+            middleName: middleName.trim(),
+            holderName,
             studentNumber: studentNumber.trim() || undefined,
             programme: programme.trim() || undefined,
             sourceRecord: sourceRecord.trim(),
@@ -227,9 +250,20 @@ function Form() {
 
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
         <label className="block">
-          <span className={LABEL}>Holder’s full name *</span>
-          <input value={holderName} onChange={(e) => setHolderName(e.target.value)} className={`${INPUT} mt-1`} />
+          <span className={LABEL}>Surname *</span>
+          <input value={surname} onChange={(e) => setSurname(e.target.value)} className={`${INPUT} mt-1`} />
         </label>
+        <label className="block">
+          <span className={LABEL}>First names *</span>
+          <input value={firstNames} onChange={(e) => setFirstNames(e.target.value)} className={`${INPUT} mt-1`} />
+        </label>
+        <label className="block">
+          <span className={LABEL}>Middle name</span>
+          <input value={middleName} onChange={(e) => setMiddleName(e.target.value)} className={`${INPUT} mt-1`} />
+        </label>
+      </div>
+
+      <div className="mt-3 grid gap-3 sm:grid-cols-3">
         <label className="block">
           <span className={LABEL}>Student number, if there was one</span>
           <input value={studentNumber} onChange={(e) => setStudentNumber(e.target.value)} className={`${INPUT} mt-1`} />
@@ -382,6 +416,44 @@ function Form() {
         </div>
       )}
 
+      {/* --- The sheet itself, as it will be sealed --------------------- */}
+      {/* THE OPERATOR SEES THE DOCUMENT BEFORE THE SEAL GOES ON IT. A summary
+          line saying "18 courses · CGPA 3.41" is not the same as looking at the
+          transcript: a year typed into the wrong field, a course under the
+          wrong semester, a name with the surname in the first-names box — all
+          of those read perfectly well as a summary and are obvious on the
+          sheet. And this is the same component the emailed copy is rendered
+          from, so it is the document, not an impression of it. */}
+      {filled.length > 0 && (
+        <div className="mt-4">
+          <p className="mb-2 text-[11px] text-[#8a8194]">
+            The sheet as it will be sealed. Nothing is on the register until you press
+            Transcribe and seal.
+          </p>
+          <div className="overflow-auto rounded-xl bg-[#f2eee6] p-4 dark:bg-[#2a2333]">
+            <TranscriptPreview
+                scale={0.62}
+                design={template.design}
+                specimen
+                data={{
+                  ...preview.data,
+                  studentNumber: studentNumber.trim() || null,
+                  dateOfBirth: dateOfBirth.trim() || null,
+                  placeOfBirth: placeOfBirth.trim() || null,
+                  sex: sex.trim() || null,
+                  studentAddress: studentAddress.trim() || null,
+                  issuedOn: issuedOn || null,
+                  creditsEarned: filled.reduce(
+                    (t, r) => (pointFor(r.grade) > 0 ? t + (Number(r.creditUnit) || 0) : t),
+                    0,
+                  ),
+                  transcribedFrom: sourceRecord.trim() || null,
+                }}
+            />
+          </div>
+        </div>
+      )}
+
       {refusal && (
         <p className="mt-3 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-800 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200">
           <AlertTriangle size={14} className="mt-0.5 shrink-0" /> {refusal}
@@ -416,7 +488,7 @@ function Form() {
             {/* Names what is missing rather than leaving a dead button. */}
             {blocked && (
               <p className="mt-2 text-[11px] text-[#8a8194]">
-                {!holderName.trim() ? 'Give the holder’s full name.'
+                {!surname.trim() || !firstNames.trim() ? 'Give the holder’s surname and first names.'
                   : !programme ? 'Choose the programme, so the level decides how the record is read.'
                   : filled.length === 0 ? 'Add at least one course with a code and a credit unit above zero.'
                     : sourceShort ? 'Say where these figures come from, in at least a dozen characters.'
