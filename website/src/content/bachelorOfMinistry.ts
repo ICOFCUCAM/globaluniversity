@@ -84,6 +84,22 @@ export interface BminCourse {
    * expression that treats them alike would pass a check it should fail.
    */
   requires: string[];
+  /**
+   * How to read that list. 'all' — every course. 'any' — one of them.
+   *
+   * THIS FIELD WAS MISSING AND THE COMMENT ABOVE ALREADY SAID WHY IT MATTERED.
+   * "BIB 101 or BIB 102" and "MIN 101, BIB 103" were both stored as a bare
+   * array of two codes, which makes them indistinguishable — the exact defect
+   * the note above warns a regular expression would introduce, reached instead
+   * by hand. A registry reading the array as 'all' would refuse a student who
+   * has satisfied BIB 103's prerequisite; reading it as 'any' would admit a
+   * student to MIN 201 who has done neither MIN 101 nor BIB 103.
+   *
+   * Defaulted to 'all', because conjunction is what a comma means and it is
+   * also the safe direction: an over-strict rule is caught by a student at the
+   * registration desk, an over-lax one by an examiner at graduation.
+   */
+  requiresMode?: 'all' | 'any';
   /** Where the requirement is a credit threshold rather than a named course. */
   requiresEcts?: number;
   description?: string;
@@ -400,6 +416,9 @@ export const bminSemesters: BminSemester[] = [
         ects: 5,
         prerequisite: 'BIB 101 or BIB 102',
         requires: ['BIB 101', 'BIB 102'],
+        // The only disjunction in the programme. Either survey admits a
+        // student to hermeneutics; the framework says "or" and means it.
+        requiresMode: 'any',
         description:
           'Students learn principles of biblical interpretation, context, genre, observation, interpretation and application.',
       },
