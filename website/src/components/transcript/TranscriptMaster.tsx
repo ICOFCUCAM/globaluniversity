@@ -59,11 +59,11 @@
 // ---------------------------------------------------------------------------
 
 import React from 'react';
-import { UNIVERSITY } from '@/lib/constants';
+import { UNIVERSITY, IMAGES } from '@/lib/constants';
 import { GRADING_SCALE } from '@/lib/grading';
 import type { CredentialDesign } from '@/lib/credentialTemplate';
 import type { TranscriptData } from '@/lib/types';
-import { seedFrom, securityGroundUri, microtextBandUri, globeInRosetteUri } from '@/lib/credentialArt';
+import { seedFrom, securityGroundUri, microtextBandUri } from '@/lib/credentialArt';
 
 /**
  * The registrar's codes, as printed on the University's own transcript.
@@ -139,7 +139,11 @@ export default function TranscriptMaster({
   // ground, a repeating tile, which is a different thing serving a different
   // purpose: the ground defeats a flatbed copier, the watermark says whose
   // document this is at arm's length. A transcript needs both.
-  const watermark = globeInRosetteUri(seed, 900, design.brand, 0.055);
+  // THE UNIVERSITY'S OWN LOGO, from /public, not a generated device. Drawing a
+  // globe of my own invention and calling it the watermark put a mark on the
+  // document that is not the University's — which is the one thing a watermark
+  // must never be.
+  const watermark = IMAGES.logo;
 
   const microtext = microtextBandUri(
     `${UNIVERSITY.name} · ${data.credentialId ?? 'SPECIMEN'} · `, 900, 10, design.accent, 3.4,
@@ -225,7 +229,16 @@ function Sheet({
         position: 'absolute', inset: 0, display: 'flex', alignItems: 'center',
         justifyContent: 'center', pointerEvents: 'none', overflow: 'hidden',
       }}>
-        <img src={watermark} alt="" style={{ width: MM(185), height: MM(185), opacity: 0.85 }} />
+        <img
+          src={watermark}
+          alt=""
+          style={{
+            width: MM(165), height: MM(165), objectFit: 'contain',
+            // Pale enough to read the marks through, present enough to be seen
+            // at arm's length. The original sits at roughly this weight.
+            opacity: 0.13,
+          }}
+        />
       </div>
 
       {data.superseded && <Overprint text="SUPERSEDED" colour="rgba(160,40,40,.15)" />}
@@ -389,6 +402,16 @@ function Masthead({
 
   return (
     <div style={{ display: 'flex', gap: MM(3), alignItems: 'flex-start', flex: '0 0 auto' }}>
+      {/* THE CREST, boxed, as the original opens. It was absent entirely —
+          the one mark on the sheet that identifies the institution before a
+          word of it is read. */}
+      <div style={{
+        flex: '0 0 auto', border: `0.4pt solid ${ink}`, padding: MM(1.2),
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <img src={IMAGES.logo} alt="" style={{ width: MM(17), height: MM(17), objectFit: 'contain' }} />
+      </div>
+
       <div style={{ flex: '1 1 0', minWidth: 0 }}>
         <h1 style={{ margin: 0, fontSize: '15pt', letterSpacing: '.01em', fontWeight: 400, color: design.brand }}>
           {UNIVERSITY.name}
@@ -558,7 +581,10 @@ function YearTable({
   semesters: TranscriptMasterData['years'][number]['semesters'];
   ink: string; brand: string; yearLabel: string;
 }) {
-  const hair = `0.25pt solid ${ink}`;
+  // SOLID, BLACK, FINE. The clean digital copy settled it: I read the scan's
+  // broken edges as dotted and its grey cast as colour, and both were the
+  // photocopier. A ruled ledger in black at 0.3pt.
+  const hair = '0.3pt solid #000';
   const th: React.CSSProperties = {
     fontSize: '5.6pt', padding: '0.55mm 1mm', textAlign: 'left',
     color: ink, fontWeight: 400, verticalAlign: 'bottom', lineHeight: 1.15,
