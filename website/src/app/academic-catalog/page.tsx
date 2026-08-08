@@ -152,7 +152,7 @@ export default function AcademicCatalogPage() {
       <PageBanner
         title="Academic Catalog"
         subtitle="The official academic handbook of ICOF Global University — governance, faculties, regulations and the full programme catalogue."
-        image="/images/graduation.jpg"
+        image="/images/graduation-2024/grad-2024-masters-caps.jpg"
         eyebrow={EDITION}
       />
 

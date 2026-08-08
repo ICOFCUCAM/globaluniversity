@@ -15,7 +15,7 @@ export default function ApplyPage() {
       <PageBanner
         title="Apply Now"
         subtitle="Anything you can dream, you can do — fill out our free online application today."
-        image="/images/admission-banner.jpg"
+        image="/images/graduation-2024/grad-2024-graduands-line.jpg"
       />
       <Section>
         <div className="mx-auto max-w-3xl">

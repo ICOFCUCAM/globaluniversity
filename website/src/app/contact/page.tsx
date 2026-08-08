@@ -11,7 +11,7 @@ export default async function ContactPage() {
 
   return (
     <>
-      <PageBanner title="Contact Us" image="/images/global.jpg" />
+      <PageBanner title="Contact Us" image="/images/graduation-2024/grad-2024-graduates-group.jpg" />
       <Section>
         <SectionHeading>{contact.heading}</SectionHeading>
         <p className="mx-auto mb-12 max-w-2xl text-center text-brand-muted">{contact.intro}</p>

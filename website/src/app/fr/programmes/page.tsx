@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 export default function FrPrograms() {
   return (
     <>
-      <PageBanner title={fr.programs.title} subtitle={fr.programs.subtitle} image="/images/graduation.jpg" />
+      <PageBanner title={fr.programs.title} subtitle={fr.programs.subtitle} image="/images/graduation-2024/grad-2024-bachelors-robes.jpg" />
       <Section>
         <p className="mx-auto mb-12 max-w-3xl text-center leading-relaxed text-brand-muted">
           {fr.programs.intro}

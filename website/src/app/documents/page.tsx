@@ -57,7 +57,7 @@ export default function DocumentsPage() {
       <PageBanner
         title="Institutional Documents"
         subtitle="The documentation an established university is expected to hold — and an honest account of how far ICOF Global University has come in producing it."
-        image="/images/hall.jpg"
+        image="/images/graduation-2024/grad-2024-leadership.jpg"
         eyebrow="Academic Standards"
       />
 

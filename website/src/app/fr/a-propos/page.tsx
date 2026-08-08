@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default function FrAbout() {
   return (
     <>
-      <PageBanner title={fr.about.title} subtitle={fr.about.subtitle} image="/images/hall.jpg" />
+      <PageBanner title={fr.about.title} subtitle={fr.about.subtitle} image="/images/graduation-2024/grad-2024-academic-procession.jpg" />
       <Section>
         <div className="mx-auto max-w-3xl space-y-10">
           {fr.about.sections.map((s) => (

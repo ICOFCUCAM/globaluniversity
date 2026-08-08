@@ -66,7 +66,7 @@ export default async function FacultyPage() {
       <PageBanner
         title="Schools & Faculties"
         subtitle="Instructors who practice what they teach!"
-        image="/images/hall.jpg"
+        image="/images/graduation-2024/grad-2024-academics-seated.jpg"
       />
 
       {/* Instructors intro */}

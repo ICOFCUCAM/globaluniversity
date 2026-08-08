@@ -89,7 +89,7 @@ export default function StudentHandbookPage() {
       <PageBanner
         title="Student Handbook"
         subtitle="What you may expect of the university, and what the university expects of you."
-        image="/images/students.jpg"
+        image="/images/graduation-2024/grad-2024-graduates-selfie.jpg"
         eyebrow="For registered students"
       />
 

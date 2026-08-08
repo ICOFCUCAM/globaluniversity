@@ -103,7 +103,7 @@ export default function ArchitecturePage() {
       <PageBanner
         title="Enterprise Architecture"
         subtitle="Every office connected through workflows rather than operating independently — the blueprint developers build from."
-        image="/images/graduation.jpg"
+        image="/images/graduation-2024/grad-2024-award-presentation.jpg"
         eyebrow="For developers and for the Board"
       />
 

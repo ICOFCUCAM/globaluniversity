@@ -16,7 +16,7 @@ export default function FrAdmission() {
       <PageBanner
         title={fr.admission.title}
         subtitle={fr.admission.subtitle}
-        image="/images/admission-banner.jpg"
+        image="/images/graduation-2024/grad-2024-graduands-group.jpg"
       />
       <Section>
         <p className="mx-auto mb-12 max-w-3xl text-center leading-relaxed text-brand-muted">

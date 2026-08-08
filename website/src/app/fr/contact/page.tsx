@@ -27,7 +27,7 @@ const CARDS = [
 export default function FrContact() {
   return (
     <>
-      <PageBanner title={fr.contact.title} subtitle={fr.contact.subtitle} image="/images/global.jpg" />
+      <PageBanner title={fr.contact.title} subtitle={fr.contact.subtitle} image="/images/graduation-2024/grad-2024-family-celebration.jpg" />
       <Section>
         <p className="mx-auto mb-12 max-w-2xl text-center leading-relaxed text-brand-muted">
           {fr.contact.intro}

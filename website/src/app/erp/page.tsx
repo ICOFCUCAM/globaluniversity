@@ -45,7 +45,7 @@ export default function ErpPage() {
       <PageBanner
         title="University ERP"
         subtitle="Seventeen modules from application to alumnus — the blueprint, and an honest account of how much of it stands today."
-        image="/images/hall.jpg"
+        image="/images/graduation-2024/grad-2024-procession-hall.jpg"
         eyebrow="System architecture"
       />
 

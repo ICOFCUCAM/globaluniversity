@@ -78,7 +78,7 @@ export default function AdmissionsPortalPage() {
       <PageBanner
         title="Admissions Portal"
         subtitle="Apply, upload your documents, pay the application fee and follow your application through to a decision."
-        image="/images/students.jpg"
+        image="/images/graduation-2024/grad-2024-graduate-flowers.jpg"
         eyebrow="For applicants"
       />
 

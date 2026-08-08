@@ -84,7 +84,7 @@ export default function GraduateSchoolHandbookPage() {
       <PageBanner
         title="Graduate School Handbook"
         subtitle="For Master’s and doctoral candidates — admission, coursework, comprehensive examinations, the dissertation and the defence."
-        image="/images/graduation.jpg"
+        image="/images/graduation-2024/grad-2024-doctoral-seated.jpg"
         eyebrow="Postgraduate study"
       />
 

@@ -10,7 +10,7 @@ export default async function TuitionPage() {
 
   return (
     <>
-      <PageBanner title="Tuition & Costs" image="/images/banner.jpg" />
+      <PageBanner title="Tuition & Costs" image="/images/graduation-2024/grad-2024-congregation-row.jpg" />
       <Section>
         <SectionHeading>{tuition.heading}</SectionHeading>
         <p className="mx-auto mb-10 max-w-3xl text-center text-brand-muted">{tuition.intro}</p>
