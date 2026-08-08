@@ -55,6 +55,7 @@ import TranscriptDocument from '@/components/transcript/TranscriptDocument';
 import { uvLayerSvg } from '@/lib/credentialArt';
 import ApprovalQueue from './ApprovalQueue';
 import { WORDING_KEYS, TITLE_FONTS } from '@/lib/credentialTemplate';
+import { MERGE_FIELDS, fieldsUsedBy } from '@/lib/credentialAuthority';
 import { SECURITY_PATTERNS, watermarkName } from '@/lib/securityPatterns';
 import { BORDER_CATALOGUE, borderById } from '@/lib/borderCatalogue';
 import {
@@ -749,6 +750,7 @@ export default function CredentialStudio() {
                 ))}
                 <Field label="Footnote" value={design.footnote} onChange={(v) => set('footnote', v)} />
               </Panel>
+              <MergeFields design={design} />
               <PreviewFrame kind={kind}>{preview}</PreviewFrame>
               <Publisher
                 problems={problems} versionName={versionName} setVersionName={setVersionName}
@@ -1236,5 +1238,98 @@ function Readiness() {
         </ul>
       )}
     </div>
+  );
+}
+
+
+// ---------------------------------------------------------------------------
+
+/**
+ * THE FIELDS THIS DESIGN FILLS IN, AND THE ONES IT ASKS FOR AND WILL NOT GET.
+ *
+ * "Dynamic fields — {{student.full_name}}, {{credential.number}}..." is the
+ * University's point 5. A merge field is a promise the design makes about what
+ * will be there when the document is printed, and the two ways it breaks are
+ * both silent:
+ *
+ *   A MISSPELLED TOKEN. `{{student.fullnme}}` is not a syntax error; it is a
+ *   token this system has never heard of, and it renders as a marker on the
+ *   certificate. Discovered on the two-hundredth document of a cohort, that is
+ *   two hundred amendments whose stated reason reads "the University misspelled
+ *   its own field name".
+ *
+ *   A FIELD THAT IS SOMETIMES EMPTY. `{{result.classification}}` is right on a
+ *   degree and blank on a certificate of ordination, because a ministry
+ *   credential has no classification. That is not a fault, but the author has
+ *   to know it before three offices approve the design.
+ *
+ * So both are shown here, while the design is being edited and before it can be
+ * submitted for approval — not at print time, in front of a graduand.
+ *
+ * IT READS THE WHOLE DESIGN, not just the wording fields. A token in the
+ * footnote or in a signatory's office line renders exactly the same way, and
+ * checking only the boxes the author happens to be looking at is how the one
+ * that matters gets missed.
+ */
+function MergeFields({ design }: { design: CredentialDesign }) {
+  const report = fieldsUsedBy(JSON.stringify(design));
+  const known = new Map(MERGE_FIELDS.map((f) => [f.token, f]));
+
+  return (
+    <Panel
+      title="Fields this design fills in"
+      hint="Write {{student.full_name}} anywhere in the wording and the register fills it at print time."
+    >
+      {report.unknown.length > 0 && (
+        <div className="mb-3 rounded-lg border border-red-300 bg-red-50 p-3 text-xs dark:bg-[#2a1a1a]">
+          <p className="font-semibold text-red-800 dark:text-red-300">
+            {report.unknown.length === 1 ? 'One field cannot be filled' : `${report.unknown.length} fields cannot be filled`}
+          </p>
+          <ul className="mt-1 space-y-0.5">
+            {report.unknown.map((t) => (
+              <li key={t} className="font-mono text-red-700 dark:text-red-300">{`{{${t}}}`}</li>
+            ))}
+          </ul>
+          <p className="mt-1.5 text-red-800 dark:text-red-300">
+            This system has no such field. It will print as a visible marker on every document
+            issued under this design. Check the spelling against the list below.
+          </p>
+        </div>
+      )}
+
+      {report.conditional.length > 0 && (
+        <div className="mb-3 rounded-lg border border-[#e9c14a]/50 bg-[#e9c14a]/10 p-3 text-xs">
+          <p className="font-semibold text-[#8a6a10]">May print blank</p>
+          <ul className="mt-1 space-y-0.5">
+            {report.conditional.map((t) => (
+              <li key={t} className="text-[#6b6076] dark:text-[#9c93ad]">
+                <span className="font-mono">{`{{${t}}}`}</span> — {known.get(t)?.source}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {report.used.length > 0 && (
+        <p className="mb-3 text-xs text-[#6b6076] dark:text-[#9c93ad]">
+          In use: {report.used.filter((t) => known.has(t)).length} of {MERGE_FIELDS.length} available.
+        </p>
+      )}
+
+      <ul className="grid gap-x-4 gap-y-1 sm:grid-cols-2">
+        {MERGE_FIELDS.map((f) => {
+          const inUse = report.used.includes(f.token);
+          return (
+            <li key={f.token} className="text-xs">
+              <span className={`font-mono ${inUse ? 'font-semibold text-[#5b3392] dark:text-[#c9a9f2]' : 'text-[#9c93ad]'}`}>
+                {`{{${f.token}}}`}
+              </span>
+              <span className="ml-1.5 text-[#6b6076] dark:text-[#9c93ad]">{f.label}</span>
+              {!f.always && <span className="ml-1 text-[#a07c12]">·  may be blank</span>}
+            </li>
+          );
+        })}
+      </ul>
+    </Panel>
   );
 }
