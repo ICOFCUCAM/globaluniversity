@@ -69,6 +69,23 @@ export async function POST(request: Request) {
       sourceRecord?: string;
       /** The award, by title. Decides whether a class is printed at all. */
       award?: string;
+      /**
+       * THE DATE THE UNIVERSITY IS RECORDED AS HAVING ISSUED THIS.
+       *
+       * A transcript transcribed for a 2011 graduate may legitimately need to
+       * bear a date in the past — the University did issue them a record then,
+       * and a document dated today misrepresents when it was made.
+       *
+       * It does NOT back-date the register. `issued_at` on the row is the
+       * moment this was actually written, and the audit entry records both, so
+       * the trail cannot be used to claim the University issued something
+       * before it did.
+       */
+      issuedOn?: string;
+      dateOfBirth?: string;
+      placeOfBirth?: string;
+      sex?: string;
+      studentAddress?: string;
       rows?: Array<{
         code?: string; title?: string; creditUnit?: number;
         grade?: string; gradePoint?: number; year?: number; semester?: number;
@@ -369,8 +386,20 @@ async function transcribe(
     })) as never,
   });
 
-  const issuedOn = new Date().toISOString().slice(0, 10);
-  const credentialId = newCredentialId('TRANSCRIPT', new Date().getFullYear());
+  const today = new Date().toISOString().slice(0, 10);
+  // THE DOCUMENT'S DATE, which may be in the past. Refused if it is in the
+  // future: a transcript the University has not yet issued is not a record.
+  const backDated = String(m.issuedOn ?? '').trim();
+  if (backDated && backDated > today) {
+    return NextResponse.json({
+      ok: false,
+      error: 'issue-date-in-the-future',
+      detail: 'A transcript cannot bear a date the University has not reached. Historical records '
+        + 'may be back-dated; forward-dated ones cannot be issued.',
+    }, { status: 400 });
+  }
+  const issuedOn = backDated || today;
+  const credentialId = newCredentialId('TRANSCRIPT', Number(issuedOn.slice(0, 4)) || new Date().getFullYear());
 
   const facts = {
     credentialId,
@@ -418,6 +447,14 @@ async function transcribe(
       source: 'transcribed',
       source_record: sourceRecord,
       transcribed_by: caller.email,
+      date_of_birth: m.dateOfBirth ?? null,
+      place_of_birth: m.placeOfBirth ?? null,
+      sex: m.sex ?? null,
+      student_address: m.studentAddress ?? null,
+      // BOTH DATES ON THE RECORD. The document bears `issued_on`; this says
+      // when the row was actually written, so a back-dated transcript can
+      // never be read as evidence the University issued it then.
+      transcribed_on: today,
       cgpa: transcript.cgpa,
       credits_attempted: transcript.totalCredits,
       credits_earned: transcript.totalCredits,
@@ -447,6 +484,8 @@ async function transcribe(
       source: 'transcribed',
       source_record: sourceRecord,
       holder_name: holderName,
+      document_dated: issuedOn,
+      actually_written: today,
       student_number: m.studentNumber ?? null,
       cgpa: transcript.cgpa,
       courses: usable.length,

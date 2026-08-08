@@ -89,6 +89,12 @@ function Form() {
   // notice, because it reads perfectly well.
   const [programme, setProgramme] = React.useState('');
   const [sourceRecord, setSourceRecord] = React.useState('');
+  // The particulars the transcript prints, and the date it bears.
+  const [issuedOn, setIssuedOn] = React.useState('');
+  const [dateOfBirth, setDateOfBirth] = React.useState('');
+  const [placeOfBirth, setPlaceOfBirth] = React.useState('');
+  const [sex, setSex] = React.useState('');
+  const [studentAddress, setStudentAddress] = React.useState('');
   const [rows, setRows] = React.useState<Row[]>([blank(1), blank(2), blank(3)]);
   const [busy, setBusy] = React.useState(false);
   const [producing, setProducing] = React.useState(false);
@@ -156,6 +162,11 @@ function Form() {
             studentNumber: studentNumber.trim() || undefined,
             programme: programme.trim() || undefined,
             sourceRecord: sourceRecord.trim(),
+            issuedOn: issuedOn || undefined,
+            dateOfBirth: dateOfBirth.trim() || undefined,
+            placeOfBirth: placeOfBirth.trim() || undefined,
+            sex: sex.trim() || undefined,
+            studentAddress: studentAddress.trim() || undefined,
             // The level, so the route applies the same rule about whether a
             // class of award is printed.
             award: programme.trim() || undefined,
@@ -244,6 +255,46 @@ function Form() {
           </span>
         </label>
       </div>
+
+      {/* The particulars the sheet prints, and the date it bears. */}
+      <div className="mt-3 grid gap-3 sm:grid-cols-4">
+        <label className="block">
+          <span className={LABEL}>Date of birth</span>
+          <input value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} placeholder="16/06/1984" className={`${INPUT} mt-1`} />
+        </label>
+        <label className="block">
+          <span className={LABEL}>Place of birth</span>
+          <input value={placeOfBirth} onChange={(e) => setPlaceOfBirth(e.target.value)} className={`${INPUT} mt-1`} />
+        </label>
+        <label className="block">
+          <span className={LABEL}>Sex</span>
+          <input value={sex} onChange={(e) => setSex(e.target.value)} maxLength={4} className={`${INPUT} mt-1`} />
+        </label>
+        <label className="block">
+          <span className={LABEL}>Student address</span>
+          <input value={studentAddress} onChange={(e) => setStudentAddress(e.target.value)} className={`${INPUT} mt-1`} />
+        </label>
+      </div>
+
+      <label className="mt-3 block max-w-xs">
+        <span className={LABEL}>Date the transcript bears</span>
+        <input
+          type="date"
+          value={issuedOn}
+          max={new Date().toISOString().slice(0, 10)}
+          onChange={(e) => setIssuedOn(e.target.value)}
+          className={`${INPUT} mt-1`}
+        />
+        {/* BACK-DATING THE DOCUMENT IS NOT BACK-DATING THE REGISTER. A 2011
+            graduate's transcript should bear a 2011 date — the University did
+            issue them a record then. What must never move is the register's
+            own account of when this row was written, and it does not: both
+            dates go on the row and into the audit entry. */}
+        <span className="mt-1 block text-[11px] leading-relaxed text-[#8a8194]">
+          Leave blank for today. A past date is printed on the sheet; the register still records
+          when it was actually written, and the audit entry carries both. A future date is refused.
+        </span>
+      </label>
 
       <label className="mt-3 block">
         <span className={LABEL}>Where these figures come from *</span>

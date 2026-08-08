@@ -219,22 +219,37 @@ export default function TranscriptMaster({
   // PAGINATED BY YEAR, not by however many blocks happen to fit. A year is the
   // unit a transcript is read in, and a sheet that breaks Year Two across two
   // pages is one a registrar has to reassemble.
-  const sheets: (typeof data.years)[] = [];
-  for (let i = 0; i < data.years.length; i += YEARS_PER_SHEET) {
-    sheets.push(data.years.slice(i, i + YEARS_PER_SHEET));
-  }
-  if (sheets.length === 0) sheets.push([]);
-
-  // THE LAST SHEET CARRIES THE CLOSING BLOCK, so it cannot also carry two full
-  // years — the totals and the signatures then run off the foot of the page and
-  // print over the final Semester GPA row. Seen in a render, not reasoned about.
+  // ---------------------------------------------------------------------
+  // PAGINATION THAT STRETCHES TO THE PROGRAMME
   //
-  // The University's own transcript has the same rhythm: two years on the first
-  // sheet, the last year alone with the totals and the signatures on the second.
-  const last = sheets[sheets.length - 1];
-  if (last.length > 1) {
-    sheets[sheets.length - 1] = last.slice(0, last.length - 1);
-    sheets.push(last.slice(last.length - 1));
+  // A certificate programme runs one year, a diploma two, a bachelor's three.
+  // The sheet count follows the record rather than a fixed assumption.
+  //
+  // THE CLOSING BLOCK COSTS A SLOT. The totals, the offices and the signature
+  // line take roughly the height of one year's table, so they are paginated as
+  // if they were a year. Without that the last sheet overflows and the totals
+  // print over the final Semester GPA row — which is exactly what happened
+  // when the rule was "two years a sheet, closing block wherever it lands".
+  //
+  //   one year    → 1 sheet   (the year and the closing block)
+  //   two years   → 2 sheets  (both years, then the closing block)
+  //   three years → 2 sheets  (two years, then the third with the closing)
+  //   four years  → 3 sheets, and so on
+  const SLOTS_PER_SHEET = 2;
+  const slots: Array<{ year: (typeof data.years)[number] } | { closing: true }> =
+    [...data.years.map((year) => ({ year })), { closing: true as const }];
+
+  const sheets: Array<{
+    years: typeof data.years;
+    closing: boolean;
+  }> = [];
+  for (let i = 0; i < slots.length; i += SLOTS_PER_SHEET) {
+    const chunk = slots.slice(i, i + SLOTS_PER_SHEET);
+    sheets.push({
+      years: chunk.filter((x): x is { year: (typeof data.years)[number] } => 'year' in x)
+        .map((x) => x.year),
+      closing: chunk.some((x) => 'closing' in x),
+    });
   }
 
   return (
@@ -261,7 +276,7 @@ export default function TranscriptMaster({
         }
       `}</style>
 
-      {sheets.map((yearsOnSheet, i) => (
+      {sheets.map((sheet, i) => (
         <Sheet
           key={i}
           design={design}
@@ -272,9 +287,9 @@ export default function TranscriptMaster({
           microtext={microtext}
           ink={ink}
           rule={rule}
-          years={yearsOnSheet}
+          years={sheet.years}
           first={i === 0}
-          last={i === sheets.length - 1}
+          last={sheet.closing}
           page={i + 1}
           of={sheets.length}
         />
