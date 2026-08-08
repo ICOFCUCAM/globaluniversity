@@ -57,6 +57,7 @@ import {
   CalendarClock, Image as ImageIcon, Info, CheckCircle2, XCircle, Link2,
   PenLine, CalendarDays, ClipboardCheck,
 } from 'lucide-react';
+import { PageHeader } from '@/components/ui/portal';
 import ContentCalendar from './ContentCalendar';
 import PublicationDesk from './PublicationDesk';
 
@@ -278,8 +279,8 @@ export default function SocialCommandCentre({ role, userId }: { role?: UserRole;
 
   if (!mayCompose) {
     return (
-      <div className="mx-auto max-w-2xl rounded-2xl border border-[#ece7de] bg-white p-8 text-center dark:border-[#2e2637] dark:bg-[#1b1723]">
-        <h2 className="font-serif text-xl text-[#241a30] dark:text-[#f3efe7]">The Command Centre</h2>
+      <div className="mx-auto max-w-2xl rounded-xl border border-[#ece7de] bg-white p-8 text-center dark:border-[#2e2637] dark:bg-[#1f1a27]">
+        <h2 className="font-heading font-bold text-xl text-[#422e59] dark:text-[#e4dcf0]">The Command Centre</h2>
         <p className="mt-2 text-sm text-[#6b6076] dark:text-[#9c93ad]">
           Publishing on behalf of the University is limited to administrators.
         </p>
@@ -289,12 +290,10 @@ export default function SocialCommandCentre({ role, userId }: { role?: UserRole;
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <header>
-        <h1 className="font-serif text-2xl text-[#241a30] dark:text-[#f3efe7]">Social media command centre</h1>
-        <p className="mt-1 text-sm text-[#6b6076] dark:text-[#9c93ad]">
-          Write once, review once, publish everywhere. What each network receives is shown before it is sent.
-        </p>
-      </header>
+      <PageHeader
+        title="Social media command centre"
+        subtitle="Write once, review once, publish everywhere. What each network receives is shown before it is sent."
+      />
 
       {/* THREE VIEWS OF THE SAME PIPELINE, in the order the work happens:
           write it, see when it goes out, watch what happened to it. The
@@ -313,7 +312,7 @@ export default function SocialCommandCentre({ role, userId }: { role?: UserRole;
             onClick={() => setTab(t.id)}
             className={`-mb-px flex items-center gap-2 border-b-2 px-3 py-2 text-sm ${
               tab === t.id
-                ? 'border-[#7a4bbd] font-semibold text-[#241a30] dark:text-[#f3efe7]'
+                ? 'border-[#422e59] font-semibold text-[#422e59] dark:text-[#e4dcf0]'
                 : 'border-transparent text-[#6b6076] dark:text-[#9c93ad]'
             }`}
           >
@@ -354,8 +353,8 @@ export default function SocialCommandCentre({ role, userId }: { role?: UserRole;
         {/* THE COMPOSER                                                     */}
         {/* ---------------------------------------------------------------- */}
         <section className="space-y-4">
-          <div className="rounded-2xl border border-[#ece7de] bg-white p-5 dark:border-[#2e2637] dark:bg-[#1b1723]">
-            <label htmlFor="post-body" className="text-sm font-semibold text-[#241a30] dark:text-[#f3efe7]">
+          <div className="rounded-xl border border-[#ece7de] bg-white p-5 dark:border-[#2e2637] dark:bg-[#1f1a27]">
+            <label htmlFor="post-body" className="text-sm font-semibold text-[#422e59] dark:text-[#e4dcf0]">
               The announcement
             </label>
             <textarea
@@ -364,7 +363,7 @@ export default function SocialCommandCentre({ role, userId }: { role?: UserRole;
               onChange={(e) => setBody(e.target.value)}
               rows={6}
               placeholder="What has the University done, and who should know?"
-              className="mt-2 w-full rounded-xl border border-[#ece7de] bg-[#fbfaf7] p-3 text-sm text-[#241a30] outline-none focus:border-[#7a4bbd] dark:border-[#2e2637] dark:bg-[#17131d] dark:text-[#f3efe7]"
+              className="mt-2 w-full rounded-xl border border-[#ece7de] bg-[#faf8f4] p-3 text-sm text-[#241a30] outline-none focus:border-[#422e59] dark:border-[#2e2637] dark:bg-[#241f2c] dark:text-[#e4dcf0]"
             />
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -374,7 +373,7 @@ export default function SocialCommandCentre({ role, userId }: { role?: UserRole;
                   value={linkUrl}
                   onChange={(e) => setLinkUrl(e.target.value)}
                   placeholder="A link to include (optional)"
-                  className="w-full rounded-lg border border-[#ece7de] bg-[#fbfaf7] py-2 pl-9 pr-3 text-sm outline-none focus:border-[#7a4bbd] dark:border-[#2e2637] dark:bg-[#17131d] dark:text-[#f3efe7]"
+                  className="w-full rounded-lg border border-[#ece7de] bg-[#faf8f4] py-2 pl-9 pr-3 text-sm outline-none focus:border-[#422e59] dark:border-[#2e2637] dark:bg-[#241f2c] dark:text-[#e4dcf0]"
                 />
               </div>
 
@@ -382,7 +381,7 @@ export default function SocialCommandCentre({ role, userId }: { role?: UserRole;
                 type="button"
                 onClick={() => void askAssistant()}
                 disabled={drafting || !body.trim() || livePlatforms.length === 0}
-                className="inline-flex items-center gap-2 rounded-lg border border-[#7a4bbd]/30 bg-[#7a4bbd]/10 px-3 py-2 text-sm font-semibold text-[#5b3392] disabled:opacity-40 dark:text-[#c9a9f2]"
+                className="inline-flex items-center gap-2 rounded-lg border border-[#c5a55a]/50 bg-[#422e59]/10 px-3 py-2 text-sm font-semibold text-[#422e59] disabled:opacity-40 dark:text-[#c5a55a]"
               >
                 {drafting ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
                 Draft for each network
@@ -395,7 +394,7 @@ export default function SocialCommandCentre({ role, userId }: { role?: UserRole;
           {/* PER-PLATFORM PREVIEW. One panel per network actually being sent to. */}
           {livePlatforms.length > 0 && (
             <div className="space-y-3">
-              <h2 className="text-sm font-semibold text-[#241a30] dark:text-[#f3efe7]">
+              <h2 className="text-sm font-semibold text-[#422e59] dark:text-[#e4dcf0]">
                 What each network will receive
               </h2>
               {livePlatforms.map((p) => (
@@ -416,8 +415,8 @@ export default function SocialCommandCentre({ role, userId }: { role?: UserRole;
         {/* DESTINATIONS AND PUBLISHING                                      */}
         {/* ---------------------------------------------------------------- */}
         <aside className="space-y-4">
-          <div className="rounded-2xl border border-[#ece7de] bg-white p-5 dark:border-[#2e2637] dark:bg-[#1b1723]">
-            <h2 className="text-sm font-semibold text-[#241a30] dark:text-[#f3efe7]">Where this goes</h2>
+          <div className="rounded-xl border border-[#ece7de] bg-white p-5 dark:border-[#2e2637] dark:bg-[#1f1a27]">
+            <h2 className="text-sm font-semibold text-[#422e59] dark:text-[#e4dcf0]">Where this goes</h2>
 
             <div className="mt-3 space-y-2">
               {CHOICES.map((c) => (
@@ -425,7 +424,7 @@ export default function SocialCommandCentre({ role, userId }: { role?: UserRole;
                   key={c.id}
                   className={`flex cursor-pointer gap-3 rounded-xl border p-3 text-sm ${
                     choice === c.id
-                      ? 'border-[#7a4bbd] bg-[#7a4bbd]/[0.06]'
+                      ? 'border-[#422e59] bg-[#faf6ee] dark:bg-[#2a2333]'
                       : 'border-[#ece7de] dark:border-[#2e2637]'
                   }`}
                 >
@@ -437,7 +436,7 @@ export default function SocialCommandCentre({ role, userId }: { role?: UserRole;
                     onChange={() => { setChoice(c.id); setPlatforms([]); }}
                   />
                   <span>
-                    <span className="flex items-center gap-2 font-semibold text-[#241a30] dark:text-[#f3efe7]">
+                    <span className="flex items-center gap-2 font-semibold text-[#422e59] dark:text-[#e4dcf0]">
                       {c.icon}{c.label}
                     </span>
                     <span className="mt-0.5 block text-xs text-[#6b6076] dark:text-[#9c93ad]">{c.note}</span>
@@ -461,7 +460,7 @@ export default function SocialCommandCentre({ role, userId }: { role?: UserRole;
                       onClick={() => setPlatforms((ps) => on ? ps.filter((x) => x !== p) : [...ps, p])}
                       className={`rounded-full border px-3 py-1 text-xs font-medium ${
                         on
-                          ? 'border-[#7a4bbd] bg-[#7a4bbd] text-white'
+                          ? 'border-[#422e59] bg-[#422e59] text-white'
                           : 'border-[#ece7de] text-[#6b6076] dark:border-[#2e2637] dark:text-[#9c93ad]'
                       }`}
                     >
@@ -484,7 +483,7 @@ export default function SocialCommandCentre({ role, userId }: { role?: UserRole;
               <ul className="mt-4 space-y-1 border-t border-[#ece7de] pt-3 text-xs dark:border-[#2e2637]">
                 {resolution.targets.map((t) => (
                   <li key={t.account.id} className="flex items-center justify-between gap-2">
-                    <span className="text-[#241a30] dark:text-[#f3efe7]">{t.account.handle}</span>
+                    <span className="text-[#422e59] dark:text-[#e4dcf0]">{t.account.handle}</span>
                     <span className="text-[#9c93ad]">
                       {PLATFORM_PROFILES[t.platform].name}
                       {t.account.scope === 'personal' && ' · yours'}
@@ -507,8 +506,8 @@ export default function SocialCommandCentre({ role, userId }: { role?: UserRole;
           </div>
 
           {/* SCHEDULE */}
-          <div className="rounded-2xl border border-[#ece7de] bg-white p-5 dark:border-[#2e2637] dark:bg-[#1b1723]">
-            <label htmlFor="sched" className="flex items-center gap-2 text-sm font-semibold text-[#241a30] dark:text-[#f3efe7]">
+          <div className="rounded-xl border border-[#ece7de] bg-white p-5 dark:border-[#2e2637] dark:bg-[#1f1a27]">
+            <label htmlFor="sched" className="flex items-center gap-2 text-sm font-semibold text-[#422e59] dark:text-[#e4dcf0]">
               <CalendarClock size={15} /> Publish later
             </label>
             <input
@@ -516,14 +515,14 @@ export default function SocialCommandCentre({ role, userId }: { role?: UserRole;
               type="datetime-local"
               value={scheduledFor}
               onChange={(e) => setScheduledFor(e.target.value)}
-              className="mt-2 w-full rounded-lg border border-[#ece7de] bg-[#fbfaf7] p-2 text-sm dark:border-[#2e2637] dark:bg-[#17131d] dark:text-[#f3efe7]"
+              className="mt-2 w-full rounded-lg border border-[#ece7de] bg-[#faf8f4] p-2 text-sm dark:border-[#2e2637] dark:bg-[#241f2c] dark:text-[#e4dcf0]"
             />
             <p className="mt-1 text-xs text-[#9c93ad]">Leave empty to publish now.</p>
           </div>
 
           {/* PROBLEMS. Listed, not hidden behind a disabled button. */}
           {problems.length > 0 && (
-            <ul className="space-y-2 rounded-2xl border border-[#ece7de] bg-white p-4 text-xs dark:border-[#2e2637] dark:bg-[#1b1723]">
+            <ul className="space-y-2 rounded-xl border border-[#ece7de] bg-white p-4 text-xs dark:border-[#2e2637] dark:bg-[#1f1a27]">
               {problems.map((p, i) => (
                 <li key={i} className="flex items-start gap-2">
                   {p.severity === 'blocking'
@@ -539,7 +538,7 @@ export default function SocialCommandCentre({ role, userId }: { role?: UserRole;
             type="button"
             onClick={() => void publish()}
             disabled={!ready || publishing}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#241a30] px-4 py-3 text-sm font-semibold text-white disabled:opacity-40 dark:bg-[#e9c14a] dark:text-[#241a30]"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#422e59] px-4 py-3 text-sm font-semibold text-white disabled:opacity-40 dark:bg-[#c5a55a] dark:text-[#241a30]"
           >
             {publishing ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
             {needsReview ? 'Send for review' : scheduledFor ? 'Schedule' : 'Publish'}
@@ -587,9 +586,9 @@ function PlatformPanel({
   const near = !over && text.length > profile.limit * 0.9;
 
   return (
-    <div className="rounded-2xl border border-[#ece7de] bg-white p-4 dark:border-[#2e2637] dark:bg-[#1b1723]">
+    <div className="rounded-xl border border-[#ece7de] bg-white p-4 dark:border-[#2e2637] dark:bg-[#1f1a27]">
       <div className="flex items-baseline justify-between gap-3">
-        <h3 className="text-sm font-semibold text-[#241a30] dark:text-[#f3efe7]">{profile.name}</h3>
+        <h3 className="text-sm font-semibold text-[#422e59] dark:text-[#e4dcf0]">{profile.name}</h3>
         <span className={`text-xs tabular-nums ${
           over ? 'font-semibold text-red-600' : near ? 'font-semibold text-[#a07c12]' : 'text-[#9c93ad]'
         }`}>
@@ -613,7 +612,7 @@ function PlatformPanel({
           editedBy: variant?.editedBy ?? null,
         })}
         rows={3}
-        className="mt-2 w-full rounded-lg border border-[#ece7de] bg-[#fbfaf7] p-2 text-sm dark:border-[#2e2637] dark:bg-[#17131d] dark:text-[#f3efe7]"
+        className="mt-2 w-full rounded-lg border border-[#ece7de] bg-[#faf8f4] p-2 text-sm dark:border-[#2e2637] dark:bg-[#241f2c] dark:text-[#e4dcf0]"
       />
 
       <input
@@ -626,11 +625,11 @@ function PlatformPanel({
           editedBy: variant?.editedBy ?? null,
         })}
         placeholder={`Hashtags — around ${profile.hashtagGuide} reads as an institution`}
-        className="mt-2 w-full rounded-lg border border-[#ece7de] bg-[#fbfaf7] p-2 text-xs dark:border-[#2e2637] dark:bg-[#17131d] dark:text-[#f3efe7]"
+        className="mt-2 w-full rounded-lg border border-[#ece7de] bg-[#faf8f4] p-2 text-xs dark:border-[#2e2637] dark:bg-[#241f2c] dark:text-[#e4dcf0]"
       />
 
       {variant?.source === 'assistant' && (
-        <p className="mt-2 flex items-center gap-1.5 text-xs text-[#7a4bbd] dark:text-[#c9a9f2]">
+        <p className="mt-2 flex items-center gap-1.5 text-xs text-[#422e59] dark:text-[#c5a55a]">
           <Sparkles size={12} /> Drafted by the assistant. You are publishing it.
         </p>
       )}
@@ -654,8 +653,8 @@ function MediaPanel({ media, onChange }: { media: PostMedia[]; onChange: (m: Pos
   const [kind, setKind] = useState<'image' | 'video'>('image');
 
   return (
-    <div className="rounded-2xl border border-[#ece7de] bg-white p-5 dark:border-[#2e2637] dark:bg-[#1b1723]">
-      <h2 className="flex items-center gap-2 text-sm font-semibold text-[#241a30] dark:text-[#f3efe7]">
+    <div className="rounded-xl border border-[#ece7de] bg-white p-5 dark:border-[#2e2637] dark:bg-[#1f1a27]">
+      <h2 className="flex items-center gap-2 text-sm font-semibold text-[#422e59] dark:text-[#e4dcf0]">
         <ImageIcon size={15} /> Images and video
       </h2>
 
@@ -664,12 +663,12 @@ function MediaPanel({ media, onChange }: { media: PostMedia[]; onChange: (m: Pos
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           placeholder="Address of the image or video"
-          className="min-w-[16rem] flex-1 rounded-lg border border-[#ece7de] bg-[#fbfaf7] p-2 text-sm dark:border-[#2e2637] dark:bg-[#17131d] dark:text-[#f3efe7]"
+          className="min-w-[16rem] flex-1 rounded-lg border border-[#ece7de] bg-[#faf8f4] p-2 text-sm dark:border-[#2e2637] dark:bg-[#241f2c] dark:text-[#e4dcf0]"
         />
         <select
           value={kind}
           onChange={(e) => setKind(e.target.value as 'image' | 'video')}
-          className="rounded-lg border border-[#ece7de] bg-[#fbfaf7] p-2 text-sm dark:border-[#2e2637] dark:bg-[#17131d] dark:text-[#f3efe7]"
+          className="rounded-lg border border-[#ece7de] bg-[#faf8f4] p-2 text-sm dark:border-[#2e2637] dark:bg-[#241f2c] dark:text-[#e4dcf0]"
         >
           <option value="image">Image</option>
           <option value="video">Video</option>
@@ -678,7 +677,7 @@ function MediaPanel({ media, onChange }: { media: PostMedia[]; onChange: (m: Pos
           type="button"
           disabled={!url.trim()}
           onClick={() => { onChange([...media, { url: url.trim(), kind, altText: '' }]); setUrl(''); }}
-          className="rounded-lg border border-[#ece7de] px-3 py-2 text-sm font-medium text-[#241a30] disabled:opacity-40 dark:border-[#2e2637] dark:text-[#f3efe7]"
+          className="rounded-lg border border-[#ece7de] px-3 py-2 text-sm font-medium text-[#241a30] disabled:opacity-40 dark:border-[#2e2637] dark:text-[#e4dcf0]"
         >
           Add
         </button>
@@ -691,9 +690,9 @@ function MediaPanel({ media, onChange }: { media: PostMedia[]; onChange: (m: Pos
             value={m.altText}
             onChange={(e) => onChange(media.map((x, j) => j === i ? { ...x, altText: e.target.value } : x))}
             placeholder="Describe it for someone who cannot see it — required"
-            className={`mt-2 w-full rounded-lg border p-2 text-sm dark:bg-[#17131d] dark:text-[#f3efe7] ${
+            className={`mt-2 w-full rounded-lg border p-2 text-sm dark:bg-[#241f2c] dark:text-[#e4dcf0] ${
               m.altText.trim()
-                ? 'border-[#ece7de] bg-[#fbfaf7] dark:border-[#2e2637]'
+                ? 'border-[#ece7de] bg-[#faf8f4] dark:border-[#2e2637]'
                 : 'border-red-400 bg-red-50 dark:bg-[#2a1a1a]'
             }`}
           />

@@ -202,12 +202,12 @@ export default function PublicationDesk({
       {/* WHAT THE UNIVERSITY HAS SAID. At the top of the desk rather than on a
           tab of its own, because a separate analytics screen is visited on the
           day it is built and never again. */}
-      <section className="rounded-2xl border border-[#ece7de] bg-white p-5 dark:border-[#2e2637] dark:bg-[#1b1723]">
+      <section className="rounded-xl border border-[#ece7de] bg-white p-5 dark:border-[#2e2637] dark:bg-[#1f1a27]">
         <PublishingAnalytics />
       </section>
 
       <section>
-        <h2 className="flex items-center gap-2 font-serif text-lg text-[#241a30] dark:text-[#f3efe7]">
+        <h2 className="flex items-center gap-2 font-heading font-bold text-lg text-[#422e59] dark:text-[#e4dcf0]">
           <Inbox size={17} /> Waiting to be read
         </h2>
         {posts === null ? (
@@ -225,11 +225,11 @@ export default function PublicationDesk({
                 // The route and migration 014 both refuse it as well.
                 .filter((m) => !(m.to === 'approved' && mine));
               return (
-                <li key={p.id} className="rounded-2xl border border-[#ece7de] bg-white p-4 dark:border-[#2e2637] dark:bg-[#1b1723]">
+                <li key={p.id} className="rounded-xl border border-[#ece7de] bg-white p-4 dark:border-[#2e2637] dark:bg-[#1f1a27]">
                   <PostSummary post={p} />
 
                   {mine ? (
-                    <p className="mt-3 rounded-lg bg-[#fbfaf7] p-2 text-xs text-[#6b6076] dark:bg-[#17131d] dark:text-[#9c93ad]">
+                    <p className="mt-3 rounded-lg bg-[#faf8f4] p-2 text-xs text-[#6b6076] dark:bg-[#241f2c] dark:text-[#9c93ad]">
                       You wrote this, so you cannot be the one who approves it. Another
                       administrator has to read it first — that is what the review step is for.
                     </p>
@@ -241,7 +241,7 @@ export default function PublicationDesk({
                         value={note[p.id] ?? ''}
                         onChange={(e) => setNote((s) => ({ ...s, [p.id]: e.target.value }))}
                         placeholder="A note. Required to send back — say what needs to change."
-                        className="mt-3 w-full rounded-lg border border-[#ece7de] bg-[#fbfaf7] p-2 text-xs dark:border-[#2e2637] dark:bg-[#17131d] dark:text-[#f3efe7]"
+                        className="mt-3 w-full rounded-lg border border-[#ece7de] bg-[#faf8f4] p-2 text-xs dark:border-[#2e2637] dark:bg-[#241f2c] dark:text-[#e4dcf0]"
                       />
                       <div className="mt-2 flex flex-wrap gap-2">
                         {moves.map((m) => {
@@ -259,7 +259,7 @@ export default function PublicationDesk({
                               title={verdict.allowed ? undefined : verdict.reason}
                               className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold disabled:opacity-40 ${
                                 m.to === 'approved'
-                                  ? 'bg-[#241a30] text-white dark:bg-[#e9c14a] dark:text-[#241a30]'
+                                  ? 'bg-[#241a30] text-white dark:bg-[#c5a55a] dark:text-[#241a30]'
                                   : 'border border-[#ece7de] text-[#6b6076] dark:border-[#2e2637] dark:text-[#9c93ad]'
                               }`}
                             >
@@ -280,7 +280,7 @@ export default function PublicationDesk({
 
       {/* ------------------------------------------------------------------ */}
       <section>
-        <h2 className="font-serif text-lg text-[#241a30] dark:text-[#f3efe7]">Publication history</h2>
+        <h2 className="font-heading font-bold text-lg text-[#422e59] dark:text-[#e4dcf0]">Publication history</h2>
         {posts === null ? null : history.length === 0 ? (
           <p className="mt-2 text-sm text-[#6b6076] dark:text-[#9c93ad]">
             Nothing has been published through the Command Centre yet.
@@ -291,7 +291,7 @@ export default function PublicationDesk({
               const outcome = statusFromTargets(p.targets.map((t) => t.state));
               const failed = p.targets.filter((t) => t.state === 'failed');
               return (
-                <li key={p.id} className="rounded-2xl border border-[#ece7de] bg-white p-4 dark:border-[#2e2637] dark:bg-[#1b1723]">
+                <li key={p.id} className="rounded-xl border border-[#ece7de] bg-white p-4 dark:border-[#2e2637] dark:bg-[#1f1a27]">
                   <PostSummary post={p} />
 
                   {p.targets.length > 0 && (
@@ -306,11 +306,11 @@ export default function PublicationDesk({
                               t.state === 'posted' ? 'bg-emerald-600/10 text-emerald-700 dark:text-emerald-300'
                                 : t.state === 'failed' ? 'bg-red-600/10 text-red-700 dark:text-red-300'
                                   : t.state === 'skipped' ? 'bg-[#ece7de] text-[#6b6076] dark:bg-[#2e2637] dark:text-[#9c93ad]'
-                                    : 'bg-[#7a4bbd]/10 text-[#5b3392] dark:text-[#c9a9f2]'
+                                    : 'bg-[#422e59]/10 text-[#422e59] dark:text-[#c5a55a]'
                             }`}>
                               {t.state}
                             </span>
-                            <span className="text-[#241a30] dark:text-[#f3efe7]">{t.handle}</span>
+                            <span className="text-[#422e59] dark:text-[#e4dcf0]">{t.handle}</span>
                             {t.platform && (
                               <span className="text-[#9c93ad]">{PLATFORM_PROFILES[t.platform]?.name}</span>
                             )}
@@ -335,7 +335,7 @@ export default function PublicationDesk({
                         type="button"
                         onClick={() => void retry(p)}
                         disabled={busy === p.id}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-[#7a4bbd]/40 px-3 py-1.5 text-xs font-semibold text-[#5b3392] disabled:opacity-40 dark:text-[#c9a9f2]"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-[#c5a55a]/60 px-3 py-1.5 text-xs font-semibold text-[#422e59] disabled:opacity-40 dark:text-[#c5a55a]"
                       >
                         {busy === p.id ? <Loader2 size={12} className="animate-spin" /> : <RotateCw size={12} />}
                         Try {failed.length === 1 ? 'it' : `those ${failed.length}`} again
@@ -366,7 +366,7 @@ export default function PublicationDesk({
 function PostSummary({ post }: { post: PostRow }) {
   return (
     <>
-      <p className="whitespace-pre-wrap text-sm text-[#241a30] dark:text-[#f3efe7]">{post.body}</p>
+      <p className="whitespace-pre-wrap text-sm text-[#422e59] dark:text-[#e4dcf0]">{post.body}</p>
       <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#9c93ad]">
         <span>{post.authorName ?? 'An administrator'}</span>
         <span>·</span>
@@ -374,7 +374,7 @@ function PostSummary({ post }: { post: PostRow }) {
         {post.scheduledFor && (
           <>
             <span>·</span>
-            <span className="inline-flex items-center gap-1 text-[#5b3392] dark:text-[#c9a9f2]">
+            <span className="inline-flex items-center gap-1 text-[#422e59] dark:text-[#c5a55a]">
               <Send size={11} /> scheduled {new Date(post.scheduledFor).toLocaleString('en-GB')}
             </span>
           </>
@@ -385,7 +385,7 @@ function PostSummary({ post }: { post: PostRow }) {
         {post.assistantDrafted && (
           <>
             <span>·</span>
-            <span className="inline-flex items-center gap-1 text-[#7a4bbd] dark:text-[#c9a9f2]">
+            <span className="inline-flex items-center gap-1 text-[#422e59] dark:text-[#c5a55a]">
               <Sparkles size={11} /> assistant-drafted
             </span>
           </>

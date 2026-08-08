@@ -140,9 +140,9 @@ export default function RequestCorrection({
   }
 
   return (
-    <div className="mt-3 space-y-3 rounded-xl border border-[#ece7de] bg-[#fbfaf7] p-4 dark:border-[#2e2637] dark:bg-[#17131d]">
+    <div className="mt-3 space-y-3 rounded-xl border border-[#ece7de] bg-[#faf8f4] p-4 dark:border-[#2e2637] dark:bg-[#241f2c]">
       <div>
-        <p className="text-sm font-semibold text-[#241a30] dark:text-[#f3efe7]">
+        <p className="text-sm font-semibold text-[#422e59] dark:text-[#e4dcf0]">
           Ask the Registry to correct {reference}
         </p>
         <p className="mt-1 text-xs text-[#6b6076] dark:text-[#9c93ad]">
@@ -152,7 +152,7 @@ export default function RequestCorrection({
       </div>
 
       <label className="block">
-        <span className="text-xs font-medium text-[#241a30] dark:text-[#f3efe7]">
+        <span className="text-xs font-medium text-[#422e59] dark:text-[#e4dcf0]">
           What is wrong with it?
         </span>
         <textarea
@@ -160,12 +160,12 @@ export default function RequestCorrection({
           onChange={(e) => setDescription(e.target.value)}
           rows={3}
           placeholder="e.g. My surname is spelled Nkenge on the certificate. It is Nkeng on my birth certificate and on my passport."
-          className="mt-1 w-full rounded-lg border border-[#ece7de] bg-white p-2 text-sm dark:border-[#2e2637] dark:bg-[#1b1723] dark:text-[#f3efe7]"
+          className="mt-1 w-full rounded-lg border border-[#ece7de] bg-white p-2 text-sm dark:border-[#2e2637] dark:bg-[#1f1a27] dark:text-[#e4dcf0]"
         />
       </label>
 
       <fieldset>
-        <legend className="text-xs font-medium text-[#241a30] dark:text-[#f3efe7]">
+        <legend className="text-xs font-medium text-[#422e59] dark:text-[#e4dcf0]">
           What should it say? Fill in only what is wrong.
         </legend>
         <div className="mt-1.5 space-y-1.5">
@@ -177,7 +177,7 @@ export default function RequestCorrection({
               <input
                 value={proposed[f.key] ?? ''}
                 onChange={(e) => setProposed((s) => ({ ...s, [f.key]: e.target.value }))}
-                className="min-w-0 flex-1 rounded-lg border border-[#ece7de] bg-white p-1.5 text-sm dark:border-[#2e2637] dark:bg-[#1b1723] dark:text-[#f3efe7]"
+                className="min-w-0 flex-1 rounded-lg border border-[#ece7de] bg-white p-1.5 text-sm dark:border-[#2e2637] dark:bg-[#1f1a27] dark:text-[#e4dcf0]"
               />
             </label>
           ))}
@@ -185,14 +185,14 @@ export default function RequestCorrection({
       </fieldset>
 
       <label className="block">
-        <span className="text-xs font-medium text-[#241a30] dark:text-[#f3efe7]">
+        <span className="text-xs font-medium text-[#422e59] dark:text-[#e4dcf0]">
           What can you show them?
         </span>
         <input
           value={evidence}
           onChange={(e) => setEvidence(e.target.value)}
           placeholder="e.g. Birth certificate and passport"
-          className="mt-1 w-full rounded-lg border border-[#ece7de] bg-white p-2 text-sm dark:border-[#2e2637] dark:bg-[#1b1723] dark:text-[#f3efe7]"
+          className="mt-1 w-full rounded-lg border border-[#ece7de] bg-white p-2 text-sm dark:border-[#2e2637] dark:bg-[#1f1a27] dark:text-[#e4dcf0]"
         />
         <span className="mt-1 block text-xs text-[#9c93ad]">
           Name the documents rather than attaching them. The Registry will tell you how to present
@@ -205,7 +205,7 @@ export default function RequestCorrection({
           type="button"
           onClick={() => void submit()}
           disabled={busy || !description.trim() || filled === 0}
-          className="inline-flex items-center gap-2 rounded-lg bg-[#241a30] px-4 py-2 text-sm font-semibold text-white disabled:opacity-40 dark:bg-[#e9c14a] dark:text-[#241a30]"
+          className="inline-flex items-center gap-2 rounded-lg bg-[#422e59] px-4 py-2 text-sm font-semibold text-white disabled:opacity-40 dark:bg-[#c5a55a] dark:text-[#241a30]"
         >
           {busy && <Loader2 size={14} className="animate-spin" />}
           Send request

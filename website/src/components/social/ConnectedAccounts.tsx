@@ -143,7 +143,7 @@ export default function ConnectedAccounts({ role }: { role?: UserRole }) {
 
       {/* ------------------------------------------------------------------ */}
       <section>
-        <h3 className="flex items-center gap-2 text-sm font-semibold text-[#241a30] dark:text-[#f3efe7]">
+        <h3 className="flex items-center gap-2 text-sm font-semibold text-[#422e59] dark:text-[#e4dcf0]">
           <Building2 size={15} /> The University’s accounts
         </h3>
         <p className="mt-1 text-xs text-[#6b6076] dark:text-[#9c93ad]">
@@ -174,7 +174,7 @@ export default function ConnectedAccounts({ role }: { role?: UserRole }) {
 
       {/* ------------------------------------------------------------------ */}
       <section>
-        <h3 className="flex items-center gap-2 text-sm font-semibold text-[#241a30] dark:text-[#f3efe7]">
+        <h3 className="flex items-center gap-2 text-sm font-semibold text-[#422e59] dark:text-[#e4dcf0]">
           <User size={15} /> My accounts
         </h3>
         <p className="mt-1 text-xs text-[#6b6076] dark:text-[#9c93ad]">
@@ -215,7 +215,7 @@ export default function ConnectedAccounts({ role }: { role?: UserRole }) {
               title={r.configured ? undefined : `${r.app} Missing: ${r.missing.join(', ')}`}
               className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium ${
                 r.configured
-                  ? 'border-[#7a4bbd]/40 text-[#5b3392] dark:text-[#c9a9f2]'
+                  ? 'border-[#c5a55a]/60 text-[#422e59] dark:text-[#c5a55a]'
                   : 'border-[#ece7de] text-[#9c93ad] dark:border-[#2e2637]'
               }`}
             >
@@ -232,8 +232,8 @@ export default function ConnectedAccounts({ role }: { role?: UserRole }) {
           only — an ordinary administrator cannot act on any of it, and a list
           of unmet requirements they cannot meet reads as a broken system. */}
       {mayConnectUniversity && requirements.some((r) => !r.configured) && (
-        <section className="rounded-xl border border-[#ece7de] bg-[#fbfaf7] p-4 dark:border-[#2e2637] dark:bg-[#17131d]">
-          <h3 className="flex items-center gap-2 text-sm font-semibold text-[#241a30] dark:text-[#f3efe7]">
+        <section className="rounded-xl border border-[#ece7de] bg-[#faf8f4] p-4 dark:border-[#2e2637] dark:bg-[#241f2c]">
+          <h3 className="flex items-center gap-2 text-sm font-semibold text-[#422e59] dark:text-[#e4dcf0]">
             <Info size={15} /> Not yet connectable
           </h3>
           <p className="mt-1 text-xs text-[#6b6076] dark:text-[#9c93ad]">
@@ -244,7 +244,7 @@ export default function ConnectedAccounts({ role }: { role?: UserRole }) {
           <ul className="mt-3 space-y-3">
             {requirements.filter((r) => !r.configured).map((r) => (
               <li key={r.platform} className="text-xs">
-                <p className="font-semibold text-[#241a30] dark:text-[#f3efe7]">
+                <p className="font-semibold text-[#422e59] dark:text-[#e4dcf0]">
                   {PLATFORM_PROFILES[r.platform].name}
                 </p>
                 <p className="text-[#6b6076] dark:text-[#9c93ad]">{r.app}</p>
@@ -269,7 +269,7 @@ function AccountRow({
   return (
     <li className="flex items-center justify-between gap-3 rounded-xl border border-[#ece7de] p-3 dark:border-[#2e2637]">
       <div className="min-w-0">
-        <p className="flex items-center gap-2 text-sm font-medium text-[#241a30] dark:text-[#f3efe7]">
+        <p className="flex items-center gap-2 text-sm font-medium text-[#422e59] dark:text-[#e4dcf0]">
           {live
             ? <CheckCircle2 size={14} className="text-emerald-600" />
             : <AlertTriangle size={14} className="text-[#a07c12]" />}

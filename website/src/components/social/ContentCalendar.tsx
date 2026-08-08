@@ -143,7 +143,7 @@ export default function ContentCalendar({ onOpen }: { onOpen?: (id: string) => v
   return (
     <div>
       <header className="flex items-center justify-between gap-3">
-        <h2 className="font-serif text-lg text-[#241a30] dark:text-[#f3efe7]">
+        <h2 className="font-heading font-bold text-lg text-[#422e59] dark:text-[#e4dcf0]">
           {cursor.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
         </h2>
         <div className="flex items-center gap-1">
@@ -186,7 +186,7 @@ export default function ContentCalendar({ onOpen }: { onOpen?: (id: string) => v
         <>
           <div className="mt-3 grid grid-cols-7 gap-px overflow-hidden rounded-xl border border-[#ece7de] bg-[#ece7de] dark:border-[#2e2637] dark:bg-[#2e2637]">
             {DAY_NAMES.map((d) => (
-              <div key={d} className="bg-[#fbfaf7] px-2 py-1.5 text-center text-xs font-semibold text-[#9c93ad] dark:bg-[#17131d]">
+              <div key={d} className="bg-[#faf8f4] px-2 py-1.5 text-center text-xs font-semibold text-[#9c93ad] dark:bg-[#241f2c]">
                 {d}
               </div>
             ))}
@@ -197,13 +197,13 @@ export default function ContentCalendar({ onOpen }: { onOpen?: (id: string) => v
               return (
                 <div
                   key={key}
-                  className={`min-h-[5.5rem] bg-white p-1.5 dark:bg-[#1b1723] ${
+                  className={`min-h-[5.5rem] bg-white p-1.5 dark:bg-[#1f1a27] ${
                     otherMonth ? 'opacity-40' : ''
                   }`}
                 >
                   <div className={`text-xs ${
                     key === today
-                      ? 'inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#241a30] font-semibold text-white dark:bg-[#e9c14a] dark:text-[#241a30]'
+                      ? 'inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#241a30] font-semibold text-white dark:bg-[#c5a55a] dark:text-[#241a30]'
                       : 'text-[#9c93ad]'
                   }`}>
                     {day.getDate()}
@@ -233,7 +233,7 @@ export default function ContentCalendar({ onOpen }: { onOpen?: (id: string) => v
           <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-[#6b6076] dark:text-[#9c93ad]">
             <Key className="bg-emerald-600/15 text-emerald-800 dark:text-emerald-300">Published</Key>
             <Key className="bg-[#e9c14a]/20 text-[#8a6a10]">Some networks failed</Key>
-            <Key className="bg-[#7a4bbd]/15 text-[#5b3392] dark:text-[#c9a9f2]">Scheduled</Key>
+            <Key className="bg-[#422e59]/12 text-[#422e59] dark:text-[#c5a55a]">Scheduled</Key>
             <Key className="bg-red-600/10 text-red-700 dark:text-red-300">Waiting for approval</Key>
             <Key className="bg-[#ece7de] text-[#6b6076] dark:bg-[#2e2637] dark:text-[#9c93ad]">Draft</Key>
           </ul>
@@ -268,7 +268,7 @@ function toneFor(e: Entry): string {
   if (e.approvalState === 'submitted' || e.approvalState === 'rejected') {
     return 'bg-red-600/10 text-red-700 dark:text-red-300';
   }
-  if (e.status === 'scheduled') return 'bg-[#7a4bbd]/15 text-[#5b3392] dark:text-[#c9a9f2]';
+  if (e.status === 'scheduled') return 'bg-[#422e59]/12 text-[#422e59] dark:text-[#c5a55a]';
   return 'bg-[#ece7de] text-[#6b6076] dark:bg-[#2e2637] dark:text-[#9c93ad]';
 }
 

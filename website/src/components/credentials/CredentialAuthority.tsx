@@ -56,6 +56,7 @@ import {
   type CredentialVersion, type CredentialCategory, type AuditEvent,
   type CorrectionState,
 } from '@/lib/credentialAuthority';
+import { PageHeader } from '@/components/ui/portal';
 import {
   Loader2, Search, AlertTriangle, History, ShieldCheck, Printer, Mail,
   FileWarning, Plus, ChevronRight, XCircle, CheckCircle2, Inbox, BadgeCheck,
@@ -213,12 +214,10 @@ export default function CredentialAuthority({ role }: { role?: UserRole }) {
 
   return (
     <div className="mx-auto max-w-6xl space-y-5">
-      <header>
-        <h1 className="font-serif text-2xl text-[#241a30] dark:text-[#f3efe7]">Credential authority</h1>
-        <p className="mt-1 text-sm text-[#6b6076] dark:text-[#9c93ad]">
-          Everything the University has issued. Corrections supersede; nothing is overwritten.
-        </p>
-      </header>
+      <PageHeader
+        title="Credential authority"
+        subtitle="Everything the University has issued. Corrections supersede; nothing is overwritten."
+      />
 
       {notReady && (
         <div className="flex items-start gap-3 rounded-xl border border-[#e9c14a]/40 bg-[#e9c14a]/10 p-4 text-sm">
@@ -250,13 +249,13 @@ export default function CredentialAuthority({ role }: { role?: UserRole }) {
             onClick={() => setTab(t.id)}
             className={`-mb-px flex items-center gap-2 border-b-2 px-3 py-2 text-sm ${
               tab === t.id
-                ? 'border-[#7a4bbd] font-semibold text-[#241a30] dark:text-[#f3efe7]'
+                ? 'border-[#422e59] font-semibold text-[#422e59] dark:text-[#e4dcf0]'
                 : 'border-transparent text-[#6b6076] dark:text-[#9c93ad]'
             }`}
           >
             {t.icon}{t.label}
             {t.count != null && t.count > 0 && (
-              <span className="rounded-full bg-[#7a4bbd]/15 px-1.5 text-xs text-[#5b3392] dark:text-[#c9a9f2]">
+              <span className="rounded-full bg-[#422e59]/12 px-1.5 text-xs text-[#422e59] dark:text-[#c5a55a]">
                 {t.count}
               </span>
             )}
@@ -274,7 +273,7 @@ export default function CredentialAuthority({ role }: { role?: UserRole }) {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search by name, award or credential number"
-                className="w-full rounded-xl border border-[#ece7de] bg-white py-2.5 pl-9 pr-3 text-sm outline-none focus:border-[#7a4bbd] dark:border-[#2e2637] dark:bg-[#1b1723] dark:text-[#f3efe7]"
+                className="w-full rounded-xl border border-[#ece7de] bg-white py-2.5 pl-9 pr-3 text-sm outline-none focus:border-[#422e59] dark:border-[#2e2637] dark:bg-[#1f1a27] dark:text-[#e4dcf0]"
               />
             </div>
 
@@ -295,12 +294,12 @@ export default function CredentialAuthority({ role }: { role?: UserRole }) {
                       onClick={() => setSelected(a.ref)}
                       className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left ${
                         selected === a.ref
-                          ? 'border-[#7a4bbd] bg-[#7a4bbd]/[0.06]'
-                          : 'border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1b1723]'
+                          ? 'border-[#422e59] bg-[#faf6ee] dark:bg-[#2a2333]'
+                          : 'border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27]'
                       }`}
                     >
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-[#241a30] dark:text-[#f3efe7]">
+                        <p className="truncate text-sm font-medium text-[#422e59] dark:text-[#e4dcf0]">
                           {a.current.holderName}
                         </p>
                         <p className="truncate text-xs text-[#6b6076] dark:text-[#9c93ad]">
@@ -472,9 +471,9 @@ function AwardPanel({
   }
 
   return (
-    <div className="space-y-4 rounded-2xl border border-[#ece7de] bg-white p-5 dark:border-[#2e2637] dark:bg-[#1b1723]">
+    <div className="space-y-4 rounded-xl border border-[#ece7de] bg-white p-5 dark:border-[#2e2637] dark:bg-[#1f1a27]">
       <div>
-        <p className="font-serif text-lg text-[#241a30] dark:text-[#f3efe7]">{current.holderName}</p>
+        <p className="font-heading font-bold text-lg text-[#422e59] dark:text-[#e4dcf0]">{current.holderName}</p>
         <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">{current.award ?? current.kind}</p>
         {current.classification && (
           <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">{current.classification}</p>
@@ -518,7 +517,7 @@ function AwardPanel({
           <button
             type="button"
             onClick={() => setCorrecting((c) => !c)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-[#7a4bbd]/40 px-3 py-1.5 text-xs font-semibold text-[#5b3392] dark:text-[#c9a9f2]"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[#c5a55a]/60 px-3 py-1.5 text-xs font-semibold text-[#422e59] dark:text-[#c5a55a]"
           >
             <FileWarning size={13} /> Correct
           </button>
@@ -564,7 +563,7 @@ function AwardPanel({
       {/* THE CORRECTION FORM. Every field prefilled with what the register
           actually says, so the Authority corrects rather than retypes. */}
       {correcting && (
-        <div className="space-y-3 rounded-xl border border-[#7a4bbd]/30 bg-[#7a4bbd]/[0.04] p-4">
+        <div className="space-y-3 rounded-xl border border-[#c5a55a]/50 bg-[#faf6ee] dark:bg-[#2a2333] p-4">
           <p className="text-xs text-[#6b6076] dark:text-[#9c93ad]">
             This issues <strong>version {current.version + 1}</strong>. Version {current.version} is
             kept, marked superseded, with its own seal intact.
@@ -572,20 +571,20 @@ function AwardPanel({
 
           {(['holder_name', 'award', 'classification', 'programme'] as const).map((f) => (
             <label key={f} className="block">
-              <span className="text-xs font-medium text-[#241a30] dark:text-[#f3efe7]">
+              <span className="text-xs font-medium text-[#422e59] dark:text-[#e4dcf0]">
                 {f === 'holder_name' ? 'Name' : f === 'award' ? 'Award'
                   : f === 'classification' ? 'Classification' : 'Programme'}
               </span>
               <input
                 value={fields[f] ?? (current[f === 'holder_name' ? 'holderName' : f] ?? '')}
                 onChange={(e) => setFields((s) => ({ ...s, [f]: e.target.value }))}
-                className="mt-1 w-full rounded-lg border border-[#ece7de] bg-white p-2 text-sm dark:border-[#2e2637] dark:bg-[#17131d] dark:text-[#f3efe7]"
+                className="mt-1 w-full rounded-lg border border-[#ece7de] bg-white p-2 text-sm dark:border-[#2e2637] dark:bg-[#241f2c] dark:text-[#e4dcf0]"
               />
             </label>
           ))}
 
           <label className="block">
-            <span className="text-xs font-medium text-[#241a30] dark:text-[#f3efe7]">
+            <span className="text-xs font-medium text-[#422e59] dark:text-[#e4dcf0]">
               Why — required, and permanent
             </span>
             <textarea
@@ -593,7 +592,7 @@ function AwardPanel({
               onChange={(e) => setReason(e.target.value)}
               rows={2}
               placeholder="e.g. Surname corrected following student request, birth certificate sighted."
-              className="mt-1 w-full rounded-lg border border-[#ece7de] bg-white p-2 text-sm dark:border-[#2e2637] dark:bg-[#17131d] dark:text-[#f3efe7]"
+              className="mt-1 w-full rounded-lg border border-[#ece7de] bg-white p-2 text-sm dark:border-[#2e2637] dark:bg-[#241f2c] dark:text-[#e4dcf0]"
             />
             <span className="mt-1 block text-xs text-[#9c93ad]">
               This goes on the permanent record and cannot be edited afterwards — by anyone,
@@ -605,7 +604,7 @@ function AwardPanel({
             type="button"
             onClick={() => void submit()}
             disabled={busy || !reason.trim()}
-            className="inline-flex items-center gap-2 rounded-lg bg-[#241a30] px-4 py-2 text-sm font-semibold text-white disabled:opacity-40 dark:bg-[#e9c14a] dark:text-[#241a30]"
+            className="inline-flex items-center gap-2 rounded-lg bg-[#422e59] px-4 py-2 text-sm font-semibold text-white disabled:opacity-40 dark:bg-[#c5a55a] dark:text-[#241a30]"
           >
             {busy && <Loader2 size={14} className="animate-spin" />}
             Issue version {current.version + 1}
@@ -673,12 +672,12 @@ function CorrectionQueue({
         const target = rows.find((r) => r.id === req.credentialId);
         const moves = movesFor(req.status, role ?? 'student');
         return (
-          <li key={req.id} className="rounded-2xl border border-[#ece7de] bg-white p-4 dark:border-[#2e2637] dark:bg-[#1b1723]">
+          <li key={req.id} className="rounded-xl border border-[#ece7de] bg-white p-4 dark:border-[#2e2637] dark:bg-[#1f1a27]">
             <div className="flex items-baseline justify-between gap-3">
-              <p className="text-sm font-medium text-[#241a30] dark:text-[#f3efe7]">
+              <p className="text-sm font-medium text-[#422e59] dark:text-[#e4dcf0]">
                 {target ? `${target.holderName} — ${target.credentialRef}` : 'A credential on the register'}
               </p>
-              <span className="rounded-full bg-[#7a4bbd]/10 px-2 py-0.5 text-xs text-[#5b3392] dark:text-[#c9a9f2]">
+              <span className="rounded-full bg-[#422e59]/10 px-2 py-0.5 text-xs text-[#422e59] dark:text-[#c5a55a]">
                 {req.status.replace('_', ' ')}
               </span>
             </div>
@@ -689,7 +688,7 @@ function CorrectionQueue({
                 {Object.entries(req.proposed).map(([k, v]) => (
                   <div key={k} className="flex gap-2">
                     <dt className="text-[#9c93ad]">{k}</dt>
-                    <dd className="text-[#241a30] dark:text-[#f3efe7]">{String(v)}</dd>
+                    <dd className="text-[#422e59] dark:text-[#e4dcf0]">{String(v)}</dd>
                   </div>
                 ))}
               </dl>
@@ -701,7 +700,7 @@ function CorrectionQueue({
                   value={note[req.id] ?? ''}
                   onChange={(e) => setNote((s) => ({ ...s, [req.id]: e.target.value }))}
                   placeholder="A note. Required to reject — a refusal with no reason cannot be appealed."
-                  className="mt-3 w-full rounded-lg border border-[#ece7de] bg-[#fbfaf7] p-2 text-xs dark:border-[#2e2637] dark:bg-[#17131d] dark:text-[#f3efe7]"
+                  className="mt-3 w-full rounded-lg border border-[#ece7de] bg-[#faf8f4] p-2 text-xs dark:border-[#2e2637] dark:bg-[#241f2c] dark:text-[#e4dcf0]"
                 />
                 <div className="mt-2 flex flex-wrap gap-2">
                   {moves.map((m) => (
@@ -710,7 +709,7 @@ function CorrectionQueue({
                       type="button"
                       onClick={() => void move(req, m.to)}
                       disabled={busy === req.id}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-[#ece7de] px-3 py-1.5 text-xs font-medium text-[#241a30] disabled:opacity-40 dark:border-[#2e2637] dark:text-[#f3efe7]"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-[#ece7de] px-3 py-1.5 text-xs font-medium text-[#241a30] disabled:opacity-40 dark:border-[#2e2637] dark:text-[#e4dcf0]"
                     >
                       {busy === req.id && <Loader2 size={12} className="animate-spin" />}
                       {m.label}
@@ -776,33 +775,33 @@ function CredentialTypes({ onDone, onError }: { onDone: (t: string) => void; onE
 
   return (
     <div className="grid gap-5 lg:grid-cols-2">
-      <section className="rounded-2xl border border-[#ece7de] bg-white p-5 dark:border-[#2e2637] dark:bg-[#1b1723]">
-        <h2 className="text-sm font-semibold text-[#241a30] dark:text-[#f3efe7]">A new kind of credential</h2>
+      <section className="rounded-xl border border-[#ece7de] bg-white p-5 dark:border-[#2e2637] dark:bg-[#1f1a27]">
+        <h2 className="text-sm font-semibold text-[#422e59] dark:text-[#e4dcf0]">A new kind of credential</h2>
 
         <label className="mt-3 block">
-          <span className="text-xs font-medium text-[#241a30] dark:text-[#f3efe7]">Name</span>
+          <span className="text-xs font-medium text-[#422e59] dark:text-[#e4dcf0]">Name</span>
           <input
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             placeholder="Certificate of Ordination"
-            className="mt-1 w-full rounded-lg border border-[#ece7de] bg-[#fbfaf7] p-2 text-sm dark:border-[#2e2637] dark:bg-[#17131d] dark:text-[#f3efe7]"
+            className="mt-1 w-full rounded-lg border border-[#ece7de] bg-[#faf8f4] p-2 text-sm dark:border-[#2e2637] dark:bg-[#241f2c] dark:text-[#e4dcf0]"
           />
         </label>
 
         <label className="mt-3 block">
-          <span className="text-xs font-medium text-[#241a30] dark:text-[#f3efe7]">
+          <span className="text-xs font-medium text-[#422e59] dark:text-[#e4dcf0]">
             Code — printed in the credential number
           </span>
           <input
             value={form.code}
             onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })}
             placeholder="ORD"
-            className="mt-1 w-full rounded-lg border border-[#ece7de] bg-[#fbfaf7] p-2 font-mono text-sm dark:border-[#2e2637] dark:bg-[#17131d] dark:text-[#f3efe7]"
+            className="mt-1 w-full rounded-lg border border-[#ece7de] bg-[#faf8f4] p-2 font-mono text-sm dark:border-[#2e2637] dark:bg-[#241f2c] dark:text-[#e4dcf0]"
           />
         </label>
 
         <fieldset className="mt-3">
-          <legend className="text-xs font-medium text-[#241a30] dark:text-[#f3efe7]">Category</legend>
+          <legend className="text-xs font-medium text-[#422e59] dark:text-[#e4dcf0]">Category</legend>
           <div className="mt-1 space-y-1">
             {CREDENTIAL_CATEGORIES.map((c) => (
               <label key={c} className="flex items-center gap-2 text-sm">
@@ -817,13 +816,13 @@ function CredentialTypes({ onDone, onError }: { onDone: (t: string) => void; onE
                     isAcademic: CATEGORY_PROFILES[c].mayBeAcademic ? form.isAcademic : false,
                   })}
                 />
-                <span className="text-[#241a30] dark:text-[#f3efe7]">{CATEGORY_PROFILES[c].label}</span>
+                <span className="text-[#422e59] dark:text-[#e4dcf0]">{CATEGORY_PROFILES[c].label}</span>
               </label>
             ))}
           </div>
           {/* WHAT A VERIFIER WILL BE TOLD, shown while the choice is being made
               rather than discovered afterwards on somebody's verification page. */}
-          <p className="mt-2 rounded-lg bg-[#fbfaf7] p-2 text-xs text-[#6b6076] dark:bg-[#17131d] dark:text-[#9c93ad]">
+          <p className="mt-2 rounded-lg bg-[#faf8f4] p-2 text-xs text-[#6b6076] dark:bg-[#241f2c] dark:text-[#9c93ad]">
             <strong className="font-semibold">A verifier will be told:</strong> {profile.verifierNote}
           </p>
         </fieldset>
@@ -835,19 +834,19 @@ function CredentialTypes({ onDone, onError }: { onDone: (t: string) => void; onE
               checked={form.isAcademic}
               onChange={(e) => setForm({ ...form, isAcademic: e.target.checked })}
             />
-            <span className="text-[#241a30] dark:text-[#f3efe7]">
+            <span className="text-[#422e59] dark:text-[#e4dcf0]">
               This is an academic award — it carries credit and appears on a transcript
             </span>
           </label>
         )}
 
         <label className="mt-3 block">
-          <span className="text-xs font-medium text-[#241a30] dark:text-[#f3efe7]">Who may receive it</span>
+          <span className="text-xs font-medium text-[#422e59] dark:text-[#e4dcf0]">Who may receive it</span>
           <textarea
             value={form.eligibility}
             onChange={(e) => setForm({ ...form, eligibility: e.target.value })}
             rows={2}
-            className="mt-1 w-full rounded-lg border border-[#ece7de] bg-[#fbfaf7] p-2 text-sm dark:border-[#2e2637] dark:bg-[#17131d] dark:text-[#f3efe7]"
+            className="mt-1 w-full rounded-lg border border-[#ece7de] bg-[#faf8f4] p-2 text-sm dark:border-[#2e2637] dark:bg-[#241f2c] dark:text-[#e4dcf0]"
           />
         </label>
 
@@ -858,7 +857,7 @@ function CredentialTypes({ onDone, onError }: { onDone: (t: string) => void; onE
               checked={form.validity === 'expiring'}
               onChange={(e) => setForm({ ...form, validity: e.target.checked ? 'expiring' : 'permanent' })}
             />
-            <span className="text-[#241a30] dark:text-[#f3efe7]">It expires</span>
+            <span className="text-[#422e59] dark:text-[#e4dcf0]">It expires</span>
           </label>
           {form.validity === 'expiring' && (
             <label className="flex items-center gap-2 text-sm">
@@ -867,7 +866,7 @@ function CredentialTypes({ onDone, onError }: { onDone: (t: string) => void; onE
                 min={1}
                 value={form.validityMonths}
                 onChange={(e) => setForm({ ...form, validityMonths: Number(e.target.value) })}
-                className="w-20 rounded-lg border border-[#ece7de] bg-[#fbfaf7] p-1.5 text-sm dark:border-[#2e2637] dark:bg-[#17131d] dark:text-[#f3efe7]"
+                className="w-20 rounded-lg border border-[#ece7de] bg-[#faf8f4] p-1.5 text-sm dark:border-[#2e2637] dark:bg-[#241f2c] dark:text-[#e4dcf0]"
               />
               <span className="text-[#6b6076] dark:text-[#9c93ad]">months</span>
             </label>
@@ -888,7 +887,7 @@ function CredentialTypes({ onDone, onError }: { onDone: (t: string) => void; onE
           type="button"
           onClick={() => void create()}
           disabled={busy || problems.length > 0}
-          className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#241a30] px-4 py-2 text-sm font-semibold text-white disabled:opacity-40 dark:bg-[#e9c14a] dark:text-[#241a30]"
+          className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#422e59] px-4 py-2 text-sm font-semibold text-white disabled:opacity-40 dark:bg-[#c5a55a] dark:text-[#241a30]"
         >
           {busy && <Loader2 size={14} className="animate-spin" />}
           Create
@@ -896,7 +895,7 @@ function CredentialTypes({ onDone, onError }: { onDone: (t: string) => void; onE
       </section>
 
       <section>
-        <h2 className="text-sm font-semibold text-[#241a30] dark:text-[#f3efe7]">
+        <h2 className="text-sm font-semibold text-[#422e59] dark:text-[#e4dcf0]">
           What this University awards
         </h2>
         {types.length === 0 ? (
@@ -906,8 +905,8 @@ function CredentialTypes({ onDone, onError }: { onDone: (t: string) => void; onE
         ) : (
           <ul className="mt-3 space-y-2">
             {types.map((t) => (
-              <li key={t.id} className="rounded-xl border border-[#ece7de] bg-white p-3 dark:border-[#2e2637] dark:bg-[#1b1723]">
-                <p className="text-sm font-medium text-[#241a30] dark:text-[#f3efe7]">
+              <li key={t.id} className="rounded-xl border border-[#ece7de] bg-white p-3 dark:border-[#2e2637] dark:bg-[#1f1a27]">
+                <p className="text-sm font-medium text-[#422e59] dark:text-[#e4dcf0]">
                   {t.name} <span className="font-mono text-xs text-[#9c93ad]">{t.code}</span>
                 </p>
                 <p className="text-xs text-[#6b6076] dark:text-[#9c93ad]">
@@ -952,7 +951,7 @@ function AuditTrail({ events }: { events: AuditEvent[] }) {
       <ol className="mt-3 divide-y divide-[#ece7de] dark:divide-[#2e2637]">
         {events.map((e) => (
           <li key={e.id} className="py-2.5">
-            <p className="text-sm text-[#241a30] dark:text-[#f3efe7]">{describeEvent(e)}</p>
+            <p className="text-sm text-[#422e59] dark:text-[#e4dcf0]">{describeEvent(e)}</p>
             <p className="text-xs text-[#9c93ad]">
               {new Date(e.occurredAt).toLocaleString('en-GB')}
             </p>

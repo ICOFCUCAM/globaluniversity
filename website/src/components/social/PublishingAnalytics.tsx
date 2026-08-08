@@ -156,7 +156,7 @@ export default function PublishingAnalytics() {
               const rate = e.attempted ? e.posted / e.attempted : 0;
               return (
                 <li key={platform} className="flex items-center gap-3 text-xs">
-                  <span className="w-20 flex-shrink-0 text-[#241a30] dark:text-[#f3efe7]">
+                  <span className="w-20 flex-shrink-0 text-[#422e59] dark:text-[#e4dcf0]">
                     {PLATFORM_PROFILES[platform]?.name ?? platform}
                   </span>
                   <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#ece7de] dark:bg-[#2e2637]">
@@ -178,7 +178,7 @@ export default function PublishingAnalytics() {
 
       {/* THE ABSENCE, STATED. See the header — this is the difference between
           a dashboard that has not measured something and one that reports zero. */}
-      <p className="flex items-start gap-2 rounded-lg bg-[#fbfaf7] p-3 text-xs text-[#6b6076] dark:bg-[#17131d] dark:text-[#9c93ad]">
+      <p className="flex items-start gap-2 rounded-lg bg-[#faf8f4] p-3 text-xs text-[#6b6076] dark:bg-[#241f2c] dark:text-[#9c93ad]">
         <Info size={13} className="mt-0.5 flex-shrink-0" />
         <span>
           These are the University&apos;s own records of what it published. Reach, impressions and
@@ -198,7 +198,7 @@ function Figure({
 }) {
   return (
     <div>
-      <p className={`font-serif text-2xl ${tone === 'warn' ? 'text-[#a07c12]' : 'text-[#241a30] dark:text-[#f3efe7]'}`}>
+      <p className={`font-heading font-bold text-2xl ${tone === 'warn' ? 'text-[#a07c12]' : 'text-[#422e59] dark:text-[#e4dcf0]'}`}>
         {typeof value === 'number' ? value.toLocaleString() : value}
       </p>
       <p className="text-xs text-[#6b6076] dark:text-[#9c93ad]">{label}</p>

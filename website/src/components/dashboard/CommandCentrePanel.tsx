@@ -121,7 +121,7 @@ export default function CommandCentrePanel({ onNavigate }: { onNavigate?: (v: Vi
 
   return (
     <section>
-      <h2 className="font-serif text-lg text-[#241a30] dark:text-[#f3efe7]">University command centre</h2>
+      <h2 className="font-heading font-bold text-lg text-[#422e59] dark:text-[#e4dcf0]">University command centre</h2>
       <p className="mt-0.5 text-sm text-[#6b6076] dark:text-[#9c93ad]">
         What the University is saying, and what it has issued.
       </p>
@@ -177,7 +177,7 @@ export default function CommandCentrePanel({ onNavigate }: { onNavigate?: (v: Vi
             <button
               type="button"
               onClick={() => onNavigate?.('credential-authority')}
-              className="mt-2 flex w-full items-start gap-2 rounded-lg bg-[#7a4bbd]/10 p-2 text-left text-xs text-[#5b3392] dark:text-[#c9a9f2]"
+              className="mt-2 flex w-full items-start gap-2 rounded-lg bg-[#422e59]/10 p-2 text-left text-xs text-[#422e59] dark:text-[#c5a55a]"
             >
               <Inbox size={13} className="mt-0.5 flex-shrink-0" />
               {c.corrections} correction {c.corrections === 1 ? 'request is' : 'requests are'} waiting
@@ -209,16 +209,16 @@ function Half({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-[#ece7de] bg-white p-4 dark:border-[#2e2637] dark:bg-[#1b1723]">
+    <div className="rounded-xl border border-[#ece7de] bg-white p-4 dark:border-[#2e2637] dark:bg-[#1f1a27]">
       <div className="flex items-center justify-between gap-2">
-        <h3 className="flex items-center gap-2 text-sm font-semibold text-[#241a30] dark:text-[#f3efe7]">
+        <h3 className="flex items-center gap-2 text-sm font-semibold text-[#422e59] dark:text-[#e4dcf0]">
           {icon}{title}
         </h3>
         {onNavigate && (
           <button
             type="button"
             onClick={() => onNavigate(action.view)}
-            className="inline-flex items-center gap-1 text-xs font-medium text-[#5b3392] hover:underline dark:text-[#c9a9f2]"
+            className="inline-flex items-center gap-1 text-xs font-medium text-[#422e59] hover:underline dark:text-[#c5a55a]"
           >
             {action.label} <ArrowRight size={11} />
           </button>
@@ -242,8 +242,8 @@ function Line({ value, label, empty }: { value: number; label: string; empty: st
     return <p className="mt-1 text-xs text-[#6b6076] dark:text-[#9c93ad]">{empty}</p>;
   }
   return (
-    <p className="mt-1 text-sm text-[#241a30] dark:text-[#f3efe7]">
-      <span className="font-serif text-xl">{value.toLocaleString()}</span>
+    <p className="mt-1 text-sm text-[#422e59] dark:text-[#e4dcf0]">
+      <span className="font-heading font-bold text-xl">{value.toLocaleString()}</span>
       <span className="ml-1.5 text-xs text-[#6b6076] dark:text-[#9c93ad]">{label}</span>
     </p>
   );
