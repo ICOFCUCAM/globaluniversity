@@ -23,7 +23,8 @@
     "test:social": "node src/lib/social.test.mjs",
     "test:authority": "node src/lib/credentialAuthority.test.mjs",
     "test:schema": "node src/lib/schemaContract.test.mjs",
-    "test": "npm run test:grading && npm run test:fees && npm run test:seal && npm run test:certificate && npm run test:routes && npm run test:approval && npm run test:policies && npm run test:publicart && npm run test:world && npm run test:fixedwindow && npm run test:faculty && npm run test:bmin && npm run test:prereq && npm run test:credits && npm run test:social && npm run test:authority && npm run test:schema",
+    "test:exams": "node src/lib/examinations.test.mjs",
+    "test": "npm run test:grading && npm run test:fees && npm run test:seal && npm run test:certificate && npm run test:routes && npm run test:approval && npm run test:policies && npm run test:publicart && npm run test:world && npm run test:fixedwindow && npm run test:faculty && npm run test:bmin && npm run test:prereq && npm run test:credits && npm run test:social && npm run test:authority && npm run test:exams && npm run test:schema",
     "test:fixedwindow": "node src/components/home/fixedWindow.test.mjs"
   },
   "dependencies": {

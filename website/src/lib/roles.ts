@@ -29,7 +29,14 @@ export const HIERARCHY: UserRole[] = [
   'dean',
   'hod',
   'programme-coordinator',
+  // The examination offices sit between the department and the lecturer: an
+  // Examination Officer runs a diet across departments, an examiner and a
+  // moderator act on one paper, and an invigilator on one sitting.
+  'exam-officer',
+  'moderator',
+  'examiner',
   'lecturer',
+  'invigilator',
   'finance',
   'admissions-officer',
   'library-staff',
@@ -112,6 +119,37 @@ export const OPERATIONAL_CAPABILITIES = [
   'manage-courses',
   // The social pipeline. COMPOSING and PUBLISHING are operational — this is
   // the university talking about itself, which is an administrator's job.
+  // ---------------------------------------------------------------------
+  // THE DIGITAL EXAMINATION & PROCTORING SYSTEM
+  //
+  // Split finely on purpose. The University's own instruction was that "no
+  // single ordinary administrator should be able to alter examination
+  // evidence, marks and academic records" — which is a statement about
+  // capabilities, not about job titles, and only holds if the powers are
+  // separable in the first place.
+  //
+  // Note what is NOT here and never will be: any capability to edit or delete
+  // an examination event, a camera session or a saved answer. Evidence is
+  // append-only in the database and there is no permission that unlocks it —
+  // not for the Superadministrator, not for anyone. A system where the right
+  // account can revise what a camera recorded cannot support an appeal.
+  'schedule-examination',
+  'publish-examination',
+  'assign-proctor',
+  // Watching a live sitting, and writing down what you saw. The narrowest
+  // examination capability: an invigilator RECORDS, and decides nothing.
+  'proctor-examination',
+  'record-exam-incident',
+  // Pausing, resuming and extending a live sitting. Separate from proctoring
+  // because giving a candidate more time changes the assessment.
+  'control-exam-session',
+  'terminate-examination',
+  // Marking, moderating and the finding of misconduct are three different
+  // people's work and three different capabilities.
+  'mark-examination',
+  'moderate-examination',
+  'determine-misconduct',
+  'sit-examination',
   'compose-social-post',
   'publish-social-post',
   // APPROVING IS NOT PUBLISHING, and they are separate on purpose. Migration
@@ -389,9 +427,47 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
     'take-attendance', 'access-lms',
   ],
 
+  // ---------------------------------------------------------------------
+  // THE EXAMINATION OFFICES
+  // ---------------------------------------------------------------------
+
+  // Runs the diet. Schedules, publishes, assigns proctors, and can stop a
+  // sitting that has gone wrong. DOES NOT MARK and cannot find misconduct —
+  // the office that arranges an examination must not also grade it.
+  'exam-officer': [
+    'schedule-examination', 'publish-examination', 'assign-proctor',
+    'control-exam-session', 'terminate-examination',
+    'view-registered-students', 'department-reports',
+  ],
+
+  // Marks, and conducts oral and practical examinations. May record an
+  // incident — they are watching a viva — but may not FIND misconduct, which
+  // is a determination about a student's academic record rather than an
+  // observation about a sitting.
+  examiner: [
+    'mark-examination', 'proctor-examination', 'record-exam-incident',
+    'control-exam-session', 'view-registered-students', 'access-lms',
+    'upload-grades', 'submit-results',
+  ],
+
+  // THE NARROWEST ROLE IN THE SYSTEM, and deliberately so. An invigilator
+  // watches and writes down what they saw. They cannot mark, cannot moderate,
+  // cannot terminate a sitting and cannot decide that what they saw was
+  // cheating. Their observation is evidence; somebody else weighs it.
+  invigilator: ['proctor-examination', 'record-exam-incident'],
+
+  // Second-marks, and determines misconduct — the academic-integrity decision
+  // the University said a human must make. Cannot enter a first mark, and
+  // migration 015 refuses to let anyone moderate their own marking.
+  moderator: [
+    'moderate-examination', 'determine-misconduct', 'moderate-results',
+    'view-registered-students', 'department-reports',
+  ],
+
   student: [
     'register-courses',
     'pay-fees',
+    'sit-examination',
     'view-results',
     'download-transcript',
     'message-lecturers',
@@ -437,5 +513,9 @@ export const roleLabels: Record<UserRole, string> = {
   'academic-office': 'Academic Office',
   dean: 'Faculty Dean',
   lecturer: 'Lecturer',
+  'exam-officer': 'Examination Officer',
+  examiner: 'Examiner',
+  invigilator: 'Invigilator',
+  moderator: 'Moderator',
   student: 'Student',
 };

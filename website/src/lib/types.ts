@@ -37,7 +37,31 @@ export type UserRole =
   | 'applicant'
   // Retained: 'academic-office' is used by the timetable and course-allocation
   // screens built before the hierarchy was specified.
-  | 'academic-office';
+  | 'academic-office'
+  // ---------------------------------------------------------------------
+  // THE EXAMINATION OFFICES.
+  //
+  // Four roles the University named for the Digital Examination & Proctoring
+  // System, and each exists because it holds a power the others must not.
+  //
+  // 'exam-officer'  runs the examination diet: publishes papers, schedules
+  //                 sittings, assigns proctors. Does not mark.
+  // 'examiner'      marks, and conducts oral and practical examinations.
+  //                 Usually also a lecturer, but the capability is separate
+  //                 because marking somebody else's paper is a different act
+  //                 from teaching them.
+  // 'invigilator'   watches a live sitting and records what they see. Records
+  //                 incidents; does NOT decide misconduct and does NOT mark.
+  //                 The narrowest role in the system, deliberately.
+  // 'moderator'     second-marks and moderates. Cannot moderate their own
+  //                 marking — the whole point of moderation.
+  //
+  // A person may hold several of these over a career; they may not hold two of
+  // them on the same script. That is checked per examination, not per account.
+  | 'exam-officer'
+  | 'examiner'
+  | 'invigilator'
+  | 'moderator';
 
 export interface Department {
   id: string;

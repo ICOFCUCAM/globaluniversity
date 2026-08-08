@@ -257,3 +257,61 @@ select credential_id, version, status, holder_name
   from credentials_issued
  where credential_id = 'IGUC-SELFTEST-013'
  order by version;
+
+-- 19. THE EXAMINATION SYSTEM LANDED.                             (015)
+--
+-- Expect: fourteen rows.
+select table_name
+  from information_schema.tables
+ where table_schema = 'public'
+   and table_name in ('examinations', 'examination_officers', 'exam_sessions',
+                      'exam_identity_checks', 'exam_device_checks', 'exam_events',
+                      'exam_answers', 'exam_recordings', 'exam_session_decisions',
+                      'exam_incidents', 'exam_findings', 'exam_marks',
+                      'exam_reports', 'exam_audit_events')
+ order by table_name;
+
+-- 20. EXAMINATION EVIDENCE CANNOT BE REWRITTEN.                  (015)
+--
+-- Expect six triggers: five append-only guards on the evidence tables, and the
+-- append-only guard on the audit trail. If any is missing, the University can
+-- no longer say that its record of what happened during a sitting is the record
+-- of what happened — which is the only thing that makes an appeal answerable.
+select c.relname as on_table, t.tgname
+  from pg_trigger t join pg_class c on c.oid = t.tgrelid
+ where t.tgname in ('exam_events_append_only', 'exam_identity_append_only',
+                    'exam_device_append_only', 'exam_answers_append_only',
+                    'exam_recordings_append_only', 'exam_audit_no_update')
+ order by c.relname;
+
+-- 21. NOBODY JUDGES THEIR OWN OBSERVATION OR MODERATES THEIR OWN MARK. (015)
+--
+-- Expect two triggers: exam_findings_second_reader and exam_marks_second_marker.
+select t.tgname, c.relname as on_table
+  from pg_trigger t join pg_class c on c.oid = t.tgrelid
+ where t.tgname in ('exam_findings_second_reader', 'exam_marks_second_marker')
+ order by t.tgname;
+
+-- 22. AN AUTOMATED EVENT STILL CANNOT EXPRESS A VERDICT.         (015)
+--
+-- Expect: ZERO rows. exam_events must have no column in which a finding could
+-- be recorded — no is_cheating, no verdict, no misconduct, no outcome. The
+-- University's instruction was that AI events are alerts and that a human makes
+-- the academic-integrity decision, and a schema in which the automated layer
+-- CANNOT express a verdict is a stronger guarantee than a policy saying it
+-- should not. A row here means that guarantee has been lost.
+select column_name
+  from information_schema.columns
+ where table_schema = 'public' and table_name = 'exam_events'
+   and column_name in ('is_cheating', 'verdict', 'misconduct', 'outcome');
+
+-- 23. RECORDINGS HAVE A RETENTION DATE.                          (015)
+--
+-- Expect: zero rows once recordings exist. A university that records its
+-- students' homes has a data-protection obligation, and "we keep it for ever
+-- because deleting is hard" is not a lawful answer anywhere this institution
+-- teaches. Any row here is a recording nobody has decided the fate of.
+select id, session_id, kind, started_at
+  from exam_recordings
+ where retention_until is null and destroyed_at is null
+ order by started_at;

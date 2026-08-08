@@ -60,6 +60,37 @@ interface AuthContextType {
 
 // Demo users for quick access (fallback when no real auth)
 const demoUsers: Record<UserRole, AuthUser> = {
+  // The four examination offices. Named after what they DO rather than given
+  // invented people's names, because a demo account that looks like a member of
+  // staff eventually gets mistaken for one.
+  'exam-officer': {
+    id: 'demo-exam-officer',
+    name: 'Demo Examination Officer',
+    email: 'examinations@iguc.net',
+    role: 'exam-officer',
+    avatar: 'EO',
+  },
+  examiner: {
+    id: 'demo-examiner',
+    name: 'Demo Examiner',
+    email: 'examiner@iguc.net',
+    role: 'examiner',
+    avatar: 'EX',
+  },
+  invigilator: {
+    id: 'demo-invigilator',
+    name: 'Demo Invigilator',
+    email: 'invigilator@iguc.net',
+    role: 'invigilator',
+    avatar: 'IN',
+  },
+  moderator: {
+    id: 'demo-moderator',
+    name: 'Demo Moderator',
+    email: 'moderator@iguc.net',
+    role: 'moderator',
+    avatar: 'MO',
+  },
   superadmin: {
     id: 'demo-superadmin',
     name: 'Demo Superadministrator',
