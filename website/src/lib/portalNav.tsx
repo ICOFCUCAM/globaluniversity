@@ -128,7 +128,13 @@ export const menuGroups: MenuGroup[] = [
         icon: <ClipboardCheck size={18} />,
         roles: ['superadmin', 'admin', 'registrar', 'academic-office', 'dean', 'hod', 'lecturer'],
       },
-      { id: 'transcript', label: 'Transcript', icon: <FileText size={18} />, roles: ['superadmin', 'admin', 'student'] },
+      // SAME TREATMENT AS THE CERTIFICATE BELOW, which it should have had in
+      // the same commit. Issuing a transcript moved to Credentials → Issue;
+      // leaving staff on this entry meant they reached the identical component
+      // from two places — the precise fault that made three credential menu
+      // entries worth consolidating. A student keeps it: theirs is a view of
+      // their own record, not the screen that seals one.
+      { id: 'transcript', label: 'Transcript', icon: <FileText size={18} />, roles: ['student'] },
       // ISSUING MOVED TO CREDENTIALS → ISSUE. A student keeps this entry —
       // theirs is a view of their own certificate, not the screen that mints
       // one — and the staff who issue now find it beside the design, the
