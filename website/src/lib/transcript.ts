@@ -44,6 +44,7 @@ import type {
   Student, Department,
 } from '@/lib/types';
 import { getClassification, PASS_MARK } from '@/lib/grading';
+import { awardWording, awardKindOf } from '@/lib/awards';
 
 /**
  * The result states that may appear on an official transcript.
@@ -92,6 +93,19 @@ export interface BuildInput {
   student: Student;
   department: Department;
   results: readonly ResultRow[];
+  /**
+   * The award this record is for, by title — "Doctor of Philosophy (Theology)".
+   *
+   * DECIDES WHETHER A CLASSIFICATION IS PRINTED AT ALL. Without it every
+   * transcript received one, so a doctorate came out carrying "First Class
+   * Honours" — meaningless under a research degree, and exactly the fault the
+   * specimen book caught on certificates. `awardWording(kind).classified` is
+   * the same table the certificate uses, so the two documents cannot disagree.
+   *
+   * Optional: a transcript for a student mid-programme may legitimately not
+   * know the award yet, and then the classification is computed as before.
+   */
+  award?: string | null;
 }
 
 export interface BuildResult {
@@ -114,7 +128,7 @@ export interface BuildResult {
  * transcripts of the same record are identical — a registrar comparing a
  * reissue against the original must not have to reconcile a reordering.
  */
-export function buildTranscript({ student, department, results }: BuildInput): BuildResult {
+export function buildTranscript({ student, department, results, award }: BuildInput): BuildResult {
   const usable = results.filter(isTranscriptable);
 
   const pendingCount = results.filter(
@@ -203,7 +217,12 @@ export function buildTranscript({ student, department, results }: BuildInput): B
       cgpa,
       // The same function the certificate uses. Two documents about one student
       // disagreeing on their class is the failure that ends up in a complaint.
-      classification: getClassification(cgpa),
+      //
+      // AND THE SAME RULE ABOUT WHETHER TO PRINT ONE. A doctorate is passed,
+      // not classified; a certificate of attendance is not classified either.
+      // Printing a class under one is not a cosmetic error — it states an
+      // award the University does not make.
+      classification: classificationFor(cgpa, award),
     },
     omitted,
   };
@@ -215,6 +234,18 @@ export function buildTranscript({ student, department, results }: BuildInput): B
  * 3.665 must not become 3.66 because it is held as 3.6649999999999996 — a
  * classification boundary is exactly where that lands.
  */
+/**
+ * The class of award, or nothing when the award does not carry one.
+ *
+ * Returns an empty string rather than a placeholder, because the document
+ * prints the field when it is non-empty and a dash under a doctorate reads as
+ * a missing value rather than an inapplicable one.
+ */
+export function classificationFor(cgpa: number, award?: string | null): string {
+  if (award && !awardWording(awardKindOf(award)).classified) return '';
+  return getClassification(cgpa);
+}
+
 function round2(n: number): number {
   return Math.round((n + Number.EPSILON) * 100) / 100;
 }

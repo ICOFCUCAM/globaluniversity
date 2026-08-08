@@ -45,6 +45,8 @@ import { supabase } from '@/lib/supabase';
 import { can } from '@/lib/roles';
 import type { UserRole } from '@/lib/types';
 import { GRADING_SCALE } from '@/lib/grading';
+import { courses as CATALOGUE } from '@/content/courses';
+import { awardKindOf, awardWording } from '@/lib/awards';
 import { buildTranscript, canIssueTranscript } from '@/lib/transcript';
 import ProduceCredential from '@/components/credentials/ProduceCredential';
 import { INPUT, LABEL, FOCUS, CARD, BTN_SECONDARY } from '@/lib/portalTheme';
@@ -81,6 +83,10 @@ export default function ManualTranscript({ role }: { role?: UserRole }) {
 function Form() {
   const [holderName, setHolderName] = React.useState('');
   const [studentNumber, setStudentNumber] = React.useState('');
+  // CHOSEN FROM THE CATALOGUE, NOT TYPED. A free-text programme is how a
+  // sealed University transcript ends up naming a qualification the University
+  // does not offer — and unlike a wrong grade, nobody in the registry would
+  // notice, because it reads perfectly well.
   const [programme, setProgramme] = React.useState('');
   const [sourceRecord, setSourceRecord] = React.useState('');
   const [rows, setRows] = React.useState<Row[]>([blank(1), blank(2), blank(3)]);
@@ -90,6 +96,31 @@ function Form() {
   const [note, setNote] = React.useState<{ tone: 'ok' | 'bad'; text: string } | null>(null);
 
   const [nextKey, setNextKey] = React.useState(4);
+
+  // The level follows the programme, and everything else follows the level.
+  const chosen = CATALOGUE.find((c) => c.title === programme);
+  const kind = programme ? awardKindOf(programme) : null;
+  const classified = kind ? awardWording(kind).classified : true;
+
+  /**
+   * How many academic years this level runs to.
+   *
+   * NOT A RULE THE UNIVERSITY HAS PUBLISHED — it bounds the Year field so a
+   * Certificate does not offer Year 4, and nothing more. A record that
+   * genuinely ran longer is still typeable; the list is a convenience, not a
+   * constraint, because the archive is the authority here and not this table.
+   */
+  const yearsFor = (k: string | null): number => {
+    switch (k) {
+      case 'certificate': return 1;
+      case 'diploma': return 2;
+      case 'bachelors': return 4;
+      case 'masters': return 2;
+      case 'doctorate': return 4;
+      default: return 6;
+    }
+  };
+  const maxYear = yearsFor(kind);
 
   function set(key: string, field: keyof Row, value: string) {
     setRows((rs) => rs.map((r) => (r.key === key ? { ...r, [field]: value } : r)));
@@ -103,6 +134,7 @@ function Form() {
   const preview = React.useMemo(() => buildTranscript({
     student: { first_name: holderName || 'Unnamed', last_name: '', matric_no: studentNumber } as never,
     department: { name: programme } as never,
+    award: programme || undefined,
     results: filled.map((r) => ({
       total_score: null,
       grade: r.grade,
@@ -120,7 +152,7 @@ function Form() {
 
   const sourceShort = sourceRecord.trim().length < MIN_SOURCE;
   const refusal = filled.length > 0 ? canIssueTranscript(preview.data) : null;
-  const blocked = !holderName.trim() || sourceShort || filled.length === 0 || Boolean(refusal);
+  const blocked = !holderName.trim() || !programme || sourceShort || filled.length === 0 || Boolean(refusal);
 
   async function issue() {
     setBusy(true);
@@ -136,6 +168,9 @@ function Form() {
             studentNumber: studentNumber.trim() || undefined,
             programme: programme.trim() || undefined,
             sourceRecord: sourceRecord.trim(),
+            // The level, so the route applies the same rule about whether a
+            // class of award is printed.
+            award: programme.trim() || undefined,
             rows: filled.map((r) => ({
               code: r.code.trim(),
               title: r.title.trim(),
@@ -201,8 +236,24 @@ function Form() {
           <input value={studentNumber} onChange={(e) => setStudentNumber(e.target.value)} className={`${INPUT} mt-1`} />
         </label>
         <label className="block">
-          <span className={LABEL}>Programme</span>
-          <input value={programme} onChange={(e) => setProgramme(e.target.value)} className={`${INPUT} mt-1`} />
+          <span className={LABEL}>Programme *</span>
+          <select value={programme} onChange={(e) => setProgramme(e.target.value)} className={`${INPUT} mt-1`}>
+            <option value="">— choose the award —</option>
+            {['Certificate', 'Diploma', 'HND', 'Bachelor', 'Master', 'Doctorate', 'Professional'].map((lvl) => {
+              const inLevel = CATALOGUE.filter((c) => c.level === lvl);
+              if (inLevel.length === 0) return null;
+              return (
+                <optgroup key={lvl} label={lvl}>
+                  {inLevel.map((c) => <option key={c.code} value={c.title}>{c.title}</option>)}
+                </optgroup>
+              );
+            })}
+          </select>
+          <span className="mt-1 block text-[11px] leading-relaxed text-[#8a8194]">
+            {chosen
+              ? `${chosen.level} · ${chosen.faculty}${classified ? '' : ' · not classified'}`
+              : 'From the University’s own catalogue, so a transcript cannot name an award it does not offer.'}
+          </span>
         </label>
       </div>
 
@@ -249,7 +300,13 @@ function Form() {
                     {GRADING_SCALE.map((g) => <option key={g.grade} value={g.grade}>{g.grade}</option>)}
                   </select>
                 </td>
-                <td className="py-1 pr-2"><input aria-label="Year" type="number" min="0" value={r.year} onChange={(e) => set(r.key, 'year', e.target.value)} className={`${INPUT} w-14`} /></td>
+                <td className="py-1 pr-2">
+                  <select aria-label="Year" value={r.year} onChange={(e) => set(r.key, 'year', e.target.value)} className={`${INPUT} w-16`}>
+                    {Array.from({ length: maxYear }, (_, i) => String(i + 1)).map((y) => (
+                      <option key={y} value={y}>{y}</option>
+                    ))}
+                  </select>
+                </td>
                 <td className="py-1 pr-2"><input aria-label="Semester" type="number" min="0" value={r.semester} onChange={(e) => set(r.key, 'semester', e.target.value)} className={`${INPUT} w-14`} /></td>
                 <td className="py-1">
                   <button
@@ -279,7 +336,10 @@ function Form() {
           <strong className="text-[#422e59] dark:text-[#e4dcf0]">Before sealing:</strong>{' '}
           {filled.length} course{filled.length === 1 ? '' : 's'} ·{' '}
           {preview.data.totalCredits} credits ·{' '}
-          CGPA {preview.data.cgpa.toFixed(2)} · {preview.data.classification}
+          CGPA {preview.data.cgpa.toFixed(2)}
+          {preview.data.classification
+            ? ` · ${preview.data.classification}`
+            : kind ? ` · ${kind === 'doctorate' ? 'a doctorate is passed, not classified' : 'this award carries no class'}` : ''}
         </div>
       )}
 
@@ -318,6 +378,7 @@ function Form() {
             {blocked && (
               <p className="mt-2 text-[11px] text-[#8a8194]">
                 {!holderName.trim() ? 'Give the holder’s full name.'
+                  : !programme ? 'Choose the programme, so the level decides how the record is read.'
                   : filled.length === 0 ? 'Add at least one course with a code and a credit unit above zero.'
                     : sourceShort ? 'Say where these figures come from, in at least a dozen characters.'
                       : 'Check the courses above.'}

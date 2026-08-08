@@ -67,6 +67,8 @@ export async function POST(request: Request) {
       programme?: string;
       /** Where the figures came from. Required, and printed on the document. */
       sourceRecord?: string;
+      /** The award, by title. Decides whether a class is printed at all. */
+      award?: string;
       rows?: Array<{
         code?: string; title?: string; creditUnit?: number;
         grade?: string; gradePoint?: number; year?: number; semester?: number;
@@ -152,6 +154,10 @@ export async function POST(request: Request) {
   const { data: transcript, omitted } = buildTranscript({
     student: student as never,
     department: { id: '', name: student.program ?? '' } as never,
+    // The programme decides whether a class of award is printed — a doctoral
+    // candidate's transcript must not carry one. Same table the certificate
+    // uses, so the two documents cannot disagree.
+    award: student.program ?? undefined,
     results: (results ?? []) as never,
   });
 
@@ -347,6 +353,10 @@ async function transcribe(
   const { data: transcript } = buildTranscript({
     student: { first_name: holderName, last_name: '', matric_no: m.studentNumber ?? '' } as never,
     department: { name: m.programme ?? '' } as never,
+    // APPLIED ON THE SERVER TOO. The screen suppresses the class for a
+    // doctorate, but the screen is not the control — a request that omitted it
+    // would otherwise seal "First Class Honours" onto a research degree.
+    award: m.award ?? m.programme ?? undefined,
     results: usable.map((c: typeof usable[number]) => ({
       total_score: null,
       grade: c.grade,

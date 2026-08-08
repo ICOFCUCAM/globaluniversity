@@ -223,6 +223,32 @@ check('nor is a semester GPA', decimals(weighted.data.years[0].semesters[0].gpa)
 
 // --- The classification comes from the same function the certificate uses. ---
 
+// --- The class of award depends on the LEVEL. -------------------------------
+//
+// This was a real defect: buildTranscript assigned a classification to every
+// transcript, so a transcribed doctorate printed "First Class Honours" — under
+// a research degree, which is passed rather than classified. The same fault the
+// specimen book caught on certificates, one document over.
+
+console.log('\nOnly awards that carry a class get one\n');
+
+const forAward = (award) => buildTranscript({
+  student, department, award,
+  results: [row('A101', 3, 4.0), row('B102', 3, 4.0)],
+}).data.classification;
+
+check('a bachelor’s is classified', forAward('Bachelor of Theology').length > 0, true);
+check('a master’s is classified', forAward('Master of Divinity').length > 0, true);
+check('a diploma is classified', forAward('Diploma in Theology').length > 0, true);
+// The two that are not, and the two that were wrong before.
+check('a doctorate carries NO class', forAward('Doctor of Philosophy (Theology)'), '');
+check('nor does a certificate', forAward('Certificate of Theology'), '');
+// Empty, not a placeholder: a dash under a doctorate reads as a missing value
+// rather than an inapplicable one.
+check('and the field is empty rather than a dash', forAward('Doctor of Theology'), '');
+// A transcript for a student mid-programme may not know the award yet.
+check('with no award named, the class is still computed', forAward(undefined).length > 0, true);
+
 check(
   'a classification is assigned',
   typeof simple.data.classification === 'string' && simple.data.classification.length > 0,
