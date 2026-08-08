@@ -46,7 +46,7 @@ import { can } from '@/lib/roles';
 import type { UserRole } from '@/lib/types';
 import { GRADING_SCALE } from '@/lib/grading';
 import { courses as CATALOGUE } from '@/content/courses';
-import { awardKindOf, awardWording } from '@/lib/awards';
+import { awardKindOf, awardWording, nominalYears } from '@/lib/awards';
 import { buildTranscript, canIssueTranscript } from '@/lib/transcript';
 import ProduceCredential from '@/components/credentials/ProduceCredential';
 import { INPUT, LABEL, FOCUS, CARD, BTN_SECONDARY } from '@/lib/portalTheme';
@@ -102,25 +102,13 @@ function Form() {
   const kind = programme ? awardKindOf(programme) : null;
   const classified = kind ? awardWording(kind).classified : true;
 
-  /**
-   * How many academic years this level runs to.
-   *
-   * NOT A RULE THE UNIVERSITY HAS PUBLISHED — it bounds the Year field so a
-   * Certificate does not offer Year 4, and nothing more. A record that
-   * genuinely ran longer is still typeable; the list is a convenience, not a
-   * constraint, because the archive is the authority here and not this table.
-   */
-  const yearsFor = (k: string | null): number => {
-    switch (k) {
-      case 'certificate': return 1;
-      case 'diploma': return 2;
-      case 'bachelors': return 4;
-      case 'masters': return 2;
-      case 'doctorate': return 4;
-      default: return 6;
-    }
-  };
-  const maxYear = yearsFor(kind);
+  // The nominal length of this level, from the awards layer rather than a
+  // table in this component — the University has ruled on two of them
+  // (bachelor 3, doctorate 2) and those rulings belong where the certificate
+  // can read them too. It bounds the Year field and refuses nothing: a record
+  // that genuinely ran longer, through a repeat or an interruption, is a real
+  // thing and the archive is the authority here.
+  const maxYear = nominalYears(programme || null);
 
   function set(key: string, field: keyof Row, value: string) {
     setRows((rs) => rs.map((r) => (r.key === key ? { ...r, [field]: value } : r)));

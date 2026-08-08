@@ -35,12 +35,16 @@ function check(label, actual, expected) {
 
 const dir = join(new URL('../../node_modules/.cache/icof', import.meta.url).pathname);
 mkdirSync(dir, { recursive: true });
-const out = join(dir, 'transcript.mjs');
-execFileSync('npx', [
-  'esbuild', new URL('./transcript.ts', import.meta.url).pathname,
-  '--bundle', '--format=esm', '--platform=node', `--outfile=${out}`, '--log-level=error',
-  `--alias:@=${new URL('..', import.meta.url).pathname.replace(/\/$/, '')}`,
-]);
+function bundle(source, name) {
+  const outfile = join(dir, name);
+  execFileSync('npx', [
+    'esbuild', new URL(source, import.meta.url).pathname,
+    '--bundle', '--format=esm', '--platform=node', `--outfile=${outfile}`, '--log-level=error',
+    `--alias:@=${new URL('..', import.meta.url).pathname.replace(/\/$/, '')}`,
+  ]);
+  return outfile;
+}
+const out = bundle('./transcript.ts', 'transcript.mjs');
 const {
   buildTranscript, isTranscriptable, creditsEarned, canIssueTranscript, APPROVED_STATES,
 } = await import(out);
@@ -222,6 +226,29 @@ check('the CGPA is never given more than two decimals', decimals(boundary.data.c
 check('nor is a semester GPA', decimals(weighted.data.years[0].semesters[0].gpa) <= 2, true);
 
 // --- The classification comes from the same function the certificate uses. ---
+
+// --- How long each level runs. ----------------------------------------------
+//
+// Two of these are University rulings and the rest are working assumptions.
+// Asserting them here is what makes a silent edit to the table a failing build
+// rather than a Certificate that quietly starts offering four years.
+
+console.log('\nThe nominal length of each level\n');
+
+const { nominalYears, NOMINAL_YEARS } = await import(bundle('./awards.ts', 'tr-awards.mjs'));
+
+// Ruled by the University.
+check('a bachelor’s runs three years', nominalYears('Bachelor of Theology'), 3);
+check('a doctorate runs two', nominalYears('Doctor of Philosophy (Theology)'), 2);
+// Working assumptions, asserted so a change to them is deliberate.
+check('a certificate, one', nominalYears('Certificate of Theology'), 1);
+check('a diploma, two', nominalYears('Diploma in Theology'), 2);
+check('a master’s, two', nominalYears('Master of Divinity'), 2);
+// An unrecognised or absent award gets the ceiling rather than zero, which
+// would leave the year field with no options at all.
+check('an unknown award gets the ceiling', nominalYears('Fellowship in Something'), 6);
+check('and so does no award at all', nominalYears(null), 6);
+check('every kind has a length', Object.values(NOMINAL_YEARS).every((n) => n > 0), true);
 
 // --- The class of award depends on the LEVEL. -------------------------------
 //

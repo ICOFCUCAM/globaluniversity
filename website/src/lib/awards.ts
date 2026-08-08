@@ -170,6 +170,58 @@ export function awardTitleAfterLead(award: string): string {
 }
 
 /* ------------------------------------------------------------------ */
+/* How long each award runs                                             */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The nominal length of each level, in academic years.
+ *
+ * ---------------------------------------------------------------------
+ * WHICH OF THESE THE UNIVERSITY HAS ACTUALLY RULED ON
+ * ---------------------------------------------------------------------
+ *
+ * The distinction matters, and is kept visible rather than flattened into a
+ * table that reads as though every figure carries the same authority:
+ *
+ *   RULED BY THE UNIVERSITY
+ *     bachelors  3 years
+ *     doctorate  2 years
+ *
+ *   NOT YET RULED — working assumptions, and they should be replaced the
+ *   moment the University states them
+ *     certificate  1
+ *     diploma      2
+ *     masters      2
+ *     other        6 (a ceiling, not a length)
+ *
+ * WHAT THIS IS USED FOR, AND WHAT IT IS NOT. It bounds the year field when a
+ * historical record is transcribed, so a Certificate does not offer Year 4. It
+ * is NOT a graduation rule and nothing checks a student against it — that is
+ * `credits_required` on the award, which is a different question and the one
+ * that actually decides whether somebody may graduate.
+ *
+ * A transcribed record that genuinely ran longer than the nominal length is a
+ * real thing — a repeated year, an interruption — so this bounds a dropdown
+ * and refuses nothing.
+ */
+export const NOMINAL_YEARS: Record<AwardKind, number> = {
+  // The University's rulings.
+  bachelors: 3,
+  doctorate: 2,
+  // Awaiting a ruling.
+  certificate: 1,
+  diploma: 2,
+  masters: 2,
+  other: 6,
+};
+
+/** The nominal length of the award named by title. */
+export function nominalYears(award: string | null | undefined): number {
+  if (!award) return NOMINAL_YEARS.other;
+  return NOMINAL_YEARS[awardKindOf(award)];
+}
+
+/* ------------------------------------------------------------------ */
 /* How the security device varies by award and faculty                  */
 /* ------------------------------------------------------------------ */
 
