@@ -29,6 +29,8 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { UNIVERSITY, IMAGES } from '@/lib/constants';
 import { useAuth } from '@/contexts/AuthContext';
+import CommandCentrePanel from './CommandCentrePanel';
+import { can } from '@/lib/roles';
 import { roleLabels } from '@/lib/roles';
 import { statusMeta, toUniversal } from '@/lib/status';
 import {
@@ -199,6 +201,14 @@ export default function AdminDashboard({ onNavigate }: { onNavigate?: (v: ViewTy
               );
             })}
       </div>
+
+      {/* THE UNIVERSITY COMMAND CENTRE — point 11.
+          Shown only to the offices that can act on either half. An
+          administrator who can neither publish nor correct a credential would
+          get two panels of numbers and no button that does anything. */}
+      {(can(user?.role, 'compose-social-post') || can(user?.role, 'amend-issued-credential')) && (
+        <CommandCentrePanel onNavigate={onNavigate} />
+      )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
