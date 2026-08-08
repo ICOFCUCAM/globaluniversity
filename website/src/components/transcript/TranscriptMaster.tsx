@@ -111,6 +111,17 @@ export interface TranscriptMasterData extends TranscriptData {
 
 const MM = (n: number) => `${n}mm`;
 
+/**
+ * How many academic years fit on a sheet.
+ *
+ * TWO, AS THE ORIGINAL SETS IT. The University's own transcript runs Year One
+ * and Year Two on the first sheet and Year Three, the totals and the signatures
+ * on the second. Fitting a three-year record onto one page would mean type too
+ * small to read under a photocopier, which is how most transcripts are actually
+ * received.
+ */
+const YEARS_PER_SHEET = 2;
+
 export default function TranscriptMaster({
   design, data, specimen,
 }: {
@@ -127,142 +138,98 @@ export default function TranscriptMaster({
   const ink = design.ink ?? '#241a30';
   const rule = design.accent ?? '#b99a3e';
 
-  // Two semesters side by side, as the original sets them — a year reads
-  // across, which is how a registrar compares one term against the next.
-  const blocks = data.years.flatMap((y) => y.semesters.map((s) => ({ year: y.year, ...s })));
-
-  const th: React.CSSProperties = {
-    fontSize: '5.4pt', textTransform: 'uppercase', letterSpacing: '.04em',
-    padding: '0.6mm 0.8mm', borderBottom: `0.5pt solid ${rule}`, textAlign: 'left',
-    color: ink, fontWeight: 700,
-  };
-  const td: React.CSSProperties = {
-    fontSize: '6pt', padding: '0.45mm 0.8mm', borderBottom: '0.2pt solid rgba(0,0,0,.10)',
-    color: ink,
-  };
-  const num: React.CSSProperties = { ...td, textAlign: 'right' };
+  // PAGINATED BY YEAR, not by however many blocks happen to fit. A year is the
+  // unit a transcript is read in, and a sheet that breaks Year Two across two
+  // pages is one a registrar has to reassemble.
+  const sheets: (typeof data.years)[] = [];
+  for (let i = 0; i < data.years.length; i += YEARS_PER_SHEET) {
+    sheets.push(data.years.slice(i, i + YEARS_PER_SHEET));
+  }
+  if (sheets.length === 0) sheets.push([]);
 
   return (
-    <div
-      id="icof-transcript"
-      style={{
-        width: MM(297), minHeight: MM(210), background: '#fdfcf8', position: 'relative',
-        padding: MM(8), fontFamily: design.fontFamily ?? 'Georgia, "Times New Roman", serif',
-        color: ink, boxSizing: 'border-box',
-      }}
-    >
+    <div id="icof-transcript">
       <style>{`
         @media print {
           @page { size: A4 landscape; margin: 0; }
           html, body { margin: 0 !important; padding: 0 !important; background: #fff !important; }
           body * { visibility: hidden; }
           #icof-transcript, #icof-transcript * { visibility: visible; }
-          #icof-transcript { position: absolute; left: 0; top: 0; box-shadow: none !important; }
+          #icof-transcript { position: absolute; left: 0; top: 0; }
+          .icof-sheet { box-shadow: none !important; margin: 0 !important; }
+          /* EACH SHEET ITS OWN PAGE. Without this the browser flows them
+             together and the second year's block is cut in half by the fold. */
+          .icof-sheet + .icof-sheet { break-before: page; page-break-before: always; }
         }
       `}</style>
 
-      {/* The security ground, seeded from the credential number. */}
+      {sheets.map((yearsOnSheet, i) => (
+        <Sheet
+          key={i}
+          design={design}
+          data={data}
+          specimen={specimen}
+          ground={ground}
+          microtext={microtext}
+          ink={ink}
+          rule={rule}
+          years={yearsOnSheet}
+          first={i === 0}
+          last={i === sheets.length - 1}
+          page={i + 1}
+          of={sheets.length}
+        />
+      ))}
+    </div>
+  );
+}
+
+function Sheet({
+  design, data, specimen, ground, microtext, ink, rule, years, first, last, page, of,
+}: {
+  design: CredentialDesign;
+  data: TranscriptMasterData;
+  specimen?: boolean;
+  ground: string; microtext: string; ink: string; rule: string;
+  years: TranscriptMasterData['years'];
+  first: boolean; last: boolean; page: number; of: number;
+}) {
+  return (
+    <div
+      className="icof-sheet"
+      style={{
+        width: MM(297), height: MM(210), background: '#fdfcf8', position: 'relative',
+        padding: MM(7), fontFamily: design.fontFamily ?? 'Georgia, "Times New Roman", serif',
+        color: ink, boxSizing: 'border-box', marginBottom: MM(6), overflow: 'hidden',
+      }}
+    >
       <div style={{
-        position: 'absolute', inset: 0, backgroundImage: `url("${ground}")`,
-        opacity: 1, pointerEvents: 'none',
+        position: 'absolute', inset: 0, backgroundImage: `url("${ground}")`, pointerEvents: 'none',
       }} />
 
-      {data.superseded && (
-        <div style={{
-          position: 'absolute', inset: 0, display: 'flex', alignItems: 'center',
-          justifyContent: 'center', pointerEvents: 'none',
-        }}>
-          <span style={{
-            fontSize: '54pt', color: 'rgba(160,40,40,.15)', fontWeight: 'bold',
-            transform: 'rotate(-22deg)', letterSpacing: '.12em',
-          }}>SUPERSEDED</span>
-        </div>
-      )}
+      {data.superseded && <Overprint text="SUPERSEDED" colour="rgba(160,40,40,.15)" />}
+      {specimen && <Overprint text="SPECIMEN" colour="rgba(120,40,40,.13)" />}
 
-      {specimen && (
-        <div style={{
-          position: 'absolute', inset: 0, display: 'flex', alignItems: 'center',
-          justifyContent: 'center', pointerEvents: 'none',
-        }}>
-          <span style={{
-            fontSize: '58pt', color: 'rgba(120,40,40,.13)', fontWeight: 'bold',
-            transform: 'rotate(-22deg)', letterSpacing: '.16em',
-          }}>SPECIMEN</span>
-        </div>
-      )}
+      <div style={{
+        position: 'relative', border: `1pt solid ${rule}`, padding: MM(3.5),
+        height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box',
+      }}>
+        {/* THE HEADER IS ON THE FIRST SHEET ONLY, as the original does it. A
+            second page repeating the whole masthead wastes a third of the
+            sheet; what it needs is enough to prove it belongs to the first,
+            which is the running head below. */}
+        {first ? (
+          <Masthead design={design} data={data} ink={ink} rule={rule} />
+        ) : (
+          <RunningHead data={data} design={design} rule={rule} />
+        )}
 
-      <div style={{ position: 'relative', border: `1pt solid ${rule}`, padding: MM(4), minHeight: MM(194) }}>
+        {first && <GradeSystem ink={ink} rule={rule} />}
 
-        {/* --- Header ------------------------------------------------------ */}
-        <div style={{ display: 'flex', gap: MM(4), alignItems: 'flex-start' }}>
-          <div style={{ flex: '1 1 0', minWidth: 0 }}>
-            <h1 style={{
-              margin: 0, fontSize: '15pt', letterSpacing: '.02em', fontWeight: 400, color: design.brand,
-            }}>
-              {UNIVERSITY.name}
-            </h1>
-            <p style={{ margin: '0.6mm 0 0', fontSize: '6.4pt', color: ink, opacity: 0.8 }}>
-              {UNIVERSITY.headquarters} · {UNIVERSITY.descriptor}
-            </p>
-            <p style={{ margin: '2.5mm 0 0', fontSize: '7pt', letterSpacing: '.18em', textTransform: 'uppercase' }}>
-              Student Transcript
-            </p>
-            <p style={{ margin: '0.4mm 0 0', fontSize: '5.8pt', letterSpacing: '.1em', textTransform: 'uppercase', opacity: 0.7 }}>
-              Degree / diploma offered
-            </p>
-            <p style={{ margin: '0.6mm 0 0', fontSize: '11.5pt', fontWeight: 700, color: design.brand }}>
-              {data.student.degree_type || data.student.program || data.department?.name}
-            </p>
-          </div>
-
-          {/* The holder's particulars, boxed as the original sets them. */}
-          <table style={{ borderCollapse: 'collapse', fontSize: '6pt', flex: '0 0 auto' }}>
-            <tbody>
-              <Particular label="Surname" value={data.student.last_name} rule={rule} />
-              <Particular label="First names" value={data.student.first_name} rule={rule} />
-              <Particular label="Middle name" value={(data.student as { middle_name?: string }).middle_name ?? '—'} rule={rule} />
-              <Particular label="Student no." value={data.studentNumber ?? data.student.matric_no} rule={rule} mono />
-              <Particular label="Date of birth" value={data.dateOfBirth ?? '—'} rule={rule} />
-              <Particular label="Place of birth" value={data.placeOfBirth ?? '—'} rule={rule} />
-              <Particular label="Sex" value={data.sex ?? '—'} rule={rule} />
-              <Particular label="Date of issue" value={data.issuedOn ?? '—'} rule={rule} />
-            </tbody>
-          </table>
-        </div>
-
-        {/* --- The grade system, on the face ------------------------------- */}
-        <div style={{
-          marginTop: MM(2.5), display: 'flex', gap: MM(4), flexWrap: 'wrap',
-          borderTop: `0.5pt solid ${rule}`, borderBottom: `0.5pt solid ${rule}`, padding: `${MM(1.4)} 0`,
-        }}>
-          <Legend title="Grade system">
-            {GRADING_SCALE.map((g) => (
-              <span key={g.grade} style={{ marginRight: MM(2.6) }}>
-                <strong>{g.grade}</strong> {g.gradePoint.toFixed(2)} · {g.minScore}–{g.maxScore}%
-              </span>
-            ))}
-          </Legend>
-          <Legend title="Registrar’s codes">
-            {REGISTRAR_CODES.map((c) => (
-              <span key={c.code} style={{ marginRight: MM(2.2) }}>
-                <strong>{c.code}</strong> {c.meaning}
-              </span>
-            ))}
-            {COURSE_STANDING.map((c) => (
-              <span key={c.code} style={{ marginRight: MM(2.2) }}>
-                <strong>{c.code}:</strong> {c.meaning}
-              </span>
-            ))}
-          </Legend>
-        </div>
-
-        {/* THE PROVENANCE OF A TRANSCRIBED RECORD, on the face rather than only
-            in the database. A safeguard a reader cannot see is not a safeguard
-            for the reader. */}
-        {data.transcribedFrom && (
+        {first && data.transcribedFrom && (
           <p style={{
-            margin: `${MM(2)} 0 0`, border: `0.6pt solid ${rule}`, background: 'rgba(185,154,62,.08)',
-            padding: `${MM(1.4)} ${MM(2)}`, fontSize: '6pt', lineHeight: 1.45,
+            margin: `${MM(1.8)} 0 0`, border: `0.6pt solid ${rule}`, background: 'rgba(185,154,62,.08)',
+            padding: `${MM(1.2)} ${MM(2)}`, fontSize: '5.8pt', lineHeight: 1.4,
           }}>
             <strong>Transcribed from an archived record.</strong> These marks were not recorded in
             the University’s current academic system and did not pass through its approval chain.
@@ -271,138 +238,295 @@ export default function TranscriptMaster({
           </p>
         )}
 
-        {/* --- The record ---------------------------------------------------- */}
-        <div style={{
-          marginTop: MM(2.5), display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)', gap: `${MM(2)} ${MM(3)}`, flex: '1 1 auto',
-          alignContent: 'start',
-        }}>
-          {blocks.map((b) => (
-            <div key={`${b.year}-${b.semester}`} style={{ breakInside: 'avoid' }}>
-              <p style={{
-                margin: 0, fontSize: '6pt', fontWeight: 700, textTransform: 'uppercase',
-                letterSpacing: '.06em', color: design.brand,
+        {/* --- The record: a row per year, a column per semester ------------ */}
+        <div style={{ flex: '1 1 auto', marginTop: MM(2), minHeight: 0 }}>
+          {years.map((y) => (
+            <div key={y.year} style={{ display: 'flex', gap: MM(2), marginBottom: MM(2.5) }}>
+              {/* THE YEAR LABEL DOWN THE LEFT, as the original sets it — one
+                  cell spanning both semesters, so the eye reads a year across
+                  rather than hunting for repeated headings. */}
+              <div style={{
+                flex: '0 0 auto', width: MM(14), borderRight: `0.5pt solid ${rule}`,
+                paddingRight: MM(1.5), display: 'flex', alignItems: 'flex-start',
               }}>
-                {b.year ? `Year ${b.year} · ` : ''}Semester {b.semester || '—'}
-              </p>
-              <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: MM(0.8) }}>
-                <thead>
-                  <tr>
-                    {/* THE ORIGINAL'S SEVEN COLUMNS, in its order and with its
-                        meanings. The first draft of this collapsed two of them
-                        and printed quality points under "Grade Points" — 9.99
-                        where the University's own transcript prints 3.33. A
-                        receiving registrar reads these columns by name; getting
-                        one wrong makes the sheet unreadable to the people it
-                        exists for. */}
-                    <th style={th}>Code</th>
-                    <th style={th}>Name of course</th>
-                    <th style={{ ...th, textAlign: 'right' }}>Cr val</th>
-                    <th style={{ ...th, textAlign: 'right' }}>Grade</th>
-                    <th style={{ ...th, textAlign: 'right' }}>Cr earn</th>
-                    <th style={{ ...th, textAlign: 'right' }}>Cr GPA</th>
-                    <th style={{ ...th, textAlign: 'right' }}>Gr pts</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {b.courses.map((c) => (
-                    <tr key={c.code}>
-                      <td style={{ ...td, fontFamily: 'ui-monospace, Menlo, monospace' }}>{c.code}</td>
-                      <td style={td}>{c.title}</td>
-                      <td style={num}>{c.creditUnit}</td>
-                      <td style={num}>{c.grade}</td>
-                      {/* CREDIT EARNED IS NOT CREDIT VALUE. A failed course is
-                          attempted and not earned, and the original prints both
-                          columns precisely so the difference is legible. */}
-                      <td style={num}>{c.gradePoint > 0 ? c.creditUnit : 0}</td>
-                      <td style={num}>{c.gradePoint > 0 ? c.creditUnit : 0}</td>
-                      {/* THE GRADE POINT, not the quality point. See above. */}
-                      <td style={num}>{c.gradePoint.toFixed(2)}</td>
-                    </tr>
-                  ))}
-                  {/* Two figures, as the original closes each block: how many
-                      credits counted toward the GPA, and the GPA itself. */}
-                  <tr>
-                    <td colSpan={2} style={{ ...td, fontWeight: 700, borderTop: `0.5pt solid ${rule}` }}>
-                      GPA credit earned
-                    </td>
-                    <td colSpan={3} style={{ ...num, fontWeight: 700, borderTop: `0.5pt solid ${rule}` }}>
-                      {b.totalCredits}
-                    </td>
-                    <td colSpan={2} style={{ ...num, fontWeight: 700, borderTop: `0.5pt solid ${rule}` }}>
-                      Semester GPA {b.gpa.toFixed(2)}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+                <span style={{
+                  fontSize: '6.4pt', fontWeight: 700, textTransform: 'uppercase',
+                  letterSpacing: '.08em', color: design.brand,
+                }}>
+                  {y.year ? `Year ${inWords(y.year)}` : 'Unplaced'}
+                </span>
+              </div>
+              <div style={{
+                flex: '1 1 0', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: MM(3), minWidth: 0,
+              }}>
+                {[0, 1].map((slot) => {
+                  const s = y.semesters[slot];
+                  return s
+                    ? <SemesterBlock key={slot} s={s} ink={ink} rule={rule} brand={design.brand} />
+                    : <div key={slot} />;
+                })}
+              </div>
             </div>
           ))}
         </div>
 
-        {/* --- Totals -------------------------------------------------------- */}
-        <div style={{
-          marginTop: MM(3), borderTop: `1pt solid ${rule}`, paddingTop: MM(1.6),
-          display: 'flex', gap: MM(6), fontSize: '7pt', flexWrap: 'wrap',
-        }}>
-          <span>Study total credit <strong>{data.totalCredits}</strong></span>
-          <span>Total credit earned <strong>{data.creditsEarned ?? data.totalCredits}</strong></span>
-          <span>Cumulative GPA <strong>{data.cgpa.toFixed(2)}</strong></span>
-          {/* Printed only when the award carries one — a doctorate is passed,
-              not classified. `classificationFor` decides; this only renders. */}
-          {data.classification && <span>Classification <strong>{data.classification}</strong></span>}
-        </div>
-
-        {/* --- Attestation, seal and verification ---------------------------- */}
-        <div style={{
-          marginTop: MM(3), display: 'flex', alignItems: 'flex-end',
-          justifyContent: 'space-between', gap: MM(4),
-        }}>
-          {(design.signatories ?? []).slice(0, 4).map((sig, i) => (
-            <div key={`${sig.name}-${i}`} style={{
-              borderTop: `0.6pt solid ${ink}`, paddingTop: MM(1), minWidth: MM(48), textAlign: 'center',
+        {/* --- Closing block, on the last sheet only ----------------------- */}
+        {last && (
+          <>
+            <div style={{
+              borderTop: `1pt solid ${rule}`, paddingTop: MM(1.4),
+              display: 'flex', gap: MM(6), fontSize: '7pt', flexWrap: 'wrap',
             }}>
-              <p style={{ margin: 0, fontSize: '6.6pt', fontWeight: 700 }}>{sig.name}</p>
-              <p style={{ margin: 0, fontSize: '5.8pt', opacity: 0.75 }}>{sig.office}</p>
+              <span>Study total credit <strong>{data.totalCredits}</strong></span>
+              <span>Total credit earned <strong>{data.creditsEarned ?? data.totalCredits}</strong></span>
+              <span>Cumulative GPA <strong>{data.cgpa.toFixed(2)}</strong></span>
+              {data.classification && <span>Classification <strong>{data.classification}</strong></span>}
             </div>
-          ))}
 
-          <div style={{ textAlign: 'center', flex: '0 0 auto' }}>
-            {data.qrSvg
-              ? <div dangerouslySetInnerHTML={{ __html: data.qrSvg }} />
-              : <div style={{
-                width: MM(16), height: MM(16), border: `0.5pt dashed ${rule}`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '4.6pt', opacity: 0.6,
-              }}>QR on issue</div>}
-            <p style={{ margin: `${MM(0.8)} 0 0`, fontSize: '5.8pt', fontFamily: 'ui-monospace, Menlo, monospace' }}>
-              {data.credentialId ?? 'not yet issued'}
-            </p>
-            {data.sealCode && (
-              <p style={{ margin: 0, fontSize: '5.4pt', opacity: 0.75 }}>Seal {data.sealCode}</p>
-            )}
-            <p style={{ margin: 0, fontSize: '5.4pt', opacity: 0.75 }}>
-              {/* NO EXPIRY. The 2017 sheet said "Valid 3 for Months" because a
-                  paper document's only defence is to go stale. This one is
-                  checkable against the register for as long as the award
-                  stands, so it does not need to expire. */}
-              Version {data.version ?? 1} · verify at {UNIVERSITY.website}/verify
-            </p>
-          </div>
-        </div>
+            <div style={{
+              marginTop: MM(2.5), display: 'flex', alignItems: 'flex-end',
+              justifyContent: 'space-between', gap: MM(3),
+            }}>
+              <div style={{ display: 'flex', gap: MM(4), flexWrap: 'wrap' }}>
+                {(design.signatories ?? []).slice(0, 3).map((sig, i) => (
+                  <div key={`${sig.name}-${i}`} style={{
+                    borderTop: `0.6pt solid ${ink}`, paddingTop: MM(1),
+                    minWidth: MM(38), textAlign: 'center',
+                  }}>
+                    <p style={{ margin: 0, fontSize: '6.4pt', fontWeight: 700 }}>{sig.name}</p>
+                    <p style={{ margin: 0, fontSize: '5.6pt', opacity: 0.75 }}>{sig.office}</p>
+                  </div>
+                ))}
+              </div>
 
-        {/* Microtext along the foot: legible under a glass, a grey line to a
-            photocopier. It raises the cost of a casual forgery and nothing
-            more — the register behind /verify is the control. */}
+              <div style={{ textAlign: 'center', flex: '0 0 auto' }}>
+                {data.qrSvg
+                  ? <div dangerouslySetInnerHTML={{ __html: data.qrSvg }} />
+                  : <div style={{
+                    width: MM(15), height: MM(15), border: `0.5pt dashed ${rule}`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '4.6pt', opacity: 0.6, margin: '0 auto',
+                  }}>QR on issue</div>}
+                <p style={{ margin: `${MM(0.7)} 0 0`, fontSize: '5.6pt', fontFamily: 'ui-monospace, Menlo, monospace' }}>
+                  {data.credentialId ?? 'not yet issued'}
+                </p>
+                {data.sealCode && (
+                  <p style={{ margin: 0, fontSize: '5.2pt', opacity: 0.75 }}>Seal {data.sealCode}</p>
+                )}
+                {/* NO EXPIRY. The 2017 sheet said "Valid 3 for Months" because
+                    going stale is a paper document's only defence. This one is
+                    checkable against the register for as long as the award
+                    stands. */}
+                <p style={{ margin: 0, fontSize: '5.2pt', opacity: 0.75 }}>
+                  Version {data.version ?? 1} · verify at {UNIVERSITY.website}/verify
+                </p>
+              </div>
+            </div>
+          </>
+        )}
+
         <div style={{
-          marginTop: MM(1.6), height: MM(2.4), backgroundImage: `url("${microtext}")`,
-          backgroundRepeat: 'repeat-x', opacity: 0.55,
+          marginTop: MM(1.2), height: MM(2.2), backgroundImage: `url("${microtext}")`,
+          backgroundRepeat: 'repeat-x', opacity: 0.55, flex: '0 0 auto',
         }} />
-
-        <p style={{ margin: `${MM(1)} 0 0`, fontSize: '5.4pt', textAlign: 'center', opacity: 0.7 }}>
+        <p style={{ margin: `${MM(0.8)} 0 0`, fontSize: '5.2pt', textAlign: 'center', opacity: 0.7 }}>
           Issued without erasure or alteration. Any unauthorised modification renders it invalid.
-          {' '}{UNIVERSITY.email} · {UNIVERSITY.website}
+          {' '}{UNIVERSITY.email} · {UNIVERSITY.website} · Page {page} of {of}
         </p>
       </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+
+function Overprint({ text, colour }: { text: string; colour: string }) {
+  return (
+    <div style={{
+      position: 'absolute', inset: 0, display: 'flex', alignItems: 'center',
+      justifyContent: 'center', pointerEvents: 'none',
+    }}>
+      <span style={{
+        fontSize: '54pt', color: colour, fontWeight: 'bold',
+        transform: 'rotate(-22deg)', letterSpacing: '.14em',
+      }}>{text}</span>
+    </div>
+  );
+}
+
+function Masthead({
+  design, data, ink, rule,
+}: { design: CredentialDesign; data: TranscriptMasterData; ink: string; rule: string }) {
+  return (
+    <div style={{ display: 'flex', gap: MM(4), alignItems: 'flex-start', flex: '0 0 auto' }}>
+      <div style={{ flex: '1 1 0', minWidth: 0 }}>
+        <h1 style={{ margin: 0, fontSize: '14pt', letterSpacing: '.02em', fontWeight: 400, color: design.brand }}>
+          {UNIVERSITY.name}
+        </h1>
+        <p style={{ margin: '0.5mm 0 0', fontSize: '6pt', color: ink, opacity: 0.8 }}>
+          {UNIVERSITY.headquarters} · {UNIVERSITY.descriptor}
+        </p>
+        <p style={{ margin: '2mm 0 0', fontSize: '6.6pt', letterSpacing: '.18em', textTransform: 'uppercase' }}>
+          Student Transcript
+        </p>
+        <p style={{ margin: '0.3mm 0 0', fontSize: '5.4pt', letterSpacing: '.1em', textTransform: 'uppercase', opacity: 0.7 }}>
+          Degree / diploma offered
+        </p>
+        <p style={{ margin: '0.5mm 0 0', fontSize: '11pt', fontWeight: 700, color: design.brand }}>
+          {data.student.degree_type || data.student.program || data.department?.name}
+        </p>
+      </div>
+      <table style={{ borderCollapse: 'collapse', fontSize: '6pt', flex: '0 0 auto' }}>
+        <tbody>
+          <Particular label="Surname" value={data.student.last_name} rule={rule} />
+          <Particular label="First names" value={data.student.first_name} rule={rule} />
+          <Particular label="Middle name" value={(data.student as { middle_name?: string }).middle_name ?? '—'} rule={rule} />
+          <Particular label="Student no." value={data.studentNumber ?? data.student.matric_no} rule={rule} mono />
+          <Particular label="Date of birth" value={data.dateOfBirth ?? '—'} rule={rule} />
+          <Particular label="Place of birth" value={data.placeOfBirth ?? '—'} rule={rule} />
+          <Particular label="Sex" value={data.sex ?? '—'} rule={rule} />
+          <Particular label="Date of issue" value={data.issuedOn ?? '—'} rule={rule} />
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/**
+ * The running head on sheets after the first.
+ *
+ * Enough to prove the sheet belongs to the first — the holder, the award and
+ * the credential number — without repeating a masthead that would cost a third
+ * of the page. A loose second sheet with no identification on it is a second
+ * sheet that gets attached to the wrong transcript.
+ */
+function RunningHead({
+  data, design, rule,
+}: { data: TranscriptMasterData; design: CredentialDesign; rule: string }) {
+  return (
+    <div style={{
+      flex: '0 0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
+      gap: MM(4), borderBottom: `0.6pt solid ${rule}`, paddingBottom: MM(1.2),
+    }}>
+      <span style={{ fontSize: '8pt', fontWeight: 700, color: design.brand }}>
+        {UNIVERSITY.name} · Student Transcript (continued)
+      </span>
+      <span style={{ fontSize: '6.4pt' }}>
+        {data.student.last_name} {data.student.first_name} ·{' '}
+        <span style={{ fontFamily: 'ui-monospace, Menlo, monospace' }}>
+          {data.studentNumber ?? data.student.matric_no}
+        </span>
+        {' '}· {data.credentialId ?? 'not yet issued'}
+      </span>
+    </div>
+  );
+}
+
+function GradeSystem({ ink, rule }: { ink: string; rule: string }) {
+  return (
+    <div style={{
+      marginTop: MM(2), display: 'flex', gap: MM(4), flexWrap: 'wrap', flex: '0 0 auto',
+      borderTop: `0.5pt solid ${rule}`, borderBottom: `0.5pt solid ${rule}`, padding: `${MM(1.2)} 0`,
+    }}>
+      <Legend title="Grade system">
+        {GRADING_SCALE.map((g) => (
+          <span key={g.grade} style={{ marginRight: MM(2.4) }}>
+            <strong>{g.grade}</strong> {g.gradePoint.toFixed(2)} · {g.minScore}–{g.maxScore}%
+          </span>
+        ))}
+      </Legend>
+      <Legend title="Registrar’s codes">
+        {REGISTRAR_CODES.map((c) => (
+          <span key={c.code} style={{ marginRight: MM(2) }}>
+            <strong>{c.code}</strong> {c.meaning}
+          </span>
+        ))}
+        {COURSE_STANDING.map((c) => (
+          <span key={c.code} style={{ marginRight: MM(2) }}>
+            <strong>{c.code}:</strong> {c.meaning}
+          </span>
+        ))}
+      </Legend>
+    </div>
+  );
+}
+
+function SemesterBlock({
+  s, ink, rule, brand,
+}: {
+  s: TranscriptMasterData['years'][number]['semesters'][number];
+  ink: string; rule: string; brand: string;
+}) {
+  const th: React.CSSProperties = {
+    fontSize: '5pt', textTransform: 'uppercase', letterSpacing: '.03em',
+    padding: '0.5mm 0.6mm', borderBottom: `0.5pt solid ${rule}`, textAlign: 'left',
+    color: ink, fontWeight: 700,
+  };
+  const td: React.CSSProperties = {
+    fontSize: '5.8pt', padding: '0.4mm 0.6mm', borderBottom: '0.2pt solid rgba(0,0,0,.09)', color: ink,
+  };
+  const num: React.CSSProperties = { ...td, textAlign: 'right' };
+
+  return (
+    <div style={{ minWidth: 0 }}>
+      <p style={{
+        margin: 0, fontSize: '5.8pt', fontWeight: 700, textTransform: 'uppercase',
+        letterSpacing: '.06em', color: brand,
+      }}>
+        Semester {s.semester || '—'}
+      </p>
+      <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: MM(0.6), tableLayout: 'fixed' }}>
+        <colgroup>
+          <col style={{ width: '16%' }} /><col />
+          <col style={{ width: '9%' }} /><col style={{ width: '9%' }} />
+          <col style={{ width: '9%' }} /><col style={{ width: '9%' }} /><col style={{ width: '10%' }} />
+        </colgroup>
+        <thead>
+          <tr>
+            {/* The original's seven columns, in its order and with its meanings. */}
+            <th style={th}>Code</th>
+            <th style={th}>Name of course</th>
+            <th style={{ ...th, textAlign: 'right' }}>Cr val</th>
+            <th style={{ ...th, textAlign: 'right' }}>Grade</th>
+            <th style={{ ...th, textAlign: 'right' }}>Cr earn</th>
+            <th style={{ ...th, textAlign: 'right' }}>Cr GPA</th>
+            <th style={{ ...th, textAlign: 'right' }}>Gr pts</th>
+          </tr>
+        </thead>
+        <tbody>
+          {s.courses.map((c) => (
+            <tr key={c.code}>
+              <td style={{ ...td, fontFamily: 'ui-monospace, Menlo, monospace' }}>{c.code}</td>
+              <td style={td}>{c.title}</td>
+              <td style={num}>{c.creditUnit}</td>
+              <td style={num}>{c.grade}</td>
+              {/* Credit earned is not credit value: a failed course is attempted
+                  and not earned, and the original prints both so the difference
+                  is legible. */}
+              <td style={num}>{c.gradePoint > 0 ? c.creditUnit : 0}</td>
+              <td style={num}>{c.gradePoint > 0 ? c.creditUnit : 0}</td>
+              {/* The grade point, not the quality point — 3.33, as the
+                  University's own sheet prints it. */}
+              <td style={num}>{c.gradePoint.toFixed(2)}</td>
+            </tr>
+          ))}
+          <tr>
+            <td colSpan={4} style={{ ...td, fontWeight: 700, borderTop: `0.5pt solid ${rule}` }}>
+              GPA credit earned
+            </td>
+            {/* CREDITS HERE, GPA ON THE NEXT ROW — as the original separates
+                them. Printing the GPA on both made the two closing rows read
+                as the same figure stated twice. */}
+            <td colSpan={3} style={{ ...num, fontWeight: 700, borderTop: `0.5pt solid ${rule}` }}>
+              {s.totalCredits}
+            </td>
+          </tr>
+          <tr>
+            <td colSpan={6} style={{ ...td, fontStyle: 'italic', borderBottom: 'none' }}>Semester GPA</td>
+            <td style={{ ...num, fontWeight: 700, borderBottom: 'none' }}>{s.gpa.toFixed(2)}</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -413,12 +537,12 @@ function Particular({
   return (
     <tr>
       <th style={{
-        textAlign: 'left', fontSize: '5.2pt', textTransform: 'uppercase', letterSpacing: '.06em',
-        padding: '0.5mm 1.6mm 0.5mm 0', opacity: 0.7, fontWeight: 400,
+        textAlign: 'left', fontSize: '5pt', textTransform: 'uppercase', letterSpacing: '.06em',
+        padding: '0.45mm 1.6mm 0.45mm 0', opacity: 0.7, fontWeight: 400,
         borderBottom: `0.2pt solid ${rule}33`, whiteSpace: 'nowrap',
       }}>{label}</th>
       <td style={{
-        fontSize: '6.4pt', fontWeight: 700, padding: '0.5mm 0', whiteSpace: 'nowrap',
+        fontSize: '6.2pt', fontWeight: 700, padding: '0.45mm 0', whiteSpace: 'nowrap',
         borderBottom: `0.2pt solid ${rule}33`,
         fontFamily: mono ? 'ui-monospace, Menlo, monospace' : undefined,
       }}>{value || '—'}</td>
@@ -428,11 +552,16 @@ function Particular({
 
 function Legend({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div style={{ flex: '1 1 0', minWidth: MM(90) }}>
-      <p style={{
-        margin: 0, fontSize: '5.2pt', textTransform: 'uppercase', letterSpacing: '.1em', opacity: 0.7,
-      }}>{title}</p>
-      <p style={{ margin: '0.6mm 0 0', fontSize: '5.4pt', lineHeight: 1.5 }}>{children}</p>
+    <div style={{ flex: '1 1 0', minWidth: MM(88) }}>
+      <p style={{ margin: 0, fontSize: '5pt', textTransform: 'uppercase', letterSpacing: '.1em', opacity: 0.7 }}>
+        {title}
+      </p>
+      <p style={{ margin: '0.5mm 0 0', fontSize: '5.2pt', lineHeight: 1.45 }}>{children}</p>
     </div>
   );
+}
+
+/** "One", "Two", "Three" — as the original labels its years. */
+function inWords(n: number): string {
+  return ['Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven'][n] ?? String(n);
 }
