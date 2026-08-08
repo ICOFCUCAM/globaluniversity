@@ -129,7 +129,12 @@ export const menuGroups: MenuGroup[] = [
         roles: ['superadmin', 'admin', 'registrar', 'academic-office', 'dean', 'hod', 'lecturer'],
       },
       { id: 'transcript', label: 'Transcript', icon: <FileText size={18} />, roles: ['superadmin', 'admin', 'student'] },
-      { id: 'certificate', label: 'Certificate', icon: <Award size={18} />, roles: ['superadmin', 'admin', 'student'] },
+      // ISSUING MOVED TO CREDENTIALS → ISSUE. A student keeps this entry —
+      // theirs is a view of their own certificate, not the screen that mints
+      // one — and the staff who issue now find it beside the design, the
+      // register and the specimen book rather than three groups away from all
+      // of them.
+      { id: 'certificate', label: 'Certificate', icon: <Award size={18} />, roles: ['student'] },
       // The graduate's own wallet: what the university has issued them, and a
       // link they can send to an employer. Students only — staff read the
       // register through the Registrar's screens, not through a wallet.

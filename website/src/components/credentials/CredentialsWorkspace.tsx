@@ -56,17 +56,18 @@
 // ---------------------------------------------------------------------------
 
 import React from 'react';
-import { BadgeCheck, Palette, ShieldCheck, BookOpen } from 'lucide-react';
+import { BadgeCheck, Palette, ShieldCheck, BookOpen, Stamp } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { can } from '@/lib/roles';
 import type { UserRole } from '@/lib/types';
 import CredentialAuthority from '@/components/credentials/CredentialAuthority';
 import CredentialStudio from '@/components/studio/CredentialStudio';
 import SpecimenGallery from '@/components/studio/SpecimenGallery';
+import CertificateGenerator from '@/components/certificate/CertificateGenerator';
 import { PageHeader } from '@/components/ui/portal';
 import { FOCUS } from '@/lib/portalTheme';
 
-type AreaId = 'register' | 'design' | 'specimens';
+type AreaId = 'issue' | 'register' | 'design' | 'specimens';
 
 interface Area {
   id: AreaId;
@@ -88,8 +89,27 @@ export default function CredentialsWorkspace({ role }: { role?: UserRole }) {
     || actualRole === 'vice-chancellor'
     || actualRole === 'registrar';
 
+  // Whoever may put the University's name on a document for a named person.
+  const mayIssue = can(actualRole, 'issue-credential');
+
   const areas: Area[] = React.useMemo(() => {
     const list: Area[] = [];
+    // FIRST, BECAUSE IT IS THE JOB. Every other area exists in service of this
+    // one: the design decides what the document looks like, the register
+    // records what was issued, the specimen book shows the forms. Issuing is
+    // the act. It used to live under Records → Certificate, three groups away
+    // from everything else about credentials, so somebody standing in the
+    // Design tab with a graduate's file open had no route to producing their
+    // certificate and no reason to think one existed.
+    if (mayIssue) {
+      list.push({
+        id: 'issue',
+        label: 'Issue',
+        icon: <Stamp size={15} />,
+        blurb: 'Choose a graduate, see the checks that decide whether they qualify, and issue. '
+          + 'The document is filled from the record the University already holds.',
+      });
+    }
     if (mayRegister) {
       list.push({
         id: 'register',
@@ -118,7 +138,7 @@ export default function CredentialsWorkspace({ role }: { role?: UserRole }) {
       blurb: 'One certificate per level the University confers, in the wording each level requires.',
     });
     return list;
-  }, [mayDesign, mayApprove, mayRegister]);
+  }, [mayIssue, mayDesign, mayApprove, mayRegister]);
 
   // Land on the area this role is most likely to have come for: the register if
   // they hold it, otherwise their own work, otherwise the specimen book.
@@ -165,6 +185,7 @@ export default function CredentialsWorkspace({ role }: { role?: UserRole }) {
         <p className="max-w-3xl text-sm text-[#6b6076] dark:text-[#9c93ad]">{current.blurb}</p>
       )}
 
+      {area === 'issue' && <CertificateGenerator embedded />}
       {area === 'register' && <CredentialAuthority role={actualRole} embedded />}
       {area === 'design' && <CredentialStudio embedded />}
       {area === 'specimens' && <SpecimenGallery />}

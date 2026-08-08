@@ -28,6 +28,7 @@ import { PASS_MARK } from '@/lib/grading';
 import { useCredentialTemplate } from '@/lib/useCredentialTemplate';
 import { assessGraduation, type AwardRule, type GraduationVerdict } from '@/lib/graduation';
 import CertificateDocument from './CertificateDocument';
+import ProduceCredential from '@/components/credentials/ProduceCredential';
 import { Card, PageHeader, EmptyState } from '@/components/ui/portal';
 import { BTN_SECONDARY, INPUT, FOCUS } from '@/lib/portalTheme';
 import {
@@ -48,7 +49,7 @@ interface Candidate {
   admission_conditions: string | null;
 }
 
-export default function CertificateGenerator() {
+export default function CertificateGenerator({ embedded }: { embedded?: boolean } = {}) {
   const template = useCredentialTemplate('certificate');
 
   const [candidates, setCandidates] = useState<Candidate[] | null>(null);
@@ -59,8 +60,12 @@ export default function CertificateGenerator() {
   const [assessing, setAssessing] = useState(false);
   const [issuing, setIssuing] = useState(false);
   const [issued, setIssued] = useState<{
+    /** The register row id, needed to produce copies of it. */
+    id: string | null;
     credentialId: string; sealCode: string; qrSvg: string; classification: string | null;
   } | null>(null);
+  const [producing, setProducing] = useState(false);
+  const [sent, setSent] = useState<string | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
 
   const student = candidates?.find((c) => c.id === selectedId) ?? null;
@@ -88,6 +93,38 @@ export default function CertificateGenerator() {
       })));
     })();
   }, []);
+
+  /**
+   * Email the certificate that has just been issued.
+   *
+   * Goes through the same route the register uses, so the act is audited
+   * identically wherever it was started from. A second delivery path with its
+   * own audit behaviour is how a trail ends up with holes in it.
+   */
+  async function produce(action: 'print' | 'email') {
+    if (!issued?.id) return;
+    setProducing(true);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const res = await fetch('/api/credential/deliver', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          authorization: `Bearer ${session.session?.access_token ?? ''}`,
+        },
+        body: JSON.stringify({ credentialId: issued.id, action }),
+      }).then((r) => r.json()).catch(() => null);
+
+      if (!res?.ok) {
+        setProblem(res?.detail ?? res?.error ?? 'It could not be sent.');
+        return;
+      }
+      setProblem(null);
+      setSent(res.message ?? 'Sent, and recorded on the audit trail.');
+    } finally {
+      setProducing(false);
+    }
+  }
 
   // --- Assess the selected candidate ---------------------------------------
   const assess = useCallback(async (c: Candidate) => {
@@ -174,6 +211,7 @@ export default function CertificateGenerator() {
       return;
     }
     setIssued({
+      id: res.credential.id ?? null,
       credentialId: res.credential.credentialId,
       sealCode: res.credential.sealCode,
       qrSvg: res.credential.qrSvg,
@@ -199,10 +237,14 @@ export default function CertificateGenerator() {
 
   return (
     <div className="space-y-5">
-      <PageHeader
-        title="Issue a degree certificate"
-        subtitle="Choose the graduate, read the checks, and issue. Issuing writes the credential to the university's register."
-      />
+      {/* Suppressed inside the Credentials workspace, which already names the
+          area and says what it is for. */}
+      {!embedded && (
+        <PageHeader
+          title="Issue a degree certificate"
+          subtitle="Choose the graduate, read the checks, and issue. Issuing writes the credential to the university's register."
+        />
+      )}
 
       {/* Which design this will print under. Two certificates issued a week
           apart can legitimately differ, and the version is how anyone later
@@ -315,6 +357,16 @@ export default function CertificateGenerator() {
             </div>
           )}
 
+          {/* The confirmation the email actually went. Without it the button
+              looks identical before and after, and a registrar sends it three
+              times. */}
+          {sent && (
+            <div role="status" className="flex items-start gap-2 rounded-xl border border-emerald-600/30 bg-emerald-600/10 p-4 text-sm text-emerald-900 dark:text-emerald-200">
+              <Check size={16} className="mt-0.5 shrink-0" />
+              <p>{sent}</p>
+            </div>
+          )}
+
           {/* --- Issue ------------------------------------------------- */}
           <Card>
             <div className="flex flex-wrap items-center justify-between gap-4 p-5">
@@ -337,11 +389,7 @@ export default function CertificateGenerator() {
                 )}
               </div>
               <div className="flex gap-2">
-                {issued ? (
-                  <button onClick={() => window.print()} className={BTN_SECONDARY}>
-                    <Printer size={15} /> Print
-                  </button>
-                ) : (
+                {issued ? null : (
                   <button
                     onClick={() => void issue()}
                     disabled={issuing || !verdict?.qualifies}
@@ -354,6 +402,21 @@ export default function CertificateGenerator() {
               </div>
             </div>
           </Card>
+
+          {/* THE THREE OUTPUTS, HERE RATHER THAN ON ANOTHER SCREEN.
+              A registrar who has just issued a certificate wants to produce it.
+              Before this they got one small Print button and had to find their
+              way to the register — the screen in another menu group — to email
+              it, and nothing anywhere said a PDF was possible at all. */}
+          {issued && (
+            <ProduceCredential
+              allowed
+              mayEmail={Boolean(issued.id)}
+              busy={producing}
+              onProduce={() => window.print()}
+              onEmail={() => void produce('email')}
+            />
+          )}
 
           <div className="overflow-auto rounded-xl bg-[#f2eee6] p-6 dark:bg-[#2a2333]">
             <div style={{ transform: 'scale(0.5)', transformOrigin: 'top left', width: '200%' }}>

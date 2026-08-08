@@ -58,8 +58,9 @@ import {
   type CorrectionState,
 } from '@/lib/credentialAuthority';
 import { PageHeader } from '@/components/ui/portal';
+import ProduceCredential from './ProduceCredential';
 import {
-  Loader2, Search, AlertTriangle, History, ShieldCheck, Printer, Mail,
+  Loader2, Search, AlertTriangle, History, ShieldCheck,
   FileWarning, Plus, ChevronRight, XCircle, CheckCircle2, Inbox, BadgeCheck,
 } from 'lucide-react';
 
@@ -568,26 +569,6 @@ function AwardPanel({
             <FileWarning size={13} /> Correct
           </button>
         )}
-        {actions.includes('print') && (
-          <button
-            type="button"
-            onClick={() => void deliver('print')}
-            disabled={busy}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-[#ece7de] px-3 py-1.5 text-xs text-[#6b6076] disabled:opacity-40 dark:border-[#2e2637] dark:text-[#9c93ad]"
-          >
-            {busy ? <Loader2 size={13} className="animate-spin" /> : <Printer size={13} />} Print
-          </button>
-        )}
-        {actions.includes('email') && (
-          <button
-            type="button"
-            onClick={() => void deliver('email')}
-            disabled={busy}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-[#ece7de] px-3 py-1.5 text-xs text-[#6b6076] disabled:opacity-40 dark:border-[#2e2637] dark:text-[#9c93ad]"
-          >
-            {busy ? <Loader2 size={13} className="animate-spin" /> : <Mail size={13} />} Email to student
-          </button>
-        )}
         <a
           href={`/verify?id=${encodeURIComponent(award.ref)}`}
           target="_blank"
@@ -597,6 +578,26 @@ function AwardPanel({
           <ShieldCheck size={13} /> Verify as a stranger would
         </a>
       </div>
+
+      {/* THE THREE OUTPUTS, IN ONE PLACE.
+          Print and Email used to be two small buttons in the row above, beside
+          Correct and Revoke, with nothing anywhere to say a PDF was possible.
+          A registrar looking for "how do I send this graduate their
+          certificate" had to recognise a 13px icon.
+
+          A revoked credential is deliberately excluded: producing a fresh copy
+          of a withdrawn award is not a legitimate act, and the row above
+          already explains why revocation is final. */}
+      {current.status !== 'revoked' && (
+        <ProduceCredential
+          allowed={actions.includes('print')}
+          mayEmail={actions.includes('email')}
+          onProduce={() => void deliver('print')}
+          onEmail={() => void deliver('email')}
+          busy={busy}
+          superseded={current.status === 'replaced'}
+        />
+      )}
 
       {current.status === 'revoked' && (
         <p className="rounded-lg bg-red-600/5 p-3 text-xs text-[#6b6076] dark:text-[#9c93ad]">
