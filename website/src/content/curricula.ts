@@ -25,6 +25,8 @@
 // ECTS value of each course in this listing when it is next revised.
 // ---------------------------------------------------------------------------
 
+import { bminSemesters, bminIdentity, bminObjectives } from '@/content/bachelorOfMinistry';
+
 export interface CurriculumCourse {
   code: string;
   title: string;
@@ -324,7 +326,47 @@ export const bachelorOfTheologyCreditCurriculum: Curriculum = {
   ],
 };
 
-export const curricula: Curriculum[] = [diplomaOfTheologyCurriculum, bachelorOfTheologyCreditCurriculum];
+// --- Bachelor of Ministry --------------------------------------------------
+//
+// DERIVED, NOT RETYPED. The B.Min. is held in full in bachelorOfMinistry.ts —
+// with prerequisites, learning outcomes, topic lists and assessment weights
+// that this interface has no room for — and published at /bachelor-of-ministry.
+//
+// What it needs HERE is only the semester table, so that /programs/
+// bachelor-of-ministry carries the course list like every other programme
+// instead of being the one degree on the site whose course list lives
+// somewhere else. So it is mapped from the same source rather than copied: the
+// list cannot be right on one page and stale on the other, which is precisely
+// the failure this file's own header records for the Bachelor of Theology.
+
+export const bachelorOfMinistryCurriculum: Curriculum = {
+  programSlug: 'bachelor-of-ministry',
+  title: 'Bachelor of Ministry (B.Min.)',
+  duration: '3 years · 6 semesters',
+  creditUnit: 'ECTS',
+  intro: bminIdentity,
+  objectives: bminObjectives,
+  note:
+    'This is the semester plan. The full framework — learning outcomes, assessment weights, the '
+    + 'fourteen specialization tracks, the practicum, the formation portfolio and the four points '
+    + 'still open for University approval — is published at /bachelor-of-ministry.',
+  terms: bminSemesters.map((s) => ({
+    label: `${s.year.split('—')[0].trim()} · ${s.label}`,
+    courses: s.courses.map((c) => ({
+      code: c.code,
+      title: c.title,
+      credits: c.ects,
+      description: c.description,
+      objectives: c.outcomes,
+    })),
+  })),
+};
+
+export const curricula: Curriculum[] = [
+  diplomaOfTheologyCurriculum,
+  bachelorOfTheologyCreditCurriculum,
+  bachelorOfMinistryCurriculum,
+];
 
 export function getCurriculum(programSlug: string) {
   return curricula.find((c) => c.programSlug === programSlug);

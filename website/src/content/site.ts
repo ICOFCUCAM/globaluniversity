@@ -122,6 +122,7 @@ export const site = {
           heading: 'Degree Levels',
           items: [
             { label: 'Bachelor of Theology', href: '/bachelor-of-theology' },
+            { label: 'Bachelor of Ministry', href: '/bachelor-of-ministry' },
             { label: "Bachelor's Degrees", href: '/degrees/bachelors-degrees' },
             { label: "Master's Degrees", href: '/degrees/masters-degrees' },
             { label: 'Doctoral', href: '/degrees/doctoral' },

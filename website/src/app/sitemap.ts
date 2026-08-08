@@ -10,6 +10,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/welcome',
     '/black-liberation-theology',
     '/bachelor-of-theology',
+    '/bachelor-of-ministry',
     '/master-of-theology',
     '/roots-of-faith',
     '/about',

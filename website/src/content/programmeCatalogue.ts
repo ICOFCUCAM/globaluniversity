@@ -535,6 +535,7 @@ export const LEVEL_COPY: Record<AwardLevel, LevelCopy> = {
  */
 const PUBLISHED_CREDITS: Record<string, number> = {
   'bachelor-of-theology': 180,
+  'bachelor-of-ministry': 180,
   'diploma-in-theology': 180,
 };
 

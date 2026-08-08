@@ -328,6 +328,9 @@ export const facultyList: Faculty[] = [
       'Most of its students are already serving. The school is built around that: study is available online and on campus in Buea, and admission is enrolment, so a minister may begin from the date of their offer without standing down from the work they are being trained for.',
     ],
     programSchool: 'School of Ministry',
+    degrees: [
+      { label: 'Bachelor of Ministry — full curriculum', href: '/bachelor-of-ministry' },
+    ],
     awards: [
       { title: 'Diploma in Ministry', level: 'Diploma', slug: 'diploma-in-ministry' },
       { title: 'Diploma in Christian Leadership', level: 'Diploma', slug: 'diploma-in-christian-leadership' },
