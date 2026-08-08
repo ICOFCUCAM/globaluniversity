@@ -40,13 +40,30 @@
     "same thing at two lengths because the rail is a 8.5rem column and the panel is",
     "not: 'Professional development & research' set across three lines in a tab is",
     "unreadable and clipped, and shortening the panel to fit the tab would have thrown",
-    "away the precision that is the whole point of this section."
+    "away the precision that is the whole point of this section.",
+    "",
+    "THE KIND LINES ARE THE UNIVERSITY'S EXACT WORDS, supplied August 2026 for the homepage",
+    "footprint: 'Campuses' for Cameroon, 'Professional development & research' for Nigeria,",
+    "and 'International teaching presence and Campus' for the United States and Zambia.",
+    "",
+    "THAT LAST ONE IS A NEW FACT: there is a campus in each of those two countries. The map",
+    "mark does NOT change to a filled dot for it, and the reason is worth stating. The dot",
+    "and the ring are about POSITIONAL PRECISION, not about whether an establishment exists —",
+    "a filled dot says 'a campus is at this spot', and the spot available is the country's",
+    "geographic centre, which is a field in Kansas. The ring says 'in this country', which is",
+    "exactly as much as the university has told us. The campus is stated in words, where it",
+    "can be stated truthfully.",
+    "",
+    "'teaching' IS A FLAG AND NOT A LABEL MATCH. Code elsewhere selected the teaching nations",
+    "by comparing `kind` to the exact string 'International teaching presence'. Changing that",
+    "wording to '... and Campus' silently dropped two nations out of the closing section's",
+    "sentence. A display label is written for a reader and must never be load-bearing."
   ],
   "nations": [
     {
       "id": "cameroon",
       "country": "Cameroon",
-      "kind": "Our academic home",
+      "kind": "Campuses",
       "blurb": "The university’s founding country, and where its principal campus and its two schools of teaching sit.",
       "href": "/campus-life",
       "linkLabel": "Campus life",
@@ -70,7 +87,8 @@
           "lat": 4.05
         }
       ],
-      "shortKind": "Academic home"
+      "shortKind": "Campuses",
+      "teaching": false
     },
     {
       "id": "nigeria",
@@ -90,12 +108,13 @@
           "lat": 9.06
         }
       ],
-      "shortKind": "Development & research"
+      "shortKind": "Development & research",
+      "teaching": false
     },
     {
       "id": "united-states",
       "country": "United States",
-      "kind": "International teaching presence",
+      "kind": "International teaching presence and Campus",
       "subKind": "International Headquarters of ICOF",
       "blurb": "Accredited programmes taught in-country through our authorised academic presence.",
       "href": null,
@@ -111,12 +130,13 @@
           "lat": 39.83
         }
       ],
-      "shortKind": "Teaching presence"
+      "shortKind": "Teaching presence · Campus",
+      "teaching": true
     },
     {
       "id": "zambia",
       "country": "Zambia",
-      "kind": "International teaching presence",
+      "kind": "International teaching presence and Campus",
       "blurb": "Accredited programmes taught in-country through our authorised academic presence.",
       "href": null,
       "linkLabel": null,
@@ -131,7 +151,8 @@
           "lat": -13.45
         }
       ],
-      "shortKind": "Teaching presence"
+      "shortKind": "Teaching presence · Campus",
+      "teaching": true
     },
     {
       "id": "south-africa",
@@ -151,7 +172,8 @@
           "lat": -29.0
         }
       ],
-      "shortKind": "Teaching presence"
+      "shortKind": "Teaching presence",
+      "teaching": true
     },
     {
       "id": "worldwide",
@@ -162,7 +184,8 @@
       "href": "/online-learning",
       "linkLabel": "How online study works",
       "sites": [],
-      "shortKind": "Online, worldwide"
+      "shortKind": "Online, worldwide",
+      "teaching": false
     }
   ]
 }

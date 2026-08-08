@@ -128,6 +128,17 @@ export interface Nation {
   kind: string;
   /** The same, short enough for a selector tab. See the register's header. */
   shortKind: string;
+  /**
+   * Does the university teach in this country?
+   *
+   * A FLAG, NOT A LABEL MATCH. TEACHING_NATIONS used to be selected by
+   * comparing `kind` to the exact string 'International teaching presence'. The
+   * university then reworded two of them to '... and Campus' and both silently
+   * dropped out of the closing section's sentence — no error, no test failure,
+   * just two nations quietly missing from a claim about where it teaches. A
+   * display label is written for a reader; it must never be load-bearing.
+   */
+  teaching: boolean;
   /** A second line where the university gave one, e.g. the ICOF headquarters. */
   subKind?: string;
   blurb: string;
@@ -163,7 +174,7 @@ export const NATIONS: string[] = NATIONS_FULL
  * contradicts — which is exactly what the university objected to.
  */
 export const TEACHING_NATIONS: string[] = NATIONS_FULL
-  .filter((n) => n.kind === 'International teaching presence')
+  .filter((n) => n.teaching)
   .map((n) => n.country);
 
 /**
