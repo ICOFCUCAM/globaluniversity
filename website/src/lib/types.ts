@@ -223,5 +223,8 @@ export type ViewType =
   | 'documents'
   | 'analytics'
   | 'settings'
+  // The two subsystems of the University Command Centre. See migration 013.
+  | 'social'
+  | 'credential-authority'
   | 'admissions-finance' | 'admissions-registrar'
   | 'audit' | 'assignments' | 'fees' | 'announcements' | 'forum' | 'timetable' | 'insights' | 'gradebook' | 'questionbank' | 'result-approval';

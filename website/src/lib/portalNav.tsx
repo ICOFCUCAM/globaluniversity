@@ -13,7 +13,7 @@ import {
   LayoutDashboard, Users, GraduationCap, BookOpen, ClipboardList,
   FileText, Award, Monitor, PenTool, FolderOpen, BarChart3,
   Settings, Shield, BookMarked, Wallet, Stamp, UserCog, Palette, Inbox, ShieldCheck,
-  ClipboardCheck,
+  ClipboardCheck, Share2, BadgeCheck,
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -121,6 +121,16 @@ export const menuGroups: MenuGroup[] = [
     items: [
       { id: 'announcements', label: 'Announcements', icon: <ClipboardList size={18} />, roles: EVERYONE },
       { id: 'forum', label: 'Discussion forum', icon: <ClipboardList size={18} />, roles: EVERYONE },
+      // The University talking about itself. An administrator's job, so it sits
+      // with the other outward-facing screens rather than under System — the
+      // Superadministrator connects the accounts, but they do not write the
+      // announcements.
+      {
+        id: 'social',
+        label: 'Social command centre',
+        icon: <Share2 size={18} />,
+        roles: ['superadmin', 'admin'],
+      },
     ],
   },
   {
@@ -143,6 +153,16 @@ export const menuGroups: MenuGroup[] = [
       // the chain is that designing and approving are different people.
       { id: 'studio', label: 'Credential studio', icon: <Palette size={18} />, roles: ['superadmin'] },
       { id: 'studio', label: 'Credential approvals', icon: <ShieldCheck size={18} />, roles: ['registrar', 'academic-office', 'vice-chancellor'] },
+      // The register of everything the University has issued, and the only
+      // place a sealed document can be corrected. The Registrar reaches it to
+      // print and email; only the Authority can amend or revoke, and the screen
+      // itself decides which of those it draws.
+      {
+        id: 'credential-authority',
+        label: 'Credential authority',
+        icon: <BadgeCheck size={18} />,
+        roles: ['superadmin', 'vice-chancellor', 'registrar'],
+      },
       { id: 'settings', label: 'Settings', icon: <Settings size={18} />, roles: EVERYONE },
     ],
   },

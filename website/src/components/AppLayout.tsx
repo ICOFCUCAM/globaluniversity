@@ -41,6 +41,7 @@ import AuditLogs from './audit/AuditLogs';
 import ScreenBoundary from './ScreenBoundary';
 import AccountManagement from './accounts/AccountManagement';
 import CredentialStudio from './studio/CredentialStudio';
+import SocialCommandCentre from './social/SocialCommandCentre';
 
 export default function AppLayout() {
   // The Student Portal is exclusively for enrolled students. An applicant who
@@ -220,6 +221,8 @@ export default function AppLayout() {
         return <AccountManagement />;
       case 'studio':
         return <CredentialStudio />;
+      case 'social':
+        return <SocialCommandCentre role={user?.role} userId={user?.id} />;
       default:
         return <AdminDashboard onNavigate={setCurrentView} />;
     }

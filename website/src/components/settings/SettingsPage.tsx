@@ -3,10 +3,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { roleLabels, can } from '@/lib/roles';
 import AdmissionOpenings from './AdmissionOpenings';
+import ConnectedAccounts from '@/components/social/ConnectedAccounts';
 import { GRADING_SCALE, CLASSIFICATION_BANDS, MAX_GRADE_POINT } from '@/lib/grading';
 import { UNIVERSITY } from '@/lib/constants';
 import {
-  User, Shield, Bell, Palette, Database, Save, CheckCircle2, DoorOpen,
+  User, Shield, Bell, Palette, Database, Save, CheckCircle2, DoorOpen, Share2,
 } from 'lucide-react';
 
 export default function SettingsPage() {
@@ -101,6 +102,14 @@ export default function SettingsPage() {
     ...(can(user?.role, 'set-admission-openings')
       ? [{ id: 'openings', label: 'Admission openings', icon: <DoorOpen size={16} /> }]
       : []),
+    // "Individual administrators would only be given the option in their
+    // settings to connect theirs." An administrator's own social connections
+    // are a personal setting and belong nowhere else — not on the Command
+    // Centre, which is about publishing, and certainly not on a screen any
+    // colleague can reach.
+    ...(can(user?.role, 'connect-own-social')
+      ? [{ id: 'social', label: 'Connected social accounts', icon: <Share2 size={16} /> }]
+      : []),
     { id: 'grading', label: 'Grading Scale', icon: <Database size={16} /> },
     { id: 'notifications', label: 'Notifications', icon: <Bell size={16} /> },
     { id: 'security', label: 'Security', icon: <Shield size={16} /> },
@@ -177,6 +186,20 @@ export default function SettingsPage() {
           )}
 
           {activeTab === 'openings' && <AdmissionOpenings />}
+
+          {activeTab === 'social' && (
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-heading text-lg font-bold text-[#422e59] dark:text-[#e4dcf0]">
+                  Connected social accounts
+                </h3>
+                <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">
+                  Where the Command Centre may publish on your behalf.
+                </p>
+              </div>
+              <ConnectedAccounts role={user?.role} />
+            </div>
+          )}
 
           {activeTab === 'grading' && (
             <div className="space-y-4">
