@@ -315,3 +315,33 @@ select id, session_id, kind, started_at
   from exam_recordings
  where retention_until is null and destroyed_at is null
  order by started_at;
+
+-- 24. A CANDIDATE'S PAPER IS RECORDED AND CANNOT BE REWRITTEN.   (016)
+--
+-- Expect one trigger, exam_sessions_paper_once.
+--
+-- The seed alone makes a paper reproducible only while the question bank is
+-- unchanged. A question withdrawn after the sitting — which is exactly the case
+-- an appeal is about — would make the same seed produce a different paper, and
+-- the University would be unable to show what it actually asked.
+select t.tgname, c.relname as on_table
+  from pg_trigger t join pg_class c on c.oid = t.tgrelid
+ where t.tgname = 'exam_sessions_paper_once';
+
+-- 25. CANDIDATES CANNOT READ THEIR OWN ANSWER KEY.               (016)
+--
+-- Expect: the view exam_sessions_mine EXISTS, and NO policy named
+-- exam_sessions_own_read remains on exam_sessions.
+--
+-- 015's row policy let a candidate select their whole session row. Once 016
+-- put the recorded paper — including which option is correct — in a column of
+-- that row, the policy would have served the answer key to the one person who
+-- must not have it, with the publishable key and a single query.
+select 'view' as kind, table_name as name
+  from information_schema.views
+ where table_schema = 'public' and table_name = 'exam_sessions_mine'
+union all
+select 'policy', policyname
+  from pg_policies
+ where schemaname = 'public' and tablename = 'exam_sessions'
+   and policyname = 'exam_sessions_own_read';

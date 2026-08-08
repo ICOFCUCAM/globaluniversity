@@ -36,6 +36,7 @@ import {
   requirementsFor, mayStart, MODE_PROFILES,
   type ExamMode, type Readiness, type SessionState,
 } from '@/lib/examinations';
+import type { DeliveredPaper } from '@/lib/examPaper';
 import {
   Loader2, Camera, Mic, MonitorUp, Wifi, ShieldCheck, AlertTriangle,
   CheckCircle2, XCircle, Clock, Save, Send,
@@ -61,7 +62,12 @@ export default function SitExamination() {
   const [remaining, setRemaining] = useState<number | null>(null);
   const [message, setMessage] = useState<{ tone: 'ok' | 'bad'; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
-  const [answers, setAnswers] = useState<Record<number, string>>({});
+  // Keyed by QUESTION ID, never by position — the paper is randomised per
+  // candidate, and a position-keyed map would put an answer on the wrong
+  // question the moment anything re-ordered.
+  const [answers, setAnswers] = useState<Record<string, string | number>>({});
+  const [paper, setPaper] = useState<DeliveredPaper | null>(null);
+  const [paperError, setPaperError] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streams = useRef<MediaStream[]>([]);
@@ -136,6 +142,26 @@ export default function SitExamination() {
     const local = setInterval(() => setRemaining((r) => (r === null ? null : Math.max(0, r - 1000))), 1000);
     return () => { alive = false; clearInterval(server); clearInterval(local); };
   }, [sessionId, state]);
+
+  // -------------------------------------------------------------------------
+  // THE PAPER.
+  //
+  // Fetched once the checks have passed, and again on reconnection — the route
+  // returns the SAME arrangement every time, because it was recorded on the
+  // session the first time it was built.
+  // -------------------------------------------------------------------------
+  useEffect(() => {
+    if (!sessionId || !['ready', 'in_progress', 'paused'].includes(state) || paper) return;
+    void (async () => {
+      const { data: session } = await supabase.auth.getSession();
+      const res = await fetch(`/api/exam/questions?sessionId=${sessionId}`, {
+        headers: { authorization: `Bearer ${session.session?.access_token ?? ''}` },
+      });
+      const out = await res.json().catch(() => null);
+      if (out?.ok) { setPaper(out.paper); setPaperError(null); }
+      else setPaperError(out?.detail ?? 'The paper could not be loaded.');
+    })();
+  }, [sessionId, state, paper]);
 
   // -------------------------------------------------------------------------
   // LAYER 3 — the examination environment reports on itself.
@@ -247,13 +273,22 @@ export default function SitExamination() {
   }
 
   /** Autosave. Debounced, and it always reports what happened. */
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  function writeAnswer(n: number, text: string) {
-    setAnswers((a) => ({ ...a, [n]: text }));
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(async () => {
+  const saveTimer = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  function writeAnswer(
+    question: { id: string; number: number },
+    value: string | number,
+  ) {
+    setAnswers((a) => ({ ...a, [question.id]: value }));
+    // A TIMER PER QUESTION. One shared timer meant typing in question 3 cancelled
+    // the pending save of question 2, so an answer could sit unsaved for as long
+    // as the candidate kept moving between questions.
+    clearTimeout(saveTimer.current[question.id]);
+    saveTimer.current[question.id] = setTimeout(async () => {
       const out = await call('/api/exam/answer', {
-        sessionId, questionNumber: n, answer: { text },
+        sessionId,
+        questionId: question.id,
+        questionNumber: question.number,
+        answer: typeof value === 'number' ? { chosen: value } : { text: value },
       });
       if (out.ok) {
         setSavedAt(out.savedAt);
@@ -466,25 +501,74 @@ export default function SitExamination() {
         </div>
       ) : (
         <>
-          {/* Questions are delivered per paper; until a question set is
-              attached, the candidate gets a single answer field rather than an
-              empty screen. */}
-          {[1, 2, 3].map((n) => (
-            <div key={n} className="rounded-xl border border-[#ece7de] bg-white p-4 dark:border-[#2e2637] dark:bg-[#1f1a27]">
-              <p className="text-xs font-semibold uppercase tracking-wide text-[#9c93ad]">Question {n}</p>
-              <textarea
-                value={answers[n] ?? ''}
-                onChange={(e) => writeAnswer(n, e.target.value)}
-                disabled={state !== 'in_progress'}
-                rows={6}
-                placeholder="Your answer"
-                className="mt-2 w-full rounded-lg border border-[#ded6c8] bg-white p-3 text-sm text-[#33234a] disabled:opacity-60 dark:border-[#3d3349] dark:bg-[#241f2c] dark:text-[#e4dcf0]"
-              />
-              <p className="mt-1 flex items-center gap-1.5 text-xs text-[#9c93ad]">
+          {paperError && <Banner tone="bad" text={paperError} />}
+
+          {!paper ? (
+            <p className="flex items-center gap-2 text-sm text-[#6b6076] dark:text-[#9c93ad]">
+              <Loader2 size={15} className="animate-spin" /> Loading your paper…
+            </p>
+          ) : paper.questions.map((q) => (
+            <div key={q.id} className="rounded-xl border border-[#ece7de] bg-white p-4 dark:border-[#2e2637] dark:bg-[#1f1a27]">
+              <div className="flex items-baseline justify-between gap-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-[#9c93ad]">
+                  Question {q.number}
+                </p>
+                <p className="text-xs text-[#9c93ad]">
+                  {q.marks} {q.marks === 1 ? 'mark' : 'marks'}
+                </p>
+              </div>
+              <p className="mt-1.5 text-sm text-[#33234a] dark:text-[#d8d2e2]">{q.text}</p>
+
+              {q.options.length > 0 ? (
+                <div className="mt-3 space-y-1.5">
+                  {q.options.map((option, i) => (
+                    <label
+                      key={i}
+                      className={`flex cursor-pointer items-start gap-2 rounded-lg border p-2.5 text-sm ${
+                        answers[q.id] === i
+                          ? 'border-[#422e59] bg-[#faf6ee] dark:bg-[#2a2333]'
+                          : 'border-[#ece7de] dark:border-[#2e2637]'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name={q.id}
+                        className="mt-0.5"
+                        checked={answers[q.id] === i}
+                        disabled={state !== 'in_progress'}
+                        onChange={() => writeAnswer(q, i)}
+                      />
+                      <span className="text-[#33234a] dark:text-[#d8d2e2]">{option}</span>
+                    </label>
+                  ))}
+                </div>
+              ) : (
+                <textarea
+                  value={typeof answers[q.id] === 'string' ? (answers[q.id] as string) : ''}
+                  onChange={(e) => writeAnswer(q, e.target.value)}
+                  disabled={state !== 'in_progress'}
+                  rows={8}
+                  placeholder="Your answer"
+                  className="mt-3 w-full rounded-lg border border-[#ded6c8] bg-white p-3 text-sm text-[#33234a] disabled:opacity-60 dark:border-[#3d3349] dark:bg-[#241f2c] dark:text-[#e4dcf0]"
+                />
+              )}
+
+              <p className="mt-1.5 flex items-center gap-1.5 text-xs text-[#9c93ad]">
                 <Save size={11} /> Saves automatically
               </p>
             </div>
           ))}
+
+          {/* HOW MUCH IS LEFT, WITHOUT NAGGING. A candidate who can see they
+              have answered 8 of 12 does not have to scroll the paper to find
+              out, and the count never implies the unanswered ones are wrong. */}
+          {paper && (
+            <p className="text-xs text-[#6b6076] dark:text-[#9c93ad]">
+              {Object.keys(answers).length} of {paper.questions.length} answered.
+              Anything you have not answered is simply blank — nothing is marked wrong for being
+              left out.
+            </p>
+          )}
 
           <button
             type="button"
