@@ -22,6 +22,16 @@ variable being wrong.
 |---|---|---|
 | `CREDENTIAL_SECRET` | The HMAC key that seals every certificate, transcript and identity card. | `/api/credential/issue` refuses to issue anything. Every verification fails. |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project Settings → API → `service_role`. Bypasses row-level security. | Every guarded route returns `service-role-key-missing`: admissions approval, mark entry, the approval chain, GPA recompute, credential issue, staff accounts. |
+| `SECRET_STORE_KEY` | Seals every stored OAuth token with AES-256-GCM. `openssl rand -base64 48`, minimum 24 characters. | No social account can be connected at all. The flow refuses **before** the consent screen rather than obtaining a permission it cannot store. |
+| `SMTP_PASS` | The mailbox password for `SMTP_USER`. | Nothing is emailed: no application notice, no welcome message with a new student's credentials, no credential delivery. The account is still created and the desk warns the Registrar. |
+| `META_APP_SECRET`, `X_CLIENT_SECRET`, `LINKEDIN_CLIENT_SECRET`, `GOOGLE_CLIENT_SECRET`, `TIKTOK_CLIENT_SECRET` | The registered social applications. See §1a. | That network is not offered as a destination. |
+| `LIVEKIT_API_SECRET` | With `LIVEKIT_URL` and `LIVEKIT_API_KEY`, live proctoring. | Examinations can be sat and marked; they cannot be watched live. The console says so. |
+| `ANTHROPIC_API_KEY` | Optional. Drafts each network's version of a post. | Posts are fitted to each platform's limit on a sentence boundary instead of rewritten, and the response says which happened. |
+
+**`SECRET_STORE_KEY` is deliberately not `CREDENTIAL_SECRET`.** Rotating this one
+costs an afternoon of re-authorising six social connections. Rotating
+`CREDENTIAL_SECRET` invalidates every certificate the university has ever
+issued. Keeping them separate is what makes this one rotatable at all.
 
 **`CREDENTIAL_SECRET` — generate it, do not invent it.** Any of:
 
@@ -55,18 +65,78 @@ decide what to inline into the JavaScript bundle sent to every visitor.
 | `SITE_URL` | `https://iguc.net` | The absolute origin printed into QR codes, verification links and the admission package. Defaults to the university website in `constants.ts`. **Set it in Production.** A QR code that points at a preview URL is a certificate nobody can verify. |
 | `NEXT_PUBLIC_ENABLE_DEMO` | `true` to enable | Leave **unset in Production.** It puts one-click role buttons on the login screen. |
 
-### Not needed
+### Mail
 
-There are no mail, storage or payment provider keys. The admission package is
-generated in-process and delivered through Supabase; nothing else calls out.
+| Variable | Value | Notes |
+|---|---|---|
+| `SMTP_HOST` | `mail.iguc.net` | |
+| `SMTP_PORT` | `465` | 465 means implicit TLS. The code sets `secure: true` only for 465, so use 465 or 587 and nothing else. |
+| `SMTP_USER` | `registrar@iguc.net` | |
+| `SMTP_PASS` | — | Secret. |
+| `MAIL_FROM` | Optional | The address students see. Defaults to `SMTP_USER`. Set it only to a domain whose SPF authorises this mail server — a mismatch reads as forged, and a student receiving their password from an unfamiliar address has been handed something indistinguishable from phishing. |
+| `APPLY_TO` | `admissions@iguc.net` | Where a submitted application is sent. |
+
+---
+
+## 1a. The six social applications, and one media provider
+
+**None of these can be generated.** Each is an application the University
+registers in its own name, submitted for review, and granted specific
+permissions. That is a series of forms filled in by a person with authority to
+act for the institution. `docs/SOCIAL-CONNECTIONS.md` lists the exact scopes per
+network, what takes weeks, and the thing that catches people out.
+
+| Network | Variables | The part that takes time |
+|---|---|---|
+| Facebook + Instagram + Threads | `META_APP_ID`, `META_APP_SECRET` | Meta App Review, for publishing permissions. Weeks. The Instagram account must be Business or Creator and linked to the Page — a personal account cannot be published to by any API, by anyone. |
+| X | `X_CLIENT_ID`, `X_CLIENT_SECRET` | None, but check the tier's monthly post allowance against graduation week. |
+| LinkedIn | `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET` | Posting **as the organisation** needs the Community Management API, requested separately and granted per page. |
+| YouTube | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google verification. Until it passes, uploads can only be **private**. |
+| TikTok | `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET` | An audit. Until it passes, the API can only place a video in the account's drafts. |
+
+Plus `SOCIAL_REDIRECT_URI=https://iguc.net/api/social/oauth/callback`, registered
+as the redirect address with **all six**. A mismatch here is the commonest cause
+of a failed connection; the provider's own words are carried back to the screen.
+
+Live proctoring needs `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` —
+LiveKit is the only provider with an adapter here, and the only one that can be
+self-hosted, which is the sole option that keeps recordings of students' homes
+on infrastructure the University controls.
+
+Until a network's application exists it is not offered as a destination, and a
+post with no provider configured is logged as **queued**. It is never reported
+as published.
 
 ---
 
 ## 2. Migrations, in order
 
-Run each in the Supabase SQL editor, in this order, waiting for one to finish
-before starting the next. Each is idempotent and destroys nothing, so re-running
-one is safe.
+**On a database that is already live, run one file: `docs/migrations/RUN.sql`.**
+It carries 006 and 010 through 017 in order. Paste the whole file into the
+Supabase SQL editor and run it once, or
+
+```
+psql "<connection string>" -f docs/migrations/RUN.sql
+```
+
+Every migration in it is idempotent and destroys nothing, so running it twice is
+safe, and so is running it when some of it has already landed. It is
+deliberately **not** wrapped in a transaction: each file runs statement by
+statement, and wrapping them would mean a failure in the last one silently
+undoing the first.
+
+**On an empty project, run `docs/migrations/RUN-ALL.sql` instead** — 000 through
+017. Read its header first: 000 appoints two administrators and can only appoint
+accounts that already exist, so create them in Authentication → Users first.
+
+Afterwards run `docs/migrations/VERIFY.sql`, which makes 25 checks and reports
+what actually landed rather than what should have.
+
+Some of these raise `NOTICE` deliberately — they report on the state they found
+rather than changing it silently. A notice is information. An `ERROR` is a real
+failure and stops the run.
+
+The individual files, for reference:
 
 | # | File | What it does |
 |---|---|---|
@@ -81,9 +151,18 @@ one is safe.
 | 008 | `008_admission_openings.sql` | What the university is currently admitting to. |
 | 009 | `009_results_approval.sql` | **The grade approval chain.** States, per-stage actors, the append-only transition log, the staff read policy on `results`, and the trigger enforcing four distinct signatories. |
 | 010 | `010_writes_the_ui_makes.sql` | **The writes the interface makes.** Policies for `courses`, `payments` and `documents`, and `module_records` for the seven portal modules. |
+| 011 | `011_school_of_ministry_curriculum.sql` | The School of Ministry curriculum. |
+| 012 | `012_credit_framework.sql` | The credit framework the awards are counted in. |
+| 013 | `013_social_and_credential_authority.sql` | **Eleven tables.** The social pipeline (accounts, posts, media, per-network targets, variants, metrics) with the trigger that refuses a personal target without per-post consent — and the Credential Authority, including the fix that made amendment possible at all: `credentials_issued.credential_id` was `UNIQUE`, so a second version could never be written. Now unique on `(credential_id, version)`, with a trigger enforcing the supersession chain. |
+| 014 | `014_social_approval_and_retry.sql` | Approval state kept **separate from** pipeline status, a trigger refusing self-approval, rejection notes, and the retry index. |
+| 015 | `015_examination_and_proctoring.sql` | **Fourteen tables, split along the line that matters.** Evidence — events, answers, recordings, identity and device checks — is append-only, enforced by triggers, not by convention. Decisions — session determinations, incidents, findings, marks, reports — are made by people and recorded as theirs. Second reader on findings, second marker on marks, reports immutable once signed. |
+| 016 | `016_examination_papers.sql` | The paper each candidate actually saw, set once and never again. Replaces the own-read policy with a view that omits the paper column, because the paper carries the answer key. |
+| 017 | `017_secret_store.sql` | AES-256-GCM sealed tokens. RLS enabled and **no policy at all** — unreadable through the publishable key by construction rather than by a rule somebody could later widen. The migration asserts no policy exists, so adding one fails the check on purpose. |
 
-Each file ends with `select` statements that verify what it did. Read the
-output rather than assuming.
+Each file ends with `select` statements that verify what it did, and 013
+onwards *perform* their rules rather than checking a trigger exists — the proof
+block writes a second credential version, attempts a self-approval, tries to
+update a piece of evidence. Read the output rather than assuming.
 
 ### One correction that no migration can make for you
 
