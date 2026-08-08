@@ -214,16 +214,26 @@ async function lookUpRegister(payload: Record<string, unknown> | null): Promise<
     };
   }
 
-  const { data, error } = await admin
+  // EVERY VERSION OF THIS AWARD, NOT ONE ROW.
+  //
+  // This used to be `.maybeSingle()`, which was right while a credential number
+  // identified exactly one row. Migration 013 made a corrected award two rows
+  // sharing one number — that is what lets a QR printed on version 1 still
+  // resolve — and `.maybeSingle()` fails outright when it matches more than
+  // one. So the first credential the University ever corrected would have made
+  // its own verification page report "the credential register returned an
+  // error" to whoever was checking it. A graduate with a corrected certificate
+  // would have looked like a forger.
+  const { data: versions, error } = await admin
     .from('credentials_issued')
-    .select('status, issued_at, revoked_at, revocation_reason, template_version, content_hash')
+    .select('status, issued_at, revoked_at, revocation_reason, template_version, content_hash, version')
     .eq('credential_id', id)
-    .maybeSingle();
+    .order('version', { ascending: false });
 
   if (error) {
     return { status: 'unavailable', note: `The credential register returned an error: ${error.message}` };
   }
-  if (!data) {
+  if (!versions || versions.length === 0) {
     return {
       status: 'not-registered',
       note: 'This credential number is not on the university\'s register. It was not issued by ' +
@@ -234,25 +244,69 @@ async function lookUpRegister(payload: Record<string, unknown> | null): Promise<
   const presented = createHash('sha256')
     .update(JSON.stringify(payload))
     .digest('hex');
-  const hashMatches = presented === data.content_hash;
+
+  // WHICH VERSION IS IN THE ENQUIRER'S HAND. The hash on the document says so —
+  // each version seals its own facts — and that is the whole reason the old
+  // hash is never overwritten when a correction is made.
+  const scanned = versions.find((v) => v.content_hash === presented) ?? null;
+  const current = versions.find((v) => v.status !== 'replaced') ?? versions[0];
+  const hashMatches = scanned !== null;
+
+  // Revocation applies to the award, not to a print of it.
+  if (current.status === 'revoked') {
+    return {
+      status: 'revoked',
+      issuedOn: current.issued_at,
+      revokedOn: current.revoked_at,
+      revocationReason: current.revocation_reason,
+      templateVersion: current.template_version,
+      hashMatches,
+      note: 'This credential was issued and has since been REVOKED by the university. It no longer stands.',
+    };
+  }
+
+  if (scanned && scanned.status === 'replaced') {
+    return {
+      status: 'replaced',
+      issuedOn: scanned.issued_at,
+      templateVersion: scanned.template_version,
+      hashMatches: true,
+      // THE WORDING MATTERS AS MUCH AS THE STATUS. An employer holding a
+      // corrected certificate must not be left thinking the degree is in
+      // doubt. The award stands; the University corrected its own document.
+      note:
+        `Credential superseded. This is version ${scanned.version ?? 1}, which the University `
+        + `replaced with version ${current.version ?? 1} on `
+        + `${String(current.issued_at).slice(0, 10)}. The award itself stands and is valid — ask `
+        + 'the holder for the current version, or verify it by number.',
+    };
+  }
+
+  if (!hashMatches) {
+    return {
+      status: current.status,
+      issuedOn: current.issued_at,
+      templateVersion: current.template_version,
+      hashMatches: false,
+      note: versions.length > 1
+        // A document that matches no version at all is different from one that
+        // matches an older version, and saying so stops a genuine older print
+        // being reported as altered.
+        ? 'This credential number is on the register, but the details presented match no version '
+          + 'of it that the University has issued. The document has been altered.'
+        : 'This credential is on the register, but the details presented do not match what '
+          + 'the university recorded. The document has been altered since it was issued.',
+    };
+  }
 
   return {
-    status: data.status,
-    issuedOn: data.issued_at,
-    revokedOn: data.revoked_at,
-    revocationReason: data.revocation_reason,
-    templateVersion: data.template_version,
-    hashMatches,
-    note:
-      data.status === 'revoked'
-        ? 'This credential was issued and has since been REVOKED by the university. It no longer stands.'
-        : data.status === 'replaced'
-          ? 'This credential has been superseded by a reissued version. It was validly issued; a ' +
-            'later copy replaces it.'
-          : hashMatches
-            ? 'Issued by ICOF Global University and current on its register.'
-            : 'This credential is on the register, but the details presented do not match what ' +
-              'the university recorded. The document has been altered since it was issued.',
+    status: 'issued',
+    issuedOn: scanned!.issued_at,
+    templateVersion: scanned!.template_version,
+    hashMatches: true,
+    note: versions.length > 1
+      ? `Issued by ICOF Global University and current on its register (version ${scanned!.version ?? 1}).`
+      : 'Issued by ICOF Global University and current on its register.',
   };
 }
 
@@ -280,15 +334,24 @@ async function lookUpByNumber(credentialId: string) {
     };
   }
 
-  const { data, error } = await admin
+  // Every version, newest first — see lookUpRegister above for why this cannot
+  // be `.maybeSingle()` any more.
+  const { data: rows, error } = await admin
     .from('credentials_issued')
-    .select('credential_id, kind, holder_name, award, classification, programme, issued_at, status, revoked_at, revocation_reason, template_version')
+    .select('credential_id, kind, holder_name, award, classification, programme, issued_at, status, revoked_at, revocation_reason, template_version, version')
     .eq('credential_id', credentialId)
-    .maybeSingle();
+    .order('version', { ascending: false });
 
   if (error) {
     return { ok: false, error: 'register-error', note: error.message };
   }
+
+  // WHAT THE UNIVERSITY SAYS NOW. A search by number asks "is this award real
+  // and what is it", which is a question about the award rather than about any
+  // particular printed copy — so it is answered with the current version.
+  const data = (rows ?? []).find((r) => r.status !== 'replaced') ?? (rows ?? [])[0] ?? null;
+  const supersededCount = (rows ?? []).filter((r) => r.status === 'replaced').length;
+
   if (!data) {
     return {
       ok: true,
@@ -312,12 +375,19 @@ async function lookUpByNumber(credentialId: string) {
       status: data.status,
       revokedOn: data.revoked_at,
       revocationReason: data.revocation_reason,
+      version: data.version ?? 1,
+      supersededVersions: supersededCount,
     },
     note:
       data.status === 'revoked'
         ? 'This credential was issued and has since been REVOKED by the university. It no longer stands.'
-        : data.status === 'replaced'
-          ? 'This credential has been superseded by a reissued version.'
+        : supersededCount > 0
+          // NOT A WARNING. The enquirer asked whether the award is real; it is,
+          // and the University corrected its own document at some point. Saying
+          // so plainly is more useful than either hiding it or implying doubt.
+          ? `Issued by ICOF Global University and current on its register. This is version `
+            + `${data.version ?? 1}; ${supersededCount === 1 ? 'an earlier version was' : `${supersededCount} earlier versions were`} `
+            + 'superseded when the University corrected the document. The award is unaffected.'
           : 'Issued by ICOF Global University and current on its register.',
   };
 }
