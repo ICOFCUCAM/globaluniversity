@@ -224,6 +224,17 @@ function Sheet({
           <RunningHead data={data} design={design} rule={rule} />
         )}
 
+        {/* THE FULL-WIDTH STRIP the original rules across under the masthead:
+            what the institution is, and where to check it. */}
+        {first && (
+          <p style={{
+            margin: `${MM(1.6)} 0 0`, border: `0.5pt solid ${ink}`, padding: '0.9mm 2mm',
+            fontSize: '6.2pt', textAlign: 'center', flex: '0 0 auto',
+          }}>
+            {UNIVERSITY.name}. For more information, visit {UNIVERSITY.email} · {UNIVERSITY.website}
+          </p>
+        )}
+
         {first && <GradeSystem ink={ink} rule={rule} />}
 
         {first && data.transcribedFrom && (
@@ -522,11 +533,12 @@ function SemesterBlock({
 }) {
   const th: React.CSSProperties = {
     fontSize: '6pt', textTransform: 'uppercase', letterSpacing: '.03em',
-    padding: '0.8mm 1mm', border: `0.4pt solid ${ink}`, textAlign: 'left',
+    padding: '0.8mm 1mm', border: `0.4pt solid ${ink}`, textAlign: 'left', verticalAlign: 'bottom',
     color: ink, fontWeight: 700,
   };
   const td: React.CSSProperties = {
-    fontSize: '7pt', padding: '0.78mm 1mm', border: `0.4pt solid ${ink}`, color: ink,
+    fontSize: '7pt', padding: '0.5mm 1mm', color: ink,
+    borderLeft: `0.4pt solid ${ink}`, borderRight: `0.4pt solid ${ink}`,
   };
   const num: React.CSSProperties = { ...td, textAlign: 'right' };
 
