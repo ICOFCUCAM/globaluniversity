@@ -1,4 +1,5 @@
 import { WORLD, type Ring } from './worldCoastlines';
+import register from '@/content/universityPlaces.json';
 
 // ---------------------------------------------------------------------------
 // THE FLAT WORLD.
@@ -107,18 +108,38 @@ export function graticule(cx: number, cy: number, radius: number): string {
 /**
  * Where the university is, in degrees.
  *
- * ONLY PLACES THE UNIVERSITY ACTUALLY TEACHES FROM. Buea and Douala are
- * campuses; the Nigerian site is a professional development centre and is
- * labelled as one. There is no pin for anywhere a student merely lives, and
- * none for a country the fellowship reaches — a pin on a map reads as an
- * establishment, and marking one where there is no establishment is the easiest
- * false claim on a website to make and the hardest to notice.
+ * ONLY PLACES THE UNIVERSITY ACTUALLY TEACHES FROM — and the list is no longer
+ * written here. It is read from src/content/universityPlaces.json, which is the
+ * same file the homepage's campuses list renders and the same file the
+ * generated flat-world.svg plots, so a place cannot be added to the words
+ * without appearing on the map, or to the map without appearing in the words.
+ * The header of that file records what may be entered and on whose word.
+ *
+ * TWO KINDS OF MARK, BECAUSE THERE ARE TWO STRENGTHS OF CLAIM. Buea, Douala and
+ * the Nigerian centre are sites the university can name, and they are drawn as
+ * filled dots. The United States, Zambia and South Africa are nations the
+ * university has stated it teaches accredited degrees from without yet naming an
+ * address in them, and they are drawn as open rings at the country's centre. A
+ * filled pin reads as an establishment — a building, at that spot. An open ring
+ * in the middle of a country reads as the country, which is the claim actually
+ * being made. Drawing the second as the first would be the easiest false
+ * statement on this site to make and the hardest for a reader to catch.
  */
-export const UNIVERSITY_PLACES: { name: string; kind: string; lon: number; lat: number }[] = [
-  { name: 'Buea', kind: 'Campus', lon: 9.24, lat: 4.16 },
-  { name: 'Douala', kind: 'Campus', lon: 9.71, lat: 4.05 },
-  { name: 'Nigeria', kind: 'Professional development centre', lon: 7.49, lat: 9.06 },
-];
+export const UNIVERSITY_PLACES: {
+  name: string;
+  kind: string;
+  establishment: boolean;
+  lon: number;
+  lat: number;
+}[] = register.places
+  .filter((p): p is typeof p & { lon: number; lat: number } => p.lon !== null && p.lat !== null)
+  .map((p) => ({
+    name: p.name ?? p.country,
+    kind: p.kind,
+    establishment: p.establishment,
+    lon: p.lon,
+    lat: p.lat,
+  }));
 
 export interface FlatWorldOptions {
   /** Coordinate space. The figure is self-similar; this is not a size on screen. */
@@ -159,13 +180,23 @@ export function flatWorldSvg(opts: FlatWorldOptions = {}): string {
     : `<g stroke="${colour}" stroke-opacity="0.3" stroke-width="${(S * 0.0028).toFixed(2)}" fill="none">`
       + `${graticule(c, c, R)}</g>`;
 
+  // TWO CIRCLES EACH, EITHER WAY — a site is a filled dot inside a ring; a
+  // nation is an open ring inside a ring. Keeping the circle count equal is not
+  // tidiness: flatWorld.test.mjs proves the pins are drawn by diffing the circle
+  // count against the same figure with places off, and a mark that spent a
+  // different number of circles would make that test unable to count anything.
   const pins = opts.places
     ? `<g>${UNIVERSITY_PLACES.map((p) => {
         const [x, y] = projectFlatWorld(p.lon, p.lat, c, c, R);
-        return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(S * 0.011).toFixed(1)}" `
-          + `fill="${colour}"/>`
+        const inner = p.establishment
+          ? `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(S * 0.011).toFixed(1)}" `
+            + `fill="${colour}"/>`
+          : `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(S * 0.011).toFixed(1)}" `
+            + `fill="none" stroke="${colour}" stroke-opacity="0.8" stroke-width="${(S * 0.005).toFixed(2)}"/>`;
+        return inner
           + `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(S * 0.026).toFixed(1)}" `
-          + `fill="none" stroke="${colour}" stroke-opacity="0.55" stroke-width="${(S * 0.004).toFixed(2)}"/>`;
+          + `fill="none" stroke="${colour}" stroke-opacity="${p.establishment ? '0.55' : '0.32'}" `
+          + `stroke-width="${(S * 0.004).toFixed(2)}"/>`;
       }).join('')}</g>`
     : '';
 

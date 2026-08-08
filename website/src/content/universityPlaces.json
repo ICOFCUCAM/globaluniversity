@@ -1,0 +1,112 @@
+{
+  "note": [
+    "THE REGISTER OF WHERE THIS UNIVERSITY TEACHES FROM. One file, three readers.",
+    "",
+    "It existed twice before this: as CAMPUSES in src/content/institutionalFacts.ts, which",
+    "the homepage list rendered, and as UNIVERSITY_PLACES in src/lib/flatWorld.ts, which the",
+    "map drew — plus a third bare copy of the coordinates inside scripts/build-flat-world.mjs.",
+    "Three lists of the same fact, kept in step by a comment asking somebody to remember.",
+    "That is the exact shape of a bug this repository has already shipped once: the ministry",
+    "awards moved faculty in one of two catalogues and the homepage said 'four programmes'",
+    "while the prospectus said six.",
+    "",
+    "So the register is JSON, because JSON is the only format all three readers can load:",
+    "TypeScript with resolveJsonModule, and a plain node build script with JSON.parse. Adding",
+    "a place here adds it to the homepage list, to the crest's map and to the generated",
+    "flat-world.svg at once, and there is nowhere left to add it to only one of them.",
+    "",
+    "WHAT MAY BE ENTERED. Only what the university has itself stated. Buea, Douala and the",
+    "Nigerian centre are on this site and in its prospectus. The United States, Zambia and",
+    "South Africa were stated by the university in August 2026, when it directed that the",
+    "homepage say 'accredited degrees taught from Cameroon, the USA, Zambia, Nigeria, South",
+    "Africa and worldwide' — and then that the campuses list and the map pins follow it.",
+    "",
+    "WHAT MAY NOT. A country a student lives in. A country the fellowship reaches. A country",
+    "an alumnus serves in. A mark on a map reads as an establishment, which makes it the",
+    "easiest false claim a university website can make and the hardest for a reader to catch.",
+    "",
+    "'establishment' IS THE HONEST DISTINCTION, and it is why the marks differ. Where the",
+    "university can name the site, the mark is a filled dot. Where it has named only the",
+    "nation, the mark is an open ring at the country's centre — it says 'here', not 'this",
+    "building here'. The addresses for those three are pending; see PENDING_MEASURES."
+  ],
+  "places": [
+    {
+      "name": "Buea",
+      "country": "Cameroon",
+      "kind": "Campus",
+      "establishment": true,
+      "role": "Principal campus and the Faculty of Theology",
+      "address": "Opposite Bulu Blind Junction, Buea, South West Region",
+      "map": "https://www.google.com/maps/search/?api=1&query=Bulu+Blind+Junction+Buea+Cameroon",
+      "lon": 9.24,
+      "lat": 4.16
+    },
+    {
+      "name": "Douala",
+      "country": "Cameroon",
+      "kind": "Campus",
+      "establishment": true,
+      "role": "School of Theology, in Cameroon’s largest city",
+      "address": "Littoral Region",
+      "map": "https://www.google.com/maps/search/?api=1&query=Douala+Cameroon",
+      "lon": 9.71,
+      "lat": 4.05
+    },
+    {
+      "name": "PPDI-RC",
+      "country": "Nigeria",
+      "kind": "Professional development centre",
+      "establishment": true,
+      "role": "Professional development, applied research and training — not a teaching campus",
+      "address": null,
+      "map": null,
+      "lon": 7.49,
+      "lat": 9.06
+    },
+    {
+      "name": null,
+      "country": "United States",
+      "kind": "Teaching nation",
+      "establishment": false,
+      "role": "Accredited degrees taught in-country",
+      "address": null,
+      "map": null,
+      "lon": -98.58,
+      "lat": 39.83
+    },
+    {
+      "name": null,
+      "country": "Zambia",
+      "kind": "Teaching nation",
+      "establishment": false,
+      "role": "Accredited degrees taught in-country",
+      "address": null,
+      "map": null,
+      "lon": 27.85,
+      "lat": -13.45
+    },
+    {
+      "name": null,
+      "country": "South Africa",
+      "kind": "Teaching nation",
+      "establishment": false,
+      "role": "Accredited degrees taught in-country",
+      "address": null,
+      "map": null,
+      "lon": 25.08,
+      "lat": -29.0
+    },
+    {
+      "name": null,
+      "country": "Worldwide",
+      "kind": "Online",
+      "establishment": false,
+      "role": "Every programme online — the portal, the library and your faculty",
+      "address": null,
+      "map": null,
+      "lon": null,
+      "lat": null
+    }
+  ]
+}

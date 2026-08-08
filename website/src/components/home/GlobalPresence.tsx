@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-import { CAMPUSES } from '@/content/institutionalFacts';
+import { PLACES_BY_NATION, NATIONS, inWordsCapped } from '@/content/institutionalFacts';
 
 // ---------------------------------------------------------------------------
 // ONE UNIVERSITY. NO BORDERS.
@@ -13,8 +13,7 @@ import { CAMPUSES } from '@/content/institutionalFacts';
 // the top, the hero assurances, a Campuses band of three photographic cards
 // (1.51 screens), and a Global network band with a rotating globe (1.85
 // screens). Three and a half screens, two of them consecutive, to establish one
-// fact — that this university teaches from Buea, Douala, a centre in Nigeria,
-// and online.
+// fact — where this university teaches from.
 //
 // Worse, the two big bands were the same argument in two registers: the cards
 // said "here are the places" and the globe said "here are the places, on a
@@ -55,20 +54,25 @@ import { CAMPUSES } from '@/content/institutionalFacts';
 // animation frame, no JavaScript at all.
 //
 // ===========================================================================
-// WHAT THE MAP IS ALLOWED TO SHOW — carried over verbatim from the globe
+// WHAT THE MAP IS ALLOWED TO SHOW
 // ===========================================================================
 //
-// Only places the university can name: two campuses and a professional
-// development centre. NOT "countries where our students live", NOT "countries
-// where our graduates serve", however much stronger a scatter of forty pins
-// would look. The student register is empty, so such a map would be a drawing
-// of a claim rather than a picture of a fact — and a pin reads as an
-// establishment, which makes it the easiest false statement on a website to
-// make and the hardest for a reader to catch.
+// Only what the university has stated about itself: the sites it can name, and
+// the nations it has said it teaches accredited degrees from. NOT "countries
+// where our students live", NOT "countries where our graduates serve", however
+// much stronger a scatter of forty pins would look. The student register is
+// empty, so such a map would be a drawing of a claim rather than a picture of a
+// fact.
+//
+// The two are marked differently, which is the whole point of allowing the
+// second at all: a filled pin says there is an establishment at that spot, and
+// an open ring at a country's centre says the country. Six marks now, three of
+// each. src/content/universityPlaces.json holds the register and records on
+// whose word each entry stands.
 // ---------------------------------------------------------------------------
 
-// Rendered once, on the server. `places` draws the three pins the university
-// can actually evidence; see UNIVERSITY_PLACES in src/lib/flatWorld.ts.
+// The words and the marks come from one file, so this list and the map behind
+// the page cannot disagree; see src/content/universityPlaces.json.
 
 export default function GlobalPresence() {
   return (
@@ -95,33 +99,60 @@ export default function GlobalPresence() {
         Where we teach from
       </p>
 
+      {/* THE COUNT IS COUNTED. It read "Four places. One degree." while the
+          hero two screens above said five nations, because the heading was a
+          typed number and the register had grown underneath it. NATIONS.length
+          is the register's own answer, so the sentence cannot fall out of step
+          with the list printed directly below it. */}
       <h2 className="mt-8 font-heading text-[clamp(2.2rem,5.4vw,4.2rem)] font-bold leading-[1.04] tracking-[-0.03em] text-brand-purple dark:text-white [text-wrap:balance]">
-        Four places. One degree.
+        {inWordsCapped(NATIONS.length)} nations. One degree.
       </h2>
 
       <p className="mt-8 max-w-2xl text-[15px] leading-relaxed text-brand-muted dark:text-white/80 sm:text-base">
-        Two campuses in Cameroon, a professional development centre in Nigeria, and every
-        programme taught online to students on every continent. Wherever you study with us,
-        you are a full member of this university — the same faculty, the same examinations,
-        the same degree.
+        Two campuses in Cameroon, a professional development centre in Nigeria, accredited
+        degrees taught in the United States, Zambia and South Africa, and every programme
+        online. Wherever you study with us, you are a full member of this university — the
+        same faculty, the same examinations, the same degree.
       </p>
 
-      <ul className="mt-12 grid gap-x-10 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
-        {CAMPUSES.map((c) => (
-          <li key={c.city} className="border-l-2 border-brand-gold-deep pl-4 dark:border-brand-gold/40">
-            <p className="font-heading text-[17px] font-bold leading-tight text-brand-purple dark:text-white">
-              {c.city}
-              <span className="ml-2 font-sans text-[12px] font-normal text-brand-muted dark:text-white/60">{c.country}</span>
-            </p>
-            <p className="mt-1 text-[13px] leading-snug text-brand-muted dark:text-white/75">{c.role}</p>
-          </li>
+      {/* A REGISTER, NOT A ROW OF CARDS.
+          The places were four equal tiles in a four-column grid, which worked
+          exactly while there were four of them. Seven entries in that grid is a
+          ragged second row, and worse, it flattens a real distinction: Buea and
+          Douala are two campuses in ONE country, and printing them as two tiles
+          beside "Nigeria" invited a reader to count six countries.
+
+          So the nation is the unit, set in the heading face, with what the
+          university has in it listed alongside. It is the shape of an entry in
+          a calendar or a charter rather than a pricing table, it holds however
+          many sites a nation acquires, and it says the thing the hero says —
+          this university teaches from these nations — with the detail underneath
+          rather than instead. */}
+      <dl className="mt-12 border-t border-brand-purple/12 dark:border-white/12">
+        {PLACES_BY_NATION.map(({ country, sites }) => (
+          <div
+            key={country}
+            className="grid gap-x-10 gap-y-2 border-b border-brand-purple/12 py-5 dark:border-white/12 sm:grid-cols-[minmax(0,11rem)_minmax(0,1fr)]"
+          >
+            <dt className="font-heading text-[17px] font-bold leading-tight text-brand-purple dark:text-white">
+              {country}
+            </dt>
+            <dd className="space-y-1.5">
+              {sites.map((s) => (
+                <p key={s.role} className="text-[13.5px] leading-snug text-brand-muted dark:text-white/75">
+                  {s.name && (
+                    <span className="font-heading font-bold text-brand-gold-ink dark:text-brand-gold">
+                      {s.name}
+                      <span aria-hidden="true"> · </span>
+                    </span>
+                  )}
+                  {s.role}
+                </p>
+              ))}
+            </dd>
+          </div>
         ))}
-        {/* No hand-written "Online" entry here. CAMPUSES already carries one —
-            adding a second rendered the word twice, one under the other, with
-            two different descriptions. It survived typecheck, lint, the link
-            check and every contrast probe, because none of those can see that a
-            list repeats itself; only looking at the picture caught it. */}
-      </ul>
+      </dl>
 
       <div className="mt-11 flex flex-wrap items-center gap-x-8 gap-y-4">
         <Link

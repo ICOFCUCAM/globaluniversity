@@ -42,7 +42,13 @@ const bundle = join(dir, 'flatworld-test.mjs');
 execFileSync('npx', [
   'esbuild', new URL('./flatWorld.ts', import.meta.url).pathname,
   '--bundle', '--format=esm', '--platform=node', `--outfile=${bundle}`, '--log-level=error',
-  `--alias:@=${new URL('.', import.meta.url).pathname.replace(/\/[^/]*$/, '')}`,
+  // '@' is src, not src/lib. This read `new URL('.')` — this file's own
+  // directory — and stripped the trailing slash, which aliased '@' to src/lib.
+  // It was wrong from the day it was written and could not fail, because
+  // flatWorld.ts imported nothing by alias; the moment it imported the places
+  // register the bundle went looking for src/lib/content/. A path alias with no
+  // import through it is untested, not correct.
+  `--alias:@=${new URL('..', import.meta.url).pathname.replace(/\/$/, '')}`,
 ], { stdio: 'inherit' });
 const W = await import(bundle);
 
@@ -97,13 +103,45 @@ check('Buea and Douala are within a few pixels of each other', Math.hypot(buea[0
 check('Nigeria is north of Buea', naija[1] < buea[1], true);
 check('all three sit below the pole', [buea, douala, naija].every((p) => p[1] > C), true);
 
-// Only places the university actually teaches from.
-check('three places are marked, no more', W.UNIVERSITY_PLACES.length, 3);
+// ONLY PLACES THE UNIVERSITY ACTUALLY TEACHES FROM, and this list is the whole
+// point of the assertion: it is the one place on the site where adding a name
+// is a claim about the world rather than a design choice. If this test has to
+// be edited, somebody has decided the university teaches from somewhere new,
+// which is exactly the decision that should not be possible to make by accident
+// while adjusting a map.
+check('six places are marked, no more', W.UNIVERSITY_PLACES.length, 6);
 check(
-  'and they are the campuses and the centre',
-  W.UNIVERSITY_PLACES.map((p) => p.name).sort(),
-  ['Buea', 'Douala', 'Nigeria'],
+  'and they are the register’s, in its order',
+  W.UNIVERSITY_PLACES.map((p) => p.name),
+  ['Buea', 'Douala', 'PPDI-RC', 'United States', 'Zambia', 'South Africa'],
 );
+
+// The distinction the two marks exist to carry. Three sites the university can
+// name; three nations it has stated it teaches from without naming an address.
+check(
+  'three are named sites and three are nations',
+  [
+    W.UNIVERSITY_PLACES.filter((p) => p.establishment).length,
+    W.UNIVERSITY_PLACES.filter((p) => !p.establishment).length,
+  ],
+  [3, 3],
+);
+// A nation drawn as a filled dot would claim a building the university has not
+// named. The mark is an open ring, so the fill belongs to the sites alone.
+const marks = W.flatWorldSvg({ size: 600, places: true });
+const bareMarks = W.flatWorldSvg({ size: 600 });
+const filled = (s) => (s.match(/<circle[^>]*fill="#f7dc79"/g) || []).length;
+check(
+  'only the named sites are drawn filled',
+  filled(marks) - filled(bareMarks),
+  W.UNIVERSITY_PLACES.filter((p) => p.establishment).length,
+);
+
+// Everything below 60°S is off the disc. South Africa at 29°S is comfortably on
+// it — but it is the southernmost mark on the map, so it is the one that would
+// vanish first if the cut were ever moved, and it would vanish silently.
+const sa = W.UNIVERSITY_PLACES.find((p) => p.name === 'South Africa');
+check('the southernmost mark is inside the southern cut', sa.lat > W.SOUTH_CUT, true);
 
 console.log('\nThe drawing\n');
 

@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Grain } from '@/components/Atmosphere';
 import { ALL_PROGRAMMES } from '@/content/programmeCatalogue';
+import { NATIONS, inWords } from '@/content/institutionalFacts';
 
 // ---------------------------------------------------------------------------
 // THE LAST SCENE — the point of decision.
@@ -146,8 +147,8 @@ export default function FinalScene() {
               to start now or next year. */}
           <p className="mt-8 max-w-lg text-[15.5px] leading-relaxed text-white/85 sm:text-[17px]">
             Applications are open across all {total} programmes — on campus in Buea and Douala,
-            or online from wherever you already are. Admission is enrolment: you may begin
-            studying from the date of your offer.
+            in-country across {inWords(NATIONS.length)} nations, or online from wherever you already are.
+            Admission is enrolment: you may begin studying from the date of your offer.
           </p>
 
           <div className="mt-11 flex flex-wrap items-center gap-4">
@@ -172,8 +173,13 @@ export default function FinalScene() {
               and the only place on this page the accreditation is repeated — a
               reader about to fill in a form is entitled to it here even though
               the claim is made in full further up. */}
+          {/* The nations come from the register rather than being typed here.
+              This line read "Buea · Douala · Nigeria · Online worldwide" and
+              would have gone on reading it after the university restated its
+              reach; a reassurance line that contradicts the hero two screens
+              above is worse than no reassurance line. */}
           <p className="mt-11 border-t border-white/15 pt-7 font-sans text-[12.5px] leading-relaxed text-white/70">
-            Accredited by the Ministry of Higher Education since 2007 · Buea · Douala · Nigeria ·
+            Accredited by the Ministry of Higher Education since 2007 · {NATIONS.join(' · ')} ·
             Online worldwide
           </p>
         </div>

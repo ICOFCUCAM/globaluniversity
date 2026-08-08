@@ -8,17 +8,23 @@
 //
 // A brief for this section proposed showing "🇨🇲 Cameroon, South Africa,
 // Zambia", "students across Africa, Europe, the Americas and Asia", "countries
-// where graduates serve" and a "global alumni network". Those would make the
-// strongest map on this page and not one of them can be evidenced:
+// where graduates serve" and a "global alumni network".
 //
-//   South Africa and Zambia appear nowhere in this system — not in the
-//   campuses, the faculty roster, the partner list or the accreditation
-//   content. Putting a pin on a country because it would look good is the
-//   difference between a map and a poster.
+//   THE FIRST OF THOSE HAS SINCE BEEN EVIDENCED, AND THE RECORD IS KEPT RATHER
+//   THAN QUIETLY EDITED. This file used to say flatly that "South Africa and
+//   Zambia appear nowhere in this system", which was true of the system and was
+//   the right answer to a brief that had simply asserted them. In August 2026
+//   the university itself stated that it teaches accredited degrees from
+//   Cameroon, the United States, Zambia, Nigeria and South Africa, and directed
+//   that the campuses list and the map pins follow. The institution's own
+//   statement about where it teaches is evidence in a way a designer's brief is
+//   not, so those three are now in the register — at national level, with an
+//   open ring rather than a campus pin, because an address has not been named.
+//   See src/content/universityPlaces.json, which is where they live.
 //
-//   Student and alumni geography comes from the student register, which is
-//   empty. The query is one line long and waiting; see PENDING_MEASURES in
-//   institutionalFacts.ts.
+//   Student and alumni geography still comes from the student register, which
+//   is empty, and is still not on any map. The query is one line long and
+//   waiting; see PENDING_MEASURES in institutionalFacts.ts.
 //
 // A world map is the most checkable thing a university publishes. Every pin is
 // a claim that somebody is there, and the first person to ask "which students
@@ -31,7 +37,7 @@
 // keeps them apart.
 // ---------------------------------------------------------------------------
 
-export type NodeKind = 'campus' | 'centre' | 'fellowship' | 'online';
+export type NodeKind = 'campus' | 'centre' | 'nation' | 'fellowship' | 'online';
 
 export interface NetworkNode {
   name: string;
@@ -48,6 +54,9 @@ export const NETWORK_KINDS: Record<
 > = {
   campus: { label: 'University campus', fill: '#f7dc79', dot: 5.5, halo: 20 },
   centre: { label: 'Professional development centre', fill: '#e9c14a', dot: 4.5, halo: 15 },
+  // Smaller dot, wider halo: a nation is a broader claim drawn more faintly
+  // than a campus, never the other way round.
+  nation: { label: 'Degrees taught in-country', fill: '#e9c14a', dot: 3.6, halo: 22 },
   fellowship: { label: 'ICOF fellowship — colleges and seminaries', fill: '#a99ccd', dot: 3.8, halo: 12 },
   online: { label: 'Online, worldwide', fill: '#ffffff', dot: 4, halo: 14 },
 };
@@ -74,6 +83,32 @@ export const NETWORK_NODES: NetworkNode[] = [
     lon: 8.68,
     kind: 'centre',
     kindLabel: 'professional development and applied research centre',
+  },
+
+  // The three nations the university has stated it teaches accredited degrees
+  // from without yet naming an address in them. Plotted at the country's centre
+  // and labelled as a nation, so the mark makes the claim the university made
+  // and not a larger one. Coordinates match universityPlaces.json.
+  {
+    name: 'United States',
+    lat: 39.83,
+    lon: -98.58,
+    kind: 'nation',
+    kindLabel: 'accredited degrees taught in-country',
+  },
+  {
+    name: 'Zambia',
+    lat: -13.45,
+    lon: 27.85,
+    kind: 'nation',
+    kindLabel: 'accredited degrees taught in-country',
+  },
+  {
+    name: 'South Africa',
+    lat: -29.0,
+    lon: 25.08,
+    kind: 'nation',
+    kindLabel: 'accredited degrees taught in-country',
   },
 
   // The International Circle of Faith, which this university was founded

@@ -40,6 +40,7 @@
 import { UNIVERSITY } from '@/lib/constants';
 import { ALL_PROGRAMMES } from '@/content/programmeCatalogue';
 import { faculties, leadership, faculty, administration } from '@/content/site';
+import register from '@/content/universityPlaces.json';
 
 /**
  * Named academic and administrative staff, counted from the rosters this site
@@ -100,6 +101,82 @@ export function institutionalFacts(): Fact[] {
   ];
 }
 
+// ---------------------------------------------------------------------------
+// WHERE THE UNIVERSITY TEACHES FROM.
+//
+// Read from src/content/universityPlaces.json, which is also what the map draws
+// and what scripts/build-flat-world.mjs plots. The three lists used to be three
+// lists; the header of that file says why they are now one.
+//
+// The university restated its reach in nations rather than towns — "Cameroon,
+// the USA, Zambia, Nigeria, South Africa and worldwide" — and then asked that
+// the campuses list and the map pins follow. They do, from here.
+// ---------------------------------------------------------------------------
+
+export interface Place {
+  /** The site, where the university names one. Null where it has named only the nation. */
+  name: string | null;
+  country: string;
+  kind: string;
+  /** Can the university name a site here? Decides the mark on the map. */
+  establishment: boolean;
+  role: string;
+  address: string | null;
+  map: string | null;
+  lon: number | null;
+  lat: number | null;
+}
+
+export const CAMPUSES: readonly Place[] = register.places;
+
+/**
+ * The nations, in the register's order, without the online entry.
+ *
+ * COUNTED, NEVER TYPED — the same discipline as every figure above it. A
+ * homepage heading that says "five nations" and a list that shows six is the
+ * cheapest way to make a reader stop believing the rest of the page, and it is
+ * the failure mode of every count on a website that is written by hand.
+ */
+export const NATIONS: string[] = CAMPUSES
+  // The online entry has no coordinate, which is precisely what makes it not a
+  // nation. Filtering on that rather than on its name means an entry cannot be
+  // counted as a nation unless it is somewhere a map could put it.
+  .filter((p) => p.lat !== null)
+  .map((p) => p.country)
+  .filter((c, i, all) => all.indexOf(c) === i);
+
+/**
+ * A small count as a word.
+ *
+ * WHY A HEADING MUST NOT PRINT A DIGIT. "5 nations. One degree." set in the
+ * display serif at 4rem does not read as a sentence; it reads as a spec, and it
+ * disagrees with itself — the second half of the same line spells "One". Every
+ * other count on this site under a dozen is spelled, which is ordinary
+ * publishing practice and the reason a prospectus reads like a document rather
+ * than a dashboard.
+ *
+ * The point is to spell the number WITHOUT typing it. The count still comes
+ * from the register; only its spelling is looked up, so the heading cannot say
+ * "five" while the list below it shows six.
+ */
+const COUNT_WORDS = [
+  'no', 'one', 'two', 'three', 'four', 'five', 'six',
+  'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve',
+];
+export const inWords = (n: number): string => COUNT_WORDS[n] ?? String(n);
+
+/** The same, capitalised, for the head of a sentence. */
+export const inWordsCapped = (n: number): string => {
+  const w = inWords(n);
+  return w.charAt(0).toUpperCase() + w.slice(1);
+};
+
+/** The register grouped for display: one nation, the sites within it. */
+export const PLACES_BY_NATION: { country: string; sites: readonly Place[] }[] = CAMPUSES
+  .map((p) => p.country)
+  .filter((c, i, all) => all.indexOf(c) === i)
+  .map((country) => ({ country, sites: CAMPUSES.filter((p) => p.country === country) }));
+
 /**
  * The line under the hero buttons.
  *
@@ -119,7 +196,10 @@ export function institutionalFacts(): Fact[] {
  */
 export const HERO_ASSURANCES: string[] = [
   `Founded ${UNIVERSITY.established} within the International Circle of Faith`,
-  'Buea · Douala · Nigeria',
+  // Derived, not typed. This said "Buea · Douala · Nigeria" — the towns — and
+  // went on saying it after the university restated its reach as nations. It is
+  // now the register's own list, so it cannot fall behind again.
+  NATIONS.join(' · '),
   'Every programme online, worldwide',
 ];
 
@@ -175,49 +255,17 @@ export const PATHWAY = [
  * "20,000+ alumni" before the register can produce the list is making a claim
  * an accreditor will ask to see evidenced.
  */
-export const CAMPUSES = [
-  {
-    city: 'Buea',
-    country: 'Cameroon',
-    address: 'Opposite Bulu Blind Junction, Buea, South West Region',
-    role: 'Principal campus and the Faculty of Theology',
-    map: 'https://www.google.com/maps/search/?api=1&query=Bulu+Blind+Junction+Buea+Cameroon',
-    image: '/images/graduation-2024/grad-2024-procession-hall.jpg',
-  },
-  {
-    city: 'Douala',
-    country: 'Cameroon',
-    address: 'Littoral Region',
-    role: 'School of Theology, Douala',
-    map: 'https://www.google.com/maps/search/?api=1&query=Douala+Cameroon',
-    image: '/images/graduation-2024/grad-2024-congregation-full.jpg',
-  },
-  {
-    // A CENTRE, NOT A CAMPUS, and the distinction is the point of listing it.
-    // An earlier version of the campus section left Nigeria out on the grounds
-    // that a partner is not a campus — while the globe two sections below
-    // plotted it. One of the two was wrong, and it was the omission: PPDI-RC is
-    // part of the university's own network, described as such on this site
-    // since before this rebuild. What would be wrong is calling it a campus, so
-    // it says what it is.
-    city: 'Nigeria',
-    country: 'PPDI-RC',
-    address: 'Professional development, applied research and training',
-    role: 'Professional development centre — not a teaching campus',
-    map: null,
-    image: '/images/graduation-2024/grad-2024-registration-desk.jpg',
-  },
-  {
-    city: 'Online',
-    country: 'Worldwide',
-    address: 'Every programme, from anywhere',
-    role: 'The student portal, the library and your faculty',
-    map: null,
-    image: '/images/global.jpg',
-  },
-] as const;
-
 export const PENDING_MEASURES = [
+  {
+    figure: 'Addresses for the United States, Zambia and South Africa',
+    from: 'The university’s own register of teaching centres.',
+    blocked:
+      'The university has stated it teaches accredited degrees from these three nations, and '
+      + 'the register carries them at national level. Until it supplies a city and a street, '
+      + 'the map marks them with an open ring at the country rather than a campus dot, and no '
+      + 'address is printed. A pin that names a building the university has not named is the '
+      + 'easiest false claim on this site.',
+  },
   {
     figure: 'Graduates to date',
     from: 'count(*) over credentials_issued where kind = award and not revoked',

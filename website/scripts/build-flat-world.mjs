@@ -43,7 +43,9 @@ import { feature } from 'topojson-client';
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..');
 
-// Kept in step with src/lib/flatWorld.ts by the test at the foot of this file.
+// Kept in step with src/lib/flatWorld.ts by hand — and by nothing else, which
+// is the honest statement. The two numbers below have not changed since the
+// projection was written; the places, which do change, are no longer copied.
 const DOWN_MERIDIAN = 20;
 const SOUTH_CUT = -60;
 
@@ -278,26 +280,32 @@ const meridians = Array.from({ length: 24 }, (_, i) => {
 // ---------------------------------------------------------------------------
 // WHERE THIS UNIVERSITY ACTUALLY TEACHES FROM.
 //
-// Three marks, and no more. Buea and Douala are campuses; the Nigerian site is
-// a professional development centre. There is no mark for a country a student
-// merely lives in and none for a country the fellowship reaches — a mark on a
-// map reads as an establishment, and putting one where there is no
-// establishment is the easiest false claim a university website can make and
-// the hardest for a reader to catch.
+// READ, NOT COPIED. This was three coordinate pairs typed into this file with a
+// comment asking whoever edited src/lib/flatWorld.ts to remember to edit here
+// too. Nobody remembers, and the failure is silent: the map keeps drawing the
+// old world and looks entirely correct while doing it.
 //
-// Kept in step with UNIVERSITY_PLACES in src/lib/flatWorld.ts.
+// It now reads src/content/universityPlaces.json — the same register the module
+// and the homepage read. The header of that file records what may be entered
+// and on whose word.
+//
+// TWO MARKS. A site the university can name is a filled dot. A nation it has
+// stated it teaches from without naming an address is an open ring at the
+// country's centre, so the drawing claims a country and not a building.
 // ---------------------------------------------------------------------------
-const PLACES = [
-  { lon: 9.24, lat: 4.16 },
-  { lon: 9.71, lat: 4.05 },
-  { lon: 7.49, lat: 9.06 },
-];
-const places = PLACES.map(({ lon, lat }) => {
+const PLACES = JSON.parse(
+  readFileSync(join(root, 'src/content/universityPlaces.json'), 'utf8'),
+).places.filter((p) => p.lon !== null && p.lat !== null);
+
+const places = PLACES.map(({ lon, lat, establishment }) => {
   const [x, y] = project(lon, lat);
+  const core = establishment
+    ? `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="7" fill="${GOLD}" fill-opacity="0.95"/>`
+    : `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="7.5" fill="none" stroke="${GOLD}" stroke-opacity="0.9" stroke-width="3"/>`;
   return (
-    `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="7" fill="${GOLD}" fill-opacity="0.95"/>` +
-    `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="20" fill="none" stroke="${GOLD}" stroke-opacity="0.5" stroke-width="2.5"/>` +
-    `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="40" fill="none" stroke="${GOLD}" stroke-opacity="0.2" stroke-width="2"/>`
+    core +
+    `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="20" fill="none" stroke="${GOLD}" stroke-opacity="${establishment ? 0.5 : 0.34}" stroke-width="2.5"/>` +
+    `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="40" fill="none" stroke="${GOLD}" stroke-opacity="${establishment ? 0.2 : 0.14}" stroke-width="2"/>`
   );
 }).join('');
 
@@ -334,5 +342,7 @@ writeFileSync(join(root, 'public/images/flat-world.svg'), svg);
 console.log(
   `flat-world.svg  coast ${coast.kept} rings / ${coast.points} points, ` +
     `borders ${borders.kept} rings / ${borders.points} points, ` +
+    `${PLACES.filter((p) => p.establishment).length} sites + ` +
+    `${PLACES.filter((p) => !p.establishment).length} nations, ` +
     `${(svg.length / 1024).toFixed(0)}KB`,
 );
