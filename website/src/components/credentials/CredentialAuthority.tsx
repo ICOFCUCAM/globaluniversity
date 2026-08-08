@@ -89,12 +89,16 @@ interface CorrectionRow {
 
 type Tab = 'register' | 'corrections' | 'types' | 'trail';
 
-export default function CredentialAuthority({ role }: { role?: UserRole }) {
+export default function CredentialAuthority(
+  { role, embedded }: { role?: UserRole; embedded?: boolean },
+) {
   const [tab, setTab] = useState<Tab>('register');
   const [rows, setRows] = useState<Row[] | null>(null);
   const [corrections, setCorrections] = useState<CorrectionRow[]>([]);
   const [trail, setTrail] = useState<AuditEvent[]>([]);
   const [notReady, setNotReady] = useState<string | null>(null);
+  /** A failure of the correction or audit read, which used to be swallowed. */
+  const [secondaryError, setSecondaryError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<string | null>(null);
   const [message, setMessage] = useState<{ tone: 'ok' | 'bad'; text: string } | null>(null);
@@ -141,6 +145,29 @@ export default function CredentialAuthority({ role }: { role?: UserRole }) {
         .select('id, credential_ref, action, from_version, to_version, reason, actor_role, actor_email, occurred_at')
         .order('occurred_at', { ascending: false }).limit(80),
     ]);
+
+    // THESE TWO ERRORS WERE DISCARDED, and the panes below say "No correction
+    // request is waiting" and "Nothing has been recorded yet" from an empty
+    // array. So a failed read — a missing table, a policy that does not admit
+    // this role, a dropped connection — was reported to the Authority as a
+    // clean sheet.
+    //
+    // On the audit trail that is the worst possible failure mode. The pane
+    // exists to answer "what was done to this credential", and answering
+    // "nothing" when the truth is "the trail could not be read" is how an
+    // amendment goes unnoticed. Empty and unreadable are different states and
+    // the screen now distinguishes them.
+    const failures = [
+      c.error ? `correction requests (${c.error.message})` : null,
+      t.error ? `the credential audit trail (${t.error.message})` : null,
+    ].filter(Boolean);
+    setSecondaryError(
+      failures.length > 0
+        ? `Could not read ${failures.join(' or ')}. `
+          + 'The panes below are not empty — they are unread, and nothing in them should be '
+          + 'taken as a statement that no action was recorded.'
+        : null,
+    );
 
     setCorrections((c.data ?? []).map((r: Record<string, any>) => ({
       id: String(r.id),
@@ -210,20 +237,32 @@ export default function CredentialAuthority({ role }: { role?: UserRole }) {
     }] : []),
     ...(can(role, 'create-credential-type')
       ? [{ id: 'types' as Tab, label: 'Kinds of credential', icon: <Plus size={15} /> }] : []),
-    { id: 'trail', label: 'Audit trail', icon: <History size={15} /> },
+    { id: 'trail', label: 'Audit', icon: <History size={15} /> },
   ];
 
   return (
-    <div className="mx-auto max-w-6xl space-y-5">
-      <PageHeader
-        title="Credential authority"
-        subtitle="Everything the University has issued. Corrections supersede; nothing is overwritten."
-      />
+    <div className={embedded ? 'space-y-5' : 'mx-auto max-w-6xl space-y-5'}>
+      {/* SUPPRESSED WHEN EMBEDDED. The workspace above already carries the
+          title and this exact sentence; rendering both printed the same line
+          twice, four lines apart, under two different headings. */}
+      {!embedded && (
+        <PageHeader
+          title="Credential authority"
+          subtitle="Everything the University has issued. Corrections supersede; nothing is overwritten."
+        />
+      )}
 
       {notReady && (
         <div className="flex items-start gap-3 rounded-xl border border-[#e9c14a]/40 bg-[#e9c14a]/10 p-4 text-sm">
           <AlertTriangle size={18} className="mt-0.5 flex-shrink-0 text-[#a07c12]" />
           <span className="text-[#6b6076] dark:text-[#9c93ad]">{notReady}</span>
+        </div>
+      )}
+
+      {secondaryError && (
+        <div className="flex items-start gap-3 rounded-xl border border-[#e9c14a]/40 bg-[#e9c14a]/10 p-4 text-sm">
+          <AlertTriangle size={18} className="mt-0.5 flex-shrink-0 text-[#a07c12]" />
+          <span className="text-[#6b6076] dark:text-[#9c93ad]">{secondaryError}</span>
         </div>
       )}
 
@@ -942,11 +981,24 @@ function CredentialTypes({ onDone, onError }: { onDone: (t: string) => void; onE
  * account.
  */
 function AuditTrail({ events }: { events: AuditEvent[] }) {
+  // The reciprocal of the note on the system audit log. Two append-only trails
+  // exist and each one says what the other holds, so neither reads as the
+  // complete record when it is half of it.
+  const scope = (
+    <p className="mt-3 text-xs leading-relaxed text-[#8a8194]">
+      Actions taken on <em>issued</em> credentials. Account changes, role grants and published
+      designs are recorded separately, in the <strong>System audit log</strong>.
+    </p>
+  );
+
   if (events.length === 0) {
     return (
-      <p className="rounded-xl border border-dashed border-[#ece7de] p-8 text-center text-sm text-[#6b6076] dark:border-[#2e2637] dark:text-[#9c93ad]">
-        Nothing has been recorded yet.
-      </p>
+      <div>
+        <p className="rounded-xl border border-dashed border-[#ece7de] p-8 text-center text-sm text-[#6b6076] dark:border-[#2e2637] dark:text-[#9c93ad]">
+          Nothing has been recorded yet.
+        </p>
+        {scope}
+      </div>
     );
   }
   return (
@@ -955,6 +1007,7 @@ function AuditTrail({ events }: { events: AuditEvent[] }) {
         Append-only. Nothing here can be edited or deleted by anyone, including the
         Superadministrator — the database refuses it, not this screen.
       </p>
+      {scope}
       <ol className="mt-3 divide-y divide-[#ece7de] dark:divide-[#2e2637]">
         {events.map((e) => (
           <li key={e.id} className="py-2.5">

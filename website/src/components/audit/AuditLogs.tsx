@@ -94,7 +94,7 @@ export default function AuditLogs() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Audit log"
+        title="System audit log"
         subtitle={loading ? 'Reading the trail…' : `${logs.length} recorded ${logs.length === 1 ? 'action' : 'actions'}`}
         action={
           <p className="flex items-center gap-1.5 text-xs text-[#8a8194]">
@@ -102,6 +102,22 @@ export default function AuditLogs() {
           </p>
         }
       />
+
+      {/* WHERE THE OTHER TRAIL IS.
+          This screen reads `audit_logs`: accounts, roles, published designs.
+          Credential actions — amendments, reissues, revocations, corrections —
+          are recorded in `credential_audit_events`, a separate append-only
+          table added by migration 013 and read under Credentials.
+          Two tables is the right design: one is system custody, the other is
+          the evidence behind a graduate's document, and they have different
+          readers and different retention. What was wrong was that neither
+          screen mentioned the other, so "who revoked this credential" had two
+          places to look and no way to choose. */}
+      <p className="max-w-3xl text-xs leading-relaxed text-[#8a8194]">
+        Accounts, roles and published credential designs. Actions taken on an <em>issued</em>{' '}
+        credential — an amendment, a reissue, a revocation, a correction request — are recorded in
+        the credential’s own append-only trail, under <strong>Credentials → Register → Audit</strong>.
+      </p>
 
       {error && (
         <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200">

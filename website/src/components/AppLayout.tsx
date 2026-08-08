@@ -40,9 +40,10 @@ import SettingsPage from './settings/SettingsPage';
 import AuditLogs from './audit/AuditLogs';
 import ScreenBoundary from './ScreenBoundary';
 import AccountManagement from './accounts/AccountManagement';
-import CredentialStudio from './studio/CredentialStudio';
 import SocialCommandCentre from './social/SocialCommandCentre';
-import CredentialAuthority from './credentials/CredentialAuthority';
+// The Studio and the Authority are now reached through the workspace that
+// composes them, so neither is imported here.
+import CredentialsWorkspace from './credentials/CredentialsWorkspace';
 import SitExamination from './exams/SitExamination';
 import ExaminerConsole from './exams/ExaminerConsole';
 import ExaminationOffice from './exams/ExaminationOffice';
@@ -223,12 +224,16 @@ export default function AppLayout() {
       // and the check in the route are the control.
       case 'accounts':
         return <AccountManagement />;
-      case 'studio':
-        return <CredentialStudio />;
       case 'social':
         return <SocialCommandCentre role={user?.role} userId={user?.id} />;
+      // Three view ids, one workspace. 'studio' and 'credential-authority' are
+      // still named by dashboard actions and older links; sending them here
+      // rather than deleting them means an existing link lands on the right
+      // screen instead of the dashboard.
+      case 'credentials':
+      case 'studio':
       case 'credential-authority':
-        return <CredentialAuthority role={user?.role} />;
+        return <CredentialsWorkspace role={user?.role} />;
       case 'sit-examination':
         return <SitExamination />;
       case 'examiner-console':

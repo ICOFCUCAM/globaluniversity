@@ -119,6 +119,32 @@ const PAGE_MM = {
   Letter: { portrait: [216, 279], landscape: [279, 216] },
 } as const;
 
+/**
+ * The classification line, without repeating the lead-in.
+ *
+ * FOUND BY THE SPECIMEN BOOK, which is the point of having one. The Master of
+ * Divinity specimen printed "with with Distinction", because the design's
+ * `classificationLead` is "with" and the classification had been written the
+ * way a person says it out loud.
+ *
+ * The convention is that the field holds the class alone — "Second Class
+ * Honours (Upper Division)" — and that convention is right. But a registrar
+ * types what they expect to READ, the certificate is sealed at issue, and the
+ * mistake is then on a document in somebody's hands that cannot be edited. A
+ * two-line guard is cheaper than a reissue.
+ *
+ * Case-insensitive, and matches only a whole leading word, so a classification
+ * that legitimately begins "Withdrawn…" is untouched.
+ */
+export function joinClassification(lead: string, classification: string): string {
+  const trimmed = classification.trim();
+  const escaped = lead.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const alreadyLed = new RegExp(`^${escaped}\\b\\s*`, 'i');
+  return alreadyLed.test(trimmed)
+    ? `${lead} ${trimmed.replace(alreadyLed, '')}`.trim()
+    : `${lead} ${trimmed}`.trim();
+}
+
 const CertificateDocument = forwardRef<HTMLDivElement, {
   design: CredentialDesign;
   data: CertificateData;
@@ -394,7 +420,7 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
       aria-label={
         `${data.duplicateOf ? 'Duplicate degree certificate' : 'Degree certificate'} of ` +
         `${UNIVERSITY.name}, conferring ${data.degree}` +
-        `${aw.classified && data.classification ? ` with ${data.classification}` : ''}` +
+        `${aw.classified && data.classification ? ` ${joinClassification('with', data.classification)}` : ''}` +
         ` upon ${data.fullName}. Credential number ${data.credentialId}.`
       }
       style={{
@@ -850,7 +876,15 @@ backgroundImage: `url("${art.micro}")`,
           // No box round it. The rule under the degree carries the eye down; a
           // bordered panel in the middle of a certificate reads as a form field.
           <p style={{ ...body(design), margin: '2.5mm 0 0', fontSize: '14px', fontStyle: 'italic' }}>
-            {design.wording.classificationLead} {data.classification}
+            {/* THE LEAD-IN IS NOT PRINTED TWICE.
+                `classificationLead` is "with", and the field holds the class —
+                "Second Class Honours (Upper Division)". But a registrar typing
+                what they expect to READ on the certificate types "with
+                Distinction", and the certificate then said "with with
+                Distinction" on a document that cannot be edited after issue.
+                The convention is the field without the lead-in; this makes
+                following it optional rather than a trap. */}
+            {joinClassification(design.wording.classificationLead, data.classification)}
           </p>
         )}
 

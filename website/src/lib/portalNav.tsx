@@ -12,8 +12,8 @@ import type { ViewType, UserRole } from './types';
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen, ClipboardList,
   FileText, Award, Monitor, PenTool, FolderOpen, BarChart3,
-  Settings, Shield, BookMarked, Wallet, Stamp, UserCog, Palette, Inbox, ShieldCheck,
-  ClipboardCheck, Share2, BadgeCheck, Video, Eye, CalendarClock,
+  Settings, Shield, BookMarked, Wallet, Stamp, UserCog, Inbox,
+  ClipboardCheck, Share2, BadgeCheck, Video, Eye, CalendarClock, TrendingUp,
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -158,9 +158,22 @@ export const menuGroups: MenuGroup[] = [
   {
     title: 'Insight',
     items: [
-      { id: 'analytics', label: 'Analytics', icon: <BarChart3 size={18} />, roles: ['superadmin', 'admin', 'chancellor', 'vice-chancellor', 'registrar', 'finance-director', 'dean'] },
-      { id: 'insights', label: 'Learning analytics', icon: <BarChart3 size={18} />, roles: ['superadmin', 'admin', 'lecturer'] },
-      { id: 'audit', label: 'Audit log', icon: <Shield size={18} />, roles: ['superadmin', 'admin'] },
+      // TWO ANALYTICS SCREENS THAT ARE NOT THE SAME SCREEN.
+      //
+      // They were labelled 'Analytics' and 'Learning analytics' and carried the
+      // IDENTICAL bar-chart icon, adjacent to each other, so the two rows were
+      // indistinguishable at a glance and neither name said what it answered.
+      //
+      // They answer genuinely different questions and neither could be dropped:
+      // one counts the institution, the other flags individual students at
+      // risk. So the fix is names that say which, and icons that differ.
+      { id: 'analytics', label: 'Institutional analytics', icon: <BarChart3 size={18} />, roles: ['superadmin', 'admin', 'chancellor', 'vice-chancellor', 'registrar', 'finance-director', 'dean'] },
+      { id: 'insights', label: 'Student early warning', icon: <TrendingUp size={18} />, roles: ['superadmin', 'admin', 'lecturer'] },
+      // 'System' because it is not the only audit surface: credential actions
+      // are recorded in their own immutable trail, under Credentials. Naming
+      // the scope is what stops "who revoked this" having two answers and no
+      // way to choose between them. Each screen points at the other.
+      { id: 'audit', label: 'System audit log', icon: <Shield size={18} />, roles: ['superadmin', 'admin'] },
     ],
   },
   {
@@ -169,21 +182,21 @@ export const menuGroups: MenuGroup[] = [
     title: 'System',
     items: [
       { id: 'accounts', label: 'Accounts', icon: <UserCog size={18} />, roles: ['superadmin'] },
-      // The Superadministrator designs; the three approving offices sign. They
-      // reach the same screen and see different halves of it — an approver gets
-      // the queue and none of the design controls, because the whole point of
-      // the chain is that designing and approving are different people.
-      { id: 'studio', label: 'Credential studio', icon: <Palette size={18} />, roles: ['superadmin'] },
-      { id: 'studio', label: 'Credential approvals', icon: <ShieldCheck size={18} />, roles: ['registrar', 'academic-office', 'vice-chancellor'] },
-      // The register of everything the University has issued, and the only
-      // place a sealed document can be corrected. The Registrar reaches it to
-      // print and email; only the Authority can amend or revoke, and the screen
-      // itself decides which of those it draws.
+      // ONE ENTRY, FOUR AREAS — design, approval, the register, the specimen
+      // book. This was three entries: 'Credential studio', 'Credential
+      // approvals' and 'Credential authority'. The first two were the SAME
+      // component under two labels, so the search box found two results that
+      // opened one screen, and "where do I correct a graduate's name" had no
+      // answer anybody could work out from the menu.
+      //
+      // Consolidating the menu did not consolidate the authority. The
+      // workspace draws only the areas a role may use, and every component
+      // beneath it still refuses from the inside.
       {
-        id: 'credential-authority',
-        label: 'Credential authority',
+        id: 'credentials',
+        label: 'Credentials',
         icon: <BadgeCheck size={18} />,
-        roles: ['superadmin', 'vice-chancellor', 'registrar'],
+        roles: ['superadmin', 'vice-chancellor', 'registrar', 'academic-office'],
       },
       { id: 'settings', label: 'Settings', icon: <Settings size={18} />, roles: EVERYONE },
     ],

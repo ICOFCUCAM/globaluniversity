@@ -138,7 +138,7 @@ const SAMPLE = {
   sealCode: 'ICOF-7T2M-XQ4V-K93B',
 };
 
-export default function CredentialStudio() {
+export default function CredentialStudio({ embedded }: { embedded?: boolean } = {}) {
   const { user } = useAuth();
   const allowed = can(user?.role, 'design-credentials');
   // An approving office is not a designer and must not become one — but it has
@@ -264,15 +264,17 @@ export default function CredentialStudio() {
   if (!allowed && approver) {
     return (
       <div className="space-y-5">
-        <div>
-          <h2 className="flex items-center gap-2 font-heading text-xl font-bold text-[#422e59] dark:text-[#e4dcf0]">
-            <ShieldCheck size={20} /> Credential approvals
-          </h2>
-          <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">
-            Designs submitted for the university&apos;s approval. You are one of the three offices
-            that must sign before a design can be published.
-          </p>
-        </div>
+        {!embedded && (
+          <div>
+            <h2 className="flex items-center gap-2 font-heading text-xl font-bold text-[#422e59] dark:text-[#e4dcf0]">
+              <ShieldCheck size={20} /> Credential approvals
+            </h2>
+            <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">
+              Designs submitted for the university&apos;s approval. You are one of the three offices
+              that must sign before a design can be published.
+            </p>
+          </div>
+        )}
         <ApprovalQueue />
       </div>
     );
@@ -302,15 +304,19 @@ export default function CredentialStudio() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h2 className="flex items-center gap-2 font-heading text-xl font-bold text-[#422e59] dark:text-[#e4dcf0]">
-          <Palette size={20} /> Credential Studio
-        </h2>
-        <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">
-          The design, the security features and the issuing rules for every credential the
-          university awards. Publishing creates a new version — nothing already issued changes.
-        </p>
-      </div>
+      {/* Suppressed inside the Credentials workspace, which already names the
+          area. Two headings one line apart read as a nesting bug. */}
+      {!embedded && (
+        <div>
+          <h2 className="flex items-center gap-2 font-heading text-xl font-bold text-[#422e59] dark:text-[#e4dcf0]">
+            <Palette size={20} /> Credential Studio
+          </h2>
+          <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">
+            The design, the security features and the issuing rules for every credential the
+            university awards. Publishing creates a new version — nothing already issued changes.
+          </p>
+        </div>
+      )}
 
       {message && (
         <div className={`flex items-start gap-2 rounded-xl border p-3 text-sm ${

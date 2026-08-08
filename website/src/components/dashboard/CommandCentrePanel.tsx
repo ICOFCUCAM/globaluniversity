@@ -160,7 +160,7 @@ export default function CommandCentrePanel({ onNavigate }: { onNavigate?: (v: Vi
         <Half
           icon={<BadgeCheck size={16} />}
           title="Credentials"
-          action={{ label: 'Credential authority', view: 'credential-authority' }}
+          action={{ label: 'Credentials', view: 'credentials' }}
           onNavigate={onNavigate}
         >
           <Line
@@ -176,7 +176,7 @@ export default function CommandCentrePanel({ onNavigate }: { onNavigate?: (v: Vi
           {c.corrections > 0 && (
             <button
               type="button"
-              onClick={() => onNavigate?.('credential-authority')}
+              onClick={() => onNavigate?.('credentials')}
               className="mt-2 flex w-full items-start gap-2 rounded-lg bg-[#422e59]/10 p-2 text-left text-xs text-[#422e59] dark:text-[#c5a55a]"
             >
               <Inbox size={13} className="mt-0.5 flex-shrink-0" />

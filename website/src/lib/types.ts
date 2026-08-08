@@ -249,6 +249,12 @@ export type ViewType =
   | 'settings'
   // The two subsystems of the University Command Centre. See migration 013.
   | 'social'
+  // ONE ENTRY OVER THE WHOLE SUBJECT. 'studio' and 'credential-authority' are
+  // kept as view ids because links and dashboard actions still name them, and
+  // both resolve to the same workspace — but only 'credentials' appears in the
+  // navigation. See CredentialsWorkspace for why three menu entries over one
+  // subject was worse than one.
+  | 'credentials'
   | 'credential-authority'
   // The Digital Examination & Proctoring System. See migration 015.
   //
