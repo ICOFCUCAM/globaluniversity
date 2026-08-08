@@ -154,7 +154,7 @@ export default function SocialCommandCentre({ role, userId }: { role?: UserRole;
 
     const posts = await supabase
       .from('social_posts')
-      .select('id, body, status, created_at, social_post_targets(state, social_accounts(handle))')
+      .select('id, body, status, created_at, social_post_targets(status, social_accounts(handle))')
       .order('created_at', { ascending: false })
       .limit(15);
 
@@ -163,7 +163,7 @@ export default function SocialCommandCentre({ role, userId }: { role?: UserRole;
       body: p.body ?? '',
       status: p.status,
       createdAt: p.created_at,
-      states: (p.social_post_targets ?? []).map((t: any) => t.state as TargetState),
+      states: (p.social_post_targets ?? []).map((t: any) => t.status as TargetState),
       handles: (p.social_post_targets ?? []).map((t: any) => t.social_accounts?.handle).filter(Boolean),
     })));
   }, []);

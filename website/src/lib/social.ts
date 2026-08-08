@@ -426,7 +426,31 @@ export function canPublish(problems: Problem[]): boolean {
 // FAN-OUT STATE
 // ---------------------------------------------------------------------------
 
-export type TargetState = 'queued' | 'publishing' | 'published' | 'failed' | 'skipped';
+/**
+ * What has happened to one destination.
+ *
+ * THESE ARE THE DATABASE'S WORDS, NOT NICER ONES.
+ *
+ * This type first read `'queued' | 'publishing' | 'published' | ...` while the
+ * column in migration 013 is `status text check (status in ('pending',
+ * 'sending', 'posted', 'failed', 'skipped'))`. Both the name of the column and
+ * four of its five values were wrong here.
+ *
+ * The consequence was total: /api/social/publish inserted `state: 'queued'`
+ * into a table with no `state` column, so the fan-out insert failed and NOTHING
+ * COULD EVER BE PUBLISHED. The publication log and the dashboard read `t.state`
+ * and got undefined, so both would have reported every post as still
+ * publishing, for ever.
+ *
+ * `social.test.mjs` cross-checked the PLATFORM list against the migration and
+ * caught nothing, because it never checked this one. It does now — see the last
+ * section of that file. A vocabulary shared with the database has to be
+ * compared against the database, or it is just two lists that happen to have
+ * been written by the same person on the same day.
+ */
+export const TARGET_STATES = ['pending', 'sending', 'posted', 'failed', 'skipped'] as const;
+
+export type TargetState = (typeof TARGET_STATES)[number];
 export type PostStatus =
   | 'draft' | 'scheduled' | 'publishing' | 'published' | 'partially_failed' | 'failed' | 'cancelled';
 
@@ -440,9 +464,9 @@ export type PostStatus =
  */
 export function statusFromTargets(states: TargetState[]): PostStatus {
   if (states.length === 0) return 'draft';
-  if (states.some((s) => s === 'queued' || s === 'publishing')) return 'publishing';
+  if (states.some((s) => s === 'pending' || s === 'sending')) return 'publishing';
 
-  const published = states.filter((s) => s === 'published').length;
+  const published = states.filter((s) => s === 'posted').length;
   const failed = states.filter((s) => s === 'failed').length;
 
   if (failed === 0) return 'published';
@@ -453,7 +477,7 @@ export function statusFromTargets(states: TargetState[]): PostStatus {
 /** A sentence for the publication log, from the same data. */
 export function describeOutcome(states: TargetState[]): string {
   const status = statusFromTargets(states);
-  const published = states.filter((s) => s === 'published').length;
+  const published = states.filter((s) => s === 'posted').length;
   const failed = states.filter((s) => s === 'failed').length;
   const total = states.length;
 
@@ -523,4 +547,21 @@ export function asAssistantDraft(platform: Platform, body: string, hashtags: str
 /** A person changed an assistant draft. Distinct from writing it from scratch. */
 export function markEdited(variant: Variant, editorId: string): Variant {
   return { ...variant, editedBy: editorId };
+}
+
+
+/**
+ * The destinations of a post that can be tried again.
+ *
+ * RETRY IS PER TARGET, NOT PER POST. When one network refuses an announcement
+ * that five accepted, republishing would duplicate it on the five that worked —
+ * so only the failed rows are re-queued, in place.
+ *
+ * A 'skipped' target is NOT retryable. It was skipped because its connection
+ * was expired or revoked at publication time, and trying again without
+ * reconnecting the account produces the same result plus a second failure in
+ * the log.
+ */
+export function retryable<T extends { state: TargetState }>(targets: T[]): T[] {
+  return targets.filter((t) => t.state === 'failed');
 }

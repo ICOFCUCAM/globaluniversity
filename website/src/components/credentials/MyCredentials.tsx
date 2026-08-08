@@ -39,6 +39,7 @@ import { supabase } from '@/lib/supabase';
 import { Card, PageHeader, EmptyState, SkeletonRows } from '@/components/ui/portal';
 import { BTN_SECONDARY, FOCUS } from '@/lib/portalTheme';
 import { Award, Link2, Check, ShieldAlert, ExternalLink } from 'lucide-react';
+import RequestCorrection from './RequestCorrection';
 
 interface CredentialRow {
   id: string;
@@ -177,6 +178,20 @@ export default function MyCredentials() {
                     </a>
                   </div>
                 </div>
+
+                {/* A GRADUATE MAY REPORT AN ERROR; THEY MAY NOT FIX ONE.
+                    Hidden behind a quiet link rather than a button, because
+                    almost every credential is correct and a prominent "report a
+                    problem" control on a degree implies otherwise. Absent on a
+                    revoked credential: a revocation is not a spelling mistake,
+                    and its remedy is a conversation with the Registry rather
+                    than a form. */}
+                {!revoked && (
+                  <RequestCorrection
+                    credentialId={c.id}
+                    reference={c.credential_id}
+                  />
+                )}
               </Card>
             );
           })}

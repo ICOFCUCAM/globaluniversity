@@ -180,8 +180,14 @@ export async function POST(request: Request) {
   // the post must not stand without its pictures.
   if (draft.media.length > 0) {
     const { error } = await admin.from('social_post_media').insert(
+      // THE REGISTER'S COLUMN NAMES. This said `url` and `position`; the table
+      // has `storage_path` and `ordinal`, so every post with a picture failed.
       draft.media.map((m, i) => ({
-        post_id: postId, url: m.url, kind: m.kind, alt_text: m.altText, position: i,
+        post_id: postId,
+        storage_path: m.url,
+        kind: m.kind,
+        alt_text: m.altText,
+        ordinal: i,
       })),
     );
     if (error) {
@@ -220,7 +226,11 @@ export async function POST(request: Request) {
     resolution.targets.map((t) => ({
       post_id: postId,
       account_id: t.account.id,
-      state: 'queued',
+      // The register's own word. See TargetState in src/lib/social.ts — this
+      // said `state: 'queued'` against a column called `status` that has no
+      // such value, so the fan-out insert failed and nothing was ever
+      // published.
+      status: 'pending',
     })),
   );
 
@@ -242,16 +252,20 @@ export async function POST(request: Request) {
   // shared data model, and "who announced what on behalf of the institution" is
   // exactly the sort of thing an audit log is for.
   // -------------------------------------------------------------------------
+  // THE SHAPE audit_logs ACTUALLY HAS. This said `actor_id` and `detail`; the
+  // table has `performed_by` and `details`, so the insert failed and the
+  // University's own log of who published what would have stayed empty.
   await admin.from('audit_logs').insert({
-    actor_id: caller.id,
     action: draft.scheduledFor ? 'social.scheduled' : 'social.published',
-    detail: {
-      post_id: postId,
+    entity_type: 'social_post',
+    entity_id: postId,
+    performed_by: caller.id,
+    details: {
       choice,
       accounts: resolution.targets.map((t) => t.account.handle),
       assistant_drafted: draft.variants.some((v) => v.source === 'assistant'),
     },
-  }).select().maybeSingle();
+  });
 
   const dispatched = await dispatch();
 

@@ -181,10 +181,12 @@ export async function POST(request: Request) {
     // and a communications record with holes in it is worse than one that says
     // "this account was disconnected in August".
     await admin.from('audit_logs').insert({
-      actor_id: caller.id,
       action: 'social.disconnected',
-      detail: { account_id: account.id, scope: account.scope, handle: account.handle },
-    }).select().maybeSingle();
+      entity_type: 'social_account',
+      entity_id: account.id,
+      performed_by: caller.id,
+      details: { scope: account.scope, handle: account.handle },
+    });
 
     return NextResponse.json({ ok: true, message: `${account.handle} disconnected.` });
   }

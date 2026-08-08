@@ -278,24 +278,54 @@ check(
 
 console.log('\nThe outcome of a fan-out is reported honestly\n');
 
-check('all six published', S.statusFromTargets(Array(6).fill('published')), 'published');
+// THE REGISTER'S WORDS: pending, sending, posted, failed, skipped. This test
+// used 'published' and 'queued' — words that read better and that the database
+// does not accept — and passed, because it only ever compared the library to
+// itself. schemaContract.test.mjs now compares TARGET_STATES to the CHECK
+// constraint, which is what should have been done from the start.
+check('all six posted', S.statusFromTargets(Array(6).fill('posted')), 'published');
 check('all six failed', S.statusFromTargets(Array(6).fill('failed')), 'failed');
 check(
-  'five published and one failed is neither of those',
-  S.statusFromTargets([...Array(5).fill('published'), 'failed']),
+  'five posted and one failed is neither of those',
+  S.statusFromTargets([...Array(5).fill('posted'), 'failed']),
   'partially_failed',
 );
 check(
   '…and the sentence says which, so nobody reposts the five that worked',
-  S.describeOutcome([...Array(5).fill('published'), 'failed']),
+  S.describeOutcome([...Array(5).fill('posted'), 'failed']),
   'Published to 5 of 6. 1 did not accept it and can be retried.',
 );
 check(
-  'anything still queued means the post is still publishing',
-  S.statusFromTargets(['published', 'queued']),
+  'anything still pending means the post is still publishing',
+  S.statusFromTargets(['posted', 'pending']),
+  'publishing',
+);
+check(
+  '…and so does anything still sending',
+  S.statusFromTargets(['posted', 'sending']),
   'publishing',
 );
 check('nothing addressed is still a draft', S.statusFromTargets([]), 'draft');
+
+console.log('\nOnly a failed destination can be tried again\n');
+
+const targets = [
+  { id: 'a', state: 'posted' },
+  { id: 'b', state: 'failed' },
+  { id: 'c', state: 'skipped' },
+  { id: 'd', state: 'pending' },
+];
+check('a failed target is retryable', S.retryable(targets).map((t) => t.id), ['b']);
+check(
+  'a skipped one is not — its connection needs reconnecting first',
+  S.retryable(targets).filter((t) => t.state === 'skipped'),
+  [],
+);
+check(
+  'and a posted one is not, because retrying it would duplicate the announcement',
+  S.retryable(targets).filter((t) => t.state === 'posted'),
+  [],
+);
 
 console.log('\nThe assistant drafts; it does not write on its own authority\n');
 

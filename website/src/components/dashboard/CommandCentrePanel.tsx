@@ -64,7 +64,7 @@ export default function CommandCentrePanel({ onNavigate }: { onNavigate?: (v: Vi
 
     const [posts, accounts, credentials, corrections, audit] = await Promise.all([
       supabase.from('social_posts')
-        .select('id, status, social_post_targets(state)')
+        .select('id, status, social_post_targets(status)')
         .gte('created_at', since),
       supabase.from('social_accounts').select('id, status').eq('status', 'connected'),
       // The register is grouped by number in the browser: a corrected award is
@@ -81,14 +81,14 @@ export default function CommandCentrePanel({ onNavigate }: { onNavigate?: (v: Vi
       return;
     }
 
-    const postRows = (posts.data ?? []) as Array<{ social_post_targets?: Array<{ state: TargetState }> }>;
+    const postRows = (posts.data ?? []) as Array<{ social_post_targets?: Array<{ status: TargetState }> }>;
     const refs = new Set((credentials.data ?? []).map((r: Record<string, any>) => r.credential_id));
     const superseded = (credentials.data ?? []).filter((r: Record<string, any>) => r.status === 'replaced');
 
     setCounts({
       posts: postRows.length,
       partial: postRows.filter((p) =>
-        statusFromTargets((p.social_post_targets ?? []).map((t) => t.state)) === 'partially_failed').length,
+        statusFromTargets((p.social_post_targets ?? []).map((t) => t.status)) === 'partially_failed').length,
       accounts: (accounts.data ?? []).length,
       credentials: refs.size,
       // Awards that have been corrected at least once — the number a

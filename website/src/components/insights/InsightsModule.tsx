@@ -35,7 +35,7 @@ export default function InsightsModule() {
   const [students, setStudents] = useState<Student[]>([]);
   const [attendance, setAttendance] = useState<{ matric: string; status: string }[]>([]);
   const [receipts, setReceipts] = useState<string[]>([]);
-  const [results, setResults] = useState<{ student_id: string; score: number | null }[]>([]);
+  const [results, setResults] = useState<{ student_id: string; total_score: number | null }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -48,7 +48,10 @@ export default function InsightsModule() {
         supabase.from('students').select('id, matric_no, first_name, last_name, program, status'),
         listByKind<{ matric?: string; status?: string }>(['attendance']),
         supabase.from('payments').select('student_id, reference'),
-        supabase.from('results').select('student_id, score').limit(2000),
+        // `total_score`, not `score`. The results table has ca_score,
+        // exam_score and total_score and has never had a bare `score`, so this
+        // query returned an error and every student's average read as "—".
+        supabase.from('results').select('student_id, total_score').limit(2000),
       ]);
       if (studRes.data) setStudents(studRes.data as Student[]);
       setAttendance(
@@ -72,9 +75,9 @@ export default function InsightsModule() {
         const attendanceRate = mine.length
           ? Math.round((mine.filter((a) => a.status === 'present').length / mine.length) * 100)
           : null;
-        const myResults = results.filter((r) => r.student_id === s.id && typeof r.score === 'number');
+        const myResults = results.filter((r) => r.student_id === s.id && typeof r.total_score === 'number');
         const avgScore = myResults.length
-          ? Math.round(myResults.reduce((t, r) => t + (r.score as number), 0) / myResults.length)
+          ? Math.round(myResults.reduce((t, r) => t + (r.total_score as number), 0) / myResults.length)
           : null;
         const paid = receipts.some((r) => r.includes(s.matric_no));
 
