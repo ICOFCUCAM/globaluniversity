@@ -106,6 +106,8 @@ export interface TranscriptMasterData extends TranscriptData {
   creditsEarned?: number | null;
   /** Set when the record was transcribed from an archive rather than derived. */
   transcribedFrom?: string | null;
+  /** Printed beside the award, as the original sets it. */
+  studentAddress?: string | null;
   superseded?: boolean;
 }
 
@@ -151,9 +153,9 @@ const MM = (n: number) => `${n}mm`;
 //   summary — so the eye finds the sections without the grid shouting.
 //
 // No rounded corners, shadows, gradients, colour or decoration anywhere.
-const RULE = '0.5pt solid #808080';
+const RULE = '0.5pt solid #a8a8a8';
 /** Section boundaries and the outer border: the same grey, a shade stronger. */
-const RULE_MAJOR = '0.9pt solid #5c5c5c';
+const RULE_MAJOR = '0.7pt solid #8a8a8a';
 
 /**
  * The table's typeface.
@@ -202,7 +204,10 @@ export default function TranscriptMaster({
   // globe of my own invention and calling it the watermark put a mark on the
   // document that is not the University's — which is the one thing a watermark
   // must never be.
-  const watermark = IMAGES.logo;
+  // site-icon.png — the Global Revival Network University seal, which is the
+  // device the University's own transcript carries. IMAGES.logo is the ICOF
+  // arms and a different mark; using it put the wrong seal behind the record.
+  const watermark = IMAGES.seal;
 
   const microtext = microtextBandUri(
     `${UNIVERSITY.name} · ${data.credentialId ?? 'SPECIMEN'} · `, 900, 10, design.accent, 3.4,
@@ -329,8 +334,9 @@ function Sheet({
             what the institution is, and where to check it. */}
         {first && (
           <p style={{
-            margin: `${MM(1.6)} 0 0`, border: RULE, padding: '0.9mm 2mm',
-            fontSize: '6.2pt', textAlign: 'center', flex: '0 0 auto',
+            margin: 0, borderLeft: RULE, borderRight: RULE, borderBottom: RULE,
+            padding: '0.7mm 2mm', fontSize: '6pt', textAlign: 'center', flex: '0 0 auto',
+            fontFamily: TABLE_FACE,
           }}>
             {UNIVERSITY.name}. For more information, visit {UNIVERSITY.email} · {UNIVERSITY.website}
           </p>
@@ -468,7 +474,11 @@ function Masthead({
   };
 
   return (
-    <div style={{ display: 'flex', gap: MM(3), alignItems: 'flex-start', flex: '0 0 auto' }}>
+    <>
+      <div style={{
+        display: 'flex', alignItems: 'stretch', flex: '0 0 auto',
+        border: RULE,
+      }}>
       {/* THE CREST, boxed, as the original opens. It was absent entirely —
           the one mark on the sheet that identifies the institution before a
           word of it is read. */}
@@ -476,7 +486,7 @@ function Masthead({
         flex: '0 0 auto', border: RULE_MAJOR, padding: MM(1.2),
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
-        <img src={IMAGES.logo} alt="" style={{ width: MM(17), height: MM(17), objectFit: 'contain' }} />
+        <img src={IMAGES.seal} alt="" style={{ width: MM(17), height: MM(17), objectFit: 'contain' }} />
       </div>
 
       <div style={{ flex: '1 1 0', minWidth: 0 }}>
@@ -488,15 +498,6 @@ function Masthead({
         </p>
         <p style={{ margin: '0.2mm 0 0', fontSize: '6.4pt', fontWeight: 700, color: ink }}>
           {UNIVERSITY.descriptor}
-        </p>
-        <p style={{ margin: '2.2mm 0 0', fontSize: '7pt', letterSpacing: '.06em' }}>
-          Student Transcript
-        </p>
-        <p style={{ margin: '1.4mm 0 0', fontSize: '5.4pt', opacity: 0.8 }}>
-          Degree / Diploma Offered
-        </p>
-        <p style={{ margin: '0.3mm 0 0', fontSize: '12pt', fontWeight: 700, color: design.brand }}>
-          {data.student.degree_type || data.student.program || data.department?.name}
         </p>
       </div>
 
@@ -526,7 +527,37 @@ function Masthead({
           </tr>
         </tbody>
       </table>
-    </div>
+      </div>
+
+      {/* THE TITLE BAR — a narrow full-width bordered row, not a heading. */}
+      <div style={{
+        borderLeft: RULE, borderRight: RULE, borderBottom: RULE,
+        padding: '0.7mm 2mm', textAlign: 'center', fontSize: '7pt', letterSpacing: '.04em',
+      }}>
+        Student Transcript
+      </div>
+
+      {/* THE DEGREE ROW — the award on the left, the holder's address on the
+          right, both inside the same rectangular grid. */}
+      <div style={{
+        borderLeft: RULE, borderRight: RULE, borderBottom: RULE, display: 'flex',
+      }}>
+        <div style={{ flex: '1 1 0', padding: '1mm 2mm', textAlign: 'center', minWidth: 0 }}>
+          <p style={{ margin: 0, fontSize: '5.4pt', opacity: 0.8 }}>Degree / Diploma Offered</p>
+          <p style={{ margin: '0.4mm 0 0', fontSize: '12pt', fontWeight: 700, color: design.brand }}>
+            {data.student.degree_type || data.student.program || data.department?.name}
+          </p>
+        </div>
+        <div style={{
+          flex: '0 0 42%', borderLeft: RULE, padding: '1mm 2mm', fontFamily: TABLE_FACE,
+        }}>
+          <p style={{ margin: 0, fontSize: '5.6pt', opacity: 0.85 }}>Student Address</p>
+          <p style={{ margin: '0.6mm 0 0', fontSize: '8pt', fontWeight: 700 }}>
+            {data.studentAddress || '—'}
+          </p>
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -561,58 +592,67 @@ function RunningHead({
 }
 
 function GradeSystem({ ink, rule }: { ink: string; rule: string }) {
-  // VERTICAL LISTS IN TWO BOXES, as the original prints them — "AVERAGE" down
-  // the left in two sub-columns, the registrar's codes down the right. Set
-  // inline as running text it reads as a footnote; the original gives it the
-  // weight of a key, because that is what it is.
-  const half = Math.ceil(GRADING_SCALE.length / 2);
-  const box: React.CSSProperties = {
-    border: `0.5pt solid ${ink}`, padding: '1.2mm 1.8mm', fontSize: '5.7pt', lineHeight: 1.5,
+  // NOT A TABLE OF HEAVY CELLS — closely grouped text columns inside one
+  // bordered band, as the specification sets it, so the academic table can
+  // begin high on the page. Boxing each half turned a key into two panels and
+  // pushed the record down.
+  const col: React.CSSProperties = {
+    fontSize: '5.8pt', lineHeight: 1.45, fontFamily: TABLE_FACE, whiteSpace: 'nowrap',
   };
+  const half = Math.ceil(GRADING_SCALE.length / 3);
+  const bands = [
+    GRADING_SCALE.slice(0, half),
+    GRADING_SCALE.slice(half, half * 2),
+    GRADING_SCALE.slice(half * 2),
+  ];
+
   return (
     <div style={{
-      marginTop: MM(1.8), display: 'flex', gap: MM(2), flex: '0 0 auto', alignItems: 'stretch',
+      borderLeft: RULE, borderRight: RULE, borderBottom: RULE,
+      padding: '1.2mm 2mm', display: 'flex', gap: MM(5), flex: '0 0 auto',
+      alignItems: 'flex-start',
     }}>
-      <div style={{ ...box, display: 'flex', gap: MM(3) }}>
-        {[GRADING_SCALE.slice(0, half), GRADING_SCALE.slice(half)].map((col, i) => (
-          <div key={i}>
-            {i === 0 && (
-              <p style={{ margin: '0 0 0.4mm', fontSize: '5.6pt', letterSpacing: '.1em', opacity: 0.8 }}>
-                AVERAGE
-              </p>
-            )}
-            {i !== 0 && <p style={{ margin: '0 0 0.4mm', fontSize: '4.8pt' }}>&nbsp;</p>}
-            {col.map((g) => (
-              <div key={g.grade} style={{ whiteSpace: 'nowrap' }}>
-                <strong style={{ display: 'inline-block', width: MM(4) }}>{g.grade}</strong>
-                {g.gradePoint.toFixed(2)}GPA {g.minScore}–{g.maxScore}%
-              </div>
-            ))}
+      {bands.map((band, i) => (
+        <div key={i} style={col}>
+          {i === 1 && (
+            <p style={{ margin: '0 0 0.3mm', fontSize: '5.4pt', letterSpacing: '.06em' }}>AVERAGE</p>
+          )}
+          {i !== 1 && <p style={{ margin: '0 0 0.3mm', fontSize: '5.4pt' }}>&nbsp;</p>}
+          {band.map((g) => (
+            <div key={g.grade}>
+              <strong style={{ display: 'inline-block', width: MM(4.5) }}>{g.grade}</strong>
+              {g.gradePoint.toFixed(2)}GPA {g.minScore}–{g.maxScore}%
+            </div>
+          ))}
+        </div>
+      ))}
+
+      <div style={col}>
+        <p style={{
+          margin: '0 0 0.3mm', fontSize: '5.6pt', letterSpacing: '.08em', fontWeight: 700,
+        }}>GRADE SYSTEM</p>
+        {REGISTRAR_CODES.slice(0, 5).map((c) => (
+          <div key={c.code}>
+            <strong style={{ display: 'inline-block', width: MM(5) }}>{c.code}</strong>
+            0GPA {c.meaning.toUpperCase()}
           </div>
         ))}
       </div>
 
-      <div style={{ ...box, display: 'flex', gap: MM(3) }}>
-        <div>
-          <p style={{ margin: '0 0 0.4mm', fontSize: '5.6pt', letterSpacing: '.1em', opacity: 0.8 }}>
-            GRADE SYSTEM
-          </p>
-          {REGISTRAR_CODES.map((c) => (
-            <div key={c.code} style={{ whiteSpace: 'nowrap' }}>
-              <strong style={{ display: 'inline-block', width: MM(4) }}>{c.code}</strong>
-              0GPA {c.meaning.toUpperCase()}
-            </div>
-          ))}
-        </div>
-        <div>
-          <p style={{ margin: '0 0 0.4mm', fontSize: '4.8pt' }}>&nbsp;</p>
-          {COURSE_STANDING.map((c) => (
-            <div key={c.code} style={{ whiteSpace: 'nowrap' }}>
-              <strong style={{ display: 'inline-block', width: MM(4) }}>{c.code}:</strong>
-              {c.meaning.toUpperCase()}
-            </div>
-          ))}
-        </div>
+      <div style={col}>
+        <p style={{ margin: '0 0 0.3mm', fontSize: '5.4pt' }}>&nbsp;</p>
+        {REGISTRAR_CODES.slice(5).map((c) => (
+          <div key={c.code}>
+            <strong style={{ display: 'inline-block', width: MM(5) }}>{c.code}</strong>
+            0GPA {c.meaning.toUpperCase()}
+          </div>
+        ))}
+        {COURSE_STANDING.map((c) => (
+          <div key={c.code}>
+            <strong style={{ display: 'inline-block', width: MM(5) }}>{c.code}:</strong>
+            {c.meaning.toUpperCase()}
+          </div>
+        ))}
       </div>
     </div>
   );
