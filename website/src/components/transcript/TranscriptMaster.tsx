@@ -241,16 +241,16 @@ function Sheet({
         {/* --- The record: a row per year, a column per semester ------------ */}
         <div style={{ flex: '1 1 auto', marginTop: MM(2), minHeight: 0 }}>
           {years.map((y) => (
-            <div key={y.year} style={{ display: 'flex', gap: MM(2), marginBottom: MM(2.5) }}>
+            <div key={y.year} style={{ display: 'flex', gap: MM(2), marginBottom: MM(2) }}>
               {/* THE YEAR LABEL DOWN THE LEFT, as the original sets it — one
                   cell spanning both semesters, so the eye reads a year across
                   rather than hunting for repeated headings. */}
               <div style={{
-                flex: '0 0 auto', width: MM(14), borderRight: `0.5pt solid ${rule}`,
+                flex: '0 0 auto', width: MM(17), borderRight: `0.5pt solid ${rule}`,
                 paddingRight: MM(1.5), display: 'flex', alignItems: 'flex-start',
               }}>
                 <span style={{
-                  fontSize: '6.4pt', fontWeight: 700, textTransform: 'uppercase',
+                  fontSize: '8.4pt', fontWeight: 700, textTransform: 'uppercase',
                   letterSpacing: '.08em', color: design.brand,
                 }}>
                   {y.year ? `Year ${inWords(y.year)}` : 'Unplaced'}
@@ -275,7 +275,7 @@ function Sheet({
           <>
             <div style={{
               borderTop: `1pt solid ${rule}`, paddingTop: MM(1.4),
-              display: 'flex', gap: MM(6), fontSize: '7pt', flexWrap: 'wrap',
+              display: 'flex', gap: MM(7), fontSize: '8.6pt', flexWrap: 'wrap',
             }}>
               <span>Study total credit <strong>{data.totalCredits}</strong></span>
               <span>Total credit earned <strong>{data.creditsEarned ?? data.totalCredits}</strong></span>
@@ -365,11 +365,11 @@ function Masthead({
     border: `0.5pt solid ${ink}`, padding: '0.6mm 1.4mm', verticalAlign: 'top',
   };
   const lab: React.CSSProperties = {
-    ...cell, fontSize: '4.8pt', fontWeight: 400, opacity: 0.85, textAlign: 'left',
+    ...cell, fontSize: '5.6pt', fontWeight: 400, opacity: 0.85, textAlign: 'left',
     borderBottom: 'none', paddingBottom: 0,
   };
   const val: React.CSSProperties = {
-    ...cell, fontSize: '7pt', fontWeight: 700, borderTop: 'none', paddingTop: '0.2mm',
+    ...cell, fontSize: '8.4pt', fontWeight: 700, borderTop: 'none', paddingTop: '0.2mm',
     whiteSpace: 'nowrap',
   };
 
@@ -463,7 +463,7 @@ function GradeSystem({ ink, rule }: { ink: string; rule: string }) {
   // weight of a key, because that is what it is.
   const half = Math.ceil(GRADING_SCALE.length / 2);
   const box: React.CSSProperties = {
-    border: `0.5pt solid ${ink}`, padding: '1mm 1.6mm', fontSize: '5pt', lineHeight: 1.55,
+    border: `0.5pt solid ${ink}`, padding: '1.2mm 1.8mm', fontSize: '5.7pt', lineHeight: 1.5,
   };
   return (
     <div style={{
@@ -473,7 +473,7 @@ function GradeSystem({ ink, rule }: { ink: string; rule: string }) {
         {[GRADING_SCALE.slice(0, half), GRADING_SCALE.slice(half)].map((col, i) => (
           <div key={i}>
             {i === 0 && (
-              <p style={{ margin: '0 0 0.4mm', fontSize: '4.8pt', letterSpacing: '.1em', opacity: 0.8 }}>
+              <p style={{ margin: '0 0 0.4mm', fontSize: '5.6pt', letterSpacing: '.1em', opacity: 0.8 }}>
                 AVERAGE
               </p>
             )}
@@ -490,7 +490,7 @@ function GradeSystem({ ink, rule }: { ink: string; rule: string }) {
 
       <div style={{ ...box, display: 'flex', gap: MM(3) }}>
         <div>
-          <p style={{ margin: '0 0 0.4mm', fontSize: '4.8pt', letterSpacing: '.1em', opacity: 0.8 }}>
+          <p style={{ margin: '0 0 0.4mm', fontSize: '5.6pt', letterSpacing: '.1em', opacity: 0.8 }}>
             GRADE SYSTEM
           </p>
           {REGISTRAR_CODES.map((c) => (
@@ -521,19 +521,19 @@ function SemesterBlock({
   ink: string; rule: string; brand: string;
 }) {
   const th: React.CSSProperties = {
-    fontSize: '5pt', textTransform: 'uppercase', letterSpacing: '.03em',
-    padding: '0.5mm 0.6mm', border: `0.4pt solid ${ink}`, textAlign: 'left',
+    fontSize: '6pt', textTransform: 'uppercase', letterSpacing: '.03em',
+    padding: '0.8mm 1mm', border: `0.4pt solid ${ink}`, textAlign: 'left',
     color: ink, fontWeight: 700,
   };
   const td: React.CSSProperties = {
-    fontSize: '5.8pt', padding: '0.35mm 0.6mm', border: `0.4pt solid ${ink}`, color: ink,
+    fontSize: '7pt', padding: '0.78mm 1mm', border: `0.4pt solid ${ink}`, color: ink,
   };
   const num: React.CSSProperties = { ...td, textAlign: 'right' };
 
   return (
     <div style={{ minWidth: 0 }}>
       <p style={{
-        margin: 0, fontSize: '5.8pt', fontWeight: 700, textTransform: 'uppercase',
+        margin: 0, fontSize: '7.4pt', fontWeight: 700, textTransform: 'uppercase',
         letterSpacing: '.06em', color: brand,
       }}>
         Semester {s.semester || '—'}
