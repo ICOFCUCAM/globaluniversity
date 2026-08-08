@@ -13,7 +13,7 @@ import {
   LayoutDashboard, Users, GraduationCap, BookOpen, ClipboardList,
   FileText, Award, Monitor, PenTool, FolderOpen, BarChart3,
   Settings, Shield, BookMarked, Wallet, Stamp, UserCog, Palette, Inbox, ShieldCheck,
-  ClipboardCheck, Share2, BadgeCheck,
+  ClipboardCheck, Share2, BadgeCheck, Video, Eye, CalendarClock,
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -88,7 +88,29 @@ export const menuGroups: MenuGroup[] = [
     items: [
       { id: 'lecturers', label: 'Lecturers', icon: <GraduationCap size={18} />, roles: ['superadmin', 'admin'] },
       { id: 'assignments', label: 'Assignments', icon: <ClipboardList size={18} />, roles: ALL },
-      { id: 'exams', label: 'Examinations', icon: <PenTool size={18} />, roles: ALL },
+      { id: 'exams', label: 'Question papers', icon: <PenTool size={18} />, roles: ALL },
+      // THE LIVE EXAMINATION SYSTEM. Three screens because they are three
+      // different jobs, and each role sees only the one that is theirs — a
+      // candidate must never see the console, and an invigilator has no
+      // business setting a paper.
+      {
+        id: 'sit-examination',
+        label: 'Sit an examination',
+        icon: <Video size={18} />,
+        roles: ['student'],
+      },
+      {
+        id: 'examiner-console',
+        label: 'Examiner console',
+        icon: <Eye size={18} />,
+        roles: ['superadmin', 'admin', 'exam-officer', 'examiner', 'invigilator', 'moderator'],
+      },
+      {
+        id: 'examination-office',
+        label: 'Examination office',
+        icon: <CalendarClock size={18} />,
+        roles: ['superadmin', 'admin', 'exam-officer', 'moderator', 'registrar'],
+      },
       { id: 'questionbank', label: 'Question bank', icon: <PenTool size={18} />, roles: ['superadmin', 'admin', 'lecturer'] },
       { id: 'gradebook', label: 'Grade book', icon: <ClipboardList size={18} />, roles: ['superadmin', 'admin', 'lecturer'] },
     ],

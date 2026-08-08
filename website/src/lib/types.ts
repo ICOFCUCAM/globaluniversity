@@ -250,5 +250,13 @@ export type ViewType =
   // The two subsystems of the University Command Centre. See migration 013.
   | 'social'
   | 'credential-authority'
+  // The Digital Examination & Proctoring System. See migration 015.
+  //
+  // 'exams' is the EXISTING module and is left alone — it is the question bank
+  // and paper-drafting screen. These three are the live examination system:
+  // one for the candidate, one for whoever is watching, one for the office.
+  | 'sit-examination'
+  | 'examiner-console'
+  | 'examination-office'
   | 'admissions-finance' | 'admissions-registrar'
   | 'audit' | 'assignments' | 'fees' | 'announcements' | 'forum' | 'timetable' | 'insights' | 'gradebook' | 'questionbank' | 'result-approval';

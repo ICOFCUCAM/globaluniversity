@@ -43,6 +43,9 @@ import AccountManagement from './accounts/AccountManagement';
 import CredentialStudio from './studio/CredentialStudio';
 import SocialCommandCentre from './social/SocialCommandCentre';
 import CredentialAuthority from './credentials/CredentialAuthority';
+import SitExamination from './exams/SitExamination';
+import ExaminerConsole from './exams/ExaminerConsole';
+import ExaminationOffice from './exams/ExaminationOffice';
 
 export default function AppLayout() {
   // The Student Portal is exclusively for enrolled students. An applicant who
@@ -226,6 +229,12 @@ export default function AppLayout() {
         return <SocialCommandCentre role={user?.role} userId={user?.id} />;
       case 'credential-authority':
         return <CredentialAuthority role={user?.role} />;
+      case 'sit-examination':
+        return <SitExamination />;
+      case 'examiner-console':
+        return <ExaminerConsole role={user?.role} />;
+      case 'examination-office':
+        return <ExaminationOffice role={user?.role} />;
       default:
         return <AdminDashboard onNavigate={setCurrentView} />;
     }
