@@ -15,7 +15,7 @@ export const careers = {
       heading: 'Where We Hire',
       list: [
         'Faculty of Theology, Buea — biblical studies, systematic and practical theology, Christian counseling',
-        'School of Theology, Douala — theology and ministerial formation',
+        'School of Ministry, Douala — ministerial formation and practice',
         'Faculty of Education — primary and special education, curriculum and pedagogy',
         'Faculty of Engineering and Technology — software engineering, networking, hardware, databases',
         'Global Institute of Business and Management Science (GIBMAS) — management, finance, accountancy, project management',

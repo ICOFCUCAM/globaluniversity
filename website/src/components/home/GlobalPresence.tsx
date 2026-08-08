@@ -1,329 +1,327 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { projectFlatWorld } from '@/lib/azimuthal';
 import { NATIONS_FULL } from '@/content/institutionalFacts';
 
 // ---------------------------------------------------------------------------
-// WHERE WE TEACH — the locations map.
+// WHERE WE TEACH — three layers over a pinned photograph.
 //
 // ===========================================================================
-// WHY THE OLD SECTION WAS WRONG, IN THE UNIVERSITY'S OWN WORDS
+// WHAT THIS REPLACES, AND WHY
 // ===========================================================================
 //
-// It read "Five nations. One degree." over a register of six rows.
+// A dark plate holding a map, an information panel and a six-tab selector. It
+// was correct — every claim in it was true and precisely qualified — and it was
+// still a control panel. The university asked for something else:
 //
-//     "I would also avoid saying 'Five nations. One degree' unless the
-//      university can substantiate the accreditation/degree status in each of
-//      those countries. The wording should distinguish campuses, centres,
-//      in-country teaching locations, and online delivery."
+//     "a premium global-university experience, not a collection of location
+//      cards... The section should breathe. Use generous whitespace, large
+//      typography and asymmetric composition... Do not make the map the main
+//      attraction — the university and people remain the focus."
 //
-// That is the correct objection and it is not a wording problem. A principal
-// campus, a research centre that explicitly does not teach, an in-country
-// teaching presence and an online platform are four different kinds of thing,
-// and a list that renders them as four identical rows has asserted they are the
-// same. The heading then totalled them into a claim about degrees.
-//
-// So the KIND is now the loudest thing about every entry — "Our academic home",
-// "Professional development & research", "International teaching presence",
-// "Online" — and Nigeria says in its own panel that it is not a teaching campus
-// rather than leaving a reader to infer it.
+// That is a different instrument. Tabs make a reader operate the section before
+// it tells them anything, and the six panels repeated what the campus, the
+// international and the online pages already say at length. The homepage's job
+// here is one sentence — WHEREVER YOU STUDY, YOU BELONG TO THE SAME UNIVERSITY
+// — with the footprint underneath it as evidence, and every detail on the page
+// that owns it.
 //
 // ===========================================================================
-// WHY THIS IS A MAP AND NOT SIX CARDS
+// THE THREE LAYERS
 // ===========================================================================
 //
-// Six cards is what a page does when it has six of something and no idea what
-// they mean. The university asked for one of the signature sections of the
-// homepage, and for a map that reads as institutional rather than as a SaaS
-// dashboard.
+//   1. THE PHOTOGRAPH. A graduand in doctoral regalia being received by the
+//      platform party at the university's own congregation. People, not
+//      architecture; this institution's own afternoon, not a stock library's.
+//      It is PINNED — position: fixed inside a clip-path: inset(0) section —
+//      the same mechanism the university asked to be preserved everywhere, so
+//      the content travels across it while the picture holds still.
 //
-// The map is THE UNIVERSITY'S OWN. It is the azimuthal equidistant projection
-// on the crest and behind the pinned window — the same drawing, the same file —
-// so this section is not decorated with a world, it is the university's mark at
-// full size with its own places on it. That is the difference between a premium
-// institutional map and a generic one, and it costs nothing because the asset
-// already exists and is already cached by the time a reader scrolls here.
+//      AND IT IS LUMINOUS. The brief is explicit that the image must not be
+//      buried under a heavy dark overlay, so there is no full-frame scrim. The
+//      photograph carries a light gradient at the edges only, and every word
+//      that needs contrast sits on its own translucent plate. That is more work
+//      than one big black veil and it is the whole difference between a
+//      photograph and a texture.
 //
-// THE MAP DOES NOT MOVE. Selecting a nation changes the panel and lights that
-// nation's marks; the disc stays exactly where it is. A map that pans and zooms
-// on every click is a toy — it makes the reader's eye chase the interface
-// instead of reading the institution, and on a phone it is a wrestling match.
+//   2. THE GEOGRAPHY. The university's own azimuthal projection, held at low
+//      opacity and bled off the right edge so it reads as an engraving on the
+//      picture rather than a map on a travel site. Fine lines run from Cameroon
+//      to each of the other places — restraint, not a flight-path diagram — and
+//      the marks distinguish a named site from a nation, as they do everywhere
+//      else on this site.
+//
+//   3. THE CONTENT. Two blocks, asymmetric, with a screen of air between them.
 //
 // ===========================================================================
-// THE ACCESSIBLE CONTROL IS THE LIST, NOT THE PINS
+// THE MOTION IS OPACITY AND STROKE, NEVER TRANSFORM ON AN ANCESTOR
 // ===========================================================================
 //
-// The pins are marked aria-hidden and are not focusable. The rail underneath is
-// a real tablist: six buttons, arrow-key navigation, aria-selected, and one
-// panel with aria-labelledby pointing at the active tab.
+// The map fades in and the network draws itself when the section arrives, and
+// the marks appear one after another. None of that is done with a transform on
+// anything between the section and the fixed layer — `transform`, `filter`,
+// `perspective`, `contain` and `will-change` all establish a containing block
+// for fixed descendants, which would silently convert the pinned photograph
+// into an ordinary scrolling background. Nothing throws; the composition just
+// quietly stops existing.
 //
-// Making the pins buttons TOO would double every stop in the tab order for no
-// gain — a keyboard reader would meet "United States" twice and have no way to
-// know the two do the same thing. One control, one stop, and the pins are what
-// the control moves.
+// So the reveal is opacity on the layers and stroke-dashoffset on the lines.
+// The marks do use a transform — but they are DESCENDANTS of the fixed layer,
+// not ancestors of it, and a transform on a child of a fixed element cannot
+// re-anchor its parent. src/components/home/fixedWindow.test.mjs scans only the
+// source that precedes the fixed layer, for exactly this reason.
+//
+// prefers-reduced-motion is honoured by skipping the observer entirely: the
+// section renders in its finished state and nothing animates.
 // ---------------------------------------------------------------------------
 
-// The pins are placed over the generated flat-world.svg, whose disc is inset to
-// 94% of the box. In percentage terms that is a centre at 50/50 and a radius of
-// 47 — the same numbers the generator uses, so a pin lands exactly on the mark
-// already drawn beneath it rather than a few pixels beside it.
+const PHOTO = '/images/graduation-2024/grad-2024-congregation-greeting.jpg';
+
+// The disc, in the 0–100 space the overlay SVG uses. 47 is 94% of the
+// half-width, which is the inset the generated flat-world.svg draws at — so a
+// mark here lands on the mark already drawn beneath it.
 const DISC = { cx: 50, cy: 50, r: 47 };
 
-export default function GlobalPresence() {
-  const [active, setActive] = useState(0);
-  const nation = NATIONS_FULL[active];
-  const named = nation.sites.filter((s) => s.name);
+const at = (lon: number, lat: number) => projectFlatWorld(lon, lat, DISC.cx, DISC.cy, DISC.r);
 
-  // ARROW KEYS MOVE BETWEEN TABS, which is what a tablist is required to do and
-  // what a row of buttons does not do for free. Home and End jump to the ends.
-  const onKeyDown = (e: React.KeyboardEvent) => {
-    const last = NATIONS_FULL.length - 1;
-    let next: number | null = null;
-    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = active === last ? 0 : active + 1;
-    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = active === 0 ? last : active - 1;
-    if (e.key === 'Home') next = 0;
-    if (e.key === 'End') next = last;
-    if (next === null) return;
-    e.preventDefault();
-    setActive(next);
-    document.getElementById(`place-tab-${next}`)?.focus();
-  };
+/** Every marked place, with the nation it belongs to. */
+const MARKS = NATIONS_FULL.flatMap((n) =>
+  n.sites.map((s) => ({ country: n.country, name: s.name, establishment: s.establishment, lon: s.lon, lat: s.lat })),
+);
+
+// THE LINES RUN FROM CAMEROON, because that is where the university is from and
+// a network drawn from anywhere else would be making a different claim. Buea is
+// the origin; Douala is sixty kilometres away and would draw a line to itself.
+const ORIGIN = MARKS.find((m) => m.name === 'Buea')!;
+const LINKS = MARKS.filter((m) => m.country !== 'Cameroon');
+
+export default function GlobalPresence() {
+  const ref = useRef<HTMLElement | null>(null);
+  const [shown, setShown] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setShown(true);
+      return;
+    }
+    const io = new IntersectionObserver(
+      ([e]) => {
+        // ONCE. A section that re-animates every time it scrolls back into view
+        // is a section that will not let the reader alone.
+        if (e.isIntersecting) {
+          setShown(true);
+          io.disconnect();
+        }
+      },
+      { rootMargin: '-15% 0px -15% 0px' },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
   return (
     <section
+      ref={ref}
+      data-on-dark=""
       data-chapter="Global presence"
       aria-labelledby="presence-heading"
-      className="relative z-10 bg-brand-cream py-24 dark:bg-[#181121] sm:py-28"
+      className="relative z-10 bg-brand-purple-dark text-white"
+      // The window. clip-path confines the viewport-sized picture to this
+      // section without becoming its containing block.
+      style={{ clipPath: 'inset(0)' }}
     >
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <p className="mb-3 font-sans text-xs font-semibold uppercase tracking-[0.25em] text-brand-gold-ink dark:text-brand-gold">
-          Global presence
-        </p>
-        <h2
-          id="presence-heading"
-          className="max-w-3xl font-heading text-[clamp(2.2rem,5.4vw,4.2rem)] font-bold leading-[1.04] tracking-[-0.03em] text-brand-purple dark:text-white [text-wrap:balance]"
+      {/* ---- LAYER 1 + 2: THE PINNED CANVAS ---------------------------- */}
+      <div aria-hidden="true" data-pinned-ground className="fixed inset-0 -z-20">
+        <Image
+          src={PHOTO}
+          alt=""
+          fill
+          sizes="100vw"
+          quality={82}
+          loading="lazy"
+          className="object-cover"
+          // The handshake is left of centre and the standing graduands fill the
+          // right; this keeps both, and keeps the water bottles on the table
+          // out of the bottom of the frame.
+          // Pushed up and slightly right: the handshake and the graduand's face
+          // are the subject, and the table of water bottles is the bottom-left
+          // corner of the source. A frame centred on the file would have led
+          // with the bottles.
+          style={{ objectPosition: '48% 34%' }}
+        />
+
+        {/* NOT A FULL-FRAME SCRIM — a SHAPED one.
+            The brief is explicit that the photograph must stay luminous rather
+            than being buried under a heavy dark overlay, so nothing here dims
+            the whole frame. Three gradients darken only where words land, and
+            the right half — the standing graduands, the regalia, the faces —
+            keeps very nearly its full strength.
+
+            THE ELLIPSE IS THE ONE THAT MATTERS. A linear left-to-right ramp was
+            not enough: the headline runs to about 70% of the width, and at that
+            point it crossed the brightest thing in the picture, a white
+            table-cloth and a row of water bottles. Letterforms over that are
+            legible in a screenshot and not on a screen. The ellipse follows the
+            TEXT rather than the frame, so the contrast is bought exactly where
+            it is spent. */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_78%_88%_at_12%_46%,rgba(20,11,32,0.94)_0%,rgba(20,11,32,0.86)_34%,rgba(20,11,32,0.52)_62%,rgba(20,11,32,0.12)_86%,transparent_100%)]" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#1b1029]/70 via-transparent to-[#1b1029]/20" />
+        <div className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-[#1b1029]/85 to-transparent" />
+        <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[#1b1029]/70 to-transparent" />
+
+        {/* ---- THE GEOGRAPHY, bled off the right edge ---- */}
+        <div
+          className={`absolute right-[-14vw] top-1/2 aspect-square w-[86vw] -translate-y-1/2 transition-opacity duration-[1600ms] ease-out sm:right-[-10vw] sm:w-[62vw] lg:right-[-6vw] lg:w-[46vw] ${
+            shown ? 'opacity-100' : 'opacity-0'
+          }`}
         >
-          One university. Many places.
-        </h2>
-        <div className="mt-5 h-[3px] w-16 rounded-full bg-gradient-to-r from-brand-gold-deep to-brand-gold" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/images/flat-world.svg"
+            alt=""
+            className="h-full w-full opacity-[0.22] mix-blend-screen"
+          />
 
-        {/* THE COMPRESSED SENTENCE IS GONE. It read "Two campuses in Cameroon,
-            a professional development centre in Nigeria, accredited degrees
-            taught in the United States, Zambia and South Africa, and every
-            programme online" — one breath, four different kinds of thing, and
-            the grammar makes them sound equivalent. What replaces it says the
-            shape and lets each nation state its own case below. */}
-        <p className="mt-8 max-w-2xl text-[15px] leading-relaxed text-brand-muted dark:text-white/80 sm:text-base">
-          Our academic presence extends from our campuses to teaching locations and
-          professional development centres internationally, with online study connecting
-          the university to students worldwide.
-        </p>
-        <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-brand-muted dark:text-white/80 sm:text-base">
-          Wherever you study, the university remains one: the same academic standards,
-          faculty, curriculum, examinations, student records and credentials.
-        </p>
-
-        {/* ---- THE PLATE ------------------------------------------------
-            One object, not a row of cards: a dark institutional plate holding
-            the map, the panel and the selector. Dark because the map is drawn
-            in gold on nothing, and gold on cream is unreadable — and because a
-            dark plate on a cream page reads as a plate in a book, which is the
-            register this section wants. */}
-        <div className="mt-14 overflow-hidden rounded-3xl bg-brand-purple-dark shadow-[0_30px_80px_-40px_rgba(20,10,40,0.6)] ring-1 ring-brand-purple/20 dark:ring-white/10">
-          <div className="grid lg:grid-cols-[minmax(0,1fr)_minmax(0,23rem)]">
-            {/* ---- THE MAP ---- */}
-            <div className="relative">
-              <div className="relative mx-auto aspect-square w-full max-w-[34rem] p-6 sm:p-10">
-                {/* Plain <img>, not next/image: this is an SVG, and routing it
-                    through the optimiser would need dangerouslyAllowSVG on for
-                    the whole site. It is 92KB gzipped, cached, and already
-                    fetched — the pinned window behind the page uses the same
-                    file. */}
-                {/* A GROUND FOR THE DISC. The map is drawn in gold on nothing,
-                    and on flat purple it reads as a faint wireframe. A soft
-                    radial lift behind it separates the sphere from the plate —
-                    the same trick the drawing already uses on the land, applied
-                    to the space the land sits in. */}
-                <div
-                  aria-hidden="true"
-                  className="absolute inset-6 rounded-full bg-[radial-gradient(circle_at_50%_46%,rgba(247,220,121,0.10),rgba(247,220,121,0.03)_58%,transparent_72%)] sm:inset-10"
-                />
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/images/flat-world.svg"
-                  alt=""
-                  aria-hidden="true"
-                  loading="lazy"
-                  // FULL STRENGTH. It was held at 90% out of habit — the same
-                  // figure is dimmed behind the pinned window because type sits
-                  // on it there. Nothing is set on it here, so dimming it only
-                  // made the university's own map harder to read.
-                  className="relative h-full w-full select-none"
-                />
-
-                {/* THE ACTIVE NATION'S MARKS.
-                    The disc already carries every place as a small gold mark;
-                    this is the one that says WHICH, and it is the only thing on
-                    the plate that moves.
-
-                    The layer is inset by exactly the padding the image sits in,
-                    so a percentage here is a percentage of the IMAGE and not of
-                    the padded box — otherwise every pin drifts outward by the
-                    padding, which at 40px on a 544px plate is most of Cameroon. */}
-                <div className="pointer-events-none absolute inset-6 sm:inset-10">
-                  {nation.sites.map((s) => {
-                    const [x, y] = projectFlatWorld(s.lon, s.lat, DISC.cx, DISC.cy, DISC.r);
-                    return (
-                      <span
-                        key={`${s.lon},${s.lat}`}
-                        aria-hidden="true"
-                        className="absolute -translate-x-1/2 -translate-y-1/2"
-                        style={{ left: `${x}%`, top: `${y}%` }}
-                      >
-                        <span className="relative block h-3 w-3">
-                          <span
-                            className={`absolute inset-0 rounded-full ${
-                              s.establishment ? 'bg-brand-gold' : 'border-2 border-brand-gold bg-transparent'
-                            }`}
-                          />
-                          <span className="absolute -inset-3 rounded-full border border-brand-gold/60" />
-                          <span className="absolute -inset-6 rounded-full border border-brand-gold/25" />
-                        </span>
-                      </span>
-                    );
-                  })}
-
-                  {/* WORLDWIDE HAS NO PIN, because it is not a place. The whole
-                      disc lights instead, which is the only honest way to draw
-                      "everywhere" on a map of somewhere. */}
-                  {nation.sites.length === 0 && (
-                    <span
-                      aria-hidden="true"
-                      className="absolute inset-[3%] rounded-full border border-brand-gold/45 bg-brand-gold/[0.07]"
-                    />
-                  )}
-                </div>
-              </div>
-
-              {/* The seam between map and panel on desktop; a rule on mobile. */}
-              <div
-                aria-hidden="true"
-                className="absolute inset-x-8 bottom-0 h-px bg-white/10 lg:inset-y-10 lg:left-auto lg:right-0 lg:h-auto lg:w-px"
-              />
-            </div>
-
-            {/* ---- THE PANEL ---- */}
-            <div
-              role="tabpanel"
-              id="place-panel"
-              aria-labelledby={`place-tab-${active}`}
-              className="flex flex-col justify-center px-7 py-10 text-white sm:px-9 lg:py-12"
-            >
-              <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.28em] text-brand-gold">
-                {nation.kind}
-              </p>
-              <h3 className="mt-3 font-heading text-[clamp(1.5rem,3vw,2.1rem)] font-bold leading-[1.08] tracking-[-0.02em]">
-                {nation.country}
-              </h3>
-              {nation.subKind && (
-                <p className="mt-2 font-heading text-[14px] font-bold text-brand-gold/90">
-                  {nation.subKind}
-                </p>
-              )}
-
-              <p className="mt-5 text-[14px] leading-relaxed text-white/80">{nation.blurb}</p>
-
-              {/* ONLY SITES THE UNIVERSITY CAN NAME ARE LISTED.
-                  A site with no name exists in the register to put a mark on
-                  the map, and its role is the nation's own sentence — so
-                  rendering it here printed "Accredited programmes taught
-                  in-country through our authorised academic presence" twice in
-                  the same panel, once as the blurb and once as the entry.
-                  Named sites are places; nameless ones are coordinates. */}
-              {named.length > 0 && (
-                <dl className="mt-7 space-y-4 border-t border-white/15 pt-6">
-                  {named.map((s) => (
-                    <div key={s.name}>
-                      <dt className="font-heading text-[15px] font-bold text-white">{s.name}</dt>
-                      <dd className="mt-0.5 text-[13.5px] leading-snug text-white/75">{s.role}</dd>
-                    </div>
-                  ))}
-                </dl>
-              )}
-
-              {/* NO LINK WHERE THERE IS NO PAGE. The brief asked for an
-                  "Explore United States" link; there is no United States page,
-                  and a link to nowhere is worse than no link. */}
-              {nation.href && nation.linkLabel && (
-                <Link
-                  href={nation.href}
-                  className="group mt-8 inline-flex w-fit items-center gap-2.5 border-b-2 border-brand-gold/50 pb-1 font-heading text-[14px] font-bold text-brand-gold transition hover:border-brand-gold"
-                >
-                  {nation.linkLabel}
-                  <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">
-                    →
-                  </span>
-                </Link>
-              )}
-            </div>
-          </div>
-
-          {/* ---- THE SELECTOR, ACROSS THE FOOT OF THE PLATE ---- */}
-          <div
-            role="tablist"
-            aria-label="Where the university teaches"
-            onKeyDown={onKeyDown}
-            className="flex gap-px overflow-x-auto border-t border-white/12 bg-white/[0.03]"
-          >
-            {NATIONS_FULL.map((n, i) => {
-              const on = i === active;
-              return (
-                <button
-                  key={n.id}
-                  id={`place-tab-${i}`}
-                  role="tab"
-                  type="button"
-                  aria-selected={on}
-                  aria-controls="place-panel"
-                  // ONE STOP FOR THE WHOLE RAIL. Only the selected tab is
-                  // reachable by Tab; the arrow keys move within. That is the
-                  // tablist pattern, and it is why six locations do not cost a
-                  // keyboard reader six stops on the way past.
-                  tabIndex={on ? 0 : -1}
-                  onClick={() => setActive(i)}
-                  // items-start and a floor on the height, so six tabs whose
-                  // labels wrap to different depths still form one clean band.
-                  // Without it the tallest label sets the row and the shortest
-                  // floats in the middle of it.
-                  className={`relative flex min-h-[5.25rem] min-w-[9rem] flex-1 flex-col items-start justify-start px-4 py-4 text-left transition sm:px-5 ${
-                    on ? 'bg-white/[0.07]' : 'hover:bg-white/[0.05]'
-                  }`}
-                >
-                  <span
-                    aria-hidden="true"
-                    className={`absolute inset-x-0 top-0 h-[3px] transition ${
-                      on ? 'bg-brand-gold' : 'bg-transparent'
-                    }`}
+          {/* The network and the marks, in the same coordinate space. */}
+          <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full overflow-visible">
+            <g stroke="#f7dc79" fill="none" strokeLinecap="round">
+              {LINKS.map((m, i) => {
+                const [x1, y1] = at(ORIGIN.lon, ORIGIN.lat);
+                const [x2, y2] = at(m.lon, m.lat);
+                // A gentle arc, not a straight chord. A great circle on this
+                // projection is a curve, and a dead-straight line between two
+                // points on a globe is the tell of a diagram that has never
+                // met a map.
+                const mx = (x1 + x2) / 2 + (y2 - y1) * 0.12;
+                const my = (y1 + y2) / 2 - (x2 - x1) * 0.12;
+                return (
+                  <path
+                    key={m.country}
+                    d={`M${x1} ${y1} Q${mx} ${my} ${x2} ${y2}`}
+                    strokeWidth={0.22}
+                    strokeOpacity={0.5}
+                    pathLength={1}
+                    strokeDasharray={1}
+                    strokeDashoffset={shown ? 0 : 1}
+                    style={{
+                      transition: `stroke-dashoffset 1400ms cubic-bezier(0.22,1,0.36,1) ${420 + i * 160}ms`,
+                    }}
                   />
-                  <span
-                    className={`block font-heading text-[14px] font-bold leading-tight ${
-                      on ? 'text-white' : 'text-white/70'
-                    }`}
+                );
+              })}
+            </g>
+
+            <g>
+              {MARKS.map((m, i) => {
+                const [x, y] = at(m.lon, m.lat);
+                return (
+                  <g
+                    key={`${m.country}-${m.name ?? 'nation'}`}
+                    style={{
+                      opacity: shown ? 1 : 0,
+                      transition: `opacity 700ms ease-out ${700 + i * 130}ms`,
+                    }}
                   >
+                    <circle cx={x} cy={y} r={2.6} fill="#f7dc79" fillOpacity={0.12} />
+                    {/* A named site is a filled dot; a nation is an open ring.
+                        The same distinction the register draws everywhere. */}
+                    {m.establishment ? (
+                      <circle cx={x} cy={y} r={0.85} fill="#f7dc79" />
+                    ) : (
+                      <circle cx={x} cy={y} r={0.9} fill="none" stroke="#f7dc79" strokeWidth={0.4} />
+                    )}
+                  </g>
+                );
+              })}
+            </g>
+          </svg>
+        </div>
+      </div>
+
+      {/* ---- LAYER 3: THE CONTENT ------------------------------------- */}
+
+      {/* BLOCK ONE — the sentence the homepage is here to say. */}
+      <div className="relative flex min-h-[92svh] items-center px-5 py-28 sm:px-8 lg:px-16">
+        <div className="max-w-3xl">
+          <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.34em] text-brand-gold">
+            Global presence
+          </p>
+          <h2
+            id="presence-heading"
+            className="mt-8 font-heading text-[clamp(2.6rem,6.4vw,5.4rem)] font-bold leading-[0.99] tracking-[-0.035em] [text-wrap:balance]"
+          >
+            Wherever you study, you belong to the same university.
+          </h2>
+          <p className="mt-10 max-w-xl text-[16px] leading-relaxed text-white/85 sm:text-[17.5px]">
+            The same academic standards, the same faculty, the same examinations and the
+            same credential — on campus, in-country, or online.
+          </p>
+        </div>
+      </div>
+
+      {/* BLOCK TWO — the footprint, as a register and not as cards.
+          Asymmetric: it sits to the left of the disc, which is bleeding off the
+          right, so the two halves of the composition are doing different work
+          rather than mirroring each other. */}
+      <div className="relative px-5 pb-32 sm:px-8 lg:px-16">
+        <div className="max-w-2xl rounded-[1.75rem] bg-[#160c22]/55 p-8 backdrop-blur-[2px] sm:p-11">
+          <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.3em] text-brand-gold">
+            The footprint
+          </p>
+
+          {/* CONCISE, ON PURPOSE. Each line is a place and what it is. The
+              campus pages, the international page and the online-learning page
+              carry the detail; repeating it here would make the homepage a
+              worse version of three pages that already exist. */}
+          <dl className="mt-8">
+            {NATIONS_FULL.map((n) => {
+              const named = n.sites.filter((s) => s.name).map((s) => s.name);
+              return (
+                <div
+                  key={n.id}
+                  className="grid gap-x-8 gap-y-1 border-t border-white/12 py-4 first:border-t-0 first:pt-0 sm:grid-cols-[minmax(0,10rem)_minmax(0,1fr)]"
+                >
+                  <dt className="font-heading text-[17px] font-bold leading-tight">
                     {n.country}
-                  </span>
-                  <span
-                    className={`mt-1 block font-sans text-[10.5px] uppercase leading-tight tracking-[0.14em] ${
-                      on ? 'text-brand-gold' : 'text-white/45'
-                    }`}
-                  >
-                    {n.shortKind}
-                  </span>
-                </button>
+                  </dt>
+                  <dd className="text-[14px] leading-snug text-white/70">
+                    <span className="text-brand-gold/95">{n.kind}</span>
+                    {named.length > 0 && (
+                      <span className="text-white/55"> · {named.join(' · ')}</span>
+                    )}
+                  </dd>
+                </div>
               );
             })}
+          </dl>
+
+          <div className="mt-9 flex flex-wrap items-center gap-x-8 gap-y-4">
+            <Link
+              href="/campus-life"
+              className="group inline-flex items-center gap-2.5 border-b-2 border-brand-gold/45 pb-1 font-heading text-[14.5px] font-bold text-brand-gold transition hover:border-brand-gold"
+            >
+              Campus life
+              <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">→</span>
+            </Link>
+            <Link
+              href="/international"
+              className="group inline-flex items-center gap-2.5 border-b-2 border-white/25 pb-1 font-heading text-[14.5px] font-bold text-white/90 transition hover:border-brand-gold hover:text-brand-gold"
+            >
+              International students
+              <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">→</span>
+            </Link>
+            <Link
+              href="/online-learning"
+              className="group inline-flex items-center gap-2.5 border-b-2 border-white/25 pb-1 font-heading text-[14.5px] font-bold text-white/90 transition hover:border-brand-gold hover:text-brand-gold"
+            >
+              How online study works
+              <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">→</span>
+            </Link>
           </div>
         </div>
       </div>

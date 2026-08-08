@@ -97,10 +97,13 @@ check(
     'education',
     'engineering-technology',
     'gibmas',
+    // Renamed from 'theology-douala' when the university ruled that Douala is
+    // the School of Ministry. The old URL redirects; see next.config.mjs.
+    // The list is compared sorted, so it sits here and not beside Buea.
+    'ministry-douala',
     'school-of-ministry',
     'theology-buea',
-    'theology-douala',
-  ],
+      ],
 );
 
 // No duplicates — a copy-paste in the scene list would otherwise show the same

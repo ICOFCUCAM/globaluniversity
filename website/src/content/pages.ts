@@ -536,7 +536,7 @@ export const contentPages: ContentPage[] = [
       {
         heading: 'Academic Structure',
         paragraphs: [
-          'Five schools and faculties carry the university\u2019s teaching mission: the Faculty of Theology in Buea, the School of Theology in Douala, the Faculty of Education, the Faculty of Engineering and Technology, and the Global Institute of Business and Management Science (GIBMAS) \u2014 together with the PPDI-RC professional development center in Nigeria. Each is led by a director accountable to the Academic Director General.',
+          'Five schools and faculties carry the university\u2019s teaching mission: the Faculty of Theology in Buea, the School of Ministry in Douala, the Faculty of Education, the Faculty of Engineering and Technology, and the Global Institute of Business and Management Science (GIBMAS) \u2014 together with the PPDI-RC professional development center in Nigeria. Each is led by a director accountable to the Academic Director General.',
         ],
       },
       {

@@ -52,7 +52,7 @@ export const fr = {
     globalEyebrow: 'Une université mondiale',
     campuses: [
       { place: 'Buea, Cameroun', desc: 'Campus principal — Théologie, Éducation, Ingénierie et Technologie, et GIBMAS' },
-      { place: 'Douala, Cameroun', desc: 'École de Théologie' },
+      { place: 'Douala, Cameroun', desc: 'École de Ministère' },
       { place: 'Nigéria', desc: 'PPDI-RC — centre de développement professionnel et de recherche' },
       { place: 'En ligne, partout', desc: 'Programmes de master et de doctorat livrés aux étudiants sur tous les continents' },
     ],
@@ -90,7 +90,7 @@ export const fr = {
       },
       {
         heading: 'Facultés et écoles',
-        body: 'Faculté de Théologie (Buea) · École de Théologie (Douala) · Faculté d’Éducation · Faculté d’Ingénierie et de Technologie · Institut Mondial des Sciences de Gestion et de Commerce (GIBMAS).',
+        body: 'Faculté de Théologie (Buea) · École de Ministère (Douala) · Faculté d’Éducation · Faculté d’Ingénierie et de Technologie · Institut Mondial des Sciences de Gestion et de Commerce (GIBMAS).',
       },
     ],
   },

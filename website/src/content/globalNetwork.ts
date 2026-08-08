@@ -75,7 +75,7 @@ export const NETWORK_NODES: NetworkNode[] = [
     lat: 4.1,
     lon: 9.5,
     kind: 'campus',
-    kindLabel: 'principal campus at Buea and the School of Theology at Douala',
+    kindLabel: 'principal campus at Buea and the School of Ministry at Douala',
   },
   {
     name: 'Nigeria — PPDI-RC',

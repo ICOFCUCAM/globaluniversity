@@ -56,7 +56,7 @@ console.log('\nThe fixed-window mechanism\n');
 // added here — that is the point of listing them rather than globbing: adding
 // a file to this list is a deliberate act, and forgetting to is caught by the
 // count assertion at the end.
-const PINNED = ['FixedWindow.tsx', 'Triptych.tsx'];
+const PINNED = ['FixedWindow.tsx', 'Triptych.tsx', 'GlobalPresence.tsx'];
 
 // The properties that establish a containing block for fixed descendants. Any
 // one of them, anywhere in these files, re-anchors the picture to the section.

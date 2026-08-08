@@ -521,7 +521,7 @@ export const administration: FacultyMember[] = [
   },
   {
     name: 'Dr Bongbuen Alando',
-    role: 'Director of School of Theology (Douala)',
+    role: 'Director of School of Ministry (Douala)',
     image: '/images/wp/alando.png',
     bio: 'Masters and PhD holder from ICOF College and University. Founder and Chairman of the Reconciled Church of Christ; professor at ICOF Global University. Email: dr.mbonguen@iguc.net',
   },
@@ -585,7 +585,7 @@ export const faculties = {
     'ICOF Global University has a number of faculties with various programs. Our courses are well designed and structured to fit you into the competitive job market. We pride our students to stand out unique with our well designed and structured professional courses in all our faculties.',
   items: [
     'Faculty of Theology Buea',
-    'School of Theology Douala',
+    'School of Ministry Douala',
     'Faculty of Education',
     'Faculty of Engineering and Technology',
     'Global Institute of Business and Management Science (GIBMAS)',
@@ -607,7 +607,7 @@ export const faculties = {
 
 // Full program catalog as published on the live Degrees & Programs page,
 // organised under the university's faculties:
-// Faculty of Theology (Buea) · School of Theology (Douala) · Faculty of
+// Faculty of Theology (Buea) · School of Ministry (Douala) · Faculty of
 // Education · Faculty of Engineering and Technology · Global Institute of
 // Business and Management Science (GIBMAS).
 // Theology is listed in ascending order of award — certificate, diploma,

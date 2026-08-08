@@ -294,7 +294,6 @@ export const facultyList: Faculty[] = [
       'Many graduates continue to Master’s and Doctoral studies in Theology, Biblical Studies, Religious Studies, Education, Leadership, or Missiology.',
     programSchool: 'Faculty of Theology',
     courseFaculty: 'Faculty of Theology',
-    sharesProvisionWith: 'theology-douala',
     leadName: 'Rev Momfor Phillip, M.Th',
     leadTitle: 'Dean',
     degrees: [
@@ -370,25 +369,40 @@ export const facultyList: Faculty[] = [
     ],
   },
   {
-    slug: 'theology-douala',
-    name: 'School of Theology, Douala',
-    shortName: 'Theology, Douala',
+    // ===================================================================
+    // DOUALA IS THE SCHOOL OF MINISTRY, on the university's instruction.
+    //
+    // It was the School of Theology here and in eight other files. The
+    // university ruled otherwise — "douala is school of ministry. fix it all
+    // over" — so the school, the slug, the director's title, the faculty list,
+    // the application form, the careers page, the search index and the French
+    // translation all follow, and /faculty/theology-douala redirects to the new
+    // URL rather than 404ing.
+    //
+    // WHAT THIS ALSO CHANGES, AND IT IS NOT COSMETIC. Buea used to share its
+    // provision with Douala: the same theology courses taught in two cities.
+    // Two different schools cannot share provision, so Douala now shares with
+    // the School of Ministry instead, and Buea shares with nobody.
+    // ===================================================================
+    slug: 'ministry-douala',
+    name: 'School of Ministry, Douala',
+    shortName: 'Ministry, Douala',
     campus: 'Douala, Cameroon',
     image: '/images/wp/g-hall.jpg',
     standsFor:
-      'To make quality theological education accessible while maintaining the academic standards and spiritual formation that define ICOF Global University.',
+      'To make ministerial formation accessible while maintaining the academic standards and spiritual formation that define ICOF Global University.',
     description: [
-      'The School of Theology in Douala teaches the Faculty of Theology’s programmes in Cameroon’s largest city and commercial centre, for students who cannot relocate to Buea.',
-      'The two campuses share their materials. A student in Douala studies the same courses, sits the same assessments and receives the same award as a student in Buea; only the location differs.',
+      'The School of Ministry in Douala teaches the School of Ministry’s programmes in Cameroon’s largest city and commercial centre, for students who cannot relocate.',
+      'A student in Douala studies the same courses, sits the same assessments and receives the same award as any other student of the School; only the location differs.',
       'The Douala campus operates under the direction of Dr Bongbuen Alando.',
     ],
     deansMessage: [
-      'The School of Theology at the Douala Campus extends the mission of ICOF Global University by providing quality theological education to students within Douala and surrounding regions.',
-      'The campus delivers the same academic standards, curriculum, assessments, and qualifications as the Buea campus while providing accessible education within a dynamic urban environment.',
+      'The School of Ministry at the Douala Campus extends the mission of ICOF Global University by preparing ministers for the work itself among students within Douala and surrounding regions.',
+      'The campus delivers the same academic standards, curriculum, assessments and qualifications as the rest of the School while providing accessible education within a dynamic urban environment.',
       'We are committed to preparing ministers, church leaders, educators, and missionaries who will faithfully serve the Church and society.',
     ],
     standsForBody: [
-      'The Douala Campus exists to make quality theological education accessible while maintaining the academic standards and spiritual formation that define ICOF Global University.',
+      'The Douala Campus exists to make ministerial formation accessible while maintaining the academic standards and spiritual formation that define ICOF Global University.',
       'Students benefit from contextual ministry experiences alongside rigorous academic study.',
     ],
     researchStrengths: [
@@ -412,15 +426,18 @@ export const facultyList: Faculty[] = [
       'Researchers',
       'Ministry Leaders',
     ],
-    programSchool: 'Faculty of Theology',
+    // THE PROVISION FOLLOWS THE SCHOOL. This page used to list the Faculty of
+    // Theology's programmes and share provision with Buea, because Douala WAS
+    // the School of Theology. It is the School of Ministry now, so it lists the
+    // School of Ministry's programmes and shares provision with it — and Buea,
+    // which is a different school again, shares with nobody.
+    programSchool: 'School of Ministry',
     courseFaculty: 'Faculty of Theology',
-    sharesProvisionWith: 'theology-buea',
+    sharesProvisionWith: 'school-of-ministry',
     leadName: 'Dr Bongbuen Alando',
     leadTitle: 'Campus Director',
     degrees: [
-      { label: 'Bachelor of Theology', href: '/bachelor-of-theology' },
-      { label: 'Master of Theology', href: '/master-of-theology' },
-      { label: 'M.A. Black Liberation Theology', href: '/black-liberation-theology' },
+      { label: 'Bachelor of Ministry — full curriculum', href: '/bachelor-of-ministry' },
     ],
   },
   {

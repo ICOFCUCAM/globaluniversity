@@ -18,6 +18,10 @@ const nextConfig = {
   // starting to 404.
   async redirects() {
     return [
+      // DOUALA BECAME THE SCHOOL OF MINISTRY, so its faculty page moved from
+      // /faculty/theology-douala. The slug is part of a URL somebody may have
+      // bookmarked or linked, and a renamed school is not a reason to break it.
+      { source: '/faculty/theology-douala', destination: '/faculty/ministry-douala', permanent: true },
       { source: '/programs/ministry', destination: '/programs/master-of-divinity', permanent: true },
       { source: '/programs/theology', destination: '/programs/doctor-of-philosophy-theology', permanent: true },
 

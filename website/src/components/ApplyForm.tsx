@@ -563,7 +563,7 @@ export default function ApplyForm() {
               <select name="campus" className={inputCls} defaultValue="">
                 <option value="" disabled>Select campus</option>
                 <option>Buea (Main Campus)</option>
-                <option>Douala (School of Theology)</option>
+                <option>Douala (School of Ministry)</option>
                 <option>Online / Distance Learning</option>
               </select>
             </label>
