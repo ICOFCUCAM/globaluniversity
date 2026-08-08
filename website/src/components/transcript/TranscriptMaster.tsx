@@ -462,15 +462,19 @@ function Masthead({
   // above each value, and boxes the student number and sex apart at the right.
   // Reading down a list is not the same document.
   const cell: React.CSSProperties = {
-    border: RULE, padding: '0.6mm 1.4mm', verticalAlign: 'top', fontFamily: TABLE_FACE,
+    border: RULE, padding: '0.3mm 1.4mm', verticalAlign: 'top', fontFamily: TABLE_FACE,
   };
   const lab: React.CSSProperties = {
-    ...cell, fontSize: '5.6pt', fontWeight: 400, opacity: 0.85, textAlign: 'left',
-    borderBottom: 'none', paddingBottom: 0,
+    ...cell, fontSize: '6pt', fontWeight: 400, opacity: 0.9, textAlign: 'left',
+    borderBottom: 'none', padding: '0.35mm 1.6mm 0',
   };
   const val: React.CSSProperties = {
-    ...cell, fontSize: '8.4pt', fontWeight: 700, borderTop: 'none', paddingTop: '0.2mm',
-    whiteSpace: 'nowrap',
+    // THE VALUES FILL THE CELL. In the original the particulars are set large
+    // and bold and the box is drawn to them; mine had small type floating in a
+    // tall box, which is what "the characters completely fill this section"
+    // was pointing at.
+    ...cell, fontSize: '10pt', fontWeight: 700, borderTop: 'none',
+    padding: '0 1.6mm 0.5mm', whiteSpace: 'nowrap', letterSpacing: '.01em',
   };
 
   return (
@@ -483,20 +487,20 @@ function Masthead({
           the one mark on the sheet that identifies the institution before a
           word of it is read. */}
       <div style={{
-        flex: '0 0 auto', border: RULE_MAJOR, padding: MM(1.2),
+        flex: '0 0 auto', borderRight: RULE, padding: MM(0.8),
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
-        <img src={IMAGES.seal} alt="" style={{ width: MM(17), height: MM(17), objectFit: 'contain' }} />
+        <img src={IMAGES.seal} alt="" style={{ width: MM(21), height: MM(21), objectFit: 'contain' }} />
       </div>
 
       <div style={{ flex: '1 1 0', minWidth: 0 }}>
-        <h1 style={{ margin: 0, fontSize: '15pt', letterSpacing: '.01em', fontWeight: 400, color: design.brand }}>
+        <h1 style={{ margin: 0, fontSize: '19pt', letterSpacing: '.01em', fontWeight: 400, color: design.brand, lineHeight: 1.1 }}>
           {UNIVERSITY.name}
         </h1>
-        <p style={{ margin: '0.4mm 0 0', fontSize: '6.4pt', fontWeight: 700, color: ink }}>
+        <p style={{ margin: '0.6mm 0 0', fontSize: '9pt', color: ink, lineHeight: 1.2 }}>
           {UNIVERSITY.headquarters}
         </p>
-        <p style={{ margin: '0.2mm 0 0', fontSize: '6.4pt', fontWeight: 700, color: ink }}>
+        <p style={{ margin: '0.3mm 0 0', fontSize: '9pt', fontWeight: 700, color: ink, lineHeight: 1.2 }}>
           {UNIVERSITY.descriptor}
         </p>
       </div>
@@ -532,7 +536,7 @@ function Masthead({
       {/* THE TITLE BAR — a narrow full-width bordered row, not a heading. */}
       <div style={{
         borderLeft: RULE, borderRight: RULE, borderBottom: RULE,
-        padding: '0.7mm 2mm', textAlign: 'center', fontSize: '7pt', letterSpacing: '.04em',
+        padding: '0.4mm 2mm', textAlign: 'center', fontSize: '8.5pt', letterSpacing: '.02em',
       }}>
         Student Transcript
       </div>
@@ -542,17 +546,17 @@ function Masthead({
       <div style={{
         borderLeft: RULE, borderRight: RULE, borderBottom: RULE, display: 'flex',
       }}>
-        <div style={{ flex: '1 1 0', padding: '1mm 2mm', textAlign: 'center', minWidth: 0 }}>
-          <p style={{ margin: 0, fontSize: '5.4pt', opacity: 0.8 }}>Degree / Diploma Offered</p>
-          <p style={{ margin: '0.4mm 0 0', fontSize: '12pt', fontWeight: 700, color: design.brand }}>
+        <div style={{ flex: '1 1 0', padding: '0.4mm 2mm 0.7mm', textAlign: 'center', minWidth: 0 }}>
+          <p style={{ margin: 0, fontSize: '5.8pt', opacity: 0.85 }}>Degree / Diploma Offered</p>
+          <p style={{ margin: '0.2mm 0 0', fontSize: '14pt', fontWeight: 700, color: design.brand, lineHeight: 1.1 }}>
             {data.student.degree_type || data.student.program || data.department?.name}
           </p>
         </div>
         <div style={{
-          flex: '0 0 42%', borderLeft: RULE, padding: '1mm 2mm', fontFamily: TABLE_FACE,
+          flex: '0 0 42%', borderLeft: RULE, padding: '0.4mm 2mm 0.7mm', fontFamily: TABLE_FACE,
         }}>
-          <p style={{ margin: 0, fontSize: '5.6pt', opacity: 0.85 }}>Student Address</p>
-          <p style={{ margin: '0.6mm 0 0', fontSize: '8pt', fontWeight: 700 }}>
+          <p style={{ margin: 0, fontSize: '6pt', opacity: 0.9 }}>Student Address</p>
+          <p style={{ margin: '0.2mm 0 0', fontSize: '10pt', fontWeight: 700, lineHeight: 1.15 }}>
             {data.studentAddress || '—'}
           </p>
         </div>
