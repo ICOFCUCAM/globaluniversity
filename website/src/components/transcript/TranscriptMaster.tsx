@@ -225,6 +225,18 @@ export default function TranscriptMaster({
   }
   if (sheets.length === 0) sheets.push([]);
 
+  // THE LAST SHEET CARRIES THE CLOSING BLOCK, so it cannot also carry two full
+  // years — the totals and the signatures then run off the foot of the page and
+  // print over the final Semester GPA row. Seen in a render, not reasoned about.
+  //
+  // The University's own transcript has the same rhythm: two years on the first
+  // sheet, the last year alone with the totals and the signatures on the second.
+  const last = sheets[sheets.length - 1];
+  if (last.length > 1) {
+    sheets[sheets.length - 1] = last.slice(0, last.length - 1);
+    sheets.push(last.slice(last.length - 1));
+  }
+
   return (
     <div id="icof-transcript">
       <style>{`
@@ -324,11 +336,11 @@ function Sheet({
             second page repeating the whole masthead wastes a third of the
             sheet; what it needs is enough to prove it belongs to the first,
             which is the running head below. */}
-        {first ? (
-          <Masthead design={design} data={data} ink={ink} rule={rule} />
-        ) : (
-          <RunningHead data={data} design={design} rule={rule} />
-        )}
+        {/* THE MASTHEAD IS ON SHEET ONE ONLY. The original's second page opens
+            straight on the Year Three table with no header at all — a running
+            head there would be furniture the instrument does not have. The
+            credential number in the foot identifies the sheet. */}
+        {first && <Masthead design={design} data={data} ink={ink} rule={rule} />}
 
         {/* THE FULL-WIDTH STRIP the original rules across under the masthead:
             what the institution is, and where to check it. */}
@@ -373,53 +385,64 @@ function Sheet({
         {/* --- Closing block, on the last sheet only ----------------------- */}
         {last && (
           <>
-            <div style={{
-              borderTop: `1pt solid ${rule}`, paddingTop: MM(1.4),
-              display: 'flex', gap: MM(7), fontSize: '8.6pt', flexWrap: 'wrap',
-            }}>
-              <span>Study total credit <strong>{data.totalCredits}</strong></span>
-              <span>Total credit earned <strong>{data.creditsEarned ?? data.totalCredits}</strong></span>
-              <span>Cumulative GPA <strong>{data.cgpa.toFixed(2)}</strong></span>
-              {data.classification && <span>Classification <strong>{data.classification}</strong></span>}
-            </div>
-
-            <div style={{
-              marginTop: MM(2.5), display: 'flex', alignItems: 'flex-end',
-              justifyContent: 'space-between', gap: MM(3),
-            }}>
-              <div style={{ display: 'flex', gap: MM(4), flexWrap: 'wrap' }}>
-                {(design.signatories ?? []).slice(0, 3).map((sig, i) => (
-                  <div key={`${sig.name}-${i}`} style={{
-                    borderTop: `0.6pt solid ${ink}`, paddingTop: MM(1),
-                    minWidth: MM(38), textAlign: 'center',
-                  }}>
-                    <p style={{ margin: 0, fontSize: '6.4pt', fontWeight: 700 }}>{sig.name}</p>
-                    <p style={{ margin: 0, fontSize: '5.6pt', opacity: 0.75 }}>{sig.office}</p>
-                  </div>
-                ))}
+            <div style={{ marginTop: MM(4), fontFamily: TABLE_FACE }}>
+              <div style={{ display: 'flex', gap: MM(14), fontSize: '9pt', fontWeight: 700 }}>
+                <span>Study Total Credit&nbsp;&nbsp;&nbsp;{data.totalCredits}</span>
+                <span>Total Credit Earned&nbsp;&nbsp;&nbsp;{data.creditsEarned ?? data.totalCredits}</span>
+              </div>
+              <div style={{ marginTop: MM(3), fontSize: '11pt', fontWeight: 700 }}>
+                Cumulative GPA&nbsp;&nbsp;&nbsp;&nbsp;{data.cgpa.toFixed(2)}
+                {data.classification && (
+                  <span style={{ marginLeft: MM(10), fontSize: '9pt' }}>{data.classification}</span>
+                )}
               </div>
 
-              <div style={{ textAlign: 'center', flex: '0 0 auto' }}>
-                {data.qrSvg
-                  ? <div dangerouslySetInnerHTML={{ __html: data.qrSvg }} />
-                  : <div style={{
-                    width: MM(15), height: MM(15), border: `0.5pt dashed ${rule}`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '4.6pt', opacity: 0.6, margin: '0 auto',
-                  }}>QR on issue</div>}
-                <p style={{ margin: `${MM(0.7)} 0 0`, fontSize: '5.6pt', fontFamily: 'ui-monospace, Menlo, monospace' }}>
-                  {data.credentialId ?? 'not yet issued'}
-                </p>
-                {data.sealCode && (
-                  <p style={{ margin: 0, fontSize: '5.2pt', opacity: 0.75 }}>Seal {data.sealCode}</p>
-                )}
-                {/* NO EXPIRY. The 2017 sheet said "Valid 3 for Months" because
-                    going stale is a paper document's only defence. This one is
-                    checkable against the register for as long as the award
-                    stands. */}
-                <p style={{ margin: 0, fontSize: '5.2pt', opacity: 0.75 }}>
-                  Version {data.version ?? 1} · verify at {UNIVERSITY.website}/verify
-                </p>
+              {/* THE OFFICES, as the original closes: two named on the left,
+                  the Registrar's signature line on the right. Every name comes
+                  from the credential design, never from the reference sheet —
+                  those officers held post in 2020 and may not now. */}
+              <div style={{
+                marginTop: MM(9), display: 'flex', justifyContent: 'space-between',
+                alignItems: 'flex-end', gap: MM(6),
+              }}>
+                <div style={{ fontSize: '9pt', fontWeight: 700 }}>
+                  {(design.signatories ?? []).slice(0, 2).map((sig, i) => (
+                    <p key={`${sig.name}-${i}`} style={{ margin: i === 0 ? 0 : `${MM(3)} 0 0` }}>
+                      {sig.office}: {sig.name}
+                    </p>
+                  ))}
+                </div>
+
+                <div style={{ textAlign: 'left', flex: '0 0 auto' }}>
+                  <p style={{ margin: 0, fontSize: '9pt', fontWeight: 700, textAlign: 'center' }}>
+                    Registrar
+                  </p>
+                  <p style={{ margin: `${MM(4)} 0 0`, fontSize: '9pt', fontWeight: 700 }}>
+                    Signed<span style={{
+                      display: 'inline-block', width: MM(46), borderBottom: `0.8pt solid ${ink}`,
+                      marginLeft: MM(1),
+                    }} />
+                  </p>
+                </div>
+
+                <div style={{ textAlign: 'center', flex: '0 0 auto' }}>
+                  {data.qrSvg
+                    ? <div dangerouslySetInnerHTML={{ __html: data.qrSvg }} />
+                    : <div style={{
+                      width: MM(15), height: MM(15), border: `0.5pt dashed ${rule}`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '4.6pt', opacity: 0.6, margin: '0 auto',
+                    }}>QR on issue</div>}
+                  <p style={{ margin: `${MM(0.7)} 0 0`, fontSize: '5.6pt', fontFamily: 'ui-monospace, Menlo, monospace' }}>
+                    {data.credentialId ?? 'not yet issued'}
+                  </p>
+                  {data.sealCode && (
+                    <p style={{ margin: 0, fontSize: '5.2pt', opacity: 0.75 }}>Seal {data.sealCode}</p>
+                  )}
+                  <p style={{ margin: 0, fontSize: '5.2pt', opacity: 0.75 }}>
+                    Version {data.version ?? 1} · verify at {UNIVERSITY.website}/verify
+                  </p>
+                </div>
               </div>
             </div>
           </>
@@ -565,90 +588,60 @@ function Masthead({
   );
 }
 
-/**
- * The running head on sheets after the first.
- *
- * Enough to prove the sheet belongs to the first — the holder, the award and
- * the credential number — without repeating a masthead that would cost a third
- * of the page. A loose second sheet with no identification on it is a second
- * sheet that gets attached to the wrong transcript.
- */
-function RunningHead({
-  data, design, rule,
-}: { data: TranscriptMasterData; design: CredentialDesign; rule: string }) {
-  return (
-    <div style={{
-      flex: '0 0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
-      gap: MM(4), borderBottom: `0.6pt solid ${rule}`, paddingBottom: MM(1.2),
-    }}>
-      <span style={{ fontSize: '8pt', fontWeight: 700, color: design.brand }}>
-        {UNIVERSITY.name} · Student Transcript (continued)
-      </span>
-      <span style={{ fontSize: '6.4pt' }}>
-        {data.student.last_name} {data.student.first_name} ·{' '}
-        <span style={{ fontFamily: 'ui-monospace, Menlo, monospace' }}>
-          {data.studentNumber ?? data.student.matric_no}
-        </span>
-        {' '}· {data.credentialId ?? 'not yet issued'}
-      </span>
+function GradeSystem({ ink, rule }: { ink: string; rule: string }) {
+  // FIVE COLUMNS SPREAD EDGE TO EDGE, not a block bunched on the left with the
+  // right half empty. The original distributes the key across the full width
+  // of the sheet — the bands in three groups, the registrar's codes in the
+  // centre under GRADE SYSTEM, and the standing codes hard right.
+  const col: React.CSSProperties = {
+    fontSize: '6pt', lineHeight: 1.5, fontFamily: TABLE_FACE, whiteSpace: 'nowrap',
+    flex: '0 0 auto',
+  };
+  const head: React.CSSProperties = {
+    margin: '0 0 0.3mm', fontSize: '6.4pt', letterSpacing: '.04em', fontWeight: 700,
+  };
+  const spacer = <p style={{ ...head, visibility: 'hidden' }}>&nbsp;</p>;
+
+  // The bands as the original groups them: five, three, three.
+  const g1 = GRADING_SCALE.slice(0, 5);
+  const g2 = GRADING_SCALE.slice(5, 8);
+  const g3 = GRADING_SCALE.slice(8);
+
+  const band = (g: typeof GRADING_SCALE[number]) => (
+    <div key={g.grade}>
+      <strong style={{ display: 'inline-block', width: MM(5) }}>{g.grade}</strong>
+      {g.gradePoint.toFixed(2)}GPA {g.minScore}–{g.maxScore}%
     </div>
   );
-}
-
-function GradeSystem({ ink, rule }: { ink: string; rule: string }) {
-  // NOT A TABLE OF HEAVY CELLS — closely grouped text columns inside one
-  // bordered band, as the specification sets it, so the academic table can
-  // begin high on the page. Boxing each half turned a key into two panels and
-  // pushed the record down.
-  const col: React.CSSProperties = {
-    fontSize: '5.8pt', lineHeight: 1.45, fontFamily: TABLE_FACE, whiteSpace: 'nowrap',
-  };
-  const half = Math.ceil(GRADING_SCALE.length / 3);
-  const bands = [
-    GRADING_SCALE.slice(0, half),
-    GRADING_SCALE.slice(half, half * 2),
-    GRADING_SCALE.slice(half * 2),
-  ];
 
   return (
     <div style={{
       borderLeft: RULE, borderRight: RULE, borderBottom: RULE,
-      padding: '1.2mm 2mm', display: 'flex', gap: MM(5), flex: '0 0 auto',
-      alignItems: 'flex-start',
+      padding: '0.8mm 2.5mm', display: 'flex', flex: '0 0 auto',
+      // EDGE TO EDGE. This is the property that was wrong.
+      justifyContent: 'space-between', alignItems: 'flex-start', gap: MM(2),
     }}>
-      {bands.map((band, i) => (
-        <div key={i} style={col}>
-          {i === 1 && (
-            <p style={{ margin: '0 0 0.3mm', fontSize: '5.4pt', letterSpacing: '.06em' }}>AVERAGE</p>
-          )}
-          {i !== 1 && <p style={{ margin: '0 0 0.3mm', fontSize: '5.4pt' }}>&nbsp;</p>}
-          {band.map((g) => (
-            <div key={g.grade}>
-              <strong style={{ display: 'inline-block', width: MM(4.5) }}>{g.grade}</strong>
-              {g.gradePoint.toFixed(2)}GPA {g.minScore}–{g.maxScore}%
-            </div>
-          ))}
-        </div>
-      ))}
-
+      <div style={col}>{spacer}{g1.map(band)}</div>
+      <div style={col}>{spacer}{g2.map(band)}</div>
       <div style={col}>
-        <p style={{
-          margin: '0 0 0.3mm', fontSize: '5.6pt', letterSpacing: '.08em', fontWeight: 700,
-        }}>GRADE SYSTEM</p>
+        <p style={head}>AVERAGE</p>
+        {g3.map(band)}
+      </div>
+      <div style={col}>
+        <p style={head}>GRADE SYSTEM</p>
         {REGISTRAR_CODES.slice(0, 5).map((c) => (
           <div key={c.code}>
-            <strong style={{ display: 'inline-block', width: MM(5) }}>{c.code}</strong>
-            0GPA {c.meaning.toUpperCase()}
+            <strong style={{ display: 'inline-block', width: MM(6) }}>{c.code}</strong>
+            0GPA&nbsp;&nbsp;{c.meaning.toUpperCase()}
           </div>
         ))}
       </div>
-
       <div style={col}>
-        <p style={{ margin: '0 0 0.3mm', fontSize: '5.4pt' }}>&nbsp;</p>
+        {spacer}
         {REGISTRAR_CODES.slice(5).map((c) => (
           <div key={c.code}>
             <strong style={{ display: 'inline-block', width: MM(5) }}>{c.code}</strong>
-            0GPA {c.meaning.toUpperCase()}
+            0GPA&nbsp;&nbsp;{c.meaning.toUpperCase()}
           </div>
         ))}
         {COURSE_STANDING.map((c) => (
