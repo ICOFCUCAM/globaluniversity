@@ -151,7 +151,7 @@ export default function Header() {
       <div className="hidden border-b border-white/10 bg-brand-purple-dark/60 lg:block">
         <div className="mx-auto flex max-w-7xl items-center justify-end gap-5 px-4 py-1.5 text-[11px] font-medium tracking-wide text-white/70">
           <span className="mr-auto text-brand-gold/90">
-            A Global University · Buea · Douala · Nigeria · Online Worldwide
+            A Global University · Cameroon · USA · Zambia · Nigeria · South Africa · Worldwide
           </span>
           <Link href="/admissions" className="hover:text-brand-gold">Prospective Students</Link>
           <Link href="/portal" className="hover:text-brand-gold">Current Students</Link>

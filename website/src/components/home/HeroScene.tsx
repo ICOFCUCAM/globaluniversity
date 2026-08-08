@@ -212,6 +212,24 @@ export default function HeroScene() {
             of the International Circle of Faith
           </p>
 
+          {/* THE MOTTO, given by the university, and placed ABOVE the headline
+              rather than below it.
+
+              A motto is a statement of what an institution is for; a headline
+              is an argument aimed at one reader. Set beneath the headline this
+              would have read as a second, weaker strapline competing with the
+              first. Set above it, in the same block as the name it belongs to,
+              it does what a motto does on a crest — it identifies, and then the
+              headline speaks.
+
+              Gold rather than white, because it is the institution's voice and
+              every other gold element on this page is too. It sits at 13.5px
+              on a purple ground, where gold is the CORRECT ink — this is not
+              the cream-ground case that gold fails. */}
+          <p className="mt-6 max-w-md font-heading text-[13.5px] font-bold leading-relaxed tracking-[0.02em] text-brand-gold sm:text-[15px]">
+            Leading the World with Truth, Knowledge &amp; Purpose.
+          </p>
+
           <h1
             id="hero-heading"
             className="mt-8 font-heading text-[clamp(2.7rem,6.4vw,5.1rem)] font-bold leading-[0.98] tracking-[-0.035em] [text-wrap:balance]"
@@ -221,9 +239,16 @@ export default function HeroScene() {
             <span className="text-brand-gold">academic rigour.</span>
           </h1>
 
-          <p className="mt-6 max-w-lg text-[15px] leading-relaxed text-white/85 sm:mt-8 sm:text-[17px]">
-            Accredited degrees taught from Buea, Douala and online worldwide — by people who
-            practised what they teach, to students who were never given the door.
+          {/* NATIONS, NOT TOWNS, on the university's instruction. This read
+              "from Buea, Douala and online worldwide" — the two Cameroonian
+              campuses and a catch-all. Naming countries states the reach a
+              global university actually has, and it is the scale a reader
+              outside Cameroon can place themselves in: "Douala" means nothing
+              to somebody in Lusaka, "Zambia" means everything. */}
+          <p className="mt-6 max-w-lg text-[15px] leading-relaxed text-white/85 sm:mt-7 sm:text-[17px]">
+            Accredited degrees taught from Cameroon, the USA, Zambia, Nigeria, South Africa
+            and worldwide — by people who practised what they teach, to students who were
+            never given the door.
           </p>
 
           <div className="mt-8 flex flex-wrap items-center gap-4 sm:mt-11">

@@ -76,7 +76,7 @@ body{width:1200px;height:630px;display:flex;background:#322244;font-family:${sta
 .eyebrow{font-size:16px;letter-spacing:.32em;text-transform:uppercase;color:#f7dc79;font-weight:700;font-family:system-ui,sans-serif}
 h1{font-size:58px;line-height:1.03;letter-spacing:-.03em;margin-top:24px;font-weight:700}
 .rule{width:84px;height:4px;background:#f7dc79;border-radius:4px;margin:28px 0 24px}
-p{font-size:21px;line-height:1.5;color:rgba(255,255,255,.85);font-family:system-ui,sans-serif;max-width:26ch}
+p{font-size:19px;line-height:1.5;color:rgba(255,255,255,.85);font-family:system-ui,sans-serif;max-width:30ch}
 .mark{position:absolute;left:44px;top:40px;z-index:2}
 .mark img{width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.92);padding:2px}
 </style>
@@ -87,7 +87,7 @@ p{font-size:21px;line-height:1.5;color:rgba(255,255,255,.85);font-family:system-
   <div class="eyebrow">A Global University</div>
   <h1>ICOF Global<br>University</h1>
   <div class="rule"></div>
-  <p>Accredited degrees taught from Buea, Douala and online worldwide.</p>
+  <p>Accredited degrees taught from Cameroon, the USA, Zambia, Nigeria, South Africa and worldwide.</p>
 </div>`;
 
 const browser = await chromium.launch({ executablePath: EXE });

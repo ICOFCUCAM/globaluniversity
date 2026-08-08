@@ -104,7 +104,7 @@ export default function Footer() {
           <Link href="/fr" hrefLang="fr" className="hover:text-brand-gold">Français</Link>
           <Link href="/privacy-policy" className="hover:text-brand-gold">Privacy Policy</Link>
         </div>
-        <p>© {new Date().getFullYear()} {site.name} · A Global University · Buea · Douala · Nigeria · Online Worldwide</p>
+        <p>© {new Date().getFullYear()} {site.name} · A Global University · Cameroon · USA · Zambia · Nigeria · South Africa · Worldwide</p>
       </div>
     </footer>
   );

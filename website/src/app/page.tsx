@@ -32,8 +32,8 @@ export const metadata: Metadata = {
   openGraph: {
     title: `${site.name} — A Global University`,
     description:
-      'Educating leaders for Africa and the world. Certificate to doctorate, on campus in Buea '
-      + 'and Douala or online from anywhere.',
+      'Educating leaders for Africa and the world. Certificate to doctorate, taught from '
+      + 'Cameroon, the USA, Zambia, Nigeria, South Africa and worldwide.',
     url: site.url,
     siteName: site.name,
     type: 'website',
@@ -67,7 +67,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: `${site.name} — A Global University`,
     description:
-      'Accredited degrees taught from Buea, Douala and online worldwide.',
+      'Accredited degrees taught from Cameroon, the USA, Zambia, Nigeria, South Africa and worldwide.',
     images: [`${site.url}/images/og-home.jpg`],
   },
 };
