@@ -61,9 +61,17 @@ select year, semester, count(*) as courses, sum(credit_unit) as ects
 
 -- 6. THE PREREQUISITE CHAIN.                                     (011)
 --
--- Expect: 23 courses with a prerequisite, 1 of them 'any' (BIB 103, which the
--- framework states as "BIB 101 or BIB 102"), and 2 with an ECTS threshold
--- (RES 301 at 60, MIN 308 at 120).
+-- Expect: 25 courses with a prerequisite, 1 of them 'any' (BIB 103, which the
+-- framework states as "BIB 101 or BIB 102"), 2 with an ECTS threshold
+-- (RES 301 at 60, MIN 308 at 120), and 0 co-requisites until the University
+-- rules on FIN 201 and COM 302.
+--
+-- THAT 25 WAS WRITTEN AS 23 AND THE FIRST REAL RUN CORRECTED IT. The figure had
+-- been recalled rather than counted, which is precisely the failure this file's
+-- own header warns about — "a number you have not predicted is a number you
+-- will accept" — reached by the person writing the predictions. Nine of the
+-- thirty-four courses are ungated: the six of Semester 1, HIS 101, and RES 301
+-- and MIN 308, whose requirement is a credit threshold and not a named course.
 --
 -- The 'any' count is the one worth reading. Every other prerequisite is a
 -- conjunction; if this returns 0 the AND/OR distinction has been lost, and a
@@ -74,6 +82,21 @@ select count(*) filter (where cardinality(prerequisites) > 0) as gated,
        count(*) filter (where cardinality(co_requisites) > 0) as co_requisites
   from courses
  where programme_slug = 'bachelor-of-ministry';
+
+-- 6b. THE CREDIT VALUES ARE ECTS, AND SAY SO.                    (011)
+--
+-- Expect: one row — ECTS, 34.
+--
+-- `courses.credit_system` defaults to 'credit_hour', because that is what the
+-- catalogue seeded before this programme existed. Five ECTS and five credit
+-- hours are not the same quantity, and a row that says 5 without saying which
+-- is the one thing a credential evaluator will not accept. If this returns
+-- 'credit_hour' the seed has landed with the wrong unit and every transcript
+-- drawn from it will understate the degree.
+select credit_system, count(*)
+  from courses
+ where programme_slug = 'bachelor-of-ministry'
+ group by credit_system;
 
 -- 7. NO PREREQUISITE POINTS AT A COURSE THAT DOES NOT EXIST.     (011)
 --
