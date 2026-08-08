@@ -129,23 +129,31 @@ const MM = (n: number) => `${n}mm`;
 // unless colour adjustment is forced, which is how a grid that looks right on
 // screen arrives at the registrar as floating columns of figures. The print
 // block below forces it.
-const RULE = '0.5pt solid #4d4d4d';
-
 // ---------------------------------------------------------------------------
-// THE TWO LINES ARE NOT THE SAME TONE
+// THE REGISTRAR'S GRID — the University's specification
 // ---------------------------------------------------------------------------
 //
-// At high magnification each doubled rule resolves into a DARKER line and a
-// PALER one, not two identical strokes. That is Word's table rendering with
-// cell spacing: every cell is drawn with a shallow engraved bevel, dark on the
-// leading edge and light on the trailing one.
+// A traditional registrar grid, not a modern spreadsheet or a card:
 //
-// I had drawn both edges in one colour, which is why the grid still read as
-// flat and mechanical next to the original even once the doubling and the
-// typeface were right. Two tones is what gives it the slight relief of a
-// document that came off a Word template rather than out of a stylesheet.
-const RULE_DARK = '#4a4a4a';
-const RULE_LIGHT = '#b4b4b4';
+//   THIN SOLID MEDIUM-GREY rules carry the structure. One tone, not the
+//   two-tone bevel I read into the magnified scan — that relief was the
+//   photocopier and the JPEG, and chasing it produced a grid with the right
+//   geometry and the wrong character.
+//
+//   VERTICAL SEPARATORS RUN CONTINUOUSLY the full height of the table, so
+//   every column reads as an unbroken course of figures.
+//
+//   HORIZONTAL RULES ONLY WHERE STRUCTURE CHANGES — under the header, at a
+//   semester heading, above the GPA summary. NOT between individual course
+//   rows: the entries stay visually open, and the typography carries them.
+//
+//   MAJOR BOUNDARIES SLIGHTLY HEAVIER — the semester heading and the GPA
+//   summary — so the eye finds the sections without the grid shouting.
+//
+// No rounded corners, shadows, gradients, colour or decoration anywhere.
+const RULE = '0.5pt solid #808080';
+/** Section boundaries and the outer border: the same grey, a shade stronger. */
+const RULE_MAJOR = '0.9pt solid #5c5c5c';
 
 /**
  * The table's typeface.
@@ -161,8 +169,6 @@ const RULE_LIGHT = '#b4b4b4';
  * is most of the servers this renders on.
  */
 const TABLE_FACE = 'Arial, Helvetica, "Liberation Sans", sans-serif';
-/** Outer border and major section boundaries — a shade heavier. */
-const RULE_MAJOR = '0.75pt solid #333333';
 
 /**
  * How many academic years fit on a sheet.
@@ -647,25 +653,26 @@ function YearTable({
     fontSize: '6.2pt', padding: '0.55mm 1mm', textAlign: 'left',
     color: ink, fontWeight: 400, verticalAlign: 'bottom', lineHeight: 1.15,
     fontFamily: TABLE_FACE,
-    // Dark leading edge, pale trailing edge — the engraved bevel.
-    borderTop: `0.5pt solid ${RULE_DARK}`,
-    borderLeft: `0.5pt solid ${RULE_DARK}`,
-    borderBottom: `0.5pt solid ${RULE_LIGHT}`,
-    borderRight: `0.5pt solid ${RULE_LIGHT}`,
+    // A semester heading is a major boundary: heavier above, and the header
+    // closes with a heavier rule beneath it.
+    borderTop: RULE_MAJOR,
+    borderBottom: RULE_MAJOR,
+    borderLeft: RULE,
+    borderRight: RULE,
   };
   const td: React.CSSProperties = {
     fontSize: '7.4pt', padding: '0.32mm 1mm', color: ink, fontFamily: TABLE_FACE,
-    // Left and right only on the body cells: the courses run as an unbroken
-    // column of figures inside one tall box, as the original sets them — and
-    // the two edges carry the two tones.
-    borderLeft: `0.5pt solid ${RULE_DARK}`,
-    borderRight: `0.5pt solid ${RULE_LIGHT}`,
+    // VERTICALS ONLY. No horizontal rule between course rows — the entries
+    // stay open and the typography carries them.
+    borderLeft: RULE,
+    borderRight: RULE,
   };
   const num: React.CSSProperties = { ...td, textAlign: 'right' };
   const foot: React.CSSProperties = {
     ...td, fontSize: '7pt', padding: '0.7mm 1mm',
-    borderTop: `0.5pt solid ${RULE_DARK}`,
-    borderBottom: `0.5pt solid ${RULE_LIGHT}`,
+    // The GPA summary is a major boundary at both edges.
+    borderTop: RULE_MAJOR,
+    borderBottom: RULE_MAJOR,
   };
 
   const pair = [semesters[0], semesters[1]];
@@ -690,13 +697,9 @@ function YearTable({
   return (
     <table style={{
       width: '100%',
-      // SEPARATE, NOT COLLAPSED — this is the thing I kept missing. Each cell
-      // in the original is its OWN rectangle with a hairline gap to the next,
-      // not a shared edge in a merged grid. That gap is why the ruling reads
-      // as a registrar's ledger and why every collapsed version I tried
-      // looked like a spreadsheet no matter what weight or colour I gave it.
-      borderCollapse: 'separate',
-      borderSpacing: '0.6mm 0',
+      // COLLAPSED, so the vertical separators run continuously the full
+      // height of the table rather than doubling at every cell edge.
+      borderCollapse: 'collapse',
       tableLayout: 'fixed',
       marginBottom: MM(2.5),
     }}>
