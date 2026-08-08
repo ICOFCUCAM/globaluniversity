@@ -111,6 +111,28 @@ export interface TranscriptMasterData extends TranscriptData {
 
 const MM = (n: number) => `${n}mm`;
 
+// ---------------------------------------------------------------------------
+// THE REGISTRAR'S GRID
+// ---------------------------------------------------------------------------
+//
+// A fine grey-black rule, not bold black — the University's specification,
+// taken from its own instrument. I had this wrong three times running: dotted
+// (that was the photocopier's broken edges), then light grey (that was the
+// photocopier's cast), then pure black (an overcorrection).
+//
+// What it is: internal rules about 1px, clearly visible but restrained; major
+// boundaries and the outer border slightly heavier. No rounded corners, no
+// shadows, no colour, no dashes. A rigid rectangular grid that reads as
+// professionally typeset paper.
+//
+// AND IT MUST NOT VANISH IN PRINT. Browsers drop light rules when printing
+// unless colour adjustment is forced, which is how a grid that looks right on
+// screen arrives at the registrar as floating columns of figures. The print
+// block below forces it.
+const RULE = '0.5pt solid #4d4d4d';
+/** Outer border and major section boundaries — a shade heavier. */
+const RULE_MAJOR = '0.75pt solid #333333';
+
 /**
  * How many academic years fit on a sheet.
  *
@@ -170,6 +192,14 @@ export default function TranscriptMaster({
           body * { visibility: hidden; }
           #icof-transcript, #icof-transcript * { visibility: visible; }
           #icof-transcript { position: absolute; left: 0; top: 0; }
+          /* WITHOUT THIS THE GRID DISAPPEARS. Browsers drop light rules and
+             backgrounds when printing unless colour adjustment is forced, and
+             a transcript that arrives as floating columns of figures with no
+             grid is not a transcript. */
+          #icof-transcript, #icof-transcript * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
           .icof-sheet { box-shadow: none !important; margin: 0 !important; }
           /* EACH SHEET ITS OWN PAGE. Without this the browser flows them
              together and the second year's block is cut in half by the fold. */
@@ -245,7 +275,7 @@ function Sheet({
       {specimen && <Overprint text="SPECIMEN" colour="rgba(120,40,40,.13)" />}
 
       <div style={{
-        position: 'relative', border: `1pt solid ${rule}`, padding: MM(3.5),
+        position: 'relative', border: RULE_MAJOR, padding: MM(3.5),
         height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box',
       }}>
         {/* THE HEADER IS ON THE FIRST SHEET ONLY, as the original does it. A
@@ -262,7 +292,7 @@ function Sheet({
             what the institution is, and where to check it. */}
         {first && (
           <p style={{
-            margin: `${MM(1.6)} 0 0`, border: `0.5pt solid ${ink}`, padding: '0.9mm 2mm',
+            margin: `${MM(1.6)} 0 0`, border: RULE, padding: '0.9mm 2mm',
             fontSize: '6.2pt', textAlign: 'center', flex: '0 0 auto',
           }}>
             {UNIVERSITY.name}. For more information, visit {UNIVERSITY.email} · {UNIVERSITY.website}
@@ -273,7 +303,7 @@ function Sheet({
 
         {first && data.transcribedFrom && (
           <p style={{
-            margin: `${MM(1.8)} 0 0`, border: `0.6pt solid ${rule}`, background: 'rgba(185,154,62,.08)',
+            margin: `${MM(1.8)} 0 0`, border: RULE_MAJOR, background: 'rgba(185,154,62,.08)',
             padding: `${MM(1.2)} ${MM(2)}`, fontSize: '5.8pt', lineHeight: 1.4,
           }}>
             <strong>Transcribed from an archived record.</strong> These marks were not recorded in
@@ -389,7 +419,7 @@ function Masthead({
   // above each value, and boxes the student number and sex apart at the right.
   // Reading down a list is not the same document.
   const cell: React.CSSProperties = {
-    border: `0.5pt solid ${ink}`, padding: '0.6mm 1.4mm', verticalAlign: 'top',
+    border: RULE, padding: '0.6mm 1.4mm', verticalAlign: 'top',
   };
   const lab: React.CSSProperties = {
     ...cell, fontSize: '5.6pt', fontWeight: 400, opacity: 0.85, textAlign: 'left',
@@ -406,7 +436,7 @@ function Masthead({
           the one mark on the sheet that identifies the institution before a
           word of it is read. */}
       <div style={{
-        flex: '0 0 auto', border: `0.4pt solid ${ink}`, padding: MM(1.2),
+        flex: '0 0 auto', border: RULE_MAJOR, padding: MM(1.2),
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
         <img src={IMAGES.logo} alt="" style={{ width: MM(17), height: MM(17), objectFit: 'contain' }} />
@@ -581,10 +611,7 @@ function YearTable({
   semesters: TranscriptMasterData['years'][number]['semesters'];
   ink: string; brand: string; yearLabel: string;
 }) {
-  // SOLID, BLACK, FINE. The clean digital copy settled it: I read the scan's
-  // broken edges as dotted and its grey cast as colour, and both were the
-  // photocopier. A ruled ledger in black at 0.3pt.
-  const hair = '0.3pt solid #000';
+  const hair = RULE;
   const th: React.CSSProperties = {
     fontSize: '5.6pt', padding: '0.55mm 1mm', textAlign: 'left',
     color: ink, fontWeight: 400, verticalAlign: 'bottom', lineHeight: 1.15,
