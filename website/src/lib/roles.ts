@@ -110,6 +110,15 @@ export const OPERATIONAL_CAPABILITIES = [
   'assign-lecturers',
   'build-timetable',
   'manage-courses',
+  // The social pipeline. COMPOSING and PUBLISHING are operational — this is
+  // the university talking about itself, which is an administrator's job.
+  'compose-social-post',
+  'publish-social-post',
+  // Connecting YOUR OWN account is operational and personal. It appears in an
+  // administrator's own settings and nowhere else: nobody may connect, revoke
+  // or post through another person's account, and the database enforces that
+  // as well as this matrix does. See migration 013.
+  'connect-own-social',
   // The Registry's academic record
   //
   // NOT the lecturer's 'upload-grades'. Posting a mark for one class and
@@ -231,6 +240,19 @@ export const SYSTEM_CAPABILITIES = [
   'design-credentials',
   'publish-credential-template',
   'revoke-credential',
+  // AMENDING AN ALREADY-ISSUED CREDENTIAL. Distinct from designing one, and
+  // far graver: it changes what the university is recorded as having said on a
+  // date that has passed. The correction supersedes rather than overwrites —
+  // migration 013 explains why — but the authority to start that is the
+  // Superadministrator's alone. "He is more of the VC of the university."
+  'amend-issued-credential',
+  // A certificate for something that is not a degree — service, appointment,
+  // ordination. Creating a new KIND of instrument the university awards is a
+  // decision about what the university is, which is what makes it systemic.
+  'create-credential-type',
+  // Connecting the INSTITUTION's accounts, so that every administrator can
+  // publish through them without ever holding their credentials.
+  'connect-university-social',
   // Held by the three approving offices, and deliberately NOT by the
   // Superadministrator who designs. An approval you give to your own work is a
   // countersignature, not a control.

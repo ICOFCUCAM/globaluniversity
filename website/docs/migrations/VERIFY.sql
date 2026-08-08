@@ -166,3 +166,52 @@ select kind, status, count(*)
   from credentials_issued
  group by kind, status
  order by kind, status;
+
+-- 13. THE TWO NEW SUBSYSTEMS LANDED.                             (013)
+--
+-- Expect: eleven rows. If any is missing, the Command Centre screen that reads
+-- it will render an empty panel rather than an error, which is the failure mode
+-- worth catching here rather than in front of a visitor.
+select table_name
+  from information_schema.tables
+ where table_schema = 'public'
+   and table_name in ('social_accounts', 'social_posts', 'social_post_media',
+                      'social_post_targets', 'social_post_variants',
+                      'social_post_metrics', 'credential_templates',
+                      'credential_types', 'credential_amendments',
+                      'credential_correction_requests', 'credential_audit_events')
+ order by table_name;
+
+-- 14. NOBODY CAN BE POSTED AS, AND NOBODY CAN EDIT THE RECORD.   (013)
+--
+-- Expect exactly three triggers:
+--   social_target_consent_trg        on social_post_targets
+--   credential_audit_no_update       on credential_audit_events
+--   credential_templates_publication on credential_templates   (from 005)
+--
+-- The third is not new. It is listed because it is the three-office approval
+-- gate — Registrar, Academic Office, Vice Chancellor — and 013 extends the
+-- table it sits on. If it is absent, a certificate design can be published by
+-- one person acting alone.
+select c.relname as on_table, t.tgname
+  from pg_trigger t
+  join pg_class c on c.oid = t.tgrelid
+ where t.tgname in ('social_target_consent_trg', 'credential_audit_no_update',
+                    'credential_templates_publication')
+ order by t.tgname;
+
+-- 15. NO TOKEN IS SITTING IN AN APPLICATION TABLE.               (013)
+--
+-- Expect: zero rows. `social_accounts.token_ref` is a POINTER into the secret
+-- store, never the secret. This looks for anything shaped like a real OAuth
+-- token that has been written into it by a route that did not read the header
+-- of 013 — a long opaque string, or one carrying a JWT's two dots.
+--
+-- A false negative is possible (a short token would pass) and that is fine:
+-- this is a smoke alarm, not a proof. A single row here is a credential leak
+-- waiting for the next database export.
+select id, scope, platform, handle, length(token_ref) as ref_length
+  from social_accounts
+ where token_ref is not null
+   and (length(token_ref) > 64 or token_ref like '%.%.%')
+ order by connected_at desc;
