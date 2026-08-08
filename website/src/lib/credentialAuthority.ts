@@ -298,7 +298,9 @@ export function amend(
     throw new Error('An amendment needs a stated reason. A correction to a sealed document without one is indistinguishable from tampering.');
   }
   if (previous.state === 'revoked') {
-    throw new Error('A revoked credential cannot be amended. Reinstate it first, or issue a new award.');
+    // Matches the register's own rule from 004: revocation is final, and the
+    // remedy is a new award rather than an un-revocation nobody can see.
+    throw new Error('A revoked credential cannot be amended. Revocation is final; issue a new award instead.');
   }
 
   return {
@@ -629,7 +631,7 @@ export function needsReason(action: AuditAction): boolean {
 // ---------------------------------------------------------------------------
 
 export type AuthorityAction =
-  | 'view' | 'amend' | 'reissue' | 'revoke' | 'reinstate' | 'print' | 'email' | 'verify';
+  | 'view' | 'amend' | 'reissue' | 'revoke' | 'print' | 'email' | 'verify';
 
 /**
  * The privilege list from point 3, as a function of the document's state.
@@ -638,6 +640,22 @@ export type AuthorityAction =
  * things a revoked credential is FOR. Someone is holding a printed copy; the
  * register has to be able to tell them it is no longer valid. Hiding the record
  * would mean the university could not answer the question at all.
+ *
+ * THERE IS NO 'REINSTATE', AND THIS FUNCTION USED TO OFFER ONE. It was mine,
+ * not the university's — the twelve-point specification lists VIEW EDIT CORRECT
+ * REISSUE REVOKE PRINT EMAIL VERIFY and no reinstatement — and the register has
+ * refused it since 004:
+ *
+ *   "a revoked credential cannot be reinstated; issue a new one"
+ *
+ * with the reason stated there: un-revoking would let an institution quietly
+ * restore a credential it had withdrawn, with nothing in the record to show it
+ * ever had. That is precisely the manoeuvre revocation exists to make
+ * impossible.
+ *
+ * So the button would have been drawn, pressed, and refused by the database.
+ * The remedy for a revocation made in error is a new award with a new number,
+ * which leaves both the revocation and the correction on the record.
  */
 export function actionsFor(version: CredentialVersion, role: string): AuthorityAction[] {
   const isAuthority = role === 'superadmin' || role === 'vice-chancellor';
@@ -658,7 +676,8 @@ export function actionsFor(version: CredentialVersion, role: string): AuthorityA
       // superseded marking, which is why it is safe.
       return [...base, 'print'];
     case 'revoked':
-      return [...base, 'reinstate'];
+      // Nothing further. See above — revocation is final by design.
+      return base;
     default:
       return base;
   }

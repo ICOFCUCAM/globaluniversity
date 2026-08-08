@@ -215,3 +215,45 @@ select id, scope, platform, handle, length(token_ref) as ref_length
  where token_ref is not null
    and (length(token_ref) > 64 or token_ref like '%.%.%')
  order by connected_at desc;
+
+-- 16. CAN A CREDENTIAL ACTUALLY BE CORRECTED?                    (013)
+--
+-- Expect: one row, credentials_issued_ref_version, and NO row named
+-- credentials_issued_credential_id_key.
+--
+-- This is the check that would have caught the defect. 004 declared
+-- credential_id UNIQUE on its own, which makes version 2 of an award
+-- impossible — the correction the University asked for in point 4 would have
+-- failed with "duplicate key value", months after installation, in front of a
+-- graduate. 013 replaces it with a unique index on (credential_id, version)
+-- and adds a trigger so that two rows sharing a number are genuinely the same
+-- award rather than a collision.
+select indexname
+  from pg_indexes
+ where schemaname = 'public' and tablename = 'credentials_issued'
+   and indexname in ('credentials_issued_ref_version', 'credentials_issued_credential_id_key')
+ order by indexname;
+
+-- 17. THE VERSION CHAIN IS GUARDED.                              (013)
+--
+-- Expect: one row — credentials_version_chain. Without it, unique
+-- (credential_id, version) would let two unrelated awards share a number as
+-- long as their versions differed, and /verify would show one graduate's award
+-- as a version of another's.
+select t.tgname, c.relname as on_table
+  from pg_trigger t join pg_class c on c.oid = t.tgrelid
+ where t.tgname = 'credentials_version_chain';
+
+-- 18. THE INSTALLATION SELF-TEST ROWS.                           (013)
+--
+-- Expect: two rows, both revoked, both named "Installation self-test".
+--
+-- 013 proves amendment works by actually issuing and correcting a credential.
+-- The register refuses deletion by design, so the rows survive — revoked, and
+-- labelled so nobody mistakes them for a real award. If this returns zero rows
+-- the migration has not been run; if it returns rows that are NOT revoked,
+-- something has interfered with them.
+select credential_id, version, status, holder_name
+  from credentials_issued
+ where credential_id = 'IGUC-SELFTEST-013'
+ order by version;

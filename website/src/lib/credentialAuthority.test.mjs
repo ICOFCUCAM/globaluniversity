@@ -97,6 +97,7 @@ check('an amendment with no stated reason is refused', /stated reason/.test(thre
 threw = null;
 try { A.amend({ ...v1, state: 'revoked' }, { reason: 'x' }); } catch (e) { threw = e.message; }
 check('a revoked credential cannot be quietly amended back into existence', /revoked/.test(threw ?? ''), true);
+check('…and the message says what to do instead', /issue a new award/.test(threw ?? ''), true);
 
 console.log('\nA QR printed on version 1 still finds the award\n');
 
@@ -307,7 +308,17 @@ check(
 check(
   'a revoked credential may still be viewed and verified, because that is what it is for',
   A.actionsFor({ ...cur, state: 'revoked' }, 'superadmin').sort(),
-  ['reinstate', 'verify', 'view'],
+  ['verify', 'view'],
+);
+// 004 refuses un-revocation in the database: "a revoked credential cannot be
+// reinstated; issue a new one". A button that is always refused is worse than
+// no button, so the Authority must not offer one — to anybody.
+check(
+  'nobody is offered reinstatement, because the register refuses it',
+  ['superadmin', 'vice-chancellor', 'registrar', 'student']
+    .flatMap((r) => A.actionsFor({ ...cur, state: 'revoked' }, r))
+    .filter((a) => a === 'reinstate'),
+  [],
 );
 check(
   'the Registrar prints and emails; they do not amend or revoke',

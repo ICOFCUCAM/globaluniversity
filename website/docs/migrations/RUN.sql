@@ -1396,8 +1396,99 @@ alter table credentials_issued add column if not exists supersedes_id  uuid refe
 alter table credentials_issued add column if not exists type_id        uuid references credential_types (id) on delete set null;
 alter table credentials_issued add column if not exists template_id    uuid references credential_templates (id) on delete set null;
 
+-- THE COLUMNS ABOVE WERE NOT ENOUGH, AND THE DATABASE PROVED IT.
+--
+-- 004 declared `credential_id text not null unique`. That single word made the
+-- entire versioning design impossible: version 2 of IGUC-BTH-2026-00125 is a
+-- second row carrying the same credential_id, and the unique constraint refuses
+-- it. Adding the columns, the index and the foreign key all succeeded; the
+-- first actual amendment would have failed with "duplicate key value violates
+-- unique constraint", months later, in front of a graduate waiting for a
+-- corrected certificate.
+--
+-- Nothing in the first draft of this migration would have caught that. It
+-- asserted that tables existed and that triggers existed — not that the one
+-- operation the whole subsystem is FOR could be performed. Section 3 now
+-- performs it.
+--
+-- WHY THE CONSTRAINT IS REPLACED RATHER THAN DROPPED. 004's reasoning for it
+-- still holds: a credential number is random rather than sequential, and
+-- uniqueness is what makes that safe. So the guarantee is preserved and
+-- narrowed — one row per (number, version) instead of one row per number — and
+-- the version chain trigger below supplies what the narrower constraint alone
+-- would lose: that two rows sharing a number are genuinely the same award,
+-- rather than two different awards that collided.
+
+alter table credentials_issued drop constraint if exists credentials_issued_credential_id_key;
+
+create unique index if not exists credentials_issued_ref_version
+  on credentials_issued (credential_id, version);
+
 create index if not exists credentials_issued_version_idx
   on credentials_issued (credential_id, version desc);
+
+-- THE VERSION CHAIN MUST BE A CHAIN.
+--
+-- Without this, `unique (credential_id, version)` would let two unrelated
+-- awards share a number as long as their version numbers differed — which is
+-- worse than the constraint it replaced, because /verify resolves by number and
+-- would show one graduate's award as a version of another's.
+--
+-- A CHECK constraint cannot express this: it needs to look at another row. So
+-- it is a trigger, and it enforces three things —
+--
+--   version 1 is an original and supersedes nothing
+--   version n > 1 supersedes something
+--   what it supersedes is the previous version OF THE SAME AWARD
+create or replace function guard_credential_version() returns trigger
+language plpgsql as $$
+declare
+  prior record;
+begin
+  if new.version < 1 then
+    raise exception 'a credential version is 1 or greater; got %', new.version;
+  end if;
+
+  if new.version = 1 then
+    if new.supersedes_id is not null then
+      raise exception 'version 1 of a credential is an original and cannot supersede anything';
+    end if;
+    return new;
+  end if;
+
+  if new.supersedes_id is null then
+    raise exception
+      'version % of % must say which version it replaces. A correction that does not point at '
+      'what it corrected is an edit with extra steps.', new.version, new.credential_id;
+  end if;
+
+  select credential_id, version into prior
+    from credentials_issued where id = new.supersedes_id;
+
+  if prior is null then
+    raise exception 'the credential this version supersedes does not exist';
+  end if;
+
+  if prior.credential_id is distinct from new.credential_id then
+    raise exception
+      'version % claims number % but supersedes %, which is a different award. '
+      'Two awards must never share a credential number.',
+      new.version, new.credential_id, prior.credential_id;
+  end if;
+
+  if prior.version <> new.version - 1 then
+    raise exception
+      'version % must supersede version %, not version %. The history has to be continuous or '
+      'it cannot be read back.', new.version, new.version - 1, prior.version;
+  end if;
+
+  return new;
+end $$;
+
+drop trigger if exists credentials_version_chain on credentials_issued;
+create trigger credentials_version_chain
+  before insert on credentials_issued
+  for each row execute function guard_credential_version();
 
 
 -- 2 (e) ---------------------------------------------------------------------
@@ -1619,9 +1710,17 @@ begin
   end if;
 
   -- Prove the append-only rule rather than trusting the trigger exists.
-  insert into credential_audit_events (action, reason) values ('issued', 'self-test');
+  --
+  -- THE ROW THIS LEAVES BEHIND IS DELIBERATE AND CANNOT BE REMOVED — that is
+  -- what append-only means, and it applies to this migration as much as to the
+  -- Vice-Chancellor. The first entry in the University's credential audit trail
+  -- is the record that the audit trail was installed and proven on the day it
+  -- was installed. That is a reasonable thing for it to say.
+  insert into credential_audit_events (action, reason)
+  values ('issued', 'Installation self-test - migration 013. The audit trail was proven append-only at install.');
   begin
-    update credential_audit_events set reason = 'tampered' where reason = 'self-test';
+    update credential_audit_events set reason = 'tampered'
+     where reason like 'Installation self-test%';
     raise exception 'The audit trail accepted an UPDATE. Refusing to complete.';
   exception when others then
     if sqlerrm like '%append-only%' then
@@ -1630,9 +1729,84 @@ begin
       raise;
     end if;
   end;
-  delete from credential_audit_events where reason = 'self-test' and false;
+
+  -- ---------------------------------------------------------------------
+  -- PROVE THAT A CREDENTIAL CAN ACTUALLY BE AMENDED.
+  --
+  -- Everything above this point checks that things EXIST. This checks that the
+  -- one operation the whole subsystem is for can be performed — because the
+  -- first draft of this migration passed every existence check while making
+  -- amendment impossible. `credential_id` was UNIQUE, so version 2 of an award
+  -- could never be written, and nothing said so until an amendment was
+  -- attempted. That would have been months later, in front of a graduate.
+  --
+  -- So: issue a certificate, correct it, and confirm both versions survive.
+  -- Then revoke and delete the test rows — which the register refuses, so they
+  -- are marked instead and carry a holder name that says what they are.
+  -- ---------------------------------------------------------------------
+  declare
+    v1 uuid;
+    v2 uuid;
+    ref text := 'IGUC-SELFTEST-013';
+  begin
+    -- Clear anything a previous run left, so this is idempotent. The register
+    -- refuses DELETE by design, so a prior self-test is reused rather than
+    -- removed: the unique index on (credential_id, version) makes a second
+    -- insert of the same pair fail, which would look like the bug this block
+    -- exists to detect.
+    select id into v1 from credentials_issued where credential_id = ref and version = 1;
+
+    if v1 is null then
+      insert into credentials_issued
+        (credential_id, kind, holder_name, facts, content_hash, seal_code, version)
+      values (ref, 'certificate', 'Installation self-test - migration 013',
+              '{}'::jsonb, 'selftest-v1', 'selftest-v1', 1)
+      returning id into v1;
+    end if;
+
+    select id into v2 from credentials_issued where credential_id = ref and version = 2;
+
+    if v2 is null then
+      begin
+        insert into credentials_issued
+          (credential_id, kind, holder_name, facts, content_hash, seal_code, version, supersedes_id)
+        values (ref, 'certificate', 'Installation self-test - migration 013 (corrected)',
+                '{}'::jsonb, 'selftest-v2', 'selftest-v2', 2, v1)
+        returning id into v2;
+      exception when unique_violation then
+        raise exception
+          'A CREDENTIAL CANNOT BE AMENDED. Version 2 was refused because credential_id is still '
+          'uniquely constrained on its own. Every correction the University makes would fail. %', sqlerrm;
+      end;
+    end if;
+
+    -- Both versions must survive. That is "never destroy the previous
+    -- certificate", checked rather than asserted.
+    if (select count(*) from credentials_issued where credential_id = ref) <> 2 then
+      raise exception 'Amendment did not leave two versions. The previous certificate was destroyed.';
+    end if;
+
+    -- And the chain must refuse a version that claims to belong to another award.
+    begin
+      insert into credentials_issued
+        (credential_id, kind, holder_name, facts, content_hash, seal_code, version, supersedes_id)
+      values ('IGUC-SELFTEST-013-OTHER', 'certificate', 'Should not exist',
+              '{}'::jsonb, 'x', 'x', 3, v2);
+      raise exception 'Two different awards were allowed to share a version chain.';
+    exception when others then
+      if sqlerrm not like '%different award%' then raise; end if;
+    end;
+
+    -- Mark the self-test rows so nobody mistakes them for a real award. They
+    -- cannot be deleted — the register refuses deletion, on purpose.
+    update credentials_issued
+       set status = 'revoked',
+           revocation_reason = 'Installation self-test row from migration 013. Not a real credential.'
+     where credential_id = ref and status <> 'revoked';
+  end;
 
   raise notice 'Social pipeline and Credential Authority installed: 11 tables, consent enforced, audit trail append-only.';
+  raise notice 'Amendment proven: a credential can be corrected to version 2 and version 1 survives.';
   raise notice 'Proctored examinations are NOT in this migration - awaiting the university''s specification.';
 end $$;
 
