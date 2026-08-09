@@ -67,6 +67,19 @@ interface Row {
 
 const MIN_SOURCE = 12;
 
+/**
+ * The modes the University teaches in, as migration 019 constrains them.
+ *
+ * THE SCHOOL IS NOT ONLY ONLINE, and the transcript should not read as though
+ * it were. The route checks this list again rather than trusting the dropdown.
+ */
+const STUDY_MODES = [
+  { value: 'on-campus', label: 'On-campus' },
+  { value: 'online', label: 'Online' },
+  { value: 'distance', label: 'Distance' },
+  { value: 'blended', label: 'Blended — on-campus and online' },
+];
+
 const blank = (n: number): Row => ({
   key: `r${n}`, code: '', title: '', creditUnit: '3',
   grade: GRADING_SCALE[0]?.grade ?? 'A', year: '1', semester: '1',
@@ -105,10 +118,18 @@ function Form() {
   const [placeOfBirth, setPlaceOfBirth] = React.useState('');
   const [sex, setSex] = React.useState('');
   const [studentAddress, setStudentAddress] = React.useState('');
+  // HOW THEY STUDIED, and it is not assumed. The University teaches on campus,
+  // online and at a distance; a transcript that omits the mode leaves a
+  // receiving institution to guess, and one that quietly says "online" states
+  // something about the holder that the archive may not support.
+  const [modeOfStudy, setModeOfStudy] = React.useState('');
+  const [campus, setCampus] = React.useState('');
   const [rows, setRows] = React.useState<Row[]>([blank(1), blank(2), blank(3)]);
   const [busy, setBusy] = React.useState(false);
   const [producing, setProducing] = React.useState(false);
-  const [issued, setIssued] = React.useState<{ id: string | null; credentialId: string; sealCode: string } | null>(null);
+  const [issued, setIssued] = React.useState<{
+    id: string | null; credentialId: string; sealCode: string; qrSvg?: string | null;
+  } | null>(null);
   const [note, setNote] = React.useState<{ tone: 'ok' | 'bad'; text: string } | null>(null);
 
   const [nextKey, setNextKey] = React.useState(4);
@@ -236,6 +257,8 @@ function Form() {
             placeOfBirth: placeOfBirth.trim() || undefined,
             sex: sex.trim() || undefined,
             studentAddress: studentAddress.trim() || undefined,
+            modeOfStudy: modeOfStudy || undefined,
+            campus: campus.trim() || undefined,
             // The level, so the route applies the same rule about whether a
             // class of award is printed.
             award: programme.trim() || undefined,
@@ -253,7 +276,12 @@ function Form() {
       }).then((r) => r.json()).catch(() => null);
 
       if (!res?.ok) { setNote({ tone: 'bad', text: res?.detail ?? res?.error ?? 'It could not be issued.' }); return; }
-      setIssued({ id: res.credential.id, credentialId: res.credential.credentialId, sealCode: res.credential.sealCode });
+      setIssued({
+        id: res.credential.id,
+        credentialId: res.credential.credentialId,
+        sealCode: res.credential.sealCode,
+        qrSvg: res.credential.qrSvg ?? null,
+      });
       setNote({ tone: 'ok', text: `Transcribed and sealed as ${res.credential.credentialId}. The register records it as transcribed from an archived record, permanently.` });
     } finally {
       setBusy(false);
@@ -350,6 +378,33 @@ function Form() {
           <span className={LABEL}>Sex</span>
           <input value={sex} onChange={(e) => setSex(e.target.value)} maxLength={4} className={`${INPUT} mt-1`} />
         </label>
+        <label className="block">
+          <span className={LABEL}>Study mode</span>
+          <select
+            value={modeOfStudy}
+            onChange={(e) => setModeOfStudy(e.target.value)}
+            className={`${INPUT} mt-1`}
+          >
+            {/* BLANK IS A REAL ANSWER and it is the default. An archive that
+                does not record how somebody studied is common, and the sheet
+                prints nothing rather than a guess. */}
+            <option value="">— not recorded —</option>
+            {STUDY_MODES.map((m) => (
+              <option key={m.value} value={m.value}>{m.label}</option>
+            ))}
+          </select>
+        </label>
+
+        <label className="block">
+          <span className={LABEL}>Teaching location</span>
+          <input
+            value={campus}
+            onChange={(e) => setCampus(e.target.value)}
+            placeholder="the campus that taught the programme"
+            className={`${INPUT} mt-1`}
+          />
+        </label>
+
         <label className="block">
           <span className={LABEL}>Student address</span>
           <input value={studentAddress} onChange={(e) => setStudentAddress(e.target.value)} className={`${INPUT} mt-1`} />
@@ -571,7 +626,11 @@ function Form() {
             <TranscriptPreview
                 scale={0.62}
                 design={template.design}
-                specimen
+                // A SPECIMEN UNTIL IT IS ON THE REGISTER. Once it is sealed the
+                // overprint comes off, because what is on screen then IS the
+                // document — with its credential number, its seal code and the
+                // QR a reader will scan.
+                specimen={!issued}
                 data={{
                   ...preview.data,
                   studentNumber: studentNumber.trim() || null,
@@ -579,6 +638,14 @@ function Form() {
                   placeOfBirth: placeOfBirth.trim() || null,
                   sex: sex.trim() || null,
                   studentAddress: studentAddress.trim() || null,
+                  modeOfStudy: modeOfStudy || null,
+                  campus: campus.trim() || null,
+                  // ONCE IT IS SEALED, THE PREVIEW IS THE DOCUMENT. Before
+                  // that it carries the specimen overprint and no credential
+                  // number, which is what it is.
+                  credentialId: issued?.credentialId ?? null,
+                  sealCode: issued?.sealCode ?? null,
+                  qrSvg: issued?.qrSvg ?? null,
                   issuedOn: issuedOn || null,
                   creditsEarned: filled.reduce(
                     (t, r) => (pointFor(r.grade) > 0 ? t + (Number(r.creditUnit) || 0) : t),

@@ -211,6 +211,8 @@ export default function TranscriptGenerator({ embedded }: { embedded?: boolean }
         ...d,
         credentialId: res.credential.credentialId,
         sealCode: res.credential.sealCode,
+        // THE REAL QR, so the sheet on screen is the sheet that was sealed.
+        qrSvg: res.credential.qrSvg ?? null,
         issuedOn: res.credential.issuedOn ?? d.issuedOn,
       }));
       setNote({

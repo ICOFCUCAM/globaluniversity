@@ -170,7 +170,13 @@ export const SPECIMEN_TRANSCRIPT: TranscriptMasterData = (() => {
     transcriptKind: 'official',
     campus: UNIVERSITY.headquarters,
     nationality: 'Specimen',
-    modeOfStudy: 'online',
+    // ON-CAMPUS, NOT ONLINE — on the University's ruling that "the school is
+    // not only online". A specimen is the document people form their
+    // expectations from, and one that always reads "Online" teaches a registry
+    // that the field has one answer. The University teaches on campus, online,
+    // at a distance and blended; the transcription screen offers all four and
+    // leaves it blank when the record does not say.
+    modeOfStudy: 'on-campus',
     admittedOn: '1 September 2023',
     completedOn: '15 July 2026',
     award: 'Bachelor of Theology',

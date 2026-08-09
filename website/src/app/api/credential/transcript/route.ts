@@ -37,7 +37,7 @@
 import { NextResponse } from 'next/server';
 import { guard, audit } from '@/lib/adminAuth';
 import {
-  newCredentialId, contentHash, sealAward, awardFields, AWARD_FORMAT,
+  newCredentialId, contentHash, sealAward, awardFields, AWARD_FORMAT, verificationQrSvg,
 } from '@/lib/documentSecurity';
 import { buildTranscript, canIssueTranscript, creditsEarned } from '@/lib/transcript';
 import { can } from '@/lib/roles';
@@ -45,6 +45,15 @@ import { signContentHash } from '@/lib/documentSignature';
 import { UNIVERSITY } from '@/lib/constants';
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? process.env.SITE_URL ?? UNIVERSITY.website;
+
+/**
+ * The study modes the University teaches in, as migration 019 constrains them.
+ *
+ * CHECKED ON THE SERVER as well as offered in a dropdown. A value outside this
+ * list would be sealed onto a transcript describing a mode of study the
+ * University does not offer.
+ */
+const MODES = ['on-campus', 'online', 'distance', 'blended'];
 
 export async function POST(request: Request) {
   // The same capability as a certificate. Both put the University's name and
@@ -98,6 +107,10 @@ export async function POST(request: Request) {
       placeOfBirth?: string;
       sex?: string;
       studentAddress?: string;
+      /** on-campus | online | distance | blended. Never assumed. */
+      modeOfStudy?: string;
+      campus?: string;
+      specialization?: string;
       rows?: Array<{
         code?: string; title?: string; creditUnit?: number;
         grade?: string; gradePoint?: number; year?: number; semester?: number;
@@ -151,17 +164,30 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: 'missing-student' }, { status: 400 });
   }
 
-  const { data: student, error: readErr } = await admin
+  // The result is cast below: a `.select()` built by concatenation is a plain
+  // string to the generated Supabase types, so they infer nothing from it. The
+  // columns are named explicitly in the query and every one exists in the
+  // schema — schemaContract.test.mjs checks exactly that.
+  const { data: studentRow, error: readErr } = await admin
     .from('students')
-    .select('id, student_number, matric_no, first_name, middle_name, last_name, program, status')
+    // THE IDENTITY THE TRANSCRIPT PRINTS, not just the name and the programme.
+    // Migration 019 added study mode, campus, specialization and the admission
+    // and completion dates precisely so the sheet could carry them — and this
+    // query did not select one of them, so every derived transcript printed a
+    // dash where the University's own record had an answer.
+    .select('id, student_number, matric_no, first_name, middle_name, last_name, program, status, '
+      + 'date_of_birth, place_of_birth, gender, nationality, address, '
+      + 'campus, mode_of_study, specialization, admitted_on, completed_on, academic_standing, '
+      + 'admission_year, expected_graduation')
     .eq('id', body.studentId)
     .maybeSingle();
   if (readErr) {
     return NextResponse.json({ ok: false, error: `lookup-failed: ${readErr.message}` }, { status: 500 });
   }
-  if (!student) {
+  if (!studentRow) {
     return NextResponse.json({ ok: false, error: 'student-not-found' }, { status: 404 });
   }
+  const student = studentRow as unknown as Record<string, any>;
 
   // NOTE THE ABSENCE OF A GRADUATION CHECK. See the header — that absence is
   // the reason this route exists, not an oversight.
@@ -270,6 +296,27 @@ export async function POST(request: Request) {
       holder_surname: student.last_name ?? '',
       holder_first_names: student.first_name ?? '',
       holder_middle_name: student.middle_name ?? '',
+      // SEALED WITH THE RECORD, not read at render time. A student who moves
+      // campus after graduating must not retrospectively change the campus on
+      // a transcript the University already issued.
+      //
+      // THE STUDY MODE IS NOT ASSUMED. The University teaches on campus, online
+      // and at a distance; a transcript that omits which one leaves a receiving
+      // institution to guess, and one that defaults to 'online' tells them
+      // something about the holder that may be false.
+      campus: student.campus ?? null,
+      mode_of_study: student.mode_of_study ?? null,
+      specialization: student.specialization ?? null,
+      nationality: student.nationality ?? null,
+      date_of_birth: student.date_of_birth ?? null,
+      place_of_birth: student.place_of_birth ?? null,
+      sex: student.gender ?? null,
+      student_address: student.address ?? null,
+      admitted_on: student.admitted_on ?? null,
+      completed_on: student.completed_on ?? null,
+      academic_standing: student.academic_standing ?? null,
+      degree_status: student.status === 'graduated' ? 'Completed'
+        : student.status === 'withdrawn' ? 'Withdrawn' : 'In progress',
       cgpa: transcript.cgpa,
       credits_attempted: transcript.totalCredits,
       credits_earned: earned,
@@ -321,6 +368,14 @@ export async function POST(request: Request) {
       creditsAttempted: transcript.totalCredits,
       creditsEarned: earned,
       sealCode: seal.code,
+      // THE QR THE DOCUMENT WILL CARRY, returned so the screen that just issued
+      // it shows the real code rather than the "QR on issue" placeholder. The
+      // printed and emailed copies always had one; the preview did not, so a
+      // registrar looking at a sealed transcript saw a dashed box and could not
+      // tell whether the QR had failed.
+      qrSvg: await verificationQrSvg(
+        `${SITE}/verify?id=${encodeURIComponent(credentialId)}`, 104,
+      ).catch(() => null),
       issuedOn,
       omitted,
       // Not a failure of the issue — the credential is on the register either
@@ -494,6 +549,12 @@ async function transcribe(
       place_of_birth: m.placeOfBirth ?? null,
       sex: m.sex ?? null,
       student_address: m.studentAddress ?? null,
+      // NOT DEFAULTED. A blank study mode prints nothing; a guessed one states
+      // how somebody studied, which is a fact about them the archive may not
+      // support.
+      mode_of_study: MODES.includes(String(m.modeOfStudy ?? '')) ? m.modeOfStudy : null,
+      campus: m.campus ?? null,
+      specialization: m.specialization ?? null,
       // BOTH DATES ON THE RECORD. The document bears `issued_on`; this says
       // when the row was actually written, so a back-dated transcript can
       // never be read as evidence the University issued it then.
@@ -558,6 +619,9 @@ async function transcribe(
       creditsAttempted: transcript.totalCredits,
       creditsEarned: transcript.totalCredits,
       sealCode: seal.code,
+      qrSvg: await verificationQrSvg(
+        `${SITE}/verify?id=${encodeURIComponent(credentialId)}`, 104,
+      ).catch(() => null),
       issuedOn,
       transcribed: true,
       omitted: [],

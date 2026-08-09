@@ -271,7 +271,11 @@ export const bachelorOfTheologyCreditCurriculum: Curriculum = {
   duration: 'Three years',
   creditUnit: 'credit hours',
   note:
-    'The 180-ECTS structure published at /bachelor-of-theology governs this award — the university has confirmed it. The listing below is a supplementary course schedule for Years One and Two, supplied with course codes and descriptions that the ECTS structure does not carry. Year Three has not been supplied, and the ECTS value of each course below has not been stated.',
+    'SUPERSEDED, AND NO LONGER PUBLISHED. The University has ruled that only the 180-ECTS '
+    + 'structure at /bachelor-of-theology stands. This listing is a supplementary course schedule '
+    + 'for Years One and Two, in credit hours rather than ECTS, totalling 87 against an award of '
+    + '180; Year Three was never supplied. It is retained only for the course codes and '
+    + 'descriptions the ECTS structure does not carry, and is not the curriculum of anything.',
   terms: [
     {
       label: 'Year One · First Semester',
@@ -362,11 +366,37 @@ export const bachelorOfMinistryCurriculum: Curriculum = {
   })),
 };
 
+// ---------------------------------------------------------------------------
+// WHAT IS PUBLISHED AS A PROGRAMME'S CURRICULUM.
+//
+// `bachelorOfTheologyCreditCurriculum` IS NO LONGER AMONG THEM, on the
+// University's ruling: "only the one with 180 stands."
+//
+// Two Bachelor of Theology course lists existed and they disagreed — the
+// 180-ECTS structure of 36 courses published at /bachelor-of-theology, and the
+// supplementary schedule below of 30 courses totalling 87 credit hours,
+// covering Years One and Two only. A programme page that served the second
+// showed a degree that does not add up to the award, in a unit the award is not
+// measured in, missing its final year.
+//
+// The export is kept rather than deleted because those thirty courses carry
+// codes and descriptions the 180-ECTS structure does not, and the registry may
+// yet want them. It is simply not published as the curriculum of anything, and
+// `getCurriculum('bachelor-of-theology')` now returns nothing rather than the
+// wrong thing — which is the honest answer while the codes for the governing
+// structure are unpublished.
+// ---------------------------------------------------------------------------
+
 export const curricula: Curriculum[] = [
   diplomaOfTheologyCurriculum,
-  bachelorOfTheologyCreditCurriculum,
   bachelorOfMinistryCurriculum,
 ];
+
+/**
+ * Superseded. Retained for its course codes and descriptions, published
+ * nowhere. See the note above and the note on the value itself.
+ */
+export const supersededBthSchedule = bachelorOfTheologyCreditCurriculum;
 
 export function getCurriculum(programSlug: string) {
   return curricula.find((c) => c.programSlug === programSlug);
