@@ -81,11 +81,22 @@ check('the first course is a Year One, Semester One course',
   [bth.courses[0].year, bth.courses[0].semester], [1, 1]);
 check('and the last is Year Three, Semester Two',
   [bth.courses[35].year, bth.courses[35].semester], [3, 2]);
-check('BTH101 is where the University puts it',
-  (() => { const c = bth.courses.find((x) => x.code === 'BTH101'); return [c.year, c.semester]; })(),
+// BY TITLE, NOT BY CODE. These looked courses up as BTH101 and BTH312 — the
+// numbering counted off within the programme — and the University has since
+// ruled that a course carries its faculty code, so those strings no longer
+// name anything. The course is the thing being placed; the code is what it is
+// called this year.
+check('the opening course is where the University puts it',
+  (() => {
+    const c = bth.courses.find((x) => x.title === 'Introduction to Biblical Studies');
+    return [c.year, c.semester];
+  })(),
   [1, 1]);
-check('and BTH312 is where the University puts it',
-  (() => { const c = bth.courses.find((x) => x.code === 'BTH312'); return [c.year, c.semester]; })(),
+check('and the thesis is where the University puts it',
+  (() => {
+    const c = bth.courses.find((x) => x.title === 'Bachelor Thesis and Defense');
+    return [c.year, c.semester];
+  })(),
   [3, 2]);
 
 check('no course code appears twice',

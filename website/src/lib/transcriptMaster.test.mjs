@@ -272,7 +272,15 @@ check('it carries no seal code, because nothing sealed it',
 {
   const codes = SPECIMEN_TRANSCRIPT.years
     .flatMap((y) => y.semesters.flatMap((s) => s.courses.map((c) => c.code)));
-  check('every course is a University course code', codes.every((c) => /^BTH\d{3}$/.test(c)), true);
+  // THE FACULTY'S CODES, NOT THE PROGRAMME BRIEF'S. This asserted /^BTH\d{3}$/,
+  // which is the numbering counted off within one degree — and the University
+  // has ruled that a code belongs to the subject: BIS 220 on every programme
+  // that teaches Bible Survey I. A specimen printing BTH102 beside a real
+  // transcript printing BIS 220 teaches the wrong document.
+  check('every course carries a faculty subject code',
+    codes.every((c) => /^[A-Z]{2,4} \d{3}$/.test(c)), true);
+  check('and Bible Survey I is the one the registry issued',
+    codes.includes('BIS 220'), true);
   check('no course appears twice', new Set(codes).size, codes.length);
 }
 

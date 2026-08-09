@@ -33,6 +33,7 @@
 // ---------------------------------------------------------------------------
 
 import { bthCurriculum } from '@/content/bachelorOfTheology';
+import { facultyCode } from '@/content/courseCodes';
 import { UNIVERSITY } from '@/lib/constants';
 import { GRADING_SCALE } from '@/lib/grading';
 import { getClassification } from '@/lib/grading';
@@ -75,7 +76,11 @@ function buildYears(): TranscriptYear[] {
       const grade = PATTERN[(blockIndex * block.courses.length + i) % PATTERN.length];
       const gradePoint = pointFor(grade);
       return {
-        code: c.code,
+        // THE FACULTY'S CODE, not the programme brief's. The specimen is what
+        // the University looks at when it judges the document, so a specimen
+        // printing BTH101 beside a real transcript printing BIS 220 teaches the
+        // wrong sheet.
+        code: facultyCode(c.title, c.code).code,
         title: c.title,
         creditUnit: CREDITS_PER_COURSE,
         grade,

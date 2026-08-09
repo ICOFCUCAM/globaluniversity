@@ -43,19 +43,27 @@
 // registry code for a subject, that is the code, on every programme and on
 // every document.
 //
-// It will NOT invent the rest. Twenty-four of the thirty-six courses on the
-// 180-ECTS Bachelor of Theology are new subjects the registry listing does not
-// contain, and a plausible code — BIS 350 for Pneumatology, say — would be
-// indistinguishable from a real one on a sealed transcript and wrong in the
-// faculty's own numbering. Those courses keep the brief's code, marked as a
-// programme code rather than a registry one, and are listed for the faculty to
-// assign. A gap that is visible is a decision waiting; a gap that has been
-// filled in by a computer is a mistake nobody will ever find.
+// Where a subject the University has numbered is read under another wording,
+// the two are paired by TITLE and the code is read from the University's own
+// documents — never typed here. So a slip of the keyboard cannot introduce a
+// code the University never issued.
 //
-// NO CODE IS TYPED IN THIS FILE. The map below pairs a course TITLE with the
-// registry TITLE it is the same subject as; the code itself is read from
-// `curricula.ts`, which holds what the University supplied. So this file cannot
-// introduce a code the University never issued, even by a typing slip.
+// ---------------------------------------------------------------------------
+// AND THE SUBJECTS IT HAD NOT NUMBERED
+// ---------------------------------------------------------------------------
+//
+// Thirteen courses on the 180-ECTS Bachelor are new to that structure: no
+// transcript and no listing carries them, because they have never been taught
+// under the old one. This file refused to number them, on the grounds that a
+// plausible code is indistinguishable from a real one on a sealed transcript.
+//
+// The University has now instructed that they be numbered, which settles it —
+// the refusal was never about the numbering being impossible, only about whose
+// decision it was. They are in ASSIGNED_CODES below, each under a prefix the
+// University already uses, on a free number, with the reasoning that produced
+// it written beside it, and marked `assigned` wherever they appear so that a
+// registrar tracing a code finds an assignment rather than a document that does
+// not exist.
 // ---------------------------------------------------------------------------
 
 import { curricula, supersededBthSchedule } from '@/content/curricula';
@@ -68,16 +76,23 @@ export type CodeSource =
   /** The 180-ECTS development brief. A programme sequence, not a faculty code. */
   | 'programme'
   /**
-   * A number this system worked out rather than read.
+   * A number worked out here rather than read off a document, at the
+   * University's direction and under its own conventions.
    *
-   * ONE COURSE HOLDS THIS, and it exists because the University ruled that
-   * Church History is made of two courses while its registry has numbered only
-   * one of them. Somebody has to propose the second number; nobody but the
-   * faculty can confirm it. So it is proposed, said out loud on every screen
-   * that shows it, and it stops being proposed the moment the University says a
-   * number — including a different one.
+   * THE UNIVERSITY ASKED FOR THESE. Sixteen subjects on the 180-ECTS Bachelor
+   * had never been numbered — they are new to that structure, so no transcript
+   * and no listing carries them — and a registry with a hole in it cannot do
+   * the one thing a registry is for. The instruction was to give them numbers.
+   *
+   * They are still marked apart from the codes the University issued, and they
+   * always will be. Not because they are provisional — they are the faculty's
+   * numbering now — but because a registrar tracing a code back to its source
+   * should find "assigned under the faculty's conventions on this date" rather
+   * than a document that does not exist. Every one is listed in ASSIGNED_CODES
+   * below with the reasoning that produced it, and any of them can be replaced
+   * by the faculty in one line.
    */
-  | 'proposed';
+  | 'assigned';
 
 export interface FacultyCode {
   code: string;
@@ -219,32 +234,145 @@ const TITLE_ALIASES: Record<string, string> = {
 
   // The University has ruled that Church History is made of two courses:
   // Introduction to Church History and Advanced Church History. The first is
-  // the course the registry numbered CH 200; the second is proposed below,
-  // because the registry has never numbered it.
+  // the course the registry numbered CH 200; the second is assigned below.
   'Introduction to Church History': 'Church History',
+
+  // --- Settled by the University -------------------------------------------
+  //
+  // HERMENEUTICS. "Putting it in year two or three does not matter, it is the
+  // same. Hermeneutics is still hermeneutics, and Biblical Studies BIS 330."
+  // The year was the wrong thing to have hesitated over: a code names a
+  // subject, and where a subject is taught is a timetable question.
+  'Hermeneutics and Biblical Interpretation': 'Hermeneutics',
+
+  // SPIRITUAL LEADERSHIP. "The two codes are for vol 1 and 2." So MDS 650 and
+  // MDS 655 are the two volumes of one subject, and the Bachelor's single
+  // course is the first of them.
+  'Spiritual Leadership': 'Spiritual Leadership I',
+
+  // The registry's own course, under the name its transcript prints. Same slot
+  // in the same semester of the same programme; "Christian" and "Social" are
+  // two names for the psychology the University teaches here.
+  'Christian Psychology and Human Relations': 'Social Psychology and Human Relation',
 };
 
 /**
- * A number this system worked out, for the University to confirm or replace.
+ * The subjects the University asked to be given numbers, and the numbers.
  *
- * ONE ENTRY, AND IT SHOULD STAY THAT WAY. The University ruled that Church
- * History is two courses — Introduction and Advanced — and its registry has
- * numbered only one of them. Somebody has to write a number down for the second
- * before a transcript can carry it.
+ * ---------------------------------------------------------------------------
+ * THE THREE RULES EVERY ONE OF THESE FOLLOWS
+ * ---------------------------------------------------------------------------
  *
- * CH 300 follows the faculty's own convention rather than a convention invented
- * for the occasion: through the whole scheme the hundred says the level and the
- * advanced course of a pair sits a level above the introduction — Homiletics
- * BIS 320 and Advance Homiletics BIS 340, Systematic Theology STT 400, 420,
- * 440. Church History is CH 200, so its advanced course is CH 300.
+ * 1. THE PREFIX IS ONE THE UNIVERSITY ALREADY USES. Not one letter of a new
+ *    subject area is invented here. A number inside an existing area can be
+ *    changed by a memo; a new prefix is a claim about how the faculty is
+ *    divided, and that is not a thing a lookup table gets to decide. Where a
+ *    subject had no obvious home — the two biblical languages — it went to the
+ *    area it is studied for rather than to a prefix made up for it.
  *
- * It is marked `proposed` everywhere it appears, which is the point: a
- * registrar sees that this one number is the system's suggestion and not the
- * faculty's ruling, and replacing it is a one-line change here.
+ * 2. THE NUMBER IS FREE. Every one was checked against every code the
+ *    University has issued, and the test fails if an assignment ever lands on
+ *    one. Two courses sharing a number is the worst thing a code register can
+ *    do, because it stays invisible until two transcripts disagree.
+ *
+ * 3. THE ADVANCED COURSE SITS ABOVE THE INTRODUCTION, which is the faculty's
+ *    own convention and not one adopted for the occasion: Homiletics BIS 320
+ *    and Advance Homiletics BIS 340; Systematic Theology STT 400, 420, 440;
+ *    Christology LC 110 and LC 120; Spiritual Leadership MDS 650 and 655.
+ *
+ * The hundred does NOT track the year of study, and it was tempting to make it.
+ * On the University's own transcript Year One carries OTH 300, MW 300 and
+ * NT 330 beside BIS 220 and LC 110 — the number sequences the subject area, not
+ * the timetable. Imposing a year rule here would have produced a register that
+ * disagreed with every transcript already issued.
  */
-const PROPOSED_CODES: Record<string, string> = {
-  'Advanced Church History': 'CH 300',
-};
+const ASSIGNED_CODES: { title: string; code: string; because: string }[] = [
+  {
+    title: 'Introduction to Biblical Studies',
+    code: 'BIS 210',
+    because: 'Biblical Studies, below Bible Survey I at BIS 220 — it is the course that opens '
+      + 'the area.',
+  },
+  {
+    title: 'Advanced Church History',
+    code: 'CH 300',
+    because: 'A level above CH 200, the code the registry issued for the introduction. The '
+      + 'University has ruled that church history is taught as two courses.',
+  },
+  {
+    title: 'Introduction to Biblical Hebrew',
+    code: 'BIS 270',
+    because: 'The languages are read for exegesis, so they sit in Biblical Studies rather than '
+      + 'under a prefix invented for them. 270 and 280 keep the pair together and clear of the '
+      + 'survey and doctrine courses at 220-260.',
+  },
+  {
+    title: 'Introduction to New Testament Greek',
+    code: 'BIS 280',
+    because: 'The second of the language pair, beside Hebrew at BIS 270.',
+  },
+  {
+    title: 'Advanced Hermeneutics',
+    code: 'BIS 350',
+    because: 'Above Hermeneutics at BIS 330, in the same relation as Advance Homiletics BIS 340 '
+      + 'stands to Homiletics BIS 320.',
+  },
+  {
+    title: 'Epistles Studies',
+    code: 'BL 340',
+    because: 'BL is the epistles area — Epistle I to IV run 300, 310, 130, 330 — and this course '
+      + 'reads across them, so it follows the last of them.',
+  },
+  {
+    title: 'Pneumatology',
+    code: 'STT 410',
+    because: 'A doctrine course, so Systematic Theology, between Systematic Theology I at 400 '
+      + 'and II at 420 where it is taught.',
+  },
+  {
+    title: 'Christian Ethics',
+    code: 'MDS 660',
+    because: 'Ministry studies, where the University already keeps Ministerial Ethics at MDS 640. '
+      + 'It is not that course and does not take its number.',
+  },
+  {
+    title: 'Spiritual Formation',
+    code: 'MDS 670',
+    because: 'Ministry studies, after Spiritual Leadership at 650 and 655.',
+  },
+  {
+    title: 'Family Theology and Marriage Studies',
+    code: 'MDS 730',
+    because: 'Ministry studies, in the pastoral band with Parliamentary Laws 710, Social '
+      + 'Psychology 720 and Churches Organisation 740.',
+  },
+  {
+    title: 'African Theology and Contextual Theology',
+    code: 'STT 430',
+    because: 'Systematic Theology, between II at 420 and III at 440 — theology done '
+      + 'systematically from a context, not a separate discipline.',
+  },
+  {
+    title: 'Ecotheology and Creation Care',
+    code: 'STT 450',
+    because: 'Systematic Theology, after the third of the sequence at 440.',
+  },
+  {
+    title: 'Bachelor Thesis and Defense',
+    code: 'RM 560',
+    because: 'The research area, after Research Method I at 540 and II at 550. The 2020 '
+      + 'transcript prints the thesis with a blank code column; the University has since asked '
+      + 'for these to be numbered, and the research sequence is where it lands.',
+  },
+];
+
+const ASSIGNED_BY_TITLE: Record<string, string> =
+  Object.fromEntries(ASSIGNED_CODES.map((a) => [a.title, a.code]));
+
+/** The assignments with their reasoning, for a reference screen or a memo. */
+export function assignedCodes(): { title: string; code: string; because: string }[] {
+  return [...ASSIGNED_CODES];
+}
 
 /**
  * The registry code for a course title, or null where the University has not
@@ -264,10 +392,10 @@ export function registryCode(title: string): FacultyCode | null {
     if (viaAlias) return { code: viaAlias.code, source: 'registry', matchedTo: viaAlias.title };
   }
 
-  // LAST, AND ONLY AFTER EVERY REAL SOURCE HAS BEEN ASKED. A proposal must
-  // never shadow a code the University actually issued.
-  const proposed = PROPOSED_CODES[title];
-  if (proposed) return { code: proposed, source: 'proposed' };
+  // LAST, AND ONLY AFTER EVERY REAL SOURCE HAS BEEN ASKED. An assignment must
+  // never shadow a code the University itself issued.
+  const assigned = ASSIGNED_BY_TITLE[title];
+  if (assigned) return { code: assigned, source: 'assigned' };
 
   return null;
 }

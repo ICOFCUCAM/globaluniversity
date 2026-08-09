@@ -196,14 +196,16 @@ export function coursesForProgramme(title: string | null | undefined): Programme
 }
 
 /**
- * The courses on a schedule that the faculty has not yet given a registry code.
+ * The courses whose code was not read off a University document.
  *
- * Shown on the transcription screen rather than kept in a file somebody would
- * have to think to open. An operator with the paper archive in front of them
- * can type the real code straight over it; without this they would not know
- * there was anything to check.
+ * It was called awaitingRegistryCode, and that stopped being true the day the
+ * University directed that the unnumbered subjects be numbered: they are not
+ * awaiting anything now. What the list is FOR has not changed — an operator
+ * with the paper archive open should be able to see at a glance which codes
+ * came off a transcript and which were assigned here, because those are the
+ * ones worth checking against the paper.
  */
-export function awaitingRegistryCode(schedule: ProgrammeSchedule): ProgrammeCourse[] {
+export function codesNotFromRecord(schedule: ProgrammeSchedule): ProgrammeCourse[] {
   return schedule.courses.filter((c) => c.codeSource !== 'registry');
 }
 

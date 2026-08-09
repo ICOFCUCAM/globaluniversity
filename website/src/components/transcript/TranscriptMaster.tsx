@@ -745,7 +745,7 @@ function Masthead({
         )}
       </div>
 
-      <table style={{ borderCollapse: 'collapse', flex: '0 0 auto' }}>
+      <table style={{ borderCollapse: 'separate', borderSpacing: '0.5pt', flex: '0 0 auto' }}>
         <tbody>
           {band([
             ['Surname', data.student.last_name],
@@ -931,6 +931,55 @@ function GradeSystem({ ink, rule }: { ink: string; rule: string }) {
  *   block, horizontals appear only under the header and above the footer, so
  *   each column reads as a continuous list of figures.
  */
+/**
+ * A subject code as the University prints it: the area, then the number,
+ * standing in two columns.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY THIS IS NOT JUST A STRING IN A CELL
+ * ---------------------------------------------------------------------------
+ *
+ * On the University's own transcript the code column is read down, not across.
+ * The prefixes line up on the left and the numbers line up beside them:
+ *
+ *     BIS   220        BL    130
+ *     BIS   230        BL    160
+ *     MW    300        CED   110
+ *     OTH   300        MDS   650
+ *
+ * That is what lets a registrar see at a glance that four of this semester's
+ * courses are Biblical Studies, and it is the whole point of a scheme where the
+ * prefix carries the meaning. Set as one string — "BIS 220", "MDS 650",
+ * "OTH 300" — the numbers wander with the width of the letters and the column
+ * reads as a list of tokens instead.
+ *
+ * A fixed inline-block for the area does it: every number starts at the same
+ * place whatever the prefix, on screen and on paper, without a second real
+ * column that would have to be threaded through every header and footer row.
+ *
+ * NOT MONOSPACE, which is what it used to be. The University's transcript is
+ * set in one face throughout; a typewriter face in one column announces that a
+ * computer wrote that column.
+ *
+ * A code with no area — a legacy BTH101, or something typed by hand into the
+ * transcription screen — is printed exactly as given. Splitting it on a guess
+ * would be rewriting somebody's archive to fit a layout.
+ */
+export function SubjectCode({ code }: { code?: string }) {
+  if (!code) return null;
+  const parts = /^([A-Za-z]{2,4})\s+(\S.*)$/.exec(code.trim());
+  if (!parts) return <>{code}</>;
+  return (
+    <>
+      {/* Wide enough for the longest area the University uses. At 4.6mm OTH
+          and MDS ran straight into their numbers — "OTH300" — which is worse
+          than not aligning at all, because it reads as a different code. */}
+      <span style={{ display: 'inline-block', width: '6.4mm' }}>{parts[1]}</span>
+      {parts[2]}
+    </>
+  );
+}
+
 function YearTable({
   year, semesters, ink, brand, yearLabel,
 }: {
@@ -987,16 +1036,43 @@ function YearTable({
   return (
     <table style={{
       width: '100%',
-      // COLLAPSED, so the vertical separators run continuously the full
-      // height of the table rather than doubling at every cell edge.
-      borderCollapse: 'collapse',
+      // ---------------------------------------------------------------------
+      // SEPARATE, NOT COLLAPSED — AND THE DIFFERENCE IS THE WHOLE LOOK OF THE
+      // SHEET.
+      // ---------------------------------------------------------------------
+      //
+      // This was collapsed, with a comment defending it: "so the vertical
+      // separators run continuously rather than doubling at every cell edge."
+      // That was a preference, and the University's transcript is not built on
+      // it. On the real sheet every cell is its own ruled box, so each boundary
+      // between two cells is TWO hairlines with a thread of paper between them:
+      //
+      //     │ BIS  220 ││ Bible Survey I  ││ 3 │
+      //                 ↑ two rules, not one
+      //
+      // Collapsing merges those into a single rule. It looks tidier and it
+      // looks like a different institution's document — which is the one thing
+      // a transcript may not do, because the grid is part of what a registrar
+      // recognises before they read a word of it.
+      //
+      // The spacing runs BOTH WAYS. On the sheet the GPA band is a box with
+      // paper showing above and below it, and the semester heading under it is
+      // another box again. Horizontally it doubles the verticals; vertically it
+      // costs a fraction of a millimetre of leading between course rows and
+      // draws nothing there, because the body cells carry no top or bottom rule
+      // — which is why the entries in a semester still run on unbroken.
+      borderCollapse: 'separate',
+      borderSpacing: '0.5pt',
       tableLayout: 'fixed',
       marginBottom: MM(2.5),
     }}>
       <colgroup>
         {[0, 1].map((i) => (
           <React.Fragment key={i}>
-            <col style={{ width: '7%' }} /><col style={{ width: '15%' }} />
+            {/* The code column holds an area and a number standing apart, so it
+                is wider than a column holding one token would need to be —
+                which is why the University's own sheet gives it the room. */}
+            <col style={{ width: '8.4%' }} /><col style={{ width: '13.6%' }} />
             <col style={{ width: '5.6%' }} /><col style={{ width: '5%' }} />
             <col style={{ width: '5.6%' }} /><col style={{ width: '5.2%' }} />
             <col style={{ width: '5.6%' }} />
@@ -1021,7 +1097,7 @@ function YearTable({
               const c = pair[i]?.courses[r];
               return (
                 <React.Fragment key={i}>
-                  <td style={{ ...td, fontFamily: 'ui-monospace, Menlo, monospace' }}>{c?.code ?? ''}</td>
+                  <td style={td}><SubjectCode code={c?.code} /></td>
                   <td style={td}>{c?.title ?? ''}</td>
                   <td style={num}>{c ? c.creditUnit : ''}</td>
                   <td style={num}>{c ? c.grade : ''}</td>
@@ -1079,7 +1155,7 @@ function TransferBlock({
 
   return (
     <table style={{
-      width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed',
+      width: '100%', borderCollapse: 'separate', borderSpacing: '0.5pt', tableLayout: 'fixed',
       fontFamily: TABLE_FACE, marginBottom: MM(2.5), border: RULE_MAJOR,
     }}>
       <colgroup>
@@ -1161,7 +1237,9 @@ function AcademicSummary({
       }}>
         ACADEMIC SUMMARY
       </p>
-      <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+      <table style={{
+        width: '100%', borderCollapse: 'separate', borderSpacing: '0.5pt', tableLayout: 'fixed',
+      }}>
         <tbody>
           <tr>
             <th style={head}>Credits attempted</th>

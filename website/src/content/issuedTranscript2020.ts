@@ -79,6 +79,10 @@ export const ISSUED_2020_YEAR_THREE: IssuedCode[] = [
 export const ISSUED_2020_EARLIER: IssuedCode[] = [
   // The listing supplied to this project stops at Research Methodology I.
   { code: 'RM 550', title: 'Research Method II', where: 'Year Two, Second Semester 2010' },
+  // The psychology course the Bachelor still teaches. It is on the transcript
+  // and in neither listing, so without this line the subject would have been
+  // given a new number while the University's own number sat unused.
+  { code: 'MDS 720', title: 'Social Psychology and Human Relation', where: 'Year One, Second Semester 2009' },
   // THE UNIVERSITY HAS RULED THAT THIS DOCUMENT GOVERNS. The later listing
   // gives EN 101 for Use of English; the transcript prints MA 210, and the same
   // sheet uses EN 140 for Creative Writings — so the two codes are not a

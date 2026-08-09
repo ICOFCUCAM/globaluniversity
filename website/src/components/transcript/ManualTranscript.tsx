@@ -47,7 +47,7 @@ import type { UserRole } from '@/lib/types';
 import { GRADING_SCALE } from '@/lib/grading';
 import { courses as CATALOGUE } from '@/content/courses';
 import {
-  awaitingRegistryCode, coursesForProgramme, programmesWithCourses,
+  codesNotFromRecord, coursesForProgramme, programmesWithCourses,
 } from '@/content/programmeCourses';
 import { ectsFor } from '@/content/creditFramework';
 import { awardKindOf, awardWording, nominalYears } from '@/lib/awards';
@@ -180,9 +180,9 @@ function Form() {
   // proposed are different states, and a registrar has to be able to tell them
   // apart before sealing.
   const awaiting = React.useMemo(
-    () => (schedule ? awaitingRegistryCode(schedule) : []), [schedule]);
+    () => (schedule ? codesNotFromRecord(schedule) : []), [schedule]);
   const standIns = awaiting.filter((c) => c.codeSource === 'programme');
-  const proposed = awaiting.filter((c) => c.codeSource === 'proposed');
+  const assigned = awaiting.filter((c) => c.codeSource === 'assigned');
 
   /** Has the operator typed anything into the rows yet? */
   const typedAnything = rows.some((r) => r.code.trim() || r.title.trim());
@@ -520,14 +520,16 @@ function Form() {
               {/* A PROPOSED CODE IS NOT A FACULTY CODE, and the difference has
                   to survive all the way to the person about to seal a document
                   with it on. */}
-              {proposed.length > 0 && (
-                <p className="mt-2 max-w-3xl rounded-lg border border-[#c8622a]/40 bg-[#c8622a]/10 p-2.5 text-[11px] leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">
-                  <strong>Awaiting the faculty&rsquo;s confirmation:</strong>{' '}
-                  {proposed.map((c) => `${c.code} ${c.title}`).join(', ')}. The University has
-                  ruled that this subject is taught as two courses while its registry has numbered
-                  only one of them, so this number follows the faculty&rsquo;s own convention —
-                  the advanced course a level above the introduction — rather than being a code
-                  anybody has issued. Check it against the archive before sealing.
+              {assigned.length > 0 && (
+                <p className="mt-2 max-w-3xl rounded-lg border border-[#422e59]/25 bg-[#422e59]/[0.06] p-2.5 text-[11px] leading-relaxed text-[#6b6076] dark:border-[#c5a55a]/30 dark:bg-[#c5a55a]/10 dark:text-[#9c93ad]">
+                  <strong>{assigned.length} were numbered at the University&rsquo;s
+                  direction</strong>, under prefixes the faculty already uses and on numbers no
+                  issued code holds:{' '}
+                  <span className="font-mono">{assigned.slice(0, 8).map((c) => c.code).join(', ')}</span>
+                  {assigned.length > 8 && ` and ${assigned.length - 8} more`}. These are subjects
+                  new to the 180-ECTS structure, so no earlier transcript carries them. They are
+                  the faculty&rsquo;s numbering now; they are marked apart only so that a code can
+                  be traced to where it came from.
                 </p>
               )}
             </>
