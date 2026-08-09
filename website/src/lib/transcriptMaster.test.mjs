@@ -312,22 +312,22 @@ check('a one-slot close is unchanged by the new argument',
 console.log('\nThe grid, which is the first thing a registrar recognises\n');
 
 // ---------------------------------------------------------------------------
-// WHY THE GRID IS TESTED AND NOT JUST LOOKED AT
+// WHY THE GRID IS MEASURED AND NOT JUST LOOKED AT
 // ---------------------------------------------------------------------------
 //
-// The University asked three times for this table to stop looking like a web
-// table. Each boundary on its own instrument is TWO fine grey rules with a
-// thread of paper between them; a single stroke — however thin, however grey —
-// is a spreadsheet.
+// The University corrected this table three times, and two of the corrections
+// were accepted on the strength of a screenshot and were wrong.
 //
-// The last attempt LOOKED right in a screenshot and was wrong: border-spacing
-// was set to 0.6pt, which is the correct proportion against a 0.5pt rule, and
-// the browser rounded it to zero. The two rules sat flush and drew one 2px
-// stroke — a heavier version of the very thing the pair replaces. Nothing in a
-// rendered image showed it; a measurement did.
+//   FIRST it was a single rule per boundary, which is a spreadsheet.
+//   THEN it was two equal rules with a gap — and the gap was set in points, so
+//   the browser rounded it to nothing and drew one 2px stroke instead. Measured,
+//   `border-spacing` computed to 0px. It photographed as an improvement.
+//   THEN two equal rules, which is still not what the sheet does: the second
+//   line is not the first line again. It is a frame inside a frame — a visible
+//   outer rule, a thread of paper, and a much lighter inner rule.
 //
-// So the grid is asserted here, on the real component, where a browser cannot
-// round it away and a later tidy-up cannot quietly collapse it back.
+// So the construction is asserted on the rendered component, where a browser
+// cannot round it away and a later tidy-up cannot quietly flatten it.
 {
   const React = (await import('react')).default;
   const { renderToStaticMarkup } = await import('react-dom/server');
@@ -341,34 +341,44 @@ console.log('\nThe grid, which is the first thing a registrar recognises\n');
   }));
   const styles = html.match(/style="[^"]*"/g) ?? [];
   const tables = styles.filter((s) => s.includes('border-collapse'));
+  const framed = styles.filter((s) => s.includes('box-shadow:inset'));
 
-  check('every table on the sheet rules its cells separately',
-    tables.filter((s) => !s.includes('border-collapse:separate')).length, 0);
+  // THE OUTER GRID IS ONE CONTINUOUS RULE that crosses the whole table. The
+  // second line comes from the frame inside each cell, not from a second
+  // border, so the outer rule never doubles at a cell edge.
+  check('every table on the sheet collapses its outer grid',
+    tables.filter((s) => !s.includes('border-collapse:collapse')).length, 0);
+  check('…and draws its own outer rule, a shade stronger, round the edge',
+    tables.filter((s) => !/border:0\.7pt solid #8a8a8a/.test(s)).length, 0);
   check('…and there are tables, so this is not passing on an empty set',
     tables.length > 0, true);
 
-  // THE FAILURE THAT ALREADY HAPPENED ONCE. A spacing a browser rounds to zero
-  // is a spacing that does not exist, and the pair silently becomes a stroke.
-  check('the paper between the two rules is a whole pixel, not a fraction of a point',
-    tables.filter((s) => !/border-spacing:1px/.test(s)).length, 0);
+  // THE FRAME ITSELF: a thread of paper, then a lighter rule, reading inward.
+  check('the sheet is framed in many places, not one',
+    framed.length > 8, true);
+  check('every frame lays the paper gap against the outer rule and the inner rule beneath it',
+    framed.filter((s) => !(s.includes('#fdfcf8') && s.includes('#d8d3c6'))).length, 0);
+  // If the two rules were the same grey it would be a doubled line again, which
+  // is the correction the University made twice.
+  check('the inner rule is lighter than the outer, not the same rule twice',
+    parseInt('d8d3c6', 16) > parseInt('a8a8a8', 16), true);
 
-  // The perimeter is doubled too — table rule, paper, cell rule — and a shade
-  // stronger, which is what reads as the edge of the instrument.
-  check('every table draws its own outer rule, so the perimeter is a pair as well',
-    tables.filter((s) => !/border:0\.7pt solid #8a8a8a/.test(s)).length, 0);
+  // A COURSE ROW IS FRAMED DOWN ITS SIDES AND NOT ACROSS, because the original
+  // rules nothing between the entries of a semester. A frame that closed would
+  // put a line under every course.
+  const courseRow = framed.find((s) => s.includes('7.4pt') && !s.includes('font-weight:700'));
+  check('a course row carries the frame on its verticals only',
+    /box-shadow:inset 1px 0[^"]*inset -1px 0[^"]*"/.test(courseRow ?? ''), true);
+  check('…and nothing across the top or bottom of it',
+    /inset 0(px)? (1|-1)px/.test(courseRow ?? ''), false);
 
-  // NOT BLACK, NOT THICK, NOT COLOURED, NOT ROUNDED. The University asked for
-  // each of these by name.
+  // NOT BLACK, NOT THICK, NOT COLOURED, NOT ROUNDED — each asked for by name.
   check('no rule anywhere on the sheet is black',
     styles.filter((s) => /border[^;"]*:(?![^;"]*none)[^;"]*(#000|black)/.test(s)).length, 0);
   check('no rule is 2pt or heavier',
     styles.filter((s) => /border[^;"]*:\s*([2-9]|\d\d)(\.\d+)?pt/.test(s)).length, 0);
   check('nothing on the grid is rounded',
     styles.filter((s) => /border-radius/.test(s)).length, 0);
-  // THE TWO GREYS, AND THE INK OF THE SIGNATURE LINE — which is the one rule
-  // on the sheet that is not grid. A registrar signs on it, so it is drawn in
-  // the document's own ink like the writing it sits under, and it is named here
-  // rather than excluded, so that a fourth colour appearing anywhere fails.
   check('the rules are the two greys, plus the ink the signature line is drawn in',
     Array.from(new Set((html.match(/border[^;"]*solid (#[0-9a-f]{3,6})/g) ?? [])
       .map((m) => m.slice(m.lastIndexOf('#'))))).sort(),

@@ -157,56 +157,111 @@ function asset(path: string, base?: string): string {
 //   summary — so the eye finds the sections without the grid shouting.
 //
 // ---------------------------------------------------------------------------
-// AND EVERY BOUNDARY IS TWO RULES, NOT ONE
+// AND EVERY BOUNDARY IS A FRAME INSIDE A FRAME
 // ---------------------------------------------------------------------------
 //
-// The thing that made this read as a web table rather than as an instrument.
-// On the University's sheet no boundary is a single stroke: each one is two
-// fine grey rules with a thread of paper showing between them, the way a
-// formal document ruled on security stationery has always been printed. A
-// single 1px line — however grey, however thin — is a spreadsheet.
+// The thing that made this read as a web table rather than as an instrument,
+// and it took three attempts to get right because two of them were plausible.
 //
-// It is drawn with the table's own mechanism rather than with a doubled
-// border, and that choice matters three ways:
+// It is NOT a single stroke, which is a spreadsheet. It is also NOT two equal
+// rules with a gap, which was the second attempt and still wrong: on the
+// University's sheet the two lines are not the same line twice. Each cell is a
+// frame sitting inside a frame —
 //
-//   THE GAP IS PAPER, NOT PAINT. `border-spacing` leaves the sheet showing
-//   through, so the security ground and the watermark run under the grid
-//   exactly as they do under everything else. A CSS `double` border paints its
-//   gap in the element's own background and would knock a white channel
-//   through the artwork along every rule on the page.
+//     outer rule → narrow cream gap → inner rule → the writing
 //
-//   IT STAYS THIN. A `double` border needs three device pixels before it
-//   resolves into two lines — over 2pt on paper, which is a heavy black frame,
-//   the one thing this must not be.
+// — with the outer rule clearly visible and running through the whole table,
+// and the inner one much lighter, barely darker than the paper. That is what
+// gives a printed transcript its slight dimensionality, as though one ruled
+// table had been laid inside another, and it is why the grid reads as
+// engraved rather than drawn.
 //
-//   IT ALIGNS BY CONSTRUCTION. The pairs are two cells' own edges, so every
-//   vertical meets every horizontal squarely and the cells stay rectangular
-//   down the whole record.
+// The University's own GPA band shows the whole construction in one place:
 //
-// The outer boundary is the table's own border, so the perimeter is doubled
-// too — table rule, paper, cell rule — and a shade stronger, which is what
-// makes it read as the edge of the instrument.
+//     ────────────  outer rule
+//                   cream gap
+//     ────────────  inner rule
+//        3.04
+//     ────────────  inner rule
+//                   cream gap
+//     ────────────  outer rule
 //
-// No rounded corners, shadows, gradients, colour or decoration anywhere.
+// HOW IT IS BUILT, AND WHY NOT THE OBVIOUS WAYS. Not `border: 3px double`,
+// which needs three device pixels before it resolves into two lines at all —
+// over 2pt on paper, a heavy black frame — and paints both rules in the same
+// colour, when the whole effect depends on the inner one being lighter. Not a
+// nested `<div>` in every cell either: a div inside a table cell is as tall as
+// its own content, so the inner rule would break at every row boundary instead
+// of running the column, and an empty cell would draw no inner rule at all.
+//
+// Inset shadows, one per side. They are painted on the cell itself, so they
+// take the cell's exact height and the inner rules run unbroken; they are
+// per-side, so a course row can carry the frame on its verticals and nothing
+// across the top and bottom, which is how the original leaves the entries in a
+// semester running on; and they cost no layout, so every rule still meets
+// every other squarely.
+//
+// The gap is painted in the paper's own colour rather than left transparent.
+// A transparent gap would show the security ground through it and the pair
+// would read as one soft band at print resolution; a cream one is the thread of
+// unprinted paper the reference shows. It is a single pixel, so the watermark
+// under the table is untouched everywhere else.
+//
+// No rounded corners, gradients, colour or decoration anywhere.
 const RULE = '0.5pt solid #a8a8a8';
 /** Section boundaries and the outer border: the same grey, a shade stronger. */
 const RULE_MAJOR = '0.7pt solid #8a8a8a';
 /**
- * The thread of paper between the two rules of a boundary.
+ * The paper showing between the outer rule and the inner one.
  *
- * ONE DEVICE PIXEL, NOT A FRACTION OF A POINT, AND THAT IS THE WHOLE LESSON
- * HERE. It was 0.6pt, which is the right proportion against a 0.5pt rule and
- * reads correctly in any drawing program — and a browser rounds it to nothing.
- * Measured rather than looked at, `border-spacing` computed to 0px: the two
- * rules sat flush and drew one 2px stroke, which is a heavier version of
- * exactly the single line the pair exists to replace. It looked like an
- * improvement in a screenshot.
- *
- * A pixel is the smallest gap that survives rounding at every scale this is
- * drawn at — 0.26mm on paper, a shade wider than the 0.18mm rule, which is the
- * proportion the University's own sheet shows.
+ * ONE DEVICE PIXEL, NOT A FRACTION OF A POINT, AND THAT IS A LESSON THIS FILE
+ * PAID FOR. The gap was once set to 0.6pt — the right proportion against a
+ * 0.5pt rule, and correct in any drawing program — and the browser rounded it
+ * to nothing. Measured, it computed to 0px: the two rules sat flush and drew a
+ * single 2px stroke, a heavier version of exactly the line the pair exists to
+ * replace. It photographed as an improvement.
  */
-const RULE_GAP = '1px';
+const FRAME_GAP_PX = 1;
+/** The sheet's own colour, so the gap reads as unprinted paper. */
+const FRAME_GAP_INK = '#fdfcf8';
+/**
+ * The inner rule: much lighter than the outer, barely darker than the paper.
+ *
+ * If the two were the same grey the effect would be a doubled line rather than
+ * a frame within a frame, which is the correction the University made twice.
+ */
+const FRAME_INNER_INK = '#d8d3c6';
+
+/**
+ * The inner frame of a cell, as inset shadows.
+ *
+ * `sides` names the edges that carry it — 'lrtb' for a closed band, 'lr' for a
+ * course row, 'lrt' and 'lrb' for the two halves of a masthead box that read as
+ * one. IT FOLLOWS THE OUTER RULE AND NOTHING ELSE: an inner rule on an edge
+ * with no outer rule beside it is a line from nowhere, and it is how a course
+ * row would end up ruled across when the original leaves the entries of a
+ * semester running on.
+ *
+ * Each edge takes two shadows: the gap in the paper's colour against the outer
+ * rule, then the inner rule beneath it, so what shows reading inward is
+ * gap-then-rule.
+ */
+function innerFrame(sides: string): string {
+  const g = FRAME_GAP_PX;
+  const edge = (x: number, y: number) => [
+    `inset ${x * g}px ${y * g}px 0 0 ${FRAME_GAP_INK}`,
+    `inset ${x * g * 2}px ${y * g * 2}px 0 0 ${FRAME_INNER_INK}`,
+  ];
+  const shadows: string[] = [];
+  // Painted first-on-top, so each gap is listed before the rule it sits
+  // against, and the verticals come before the horizontals — otherwise the
+  // corners fill with the wrong colour where the two meet.
+  if (sides.includes('l')) shadows.push(...edge(1, 0));
+  if (sides.includes('r')) shadows.push(...edge(-1, 0));
+  if (sides.includes('t')) shadows.push(...edge(0, 1));
+  if (sides.includes('b')) shadows.push(...edge(0, -1));
+  return shadows.join(', ');
+}
 
 /**
  * The table's typeface.
@@ -702,9 +757,13 @@ function Masthead({
   const cell: React.CSSProperties = {
     border: RULE, padding: '0.3mm 1.4mm', verticalAlign: 'top', fontFamily: TABLE_FACE,
   };
+  // THE HEADING AND ITS VALUE ARE ONE BOX, read down — "Surname" over "SAMBA".
+  // So the frame runs round the pair and opens where they join: the heading
+  // carries it on three sides and the value on the other three. Framing each
+  // separately would rule a line between a label and the thing it labels.
   const lab: React.CSSProperties = {
     ...cell, fontSize: '5.6pt', fontWeight: 400, opacity: 0.9, textAlign: 'left',
-    borderBottom: 'none', padding: '0.3mm 1.6mm 0',
+    borderBottom: 'none', padding: '0.3mm 1.6mm 0', boxShadow: innerFrame('lrt'),
   };
   const val: React.CSSProperties = {
     // THE VALUES FILL THE CELL. In the original the particulars are set large
@@ -717,6 +776,7 @@ function Masthead({
     // at 10pt a long campus name pushed the block wider than the masthead.
     ...cell, fontSize: '9pt', fontWeight: 700, borderTop: 'none',
     padding: '0 1.6mm 0.4mm', whiteSpace: 'nowrap', letterSpacing: '.01em',
+    boxShadow: innerFrame('lrb'),
   };
 
   const profile = profileFor(data.transcriptKind);
@@ -793,8 +853,7 @@ function Masthead({
       </div>
 
       <table style={{
-        borderCollapse: 'separate', borderSpacing: RULE_GAP, border: RULE_MAJOR,
-        flex: '0 0 auto',
+        borderCollapse: 'collapse', border: RULE_MAJOR, flex: '0 0 auto',
       }}>
         <tbody>
           {band([
@@ -1038,7 +1097,9 @@ function YearTable({
   ink: string; brand: string; yearLabel: string;
 }) {
   const th: React.CSSProperties = {
-    fontSize: '6.2pt', padding: '0.55mm 1mm', textAlign: 'left',
+    // The padding clears the inner frame rather than sitting under it: 1px of
+    // gap and 1px of rule on every edge the frame runs along.
+    fontSize: '6.2pt', padding: '0.55mm 1.3mm', textAlign: 'left',
     color: ink, fontWeight: 400, verticalAlign: 'bottom', lineHeight: 1.15,
     fontFamily: TABLE_FACE,
     // A semester heading is a major boundary: heavier above, and the header
@@ -1047,20 +1108,26 @@ function YearTable({
     borderBottom: RULE_MAJOR,
     borderLeft: RULE,
     borderRight: RULE,
+    // CLOSED ON ALL FOUR SIDES, because the heading is a band in its own right.
+    boxShadow: innerFrame('lrtb'),
   };
   const td: React.CSSProperties = {
-    fontSize: '7.4pt', padding: '0.32mm 1mm', color: ink, fontFamily: TABLE_FACE,
+    fontSize: '7.4pt', padding: '0.32mm 1.3mm', color: ink, fontFamily: TABLE_FACE,
     // VERTICALS ONLY. No horizontal rule between course rows — the entries
-    // stay open and the typography carries them.
+    // stay open and the typography carries them — so the frame runs down the
+    // sides and closes nothing across.
     borderLeft: RULE,
     borderRight: RULE,
+    boxShadow: innerFrame('lr'),
   };
   const num: React.CSSProperties = { ...td, textAlign: 'right' };
   const foot: React.CSSProperties = {
-    ...td, fontSize: '7pt', padding: '0.7mm 1mm',
-    // The GPA summary is a major boundary at both edges.
+    ...td, fontSize: '7pt', padding: '0.7mm 1.3mm',
+    // The GPA summary is a major boundary at both edges, and the band the
+    // University's own sheet shows framed top and bottom.
     borderTop: RULE_MAJOR,
     borderBottom: RULE_MAJOR,
+    boxShadow: innerFrame('lrtb'),
   };
 
   const pair = [semesters[0], semesters[1]];
@@ -1098,37 +1165,13 @@ function YearTable({
   return (
     <table style={{
       width: '100%',
-      // ---------------------------------------------------------------------
-      // SEPARATE, NOT COLLAPSED — AND THE DIFFERENCE IS THE WHOLE LOOK OF THE
-      // SHEET.
-      // ---------------------------------------------------------------------
-      //
-      // This was collapsed, with a comment defending it: "so the vertical
-      // separators run continuously rather than doubling at every cell edge."
-      // That was a preference, and the University's transcript is not built on
-      // it. On the real sheet every cell is its own ruled box, so each boundary
-      // between two cells is TWO hairlines with a thread of paper between them:
-      //
-      //     │ BIS  220 ││ Bible Survey I  ││ 3 │
-      //                 ↑ two rules, not one
-      //
-      // Collapsing merges those into a single rule. It looks tidier and it
-      // looks like a different institution's document — which is the one thing
-      // a transcript may not do, because the grid is part of what a registrar
-      // recognises before they read a word of it.
-      //
-      // The spacing runs BOTH WAYS. On the sheet the GPA band is a box with
-      // paper showing above and below it, and the semester heading under it is
-      // another box again. Horizontally it doubles the verticals; vertically it
-      // costs a fraction of a millimetre of leading between course rows and
-      // draws nothing there, because the body cells carry no top or bottom rule
-      // — which is why the entries in a semester still run on unbroken.
-      borderCollapse: 'separate',
-      borderSpacing: RULE_GAP,
-      // THE PERIMETER, DOUBLED. Without a border on the table itself the outer
-      // edge is a single cell rule while every boundary inside it is a pair —
-      // which is exactly the join a reader notices without being able to say
-      // why. With it: table rule, paper, cell rule, all the way round.
+      // THE OUTER GRID IS ONE CONTINUOUS RULE, and the second line comes from
+      // the frame set inside each cell rather than from a second border. See
+      // innerFrame() at the top of this file: the outer rule crosses the whole
+      // table, the inner one is lighter and inset, and between them is a thread
+      // of paper.
+      borderCollapse: 'collapse',
+      // A shade stronger round the outside — the edge of the instrument.
       border: RULE_MAJOR,
       tableLayout: 'fixed',
       marginBottom: MM(2.5),
@@ -1213,17 +1256,18 @@ function TransferBlock({
   credits, ink,
 }: { credits: readonly NonNullable<TranscriptMasterData['transferCredits']>[number][]; ink: string }) {
   const th: React.CSSProperties = {
-    fontSize: '5.8pt', fontWeight: 400, textAlign: 'left', padding: '0.4mm 1mm',
+    fontSize: '5.8pt', fontWeight: 400, textAlign: 'left', padding: '0.4mm 1.3mm',
     borderBottom: RULE_MAJOR, borderLeft: RULE, borderRight: RULE, color: ink,
+    boxShadow: innerFrame('lrtb'),
   };
   const td: React.CSSProperties = {
-    fontSize: '7pt', padding: '0.3mm 1mm', borderLeft: RULE, borderRight: RULE, color: ink,
+    fontSize: '7pt', padding: '0.3mm 1.3mm', borderLeft: RULE, borderRight: RULE, color: ink,
+    boxShadow: innerFrame('lr'),
   };
 
   return (
     <table style={{
-      width: '100%', borderCollapse: 'separate', borderSpacing: RULE_GAP, border: RULE_MAJOR,
-      tableLayout: 'fixed',
+      width: '100%', borderCollapse: 'collapse', border: RULE_MAJOR, tableLayout: 'fixed',
       fontFamily: TABLE_FACE, marginBottom: MM(2.5),
     }}>
       <colgroup>
@@ -1289,10 +1333,11 @@ function AcademicSummary({
     // LEFT, EXPLICITLY. A `th` centres by default, so every heading floated
     // away from the figure beneath it and the block read as two unrelated rows.
     ...cell, fontSize: '5.8pt', fontWeight: 400, opacity: 0.85, borderBottom: 'none',
-    padding: '0.5mm 2mm 0', textAlign: 'left',
+    padding: '0.5mm 2mm 0', textAlign: 'left', boxShadow: innerFrame('lrt'),
   };
   const value: React.CSSProperties = {
     ...cell, fontWeight: 700, borderTop: 'none', padding: '0 2mm 0.6mm',
+    boxShadow: innerFrame('lrb'),
   };
 
   const transfer = transferAccepted(data.transferCredits);
@@ -1306,8 +1351,7 @@ function AcademicSummary({
         ACADEMIC SUMMARY
       </p>
       <table style={{
-        width: '100%', borderCollapse: 'separate', borderSpacing: RULE_GAP, border: RULE_MAJOR,
-      tableLayout: 'fixed',
+        width: '100%', borderCollapse: 'collapse', border: RULE_MAJOR, tableLayout: 'fixed',
       }}>
         <tbody>
           <tr>
