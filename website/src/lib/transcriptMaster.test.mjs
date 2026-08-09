@@ -456,6 +456,23 @@ console.log('\nA signature on the transcript, and the specimen rule again\n');
   }));
 
   check('an issued transcript carries the Registrar’s signature', draw(false).includes(PNG), true);
+  // THE BUG THIS PAIR EXISTS FOR. The close listed only signatories with a
+  // NAME, so an officer who signed on screen without typing their name had the
+  // whole row dropped — the sheet fell back to the University's record and
+  // printed two offices and no signature, with nothing to say why. The panel
+  // promises that a blank name prints whoever holds the office; it now does.
+  {
+    const unnamed = {
+      ...DEFAULT_TRANSCRIPT_DESIGN,
+      signatories: [{ name: '', office: 'Registrar', signature: PNG }],
+    };
+    const html = renderToStaticMarkup(React.createElement(TranscriptMaster, {
+      design: unnamed, data: SPECIMEN_TRANSCRIPT, specimen: false,
+    }));
+    check('a signature with no name beside it is still printed', html.includes(PNG), true);
+    check('…and the office is filled from the University’s own record',
+      html.includes('Registrar:'), true);
+  }
   check('a specimen does not', draw(true).includes(PNG), false);
   check('and the rule to sign on is there either way', draw(true).includes('Signed'), true);
   // A design with no image is untouched — the University has always signed by

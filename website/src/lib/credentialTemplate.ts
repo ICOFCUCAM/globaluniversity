@@ -513,7 +513,14 @@ export const DEFAULT_TRANSCRIPT_DESIGN: CredentialDesign = {
     programmeLead: 'in the programme of',
     validity: 'This transcript is invalid without the seal of the University.',
   },
-  signatories: [{ name: '', office: 'Registrar' }],
+  // BOTH OFFICES THE SHEET ACTUALLY PRINTS. It carried only the Registrar, so
+  // the Signatures & seal panel offered one row for a document that closes with
+  // two — and the Vice-Chancellor's signature had nowhere to be affixed
+  // without adding a signatory by hand.
+  signatories: [
+    { name: '', office: 'Vice-Chancellor' },
+    { name: '', office: 'Registrar' },
+  ],
   footnote: 'Issued under the seal of ICOF Global University. Verify at iguc.net/verify.',
   security: {
     ...DEFAULT_CERTIFICATE_DESIGN.security,

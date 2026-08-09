@@ -1495,12 +1495,43 @@ function hasRepeat(data: TranscriptMasterData): boolean {
 function signatoriesFor(
   design: CredentialDesign,
 ): { name: string; office: string; signature?: string }[] {
-  const named = (design.signatories ?? []).filter((s) => s.name?.trim());
-  if (named.length > 0) return named.slice(0, 2);
+  // A ROW COUNTS IF IT CARRIES A NAME **OR** A SIGNATURE, and the second half
+  // of that was missing. The panel promises "leave a name blank to print
+  // whoever currently holds the office"; this filtered on the name alone, so an
+  // officer who signed on screen without typing their name had the whole row
+  // dropped and the transcript fell back to the University's record — printing
+  // two offices and no signature, with nothing to say why.
+  const given = (design.signatories ?? []).filter((s) => s.name?.trim() || s.signature);
+  if (given.length > 0) {
+    return given.slice(0, 2).map((s) => ({
+      office: s.office,
+      // The same fallback the certificate uses, rather than a blank where a
+      // name belongs.
+      name: s.name?.trim() || nameForOffice(s.office),
+      signature: s.signature,
+    }));
+  }
   return [
     { office: 'Vice-Chancellor', name: UNIVERSITY.viceChancellor },
     { office: 'Registrar', name: UNIVERSITY.registrar },
   ];
+}
+
+/**
+ * Whoever currently holds an office, when the design does not name them.
+ *
+ * The same table the certificate reads, so the two documents cannot disagree
+ * about who the Registrar is. Order matters: 'vice chancellor' contains
+ * 'chancellor', so the narrower office is tested first.
+ */
+function nameForOffice(office: string): string {
+  const o = (office ?? '').toLowerCase();
+  if (o.includes('vice')) return UNIVERSITY.viceChancellor;
+  if (o.includes('chancellor')) return UNIVERSITY.chancellor;
+  if (o.includes('president')) return UNIVERSITY.president;
+  if (o.includes('registrar')) return UNIVERSITY.registrar;
+  if (o.includes('academic affairs')) return UNIVERSITY.headOfAcademicAffairs;
+  return '';
 }
 
 /** "One", "Two", "Three" — as the original labels its years. */

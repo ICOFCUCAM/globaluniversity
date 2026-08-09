@@ -120,6 +120,15 @@ check('and a signatory with no office is still refused',
 
 console.log('\nAffixing a signature\n');
 
+// THE TRANSCRIPT CLOSES WITH TWO OFFICES, so the panel must offer two rows. It
+// shipped with one — the Registrar — and the Vice-Chancellor's signature had
+// nowhere to be affixed without adding a signatory by hand.
+check('the transcript offers both offices it prints',
+  DEFAULT_TRANSCRIPT_DESIGN.signatories.map((s) => s.office),
+  ['Vice-Chancellor', 'Registrar']);
+check('and the certificate still offers its four',
+  DEFAULT_CERTIFICATE_DESIGN.signatories.length, 4);
+
 // A SIGNATURE IS OPTIONAL. The University has always signed by hand, and a
 // design with no image must publish exactly as before.
 check('a design with no signature publishes', validateDesign(cert, 'certificate'), []);

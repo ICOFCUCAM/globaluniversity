@@ -59,6 +59,7 @@ import { TranscriptPreview } from '@/components/transcript/TranscriptMaster';
 import { SPECIMEN_TRANSCRIPT } from '@/lib/transcriptSpecimen';
 import { uvLayerSvg } from '@/lib/credentialArt';
 import ApprovalQueue from './ApprovalQueue';
+import SignaturePad from './SignaturePad';
 import { WORDING_KEYS, TITLE_FONTS } from '@/lib/credentialTemplate';
 import { MERGE_FIELDS, fieldsUsedBy } from '@/lib/credentialAuthority';
 import { SECURITY_PATTERNS, watermarkName } from '@/lib/securityPatterns';
@@ -680,11 +681,14 @@ export default function CredentialStudio({ embedded }: { embedded?: boolean } = 
                     version — so a certificate issued this year keeps this year's
                     signatures for ever, which is what a signature is for. */}
                 <p className="text-[11px] leading-relaxed text-[#8a8194]">
-                  Affix a signature and it prints on the rule, on every credential issued under
-                  this design. <strong>Scan the strokes alone on a transparent background</strong> —
-                  a PNG with the paper still behind it prints as a white box over the frame.
-                  Specimens never carry it: a specimen with a real officer&rsquo;s signature is a
-                  forger&rsquo;s starting material.
+                  <strong>Sign here</strong> and the officer signs on screen — mouse, finger or
+                  stylus, in the ink of their choice — and the strokes are kept on their own, with
+                  nothing behind them. <strong>Upload a scan</strong> is for a wet signature on
+                  paper; scan the strokes alone on a transparent background, because a PNG with the
+                  paper still behind it prints as a white box over the frame. Either way it prints
+                  on the rule of every credential issued under this design, and specimens never
+                  carry it: a specimen with a real officer&rsquo;s signature is a forger&rsquo;s
+                  starting material.
                 </p>
                 {design.signatories.map((sig, i) => (
                   <div key={i} className="flex items-center gap-2">
@@ -1377,6 +1381,7 @@ function SignatureAffix({
   onChange: (signature: string | undefined) => void;
 }) {
   const [error, setError] = React.useState<string | null>(null);
+  const [signing, setSigning] = React.useState(false);
   const id = React.useId();
 
   function take(file: File | undefined) {
@@ -1408,6 +1413,16 @@ function SignatureAffix({
     reader.readAsDataURL(file);
   }
 
+  if (signing) {
+    return (
+      <SignaturePad
+        office={office}
+        onDone={(sig) => { onChange(sig); setSigning(false); setError(null); }}
+        onCancel={() => setSigning(false)}
+      />
+    );
+  }
+
   return (
     <div className="flex items-center gap-1.5">
       {value ? (
@@ -1422,6 +1437,13 @@ function SignatureAffix({
             className="h-7 w-24 rounded border border-[#ded6c8] bg-white object-contain p-0.5 dark:border-[#3d3349]"
           />
           <button
+            onClick={() => setSigning(true)}
+            className={`whitespace-nowrap rounded-lg px-1.5 py-1 text-[11px] text-[#6b6076] hover:text-[#422e59] dark:text-[#9c93ad] ${FOCUS}`}
+            title="Sign again"
+          >
+            Sign again
+          </button>
+          <button
             onClick={() => { onChange(undefined); setError(null); }}
             className="rounded-lg p-1.5 text-[#a49bb0] hover:bg-red-50 hover:text-red-600"
             aria-label={`Remove the signature for ${office || 'this office'}`}
@@ -1431,12 +1453,25 @@ function SignatureAffix({
           </button>
         </>
       ) : (
-        <label
-          htmlFor={id}
-          className={`cursor-pointer whitespace-nowrap rounded-lg border border-dashed border-[#ded6c8] px-2 py-1.5 text-[11px] text-[#6b6076] hover:border-[#422e59] hover:text-[#422e59] dark:border-[#3d3349] dark:text-[#9c93ad] ${FOCUS}`}
-        >
-          Affix signature
-        </label>
+        <>
+          {/* SIGNING COMES FIRST, and the file second. The University asked why
+              affixing a signature opened a file chooser — the answer is that it
+              should not have to. An officer at the machine signs here; the file
+              is for the scan of a wet signature, which is a different and still
+              legitimate thing. */}
+          <button
+            onClick={() => setSigning(true)}
+            className={`whitespace-nowrap rounded-lg border border-[#422e59]/40 px-2 py-1.5 text-[11px] font-medium text-[#422e59] hover:bg-[#422e59]/[0.06] dark:border-[#c5a55a]/40 dark:text-[#c8c1d4] ${FOCUS}`}
+          >
+            Sign here
+          </button>
+          <label
+            htmlFor={id}
+            className={`cursor-pointer whitespace-nowrap rounded-lg border border-dashed border-[#ded6c8] px-2 py-1.5 text-[11px] text-[#6b6076] hover:border-[#422e59] hover:text-[#422e59] dark:border-[#3d3349] dark:text-[#9c93ad] ${FOCUS}`}
+          >
+            Upload a scan
+          </label>
+        </>
       )}
       <input
         id={id}
