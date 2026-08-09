@@ -16,6 +16,22 @@
 //
 // So the state is shown, plainly, where the register is managed: whether a key
 // is held, which key, and how many credentials still carry no signature.
+//
+// ---------------------------------------------------------------------------
+// AND WHICH ONES, NOT ONLY HOW MANY
+// ---------------------------------------------------------------------------
+//
+// The panel used to print a number and stop. "2 credentials on the register
+// carry no signature" is unanswerable from the screen it appears on: the
+// register beside it lists awards, one entry per credential number, and a
+// corrected credential is two rows there and one entry — so the number and the
+// list disagree and neither explains the other. Somebody looking at that has to
+// decide whether to sign the back catalogue without being able to see what the
+// back catalogue is.
+//
+// The rows are therefore listed, each with the version that makes the
+// arithmetic add up. A superseded version counts separately because it was
+// separately issued and somebody may still be holding it.
 // ---------------------------------------------------------------------------
 
 import React from 'react';
@@ -36,9 +52,39 @@ interface KeyInfo {
   retiredKeys?: { keyId: string }[];
 }
 
+/** One unsigned document — a version of a credential, not an award. */
+interface UnsignedRow {
+  id: string;
+  credentialRef: string;
+  version: number;
+  kind: string;
+  holderName: string;
+  award: string | null;
+  status: string;
+  issuedAt: string | null;
+}
+
+/**
+ * How many are listed before the list gives up and says how many more.
+ *
+ * A university that switches signing on after ten years has a register in the
+ * thousands, and printing it into a status panel would bury the two sentences
+ * above it.
+ */
+const SHOW_AT_MOST = 25;
+
+function issuedOn(value: string | null): string {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
 export default function SigningStatus({ role }: { role?: UserRole }) {
   const [key, setKey] = React.useState<KeyInfo | null>(null);
   const [unsigned, setUnsigned] = React.useState<number | null>(null);
+  const [unsignedRows, setUnsignedRows] = React.useState<UnsignedRow[]>([]);
+  const [unsignedError, setUnsignedError] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
   const [note, setNote] = React.useState<{ tone: 'ok' | 'bad'; text: string } | null>(null);
   // SHOWN ONCE AND NEVER STORED. Held in this component's state only, so it is
@@ -56,13 +102,47 @@ export default function SigningStatus({ role }: { role?: UserRole }) {
     const info = await fetch('/api/credential/key').then((r) => r.json()).catch(() => null);
     setKey(info ?? { configured: false, note: 'The key endpoint could not be reached.' });
 
-    // HOW MANY ARE UNSIGNED, counted rather than assumed. `head: true` asks for
-    // the count without transferring a row.
-    const { count, error } = await supabase
+    // WHICH ONES ARE UNSIGNED, counted rather than assumed. `count: 'exact'`
+    // returns the true total even though only a page of rows is fetched, so the
+    // sentence stays right when the list is truncated.
+    const { data, count, error } = await supabase
       .from('credentials_issued')
-      .select('id', { count: 'exact', head: true })
-      .is('signature', null);
-    setUnsigned(error ? null : (count ?? 0));
+      .select('id, credential_id, version, kind, holder_name, award, status, issued_at',
+        { count: 'exact' })
+      .is('signature', null)
+      // OLDEST FIRST, which is the order the backfill signs them in. A list in
+      // one order beside a button that works in another is a small lie.
+      .order('issued_at', { ascending: true })
+      .limit(SHOW_AT_MOST);
+
+    if (error) {
+      setUnsigned(null);
+      setUnsignedRows([]);
+      // THE COMMONEST CAUSE BY FAR is a database that has not had 020 run on
+      // it, where there is no signature column to be null. Saying "could not be
+      // read" and leaving it there sends somebody hunting a permissions problem
+      // that does not exist.
+      setUnsignedError(
+        /signature/i.test(error.message)
+          ? 'The register has no signature column yet. Run '
+            + 'docs/migrations/020_signature_void_and_grading.sql (or RUN-ALL.sql) and reload.'
+          : error.message,
+      );
+      return;
+    }
+
+    setUnsignedError(null);
+    setUnsigned(count ?? (data?.length ?? 0));
+    setUnsignedRows((data ?? []).map((r: Record<string, any>) => ({
+      id: String(r.id),
+      credentialRef: r.credential_id,
+      version: r.version ?? 1,
+      kind: r.kind,
+      holderName: r.holder_name,
+      award: r.award ?? null,
+      status: r.status,
+      issuedAt: r.issued_at ?? null,
+    })));
   }, []);
 
   React.useEffect(() => { void load(); }, [load]);
@@ -292,13 +372,87 @@ export default function SigningStatus({ role }: { role?: UserRole }) {
         </div>
       )}
 
-      <p className="mt-3 text-xs text-[#6b6076] dark:text-[#9c93ad]">
+      <p className="mt-4 text-xs text-[#6b6076] dark:text-[#9c93ad]">
         {unsigned === null
-          ? 'How many credentials carry no signature could not be read.'
+          ? `Which credentials carry no signature could not be read. ${unsignedError ?? ''}`
           : unsigned === 0
             ? 'Every credential on the register carries a signature.'
-            : `${unsigned} credential${unsigned === 1 ? '' : 's'} on the register carry no signature.`}
+            : `${unsigned} credential${unsigned === 1 ? '' : 's'} on the register carry no signature`
+              + `${unsigned > SHOW_AT_MOST ? `, the oldest ${SHOW_AT_MOST} of them below` : ''}`
+              // The colon only when something follows it.
+              + `${unsignedRows.length > 0 ? ':' : '.'}`}
       </p>
+
+      {/* --- WHICH ONES --------------------------------------------------
+          Listed rather than counted, because the count alone cannot be
+          checked against anything. */}
+      {unsignedRows.length > 0 && (
+        <>
+          <div className="mt-2 overflow-x-auto rounded-xl border border-[#e6e0d6] dark:border-[#3d3349]">
+            <table className="w-full min-w-[34rem] border-collapse text-left text-[11px]">
+              <thead>
+                <tr className="bg-[#faf8f4] text-[10px] uppercase tracking-wide text-[#8a8194] dark:bg-[#241d2e]">
+                  <th className="px-3 py-2 font-semibold">Credential</th>
+                  <th className="px-3 py-2 font-semibold">Holder</th>
+                  <th className="px-3 py-2 font-semibold">Document</th>
+                  <th className="px-3 py-2 font-semibold">Issued</th>
+                  <th className="px-3 py-2 font-semibold">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {unsignedRows.map((r) => (
+                  <tr key={r.id} className="border-t border-[#eee9e0] dark:border-[#332b3f]">
+                    <td className="px-3 py-2 align-top font-mono text-[10px] text-[#422e59] dark:text-[#e4dcf0]">
+                      {r.credentialRef}
+                      {/* THE VERSION IS WHY THE COUNT AND THE REGISTER DISAGREE.
+                          Two versions of one credential number are two documents
+                          to sign and one entry in the list beside this. */}
+                      {r.version > 1 && (
+                        <span className="ml-1 rounded bg-[#422e59]/10 px-1 py-px text-[9px] font-sans font-semibold text-[#422e59] dark:bg-[#c5a55a]/20 dark:text-[#e4dcf0]">
+                          v{r.version}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 align-top text-[#33234a] dark:text-[#e4dcf0]">
+                      {r.holderName}
+                      {r.award && (
+                        <span className="block text-[10px] text-[#8a8194]">{r.award}</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 align-top capitalize text-[#6b6076] dark:text-[#9c93ad]">
+                      {r.kind.replace(/-/g, ' ')}
+                    </td>
+                    <td className="px-3 py-2 align-top whitespace-nowrap text-[#6b6076] dark:text-[#9c93ad]">
+                      {issuedOn(r.issuedAt)}
+                    </td>
+                    <td className="px-3 py-2 align-top capitalize text-[#6b6076] dark:text-[#9c93ad]">
+                      {r.status}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {(unsigned ?? 0) > unsignedRows.length && (
+            <p className="mt-1.5 text-[11px] text-[#8a8194]">
+              …and {(unsigned ?? 0) - unsignedRows.length} more, not shown. Signing works through
+              the whole register, not only the rows listed here.
+            </p>
+          )}
+
+          {/* SAID ONLY WHEN IT APPLIES. Explaining superseded versions to
+              somebody whose list has none is noise. */}
+          {unsignedRows.some((r) => r.version > 1) && (
+            <p className="mt-1.5 max-w-2xl text-[11px] leading-relaxed text-[#8a8194]">
+              A credential number appearing twice is not a duplicate: it is an earlier version and
+              the correction that replaced it. Both were issued, both may be in somebody&rsquo;s
+              hand, and both are signed separately — which is why this count can exceed the number
+              of entries in the register beside it.
+            </p>
+          )}
+        </>
+      )}
 
       {note && (
         <p role="status" className={`mt-3 flex items-start gap-2 rounded-lg p-3 text-xs ${
