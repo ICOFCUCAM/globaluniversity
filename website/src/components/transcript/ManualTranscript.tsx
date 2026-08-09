@@ -46,6 +46,8 @@ import { can } from '@/lib/roles';
 import type { UserRole } from '@/lib/types';
 import { GRADING_SCALE } from '@/lib/grading';
 import { courses as CATALOGUE } from '@/content/courses';
+import { coursesForProgramme, programmesWithCourses } from '@/content/programmeCourses';
+import { ectsFor } from '@/content/creditFramework';
 import { awardKindOf, awardWording, nominalYears } from '@/lib/awards';
 import { buildTranscript, canIssueTranscript } from '@/lib/transcript';
 import ProduceCredential from '@/components/credentials/ProduceCredential';
@@ -133,6 +135,50 @@ function Form() {
 
   function set(key: string, field: keyof Row, value: string) {
     setRows((rs) => rs.map((r) => (r.key === key ? { ...r, [field]: value } : r)));
+  }
+
+  // ---------------------------------------------------------------------
+  // THE PROGRAMME'S OWN COURSES, RATHER THAN THIRTY-SIX RETYPED LINES.
+  //
+  // The University publishes the code, the title, the credit value, the year
+  // and the semester of every course on its programmes, and this repository
+  // carries them. Asking an operator to type them again is not a neutral cost:
+  // it is thirty-six chances to put a course on a SEALED University document
+  // under a name the University does not use, and nobody in the registry would
+  // notice, because it reads perfectly well.
+  //
+  // THE ARCHIVE SUPPLIES THE GRADES; THE UNIVERSITY SUPPLIES THE COURSES. So
+  // the grade column is left exactly as it was — filling that from anywhere
+  // but the paper register is the one thing this screen must never do.
+  // ---------------------------------------------------------------------
+  const schedule = React.useMemo(() => coursesForProgramme(programme), [programme]);
+
+  /** Has the operator typed anything into the rows yet? */
+  const typedAnything = rows.some((r) => r.code.trim() || r.title.trim());
+
+  function fillFromProgramme() {
+    if (!schedule) return;
+    let n = nextKey;
+    setRows(schedule.courses.map((c) => {
+      const key = `r${n}`;
+      n += 1;
+      return {
+        key,
+        code: c.code,
+        title: c.title,
+        // A CREDIT VALUE THE UNIVERSITY HAS NOT STATED IS LEFT BLANK, not set
+        // to a common number. The Diploma of Theology's schedule carries no
+        // credit values, and inventing 3 would put a figure on a sealed
+        // transcript that no committee approved.
+        creditUnit: c.credits === null ? '' : String(c.credits),
+        // UNTOUCHED. The whole purpose of this screen is that the marks come
+        // from the archive.
+        grade: GRADING_SCALE[0]?.grade ?? 'A',
+        year: String(c.year),
+        semester: String(c.semester),
+      };
+    }));
+    setNextKey(n);
   }
 
   const filled = rows.filter((r) => r.code.trim() && Number(r.creditUnit) > 0);
@@ -344,6 +390,97 @@ function Form() {
         </span>
       </label>
 
+      {/* --- The programme's own courses ---------------------------------- */}
+      {programme && (
+        <div className="mt-5 rounded-xl border border-[#ece7de] bg-[#faf8f4] p-4 dark:border-[#2e2637] dark:bg-[#241d2e]">
+          {schedule ? (
+            <>
+              <p className="text-xs font-semibold text-[#33234a] dark:text-[#e4dcf0]">
+                The University publishes {schedule.courses.length} courses for this programme.
+              </p>
+              <p className="mt-1 max-w-3xl text-[11px] leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">
+                {schedule.source} Filling them in gives you every code, title, year and semester
+                from the University&rsquo;s own record{schedule.creditsUnstated
+                  ? ' — but not the credit values, because the University has not published them '
+                    + 'for this programme, and a figure invented here would be sealed onto the '
+                    + 'transcript'
+                  : ', and the credit value of each'}.
+                {' '}<strong>Everything stays editable</strong>, and the grades are never touched:
+                those come from the archive and nowhere else.
+              </p>
+
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={fillFromProgramme}
+                  className={`${BTN_SECONDARY} text-xs`}
+                >
+                  {typedAnything
+                    ? `Replace the rows with the ${schedule.courses.length} published courses`
+                    : `Fill in the ${schedule.courses.length} published courses`}
+                </button>
+              </div>
+
+              {/* A WARNING BEFORE WORK IS DESTROYED, not after. Filling replaces
+                  every row, and an operator who has typed twenty lines from a
+                  paper register must not lose them to a button they pressed to
+                  see what it did. */}
+              {typedAnything && (
+                <p className="mt-1.5 text-[11px] text-[#a07c12]">
+                  This replaces the rows you have already typed. Nothing else on the form changes.
+                </p>
+              )}
+            </>
+          ) : (
+            /* NO INVENTED LIST. The University has published courses for three
+               programmes and not for the rest, and offering a plausible course
+               list nobody approved is exactly the failure this screen exists to
+               avoid. */
+            <p className="max-w-3xl text-[11px] leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">
+              The University has not published a course schedule for this programme, so there is
+              nothing to fill in from — type the courses as the archive records them. Published
+              schedules exist for: {programmesWithCourses().join(', ')}.
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* --- Does the record add up to the award? -------------------------- */}
+      {/* THE ONE FIGURE A READER CHECKS FIRST, and the screen was not showing
+          it. The University has ruled that a bachelor's degree is 180 ECTS, a
+          diploma 120 and a master's 120 — and a transcribed record that totals
+          108 because the credit column was left at its default of 3 looks
+          entirely normal on this form and is wrong on a sealed document.
+          Shown live, against the University's own ruling for this level. */}
+      {programme && filled.length > 0 && (() => {
+        const total = filled.reduce((t, r) => t + (Number(r.creditUnit) || 0), 0);
+        const required = chosen ? ectsFor(chosen.level) : null;
+        const matches = required !== null && total === required;
+        return (
+          <p className={`mt-4 rounded-lg p-3 text-xs ${
+            required === null
+              ? 'bg-[#f2eee6] text-[#6b6076] dark:bg-[#2a2333] dark:text-[#9c93ad]'
+              : matches
+                ? 'border border-emerald-600/30 bg-emerald-600/10 text-emerald-900 dark:text-emerald-200'
+                : 'border border-[#e9c14a]/40 bg-[#e9c14a]/10 text-[#6b6076] dark:text-[#9c93ad]'
+          }`}>
+            <strong>{total} credits</strong> across {filled.length} course{filled.length === 1 ? '' : 's'}
+            {required === null
+              // A DOCTORATE HAS NO CREDIT VALUE and that is the normal state,
+              // not a gap. Comparing against nothing and calling it a shortfall
+              // would be inventing a requirement.
+              ? '. The University states no credit value for this level — a doctorate is examined '
+                + 'by thesis — so there is nothing to check this total against.'
+              : matches
+                ? `. This matches the ${required} the University has ruled for this level.`
+                : `, against the ${required} the University has ruled for this level — a `
+                  + `difference of ${Math.abs(required - total)}. A record genuinely does differ `
+                  + 'sometimes, through transfer credit or a repeated year, and the archive is the '
+                  + 'authority here. Nothing is refused; check it before sealing.'}
+          </p>
+        );
+      })()}
+
       {/* --- The courses ------------------------------------------------- */}
       <div className="mt-5 overflow-x-auto">
         <table className="w-full text-sm">
@@ -490,6 +627,13 @@ function Form() {
               <p className="mt-2 text-[11px] text-[#8a8194]">
                 {!surname.trim() || !firstNames.trim() ? 'Give the holder’s surname and first names.'
                   : !programme ? 'Choose the programme, so the level decides how the record is read.'
+                  // A ROW WITH A CODE AND NO CREDIT VALUE IS THE CASE THE FILL
+                  // CREATES, for a programme whose credits the University has
+                  // not published. "Add at least one course" would send the
+                  // operator hunting for a course that is already on screen.
+                  : filled.length === 0 && rows.some((r) => r.code.trim())
+                    ? 'Every course above needs a credit value. The University has not published '
+                      + 'them for this programme, so they come from the archive with the grades.'
                   : filled.length === 0 ? 'Add at least one course with a code and a credit unit above zero.'
                     : sourceShort ? 'Say where these figures come from, in at least a dozen characters.'
                       : 'Check the courses above.'}
