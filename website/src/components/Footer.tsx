@@ -46,11 +46,14 @@ export default function Footer() {
                 Course Catalogue
               </Link>
             </li>
-            <li>
-              <Link href="/research" className="inline-block bg-gradient-to-r from-brand-gold to-brand-gold bg-[length:0%_1px] bg-left-bottom bg-no-repeat text-white/80 transition-[background-size,color] duration-300 hover:bg-[length:100%_1px] hover:text-brand-gold">
-                Research
-              </Link>
-            </li>
+            {/* RESEARCH IS NOT LISTED HERE, because it is already above: it was
+                promoted into site.nav as the sixth top-level entry, and this
+                column renders site.nav in full. The hardcoded copy that used to
+                sit here printed "Research" twice, one line under the other.
+
+                That is the cost of a column that is part loop and part hand-
+                written list. Anything added to the navigation now appears here
+                once and only once. */}
           </ul>
         </div>
 
@@ -100,7 +103,15 @@ export default function Footer() {
           <Link href="/portal" className="hover:text-brand-gold">Student Portal</Link>
           <Link href="/verify" className="hover:text-brand-gold">Verify a Credential</Link>
           <Link href="/news" className="hover:text-brand-gold">News</Link>
-          <Link href="/careers" className="hover:text-brand-gold">Careers</Link>
+          {/* CAREERS IS GONE BECAUSE IT WAS A 404. There is no src/app/careers,
+              and `careers` is not one of the twenty slugs in pages.ts, so every
+              click on it since it was written has landed on the not-found page
+              — on every page of the site.
+
+              Deleted rather than pointed somewhere plausible. A university's
+              footer offering "Careers" is read as "we are hiring", and sending
+              that reader to /about would be a worse answer than not offering
+              it. It comes back when there is a page with posts on it. */}
           <Link href="/fr" hrefLang="fr" className="hover:text-brand-gold">Français</Link>
           <Link href="/privacy-policy" className="hover:text-brand-gold">Privacy Policy</Link>
         </div>
