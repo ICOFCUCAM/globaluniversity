@@ -29,14 +29,15 @@
     "test:specimens": "node src/lib/specimens.test.mjs",
     "test:deleteapp": "node src/lib/deleteApplication.test.mjs",
     "test:transcript": "node src/lib/transcript.test.mjs",
-    "test": "npm run test:grading && npm run test:fees && npm run test:seal && npm run test:certificate && npm run test:routes && npm run test:approval && npm run test:policies && npm run test:publicart && npm run test:world && npm run test:fixedwindow && npm run test:faculty && npm run test:bmin && npm run test:prereq && npm run test:credits && npm run test:social && npm run test:authority && npm run test:exams && npm run test:paper && npm run test:secrets && npm run test:specimens && npm run test:deleteapp && npm run test:transcript && npm run test:transcriptmaster && npm run test:signature && npm run test:gradingscale && npm run test:config && npm run test:programmecourses && npm run test:schema",
+    "test": "npm run test:grading && npm run test:fees && npm run test:seal && npm run test:certificate && npm run test:routes && npm run test:approval && npm run test:policies && npm run test:publicart && npm run test:world && npm run test:fixedwindow && npm run test:faculty && npm run test:bmin && npm run test:prereq && npm run test:credits && npm run test:social && npm run test:authority && npm run test:exams && npm run test:paper && npm run test:secrets && npm run test:specimens && npm run test:deleteapp && npm run test:transcript && npm run test:transcriptmaster && npm run test:signature && npm run test:gradingscale && npm run test:config && npm run test:programmecourses && npm run test:design && npm run test:schema",
     "test:fixedwindow": "node src/components/home/fixedWindow.test.mjs",
     "test:transcriptmaster": "node src/lib/transcriptMaster.test.mjs",
     "test:signature": "node src/lib/documentSignature.test.mjs",
     "test:gradingscale": "node src/lib/gradingScale.test.mjs",
     "test:config": "node src/lib/configuration.test.mjs",
     "test:programmecourses": "node src/content/programmeCourses.test.mjs",
-    "make-signing-key": "node scripts/make-signing-key.mjs"
+    "make-signing-key": "node scripts/make-signing-key.mjs",
+    "test:design": "node src/lib/credentialDesign.test.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

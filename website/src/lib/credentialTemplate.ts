@@ -508,6 +508,22 @@ export function withDefaults(
  * issued, and it should fail at the moment of publishing rather than at the
  * moment a graduate opens it.
  */
+/**
+ * The widest frame a sheet of this paper can carry, in millimetres.
+ *
+ * ONE RULE, TWO PLACES. The validator refuses beyond it and the studio's slider
+ * stops at it, and they read it from here — a limit written twice is a limit
+ * that will one day be two different numbers, which is how the studio came to
+ * offer a slider that stopped at 10mm for a built-in frame of 11.
+ *
+ * A quarter of the short edge. Past that the document is a frame with a note
+ * inside it, which is a judgement about the paper rather than about taste.
+ */
+export function maxBorderWidthMm(pageSize: CredentialDesign['pageSize']): number {
+  const shortEdgeMm = pageSize === 'Letter' ? 216 : 210;
+  return Math.round(shortEdgeMm / 4);
+}
+
 export function validateDesign(d: CredentialDesign, kind: CredentialKind = 'certificate'): string[] {
   const problems: string[] = [];
   const hex = /^#[0-9a-fA-F]{6}$/;
@@ -557,8 +573,30 @@ export function validateDesign(d: CredentialDesign, kind: CredentialKind = 'cert
       'takes it with it.',
     );
   }
-  if (d.borderWidthMm < 0 || d.borderWidthMm > 10) {
-    problems.push('Border width must be between 0 and 10 mm.');
+  // THE BORDER IS A CHOICE, AND THIS USED TO REFUSE THE UNIVERSITY'S OWN.
+  //
+  // The ceiling was 10mm and the built-in certificate is an 11mm ornate frame,
+  // so "Reset to the built-in default" produced a design the validator would
+  // not publish — with a message that reads as though a border were compulsory
+  // when the truth was the opposite: the default was too wide for a limit
+  // nobody had checked it against.
+  //
+  // The limit itself was invented. What actually matters is that the frame
+  // cannot swallow the sheet, so it is now measured against the sheet: a
+  // quarter of the short edge, which on A4 is 52mm and on no paper is a
+  // number a designer will meet by accident.
+  //
+  // And it is not checked at all when there is no border, because then the
+  // width draws nothing.
+  if (d.border !== 'none') {
+    const ceiling = maxBorderWidthMm(d.pageSize);
+    if (d.borderWidthMm < 0 || d.borderWidthMm > ceiling) {
+      problems.push(
+        `Border width must be between 0 and ${ceiling} mm on ${d.pageSize} — beyond that the `
+        + 'frame leaves too little sheet for the document it frames. Choose Border: none if the '
+        + 'design should carry no frame at all.',
+      );
+    }
   }
   if (d.sealOpacity < 0 || d.sealOpacity > 1) {
     problems.push('Seal opacity must be between 0 and 1.');

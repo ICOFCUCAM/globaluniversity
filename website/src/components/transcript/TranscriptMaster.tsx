@@ -230,7 +230,7 @@ export default function TranscriptMaster({
   const sheets = paginate(data.years, closingSlots);
 
   return (
-    <div id="icof-transcript">
+    <div id="icof-transcript" className="icof-document">
       <style>{`
         @media print {
           @page { size: A4 landscape; margin: 0; }

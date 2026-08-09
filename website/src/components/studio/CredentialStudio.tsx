@@ -45,6 +45,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { can } from '@/lib/roles';
 import {
   defaultDesign,
+  maxBorderWidthMm,
   validateDesign,
   withDefaults,
   type CredentialDesign,
@@ -401,11 +402,19 @@ export default function CredentialStudio({ embedded }: { embedded?: boolean } = 
                       ? `${design.bleedMm}mm of artwork past the trim, with trim marks. For a commercial press — an office laser printer cannot bleed and will cut the frame off.`
                       : 'None. Correct for office printing. A commercial press needs 3mm, or the guillotine leaves a white sliver wherever it falls short of the trim line.'}
                   </p>
-                  <Row label="Border width">
-                    <input type="range" min={0} max={10} step={0.5} value={design.borderWidthMm}
-                      onChange={(e) => set('borderWidthMm', Number(e.target.value))} className="w-full" />
-                    <span className="w-12 text-right text-xs text-[#6b6076] dark:text-[#9c93ad]">{design.borderWidthMm}mm</span>
-                  </Row>
+                  {/* NOT SHOWN WHEN THERE IS NO BORDER. A slider that draws
+                      nothing invites somebody to move it and conclude the
+                      control is broken. And the range stopped at 10mm while the
+                      University's own default frame is 11 — so the built-in
+                      certificate could not be represented on its own slider. */}
+                  {design.border !== 'none' && (
+                    <Row label="Border width">
+                      <input type="range" min={0} max={maxBorderWidthMm(design.pageSize)} step={0.5}
+                        value={design.borderWidthMm}
+                        onChange={(e) => set('borderWidthMm', Number(e.target.value))} className="w-full" />
+                      <span className="w-12 text-right text-xs text-[#6b6076] dark:text-[#9c93ad]">{design.borderWidthMm}mm</span>
+                    </Row>
+                  )}
                 </Panel>
 
                 <Panel

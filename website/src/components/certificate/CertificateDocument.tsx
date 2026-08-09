@@ -395,6 +395,12 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
       `}</style>
     <div
       id={DOC_ID}
+      // THE CLASS THE PRINT STYLESHEET LOOKS FOR. A page carrying this is a
+      // page whose purpose is the document: the portal chrome around it is
+      // dropped from the printed flow rather than merely made invisible, and
+      // the site-wide "print in black on white paper" reset stands down so the
+      // frame, the guilloché and the ground survive. See globals.css.
+      className="icof-document"
       ref={ref}
       // The document announces what it is and what it says.
       //
