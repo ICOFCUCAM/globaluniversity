@@ -242,3 +242,42 @@ export const APPLICANT_STAGES = [
 export function applicantStageIndex(state: string | null | undefined): number {
   return APPLICANT_STAGES.findIndex((s) => (s.states as readonly string[]).includes(state ?? ''));
 }
+
+/**
+ * THE OFFICE A ROLE EXERCISES THE AUTHORITY OF.
+ *
+ * The person, the role and the office are three different facts, and an audit
+ * needs all three. `decided_by = 12345` says a user acted; what an audit has to
+ * establish is that the Head of Academic Affairs, ACTING UNDER THE ACADEMIC
+ * AFFAIRS AUTHORITY, moved this application from one state to another.
+ *
+ * They come apart exactly where it matters. When the Superadministrator decides
+ * an admission, the person is an administrator and the office exercised is
+ * Academic Affairs — which is the case the whole override mechanism exists for,
+ * and it cannot be read off the role alone.
+ */
+export const OFFICE_FOR_ROLE: Record<string, string> = {
+  'academic-office': 'Office of Academic Affairs',
+  registrar: 'Office of the Registrar',
+  'admissions-officer': 'Admissions Office',
+  finance: 'Finance Office',
+  'finance-director': 'Finance Office',
+  'vice-chancellor': 'Office of the Vice Chancellor',
+  chancellor: 'Office of the Chancellor',
+  superadmin: 'System Administration',
+  admin: 'System Administration',
+};
+
+/**
+ * Which office an action is recorded against.
+ *
+ * `actingFor` is the office whose authority is being exercised, which is NOT
+ * the actor's own office during an override. Recording the actor's office there
+ * would make an administrative override look like an ordinary administrative
+ * act, and it is the opposite: it is an administrator doing Academic Affairs'
+ * work, and the record has to say so.
+ */
+export function officeFor(role: string | null | undefined, actingFor?: string): string {
+  if (actingFor) return OFFICE_FOR_ROLE[actingFor] ?? actingFor;
+  return OFFICE_FOR_ROLE[role ?? ''] ?? 'Unattributed';
+}

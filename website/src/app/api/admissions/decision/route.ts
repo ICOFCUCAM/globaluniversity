@@ -52,7 +52,7 @@ import { admissionPackageHtml, admissionCoveringText } from '@/lib/admissionPack
 import { courses, MODE_LABEL } from '@/content/courses';
 import { UNIVERSITY } from '@/lib/constants';
 import {
-  ACADEMIC_DECISIONS, EVENT_FOR_DECISION, canDecide, isDecided,
+  ACADEMIC_DECISIONS, EVENT_FOR_DECISION, canDecide, isDecided, officeFor,
   type AcademicDecision, type AdmissionEvent,
 } from '@/lib/admissionWorkflow';
 
@@ -114,7 +114,13 @@ export async function POST(request: Request) {
   const actorIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null;
   const userAgent = request.headers.get('user-agent') ?? null;
 
-  const audit = async (event: AdmissionEvent, detail?: string, decisionId?: string) => {
+  const audit = async (
+    event: AdmissionEvent,
+    detail?: string,
+    decisionId?: string,
+    states?: { from?: string | null; to?: string | null },
+    metadata?: Record<string, unknown>,
+  ) => {
     const { error } = await admin.from('admission_audit_log').insert({
       application_id: applicationId,
       decision_id: decisionId ?? null,
@@ -122,9 +128,16 @@ export async function POST(request: Request) {
       actor_id: caller.id,
       actor_email: caller.email ?? null,
       actor_role: caller.role ?? null,
+      // THE OFFICE, WHICH IS NOT THE ROLE. During an override the person is an
+      // administrator and the authority exercised is Academic Affairs'; an
+      // audit that recorded only the role would make the two look the same.
+      actor_office: officeFor(caller.role, caller.role === 'superadmin' ? 'academic-office' : undefined),
+      previous_state: states?.from ?? null,
+      new_state: states?.to ?? null,
       actor_ip: actorIp,
       user_agent: userAgent,
       detail: detail ?? null,
+      metadata: metadata ?? null,
     });
     // Migration 024 not yet run is the one tolerable failure — the workflow
     // still works, it is simply not yet recorded. Anything else is reported.
@@ -231,9 +244,11 @@ export async function POST(request: Request) {
     } else {
       decisionId = rec?.id;
     }
-    await audit(EVENT_FOR_DECISION[decision], reason ?? undefined, decisionId);
+    await audit(EVENT_FOR_DECISION[decision], reason ?? undefined, decisionId,
+      { from: app.status, to: newStatus });
     if (isOverride) {
-      await audit('ADMINISTRATIVE_OVERRIDE', overrideReason ?? undefined, decisionId);
+      await audit('ADMINISTRATIVE_OVERRIDE', overrideReason ?? undefined, decisionId,
+        { from: app.status, to: newStatus }, { override_of: 'academic-office' });
     }
   } catch (e) {
     return NextResponse.json({ ok: false, error: String(e) }, { status: 500 });
@@ -298,7 +313,8 @@ export async function POST(request: Request) {
       portalUrl: `${process.env.SITE_URL ?? 'https://iguc.net'}/portal`,
     };
     packageHtml = await admissionPackageHtml(packageInput);
-    await audit('ADMISSION_LETTER_GENERATED', undefined, decisionId);
+    await audit('ADMISSION_LETTER_GENERATED', undefined, decisionId, undefined,
+      { programme: programmeCode, mode: packageInput.mode });
   } catch (e) {
     return NextResponse.json(
       { ok: false, error: `decision-recorded-but-package-not-generated: ${String(e)}`, decisionId },
@@ -362,7 +378,8 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
-  await audit('ACCOUNT_CREATED', studentNumber, decisionId);
+  await audit('ACCOUNT_CREATED', studentNumber, decisionId, undefined,
+    { student_number: studentNumber });
 
   // =======================================================================
   // 7. ONLY NOW IS THE ADMISSION ISSUED.
@@ -394,7 +411,8 @@ export async function POST(request: Request) {
   packageInput = { ...packageInput, studentNumber, temporaryPassword: password };
   packageHtml = await admissionPackageHtml(packageInput);
 
-  await audit('ADMISSION_PACKAGE_ISSUED', studentNumber, decisionId);
+  await audit('ADMISSION_PACKAGE_ISSUED', studentNumber, decisionId,
+    { from: newStatus, to: 'admission_issued' }, { student_number: studentNumber });
 
   // =======================================================================
   // 8. THE EMAIL, LAST. Delivery is the one step whose failure does not

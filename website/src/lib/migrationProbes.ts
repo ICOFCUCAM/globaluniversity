@@ -152,6 +152,13 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
     // this is the one the University reads when asked who admitted somebody.
     table: 'admission_decisions',
   },
+  {
+    file: '025_state_vocabulary_and_authority.sql',
+    what: 'Locks the state vocabulary to the software, splits code from label, and records the '
+      + 'office behind every admission event, not only the person.',
+    table: 'admission_audit_log',
+    column: 'actor_office',
+  },
 ];
 
 /** What a probe came back as. */
