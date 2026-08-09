@@ -971,7 +971,7 @@ backgroundImage: `url("${art.micro}")`,
               counterweight. */}
           {sec.qr && <div aria-hidden="true" style={{ flex: '0 0 26mm' }} />}
 
-          <SignatureColumn design={design} sigs={leftSigs} />
+          <SignatureColumn design={design} sigs={leftSigs} specimen={specimen} />
 
           <div style={{
             flex: mounted ? '0 0 46mm' : '0 0 38mm',
@@ -1014,7 +1014,7 @@ backgroundImage: `url("${art.micro}")`,
             )}
           </div>
 
-          <SignatureColumn design={design} sigs={rightSigs} />
+          <SignatureColumn design={design} sigs={rightSigs} specimen={specimen} />
 
           {/* Verification. The only thing on this page that settles the
               question, and printed as prominently as the seal. */}
@@ -1092,7 +1092,9 @@ backgroundImage: `url("${art.micro}")`,
  * Presiding Bishop" needs a line to itself at this size, and an office
  * abbreviated to fit is an office misnamed.
  */
-function SignatureColumn({ design, sigs }: { design: CredentialDesign; sigs: Signatory[] }) {
+function SignatureColumn({
+  design, sigs, specimen,
+}: { design: CredentialDesign; sigs: Signatory[]; specimen?: boolean }) {
   if (!sigs.length) return <div style={{ flex: '1 1 0' }} />;
   return (
     // 15mm between the ranks, not 5.
@@ -1106,6 +1108,29 @@ function SignatureColumn({ design, sigs }: { design: CredentialDesign; sigs: Sig
     <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '15mm' }}>
       {sigs.map((s, i) => (
         <div key={`${s.office}-${i}`}>
+          {/* THE SIGNATURE SITS ON THE RULE, not above a gap, because that is
+              where a pen puts it — the strokes cross the line. It is drawn in
+              the clear space that was already reserved for a hand to sign in,
+              so a design with signatures and one without lay out identically
+              and nothing below moves.
+
+              NEVER ON A SPECIMEN. A specimen is designed to look exactly like
+              the real thing, and a specimen carrying the Vice-Chancellor's
+              actual signature is a forger's starting material handed over in a
+              file that anybody may download. The rule prints bare instead. */}
+          {s.signature && !specimen && (
+            <div style={{
+              height: '9mm', marginBottom: '-2.2mm', display: 'flex', alignItems: 'flex-end',
+              overflow: 'hidden',
+            }}>
+              <img
+                src={s.signature}
+                alt=""
+                aria-hidden="true"
+                style={{ maxHeight: '9mm', maxWidth: '52mm', objectFit: 'contain' }}
+              />
+            </div>
+          )}
           <div style={{
             borderTop: `0.3mm solid ${design.ink}`,
             paddingTop: '1.5mm',

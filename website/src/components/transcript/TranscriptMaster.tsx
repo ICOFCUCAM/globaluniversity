@@ -400,6 +400,13 @@ function Sheet({
   years: TranscriptMasterData['years'];
   first: boolean; last: boolean; page: number; of: number;
 }) {
+  // THE SIGNATURE FOR THE LINE THAT SAYS "Signed". The Registrar signs a
+  // transcript; where the design carries their signature it goes on that rule,
+  // and where it does not the rule prints bare to be signed by hand, as the
+  // University has always done.
+  const registrarSignature = (design.signatories ?? [])
+    .find((s) => /registrar/i.test(s.office))?.signature;
+
   return (
     <div
       className="icof-sheet"
@@ -677,9 +684,24 @@ function Sheet({
               }}>
                 <div style={{ fontSize: '9pt', fontWeight: 700 }}>
                   {signatoriesFor(design).map((sig, i) => (
-                    <p key={`${sig.office}-${i}`} style={{ margin: i === 0 ? 0 : `${MM(3)} 0 0` }}>
-                      {sig.office}: {sig.name}
-                    </p>
+                    <div key={`${sig.office}-${i}`} style={{ marginTop: i === 0 ? 0 : MM(2) }}>
+                      {/* The signature sits above the office it belongs to, and
+                          never on a specimen — see the note in the certificate:
+                          a specimen carrying a real officer's signature is a
+                          forger's starting material. */}
+                      {sig.signature && !specimen && (
+                        <img
+                          src={sig.signature}
+                          alt=""
+                          aria-hidden="true"
+                          style={{
+                            display: 'block', maxHeight: MM(8), maxWidth: MM(48),
+                            objectFit: 'contain', marginBottom: MM(0.4),
+                          }}
+                        />
+                      )}
+                      <p style={{ margin: 0 }}>{sig.office}: {sig.name}</p>
+                    </div>
                   ))}
                 </div>
 
@@ -687,11 +709,27 @@ function Sheet({
                   <p style={{ margin: 0, fontSize: '9pt', fontWeight: 700, textAlign: 'center' }}>
                     Registrar
                   </p>
-                  <p style={{ margin: `${MM(4)} 0 0`, fontSize: '9pt', fontWeight: 700 }}>
+                  <p style={{
+                    margin: `${MM(4)} 0 0`, fontSize: '9pt', fontWeight: 700, position: 'relative',
+                  }}>
                     Signed<span style={{
                       display: 'inline-block', width: MM(46), borderBottom: `0.8pt solid ${ink}`,
-                      marginLeft: MM(1),
-                    }} />
+                      marginLeft: MM(1), position: 'relative',
+                    }}>
+                      {/* ON the rule rather than above it: the strokes of a
+                          signature cross the line, which is what a pen does. */}
+                      {registrarSignature && !specimen && (
+                        <img
+                          src={registrarSignature}
+                          alt=""
+                          aria-hidden="true"
+                          style={{
+                            position: 'absolute', left: MM(2), bottom: MM(-0.6),
+                            maxHeight: MM(8), maxWidth: MM(42), objectFit: 'contain',
+                          }}
+                        />
+                      )}
+                    </span>
                   </p>
                 </div>
 
@@ -1454,7 +1492,9 @@ function hasRepeat(data: TranscriptMasterData): boolean {
  * sheet printing a blank where two names belong. Neither list is ever taken
  * from the 2017 reference scan.
  */
-function signatoriesFor(design: CredentialDesign): { name: string; office: string }[] {
+function signatoriesFor(
+  design: CredentialDesign,
+): { name: string; office: string; signature?: string }[] {
   const named = (design.signatories ?? []).filter((s) => s.name?.trim());
   if (named.length > 0) return named.slice(0, 2);
   return [

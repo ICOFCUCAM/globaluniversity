@@ -46,8 +46,13 @@ execFileSync('npx', [
 ]);
 
 const {
-  validateDesign, defaultDesign, maxBorderWidthMm, DEFAULT_CERTIFICATE_DESIGN, DEFAULT_TRANSCRIPT_DESIGN,
+  validateDesign, defaultDesign, maxBorderWidthMm, isSignatureImage, SIGNATURE_MAX_BYTES,
+  DEFAULT_CERTIFICATE_DESIGN, DEFAULT_TRANSCRIPT_DESIGN,
 } = await import(out);
+
+/** A one-pixel transparent PNG, standing in for a scanned signature. */
+const PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAA'
+  + 'C0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
 
 console.log('\nThe designs the University actually ships\n');
 
@@ -112,5 +117,42 @@ check('a design with the verification code switched off is still refused',
 check('and a signatory with no office is still refused',
   validateDesign({ ...cert, signatories: [{ name: 'A Person', office: '  ' }] }, 'certificate').length > 0,
   true);
+
+console.log('\nAffixing a signature\n');
+
+// A SIGNATURE IS OPTIONAL. The University has always signed by hand, and a
+// design with no image must publish exactly as before.
+check('a design with no signature publishes', validateDesign(cert, 'certificate'), []);
+
+const signed = (signature) => validateDesign({
+  ...cert, signatories: [{ name: 'A Registrar', office: 'Registrar', signature }],
+}, 'certificate');
+
+check('a scanned PNG publishes', signed(PNG), []);
+check('a WebP does too', signed(PNG.replace('image/png', 'image/webp')), []);
+
+// A LINK IS NOT A SIGNATURE. The document would stop carrying one the day the
+// host moved, and until then every graduate opening their certificate would
+// tell that host they had.
+check('a web address is refused', signed('https://iguc.net/signatures/registrar.png').length, 1);
+check('…and the message says why a sealed document cannot use one',
+  signed('https://iguc.net/x.png')[0].includes('complete in itself'), true);
+
+// AN SVG IS A DOCUMENT, not an image: it can carry script, and it would be
+// rendered inside a page that shows sealed credentials.
+check('an SVG is refused', signed('data:image/svg+xml;base64,PHN2Zy8+').length, 1);
+check('and so is a PDF', signed('data:application/pdf;base64,JVBERi0=').length, 1);
+
+// A PHOTOGRAPH OF A PAGE, pasted in by mistake.
+check('something far too large to be a signature is refused',
+  signed(`data:image/png;base64,${'A'.repeat(SIGNATURE_MAX_BYTES)}`).length, 1);
+check('…and is told what to do about it',
+  signed(`data:image/png;base64,${'A'.repeat(SIGNATURE_MAX_BYTES)}`)[0]
+    .includes('transparent background'), true);
+
+check('the shape check agrees with the validator',
+  [isSignatureImage(PNG), isSignatureImage('https://iguc.net/x.png'),
+    isSignatureImage('data:image/svg+xml;base64,PHN2Zy8+')],
+  [true, false, false]);
 
 process.exit(failures === 0 ? 0 : 1);

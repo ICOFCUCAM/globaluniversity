@@ -431,4 +431,39 @@ console.log('\nThe grid, which is the first thing a registrar recognises\n');
     ['#8a8a8a', '#a8a8a8', DEFAULT_TRANSCRIPT_DESIGN.ink].sort());
 }
 
+
+console.log('\nA signature on the transcript, and the specimen rule again\n');
+
+// The transcript's Registrar signs the "Signed ____" rule at the foot. The same
+// rule holds as on the certificate, for the same reason: a specimen carrying a
+// real officer's strokes is the most useful thing a forger could be handed.
+{
+  const React = (await import('react')).default;
+  const { renderToStaticMarkup } = await import('react-dom/server');
+  const { default: TranscriptMaster } =
+    await import(bundle('../components/transcript/TranscriptMaster.tsx', 'tm-sig.mjs', true));
+  const { DEFAULT_TRANSCRIPT_DESIGN } =
+    await import(bundle('./credentialTemplate.ts', 'tm-sig-tpl.mjs'));
+
+  const PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAA'
+    + 'C0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+  const design = {
+    ...DEFAULT_TRANSCRIPT_DESIGN,
+    signatories: [{ name: 'Dr Divine Lyonga', office: 'Registrar', signature: PNG }],
+  };
+  const draw = (specimen) => renderToStaticMarkup(React.createElement(TranscriptMaster, {
+    design, data: SPECIMEN_TRANSCRIPT, specimen,
+  }));
+
+  check('an issued transcript carries the Registrar’s signature', draw(false).includes(PNG), true);
+  check('a specimen does not', draw(true).includes(PNG), false);
+  check('and the rule to sign on is there either way', draw(true).includes('Signed'), true);
+  // A design with no image is untouched — the University has always signed by
+  // hand and must be able to go on doing so.
+  check('a design with no signature renders no image',
+    renderToStaticMarkup(React.createElement(TranscriptMaster, {
+      design: DEFAULT_TRANSCRIPT_DESIGN, data: SPECIMEN_TRANSCRIPT, specimen: false,
+    })).includes('data:image/png;base64,iVBOR'), false);
+}
+
 process.exit(failures === 0 ? 0 : 1);

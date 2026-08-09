@@ -49,6 +49,59 @@ export interface Signatory {
   name: string;
   /** Printed under the name, e.g. "Vice Chancellor". */
   office: string;
+  /**
+   * A scanned signature, as a data URI, printed on the rule.
+   *
+   * ---------------------------------------------------------------------------
+   * WHY IT LIVES IN THE DESIGN AND NOT ON THE CREDENTIAL
+   * ---------------------------------------------------------------------------
+   *
+   * Because the design is versioned and never edited in place. A certificate
+   * issued in 2026 keeps the 2026 template for ever, so it keeps the signature
+   * of whoever held the office in 2026 — which is what a signature is FOR. Put
+   * on the credential instead, a later correction would have to carry the image
+   * forward by hand; put in a single current record, re-rendering a 2019
+   * certificate would show today's Registrar signing a document they never saw.
+   *
+   * ---------------------------------------------------------------------------
+   * A DATA URI, NEVER A LINK
+   * ---------------------------------------------------------------------------
+   *
+   * An `https://…` signature is two failures waiting. The document stops
+   * carrying a signature the day the host moves, and until then every graduate
+   * who opens their certificate tells that host they did. A sealed document has
+   * to be complete in itself; validateDesign refuses anything else.
+   *
+   * Optional, and blank is a real answer: the rule is then simply signed by
+   * hand, which is what the University has always done.
+   */
+  signature?: string;
+}
+
+/**
+ * What may be affixed as a signature.
+ *
+ * PNG FIRST, and the studio says so, because a signature is ink on paper with
+ * nothing behind it — a JPEG carries a white box that prints as a white box
+ * over the frame. SVG is refused outright: it is a document, it can carry
+ * script, and it would be rendered inside a page that shows sealed credentials.
+ */
+export const SIGNATURE_TYPES = ['image/png', 'image/webp', 'image/jpeg'] as const;
+
+/**
+ * The ceiling on a signature image, in bytes of encoded data URI.
+ *
+ * A signature is a few strokes; 400KB is generous for one at print resolution
+ * and small enough that a design carrying four of them stays a row somebody can
+ * read. The limit exists mainly to catch a photograph pasted in by mistake.
+ */
+export const SIGNATURE_MAX_BYTES = 400_000;
+
+/** Is this a signature the University could actually print? */
+export function isSignatureImage(value: string): boolean {
+  const m = /^data:([a-z]+\/[a-z0-9.+-]+);base64,[A-Za-z0-9+/=]+$/i.exec(value.trim());
+  if (!m) return false;
+  return (SIGNATURE_TYPES as readonly string[]).includes(m[1].toLowerCase());
 }
 
 export interface CredentialDesign {
@@ -606,6 +659,24 @@ export function validateDesign(d: CredentialDesign, kind: CredentialKind = 'cert
   }
   if (d.signatories.some((s) => !s.office.trim())) {
     problems.push('Every signatory needs an office. A signature over a blank line attests to nothing.');
+  }
+  // A SIGNATURE THAT IS NOT PART OF THE DOCUMENT IS NOT A SIGNATURE. A link
+  // fails the day the host moves and reports every reader to it meanwhile.
+  for (const sig of d.signatories) {
+    if (!sig.signature) continue;
+    if (!isSignatureImage(sig.signature)) {
+      problems.push(
+        `The signature for ${sig.office || 'a signatory'} is not an image the document can carry. `
+        + 'Affix a PNG, WebP or JPEG file — a web address will not do, because a sealed document '
+        + 'has to be complete in itself.',
+      );
+    } else if (sig.signature.length > SIGNATURE_MAX_BYTES) {
+      problems.push(
+        `The signature for ${sig.office || 'a signatory'} is larger than `
+        + `${Math.round(SIGNATURE_MAX_BYTES / 1000)}KB. That is a photograph rather than a `
+        + 'signature; scan the strokes alone, on a transparent background.',
+      );
+    }
   }
   // Only the lines this kind of document actually prints. A stored design may
   // carry keys from another kind — checking those would refuse a perfectly good

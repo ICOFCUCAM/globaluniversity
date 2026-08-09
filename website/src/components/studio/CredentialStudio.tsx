@@ -46,6 +46,9 @@ import { can } from '@/lib/roles';
 import {
   defaultDesign,
   maxBorderWidthMm,
+  isSignatureImage,
+  SIGNATURE_MAX_BYTES,
+  SIGNATURE_TYPES,
   validateDesign,
   withDefaults,
   type CredentialDesign,
@@ -672,6 +675,17 @@ export default function CredentialStudio({ embedded }: { embedded?: boolean } = 
               </Panel>
 
               <Panel title="Signatories" hint="Leave a name blank to print whoever currently holds the office. The office outlives the holder, and a certificate should not need republishing because a Registrar retired.">
+                {/* WHY THE SIGNATURE BELONGS HERE AND NOT ON THE CREDENTIAL.
+                    A published design is never edited — publishing writes a new
+                    version — so a certificate issued this year keeps this year's
+                    signatures for ever, which is what a signature is for. */}
+                <p className="text-[11px] leading-relaxed text-[#8a8194]">
+                  Affix a signature and it prints on the rule, on every credential issued under
+                  this design. <strong>Scan the strokes alone on a transparent background</strong> —
+                  a PNG with the paper still behind it prints as a white box over the frame.
+                  Specimens never carry it: a specimen with a real officer&rsquo;s signature is a
+                  forger&rsquo;s starting material.
+                </p>
                 {design.signatories.map((sig, i) => (
                   <div key={i} className="flex items-center gap-2">
                     <input
@@ -694,6 +708,15 @@ export default function CredentialStudio({ embedded }: { embedded?: boolean } = 
                       }}
                       className="min-w-0 flex-1 rounded-lg border border-[#ded6c8] px-2 py-1.5 text-xs dark:border-[#3d3349]"
                     />
+                    <SignatureAffix
+                      value={sig.signature}
+                      office={sig.office}
+                      onChange={(signature) => {
+                        const next = [...design.signatories];
+                        next[i] = { ...next[i], signature };
+                        set('signatories', next);
+                      }}
+                    />
                     <button
                       onClick={() => set('signatories', design.signatories.filter((_, j) => j !== i))}
                       className="rounded-lg p-1.5 text-[#a49bb0] hover:bg-red-50 hover:text-red-600"
@@ -709,6 +732,20 @@ export default function CredentialStudio({ embedded }: { embedded?: boolean } = 
                 >
                   <Plus size={13} /> Add signatory
                 </button>
+                {/* SAID WHERE THE CONFUSION HAPPENS. The preview on this screen
+                    is a specimen, so it will not show what was just affixed —
+                    and a designer who does not know that reasonably concludes
+                    the affixing failed and does it again. The thumbnail beside
+                    the office is the confirmation; this says why it is the only
+                    one. */}
+                {design.signatories.some((s) => s.signature) && (
+                  <p className="rounded-lg border border-[#422e59]/25 bg-[#422e59]/[0.06] p-2.5 text-[11px] leading-relaxed text-[#6b6076] dark:border-[#c5a55a]/30 dark:bg-[#c5a55a]/10 dark:text-[#9c93ad]">
+                    <strong>The preview will not show it.</strong> Everything drawn on this screen
+                    is overprinted SPECIMEN, and a specimen never carries a real signature — the
+                    thumbnail beside the office is your confirmation that it is affixed. It prints
+                    on credentials issued under this design, once published.
+                  </p>
+                )}
               </Panel>
 
               <PreviewFrame kind={kind}>{preview}</PreviewFrame>
@@ -1316,5 +1353,99 @@ function MergeFields({ design }: { design: CredentialDesign }) {
         })}
       </ul>
     </Panel>
+  );
+}
+
+/**
+ * Affixing one officer's signature.
+ *
+ * THE FILE NEVER LEAVES THE BROWSER until the design is published. It is read
+ * into a data URI here and travels inside the design, which is what makes the
+ * document complete in itself — see the note on Signatory.signature for why a
+ * link would not do.
+ *
+ * The checks are here AND in validateDesign, deliberately. This one is so the
+ * Superadministrator learns immediately, with the file in front of them, that
+ * they picked a photograph or a PDF; the other is so that a design which got
+ * past this screen by any route still cannot be published.
+ */
+function SignatureAffix({
+  value, office, onChange,
+}: {
+  value?: string;
+  office: string;
+  onChange: (signature: string | undefined) => void;
+}) {
+  const [error, setError] = React.useState<string | null>(null);
+  const id = React.useId();
+
+  function take(file: File | undefined) {
+    setError(null);
+    if (!file) return;
+    if (!(SIGNATURE_TYPES as readonly string[]).includes(file.type)) {
+      setError('PNG, WebP or JPEG only. A PDF or an SVG is a document, not an image.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onerror = () => setError('That file could not be read.');
+    reader.onload = () => {
+      const uri = String(reader.result ?? '');
+      // THE SAME TWO RULES THE VALIDATOR APPLIES, so nothing can be affixed here
+      // that publishing would then refuse.
+      if (!isSignatureImage(uri)) {
+        setError('That is not an image this document can carry.');
+        return;
+      }
+      if (uri.length > SIGNATURE_MAX_BYTES) {
+        setError(
+          `Larger than ${Math.round(SIGNATURE_MAX_BYTES / 1000)}KB — that is a photograph of a `
+          + 'page rather than a signature. Crop to the strokes and save as a transparent PNG.',
+        );
+        return;
+      }
+      onChange(uri);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  return (
+    <div className="flex items-center gap-1.5">
+      {value ? (
+        <>
+          {/* Shown on a light ground, because a signature scanned with
+              transparency is invisible against a dark panel and the designer
+              would think the affixing had failed. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={value}
+            alt={`Signature affixed for ${office || 'this office'}`}
+            className="h-7 w-24 rounded border border-[#ded6c8] bg-white object-contain p-0.5 dark:border-[#3d3349]"
+          />
+          <button
+            onClick={() => { onChange(undefined); setError(null); }}
+            className="rounded-lg p-1.5 text-[#a49bb0] hover:bg-red-50 hover:text-red-600"
+            aria-label={`Remove the signature for ${office || 'this office'}`}
+            title="Remove this signature"
+          >
+            <Trash2 size={13} />
+          </button>
+        </>
+      ) : (
+        <label
+          htmlFor={id}
+          className={`cursor-pointer whitespace-nowrap rounded-lg border border-dashed border-[#ded6c8] px-2 py-1.5 text-[11px] text-[#6b6076] hover:border-[#422e59] hover:text-[#422e59] dark:border-[#3d3349] dark:text-[#9c93ad] ${FOCUS}`}
+        >
+          Affix signature
+        </label>
+      )}
+      <input
+        id={id}
+        type="file"
+        accept={SIGNATURE_TYPES.join(',')}
+        className="sr-only"
+        onChange={(e) => { take(e.target.files?.[0]); e.currentTarget.value = ''; }}
+      />
+      {error && <span className="max-w-[14rem] text-[10px] leading-tight text-red-700">{error}</span>}
+    </div>
   );
 }

@@ -226,4 +226,45 @@ console.log(
     ? '\nEvery level is stated correctly, and no specimen can pass as issued.\n'
     : `\n${failures} failed\n`,
 );
+
+console.log('\nA signature affixed to a design, and the one place it must not print\n');
+
+// ---------------------------------------------------------------------------
+// A SPECIMEN CARRYING A REAL SIGNATURE IS A FORGER'S STARTING MATERIAL
+// ---------------------------------------------------------------------------
+//
+// The specimen book exists to look exactly like the real thing, and the
+// specimens are downloadable by anybody who reaches the screen. The strokes of
+// the Vice-Chancellor's own hand, clean, on a transparent ground, is the single
+// most useful thing a forger could be handed — more useful than the artwork,
+// which is generated per credential, and more useful than the wording, which is
+// published anyway.
+//
+// So the image is suppressed on a specimen and the rule prints bare. This is
+// the assertion that has to hold whatever else changes about signatures.
+{
+  const PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAA'
+    + 'C0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+  const signedDesign = {
+    ...DEFAULT_CERTIFICATE_DESIGN,
+    // The Registrar's, because that is the office whose name is plain enough to
+    // look for in the markup — the Chancellor's carries an ampersand, which the
+    // renderer escapes.
+    signatories: DEFAULT_CERTIFICATE_DESIGN.signatories
+      .map((s) => (s.office === 'Registrar' ? { ...s, signature: PNG } : s)),
+  };
+  const draw = (specimen) => renderToStaticMarkup(React.createElement(CertificateDocument, {
+    design: signedDesign, data: SPECIMENS[0].data, specimen,
+  }));
+
+  check('an issued certificate carries the affixed signature',
+    draw(false).includes(PNG), true);
+  check('a specimen does not, however it is asked for',
+    draw(true).includes(PNG), false);
+  // AND IT STILL SAYS WHO SIGNS. Suppressing the image must not suppress the
+  // office: a specimen has to teach the form of the document.
+  check('the specimen still names the office that signs',
+    draw(true).includes('Registrar'), true);
+}
+
 process.exit(failures === 0 ? 0 : 1);
