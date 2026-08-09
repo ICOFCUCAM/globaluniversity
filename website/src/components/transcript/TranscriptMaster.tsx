@@ -68,7 +68,7 @@ import { UNIVERSITY, IMAGES } from '@/lib/constants';
 import { GRADING_SCALE, MAX_GRADE_POINT } from '@/lib/grading';
 import { specialGrades, courseClassification } from '@/content/regulations';
 import type { CredentialDesign } from '@/lib/credentialTemplate';
-import { paginate, transferAccepted } from '@/lib/transcriptMaster';
+import { closingSlotsFor, paginate, transferAccepted } from '@/lib/transcriptMaster';
 import type { TranscriptMasterData } from '@/lib/transcriptMaster';
 import { profileFor } from '@/lib/transcriptTypes';
 
@@ -319,17 +319,17 @@ export default function TranscriptMaster({
   // wrappers need the sheet count to size their box — and a second copy of the
   // rule in a screen is how a preview ends up disagreeing with the document.
   //
-  // AND THE CLOSING BLOCK IS NOT ALWAYS ONE SLOT. Once it carries transfer
-  // credits, honours or a conferral it is three further ruled blocks, and it
-  // takes a sheet of its own rather than being squeezed beside a year.
+  // HOW MUCH ROOM THE CLOSE NEEDS, from the one function that decides it. It
+  // used to be worked out here, which meant the preview box and every test
+  // paginated with the default of one slot while the document paginated with
+  // two — so nothing was ever measuring the pagination that printed.
   const profile = profileFor(data.transcriptKind);
-  const closingSlots =
-    (data.transferCredits?.length ?? 0) > 0
-    || (data.honours?.length ?? 0) > 0
-    || (profile.showsGraduation && data.conferral)
-    || (profile.showsStandingHistory && (data.standingHistory?.length ?? 0) > 0)
-      ? 2 : 1;
-  const sheets = paginate(data.years, closingSlots);
+  const sheets = paginate(data.years, closingSlotsFor({
+    transferCredits: data.transferCredits,
+    honours: data.honours,
+    conferral: profile.showsGraduation ? data.conferral : undefined,
+    standingHistory: profile.showsStandingHistory ? data.standingHistory : undefined,
+  }));
 
   return (
     <div id="icof-transcript" className="icof-document">
@@ -1490,7 +1490,10 @@ export function TranscriptPreview({
   specimen?: boolean;
   scale?: number;
 }) {
-  const sheets = paginate(data.years).length;
+  // THE SAME COUNT THE DOCUMENT WILL PRINT. This called paginate() with the
+  // default closing size, so a record whose close needs two slots was previewed
+  // in a box sized for a document with one — short by a sheet.
+  const sheets = paginate(data.years, closingSlotsFor(data)).length;
   return (
     <div
       className="icof-preview-box"

@@ -57,6 +57,7 @@ function bundle(source, name, jsx = false) {
 
 const {
   masterFromCredential, splitHolderName, programmeProgress, formatIssued, paginate,
+  closingSlotsFor,
 } = await import(bundle('./transcriptMaster.ts', 'transcriptMaster.mjs'));
 
 const { SPECIMEN_TRANSCRIPT } = await import(bundle('./transcriptSpecimen.ts', 'transcriptSpecimen.mjs'));
@@ -233,28 +234,59 @@ console.log('\nHow many sheets — stretching to the programme\n');
 
 const yr = (n) => ({ year: n, semesters: [] });
 
-// THE CLOSING BLOCK COSTS A SLOT. Without that the totals print over the final
-// Semester GPA row, which is what happened on a three-year record.
+// THE CLOSING BLOCK COSTS ROOM, and how much depends on what it carries. These
+// are asserted at BOTH sizes, because the fault that reached the University was
+// that only the small one was ever tested: a bachelor's degree with transfer
+// credits, honours and a conferral printed three sheets and headed itself
+// "Page 1 of 3", while a test asserting two passed all along — it was
+// paginating with a closing block the document never used.
 check('a one-year certificate is one sheet', paginate([yr(1)]).length, 1);
 check('a two-year diploma is two sheets', paginate([yr(1), yr(2)]).length, 2);
 check('a three-year bachelor’s is two sheets', paginate([yr(1), yr(2), yr(3)]).length, 2);
-check('a four-year record is three sheets', paginate([yr(1), yr(2), yr(3), yr(4)]).length, 3);
-check('a six-year record is four sheets',
-  paginate([yr(1), yr(2), yr(3), yr(4), yr(5), yr(6)]).length, 4);
+
+// THE CASE THE UNIVERSITY REPORTED, at the size its own graduates print at.
+check('…and still two with transfer credits, honours and a conferral on the close',
+  paginate([yr(1), yr(2), yr(3)], 2).length, 2);
+check('…with Year Three and the close on the second sheet, as the University’s own is',
+  paginate([yr(1), yr(2), yr(3)], 2).map((s) => [s.years.map((y) => y.year), s.closing]),
+  [[[1, 2], false], [[3], true]]);
+
+check('a four-year record is two sheets', paginate([yr(1), yr(2), yr(3), yr(4)]).length, 2);
+check('…and three when the close is the full one',
+  paginate([yr(1), yr(2), yr(3), yr(4)], 2).length, 3);
+check('a six-year record is three sheets',
+  paginate([yr(1), yr(2), yr(3), yr(4), yr(5), yr(6)]).length, 3);
 
 check('the closing block is on the last sheet and nowhere else',
   paginate([yr(1), yr(2), yr(3)]).map((s) => s.closing), [false, true]);
 check('a one-year record closes on its only sheet',
   paginate([yr(1)]).map((s) => s.closing), [true]);
-check('two years to a sheet, in order',
-  paginate([yr(1), yr(2), yr(3)]).map((s) => s.years.map((y) => y.year)), [[1, 2], [3]]);
+// The opening matter costs the first sheet a year's room, which is why the
+// first holds two and the rest hold three.
+check('two years on the first sheet, three on the ones after it',
+  paginate([yr(1), yr(2), yr(3), yr(4), yr(5)]).map((s) => s.years.map((y) => y.year)),
+  [[1, 2], [3, 4, 5], []]);
+
+console.log('\nHow much room the close needs, decided in one place\n');
+
+// THE FUNCTION THAT WAS MISSING. It lived inside the component, so the preview
+// box and the tests could not see it and quietly used a different number.
+check('a bare close is one slot', closingSlotsFor({}), 1);
+check('transfer credits make it two', closingSlotsFor({ transferCredits: [{}] }), 2);
+check('so do honours', closingSlotsFor({ honours: [{}] }), 2);
+check('so does a conferral', closingSlotsFor({ conferral: { on: '2026-07-15' } }), 2);
+check('and so does a standing history', closingSlotsFor({ standingHistory: [{}] }), 2);
+check('the specimen’s close is the full one',
+  closingSlotsFor(SPECIMEN_TRANSCRIPT), 2);
 
 // A RECORD WITH NO YEARS STILL HAS A DOCUMENT. It prints one sheet carrying the
 // closing block, rather than none at all — an empty page is visibly wrong,
 // where no page is a blank screen nobody can diagnose.
 check('an empty record is still one sheet', paginate([]).length, 1);
-check('the specimen paginates to two sheets',
-  paginate(SPECIMEN_TRANSCRIPT.years).length, 2);
+// PAGINATED THE WAY IT PRINTS, with its own closing size rather than the
+// default — which is the whole of the fault this pair of lines missed before.
+check('the specimen paginates to two sheets, as it prints',
+  paginate(SPECIMEN_TRANSCRIPT.years, closingSlotsFor(SPECIMEN_TRANSCRIPT)).length, 2);
 
 console.log('\nThe specimen\n');
 
@@ -287,12 +319,15 @@ check('it carries no seal code, because nothing sealed it',
 
 
 
-console.log('\nA closing block that needs its own sheet\n');
+console.log('\nA closing block that needs room, and what happens when there is none\n');
 
-// TWO SLOTS FOR A CLOSE that also carries transfer credits, honours and a
-// conferral. The pad is what stops it running over the fold.
-check('three years and a full close is three sheets',
-  paginate([yr(1), yr(2), yr(3)], 2).length, 3);
+// THESE ASSERTIONS USED TO ENCODE THE FAULT. They said a three-year record with
+// a full close was THREE sheets, and they passed — because they were written
+// from the rule rather than from the paper. The University's own transcript of
+// that degree is two sheets, and the room was there all along: Year Three's
+// table is 59mm and the full close 111mm on a sheet with 190mm to give.
+check('three years and a full close is two sheets, as the University prints it',
+  paginate([yr(1), yr(2), yr(3)], 2).length, 2);
 check('two years and a full close is two sheets',
   paginate([yr(1), yr(2)], 2).length, 2);
 check('one year and a full close is two sheets',
@@ -300,11 +335,22 @@ check('one year and a full close is two sheets',
 check('the close is printed once and only once',
   paginate([yr(1), yr(2), yr(3)], 2).filter((s) => s.closing).length, 1);
 check('…and it is the last sheet that carries it',
-  paginate([yr(1), yr(2), yr(3)], 2).map((s) => s.closing), [false, false, true]);
-// NO BLANK PAGE. The padded slot must not become a sheet with a page number
-// and nothing on it.
-check('the padded sheet still carries a year rather than being blank',
-  paginate([yr(1), yr(2), yr(3)], 2).map((s) => s.years.length), [2, 1, 0]);
+  paginate([yr(1), yr(2), yr(3)], 2).map((s) => s.closing), [false, true]);
+
+// THE CLOSE NEVER STRADDLES THE FOLD. That was the real reason for the old
+// rule, and it still holds: where the close does not fit under the last year it
+// starts a sheet of its own rather than running over.
+check('a close that does not fit starts its own sheet rather than running over',
+  paginate([yr(1), yr(2)], 2).map((s) => [s.years.length, s.closing]),
+  [[2, false], [0, true]]);
+
+// NO SHEET IS BLANK. A sheet with neither a year nor the close would print a
+// page number over empty paper — visibly wrong on a sealed document.
+for (const [years, close] of [[3, 2], [3, 1], [4, 2], [6, 2], [1, 2], [0, 1]]) {
+  const sheets = paginate(Array.from({ length: years }, (_, i) => yr(i + 1)), close);
+  check(`${years} years, close of ${close}: no sheet is empty`,
+    sheets.filter((s) => s.years.length === 0 && !s.closing).length, 0);
+}
 check('a one-slot close is unchanged by the new argument',
   paginate([yr(1), yr(2), yr(3)], 1).length, paginate([yr(1), yr(2), yr(3)]).length);
 

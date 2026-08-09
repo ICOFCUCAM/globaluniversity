@@ -357,72 +357,108 @@ export interface Sheet {
 }
 
 /**
- * Two years to a sheet, AND THE CLOSING BLOCK COSTS A SLOT.
+ * How many blocks fit on a sheet, and what each block costs.
  *
- * The University's own transcript runs Year One and Year Two on the first sheet
- * and Year Three with the totals and the signatures on the second. Fitting a
- * three-year record onto one page would mean type too small to read under a
- * photocopier, which is how most transcripts are actually received.
+ * ---------------------------------------------------------------------------
+ * MEASURED, NOT ASSUMED — AND THE OLD NUMBER WAS ASSUMED
+ * ---------------------------------------------------------------------------
  *
- * The totals, the offices and the signature line take roughly the height of one
- * year's table, so they are paginated as if they were a year. Without that the
- * last sheet overflows and the totals print over the final Semester GPA row —
- * which is exactly what happened when the rule was "two years a sheet, closing
- * block wherever it lands".
+ * The rule used to be "two years to a sheet", which made a three-year bachelor's
+ * degree print on THREE sheets and head itself "Page 1 of 3". The University's
+ * own transcript of the same degree is TWO: Year One and Year Two on the first
+ * sheet, Year Three with the totals and the signatures on the second.
  *
- *   one year    → 1 sheet   (the year and the closing block)
- *   two years   → 2 sheets  (both years, then the closing block)
- *   three years → 2 sheets  (two years, then the third with the closing)
- *   four years  → 3 sheets, and so on
+ * The blocks were then measured on the rendered sheet, at A4 landscape:
  *
- * WHICH IS WHY IT STRETCHES TO THE PROGRAMME. A certificate runs one year, a
- * diploma two, a bachelor's three; the sheet count follows the record rather
- * than a fixed assumption about how long a programme is.
+ *   the sheet, less its margins and running head      ~190mm
+ *   masthead, programme band and grade legend          ~59mm   (first sheet only)
+ *   one year's table                                ~51–59mm
+ *   the closing block, carrying transfer credits,
+ *     honours and the conferral                      ~111mm
+ *   the closing block bare — totals and signatures    ~65mm
  *
- * EXPORTED because the preview wrappers need the sheet count to size their box,
- * and a second implementation of this rule in a screen is how a preview ends up
- * disagreeing with the document.
+ * So a sheet holds THREE year-tables' worth of room; the opening matter costs
+ * one of them on the first sheet; and the full closing block costs two. Which
+ * gives the University's own layout without being told it: 1 + 1 + 1 on the
+ * first sheet, then Year Three and the close on the second.
+ *
+ * The old rule was not wrong by a rounding error — it was a guess with no
+ * measurement behind it, and it cost every graduate a third sheet carrying a
+ * quarter of a page of text.
  */
-export const SLOTS_PER_SHEET = 2;
+const SHEET_CAPACITY = 3;
+
+/**
+ * What the masthead, the programme band and the grade legend cost, on the first
+ * sheet only. Later sheets carry the running head and nothing else, which is
+ * why they hold a year more.
+ */
+const OPENING_COST = 1;
+
+/**
+ * Kept for the preview wrappers, which size their box from the sheet count.
+ *
+ * EXPORTED SO THERE IS ONE RULE. A second implementation in a screen is how a
+ * preview ends up disagreeing with the document it is previewing.
+ */
+export const SLOTS_PER_SHEET = SHEET_CAPACITY;
+
+/**
+ * How many slots the closing block needs for THIS record.
+ *
+ * ONE FOR A BARE CLOSE — the totals, the offices and the signature line. TWO
+ * once it also carries transfer credits, honours or a conferral, because those
+ * are three further ruled blocks.
+ *
+ * IT LIVES HERE RATHER THAN IN THE COMPONENT, and that is the fix for a fault
+ * nobody could see: the document computed this and paginated with it, while the
+ * preview box and every test called paginate() with the default of one. They
+ * were measuring a pagination the document never used, which is why a
+ * three-sheet bachelor's degree passed a test asserting two.
+ */
+export function closingSlotsFor(data: {
+  transferCredits?: readonly unknown[] | null;
+  honours?: readonly unknown[] | null;
+  conferral?: unknown;
+  standingHistory?: readonly unknown[] | null;
+}): number {
+  const heavy = (data.transferCredits?.length ?? 0) > 0
+    || (data.honours?.length ?? 0) > 0
+    || Boolean(data.conferral)
+    || (data.standingHistory?.length ?? 0) > 0;
+  return heavy ? 2 : 1;
+}
 
 export function paginate(
   years: readonly TranscriptYear[],
-  /**
-   * How many slots the closing block needs.
-   *
-   * ONE FOR A BARE CLOSE — the totals, the offices and the signature line.
-   * TWO once it also carries transfer credits, honours or a conferral, because
-   * those are three more ruled blocks and they do not fit beside a year's
-   * table. The caller decides from what it actually has to print, rather than
-   * this file guessing.
-   */
   closingSlots: number = 1,
 ): Sheet[] {
-  const closing = Math.min(SLOTS_PER_SHEET, Math.max(1, Math.floor(closingSlots)));
-
-  type Slot = { year: TranscriptYear } | { closing: true } | { filler: true };
-  const slots: Slot[] = years.map((year) => ({ year }));
-
-  // A CLOSING BLOCK THAT NEEDS A WHOLE SHEET MUST START ON ONE. Without this
-  // pad, a two-slot close beginning halfway through a sheet would run over the
-  // fold — and the sheet after it would be blank paper carrying a page number.
-  if (closing === SLOTS_PER_SHEET) {
-    while (slots.length % SLOTS_PER_SHEET !== 0) slots.push({ filler: true });
-  }
-  for (let i = 0; i < closing; i += 1) slots.push({ closing: true });
+  const closing = Math.min(SHEET_CAPACITY, Math.max(1, Math.floor(closingSlots)));
 
   const sheets: Sheet[] = [];
-  for (let i = 0; i < slots.length; i += SLOTS_PER_SHEET) {
-    const chunk = slots.slice(i, i + SLOTS_PER_SHEET);
-    sheets.push({
-      years: chunk
-        .filter((x): x is { year: TranscriptYear } => 'year' in x)
-        .map((x) => x.year),
-      // Printed once. A second slot only reserves the room beside the first,
-      // and the pad above guarantees both fall on the same sheet.
-      closing: chunk.some((x) => 'closing' in x),
-    });
+  let current: TranscriptYear[] = [];
+  // The first sheet starts with the opening matter already on it.
+  let used = OPENING_COST;
+
+  for (const year of years) {
+    if (used + 1 > SHEET_CAPACITY) {
+      sheets.push({ years: current, closing: false });
+      current = [];
+      used = 0;
+    }
+    current.push(year);
+    used += 1;
   }
+
+  // THE CLOSE GOES ON THE LAST SHEET IF IT FITS, and starts a new one if it
+  // does not — never straddling the fold, which is what put the totals over the
+  // final Semester GPA row before any of this was measured.
+  if (used + closing > SHEET_CAPACITY) {
+    sheets.push({ years: current, closing: false });
+    current = [];
+  }
+  sheets.push({ years: current, closing: true });
+
   return sheets;
 }
 
