@@ -59,13 +59,25 @@
 // ---------------------------------------------------------------------------
 
 import { curricula, supersededBthSchedule } from '@/content/curricula';
+import { ISSUED_2020 } from '@/content/issuedTranscript2020';
 
 /** Where a code on a document came from. */
 export type CodeSource =
   /** The University's registry scheme, as published in its course listings. */
   | 'registry'
   /** The 180-ECTS development brief. A programme sequence, not a faculty code. */
-  | 'programme';
+  | 'programme'
+  /**
+   * A number this system worked out rather than read.
+   *
+   * ONE COURSE HOLDS THIS, and it exists because the University ruled that
+   * Church History is made of two courses while its registry has numbered only
+   * one of them. Somebody has to propose the second number; nobody but the
+   * faculty can confirm it. So it is proposed, said out loud on every screen
+   * that shows it, and it stops being proposed the moment the University says a
+   * number — including a different one.
+   */
+  | 'proposed';
 
 export interface FacultyCode {
   code: string;
@@ -111,23 +123,58 @@ const registrySources = [
   supersededBthSchedule,
 ];
 
+/**
+ * Read in this order, and the order is a ruling.
+ *
+ * THE ISSUED TRANSCRIPT COMES FIRST. Where the 2020 transcript and the later
+ * course listing disagree — Use of English is MA 210 on the sheet and EN 101 in
+ * the listing — the University has ruled that the transcript governs. That is
+ * the right way round: the listing is a description of a programme, and the
+ * transcript is a document the University put its seal on and a graduate has
+ * been carrying for six years. Changing the code under them now would make
+ * their transcript disagree with the register that is supposed to prove it.
+ *
+ * First wins, so precedence is expressed by position rather than by a rule
+ * somewhere else that has to be kept in step with it.
+ */
+const orderedSources: { code: string; title: string }[] = [
+  ...ISSUED_2020.map(({ code, title }) => ({ code, title })),
+  ...registrySources.flatMap((c) => c.terms.flatMap((t) => t.courses
+    .map((course) => ({ code: course.code, title: course.title })))),
+];
+
 const registryByTitle: Map<string, { code: string; title: string }> = (() => {
   const out = new Map<string, { code: string; title: string }>();
-  for (const c of registrySources) {
-    for (const term of c.terms) {
-      for (const course of term.courses) {
-        const k = key(course.title);
-        const seen = out.get(k);
-        // A subject listed on two programmes with two different codes is a
-        // contradiction in the University's own material, and it is surfaced
-        // rather than resolved by whichever happened to be read last.
-        if (seen && seen.code !== course.code) continue;
-        if (!seen) out.set(k, { code: course.code, title: course.title });
-      }
-    }
+  for (const course of orderedSources) {
+    const k = key(course.title);
+    // First wins: a later source never overwrites an earlier one, so a
+    // disagreement is settled by precedence rather than by whichever happened
+    // to be read last. The disagreements themselves are reported by
+    // codeDisagreements() rather than swallowed.
+    if (!out.has(k)) out.set(k, { code: course.code, title: course.title });
   }
   return out;
 })();
+
+/**
+ * Subjects the University's own documents number differently.
+ *
+ * SURFACED, NOT SILENTLY RESOLVED. Precedence decides which code a document
+ * carries, but a registry where two sources disagree is a registry with
+ * something to settle, and nothing settles if nobody can see it.
+ */
+export function codeDisagreements(): { title: string; governing: string; also: string[] }[] {
+  const byTitle = new Map<string, { title: string; codes: string[] }>();
+  for (const course of orderedSources) {
+    const k = key(course.title);
+    const seen = byTitle.get(k) ?? { title: course.title, codes: [] };
+    if (!seen.codes.includes(course.code)) seen.codes.push(course.code);
+    byTitle.set(k, seen);
+  }
+  return Array.from(byTitle.values())
+    .filter((e) => e.codes.length > 1)
+    .map((e) => ({ title: e.title, governing: e.codes[0], also: e.codes.slice(1) }));
+}
 
 /**
  * Where a course of the 180-ECTS Bachelor of Theology is the same subject as
@@ -145,6 +192,58 @@ const TITLE_ALIASES: Record<string, string> = {
   'Old Testament History and Theology': 'Old Testament History',
   'Homiletics I': 'Homiletics',
   'Evangelism and Missions Introduction': 'Evangelism (Intro)',
+
+  // --- From the 2020 transcript, which the University directed be used -----
+  //
+  // THE TEST APPLIED TO EVERY ONE OF THESE: does exactly one course in the
+  // faculty answer to this subject? The 180-ECTS titles are the registry's
+  // subject names with a describing tail — "Demonology" became "Spiritual
+  // Warfare and Demonology", "Missiology" became "Missiology and Global
+  // Christianity" — and where one registry course stands behind one programme
+  // course, they are the same course under two wordings.
+  //
+  // Where the count is not one to one, nothing is mapped. Hermeneutics is the
+  // case: the transcript has one BIS 330 and the 180-ECTS structure has both
+  // Hermeneutics and Biblical Interpretation in Year Two and Advanced
+  // Hermeneutics in Year Three. The title favours the first, the 300-level
+  // number favours the second, and a coin toss on a graduate's transcript is
+  // not a decision this file gets to make. Same for Spiritual Leadership, where
+  // the registry has MDS 650 and MDS 655 for a programme course that is not
+  // numbered I or II. Both are listed for the faculty.
+  'Advanced Homiletics': 'Advance Homiletics',
+  'Research Methodology II': 'Research Method II',
+  'Missiology and Global Christianity': 'Missiology',
+  'Spiritual Warfare and Demonology': 'Demonology',
+  'Acts and Apostolic Mission': 'Acts of Apostles',
+  'ICT, Technology and Global Ministry': 'ICT & Globalization',
+
+  // The University has ruled that Church History is made of two courses:
+  // Introduction to Church History and Advanced Church History. The first is
+  // the course the registry numbered CH 200; the second is proposed below,
+  // because the registry has never numbered it.
+  'Introduction to Church History': 'Church History',
+};
+
+/**
+ * A number this system worked out, for the University to confirm or replace.
+ *
+ * ONE ENTRY, AND IT SHOULD STAY THAT WAY. The University ruled that Church
+ * History is two courses — Introduction and Advanced — and its registry has
+ * numbered only one of them. Somebody has to write a number down for the second
+ * before a transcript can carry it.
+ *
+ * CH 300 follows the faculty's own convention rather than a convention invented
+ * for the occasion: through the whole scheme the hundred says the level and the
+ * advanced course of a pair sits a level above the introduction — Homiletics
+ * BIS 320 and Advance Homiletics BIS 340, Systematic Theology STT 400, 420,
+ * 440. Church History is CH 200, so its advanced course is CH 300.
+ *
+ * It is marked `proposed` everywhere it appears, which is the point: a
+ * registrar sees that this one number is the system's suggestion and not the
+ * faculty's ruling, and replacing it is a one-line change here.
+ */
+const PROPOSED_CODES: Record<string, string> = {
+  'Advanced Church History': 'CH 300',
 };
 
 /**
@@ -164,6 +263,12 @@ export function registryCode(title: string): FacultyCode | null {
     const viaAlias = registryByTitle.get(key(alias));
     if (viaAlias) return { code: viaAlias.code, source: 'registry', matchedTo: viaAlias.title };
   }
+
+  // LAST, AND ONLY AFTER EVERY REAL SOURCE HAS BEEN ASKED. A proposal must
+  // never shadow a code the University actually issued.
+  const proposed = PROPOSED_CODES[title];
+  if (proposed) return { code: proposed, source: 'proposed' };
+
   return null;
 }
 
@@ -175,10 +280,25 @@ export function facultyCode(title: string, programmeCode: string): FacultyCode {
   return registryCode(title) ?? { code: programmeCode, source: 'programme' };
 }
 
-/** Every registry code the University has published, for a reference screen. */
-export function registryCodes(): { code: string; title: string }[] {
-  return Array.from(registryByTitle.values())
-    .sort((a, b) => a.code.localeCompare(b.code));
+/**
+ * Every registry code the University has published, for a reference screen.
+ *
+ * ONE ROW PER CODE, because a code is one course. Where the University's
+ * documents give that course two names — MDS 880 is "Faith" in the listing and
+ * "Exegesis of Faith" on the 2020 transcript — the governing source's title
+ * leads and the other is carried beside it. Two rows would read as two courses
+ * sharing a number, which is the one thing a code register must not say.
+ */
+export function registryCodes(): { code: string; title: string; alsoKnownAs: string[] }[] {
+  const byCode = new Map<string, { code: string; title: string; alsoKnownAs: string[] }>();
+  for (const entry of Array.from(registryByTitle.values())) {
+    const seen = byCode.get(entry.code);
+    if (!seen) byCode.set(entry.code, { ...entry, alsoKnownAs: [] });
+    else if (seen.title !== entry.title && !seen.alsoKnownAs.includes(entry.title)) {
+      seen.alsoKnownAs.push(entry.title);
+    }
+  }
+  return Array.from(byCode.values()).sort((a, b) => a.code.localeCompare(b.code));
 }
 
 /**

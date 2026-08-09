@@ -175,9 +175,14 @@ function Form() {
   // but the paper register is the one thing this screen must never do.
   // ---------------------------------------------------------------------
   const schedule = React.useMemo(() => coursesForProgramme(programme), [programme]);
-  /** The courses on this schedule the faculty has not yet given a code. */
+  // The courses on this schedule that do not carry a faculty code, split by
+  // WHY. A subject the registry has never numbered and a number this system
+  // proposed are different states, and a registrar has to be able to tell them
+  // apart before sealing.
   const awaiting = React.useMemo(
     () => (schedule ? awaitingRegistryCode(schedule) : []), [schedule]);
+  const standIns = awaiting.filter((c) => c.codeSource === 'programme');
+  const proposed = awaiting.filter((c) => c.codeSource === 'proposed');
 
   /** Has the operator typed anything into the rows yet? */
   const typedAnything = rows.some((r) => r.code.trim() || r.title.trim());
@@ -497,17 +502,32 @@ function Form() {
                   paper archive open in front of them. Naming the courses the
                   faculty has not yet numbered turns a silent guess into a
                   correction somebody can make in the moment. */}
-              {awaiting.length > 0 && (
+              {standIns.length > 0 && (
                 <p className="mt-2 max-w-3xl rounded-lg border border-[#e9c14a]/40 bg-[#e9c14a]/10 p-2.5 text-[11px] leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">
-                  <strong>{awaiting.length} of these {schedule.courses.length} courses carry a
+                  <strong>{standIns.length} of these {schedule.courses.length} courses carry a
                   programme code, not a faculty one.</strong>{' '}
                   The University&rsquo;s registry numbers a subject once and every programme uses
                   that number — Bible Doctrine I is BIS 250 on the Diploma and on the Bachelor
-                  alike. These {awaiting.length} are subjects the published listings do not yet
-                  number, so they stand in with the code from the programme brief:{' '}
-                  <span className="font-mono">{awaiting.slice(0, 6).map((c) => c.code).join(', ')}</span>
-                  {awaiting.length > 6 && ` and ${awaiting.length - 6} more`}. If the archive shows
+                  alike. These {standIns.length} are subjects the published listings and the
+                  issued transcripts do not number, so they stand in with the code from the
+                  programme brief:{' '}
+                  <span className="font-mono">{standIns.slice(0, 6).map((c) => c.code).join(', ')}</span>
+                  {standIns.length > 6 && ` and ${standIns.length - 6} more`}. If the archive shows
                   the faculty code, type it over — nothing here is fixed.
+                </p>
+              )}
+
+              {/* A PROPOSED CODE IS NOT A FACULTY CODE, and the difference has
+                  to survive all the way to the person about to seal a document
+                  with it on. */}
+              {proposed.length > 0 && (
+                <p className="mt-2 max-w-3xl rounded-lg border border-[#c8622a]/40 bg-[#c8622a]/10 p-2.5 text-[11px] leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">
+                  <strong>Awaiting the faculty&rsquo;s confirmation:</strong>{' '}
+                  {proposed.map((c) => `${c.code} ${c.title}`).join(', ')}. The University has
+                  ruled that this subject is taught as two courses while its registry has numbered
+                  only one of them, so this number follows the faculty&rsquo;s own convention —
+                  the advanced course a level above the introduction — rather than being a code
+                  anybody has issued. Check it against the archive before sealing.
                 </p>
               )}
             </>

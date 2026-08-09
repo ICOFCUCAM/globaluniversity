@@ -111,7 +111,15 @@ export interface BthSemester {
  * promises "the historical development of Christianity from the apostolic
  * period to the contemporary Church".
  *
- * Adding Church History I and II and the two language courses, and moving
+ * NAMED BY THE UNIVERSITY, not numbered by this file. They were Church
+ * History I and II, which is a programme's way of saying "the first one and
+ * the second one". The University has ruled that church history is taught as
+ * Introduction to Church History and Advanced Church History — two courses with
+ * their own names, which is what lets the registry number them separately
+ * (CH 200, and a second number the faculty has still to confirm). See
+ * courseCodes.ts.
+ *
+ * Adding the two church history courses and the two language courses, and moving
  * Advanced Homiletics up to Semester Five, gives 36 courses, six per semester,
  * 5 ECTS each: 30 per semester, 180 total. Both problems close together.
  *
@@ -165,7 +173,7 @@ export const bthCurriculum: BthSemester[] = [
         'Covenant Theology', 'Redemption and the Restoration of Creation',
       ] },
       { code: 'BTH105', title: 'Evangelism and Missions Introduction' },
-      { code: 'BTH111', title: 'Church History I', contents: ['The apostolic assembly', 'The Church Fathers', 'Persecution under Rome', 'The ecumenical councils', 'Canon and creeds', 'Constantine and the imperial church', 'Monasticism', 'Early African Christianity: Alexandria, Carthage, Ethiopia'] },
+      { code: 'BTH111', title: 'Introduction to Church History', contents: ['The apostolic assembly', 'The Church Fathers', 'Persecution under Rome', 'The ecumenical councils', 'Canon and creeds', 'Constantine and the imperial church', 'Monasticism', 'Early African Christianity: Alexandria, Carthage, Ethiopia'] },
     ],
   },
   {
@@ -177,7 +185,7 @@ export const bthCurriculum: BthSemester[] = [
       { code: 'BTH108', title: 'Christology I', contents: ['Identity of Yahusha', 'Messianic prophecy', 'Incarnation', 'Humanity and divinity', 'Kingdom ministry', 'African and global interpretations of Yahusha'] },
       { code: 'BTH109', title: 'Pentateuch Studies', contents: ['Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy', 'Covenant theology', 'Torah and Christian theology'] },
       { code: 'BTH110', title: 'Christian Psychology and Human Relations', contents: ['Human personality', 'Spiritual formation', 'Pastoral relationships', 'Emotional maturity', 'Family systems', 'Conflict resolution'] },
-      { code: 'BTH112', title: 'Church History II', contents: ['The medieval church', 'The Reformation', 'Counter-Reformation', 'Revival and awakening movements', 'The missionary century', 'Colonialism and the African church', 'Independent African churches', 'The contemporary global church'] },
+      { code: 'BTH112', title: 'Advanced Church History', contents: ['The medieval church', 'The Reformation', 'Counter-Reformation', 'Revival and awakening movements', 'The missionary century', 'Colonialism and the African church', 'Independent African churches', 'The contemporary global church'] },
     ],
   },
   {

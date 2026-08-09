@@ -53,8 +53,10 @@ function bundle(source, name) {
   return out;
 }
 
-const { registryCode, facultyCode, registryCodes, subjectPrefixes } =
+const { registryCode, facultyCode, registryCodes, subjectPrefixes, codeDisagreements } =
   await import(bundle('./courseCodes.ts', 'course-codes.mjs'));
+const { ISSUED_2020, ISSUED_2020_UNCERTAIN } =
+  await import(bundle('./issuedTranscript2020.ts', 'course-codes-2020.mjs'));
 const { coursesForProgramme, awaitingRegistryCode } =
   await import(bundle('./programmeCourses.ts', 'course-codes-prog.mjs'));
 const { curricula, supersededBthSchedule } = await import(bundle('./curricula.ts', 'course-codes-cur.mjs'));
@@ -94,6 +96,9 @@ console.log('\nAnd no code is invented\n');
 // file by hand.
 const supplied = new Set();
 for (const c of [...curricula, supersededBthSchedule]) for (const t of c.terms) for (const co of t.courses) supplied.add(co.code);
+// The transcript the University issued is a supplied source too — the codes on
+// it are the faculty's, read off a document the University sealed.
+for (const c of ISSUED_2020) supplied.add(c.code);
 
 const registrySourced = [...bth.courses, ...dip.courses, ...bmin.courses]
   .filter((c) => c.codeSource === 'registry');
@@ -106,19 +111,88 @@ check('…and there are some, so the check is not passing on an empty set',
 // own code and is MARKED as such, rather than being handed something that looks
 // like a faculty code.
 const awaiting = awaitingRegistryCode(bth);
-check('the courses the faculty has not numbered are marked, not filled in',
-  awaiting.every((c) => c.codeSource === 'programme'), true);
+check('nothing without a faculty code is left looking like it has one',
+  awaiting.every((c) => c.codeSource === 'programme' || c.codeSource === 'proposed'), true);
 check('…and they are named rather than hidden', awaiting.length > 0, true);
 check('Pneumatology has no registry code and does not pretend to',
   registryCode('Pneumatology'), null);
 check('…so it stands in with the code from the programme brief',
   codeOf(bth, 'Pneumatology'), 'BTH208');
 
-// A subject the 180-ECTS structure SPLIT must not inherit the single code of
-// the course it was split from — two courses cannot share one number.
-check('Church History I does not take the code of the single Church History',
-  registryCode('Church History I'), null);
-check('nor does Church History II', registryCode('Church History II'), null);
+console.log('\nYear Three, from the transcript the University issued in 2020\n');
+
+// THE CODES THAT WERE MISSING. Year Three was never in the listing supplied to
+// this project, so before the transcript was read every third-year subject on
+// the Bachelor stood in with a programme code.
+for (const [title, expected] of [
+  ['Advanced Homiletics', 'BIS 340'],
+  ['Systematic Theology II', 'STT 420'],
+  ['Missiology and Global Christianity', 'MW 350'],
+  ['Spiritual Warfare and Demonology', 'MDS 760'],
+  ['Acts and Apostolic Mission', 'CDS 100'],
+  ['ICT, Technology and Global Ministry', 'MDS 820'],
+  ['Research Methodology II', 'RM 550'],
+]) {
+  check(`${title} is ${expected}`, codeOf(bth, title), expected);
+}
+
+// AND THE ONE LINE ON THE SHEET THAT CARRIES NO CODE stays without one. The
+// thesis is printed with a blank code column, five credits and a grade point.
+check('the thesis is not given a number the transcript does not show',
+  registryCode('Bachelor Thesis and Defense'), null);
+
+// Every code entered from the sheet is traceable to a named place on it, so a
+// registrar can go back to the paper rather than to a decision nobody recorded.
+check('every code read from the transcript says where on the sheet it was read',
+  ISSUED_2020.filter((c) => !c.where || !c.title).map((c) => c.code), []);
+check('and the lines that could not be read confidently are kept, not dropped',
+  ISSUED_2020_UNCERTAIN.length > 0, true);
+
+console.log('\nWhere two of the University’s documents disagree, the 2020 transcript governs\n');
+
+// THE UNIVERSITY'S RULING. The listing says Use of English is EN 101; the
+// transcript it sealed and a graduate has been carrying says MA 210.
+check('Use of English is the code the issued transcript prints',
+  codeOf(dip, 'Use of English'), 'MA 210');
+{
+  const clash = codeDisagreements().find((d) => d.title === 'Use of English');
+  check('the disagreement is reported rather than swallowed', Boolean(clash), true);
+  check('…with the transcript’s code governing', clash?.governing, 'MA 210');
+  check('…and the listing’s code still named', clash?.also, ['EN 101']);
+}
+
+console.log('\nChurch history, as the University has ruled it is taught\n');
+
+// TWO COURSES, NOT "I" AND "II". The University has ruled that church history
+// is Introduction to Church History and Advanced Church History — which is what
+// lets the registry number them separately at all.
+check('the introduction takes the code the registry issued',
+  codeOf(bth, 'Introduction to Church History'), 'CH 200');
+check('…and is a real registry code, not a proposal',
+  registryCode('Introduction to Church History')?.source, 'registry');
+check('the advanced course carries a proposed number',
+  facultyCode('Advanced Church History', 'BTH112'),
+  { code: 'CH 300', source: 'proposed' });
+check('…which follows the faculty’s own convention: a level above the introduction',
+  codeOf(bth, 'Advanced Church History').startsWith('CH '), true);
+// A PROPOSAL MUST NEVER SHADOW A CODE THE UNIVERSITY ISSUED. If one ever did,
+// a real code would silently disappear behind a suggestion.
+check('no proposed code stands where the University has issued one',
+  bth.courses.filter((c) => c.codeSource === 'proposed' && registryCode(c.title)?.source === 'registry'),
+  []);
+check('and exactly one course in the whole programme is proposed',
+  bth.courses.filter((c) => c.codeSource === 'proposed').map((c) => c.title),
+  ['Advanced Church History']);
+
+console.log('\nAnd where one code has two candidates, nothing is chosen\n');
+
+// THE TEST APPLIED TO EVERY MAPPING: exactly one course answers to the subject.
+// These two fail it and are left for the faculty rather than guessed at.
+check('Hermeneutics is not mapped — one code, two candidate courses',
+  [registryCode('Hermeneutics and Biblical Interpretation'), registryCode('Advanced Hermeneutics')],
+  [null, null]);
+check('Spiritual Leadership is not mapped — one course, two candidate codes',
+  registryCode('Spiritual Leadership'), null);
 
 console.log('\nThe alias table, which is the one place a mistake would hide\n');
 
@@ -148,8 +222,15 @@ check('…and are marked as programme codes rather than faculty ones',
 console.log('\nThe register itself\n');
 
 check('the registry holds codes', registryCodes().length > 0, true);
-check('no code appears twice under two titles',
+check('no code appears twice, because a code is one course',
   registryCodes().length, new Set(registryCodes().map((c) => c.code)).size);
+{
+  // The same course under two of the University's own names. The register
+  // carries both rather than picking one and losing the other.
+  const faith = registryCodes().find((c) => c.code === 'MDS 880');
+  check('a course the documents name twice keeps both names',
+    [faith?.title, faith?.alsoKnownAs], ['Exegesis of Faith', ['Faith']]);
+}
 check('the prefixes are listed with the courses that carry them, not with invented meanings',
   subjectPrefixes().every((p) => p.courses.length > 0 && !('meaning' in p)), true);
 check('and BIS is one of them, carrying more than one course',
