@@ -1,6 +1,8 @@
 import { SampleDataNotice } from '@/components/ui/portal';
 import React, { useEffect, useState } from 'react';
 import MyWeek from './MyWeek';
+import PortalMasthead from '@/components/portal/PortalMasthead';
+import { CARD_INTERACTIVE, FOCUS } from '@/lib/portalTheme';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { getGPAColor, getClassificationShort } from '@/lib/grading';
@@ -77,62 +79,63 @@ export default function StudentDashboard({ onNavigate }: StudentDashboardProps) 
 
   return (
     <div className="space-y-6">
-      {/* Welcome */}
-      <div className="bg-gradient-to-r from-[#422e59] to-[#3949ab] rounded-2xl p-6 text-white relative overflow-hidden">
-        <div className="relative z-10">
-          <p className="text-blue-200 text-sm">Welcome back,</p>
-          <h1 className="text-2xl font-bold mt-1">{user?.name}</h1>
-          <p className="mt-1 text-sm text-white/70">
-            {record?.student_number || user?.matricNo || '—'}
-            {programme ? ` · ${programme}` : ''}
-          </p>
-          <div className="mt-4 flex flex-wrap gap-6">
-            <div>
-              <p className="text-3xl font-bold tabular-nums text-amber-300">
-                {loading ? '…' : cgpa !== null ? cgpa.toFixed(2) : '—'}
-              </p>
-              <p className="text-xs text-white/60">
-                {cgpa !== null ? 'CGPA' : 'No approved results yet'}
-              </p>
-            </div>
-            <div>
-              <p className="text-3xl font-bold tabular-nums text-emerald-300">{loading ? '…' : credits}</p>
-              <p className="text-xs text-white/60">Credits earned</p>
-            </div>
-            {cgpa !== null && (
-              <div>
-                <p className="mt-1 text-lg font-bold text-amber-300">{getClassificationShort(cgpa)}</p>
-                <p className="text-xs text-white/60">Standing</p>
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="absolute right-6 top-6 w-20 h-20 rounded-full border-4 border-amber-400/30 flex items-center justify-center">
-          <img src={user?.avatar} alt="" className="w-16 h-16 rounded-full object-cover" />
-        </div>
-      </div>
+      {/* ------------------------------------------------------------------
+          The student's masthead.
+
+          It was a blue-to-purple gradient carrying amber, emerald and pale-blue
+          text — four colours belonging to no part of the university's palette,
+          on the first screen a student sees. The figures it carries have not
+          changed and neither has their provenance: the CGPA and the credits are
+          computed from this student's own approved results, and read "—" where
+          there are none rather than a zero that looks like a mark.
+          ------------------------------------------------------------------ */}
+      <PortalMasthead
+        eyebrow={programme || 'Student'}
+        title={user?.name ? 'Welcome back,' : 'Welcome back'}
+        accent={user?.name ?? undefined}
+        lead={record?.student_number || user?.matricNo || undefined}
+        portrait={user?.avatar}
+        facts={[
+          {
+            label: cgpa !== null ? 'CGPA' : 'No approved results yet',
+            value: loading ? '…' : cgpa !== null ? cgpa.toFixed(2) : '—',
+          },
+          { label: 'Credits earned', value: loading ? '…' : credits },
+          ...(cgpa !== null
+            ? [{ label: 'Standing', value: getClassificationShort(cgpa) }]
+            : []),
+        ]}
+      />
 
       <MyWeek />
 
 
-      {/* Quick Actions */}
+      {/* Quick Actions.
+
+          These were four tiles in four unrelated gradients — blue, emerald,
+          amber, purple — one per destination, chosen because there were four
+          destinations. Colour that carries no meaning is noise, and four
+          equally loud tiles have no order to them at all. They now use the one
+          card treatment the rest of the portal uses, with the university's gold
+          on the icon: the same restraint src/lib/portalTheme.ts was written to
+          impose, applied to the screen that most students open first. */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: 'My Courses', icon: <BookOpen size={20} />, color: 'from-blue-500 to-blue-600', view: 'courses' as ViewType },
-          { label: 'View Results', icon: <ClipboardList size={20} />, color: 'from-emerald-500 to-emerald-600', view: 'results' as ViewType },
-          { label: 'Transcript', icon: <FileText size={20} />, color: 'from-amber-500 to-amber-600', view: 'transcript' as ViewType },
-          { label: 'LMS Portal', icon: <Monitor size={20} />, color: 'from-purple-500 to-purple-600', view: 'lms' as ViewType },
+          { label: 'My Courses', icon: <BookOpen size={20} />, view: 'courses' as ViewType },
+          { label: 'View Results', icon: <ClipboardList size={20} />, view: 'results' as ViewType },
+          { label: 'Transcript', icon: <FileText size={20} />, view: 'transcript' as ViewType },
+          { label: 'LMS Portal', icon: <Monitor size={20} />, view: 'lms' as ViewType },
         ].map((action, i) => (
           <button
             key={i}
             onClick={() => onNavigate(action.view)}
-            className="bg-white rounded-xl p-4 border border-[#ece7de] dark:border-[#2e2637] hover:shadow-lg transition-all duration-300 group text-left"
+            className={`${CARD_INTERACTIVE} group p-4 text-left ${FOCUS}`}
           >
-            <div className={`p-2.5 rounded-xl bg-gradient-to-br ${action.color} text-white shadow-lg w-fit`}>
+            <div className="w-fit rounded-xl bg-[#faf6ee] p-2.5 text-[#c5a55a] ring-1 ring-[#ece0c4] transition-colors group-hover:bg-[#422e59] group-hover:text-[#e9c14a] group-hover:ring-[#422e59] dark:bg-[#241f2c] dark:ring-[#3d3349]">
               {action.icon}
             </div>
             <p className="text-sm font-semibold text-[#33234a] dark:text-[#e4dcf0] mt-3">{action.label}</p>
-            <div className="flex items-center gap-1 text-xs text-[#a49bb0] dark:text-[#7b7289] mt-1 group-hover:text-blue-500 transition-colors">
+            <div className="flex items-center gap-1 text-xs text-[#a49bb0] dark:text-[#7b7289] mt-1 transition-colors group-hover:text-[#422e59] dark:group-hover:text-[#c9b6e6]">
               <span>Open</span>
               <ArrowRight size={12} />
             </div>

@@ -25,7 +25,7 @@
 
 import React from 'react';
 import {
-  CARD, CARD_INTERACTIVE, EYEBROW, SECTION_TITLE, SECTION_SUB, NUMERIC, SURFACE,
+  CARD, CARD_INTERACTIVE, EYEBROW, TEXT, SECTION_SUB, NUMERIC, SURFACE,
 } from '@/lib/portalTheme';
 
 /* ------------------------------------------------------------------ */
@@ -65,7 +65,31 @@ export function CardHeader({
   );
 }
 
-/** The heading block at the top of a screen. */
+/**
+ * The heading block at the top of a screen.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY IT CARRIES A GOLD RULE
+ * ---------------------------------------------------------------------------
+ *
+ * The University put its sign-in screen beside its management system and asked
+ * why they were not the same institution to look at. Part of the answer is the
+ * masthead, which is a band and only belongs on a dashboard. The rest of it is
+ * here: every one of the twenty-five working screens opened with a bare bold
+ * line of text, and the sign-in screen opens with a gold eyebrow, a dot, a
+ * heading, and a rule under it.
+ *
+ * This is that, at the scale a screen somebody works in all day can carry. One
+ * component, so it arrives everywhere at once and cannot drift screen by
+ * screen — which is exactly how the four dashboards ended up with four copies
+ * of one band.
+ *
+ * WHAT IT DELIBERATELY DOES NOT CARRY is the eyebrow. The masthead has one, and
+ * on a dashboard it names the office. Here it would name the group of screens —
+ * "Admissions", "Records" — which the breadcrumb in the top bar is already
+ * saying two centimetres above, in the same words. A line that repeats the line
+ * above it is not identity, it is a stutter.
+ */
 export function PageHeader({
   title, subtitle, action,
 }: {
@@ -74,12 +98,26 @@ export function PageHeader({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-wrap items-end justify-between gap-4">
-      <div>
-        <h1 className={SECTION_TITLE.replace('text-base', 'text-xl')}>{title}</h1>
-        {subtitle && <p className={`mt-1 ${SECTION_SUB}`}>{subtitle}</p>}
+    <div className="relative pb-4">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className={`font-heading text-xl font-bold ${TEXT.heading}`}>{title}</h1>
+          {subtitle && <p className={`mt-1 ${SECTION_SUB}`}>{subtitle}</p>}
+        </div>
+        {action}
       </div>
-      {action}
+
+      {/* The rule. Brightest under the heading and fading out across the screen,
+          which is the same figure the sign-in screen's Seam draws — and the
+          reason this reads as a masthead rather than as a border. */}
+      <span
+        aria-hidden="true"
+        className="absolute inset-x-0 bottom-0 h-px"
+        style={{
+          background:
+            'linear-gradient(90deg, rgba(197,165,90,0.75), rgba(197,165,90,0.28) 38%, rgba(197,165,90,0.06) 72%, transparent)',
+        }}
+      />
     </div>
   );
 }

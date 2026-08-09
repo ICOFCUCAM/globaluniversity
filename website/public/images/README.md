@@ -50,6 +50,38 @@ good. Send the large original if you have it and it can be resized here.
 seal, a cut-out. A photograph saved as PNG is typically five times the size for
 no visible gain.
 
+## `portal-hero.png` — the management system's masthead
+
+The band across the top of every dashboard reads its photograph from exactly
+one path:
+
+    public/images/portal-hero.png
+
+Upload it under **that name**, in lowercase, with no spaces or commas. A file
+committed as `ChatGPT Image Aug 9, 2026, 06_56_24 PM.png` is served at a URL
+full of `%20` and `%2C`, which works right up until something in the chain
+does not encode it.
+
+Three things worth knowing before choosing the picture:
+
+- **It is texture, not a subject.** The band blends it on luminosity over the
+  university's aubergine, so what survives is its light and shade, not its
+  colour, and nothing in it is legible as a scene. Faces, text and detail are
+  all lost by design — that is what keeps the masthead the university's colour
+  whatever is uploaded. Choose for shape and contrast, not for content.
+- **This is the one full-width band the audit below permits.** Because the
+  picture is texture and sits under a heavy wash, a source softer than 1600px
+  does not read as soft the way a full-bleed hero does. It should still be
+  1600px or wider if you have it.
+- **If the file is absent, nothing breaks.** The band renders as the wash
+  alone — darker and plainer, and completely intact. There is no placeholder
+  to remove and no broken image to explain.
+
+A photograph is normally `.jpg`, not `.png` (see Formats above). The path ends
+`.png` because that is what the university had to hand. If the PNG comes in over
+400 KB, save it as `portal-hero.jpg` instead and change the single line naming
+it in `src/lib/constants.ts`.
+
 ## Rights
 
 Same rule as anywhere: the university needs to own the photograph or have

@@ -23,13 +23,15 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { UNIVERSITY } from '@/lib/constants';
+import PortalMasthead, {
+  MASTHEAD_BTN_PRIMARY, MASTHEAD_BTN_SECONDARY,
+} from '@/components/portal/PortalMasthead';
 import { roleLabels } from '@/lib/roles';
 import { statusMeta, toUniversal } from '@/lib/status';
 import {
   Card, CardHeader, Figure, EmptyState, Skeleton, TableShell, THead, TBody, Th, Td,
 } from '@/components/ui/portal';
-import { BTN_PRIMARY, BTN_SECONDARY, FOCUS } from '@/lib/portalTheme';
+import { FOCUS } from '@/lib/portalTheme';
 import type { ViewType } from '@/lib/types';
 import { Wallet, Banknote, Inbox, ArrowRight, Users, AlertCircle } from 'lucide-react';
 
@@ -91,32 +93,26 @@ export default function FinanceDashboard({ onNavigate }: { onNavigate?: (v: View
 
   return (
     <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-2xl bg-[#33234a] p-6 text-white">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#e9c14a]">
-          {roleLabels[user?.role ?? 'finance']}
-        </p>
-        <h1 className="mt-1.5 font-heading text-2xl font-bold">
-          Good day{user?.name ? `, ${user.name.split(' ')[0]}` : ''}
-        </h1>
-        <p className="mt-1 text-sm text-white/65">
-          {UNIVERSITY.name} ·{' '}
-          {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-        </p>
-        <div className="mt-4 flex flex-wrap gap-2">
-          {awaitingFee > 0 ? (
-            <button onClick={go('admissions-finance')} className={`${BTN_PRIMARY} bg-[#e9c14a] text-[#241a30] hover:bg-[#f3d27a]`}>
-              <Wallet size={15} /> {awaitingFee} awaiting a fee
+      <PortalMasthead
+        eyebrow={roleLabels[user?.role ?? 'finance']}
+        title={`Welcome back${user?.name ? `, ${user.name.split(' ')[0]}` : ''}`}
+        actions={
+          <>
+            {awaitingFee > 0 ? (
+              <button onClick={go('admissions-finance')} className={MASTHEAD_BTN_PRIMARY}>
+                <Wallet size={15} /> {awaitingFee} awaiting a fee
+              </button>
+            ) : (
+              <button onClick={go('admissions-finance')} className={MASTHEAD_BTN_SECONDARY}>
+                <Wallet size={15} /> Finance desk
+              </button>
+            )}
+            <button onClick={go('fees')} className={MASTHEAD_BTN_SECONDARY}>
+              <Banknote size={15} /> Record a payment
             </button>
-          ) : (
-            <button onClick={go('admissions-finance')} className={`${BTN_SECONDARY} border-white/25 bg-white/10 text-white hover:bg-white/20`}>
-              <Wallet size={15} /> Finance desk
-            </button>
-          )}
-          <button onClick={go('fees')} className={`${BTN_SECONDARY} border-white/25 bg-white/10 text-white hover:bg-white/20`}>
-            <Banknote size={15} /> Record a payment
-          </button>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {blocked && (
         <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200">

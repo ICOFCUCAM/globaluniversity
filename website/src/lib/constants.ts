@@ -69,7 +69,28 @@ export const UNIVERSITY = {
 // All replaced with the university's own files from /public.
 export const IMAGES = {
   logo: '/images/site-icon.png',
+  // The sign-in screen's photograph, and nothing else's.
   hero: '/images/hall.jpg',
+  // ---------------------------------------------------------------------
+  // THE MANAGEMENT SYSTEM'S OWN PHOTOGRAPH
+  // ---------------------------------------------------------------------
+  //
+  // Separate from `hero` because no image on this site is used twice, and
+  // this one was. The administrator's dashboard pasted `hall.jpg` into the
+  // right-hand third of its welcome band — the same photograph the reader had
+  // been looking at, full-bleed, four seconds earlier on the way in. Signing
+  // in should change the scene.
+  //
+  // IF THIS FILE IS NOT PRESENT the masthead renders as the aubergine wash
+  // alone and nothing breaks: it is painted as a background layer over a
+  // gradient that is always drawn, never as an <img> that could 404 into a
+  // broken glyph across the top of every dashboard. See PortalMasthead.tsx.
+  //
+  // The name matters. Files under /public are served at the path they are
+  // committed under, so a name carrying spaces and commas becomes a URL
+  // carrying %20 and %2C — which works until something along the way does not
+  // encode it. Upload the photograph as exactly this name.
+  portalHero: '/images/portal-hero.png',
   seal: '/images/site-icon.png',
   professors: [
     '/images/wp/ndenka.jpg',
