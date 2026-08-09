@@ -289,6 +289,22 @@ export const SYSTEM_CAPABILITIES = [
   // What the university's awards look like and whether they stand
   'design-credentials',
   'publish-credential-template',
+  /**
+   * Publishing a design the three approving offices have not signed.
+   *
+   * THE UNIVERSITY'S OWN AUTHORITY, held by the Superadministrator alone —
+   * "he is more of the VC of the university". It is a separate capability from
+   * publishing rather than part of it, because the two are different acts: one
+   * carries out a decision the Senate has taken, the other takes the decision.
+   * A future role that may publish must not inherit the power to publish
+   * unapproved simply by holding the first.
+   *
+   * It is not a way round the control. The database still refuses unless the
+   * row says so and carries a reason of at least forty characters, stamps the
+   * hour itself, and marks the version permanently — see migration 022. What
+   * this capability decides is WHO may take that route.
+   */
+  'publish-without-senate',
   'revoke-credential',
   // AMENDING AN ALREADY-ISSUED CREDENTIAL. Distinct from designing one, and
   // far graver: it changes what the university is recorded as having said on a

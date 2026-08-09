@@ -96,6 +96,10 @@ interface VersionRow {
   name: string;
   is_active: boolean;
   published_at: string | null;
+  /** True where the Superadministrator published without the three offices. */
+  published_without_approval?: boolean;
+  override_reason?: string | null;
+  overridden_by_email?: string | null;
   design: Partial<CredentialDesign>;
 }
 
@@ -134,7 +138,7 @@ export default function CredentialStudio({ embedded }: { embedded?: boolean } = 
       setLoading(true);
       const { data } = await supabase
         .from('credential_templates')
-        .select('id, kind, version, name, is_active, published_at, design')
+        .select('id, kind, version, name, is_active, published_at, design, published_without_approval, override_reason, overridden_by_email')
         .eq('kind', kind)
         .order('version', { ascending: false });
       if (!live) return;
@@ -222,7 +226,7 @@ export default function CredentialStudio({ embedded }: { embedded?: boolean } = 
     setVersionName('');
     const { data } = await supabase
       .from('credential_templates')
-      .select('id, kind, version, name, is_active, published_at, design')
+      .select('id, kind, version, name, is_active, published_at, design, published_without_approval, override_reason, overridden_by_email')
       .eq('kind', kind)
       .order('version', { ascending: false });
     setVersions((data ?? []) as VersionRow[]);
@@ -824,6 +828,19 @@ export default function CredentialStudio({ embedded }: { embedded?: boolean } = 
                         </p>
                         <p className="text-xs text-[#a49bb0]">
                           {v.published_at ? new Date(v.published_at).toLocaleString('en-GB') : 'not published'}
+                          {/* SAID HERE, NOT ONLY AT THE MOMENT IT WAS DONE. A
+                              version published without the approving offices
+                              has to be recognisable years later by somebody
+                              auditing what the University issued — which is the
+                              whole point of recording it. */}
+                          {v.published_without_approval && (
+                            <span className="mt-0.5 block text-[11px] leading-relaxed text-[#8a3f14] dark:text-[#e5a877]">
+                              Published under the University&rsquo;s own authority
+                              {v.overridden_by_email ? ` by ${v.overridden_by_email}` : ''} — the
+                              approving offices did not sign this version.
+                              {v.override_reason ? ` “${v.override_reason}”` : ''}
+                            </span>
+                          )}
                         </p>
                       </div>
                       <div className="flex items-center gap-2">

@@ -164,4 +164,49 @@ check('the shape check agrees with the validator',
     isSignatureImage('data:image/svg+xml;base64,PHN2Zy8+')],
   [true, false, false]);
 
+console.log('\nPublishing without the Senate\n');
+
+// ---------------------------------------------------------------------------
+// THE SAME NUMBER IN THREE PLACES, CHECKED AGAINST EACH OTHER
+// ---------------------------------------------------------------------------
+//
+// The University has ruled that the Superadministrator may publish a design the
+// three approving offices have not signed. It is not a check that was removed:
+// the database still refuses unless the row says so and carries a reason of at
+// least forty characters (migration 022), the route refuses shorter (so the
+// desk gets a message rather than a stack trace), and the screen keeps the
+// button dark until the sentence is written.
+//
+// Three copies of a number is two too many, and each one is there for a reason
+// the others cannot cover. What must not happen is that they drift — a screen
+// that accepts thirty characters and a database that refuses them is a button
+// that fails with no explanation. So they are read out of the files and
+// compared.
+{
+  const { readFileSync } = await import('node:fs');
+  const read = (p) => readFileSync(new URL(p, import.meta.url).pathname, 'utf8');
+
+  const migration = read('../../docs/migrations/022_publication_under_own_authority.sql');
+  const route = read('../app/api/admin/credential-template/route.ts');
+  const screen = read('../components/studio/ApprovalQueue.tsx');
+
+  const inMigration = /length\(btrim\(override_reason\)\) >= (\d+)/.exec(migration)?.[1];
+  const inRoute = /OVERRIDE_REASON_MIN = (\d+)/.exec(route)?.[1];
+  const inScreen = /OVERRIDE_MIN = (\d+)/.exec(screen)?.[1];
+
+  check('the database, the route and the screen agree on the shortest reason',
+    [inMigration, inRoute, inScreen], ['40', '40', '40']);
+
+  // AND THE GUARD IS STILL THERE. If the exception were ever widened into
+  // "publish whatever", the approval chain would be decoration.
+  check('the Senate is still required where there is no override',
+    /if signed < 3 then/.test(migration), true);
+  check('…and an override still has to say why',
+    /must carry a reason of at least 40 characters/.test(migration), true);
+  check('the hour is stamped by the database, not supplied by the caller',
+    /new\.overridden_at := now\(\)/.test(migration), true);
+  check('and the route reserves it to the capability the University named',
+    /publish-without-senate/.test(route), true);
+}
+
 process.exit(failures === 0 ? 0 : 1);

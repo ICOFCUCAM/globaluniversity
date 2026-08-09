@@ -23,6 +23,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { can } from '@/lib/roles';
 import { withDefaults, type CredentialDesign, type CredentialKind } from '@/lib/credentialTemplate';
 import { Card, EmptyState } from '@/components/ui/portal';
 import { BTN_SECONDARY, FOCUS, INPUT } from '@/lib/portalTheme';
@@ -31,6 +32,18 @@ import {
 } from 'lucide-react';
 
 const OFFICES = ['registrar', 'academic-office', 'vice-chancellor'] as const;
+
+/**
+ * The shortest reason for publishing without the Senate.
+ *
+ * Forty characters, the same as the route and the database constraint in
+ * migration 022. Three copies of a number is two too many, but the database has
+ * to hold it (a rule enforced only in code is bypassed by the next route), the
+ * route has to hold it (so the desk gets a message rather than a stack trace),
+ * and the screen has to hold it (so the button is dark until the sentence is
+ * written). They are checked against each other in credentialTemplate tests.
+ */
+const OVERRIDE_MIN = 40;
 type Office = (typeof OFFICES)[number];
 
 const OFFICE_LABEL: Record<Office, string> = {
@@ -60,9 +73,20 @@ export default function ApprovalQueue({
   const role = user?.role ?? '';
   const myOffice = (OFFICES as readonly string[]).includes(role) ? (role as Office) : null;
   const canPublish = role === 'superadmin';
+  /**
+   * Who may go round the approving offices.
+   *
+   * Read from the capability rather than from the role, so the rule lives in
+   * one place — and the route checks it again, because a control that is only
+   * in a screen is not a control.
+   */
+  const mayOverride = can(role || undefined, 'publish-without-senate');
 
   const [rows, setRows] = useState<Submission[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  /** Which submission the override is open on, if any. */
+  const [override, setOverride] = useState<string | null>(null);
+  const [reason, setReason] = useState<Record<string, string>>({});
   const [note, setNote] = useState<Record<string, string>>({});
   const [message, setMessage] = useState<{ tone: 'ok' | 'bad'; text: string } | null>(null);
 
@@ -300,6 +324,76 @@ export default function ApprovalQueue({
                         ? 'All three offices have approved. Publishing makes this the design for credentials issued from now on; nothing already issued changes.'
                         : `${approvals.length} of 3 approvals. The database refuses publication until all three have signed.`}
                     </p>
+
+                    {/* --- THE UNIVERSITY'S OWN AUTHORITY --------------------
+                        Offered only where it is needed — a design the Senate
+                        has already cleared does not need a way round the
+                        Senate — and only to the office the University named.
+
+                        Not a checkbox beside the Publish button, deliberately.
+                        Going round the approval chain is a different act from
+                        carrying out its decision, and it should not be one
+                        careless click away from it. */}
+                    {mayOverride && !cleared && (
+                      <div className="mt-4 rounded-xl border border-[#c8622a]/40 bg-[#c8622a]/[0.07] p-3">
+                        {override === r.id ? (
+                          <>
+                            <p className="text-xs font-semibold text-[#8a3f14] dark:text-[#e5a877]">
+                              Publish under the University&rsquo;s own authority
+                            </p>
+                            <p className="mt-1 max-w-2xl text-[11px] leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">
+                              The {['Registrar', 'Academic Office', 'Vice Chancellor']
+                                .filter((_, i) => !approvals.some((a) => a.office === OFFICES[i]))
+                                .join(', ') || 'approving offices'} will not have signed this
+                              design, and the version will say so for as long as it exists — on this
+                              screen, in the version history, and on the audit trail. Say what could
+                              not wait.
+                            </p>
+                            <textarea
+                              value={reason[r.id] ?? ''}
+                              onChange={(e) => setReason((x) => ({ ...x, [r.id]: e.target.value }))}
+                              rows={2}
+                              placeholder="Convocation is on Saturday and the Vice Chancellor is out of the country."
+                              className="mt-2 w-full rounded-lg border border-[#ded6c8] bg-white p-2 text-xs dark:border-[#3d3349] dark:bg-[#1f1a27]"
+                            />
+                            <div className="mt-2 flex flex-wrap items-center gap-2">
+                              <button
+                                onClick={() => void send(r.id, {
+                                  publish: true,
+                                  overrideApproval: true,
+                                  overrideReason: reason[r.id] ?? '',
+                                }, 'publication')}
+                                disabled={busy === r.id || (reason[r.id]?.trim().length ?? 0) < OVERRIDE_MIN}
+                                className={`flex items-center gap-2 rounded-xl bg-[#8a3f14] px-4 py-2 text-xs font-semibold text-white hover:bg-[#733411] disabled:opacity-40 ${FOCUS}`}
+                              >
+                                {busy === r.id
+                                  ? <Loader2 size={13} className="animate-spin" />
+                                  : <Upload size={13} />}
+                                Publish without the Senate
+                              </button>
+                              <button
+                                onClick={() => setOverride(null)}
+                                className="rounded-xl px-3 py-2 text-xs text-[#6b6076] hover:underline dark:text-[#9c93ad]"
+                              >
+                                Cancel
+                              </button>
+                              <span className="text-[11px] text-[#8a8194]">
+                                {Math.max(0, OVERRIDE_MIN - (reason[r.id]?.trim().length ?? 0)) > 0
+                                  ? `${OVERRIDE_MIN - (reason[r.id]?.trim().length ?? 0)} more characters`
+                                  : 'Recorded permanently against this version'}
+                              </span>
+                            </div>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => setOverride(r.id)}
+                            className="text-xs font-medium text-[#8a3f14] underline underline-offset-2 dark:text-[#e5a877]"
+                          >
+                            Publish without waiting for the approving offices
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
