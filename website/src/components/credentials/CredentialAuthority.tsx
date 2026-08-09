@@ -52,7 +52,7 @@ import { runQuery } from '@/lib/runQuery';
 import { can } from '@/lib/roles';
 import type { UserRole } from '@/lib/types';
 import {
-  actionsFor, describeEvent, CATEGORY_PROFILES, CREDENTIAL_CATEGORIES,
+  actionsFor, statusLabel, describeEvent, CATEGORY_PROFILES, CREDENTIAL_CATEGORIES,
   problemsWithType, movesFor, canMove,
   type CredentialVersion, type CredentialCategory, type AuditEvent,
   type CorrectionState,
@@ -77,6 +77,9 @@ interface Row {
   status: string;
   issuedAt: string;
   contentHash: string;
+  /** Why the University withdrew it as issued in error. Null unless void. */
+  voidReason: string | null;
+  voidedAt: string | null;
 }
 
 interface CorrectionRow {
@@ -109,7 +112,7 @@ export default function CredentialAuthority(
   const load = useCallback(async () => {
     const { data, error } = await runQuery(supabase
       .from('credentials_issued')
-      .select('id, credential_id, version, supersedes_id, kind, holder_name, award, classification, programme, status, issued_at, content_hash')
+      .select('id, credential_id, version, supersedes_id, kind, holder_name, award, classification, programme, status, issued_at, content_hash, void_reason, voided_at')
       .order('issued_at', { ascending: false })
       .limit(400));
 
@@ -136,6 +139,8 @@ export default function CredentialAuthority(
       status: r.status,
       issuedAt: r.issued_at,
       contentHash: r.content_hash,
+      voidReason: r.void_reason ?? null,
+      voidedAt: r.voided_at ?? null,
     })));
 
     const [c, t] = await Promise.all([
@@ -405,17 +410,24 @@ export default function CredentialAuthority(
 // ---------------------------------------------------------------------------
 
 function StatusPill({ row, versions }: { row: Row; versions: number }) {
-  const tone = row.status === 'revoked'
-    ? 'bg-red-600/10 text-red-700 dark:text-red-300'
-    : row.status === 'replaced'
-      ? 'bg-[#e9c14a]/15 text-[#8a6a10]'
-      : 'bg-emerald-600/10 text-emerald-700 dark:text-emerald-300';
+  // THE WORDS AND THE TONE COME FROM `statusLabel`, not from a ternary here.
+  // The ternary this replaces had no case for 'void' and fell through to green
+  // "Current", so a document the University had withdrawn as issued in error
+  // showed in the register as the standing credential. See statusLabel.
+  const { label, tone } = statusLabel(row.status, row.version, versions);
 
-  const label = row.status === 'revoked' ? 'Revoked'
-    : row.status === 'replaced' ? 'Superseded'
-      : versions > 1 ? `Current · v${row.version}` : 'Current';
+  const TONES: Record<typeof tone, string> = {
+    current: 'bg-emerald-600/10 text-emerald-700 dark:text-emerald-300',
+    superseded: 'bg-[#e9c14a]/15 text-[#8a6a10]',
+    revoked: 'bg-red-600/10 text-red-700 dark:text-red-300',
+    void: 'bg-[#c5a55a]/20 text-[#7a5f10] dark:text-[#e0c778]',
+  };
 
-  return <span className={`flex-shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${tone}`}>{label}</span>;
+  return (
+    <span className={`flex-shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${TONES[tone]}`}>
+      {label}
+    </span>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -565,20 +577,20 @@ function AwardPanel({
           {award.versions.map((v) => (
             <li key={v.id} className="flex items-baseline gap-2 text-xs">
               <span className={`rounded px-1.5 py-0.5 font-medium ${
-                v.status === 'replaced'
+                statusLabel(v.status).tone === 'superseded'
                   ? 'bg-[#e9c14a]/15 text-[#8a6a10]'
-                  : v.status === 'revoked'
+                  : statusLabel(v.status).tone === 'revoked'
                     ? 'bg-red-600/10 text-red-700 dark:text-red-300'
-                    : v.status === 'void'
+                    : statusLabel(v.status).tone === 'void'
                       ? 'bg-[#c5a55a]/20 text-[#7a5f10] dark:text-[#e0c778]'
                       : 'bg-emerald-600/10 text-emerald-700 dark:text-emerald-300'
               }`}>
                 Version {v.version}
               </span>
               <span className="text-[#6b6076] dark:text-[#9c93ad]">
-                {v.status === 'replaced' ? 'Superseded'
-                  : v.status === 'revoked' ? 'Revoked'
-                    : v.status === 'void' ? 'Void — issued in error' : 'Current'}
+                {/* THE SAME FUNCTION THE LIST USES. Two places naming the same
+                    state in their own words is how they come to disagree. */}
+                {v.status === 'void' ? 'Void — issued in error' : statusLabel(v.status).label}
                 {' · '}{new Date(v.issuedAt).toLocaleDateString('en-GB')}
               </span>
             </li>
@@ -674,11 +686,23 @@ function AwardPanel({
       )}
 
       {current.status === 'void' && (
-        <p className="rounded-xl border border-[#c5a55a]/50 bg-[#fdf7e8] p-4 text-xs leading-relaxed text-[#6b6076] dark:bg-[#2a2333] dark:text-[#9c93ad]">
-          <strong>This document is void.</strong> The University issued it in error, and anyone
-          verifying the number is told so — and told that the holder is not at fault. No further
-          copies can be produced from it. Issue a correct document in its place.
-        </p>
+        <div className="rounded-xl border border-[#c5a55a]/50 bg-[#fdf7e8] p-4 text-xs leading-relaxed text-[#6b6076] dark:bg-[#2a2333] dark:text-[#9c93ad]">
+          <p>
+            <strong>This document is void.</strong> The University issued it in error, and anyone
+            verifying the number is told so — and told that the holder is not at fault. No further
+            copies can be produced from it. Issue a correct document in its place.
+          </p>
+          {/* THE REASON, WHICH THE DATABASE REQUIRES AND THIS SCREEN WAS NOT
+              SHOWING. A registrar looking at a void document and unable to see
+              why it was voided has to go to the audit trail to find out what
+              their own register already knows. */}
+          {current.voidReason && (
+            <p className="mt-2">
+              <strong>Reason:</strong> {current.voidReason}
+              {current.voidedAt && ` · recorded ${new Date(current.voidedAt).toLocaleDateString('en-GB')}`}
+            </p>
+          )}
+        </div>
       )}
 
       {/* THE THREE OUTPUTS, IN ONE PLACE.

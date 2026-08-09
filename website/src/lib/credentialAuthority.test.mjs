@@ -363,6 +363,40 @@ check(
   ['verify', 'view'],
 );
 
+console.log('\nWhat the register calls a document in each state\n');
+
+// THE BUG THIS SECTION EXISTS BECAUSE OF. Voiding shipped with a route, a
+// migration, a capability check and a passing actionsFor test — and the pill in
+// the register's list had no case for it, so it fell through to green
+// "Current". A document the University had withdrawn as issued in error
+// appeared as the standing credential. Every layer was right and the sentence a
+// registrar reads was the opposite of the truth.
+check('an issued credential reads as current',
+  A.statusLabel('issued').label, 'Current');
+check('…and names its version once there is more than one',
+  A.statusLabel('issued', 2, 2).label, 'Current \u00b7 v2');
+check('a superseded one says so', A.statusLabel('replaced').label, 'Superseded');
+check('a revoked one says so', A.statusLabel('revoked').label, 'Revoked');
+check('AND A VOID ONE SAYS SO — the case that was missing',
+  A.statusLabel('void').label, 'Void');
+
+// The tone is what the eye reads before the word.
+check('a void document is never shown in the current tone',
+  A.statusLabel('void').tone === 'current', false);
+check('and is marked as withdrawn', A.statusLabel('void').withdrawn, true);
+check('as is a revoked one', A.statusLabel('revoked').withdrawn, true);
+check('while a superseded one is not withdrawn — the award still stands',
+  A.statusLabel('replaced').withdrawn, false);
+
+// AN UNKNOWN STATUS FAILS SAFE. The failure that matters is a withdrawn
+// document reading as a standing one; never the reverse.
+check('an unknown status is never reported as current',
+  A.statusLabel('confiscated').tone === 'current', false);
+check('and is treated as withdrawn until somebody teaches this code otherwise',
+  A.statusLabel('confiscated').withdrawn, true);
+check('and says plainly that it is unknown rather than inventing a label',
+  A.statusLabel('confiscated').label.includes('Unknown'), true);
+
 console.log('\nThe library and the migration agree\n');
 
 const sql = readFileSync(join(root, 'docs/migrations/013_social_and_credential_authority.sql'), 'utf8');
@@ -395,6 +429,29 @@ check(
 );
 
 const categoriesInDb = (sql.match(/category\s+text not null check \(category in\s*\n?\s*\(([^)]+)\)/) ?? [])[1];
+// EVERY STATUS THE DATABASE CAN STORE HAS A LABEL.
+//
+// This is the guard that would have caught the void bug on the day it shipped:
+// 020 taught the database a fourth status, and nothing made the interface learn
+// it. Read from the migration rather than from the constant, so adding a status
+// to the schema and forgetting the screen fails here.
+const statusesInDb = (sql020.match(
+  /add constraint credentials_issued_status_check\s*\n?\s*check \(status in \(([^)]*)\)/,
+) ?? [])[1] ?? '';
+const dbStatuses = (statusesInDb.match(/'[a-z_]+'/g) ?? []).map((v) => v.replace(/'/g, ''));
+
+check('the migration was read', dbStatuses.length > 0, true);
+check(
+  'every status the database can store has a label in the interface',
+  dbStatuses.filter((st) => A.statusLabel(st).label.includes('Unknown')),
+  [],
+);
+check(
+  'and the code\u2019s own list of statuses matches the database\u2019s',
+  [...A.CREDENTIAL_STATUSES].sort(),
+  [...dbStatuses].sort(),
+);
+
 check(
   'every category the code offers is one the database accepts',
   A.CREDENTIAL_CATEGORIES.filter((c) => !new RegExp(`'${c}'`).test(categoriesInDb ?? '')),
