@@ -71,6 +71,27 @@ export const menuGroups: MenuGroup[] = [
       { id: 'admissions-finance', label: 'Finance desk', icon: <Wallet size={18} />, roles: ['superadmin', 'admin', 'finance'] },
       { id: 'admissions-registrar', label: 'Registrar desk', icon: <Stamp size={18} />, roles: ['superadmin', 'admin', 'registrar'] },
       { id: 'admissions-office', label: 'Admissions Office', icon: <Inbox size={18} />, roles: ['superadmin', 'admin', 'admissions-officer'] },
+      // ---------------------------------------------------------------------
+      // THE DESK THAT WAS MISSING.
+      //
+      // 'academic-office' held 'admit-student' and its signature is printed on
+      // page 1 of every admission letter, and this file put it on none of the
+      // three admissions screens — so the office that signs the offer had no
+      // way to make it. The capability was granted and the door was not built.
+      //
+      // It is a desk of its own rather than a seat at the Admissions Office's,
+      // because the two do different work: that office verifies documents and
+      // eligibility, this one takes the academic decision. Sharing one screen
+      // would put the verification controls in front of the deciding office
+      // and the decision in front of the verifying one, which is the
+      // separation the whole pipeline exists to keep.
+      // ---------------------------------------------------------------------
+      {
+        id: 'academic-admissions',
+        label: 'Admissions approval',
+        icon: <GraduationCap size={18} />,
+        roles: ['superadmin', 'academic-office'],
+      },
       { id: 'students', label: 'Students', icon: <Users size={18} />, roles: ['superadmin', 'admin', 'registrar', 'admissions-officer', 'finance', 'finance-director', 'dean'] },
     ],
   },

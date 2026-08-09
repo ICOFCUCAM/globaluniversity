@@ -109,6 +109,20 @@ export const OPERATIONAL_CAPABILITIES = [
   'manage-student-accounts',
   // Registrar
   'admit-student',
+  // ---------------------------------------------------------------------
+  // THE ACADEMIC ADMISSION DECISION, held apart from 'admit-student'.
+  //
+  // 'admit-student' is the old capability and it is what the Admissions Office
+  // and the Registrar hold: process the file, and in a pinch admit from it.
+  // 'decide-admission' is the ACADEMIC act — the decision the Head of Academic
+  // Affairs signs page 1 of the letter for — and it is deliberately a
+  // different key so the two cannot be granted by accident together.
+  //
+  // Only 'academic-office' and the Superadministrator hold it. The
+  // Superadministrator's use of it is recorded as an administrative override
+  // with a stated reason, never as an academic decision.
+  // ---------------------------------------------------------------------
+  'decide-admission',
   'reject-application',
   'request-documents',
   'assign-programme',
@@ -453,6 +467,11 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   'academic-office': [
     'assign-lecturers', 'build-timetable', 'manage-courses',
     'approve-credential-design', 'recompute-gpa',
+    // THE ACADEMIC ADMISSION DECISION. This office signs page 1 of the
+    // admission letter, so it is the office that takes the decision the
+    // signature attests to. Nobody else holds this except the
+    // Superadministrator, whose use of it is recorded as an override.
+    'decide-admission',
     'admit-student', 'reject-application', 'request-documents',
     // Publication, alongside the Registrar, for the same reason 'admit-student'
     // is held by two offices: a term's results must not sit unpublished because

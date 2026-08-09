@@ -124,10 +124,28 @@ const esc = (v: string) =>
  * by both sets, and telling them one set "does not apply to you" would be
  * false — which is what happened while this returned a boolean.
  */
+/**
+ * Which set of terms the letter's annexe carries.
+ *
+ * THE ORDER OF THESE TESTS IS LOAD-BEARING. The University's own wording for a
+ * programme taught both ways is "Online / Campus", and the online test would
+ * have matched it first — so a student admitted to a programme taught in Buea
+ * AND at a distance would have received the online-only terms: no mention of
+ * attendance being recorded, of examinations under invigilation, or of the
+ * student card they need to sit them.
+ *
+ * So both-ness is checked first, and it is checked by asking whether the
+ * string mentions campus AND distance rather than by listing the phrasings
+ * somebody happened to think of. `MODE_LABEL` in src/content/courses.ts is the
+ * source of these strings; src/lib/admissionPackage.test.mjs holds the two
+ * files to agreeing.
+ */
 function modeOf(mode: string): 'campus' | 'online' | 'both' {
   const m = (mode ?? '').toLowerCase();
-  if (/both|and online|blend|hybrid/.test(m)) return 'both';
-  if (/online|distance|odl/.test(m)) return 'online';
+  const online = /online|distance|odl/.test(m);
+  const campus = /campus|in person|on site|onsite/.test(m);
+  if ((online && campus) || /both|blend|hybrid/.test(m)) return 'both';
+  if (online) return 'online';
   return 'campus';
 }
 

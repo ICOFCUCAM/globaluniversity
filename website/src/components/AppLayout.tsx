@@ -14,6 +14,7 @@ import LecturerDashboard from './dashboard/LecturerDashboard';
 import StudentManagement from './students/StudentManagement';
 import AdmissionsDesk from './admissions/AdmissionsDesk';
 import AdmissionsOffice from './admissions/AdmissionsOffice';
+import AcademicAdmissions from './admissions/AcademicAdmissions';
 import { isEnrolledRole } from '@/lib/roles';
 import { labelForView } from '@/lib/portalNav';
 import { UNIVERSITY } from '@/lib/constants';
@@ -175,6 +176,10 @@ export default function AppLayout() {
         return <AdmissionsDesk desk="registrar" />;
       case 'admissions-office':
         return <AdmissionsOffice />;
+      // The Head of Academic Affairs' own desk. A screen of its own rather
+      // than a seat at the Admissions Office's — see the file's header.
+      case 'academic-admissions':
+        return <AcademicAdmissions role={user?.role} />;
       case 'students':
         return <StudentManagement onNavigate={setCurrentView} />;
       case 'lecturers':

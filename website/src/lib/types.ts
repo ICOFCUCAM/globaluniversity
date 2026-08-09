@@ -249,6 +249,7 @@ export type ViewType =
   | 'accounts'
   | 'studio'
   | 'admissions-office'
+  | 'academic-admissions'
   | 'programme-resources'
   | 'dashboard' 
   | 'students' 

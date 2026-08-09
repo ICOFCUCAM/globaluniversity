@@ -144,6 +144,14 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
     // presence would report 023 as run on a database that has only had 008.
     table: 'admission_opening_events',
   },
+  {
+    file: '024_admission_decision_authority.sql',
+    what: 'The academic admission decision as an immutable record, its audit log, and a '
+      + 'student number two approvals cannot collide on.',
+    // The decision table rather than the audit log: both arrive together, and
+    // this is the one the University reads when asked who admitted somebody.
+    table: 'admission_decisions',
+  },
 ];
 
 /** What a probe came back as. */
