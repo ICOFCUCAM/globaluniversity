@@ -287,4 +287,41 @@ console.log(
     ? '\nEvery derived figure is right, drafts stay off, and an empty transcript is refused.\n'
     : `\n${failures} failed\n`,
 );
+
+console.log('\nThe academic session of a semester\n');
+
+// THE UNIVERSITY'S OWN SHEET HEADS EACH BLOCK "First Semester 08-2009", and a
+// receiving registrar reads WHEN before anything else. It rides in the record
+// rather than being added by whichever screen is drawing the sheet, so the
+// preview and the emailed copy cannot head their semesters differently.
+{
+  const r = buildTranscript({
+    student, department,
+    results: [row('BIS 220', 3, 4, { year: 1, semester: 1 }),
+      row('BIS 230', 3, 3, { year: 1, semester: 2 })],
+    sessions: { '1-1': '08-2009', '1-2': '2009' },
+  });
+  const [first, second] = r.data.years[0].semesters;
+  check('the session reaches the semester it belongs to', [first.session, second.session],
+    ['08-2009', '2009']);
+}
+// AND NOTHING IS COUNTED FORWARD. A semester with no session recorded prints
+// without one; deriving it from an admission year is right until a student
+// repeats or is away, and then it states under seal that they were somewhere
+// they were not.
+{
+  const r = buildTranscript({
+    student, department, results: [row('BIS 220', 3, 4, { year: 1, semester: 1 })],
+  });
+  check('a semester with no session recorded carries none',
+    r.data.years[0].semesters[0].session, undefined);
+}
+{
+  const r = buildTranscript({
+    student, department, results: [row('BIS 220', 3, 4, { year: 1, semester: 1 })],
+    sessions: { '1-1': '   ' },
+  });
+  check('and whitespace is not a session', r.data.years[0].semesters[0].session, undefined);
+}
+
 process.exit(failures === 0 ? 0 : 1);

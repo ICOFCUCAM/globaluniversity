@@ -94,6 +94,13 @@ export interface BuildInput {
   department: Department;
   results: readonly ResultRow[];
   /**
+   * The academic session each semester ran in, keyed `${year}-${semester}`.
+   *
+   * Supplied by whoever is reading the paper register, never computed from the
+   * admission year — see TranscriptSemester.session for why.
+   */
+  sessions?: Record<string, string>;
+  /**
    * The award this record is for, by title — "Doctor of Philosophy (Theology)".
    *
    * DECIDES WHETHER A CLASSIFICATION IS PRINTED AT ALL. Without it every
@@ -128,7 +135,9 @@ export interface BuildResult {
  * transcripts of the same record are identical — a registrar comparing a
  * reissue against the original must not have to reconcile a reordering.
  */
-export function buildTranscript({ student, department, results, award }: BuildInput): BuildResult {
+export function buildTranscript({
+  student, department, results, award, sessions,
+}: BuildInput): BuildResult {
   const usable = results.filter(isTranscriptable);
 
   const pendingCount = results.filter(
@@ -192,6 +201,7 @@ export function buildTranscript({ student, department, results, award }: BuildIn
           const totalGradePoints = ordered.reduce((t, c) => t + c.qualityPoint, 0);
           return {
             semester,
+            session: sessions?.[`${year}-${semester}`]?.trim() || undefined,
             courses: ordered,
             totalCredits,
             totalGradePoints,

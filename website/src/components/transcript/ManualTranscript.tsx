@@ -136,6 +136,16 @@ function Form() {
 
   const [nextKey, setNextKey] = React.useState(4);
 
+  /**
+   * The academic session each semester ran in, keyed `${year}-${semester}`.
+   *
+   * ASKED FOR RATHER THAN CALCULATED. Counting forward from an admission year
+   * is right until a student repeats one or comes back after a year away, and
+   * then it prints a session they were not there for. The operator has the
+   * paper in front of them, which is where "08-2009" comes from.
+   */
+  const [sessions, setSessions] = React.useState<Record<string, string>>({});
+
   const holderName = [firstNames, middleName, surname]
     .map((p) => p.trim()).filter(Boolean).join(' ');
 
@@ -214,6 +224,20 @@ function Form() {
 
   const filled = rows.filter((r) => r.code.trim() && Number(r.creditUnit) > 0);
 
+  /** Every semester the typed rows actually use, in order. */
+  const semesterKeys = React.useMemo(() => {
+    const seen = new Map<string, { key: string; year: number; semester: number }>();
+    for (const r of rows) {
+      const year = Number(r.year) || 0;
+      const semester = Number(r.semester) || 0;
+      if (!year || !semester) continue;
+      const key = `${year}-${semester}`;
+      if (!seen.has(key)) seen.set(key, { key, year, semester });
+    }
+    return Array.from(seen.values())
+      .sort((a, b) => (a.year - b.year) || (a.semester - b.semester));
+  }, [rows]);
+
   // COMPUTED BEFORE SEALING, with the same function the derived transcript
   // uses. An operator who cannot see the GPA until after the document is on the
   // register is being asked to seal a number they have not read.
@@ -226,6 +250,7 @@ function Form() {
     } as never,
     department: { name: programme } as never,
     award: programme || undefined,
+    sessions,
     results: filled.map((r) => ({
       total_score: null,
       grade: r.grade,
@@ -239,7 +264,7 @@ function Form() {
         semester: Number(r.semester) || 0,
       },
     })) as never,
-  }), [filled, firstNames, middleName, surname, studentNumber, programme]);
+  }), [filled, firstNames, middleName, surname, studentNumber, programme, sessions]);
 
   const sourceShort = sourceRecord.trim().length < MIN_SOURCE;
   const refusal = filled.length > 0 ? canIssueTranscript(preview.data) : null;
@@ -281,6 +306,9 @@ function Form() {
               year: Number(r.year),
               semester: Number(r.semester),
             })),
+            // The sessions travel with the rows, so the sealed facts head each
+            // semester exactly as the preview did.
+            sessions,
           },
         }),
       }).then((r) => r.json()).catch(() => null);
@@ -635,9 +663,43 @@ function Form() {
         </table>
       </div>
 
+      {/* --- WHEN EACH SEMESTER RAN -------------------------------------
+          The University's own transcript heads each block "First Semester
+          08-2009", and a receiving registrar reads that before anything else.
+          One box per semester the rows actually use, so the list grows with
+          the record instead of asking for six sessions before a course is
+          typed. */}
+      {semesterKeys.length > 0 && (
+        <div className="mt-4">
+          <p className={LABEL}>Academic session of each semester</p>
+          <p className="mt-0.5 max-w-3xl text-[11px] leading-relaxed text-[#8a8194]">
+            As the paper record gives it — <span className="font-mono">08-2009</span>,{' '}
+            <span className="font-mono">2009/2010</span>. Left blank, the sheet prints the
+            semester without a session; it is never counted forward from the admission date,
+            because a repeated or interrupted year would put a session on a sealed document that
+            the holder did not study in.
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {semesterKeys.map(({ key, year, semester }) => (
+              <label key={key} className="flex items-center gap-1.5 text-[11px] text-[#6b6076] dark:text-[#9c93ad]">
+                <span className="whitespace-nowrap">
+                  Year {year} · Sem {semester}
+                </span>
+                <input
+                  value={sessions[key] ?? ''}
+                  onChange={(e) => setSessions((s) => ({ ...s, [key]: e.target.value }))}
+                  placeholder="08-2009"
+                  className={`${INPUT} w-28 py-1 text-[11px]`}
+                />
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+
       <button
         onClick={() => { setRows((rs) => [...rs, blank(nextKey)]); setNextKey((n) => n + 1); }}
-        className={`${BTN_SECONDARY} mt-2 text-[11px]`}
+        className={`${BTN_SECONDARY} mt-4 text-[11px]`}
       >
         <Plus size={13} /> Add a course
       </button>

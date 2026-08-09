@@ -213,6 +213,22 @@ export interface TranscriptYear {
 
 export interface TranscriptSemester {
   semester: number;
+  /**
+   * The academic session this semester ran in, as the University prints it:
+   * "08-2009", "2009", "09-2010".
+   *
+   * OPTIONAL, AND NEVER DERIVED. The obvious thing is to count forward from the
+   * admission year — Year One is 2023/2024, Year Two is 2024/2025 — and it is
+   * right for every student who never repeated a year, was never away, and
+   * never resumed late. For everyone else it prints a session they did not
+   * study in, on a document under seal, and nothing on the sheet shows it was
+   * calculated rather than recorded.
+   *
+   * So it is printed only where the record carries it, and the transcription
+   * screen asks for it: whoever is reading the paper register has the sessions
+   * in front of them.
+   */
+  session?: string;
   courses: TranscriptCourse[];
   gpa: number;
   totalCredits: number;

@@ -115,6 +115,8 @@ export async function POST(request: Request) {
         code?: string; title?: string; creditUnit?: number;
         grade?: string; gradePoint?: number; year?: number; semester?: number;
       }>;
+      /** The academic session of each semester, keyed `${year}-${semester}`. */
+      sessions?: Record<string, string>;
     };
   };
   try {
@@ -468,6 +470,10 @@ async function transcribe(
     // doctorate, but the screen is not the control — a request that omitted it
     // would otherwise seal "First Class Honours" onto a research degree.
     award: m.award ?? m.programme ?? undefined,
+    // THE SESSION IS PART OF THE RECORD, not a label the screen adds. It has to
+    // reach the sealed facts, or the sheet a graduate receives by email would
+    // head its semesters differently from the one previewed before sealing.
+    sessions: sanitiseSessions(m.sessions),
     results: usable.map((c: typeof usable[number]) => ({
       total_score: null,
       grade: c.grade,
@@ -630,4 +636,28 @@ async function transcribe(
         : null,
     },
   });
+}
+
+/**
+ * The academic sessions, kept to what a session can be.
+ *
+ * A FREE-TEXT FIELD THAT REACHES A SEALED DOCUMENT is a free-text field that
+ * reaches a sealed document, so the key has to look like a year and semester
+ * and the value has to look like a session. Not because a registrar would type
+ * a paragraph into it, but because a request to this route is not a screen and
+ * does not have to come from one.
+ */
+function sanitiseSessions(input: unknown): Record<string, string> | undefined {
+  if (!input || typeof input !== 'object') return undefined;
+  const out: Record<string, string> = {};
+  for (const [key, value] of Object.entries(input as Record<string, unknown>)) {
+    if (!/^\d{1,2}-\d{1,2}$/.test(key)) continue;
+    const session = String(value ?? '').trim();
+    if (!session) continue;
+    // Digits, an oblique, a hyphen, an en dash and a space: "08-2009",
+    // "2009/2010", "2009 – 2010". Anything else is not a session.
+    if (!/^[0-9/\u2013\u2014 -]{4,20}$/.test(session)) continue;
+    out[key] = session;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
 }

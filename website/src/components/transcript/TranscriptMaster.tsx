@@ -1022,8 +1022,16 @@ function YearTable({
       <th style={{ ...th, fontSize: '6pt', color: brand, borderTop: hair }}>
         {i === 0 ? yearLabel : `Year ${inWords(year)}`}
       </th>
+      {/* THE SESSION BESIDE THE SEMESTER, as the University's own sheet reads:
+          "First Semester 08-2009", "Second Semester 2009". It answers the
+          question a receiving registrar asks first — WHEN — and without it the
+          record says a student passed six courses in some Year Two or other.
+          Printed only where the record carries it; nothing is counted forward
+          from an admission date, because a repeated or interrupted year would
+          make that a false statement under seal. */}
       <th style={{ ...th, fontSize: '6pt', color: brand, borderTop: hair }}>
         {i === 0 ? 'First' : 'Second'} Semester
+        {s?.session ? ` ${s.session}` : ''}
       </th>
       {['Credit\nValues', 'Grade', 'Credit\nEarned', 'Credit\nGPA', 'Grade\nPoints'].map((h) => (
         <th key={h} rowSpan={2} style={{ ...th, textAlign: 'right', borderTop: hair, borderBottom: hair }}>
