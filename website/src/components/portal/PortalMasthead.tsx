@@ -229,11 +229,16 @@ export default function PortalMasthead({
                 what makes it read as a plinth under the heading rather than as
                 a second paragraph. ---- */}
         {strip.length > 0 && (
-          <dl className="mt-6 flex flex-wrap items-stretch gap-x-6 gap-y-3 border-t border-white/10 pt-4">
+          // THE DIVIDERS ONLY APPEAR WHERE THE STRIP CANNOT WRAP. Drawn
+          // unconditionally they are a bug on a narrow workspace: the last
+          // entry drops to a second line and takes its left-hand rule with it,
+          // leaving a hairline hanging in the middle of nothing. A rule between
+          // two things is only a rule while the two things are side by side.
+          <dl className="mt-6 grid grid-cols-2 gap-x-6 gap-y-3 border-t border-white/10 pt-4 md:flex md:flex-wrap md:items-stretch">
             {strip.map((f, i) => (
               <div
                 key={f.label}
-                className={i > 0 ? 'border-l border-white/10 pl-6' : ''}
+                className={i > 0 ? 'md:border-l md:border-white/10 md:pl-6' : ''}
               >
                 <dt className="font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-white/50">
                   {f.label}

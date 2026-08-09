@@ -3,10 +3,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { UNIVERSITY, IMAGES } from '@/lib/constants';
 import { Aurora, Grain, LightShaft, Seam } from './Atmosphere';
+import Crest from './Crest';
 import type { UserRole } from '@/lib/types';
 import {
-  Shield, Users, GraduationCap, BookOpen, Award,
-  Monitor, BarChart3, FileText, Lock, Mail, User,
+  Shield, ShieldCheck, Users, GraduationCap, BookOpen, Award, Globe,
+  Monitor, BarChart3, FileText, Lock, Mail,
   Eye, EyeOff, AlertCircle, CheckCircle2, Loader2, ArrowRight
 } from 'lucide-react';
 
@@ -88,6 +89,24 @@ export default function LoginScreen() {
     demoLogin(role);
   }
 
+  /**
+   * The four spans of the portal, set in the hero.
+   *
+   * Deliberately at a different altitude from `features` below: these say what
+   * the system covers, those say what it contains. Nothing here is a claim the
+   * university cannot meet — admission through graduation is the admissions
+   * pipeline and the award record; the verified transcript is the QR code that
+   * checks against the credential register; the learning is the LMS; and the
+   * community is on campus in Cameroon and online, which is the standing
+   * ruling that the school is not only online.
+   */
+  const assurances = [
+    { icon: <GraduationCap size={22} strokeWidth={1.5} />, title: 'Admissions to graduation' },
+    { icon: <ShieldCheck size={22} strokeWidth={1.5} />, title: 'Verified GPA & transcripts' },
+    { icon: <Globe size={22} strokeWidth={1.5} />, title: 'Integrated online learning' },
+    { icon: <Users size={22} strokeWidth={1.5} />, title: 'Global community worldwide' },
+  ];
+
   const features = [
     { icon: <Users size={20} />, title: 'Student Management', desc: 'Complete lifecycle from admission to graduation' },
     { icon: <GraduationCap size={20} />, title: 'Lecturer Portal', desc: 'Course management and result processing' },
@@ -136,16 +155,32 @@ export default function LoginScreen() {
           </div>
 
           {/* Hero Content */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center pb-16">
+          <div className="grid grid-cols-1 items-center gap-12 pb-16 lg:grid-cols-2 xl:grid-cols-[1fr_auto_26rem]">
             <div>
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-brand-gold/30 bg-brand-gold/10 px-4 py-1.5 font-sans text-[10px] font-semibold uppercase tracking-[0.2em] text-brand-gold backdrop-blur-sm">
-                <span className="h-1.5 w-1.5 rounded-full bg-brand-gold" />
+              {/* The eyebrow lost its pill.
+
+                  A bordered, tinted, blurred capsule around four words is a
+                  button that cannot be pressed, and it sat directly above the
+                  university's name at four times the size — so the first thing
+                  drawn on the page was a control that does nothing. The dot and
+                  the letterspacing carry it perfectly well on their own, which
+                  is how the masthead inside the portal sets the same line. */}
+              <p className="mb-4 inline-flex items-center gap-2.5 font-sans text-[10px] font-semibold uppercase tracking-[0.22em] text-brand-gold">
+                <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-brand-gold" />
                 The ICOF Global University portal
-              </div>
+              </p>
               <h2 className="font-heading text-4xl font-bold leading-tight text-transparent lg:text-5xl [background-image:linear-gradient(175deg,#ffffff_38%,#f7e6b4_80%,#e9c14a_100%)] [background-clip:text] [-webkit-background-clip:text]">
                 ICOF Global <span className="text-brand-gold">University</span> Portal
               </h2>
-              <p className="mt-4 text-lg leading-relaxed text-white/85">
+              {/* The rule under the title. Short, gold, and fading — the same
+                  figure the Seam draws between bands, and what stops the
+                  paragraph below reading as a continuation of the heading. */}
+              <span
+                aria-hidden="true"
+                className="mt-5 block h-px w-16"
+                style={{ background: 'linear-gradient(90deg, #e9c14a, rgba(233,193,74,0.15))' }}
+              />
+              <p className="mt-5 text-lg leading-relaxed text-white/85">
                 One portal for the whole academic journey — admission to graduation — with automated GPA calculation, verified transcript generation and integrated online learning, serving students on campus in Cameroon and online worldwide.
               </p>
               {/* The four figures that were here — 7,228 success stories, 1,742
@@ -158,20 +193,89 @@ export default function LoginScreen() {
                   What replaces them is what the university can stand behind:
                   the campuses it teaches on, the year it was founded, and its
                   accreditation. Facts, from src/lib/constants.ts. */}
-              <dl className="mt-8 flex flex-wrap gap-x-8 gap-y-4">
-                <div>
-                  <dt className="font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-white/55">Campuses</dt>
-                  <dd className="mt-0.5 font-heading text-lg font-bold text-white">Buea · Douala · Online</dd>
-                </div>
-                <div>
-                  <dt className="font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-white/55">Founded</dt>
-                  <dd className="mt-0.5 font-heading text-lg font-bold tabular-nums text-white">2007</dd>
-                </div>
-                <div>
-                  <dt className="font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-white/55">Faculties</dt>
-                  <dd className="mt-0.5 font-heading text-lg font-bold text-white">Five</dd>
-                </div>
+
+              {/* WHAT THE PORTAL IS FOR, in four lines.
+
+                  These are not features — the eight below the fold are. They
+                  are the four spans of the thing, and the reason they belong up
+                  here is that somebody arriving at a sign-in page they have
+                  never seen before is asking "what is this?", not "what are its
+                  modules?". Every one of them is a claim the system can be held
+                  to on the screens beneath it. */}
+              <ul className="mt-9 grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-4">
+                {assurances.map((a) => (
+                  <li key={a.title}>
+                    <span className="text-brand-gold" aria-hidden="true">{a.icon}</span>
+                    <p className="mt-2 text-xs font-medium leading-snug text-white/80">{a.title}</p>
+                  </li>
+                ))}
+              </ul>
+
+              {/* The four figures that were here — 7,228 success stories, 1,742
+                  happy students, 213 courses, 15+ years — were the template's
+                  and nobody counted them. Two of them contradicted each other:
+                  more "success stories" than students. A university that
+                  publishes invented numbers on its own sign-in page has told
+                  every member of staff that its numbers are decoration.
+
+                  What replaces them is what the university can stand behind:
+                  the campuses it teaches on, the year it was founded, and its
+                  faculties. Facts, from src/lib/constants.ts. */}
+              {/* THE DIVIDERS ONLY APPEAR WHERE THE STRIP CANNOT WRAP.
+
+                  Drawn unconditionally they are a bug on a phone: "Faculties"
+                  drops to a second line and carries its left-hand rule with it,
+                  so a vertical hairline hangs in the middle of nothing. A rule
+                  between two things is only a rule while the two things are
+                  side by side. Below sm the strip is a plain two-column grid
+                  with space doing the separating instead. */}
+              <dl className="mt-9 grid grid-cols-2 gap-x-6 gap-y-4 border-t border-white/10 pt-6 sm:flex sm:flex-nowrap sm:items-stretch sm:gap-x-8">
+                {[
+                  { label: 'Campuses', value: 'Buea · Douala · Online' },
+                  { label: 'Founded', value: String(UNIVERSITY.established) },
+                  { label: 'Faculties', value: 'Five' },
+                ].map((f, i) => (
+                  <div key={f.label} className={i > 0 ? 'sm:border-l sm:border-white/15 sm:pl-8' : ''}>
+                    <dt className="font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-white/55">{f.label}</dt>
+                    <dd className="mt-0.5 whitespace-nowrap font-heading text-lg font-bold tabular-nums text-white">{f.value}</dd>
+                  </div>
+                ))}
               </dl>
+            </div>
+
+            {/* ----------------------------------------------------------------
+                THE MOTTO, PINNED BETWEEN THE TWO HALVES.
+
+                A narrow dark panel carrying the crest and the university's
+                motto, which is `Nobility, Professionalism & Godliness` and is
+                read from constants.ts rather than typed here — the motto has
+                already been wrong in one place in this codebase and the fix was
+                to stop having two copies of it.
+
+                It is a column of its own in the grid rather than an element
+                floated over the heading. Overlapping it would look right at the
+                width it was designed at and collide with the title at every
+                other one, and this page is read on a phone as often as on a
+                desk. Below xl there is no room for a third column, so it is not
+                drawn at all — a motto is not worth squeezing the sign-in form
+                for.
+                ---------------------------------------------------------------- */}
+            <div className="hidden xl:flex">
+              {/* Opaque enough to be a panel. At 55% the photograph came
+                  through it and the motto sat on a crowd of people, which is
+                  the one thing a plaque must not do. */}
+              <div className="flex w-[13.5rem] flex-col items-center gap-6 rounded-2xl border border-[#e9c14a]/20 bg-[#1d1428]/90 px-6 py-10 text-center shadow-2xl backdrop-blur-md">
+                <Crest size={48} />
+                <div className="h-px w-8 bg-brand-gold/50" aria-hidden="true" />
+                <p className="font-heading text-lg font-bold leading-snug text-white">
+                  {UNIVERSITY.motto.split(/\s*[,&]\s*/).filter(Boolean).map((word) => (
+                    <span key={word} className="block">{word}.</span>
+                  ))}
+                </p>
+                <p className="font-sans text-[9px] font-semibold uppercase tracking-[0.2em] text-brand-gold/80">
+                  The motto
+                </p>
+              </div>
             </div>
 
             {/* Auth Card */}
@@ -190,8 +294,10 @@ export default function LoginScreen() {
                   will look for it and nobody else has to read it. */}
 
               <div className="mb-6">
-                <h3 className="font-heading text-lg font-bold text-[#422e59]">Sign in</h3>
-                <p className="mt-0.5 text-xs text-[#6b6076] dark:text-[#9c93ad]">Students, faculty and staff</p>
+                <h3 className="font-heading text-xl font-bold text-[#422e59]">Welcome back</h3>
+                <p className="mt-1 text-xs text-[#6b6076] dark:text-[#9c93ad]">
+                  Sign in to your account to continue
+                </p>
               </div>
 
               {/* Error / Success Messages */}
