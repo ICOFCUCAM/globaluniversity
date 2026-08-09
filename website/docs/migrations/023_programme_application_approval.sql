@@ -142,56 +142,87 @@ create trigger admission_opening_events_no_change
 -- for the reason 008 gives, so each row states false explicitly.
 -- ===========================================================================
 
-insert into admission_openings (kind, label, faculty, open) values
-  ('programme', 'THE-BA',  'Faculty of Theology',           false),
-  ('programme', 'BDIV',    'Faculty of Theology',           false),
-  ('programme', 'BMIN',    'Faculty of Theology',           false),
-  ('programme', 'CED-BA',  'Faculty of Theology',           false),
-  ('programme', 'THE-MA',  'Faculty of Theology',           false),
-  ('programme', 'DIV-MA',  'Faculty of Theology',           false),
-  ('programme', 'EVM-MA',  'Faculty of Theology',           false),
-  ('programme', 'MACL',    'Faculty of Theology',           false),
-  ('programme', 'BLT-MA',  'Faculty of Theology',           false),
-  ('programme', 'PHD-TH',  'Faculty of Theology',           false),
-  ('programme', 'DSTH',    'Faculty of Theology',           false),
-  ('programme', 'DTH',     'Faculty of Theology',           false),
-  ('programme', 'DMIN',    'Faculty of Theology',           false),
-  ('programme', 'CERT-TH', 'Faculty of Theology',           false),
-  ('programme', 'CERT-CE', 'Faculty of Theology',           false),
-  ('programme', 'DIP-TH',  'Faculty of Theology',           false),
-  ('programme', 'DIP-MIN', 'Faculty of Theology',           false),
-  ('programme', 'DIP-CL',  'Faculty of Theology',           false),
-  ('programme', 'EDU-PRI', 'Faculty of Education',          false),
-  ('programme', 'EDU-SPE', 'Faculty of Education',          false),
-  ('programme', 'SWE',     'Engineering & Technology',      false),
-  ('programme', 'NET',     'Engineering & Technology',      false),
-  ('programme', 'WEB',     'Engineering & Technology',      false),
-  ('programme', 'ORA',     'Engineering & Technology',      false),
-  ('programme', 'HWM',     'Engineering & Technology',      false),
-  ('programme', 'LCH',     'Engineering & Technology',      false),
-  ('programme', 'ACR',     'Engineering & Technology',      false),
-  ('programme', 'CAC',     'Engineering & Technology',      false),
-  ('programme', 'BUS-MGT', 'GIBMAS — Business & Management', false),
-  ('programme', 'PRJ-MGT', 'GIBMAS — Business & Management', false),
-  ('programme', 'NPM',     'GIBMAS — Business & Management', false),
-  ('programme', 'BNF',     'GIBMAS — Business & Management', false),
-  ('programme', 'ACC',     'GIBMAS — Business & Management', false),
-  ('programme', 'INS',     'GIBMAS — Business & Management', false),
-  ('programme', 'SEC-EX',  'GIBMAS — Business & Management', false),
-  ('programme', 'SEC-BI',  'GIBMAS — Business & Management', false),
-  ('programme', 'PPD-AGT', 'PPDI-RC Professional Development', false),
-  ('programme', 'PPD-AFD', 'PPDI-RC Professional Development', false),
-  ('programme', 'PPD-FBO', 'PPDI-RC Professional Development', false),
-  ('programme', 'PPD-DBD', 'PPDI-RC Professional Development', false),
-  ('programme', 'PPD-RLD', 'PPDI-RC Professional Development', false),
-  ('programme', 'PPD-YTL', 'PPDI-RC Professional Development', false),
-  ('programme', 'PPD-AIY', 'PPDI-RC Professional Development', false),
-  ('programme', 'PPD-RDM', 'PPDI-RC Professional Development', false),
-  ('programme', 'PPD-MSW', 'PPDI-RC Professional Development', false),
-  ('programme', 'PPD-DSW', 'PPDI-RC Professional Development', false),
-  ('programme', 'PPD-BTT', 'PPDI-RC Professional Development', false),
-  ('programme', 'PPD-CDM', 'PPDI-RC Professional Development', false)
-on conflict (kind, label) do nothing;
+-- ---------------------------------------------------------------------------
+-- THE ASSERTION IS ABOUT THE ROWS THIS RUN INSERTED, AND NOTHING ELSE.
+--
+-- It used to read THE-BA back afterwards and refuse if it was open. That is a
+-- SEED-TIME invariant checked at RUN time, and the two are not the same thing
+-- once the feature is in service: the University ran this, opened the Bachelor
+-- of Theology from the admin screen exactly as intended, re-ran the bundle, and
+-- the migration refused with "a programme was seeded OPEN". It had not been.
+-- It had been opened, on purpose, by the office whose job that is.
+--
+-- Running twice unchanged is not the same test as running again on a database
+-- somebody has USED, and only the first was done. `returning` scopes the check
+-- to the insert itself, so the University's own decisions are none of its
+-- business.
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  opened_by_seed integer;
+begin
+  with seeded as (
+    insert into admission_openings (kind, label, faculty, open) values
+      ('programme', 'THE-BA',  'Faculty of Theology',           false),
+      ('programme', 'BDIV',    'Faculty of Theology',           false),
+      ('programme', 'BMIN',    'Faculty of Theology',           false),
+      ('programme', 'CED-BA',  'Faculty of Theology',           false),
+      ('programme', 'THE-MA',  'Faculty of Theology',           false),
+      ('programme', 'DIV-MA',  'Faculty of Theology',           false),
+      ('programme', 'EVM-MA',  'Faculty of Theology',           false),
+      ('programme', 'MACL',    'Faculty of Theology',           false),
+      ('programme', 'BLT-MA',  'Faculty of Theology',           false),
+      ('programme', 'PHD-TH',  'Faculty of Theology',           false),
+      ('programme', 'DSTH',    'Faculty of Theology',           false),
+      ('programme', 'DTH',     'Faculty of Theology',           false),
+      ('programme', 'DMIN',    'Faculty of Theology',           false),
+      ('programme', 'CERT-TH', 'Faculty of Theology',           false),
+      ('programme', 'CERT-CE', 'Faculty of Theology',           false),
+      ('programme', 'DIP-TH',  'Faculty of Theology',           false),
+      ('programme', 'DIP-MIN', 'Faculty of Theology',           false),
+      ('programme', 'DIP-CL',  'Faculty of Theology',           false),
+      ('programme', 'EDU-PRI', 'Faculty of Education',          false),
+      ('programme', 'EDU-SPE', 'Faculty of Education',          false),
+      ('programme', 'SWE',     'Engineering & Technology',      false),
+      ('programme', 'NET',     'Engineering & Technology',      false),
+      ('programme', 'WEB',     'Engineering & Technology',      false),
+      ('programme', 'ORA',     'Engineering & Technology',      false),
+      ('programme', 'HWM',     'Engineering & Technology',      false),
+      ('programme', 'LCH',     'Engineering & Technology',      false),
+      ('programme', 'ACR',     'Engineering & Technology',      false),
+      ('programme', 'CAC',     'Engineering & Technology',      false),
+      ('programme', 'BUS-MGT', 'GIBMAS — Business & Management', false),
+      ('programme', 'PRJ-MGT', 'GIBMAS — Business & Management', false),
+      ('programme', 'NPM',     'GIBMAS — Business & Management', false),
+      ('programme', 'BNF',     'GIBMAS — Business & Management', false),
+      ('programme', 'ACC',     'GIBMAS — Business & Management', false),
+      ('programme', 'INS',     'GIBMAS — Business & Management', false),
+      ('programme', 'SEC-EX',  'GIBMAS — Business & Management', false),
+      ('programme', 'SEC-BI',  'GIBMAS — Business & Management', false),
+      ('programme', 'PPD-AGT', 'PPDI-RC Professional Development', false),
+      ('programme', 'PPD-AFD', 'PPDI-RC Professional Development', false),
+      ('programme', 'PPD-FBO', 'PPDI-RC Professional Development', false),
+      ('programme', 'PPD-DBD', 'PPDI-RC Professional Development', false),
+      ('programme', 'PPD-RLD', 'PPDI-RC Professional Development', false),
+      ('programme', 'PPD-YTL', 'PPDI-RC Professional Development', false),
+      ('programme', 'PPD-AIY', 'PPDI-RC Professional Development', false),
+      ('programme', 'PPD-RDM', 'PPDI-RC Professional Development', false),
+      ('programme', 'PPD-MSW', 'PPDI-RC Professional Development', false),
+      ('programme', 'PPD-DSW', 'PPDI-RC Professional Development', false),
+      ('programme', 'PPD-BTT', 'PPDI-RC Professional Development', false),
+      ('programme', 'PPD-CDM', 'PPDI-RC Professional Development', false)
+    on conflict (kind, label) do nothing
+    returning open
+  )
+  select count(*) filter (where open) into opened_by_seed from seeded;
+
+  if opened_by_seed > 0 then
+    raise exception
+      '023 FAILED: the seed opened % programme(s) — a gate that defaults to permitting everything is not a gate',
+      opened_by_seed;
+  end if;
+end $$;
 
 
 -- ===========================================================================
@@ -203,13 +234,14 @@ declare
   tgt uuid;
   refused boolean;
 begin
-  -- ---- A programme arrives closed --------------------------------------
+  -- ---- The programmes are present --------------------------------------
+  -- Whether THE-BA is open is NOT asserted here. Once the University has ticked
+  -- it, open is the correct state and re-running the migration must not call
+  -- that a failure. The seed's own closed-ness is proved above, scoped to the
+  -- rows the seed inserted.
   select id into tgt from admission_openings where kind = 'programme' and label = 'THE-BA';
   if tgt is null then
     raise exception '023 FAILED: the programme rows were not seeded';
-  end if;
-  if (select open from admission_openings where id = tgt) then
-    raise exception '023 FAILED: a programme was seeded OPEN — the gate would permit everything';
   end if;
 
   -- ---- The trail accepts a decision ------------------------------------
@@ -253,8 +285,8 @@ begin
   delete from admission_opening_events where actor_email = 'proof-023@iguc.net';
   alter table admission_opening_events enable trigger admission_opening_events_no_change;
 
-  raise notice '023 OK — programmes are seeded closed, the trail accepts a decision, and it '
-               'refuses to have one rewritten or removed.';
+  raise notice '023 OK — the seed opens nothing, the trail accepts a decision, and it refuses '
+               'to have one rewritten or removed.';
 end $$;
 
 
