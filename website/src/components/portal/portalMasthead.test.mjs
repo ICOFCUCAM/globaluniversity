@@ -78,20 +78,30 @@ console.log('\nNo photograph is used twice\n');
 // only stays ended if nothing reaches for `hero` again.
 // ---------------------------------------------------------------------------
 
-check('the management system has a photograph of its own',
-  /portalHero: '\/images\/portal-hero\.(jpg|png)'/.test(constants), true);
+// ---------------------------------------------------------------------------
+// THE RULE, ASSERTED AS THE RULE.
+//
+// Filenames change — this pair has already swapped once, when the University
+// put its own picture on the sign-in screen and the graduation hall moved in
+// here. What must not change is that they are TWO pictures with ONE caller
+// each. So nothing below names a file.
+// ---------------------------------------------------------------------------
 
-// AND IT IS ACTUALLY THERE, at a weight a phone can carry. It arrived as a
-// 2,053 KB PNG, which is about eight times what a photograph needs and is paid
-// for by every visitor on a handset. The ceiling is the one public/images's own
-// README sets for everything else in that folder.
-{
-  const named = /portalHero: '(\/images\/[^']+)'/.exec(constants)?.[1];
-  const file = join(here, '../../../public', named ?? '');
-  let bytes = 0;
-  try { bytes = statSync(file).size; } catch { bytes = -1; }
-  check('the file the constant names exists', bytes >= 0, true);
-  check('…and is under the 400 KB the images README sets', bytes > 0 && bytes < 400_000, true);
+const heroPath = /(?:^|\s)hero: '(\/images\/[^']+)'/.exec(constants)?.[1];
+const portalPath = /portalHero: '(\/images\/[^']+)'/.exec(constants)?.[1];
+
+check('the sign-in screen and the management system name different photographs',
+  Boolean(heroPath && portalPath && heroPath !== portalPath), true);
+
+// AND BOTH ARE ACTUALLY THERE, at a weight a phone can carry. The sign-in
+// picture arrived as a 2,053 KB PNG, about eight times what a photograph needs
+// and paid for by every visitor on a handset. The ceiling is the one
+// public/images's own README sets for everything else in that folder.
+for (const [what, named] of [['sign-in', heroPath], ['masthead', portalPath]]) {
+  let bytes = -1;
+  try { bytes = statSync(join(here, '../../../public', named ?? '')).size; } catch { /* absent */ }
+  check(`the ${what} photograph exists`, bytes >= 0, true);
+  check(`…and is under the 400 KB the images README sets`, bytes > 0 && bytes < 400_000, true);
 }
 
 /** Every .tsx under src, so a new caller cannot be added unnoticed. */
@@ -105,11 +115,13 @@ function tsxFiles(dir) {
   return out;
 }
 
-const usesHero = tsxFiles(src)
-  .filter((f) => /\bIMAGES\.hero\b/.test(readFileSync(f, 'utf8')))
+const callers = (token) => tsxFiles(src)
+  .filter((f) => new RegExp(`\\bIMAGES\\.${token}\\b`).test(readFileSync(f, 'utf8')))
   .map((f) => f.slice(src.length + 1));
 
 check('the sign-in screen is the only thing using the sign-in photograph',
-  usesHero, ['components/LoginScreen.tsx']);
+  callers('hero'), ['components/LoginScreen.tsx']);
+check('and the masthead is the only thing using the management system’s',
+  callers('portalHero'), ['components/portal/PortalMasthead.tsx']);
 
 process.exit(failures === 0 ? 0 : 1);

@@ -3,7 +3,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { UNIVERSITY, IMAGES } from '@/lib/constants';
 import { Aurora, Grain, LightShaft, Seam } from './Atmosphere';
-import Crest from './Crest';
 import type { UserRole } from '@/lib/types';
 import {
   Shield, ShieldCheck, Users, GraduationCap, BookOpen, Award, Globe,
@@ -132,7 +131,37 @@ export default function LoginScreen() {
           <img src={IMAGES.hero} alt="" className="h-full w-full object-cover" />
           <Aurora tone="dual" intensity={0.5} fields={2} />
           <LightShaft />
-          <div className="absolute inset-0 bg-gradient-to-br from-[#241a30]/95 via-[#422e59]/88 to-[#57549a]/70" />
+          {/* ------------------------------------------------------------
+              THE SCRIM RUNS ACROSS, NOT DIAGONALLY.
+
+              It was one even wash — 95% at the top-left corner to 70% at the
+              bottom-right — which is a haze rather than a light. The whole
+              photograph went the same flat mauve, and a building with a wall
+              of glazing down one side arrived looking like fog.
+
+              Across instead: nearly opaque where the type sits, easing to
+              about a third by the right-hand edge, so the glass and the trees
+              behind it are actually visible. The type never crosses into the
+              light part, so nothing is bought at the cost of contrast — the
+              heading sits where the wash is at its deepest.
+              ------------------------------------------------------------ */}
+          {/* Written as explicit stops rather than from/via/to. Tailwind's
+              three-stop shorthand puts `via` at exactly 50% and interpolates
+              evenly, which starts opening the wash up at a quarter of the way
+              across — under the heading. The type column runs to about 47% of
+              the width, so the dark is HELD to there and only then released. */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                'linear-gradient(90deg, rgba(36,26,48,0.97) 0%, rgba(36,26,48,0.93) 28%, '
+                + 'rgba(43,31,61,0.78) 47%, rgba(59,47,87,0.34) 74%, rgba(59,47,87,0.20) 100%)',
+            }}
+          />
+          {/* Top and bottom, so the band is anchored rather than floating: the
+              nav reads against the dark above, and the join to the cream
+              section below is not a hard edge across a photograph. */}
+          <div className="absolute inset-0 bg-gradient-to-b from-[#241a30]/55 via-transparent to-[#241a30]/75" />
           <Grain />
           <Seam flip />
         </div>
@@ -155,7 +184,7 @@ export default function LoginScreen() {
           </div>
 
           {/* Hero Content */}
-          <div className="grid grid-cols-1 items-center gap-12 pb-16 lg:grid-cols-2 xl:grid-cols-[1fr_auto_26rem]">
+          <div className="grid grid-cols-1 items-center gap-12 pb-16 lg:grid-cols-2">
             <div>
               {/* The eyebrow lost its pill.
 
@@ -202,9 +231,12 @@ export default function LoginScreen() {
                   never seen before is asking "what is this?", not "what are its
                   modules?". Every one of them is a claim the system can be held
                   to on the screens beneath it. */}
-              <ul className="mt-9 grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-4">
-                {assurances.map((a) => (
-                  <li key={a.title}>
+              <ul className="mt-9 grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-4 sm:gap-x-0">
+                {assurances.map((a, i) => (
+                  // Hairlines between them, and only from sm — below that the
+                  // row is two-by-two and a rule down the middle of a wrapped
+                  // grid separates nothing. Same reasoning as the fact strip.
+                  <li key={a.title} className={i > 0 ? 'sm:border-l sm:border-white/12 sm:pl-6' : 'sm:pr-6'}>
                     <span className="text-brand-gold" aria-hidden="true">{a.icon}</span>
                     <p className="mt-2 text-xs font-medium leading-snug text-white/80">{a.title}</p>
                   </li>
@@ -243,40 +275,17 @@ export default function LoginScreen() {
               </dl>
             </div>
 
-            {/* ----------------------------------------------------------------
-                THE MOTTO, PINNED BETWEEN THE TWO HALVES.
+            {/* THE MOTTO PLAQUE WAS HERE, and is not coming back.
 
-                A narrow dark panel carrying the crest and the university's
-                motto, which is `Nobility, Professionalism & Godliness` and is
-                read from constants.ts rather than typed here — the motto has
-                already been wrong in one place in this codebase and the fix was
-                to stop having two copies of it.
+                A dark panel carrying the crest and `Nobility, Professionalism
+                & Godliness`, pinned between the two halves. It was in the
+                mockup this screen was built to, and the University removed it
+                on sight: this is a door, not a foyer, and the person standing
+                at it is trying to sign in.
 
-                It is a column of its own in the grid rather than an element
-                floated over the heading. Overlapping it would look right at the
-                width it was designed at and collide with the title at every
-                other one, and this page is read on a phone as often as on a
-                desk. Below xl there is no room for a third column, so it is not
-                drawn at all — a motto is not worth squeezing the sign-in form
-                for.
-                ---------------------------------------------------------------- */}
-            <div className="hidden xl:flex">
-              {/* Opaque enough to be a panel. At 55% the photograph came
-                  through it and the motto sat on a crowd of people, which is
-                  the one thing a plaque must not do. */}
-              <div className="flex w-[13.5rem] flex-col items-center gap-6 rounded-2xl border border-[#e9c14a]/20 bg-[#1d1428]/90 px-6 py-10 text-center shadow-2xl backdrop-blur-md">
-                <Crest size={48} />
-                <div className="h-px w-8 bg-brand-gold/50" aria-hidden="true" />
-                <p className="font-heading text-lg font-bold leading-snug text-white">
-                  {UNIVERSITY.motto.split(/\s*[,&]\s*/).filter(Boolean).map((word) => (
-                    <span key={word} className="block">{word}.</span>
-                  ))}
-                </p>
-                <p className="font-sans text-[9px] font-semibold uppercase tracking-[0.2em] text-brand-gold/80">
-                  The motto
-                </p>
-              </div>
-            </div>
+                The motto is not lost — it is on the public site, where a
+                visitor is being told who the university is. It has no work to
+                do on a screen whose entire job is a username and a password. */}
 
             {/* Auth Card */}
             <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md mx-auto w-full">
