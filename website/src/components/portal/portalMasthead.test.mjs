@@ -29,7 +29,7 @@
 // which is unglamorous and is the only thing that would have caught either.
 // ---------------------------------------------------------------------------
 
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 let failures = 0;
@@ -79,7 +79,20 @@ console.log('\nNo photograph is used twice\n');
 // ---------------------------------------------------------------------------
 
 check('the management system has a photograph of its own',
-  /portalHero: '\/images\/portal-hero\.png'/.test(constants), true);
+  /portalHero: '\/images\/portal-hero\.(jpg|png)'/.test(constants), true);
+
+// AND IT IS ACTUALLY THERE, at a weight a phone can carry. It arrived as a
+// 2,053 KB PNG, which is about eight times what a photograph needs and is paid
+// for by every visitor on a handset. The ceiling is the one public/images's own
+// README sets for everything else in that folder.
+{
+  const named = /portalHero: '(\/images\/[^']+)'/.exec(constants)?.[1];
+  const file = join(here, '../../../public', named ?? '');
+  let bytes = 0;
+  try { bytes = statSync(file).size; } catch { bytes = -1; }
+  check('the file the constant names exists', bytes >= 0, true);
+  check('…and is under the 400 KB the images README sets', bytes > 0 && bytes < 400_000, true);
+}
 
 /** Every .tsx under src, so a new caller cannot be added unnoticed. */
 function tsxFiles(dir) {

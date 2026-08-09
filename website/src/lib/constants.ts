@@ -89,8 +89,11 @@ export const IMAGES = {
   // The name matters. Files under /public are served at the path they are
   // committed under, so a name carrying spaces and commas becomes a URL
   // carrying %20 and %2C — which works until something along the way does not
-  // encode it. Upload the photograph as exactly this name.
-  portalHero: '/images/portal-hero.png',
+  // encode it. This arrived as `ChatGPT Image Aug 9, 2026, 06_56_24 PM.png`
+  // and was renamed on the way in for that reason, and re-encoded as a JPEG:
+  // 2,053 KB of PNG for a photograph is about eight times what it needs to be,
+  // and every visitor on a phone pays for it. The same plate is 247 KB here.
+  portalHero: '/images/portal-hero.jpg',
   seal: '/images/site-icon.png',
   professors: [
     '/images/wp/ndenka.jpg',

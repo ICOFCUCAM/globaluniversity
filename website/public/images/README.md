@@ -50,19 +50,26 @@ good. Send the large original if you have it and it can be resized here.
 seal, a cut-out. A photograph saved as PNG is typically five times the size for
 no visible gain.
 
-## `portal-hero.png` — the management system's masthead
+## `portal-hero.jpg` — the management system's masthead
 
 The band across the top of every dashboard reads its photograph from exactly
 one path:
 
-    public/images/portal-hero.png
+    public/images/portal-hero.jpg
 
-Upload it under **that name**, in lowercase, with no spaces or commas. A file
-committed as `ChatGPT Image Aug 9, 2026, 06_56_24 PM.png` is served at a URL
-full of `%20` and `%2C`, which works right up until something in the chain
-does not encode it.
+**In place.** It arrived on `main` as `ChatGPT Image Aug 9, 2026, 06_56_24
+PM.png` and was renamed and re-encoded on the way onto this branch, for two
+reasons worth keeping in mind next time:
 
-Three things worth knowing before choosing the picture:
+- **The name.** Files here are served at the path they are committed under, so
+  spaces and commas become `%20` and `%2C` in the URL. That works right up
+  until something in the chain does not encode it.
+- **The weight.** 2,053 KB of PNG for a photograph is about eight times what it
+  needs to be, and the bill is paid by every visitor on a handset. The same
+  plate as a JPEG is 247 KB. See Formats above: `.png` is for transparency,
+  not for pictures.
+
+Three things worth knowing before changing the picture:
 
 - **It is texture, not a subject.** The band blends it on luminosity over the
   university's aubergine, so what survives is its light and shade, not its
