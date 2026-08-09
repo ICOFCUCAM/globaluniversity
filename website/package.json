@@ -35,7 +35,8 @@
     "test:signature": "node src/lib/documentSignature.test.mjs",
     "test:gradingscale": "node src/lib/gradingScale.test.mjs",
     "test:config": "node src/lib/configuration.test.mjs",
-    "test:programmecourses": "node src/content/programmeCourses.test.mjs"
+    "test:programmecourses": "node src/content/programmeCourses.test.mjs",
+    "make-signing-key": "node scripts/make-signing-key.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

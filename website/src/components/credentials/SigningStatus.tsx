@@ -19,7 +19,7 @@
 // ---------------------------------------------------------------------------
 
 import React from 'react';
-import { KeyRound, Loader2, Check, AlertTriangle, ExternalLink } from 'lucide-react';
+import { KeyRound, Loader2, Check, AlertTriangle, ExternalLink, Copy, Sparkles } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { can } from '@/lib/roles';
 import type { UserRole } from '@/lib/types';
@@ -38,6 +38,12 @@ export default function SigningStatus({ role }: { role?: UserRole }) {
   const [unsigned, setUnsigned] = React.useState<number | null>(null);
   const [busy, setBusy] = React.useState(false);
   const [note, setNote] = React.useState<{ tone: 'ok' | 'bad'; text: string } | null>(null);
+  // SHOWN ONCE AND NEVER STORED. Held in this component's state only, so it is
+  // gone the moment the screen is left.
+  const [minted, setMinted] = React.useState<{
+    keyId: string; privateKeyPem: string; warning: string; rotationWarning: string | null;
+  } | null>(null);
+  const [copied, setCopied] = React.useState(false);
 
   // Hiding it is courtesy; the route checks the capability again.
   const mayBackfill = can(role, 'design-credentials');
@@ -56,6 +62,30 @@ export default function SigningStatus({ role }: { role?: UserRole }) {
   }, []);
 
   React.useEffect(() => { void load(); }, [load]);
+
+  async function makeKey() {
+    setBusy(true);
+    setNote(null);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const res = await fetch('/api/credential/key/new', {
+        method: 'POST',
+        headers: { authorization: `Bearer ${session.session?.access_token ?? ''}` },
+      }).then((r) => r.json()).catch(() => null);
+      if (!res?.ok) {
+        setNote({ tone: 'bad', text: res?.detail ?? res?.error ?? 'A key could not be generated.' });
+        return;
+      }
+      setMinted({
+        keyId: res.keyId,
+        privateKeyPem: res.privateKeyPem,
+        warning: res.warning,
+        rotationWarning: res.rotationWarning ?? null,
+      });
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function backfill(dryRun: boolean) {
     setBusy(true);
@@ -120,14 +150,106 @@ export default function SigningStatus({ role }: { role?: UserRole }) {
           )}
         </>
       ) : (
-        <p className="mt-1 flex items-start gap-2 rounded-lg border border-[#e9c14a]/40 bg-[#e9c14a]/10 p-3 text-xs leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">
-          <AlertTriangle size={14} className="mt-0.5 shrink-0 text-[#a07c12]" />
-          <span>
-            <strong>Nothing is being signed.</strong> {key.note} Credentials are still sealed and
-            verify normally through /verify — the seal is the University&rsquo;s primary record —
-            but no one can check them without asking this website.
-          </span>
-        </p>
+        <>
+          <p className="mt-1 flex items-start gap-2 rounded-lg border border-[#e9c14a]/40 bg-[#e9c14a]/10 p-3 text-xs leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">
+            <AlertTriangle size={14} className="mt-0.5 shrink-0 text-[#a07c12]" />
+            <span>
+              <strong>Nothing is being signed.</strong> {key.note} Credentials are still sealed and
+              verify normally through /verify — the seal is the University&rsquo;s primary record —
+              but no one can check them without asking this website.
+            </span>
+          </p>
+
+          {mayBackfill && !minted && (
+            <div className="mt-3">
+              <button
+                onClick={() => void makeKey()}
+                disabled={busy}
+                className={`inline-flex items-center gap-2 rounded-xl bg-[#422e59] px-4 py-2 text-xs font-semibold text-white disabled:opacity-40 ${FOCUS}`}
+              >
+                {busy
+                  ? <><Loader2 size={13} className="animate-spin" /> Generating…</>
+                  : <><Sparkles size={13} /> Generate a signing key</>}
+              </button>
+              {/* THE BETTER OPTION IS NAMED, not hidden. A key made in a
+                  terminal never touches a network; this one is generated on the
+                  University's own server and shown over TLS to one signed-in
+                  person. That is worse than a terminal and much better than an
+                  online generator or a key emailed by somebody else. */}
+              <p className="mt-1.5 max-w-2xl text-[11px] leading-relaxed text-[#8a8194]">
+                Generated on the University&rsquo;s own server, shown once, and stored nowhere. If
+                you have a terminal, <code>npm run make-signing-key</code> is better still — a key
+                made there never crosses a network at all.
+              </p>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* --- The key, shown once ---------------------------------------- */}
+      {minted && (
+        <div className="mt-4 rounded-xl border border-[#422e59]/30 bg-[#faf8f4] p-4 dark:border-[#c5a55a]/40 dark:bg-[#241d2e]">
+          <p className="text-xs font-semibold text-[#33234a] dark:text-[#e4dcf0]">
+            Your signing key · id <span className="font-mono">{minted.keyId}</span>
+          </p>
+          <p className="mt-1 max-w-2xl text-[11px] leading-relaxed text-[#a07c12]">
+            <strong>{minted.warning}</strong>
+          </p>
+          {minted.rotationWarning && (
+            <p className="mt-1.5 max-w-2xl text-[11px] leading-relaxed text-red-800 dark:text-red-300">
+              {minted.rotationWarning}
+            </p>
+          )}
+
+          <textarea
+            readOnly
+            value={minted.privateKeyPem.trim()}
+            rows={4}
+            onFocus={(e) => e.currentTarget.select()}
+            className="mt-2 w-full rounded-lg border border-[#ded6c8] bg-white p-2 font-mono text-[10px] leading-snug dark:border-[#3d3349] dark:bg-[#1f1a27]"
+          />
+
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button
+              onClick={() => {
+                void navigator.clipboard.writeText(minted.privateKeyPem.trim());
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2500);
+              }}
+              className={`${BTN_SECONDARY} inline-flex items-center gap-1.5 text-xs`}
+            >
+              <Copy size={12} /> {copied ? 'Copied' : 'Copy the key'}
+            </button>
+            <button
+              onClick={() => setMinted(null)}
+              className={`${BTN_SECONDARY} text-xs`}
+            >
+              I have saved it — hide it
+            </button>
+          </div>
+
+          {/* THE STEPS, BESIDE THE KEY. Somebody holding a secret that is shown
+              once should not have to go and find the instructions. */}
+          <ol className="mt-3 list-decimal space-y-1 pl-4 text-[11px] leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">
+            <li>
+              In Vercel: <strong>Settings → Environment Variables → Add New</strong>. Name it{' '}
+              <code className="font-mono">CREDENTIAL_SIGNING_KEY</code> and paste the key above,
+              including the BEGIN and END lines.
+            </li>
+            <li>
+              <strong>Redeploy.</strong> A new variable does not reach a deployment that is already
+              running.
+            </li>
+            <li>
+              Come back to this screen. It should read <em>The University holds an Ed25519 key</em>{' '}
+              with id <span className="font-mono">{minted.keyId}</span>.
+            </li>
+            <li>
+              Then <strong>Sign them</strong> below, to sign the credentials already on the
+              register.
+            </li>
+          </ol>
+        </div>
       )}
 
       <p className="mt-3 text-xs text-[#6b6076] dark:text-[#9c93ad]">

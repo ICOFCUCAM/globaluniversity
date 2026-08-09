@@ -286,3 +286,38 @@ real intake:
   every applicant's record is public, including the application text stored in
   the address column. The query is in `docs/ADMISSIONS-PIPELINE.md` §5b.
 - Run the verification `select`s at the foot of 009 and 010 and read the output.
+
+---
+
+## Turning on document signing
+
+Optional. Without it, credentials are sealed and verify through `/verify`
+exactly as they do now — they simply cannot be checked by a receiving
+institution without trusting this website.
+
+**Make a key.** Either:
+
+- `npm run make-signing-key` — best, because a key made in a terminal never
+  crosses a network. It prints the key and the steps; it writes no file.
+- Or, with no terminal: **Credentials -> Register -> Document signing ->
+  Generate a signing key.** Generated on the University's own server, shown
+  once, stored nowhere.
+
+**Set it.** In Vercel: Settings -> Environment Variables -> Add New. Name it
+`CREDENTIAL_SIGNING_KEY`, paste the whole key including the BEGIN and END
+lines, and choose Production.
+
+**Redeploy.** A new variable does not reach a deployment that is already
+running. This is the step people miss.
+
+**Check it.** Open `/api/credential/key`. It should report `"configured": true`
+and the key id. Credentials -> Register says the same in words.
+
+**Sign what is already there.** Credentials -> Register -> Document signing ->
+*Sign them*. It adds a signature over each credential's existing content hash;
+no hash, seal or fact changes, so every document already in a graduate's hand
+verifies exactly as it did.
+
+**Keep the key.** Losing it invalidates nothing already signed, but nothing can
+ever be re-signed under it. It is not in the secret store, because the server
+needs it before it can open the secret store.
