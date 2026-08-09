@@ -42,7 +42,7 @@
 // ---------------------------------------------------------------------------
 
 import { NextResponse } from 'next/server';
-import { signContentHash } from '@/lib/documentSignature';
+import { signContentHashWith, type SecretDb } from '@/lib/documentSignature';
 import { guard, audit } from '@/lib/adminAuth';
 import {
   newCredentialId, contentHash, sealAward, awardFields, verificationQrSvg, AWARD_FORMAT,
@@ -202,7 +202,10 @@ export async function POST(request: Request) {
   // sending the registrar to the register to find the row they just created.
   // Signed with the University's own key, so a receiving institution can check
   // the certificate without trusting this website. See documentSignature.ts.
-  const signed = signContentHash(hash);
+  // The cast keeps the Supabase client's generated types out of the signing
+  // module's structural `SecretDb` shape — matching them made the compiler walk
+  // the whole generated schema and give up.
+  const signed = await signContentHashWith(admin as unknown as SecretDb, hash);
 
   const { data: registered, error: regErr } = await admin.from('credentials_issued').insert({
     credential_id: credentialId,

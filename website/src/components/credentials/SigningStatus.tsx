@@ -31,6 +31,9 @@ interface KeyInfo {
   algorithm?: string;
   note?: string;
   limitations?: string;
+  /** 'environment' | 'store' — where the active key is held. */
+  keptIn?: string | null;
+  retiredKeys?: { keyId: string }[];
 }
 
 export default function SigningStatus({ role }: { role?: UserRole }) {
@@ -41,7 +44,8 @@ export default function SigningStatus({ role }: { role?: UserRole }) {
   // SHOWN ONCE AND NEVER STORED. Held in this component's state only, so it is
   // gone the moment the screen is left.
   const [minted, setMinted] = React.useState<{
-    keyId: string; privateKeyPem: string; warning: string; rotationWarning: string | null;
+    keyId: string; privateKeyPem: string; warning: string; kept: boolean;
+    keepError: string | null; rotationNote: string | null; environmentOverrides: string | null;
   } | null>(null);
   const [copied, setCopied] = React.useState(false);
 
@@ -70,7 +74,12 @@ export default function SigningStatus({ role }: { role?: UserRole }) {
       const { data: session } = await supabase.auth.getSession();
       const res = await fetch('/api/credential/key/new', {
         method: 'POST',
-        headers: { authorization: `Bearer ${session.session?.access_token ?? ''}` },
+        headers: {
+          'content-type': 'application/json',
+          authorization: `Bearer ${session.session?.access_token ?? ''}`,
+        },
+        // THE SYSTEM KEEPS IT. Nothing to paste, nothing to redeploy.
+        body: JSON.stringify({ keep: true }),
       }).then((r) => r.json()).catch(() => null);
       if (!res?.ok) {
         setNote({ tone: 'bad', text: res?.detail ?? res?.error ?? 'A key could not be generated.' });
@@ -80,8 +89,12 @@ export default function SigningStatus({ role }: { role?: UserRole }) {
         keyId: res.keyId,
         privateKeyPem: res.privateKeyPem,
         warning: res.warning,
-        rotationWarning: res.rotationWarning ?? null,
+        kept: Boolean(res.kept),
+        keepError: res.keepError ?? null,
+        rotationNote: res.rotationNote ?? null,
+        environmentOverrides: res.environmentOverrides ?? null,
       });
+      if (res.kept) await load();
     } finally {
       setBusy(false);
     }
@@ -132,7 +145,13 @@ export default function SigningStatus({ role }: { role?: UserRole }) {
         <>
           <p className="mt-1 text-xs text-[#6b6076] dark:text-[#9c93ad]">
             The University holds an {key.algorithm} key. Key id{' '}
-            <span className="font-mono">{key.keyId}</span>. Anyone can verify a signed credential
+            <span className="font-mono">{key.keyId}</span>
+            {key.keptIn === 'store'
+              ? ', kept by the system in its own sealed store'
+              : key.keptIn === 'environment' ? ', from CREDENTIAL_SIGNING_KEY' : ''}
+            {(key.retiredKeys?.length ?? 0) > 0
+              && `. ${key.retiredKeys!.length} retired key${key.retiredKeys!.length === 1 ? '' : 's'} `
+                + 'still published, so credentials signed before the rotation still verify'}. Anyone can verify a signed credential
             offline against the{' '}
             <a
               href="/api/credential/key"
@@ -195,9 +214,20 @@ export default function SigningStatus({ role }: { role?: UserRole }) {
           <p className="mt-1 max-w-2xl text-[11px] leading-relaxed text-[#a07c12]">
             <strong>{minted.warning}</strong>
           </p>
-          {minted.rotationWarning && (
+          {minted.keepError && (
             <p className="mt-1.5 max-w-2xl text-[11px] leading-relaxed text-red-800 dark:text-red-300">
-              {minted.rotationWarning}
+              The system could not keep this key: {minted.keepError} Paste it into your host as
+              CREDENTIAL_SIGNING_KEY instead, using the steps below.
+            </p>
+          )}
+          {minted.rotationNote && (
+            <p className="mt-1.5 max-w-2xl text-[11px] leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">
+              {minted.rotationNote}
+            </p>
+          )}
+          {minted.environmentOverrides && (
+            <p className="mt-1.5 max-w-2xl text-[11px] leading-relaxed text-[#a07c12]">
+              {minted.environmentOverrides}
             </p>
           )}
 
@@ -228,8 +258,17 @@ export default function SigningStatus({ role }: { role?: UserRole }) {
             </button>
           </div>
 
-          {/* THE STEPS, BESIDE THE KEY. Somebody holding a secret that is shown
-              once should not have to go and find the instructions. */}
+          {/* THE STEPS ARE FOR THE CASE WHERE THE SYSTEM COULD NOT KEEP IT.
+              When it did, there is nothing to do — printing four steps beside a
+              key that is already working would have somebody dutifully pasting
+              it into Vercel for no reason. */}
+          {minted.kept ? (
+            <p className="mt-3 text-[11px] leading-relaxed text-emerald-900 dark:text-emerald-200">
+              <strong>Nothing further to do.</strong> The University is signing with this key from
+              the next credential onwards — no environment variable, no redeploy. Sign the
+              credentials already on the register with the button below.
+            </p>
+          ) : (
           <ol className="mt-3 list-decimal space-y-1 pl-4 text-[11px] leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">
             <li>
               In Vercel: <strong>Settings → Environment Variables → Add New</strong>. Name it{' '}
@@ -249,6 +288,7 @@ export default function SigningStatus({ role }: { role?: UserRole }) {
               register.
             </li>
           </ol>
+          )}
         </div>
       )}
 

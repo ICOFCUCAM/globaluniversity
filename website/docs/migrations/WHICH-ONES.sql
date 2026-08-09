@@ -32,6 +32,7 @@ from (values
   ('017_secret_store.sql',                    17, to_regclass('public.secret_store')               is not null),
   ('018_delete_application.sql',              18, exists (select 1 from pg_policies where tablename='students' and policyname='students_superadmin_delete')),
   ('019_academic_record.sql',                 19, to_regclass('public.transfer_credits')           is not null),
-  ('020_signature_void_and_grading.sql',      20, to_regclass('public.grading_scales')             is not null)
+  ('020_signature_void_and_grading.sql',      20, to_regclass('public.grading_scales')             is not null),
+  ('021_signing_key_in_the_store.sql',        21, exists (select 1 from pg_constraint where conname='secret_store_kind_check' and pg_get_constraintdef(oid) like '%signing_key%'))
 ) as m(f, n, landed)
 where not landed;

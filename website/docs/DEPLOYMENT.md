@@ -195,6 +195,7 @@ The individual files, for reference:
 | 018 | `018_delete_application.sql` | **Who may delete an application: the Superadministrator alone.** Nobody could before — `students` had no DELETE policy and RLS refuses an operation with no policy — but "refused because nobody wrote the policy" is silently undone by the next person who widens something unrelated. A trigger backs it for service-role callers, and refuses an admitted student's row outright: withdrawal is a status, not a deletion. |
 | 019 | `019_academic_record.sql` | **The record a real transcript is built from.** Study mode, campus, specialization and admission/completion dates on `students`; `attempt` on `results` so a repeat no longer overwrites the failure; and six tables — `transfer_credits`, `academic_honours`, `graduation_records`, `academic_standing_events` (append-only), `transcript_requests`, and `academic_policy`, which is deliberately almost empty: the repeat rule and the standing thresholds are the University's to state, and defaulting them would raise every repeating student's GPA under a rule nobody made. |
 | 020 | `020_signature_void_and_grading.sql` | **A signature anyone can check, voiding, and a grading scale the University owns.** A detached Ed25519 signature over the content hash — the existing seal is an HMAC and only the University can check it, so a receiving institution has to trust this website; a signature verifies offline, forever, against the public key at `/api/credential/key`. VOID is a new state, distinct from revoked: revoking withdraws the award and marks the holder, voiding says the University issued the document in error and the holder is not at fault. And `grading_scales`, versioned and never edited, with the published bands seeded so nothing changes on the day it runs. |
+| 021 | `021_signing_key_in_the_store.sql` | **The system can keep the signing key.** Admits `signing_key` to the sealed store 017 built, so the key is generated in the portal and held encrypted in the University's own database — no environment variable and no redeploy. It holds a KEYRING, not a key: every key the University has ever used, with the active one named, so rotating publishes the retired public half rather than silently making every earlier signature uncheckable. |
 
 Each file ends with `select` statements that verify what it did, and 013
 onwards *perform* their rules rather than checking a trigger exists — the proof
@@ -295,7 +296,28 @@ Optional. Without it, credentials are sealed and verify through `/verify`
 exactly as they do now — they simply cannot be checked by a receiving
 institution without trusting this website.
 
-**Make a key.** Either:
+**Make a key. The system can keep it for you.**
+
+**Credentials → Register → Document signing → Generate a signing key.** The key
+is generated on the University's own server and sealed into its secret store —
+the same AES-256-GCM store the social tokens live in, with row-level security
+and no policy at all, so it is unreadable through the publishable key by
+construction. **Nothing to paste, and no redeploy**: signing starts with the
+next credential.
+
+That does NOT remove `SECRET_STORE_KEY` — something has to encrypt the store,
+and that something cannot live inside it. So it trades a long multi-line secret
+for a short single-line one, and if `SECRET_STORE_KEY` is already set for the
+social connections, it trades it for nothing at all. If `SECRET_STORE_KEY` is
+ever lost the stored signing key is unrecoverable; credentials already signed
+stay valid, but a new key has to be generated.
+
+**Rotating is safe.** Every key the University has ever held is kept, and every
+public half is published at `/api/credential/key` with its id. A credential
+records which key signed it, so one signed years ago still verifies after a
+rotation. Nothing has to be remembered by a person.
+
+**If you would rather hold it yourself**, either:
 
 - `npm run make-signing-key` — best, because a key made in a terminal never
   crosses a network. It prints the key and the steps; it writes no file.
@@ -305,7 +327,8 @@ institution without trusting this website.
 
 **Set it.** In Vercel: Settings -> Environment Variables -> Add New. Name it
 `CREDENTIAL_SIGNING_KEY`, paste the whole key including the BEGIN and END
-lines, and choose Production.
+lines, and choose Production. An environment variable takes precedence over
+anything stored, so this is also how you override a stored key.
 
 **Redeploy.** A new variable does not reach a deployment that is already
 running. This is the step people miss.

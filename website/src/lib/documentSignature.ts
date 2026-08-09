@@ -52,6 +52,28 @@
 // it is stored beside every signature. A key is rotated eventually, and a
 // signature with no record of which key made it is unverifiable from the moment
 // that happens.
+//
+// ---------------------------------------------------------------------------
+// WHERE THE KEY LIVES, AND WHY RETIRED KEYS ARE KEPT
+// ---------------------------------------------------------------------------
+//
+// Either in CREDENTIAL_SIGNING_KEY, or in the University's own sealed store —
+// the same AES-256-GCM store that holds the social tokens, with row-level
+// security and no policy at all, so it is unreadable through the publishable
+// key by construction. The environment variable wins where both exist, because
+// an operator who has just set one expects it to take effect.
+//
+// THE STORE HOLDS A KEYRING, NOT A KEY. Every key the University has ever used,
+// with the active one named — because rotation without that is a promise
+// quietly broken.
+//
+// The first version of this warned an operator that rotating would leave older
+// signatures uncheckable, since only the current public key was published. That
+// warning was the wrong fix. A signature that cannot be checked is not a
+// signature, and telling somebody to keep the old public key "somewhere" makes
+// the University's guarantee depend on a person remembering a file. Every
+// public key the University has held is published, each with its id, and a
+// verifier picks the one the signature names.
 // ---------------------------------------------------------------------------
 
 import {
@@ -74,6 +96,34 @@ export interface Signed {
 }
 
 let cached: { key: KeyObject; identity: SigningIdentity } | null | undefined;
+
+/**
+ * Every key the University has held, and which one signs today.
+ *
+ * `keys` is keyed by key id, so a signature naming a retired key can still be
+ * checked and the retired PUBLIC key can still be published.
+ */
+export interface Keyring {
+  active: string;
+  keys: Record<string, string>;
+}
+
+/** The reference the keyring is stored under. Not a secret; a row name. */
+export const KEYRING_REF = 'credential-signing-keyring';
+
+/** The shape of the database client, written out so this file imports none. */
+export interface SecretDb {
+  from(table: string): {
+    upsert(values: Record<string, unknown>, options?: Record<string, unknown>): PromiseLike<{ error: { message: string } | null }>;
+    select(columns: string): {
+      eq(column: string, value: string): {
+        maybeSingle(): PromiseLike<{ data: Record<string, unknown> | null; error: { message: string } | null }>;
+      };
+    };
+  };
+}
+
+let ringCache: Keyring | null | undefined;
 
 /**
  * The University's signing key, or null when none is configured.
@@ -194,4 +244,203 @@ export function generateSigningKey(): { privateKeyPem: string; publicKeyPem: str
 /** Forget the cached key. Tests only. */
 export function resetSigningCache(): void {
   cached = undefined;
+}
+
+/* ------------------------------------------------------------------ */
+/* THE KEYRING THE SYSTEM KEEPS FOR ITSELF                             */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Read the keyring out of the University's sealed store.
+ *
+ * RETURNS NULL RATHER THAN THROWING for every failure — no store, no sealing
+ * key, an unreadable row, a corrupt seal. Signing is optional by design, and a
+ * registry that cannot issue a certificate because a keyring could not be
+ * decrypted would be a far worse fault than one that issues it unsigned.
+ */
+export async function loadKeyring(db: SecretDb): Promise<Keyring | null> {
+  if (ringCache !== undefined) return ringCache;
+  try {
+    const { secretStoreReady, unseal } = await import('@/lib/secretStore');
+    if (!secretStoreReady()) { ringCache = null; return null; }
+
+    const { data, error } = await db.from('secret_store')
+      .select('sealed').eq('ref', KEYRING_REF).maybeSingle();
+    if (error || !data?.sealed) { ringCache = null; return null; }
+
+    const ring = JSON.parse(unseal(String(data.sealed))) as Keyring;
+    if (!ring?.active || !ring.keys?.[ring.active]) { ringCache = null; return null; }
+    ringCache = ring;
+    return ring;
+  } catch {
+    ringCache = null;
+    return null;
+  }
+}
+
+/**
+ * Put a newly generated key into the store, keeping every earlier one.
+ *
+ * THE OLD KEYS ARE NOT DISCARDED. Their public halves are published so a
+ * signature made years ago still checks; discarding them would silently void
+ * the University's guarantee on every document signed before the rotation.
+ */
+export async function storeSigningKey(
+  db: SecretDb, privateKeyPem: string,
+): Promise<{ keyId: string; retired: string[] }> {
+  const { secretStoreReady, seal, SECRET_STORE_MISSING } = await import('@/lib/secretStore');
+  if (!secretStoreReady()) throw new Error(SECRET_STORE_MISSING);
+
+  const key = createPrivateKey(privateKeyPem);
+  if (key.asymmetricKeyType !== 'ed25519') {
+    throw new Error('The University publishes Ed25519; this key is not one.');
+  }
+  const publicKeyPem = createPublicKey(key).export({ type: 'spki', format: 'pem' }).toString();
+  const keyId = keyIdFor(publicKeyPem);
+
+  const existing = await loadKeyring(db);
+  const ring: Keyring = {
+    active: keyId,
+    keys: { ...(existing?.keys ?? {}), [keyId]: privateKeyPem },
+  };
+
+  const { error } = await db.from('secret_store').upsert({
+    ref: KEYRING_REF,
+    kind: 'signing_key',
+    sealed: seal(JSON.stringify(ring)),
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'ref' });
+  if (error) throw new Error(`The signing key could not be stored: ${error.message}`);
+
+  ringCache = ring;
+  return { keyId, retired: Object.keys(ring.keys).filter((k) => k !== keyId) };
+}
+
+/** A private PEM as its public half and id. Null when it will not parse. */
+function identityOf(privateKeyPem: string): SigningIdentity | null {
+  try {
+    const pem = privateKeyPem.includes('\\n')
+      ? privateKeyPem.replace(/\\n/g, '\n') : privateKeyPem;
+    const publicKeyPem = createPublicKey(createPrivateKey(pem))
+      .export({ type: 'spki', format: 'pem' }).toString();
+    return { keyId: keyIdFor(publicKeyPem), publicKeyPem };
+  } catch {
+    return null;
+  }
+}
+
+export interface Published {
+  /** The key signing today, or null when the University signs nothing. */
+  active: SigningIdentity | null;
+  /**
+   * Every key it has held and no longer uses.
+   *
+   * PUBLISHED, NOT MERELY KEPT. A signature naming a retired key is checkable
+   * only if its public half is somewhere a stranger can find it.
+   */
+  retired: SigningIdentity[];
+  /** 'environment' | 'store' | null — where the active key came from. */
+  source: 'environment' | 'store' | null;
+}
+
+/**
+ * Everything the University can publish about its signing keys.
+ *
+ * THE ENVIRONMENT WINS where both exist: an operator who has just set
+ * CREDENTIAL_SIGNING_KEY expects it to take effect, and a stored key silently
+ * overriding it would be the kind of surprise that costs an afternoon. The
+ * stored keys are still published as retired, because documents were signed
+ * with them.
+ */
+export async function publishedKeys(db?: SecretDb): Promise<Published> {
+  const fromEnv = signingIdentity();
+  const ring = db ? await loadKeyring(db) : null;
+
+  const stored = ring
+    ? Object.entries(ring.keys)
+      .map(([, pem]) => identityOf(pem))
+      .filter((x): x is SigningIdentity => x !== null)
+    : [];
+
+  const active = fromEnv ?? stored.find((k) => k.keyId === ring?.active) ?? null;
+  return {
+    active,
+    retired: stored.filter((k) => k.keyId !== active?.keyId),
+    source: fromEnv ? 'environment' : active ? 'store' : null,
+  };
+}
+
+/**
+ * Sign, using the environment key if there is one and the stored key otherwise.
+ *
+ * The synchronous `signContentHash` is unchanged and still the environment-only
+ * path; this is what the issue routes call, because they have a database client
+ * and the University may be keeping its key there.
+ */
+export async function signContentHashWith(
+  db: SecretDb | undefined, contentHash: string,
+): Promise<Signed> {
+  const fromEnv = loadKey();
+  if (fromEnv) {
+    return {
+      signature: nodeSign(null, Buffer.from(contentHash, 'utf8'), fromEnv.key).toString('base64url'),
+      keyId: fromEnv.identity.keyId,
+    };
+  }
+
+  const ring = db ? await loadKeyring(db) : null;
+  const pem = ring?.keys[ring.active];
+  if (!ring || !pem) {
+    return {
+      signature: null,
+      keyId: null,
+      reason: 'No signing key is set and none is stored, so this credential carries its seal but '
+        + 'no independently checkable signature. It verifies normally through /verify.',
+    };
+  }
+
+  try {
+    const key = createPrivateKey(pem);
+    return {
+      signature: nodeSign(null, Buffer.from(contentHash, 'utf8'), key).toString('base64url'),
+      keyId: ring.active,
+    };
+  } catch {
+    // A STORED KEY THAT WILL NOT PARSE IS AN ABSENT ONE, never an exception —
+    // the credential is issued unsigned rather than not issued at all.
+    return {
+      signature: null,
+      keyId: null,
+      reason: 'The stored signing key could not be read, so this credential was issued unsigned. '
+        + 'It carries the University’s seal and verifies through /verify.',
+    };
+  }
+}
+
+/**
+ * Check a signature against whichever key made it.
+ *
+ * THE POINT OF KEEPING RETIRED KEYS. A signature naming a key the University
+ * has since replaced verifies here exactly as it did the day it was made.
+ */
+export async function verifyAgainstAnyKey(
+  db: SecretDb | undefined, contentHash: string, signature: string, keyId?: string | null,
+): Promise<{ valid: boolean; keyId: string | null; retired: boolean }> {
+  const { active, retired } = await publishedKeys(db);
+  const candidates = [active, ...retired].filter((k): k is SigningIdentity => k !== null);
+
+  // Named key first; it is the only one that should match, and trying it alone
+  // means a signature cannot be "verified" against a key it does not claim.
+  const named = keyId ? candidates.find((k) => k.keyId === keyId) : null;
+  for (const k of named ? [named] : candidates) {
+    if (verifySignature(contentHash, signature, k.publicKeyPem)) {
+      return { valid: true, keyId: k.keyId, retired: k.keyId !== active?.keyId };
+    }
+  }
+  return { valid: false, keyId: keyId ?? null, retired: false };
+}
+
+/** Forget the cached keyring. Tests, and immediately after a rotation. */
+export function resetKeyringCache(): void {
+  ringCache = undefined;
 }

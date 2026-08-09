@@ -41,7 +41,7 @@ import {
 } from '@/lib/documentSecurity';
 import { buildTranscript, canIssueTranscript, creditsEarned } from '@/lib/transcript';
 import { can } from '@/lib/roles';
-import { signContentHash } from '@/lib/documentSignature';
+import { signContentHashWith, type SecretDb } from '@/lib/documentSignature';
 import { UNIVERSITY } from '@/lib/constants';
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? process.env.SITE_URL ?? UNIVERSITY.website;
@@ -271,7 +271,7 @@ export async function POST(request: Request) {
   // somebody who has never heard of this website. Absent key, absent signature,
   // and the credential is issued and sealed exactly as before — see
   // documentSignature.ts for why refusing here would be the wrong trade.
-  const signed = signContentHash(hash);
+  const signed = await signContentHashWith(admin as unknown as SecretDb, hash);
 
   const { data: registered, error: regErr } = await admin.from('credentials_issued').insert({
     credential_id: credentialId,
@@ -524,7 +524,7 @@ async function transcribe(
     courses: usable.map((c: typeof usable[number]) => `${c.year}.${c.semester}:${c.code}:${c.grade}:${c.creditUnit}`).join('|'),
   });
 
-  const signed = signContentHash(hash);
+  const signed = await signContentHashWith(admin as unknown as SecretDb, hash);
 
   const { data: registered, error: regErr } = await admin.from('credentials_issued').insert({
     credential_id: credentialId,

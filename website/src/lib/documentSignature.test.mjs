@@ -47,6 +47,7 @@ execFileSync('npx', [
 const {
   generateSigningKey, signContentHash, verifySignature, keyIdFor,
   signingConfigured, signingIdentity, resetSigningCache,
+  storeSigningKey, signContentHashWith, publishedKeys, verifyAgainstAnyKey, resetKeyringCache,
 } = await import(outfile);
 
 const HASH = 'a3f1c0de4b7e2910aa55cc7788ee99001122334455667788990011223344aabb';
@@ -163,5 +164,103 @@ check('an RSA key is refused, because the University publishes Ed25519',
 process.env.CREDENTIAL_SIGNING_KEY = 'short';
 resetSigningCache();
 check('an obviously wrong value does not enable signing', signingConfigured(), false);
+
+
+
+console.log('\nThe keyring the system keeps, and what a rotation does to it\n');
+
+// A stand-in for the sealed store: the same two calls the real one makes.
+// SECRET_STORE_KEY is set so secretStore.seal actually encrypts — this exercises
+// the real sealing, not a stub of it.
+process.env.SECRET_STORE_KEY = 'k'.repeat(48);
+delete process.env.CREDENTIAL_SIGNING_KEY;
+resetSigningCache();
+resetKeyringCache();
+
+let stored = null;
+const db = {
+  from: () => ({
+    upsert: async (values) => { stored = values; return { error: null }; },
+    select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: stored, error: null }) }) }),
+  }),
+};
+
+const first = generateSigningKey();
+const kept = await storeSigningKey(db, first.privateKeyPem);
+resetKeyringCache();
+
+check('the key is kept under its own id', kept.keyId, first.keyId);
+check('and nothing is retired yet', kept.retired, []);
+// THE STORED VALUE IS SEALED, NOT THE KEY IN A COLUMN. If this ever became the
+// PEM itself, the store would be a database table holding a private key.
+check('what is stored is sealed, not the key',
+  stored.sealed.includes('BEGIN PRIVATE KEY'), false);
+check('and it is the three-segment shape the store’s own constraint requires',
+  /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(stored.sealed), true);
+check('under the signing_key kind', stored.kind, 'signing_key');
+
+// Signing now works with NO environment variable at all.
+const s1 = await signContentHashWith(db, HASH);
+check('a credential signs from the stored key', typeof s1.signature, 'string');
+check('and names it', s1.keyId, first.keyId);
+check('the published active key is the stored one',
+  (await publishedKeys(db)).active.keyId, first.keyId);
+check('and it is reported as kept in the store',
+  (await publishedKeys(db)).source, 'store');
+
+console.log('\nRotating\n');
+
+const second = generateSigningKey();
+const after = await storeSigningKey(db, second.privateKeyPem);
+resetKeyringCache();
+
+check('the new key is active', after.keyId, second.keyId);
+check('and the old one is retired rather than discarded', after.retired, [first.keyId]);
+check('the published active key is the new one',
+  (await publishedKeys(db)).active.keyId, second.keyId);
+check('and the retired one is published too',
+  (await publishedKeys(db)).retired.map((k) => k.keyId), [first.keyId]);
+
+// THE CASE THE WHOLE KEYRING EXISTS FOR. A credential signed before the
+// rotation must still verify afterwards. Publishing only the current key would
+// have made every one of them unverifiable by an outsider, silently, on the day
+// the University rotated.
+{
+  const out = await verifyAgainstAnyKey(db, HASH, s1.signature, first.keyId);
+  check('a signature made BEFORE the rotation still verifies', out.valid, true);
+  check('…and is reported as made with a retired key', out.retired, true);
+  check('…named correctly', out.keyId, first.keyId);
+}
+{
+  const s2 = await signContentHashWith(db, HASH);
+  const out = await verifyAgainstAnyKey(db, HASH, s2.signature, s2.keyId);
+  check('a signature made after it verifies as current', [out.valid, out.retired], [true, false]);
+}
+// And a forgery is still a forgery, whichever key it claims.
+{
+  const impostorKey = generateSigningKey();
+  const { sign: nodeSignRaw, createPrivateKey: cpk } = await import('node:crypto');
+  const forged = nodeSignRaw(null, Buffer.from(HASH, 'utf8'), cpk(impostorKey.privateKeyPem))
+    .toString('base64url');
+  check('a signature from a key the University never held does not verify',
+    (await verifyAgainstAnyKey(db, HASH, forged, first.keyId)).valid, false);
+  check('…nor by claiming no key at all',
+    (await verifyAgainstAnyKey(db, HASH, forged, null)).valid, false);
+}
+
+console.log('\nThe environment still wins where both exist\n');
+
+process.env.CREDENTIAL_SIGNING_KEY = impostor.privateKeyPem;
+resetSigningCache();
+resetKeyringCache();
+{
+  const p = await publishedKeys(db);
+  check('the environment key is the active one', p.active.keyId, impostor.keyId);
+  check('and is reported as such', p.source, 'environment');
+  // THE STORED KEYS ARE STILL PUBLISHED, because documents were signed with
+  // them and those signatures must remain checkable.
+  check('while both stored keys are published as retired',
+    p.retired.map((k) => k.keyId).sort(), [first.keyId, second.keyId].sort());
+}
 
 process.exit(failures === 0 ? 0 : 1);

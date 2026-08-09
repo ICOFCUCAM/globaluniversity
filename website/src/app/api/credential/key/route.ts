@@ -32,13 +32,21 @@
 // ---------------------------------------------------------------------------
 
 import { NextResponse } from 'next/server';
-import { signingIdentity } from '@/lib/documentSignature';
+import { publishedKeys, type SecretDb } from '@/lib/documentSignature';
+import { adminClient } from '@/lib/adminAuth';
 import { UNIVERSITY } from '@/lib/constants';
 
 export const runtime = 'nodejs';
 
 export async function GET() {
-  const id = signingIdentity();
+  // THE STORE IS READ TOO, so a University that let the system keep its key
+  // publishes it exactly as one that set an environment variable does.
+  const { active: id, retired, source } = await publishedKeys(
+    // Cast for the same reason the issue routes do: matching the Supabase
+    // client's generated types against this module's structural shape makes
+    // the compiler walk the whole generated schema.
+    (adminClient() as unknown as SecretDb | null) ?? undefined,
+  );
 
   if (!id) {
     return NextResponse.json({
@@ -57,6 +65,19 @@ export async function GET() {
     algorithm: 'Ed25519',
     keyId: id.keyId,
     publicKey: id.publicKeyPem,
+    keptIn: source,
+    // EVERY KEY THE UNIVERSITY HAS HELD, not only the current one.
+    //
+    // A signature is checkable only if the public half of the key that made it
+    // is somewhere a stranger can find. Publishing only the active key would
+    // mean that the day the University rotated, every document signed before
+    // then quietly stopped being verifiable by anybody outside — while looking
+    // exactly as valid as it always had.
+    retiredKeys: retired.map((k) => ({ keyId: k.keyId, publicKey: k.publicKeyPem })),
+    whichKey:
+      'Each credential records the id of the key that signed it. Use the key with that id — the '
+      + 'active one below, or one of the retired ones. A retired key means the University has '
+      + 'since rotated; it does not mean the signature is any less valid.',
     signedValue:
       'The SHA-256 content hash of the credential, as a lowercase hex string, signed as UTF-8 '
       + 'bytes. The hash is returned by /api/credential?id=<credential number>.',
