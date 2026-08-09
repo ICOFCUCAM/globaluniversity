@@ -159,6 +159,15 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
     table: 'admission_audit_log',
     column: 'actor_office',
   },
+  {
+    file: '026_issuance_is_not_the_decision.sql',
+    what: 'Separates the academic decision from the issuance, so a half-finished admission is '
+      + 'its own state and can be retried rather than corrected by hand.',
+    // Not a table or a column — two rows in an existing table. Named here so
+    // the Readiness panel does not report it as fine without looking.
+    cannotSee: "select state, label from admission_states where stage = 'issuance';"
+      + "  -- it should list admission_processing and admission_processing_failed",
+  },
 ];
 
 /** What a probe came back as. */

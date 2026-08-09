@@ -52,7 +52,7 @@ import { admissionPackageHtml, admissionCoveringText } from '@/lib/admissionPack
 import { courses, MODE_LABEL } from '@/content/courses';
 import { UNIVERSITY } from '@/lib/constants';
 import {
-  ACADEMIC_DECISIONS, EVENT_FOR_DECISION, canDecide, isDecided, officeFor,
+  ACADEMIC_DECISIONS, EVENT_FOR_DECISION, canDecide, isDecided, canRetryIssuance, officeFor,
   type AcademicDecision, type AdmissionEvent,
 } from '@/lib/admissionWorkflow';
 
@@ -89,6 +89,13 @@ export async function POST(request: Request) {
     reason?: string;
     conditions?: { requirement: string; dueBy: string }[];
     overrideReason?: string;
+    /**
+     * Resume an issuance that stopped part way, under the decision ALREADY
+     * recorded. The decision is not taken again — it was validly taken and it
+     * is immutable — so the trail shows one approval and two issuance
+     * attempts, which is what happened.
+     */
+    retry?: boolean;
   };
   try {
     body = await request.json();
@@ -96,7 +103,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: 'bad-json' }, { status: 400 });
   }
 
-  const { applicationId, reason, conditions, overrideReason } = body;
+  const { applicationId, reason, conditions, overrideReason, retry } = body;
   const decision = body.decision as AcademicDecision;
   if (!applicationId) {
     return NextResponse.json({ ok: false, error: 'missing-application-id' }, { status: 400 });
@@ -156,15 +163,26 @@ export async function POST(request: Request) {
   if (readErr || !app) {
     return NextResponse.json({ ok: false, error: 'application-not-found' }, { status: 404 });
   }
-  if (isDecided(app.status)) {
-    return NextResponse.json(
-      { ok: false, error: 'already-decided', status: app.status }, { status: 409 },
-    );
-  }
-  if (!canDecide(app.status)) {
-    return NextResponse.json(
-      { ok: false, error: 'wrong-stage', status: app.status }, { status: 409 },
-    );
+  if (retry) {
+    // A RETRY IS NOT A DECISION, so the "already decided" check is exactly
+    // backwards here: the whole point is that a decision exists and the
+    // issuance under it did not finish.
+    if (!canRetryIssuance(app.status)) {
+      return NextResponse.json(
+        { ok: false, error: 'nothing-to-retry', status: app.status }, { status: 409 },
+      );
+    }
+  } else {
+    if (isDecided(app.status)) {
+      return NextResponse.json(
+        { ok: false, error: 'already-decided', status: app.status }, { status: 409 },
+      );
+    }
+    if (!canDecide(app.status)) {
+      return NextResponse.json(
+        { ok: false, error: 'wrong-stage', status: app.status }, { status: 409 },
+      );
+    }
   }
 
   const admitting = decision === 'approve' || decision === 'conditional';
@@ -215,7 +233,28 @@ export async function POST(request: Request) {
   // =======================================================================
   const newStatus = ACADEMIC_DECISIONS[decision].becomes;
   let decisionId: string | undefined;
-  try {
+
+  if (retry) {
+    // Resume under the decision that already exists. If none can be found the
+    // request is refused rather than quietly inventing one — an issuance with
+    // no decision behind it is the thing this architecture exists to prevent.
+    const { data: prior } = await admin
+      .from('admission_decisions')
+      .select('id')
+      .eq('application_id', applicationId)
+      .in('decision', ['approve', 'conditional'])
+      .order('decision_date', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!prior?.id) {
+      return NextResponse.json(
+        { ok: false, error: 'no-decision-to-resume', status: app.status }, { status: 409 },
+      );
+    }
+    decisionId = prior.id;
+    await audit('ISSUANCE_RETRIED', undefined, decisionId,
+      { from: app.status, to: 'admission_processing' });
+  } else try {
     const { data: rec, error } = await admin.from('admission_decisions').insert({
       application_id: applicationId,
       decision,
@@ -258,7 +297,7 @@ export async function POST(request: Request) {
   // A REJECTION OR A RETURN STOPS HERE. No package, no account, no number —
   // and the status is the decision's own, not `admission_issued`.
   // -----------------------------------------------------------------------
-  if (!admitting) {
+  if (!admitting && !retry) {
     const { error } = await admin.from('students').update({
       status: newStatus,
       decided_by: caller.id,
@@ -275,7 +314,36 @@ export async function POST(request: Request) {
   }
 
   // =======================================================================
-  // 3. THE ADMISSION PACKAGE, before anything is created for the student.
+  // 3. ISSUANCE BEGINS. The status says so from here until it either finishes
+  //    or fails, because `approved` cannot mean both "the Head approved" and
+  //    "the University issued" — the University's own distinction, and the
+  //    reason migration 026 exists.
+  // =======================================================================
+  await admin.from('students').update({ status: 'admission_processing' }).eq('id', applicationId);
+  await audit('ISSUANCE_STARTED', undefined, decisionId,
+    { from: app.status, to: 'admission_processing' });
+
+  /**
+   * Stop, recording where it stopped.
+   *
+   * `admission_processing_failed` is a state the desk can see, name and offer a
+   * retry for. What it replaces is `approved` — indistinguishable from an
+   * issuance that had never started, and recoverable only by editing rows in
+   * the SQL editor.
+   */
+  const failIssuance = async (step: string, detail: string, status = 500) => {
+    await admin.from('students')
+      .update({ status: 'admission_processing_failed' }).eq('id', applicationId);
+    await audit('ISSUANCE_FAILED', `${step}: ${detail}`, decisionId,
+      { from: 'admission_processing', to: 'admission_processing_failed' }, { step });
+    return NextResponse.json(
+      { ok: false, error: `issuance-failed`, step, detail, decisionId, retryable: true },
+      { status },
+    );
+  };
+
+  // =======================================================================
+  // 3b. THE ADMISSION PACKAGE, before anything is created for the student.
   // =======================================================================
   const fullName = [app.first_name, app.middle_name, app.last_name].filter(Boolean).join(' ');
   const intakeYear = Number(app.admission_year) || new Date().getFullYear();
@@ -316,10 +384,7 @@ export async function POST(request: Request) {
     await audit('ADMISSION_LETTER_GENERATED', undefined, decisionId, undefined,
       { programme: programmeCode, mode: packageInput.mode });
   } catch (e) {
-    return NextResponse.json(
-      { ok: false, error: `decision-recorded-but-package-not-generated: ${String(e)}`, decisionId },
-      { status: 500 },
-    );
+    return failIssuance('generate the admission package', String(e));
   }
 
   // =======================================================================
@@ -361,10 +426,10 @@ export async function POST(request: Request) {
     },
   });
   if (authErr || !created?.user?.id) {
-    return NextResponse.json(
-      { ok: false, error: `decision-recorded-but-account-not-created: ${authErr?.message ?? 'no id'}`, decisionId },
-      { status: 500 },
-    );
+    // THE BOUNDARY THE UNIVERSITY ASKED TO BE PROVED. The decision stands, the
+    // letter exists, the number is reserved, and there is no account — so the
+    // record says admission_processing_failed and not a word more.
+    return failIssuance('create the account', authErr?.message ?? 'no id returned');
   }
   const authUserId = created.user.id;
 
@@ -373,10 +438,7 @@ export async function POST(request: Request) {
     { onConflict: 'id' },
   );
   if (profErr) {
-    return NextResponse.json(
-      { ok: false, error: `account-created-but-profile-not-created: ${profErr.message}`, decisionId },
-      { status: 500 },
-    );
+    return failIssuance('create the profile', profErr.message);
   }
   await audit('ACCOUNT_CREATED', studentNumber, decisionId, undefined,
     { student_number: studentNumber });
@@ -412,7 +474,7 @@ export async function POST(request: Request) {
   packageHtml = await admissionPackageHtml(packageInput);
 
   await audit('ADMISSION_PACKAGE_ISSUED', studentNumber, decisionId,
-    { from: newStatus, to: 'admission_issued' }, { student_number: studentNumber });
+    { from: 'admission_processing', to: 'admission_issued' }, { student_number: studentNumber });
 
   // =======================================================================
   // 8. THE EMAIL, LAST. Delivery is the one step whose failure does not

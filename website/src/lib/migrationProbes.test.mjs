@@ -111,8 +111,12 @@ console.log('\nAnd what it cannot see, it says so about\n');
 // Reporting it as applied would be vouching for something never looked at.
 {
   const blind = MIGRATION_PROBES.filter((p) => p.cannotSee);
-  check('the constraint-only migration is named as unverifiable',
-    blind.map((p) => p.file), ['021_signing_key_in_the_store.sql']);
+  // PINNED, so a NEW blind spot has to be added here deliberately rather than
+  // appearing quietly. 026 seeds two rows into an existing table, which the
+  // probe mechanism — which checks for tables and columns — cannot see either.
+  check('the migrations nothing can be read from are named as unverifiable',
+    blind.map((p) => p.file),
+    ['021_signing_key_in_the_store.sql', '026_issuance_is_not_the_decision.sql']);
   check('…and carries the check to run by hand',
     blind.every((p) => /select|pg_constraint/i.test(p.cannotSee)), true);
 }

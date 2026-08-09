@@ -47,17 +47,45 @@ execFileSync('npx', [
 ]);
 const W = await import(out);
 
-const migration = readFileSync(
-  join(here, '../../docs/migrations/024_admission_decision_authority.sql'), 'utf8',
-);
+// EVERY MIGRATION THAT TOUCHES THE VOCABULARY, concatenated. It read only 024,
+// so when 026 added two states and three events the test reported them missing
+// from a database that has them — the check was right, the corpus was short.
+// Anything later that adds a state or an event belongs in this list.
+const MIGRATION_FILES = [
+  '024_admission_decision_authority.sql',
+  '026_issuance_is_not_the_decision.sql',
+].map((f) => readFileSync(join(here, '../../docs/migrations/', f), 'utf8'));
+
+const migration = MIGRATION_FILES.join('\n');
 
 console.log('\nThe states the code knows are the states the database knows\n');
 
-// Only the seeded rows, which carry four columns ending in a sort order. The
-// looser pattern this replaced also matched the stage CHECK constraint's
-// continuation line and reported 'application' as a stray state.
-const inMigration = [...migration.matchAll(/^\s*\('([a-z_]+)',\s*'\w+',\s*'[^']*',\s*\d+\)/gm)]
-  .map((m) => m[1]);
+// A seeded row is a tuple whose SECOND value is one of the six stages. Anchoring
+// on the stage rather than on the column count is what makes this survive 026,
+// which seeds five columns where 024 seeded four — the previous pattern counted
+// columns and reported both new states as missing from a file that has them.
+const STAGES = 'application|verification|academic|issuance|enrolment|closed';
+
+// THE PROOF BLOCKS ARE CUT OUT FIRST. Each migration ends with a section that
+// deliberately attempts what the rules forbid — 026 tries to insert a state
+// called 'invented' and checks that the trigger refuses it — and a scan that
+// read those would report the negative tests as real seeds.
+// EACH FILE IS CUT AT ITS OWN MARKER, then joined. Splitting the concatenated
+// corpus instead dropped whichever half fell between two files' markers — which
+// is where 026's seed lives, so both its states were reported missing from the
+// file that adds them.
+const seedsOnly = MIGRATION_FILES
+  .map((text) => text.split(/-- \d+\. PERFORMING THE RULES/)[0])
+  .join('\n');
+
+// A seeded row is a tuple whose SECOND value is one of the six stages, whose
+// third is a label, and which ends in a sort order. Anchoring on the shape
+// rather than the column count is what makes it survive 026 seeding five
+// columns where 024 seeded four; requiring the trailing number is what keeps
+// the stage CHECK constraint's own list of stages out of the results.
+const inMigration = [...seedsOnly.matchAll(
+  new RegExp(`\\('([a-z_]+)',\\s*'(?:${STAGES})',\\s*'[^']*',\\s*(?:'[^']*',\\s*)?\\d+\\)`, 'g'),
+)].map((m) => m[1]);
 
 check('the migration seeds every state the module declares',
   W.ADMISSION_STATES.filter((s) => !inMigration.includes(s)), []);
@@ -66,9 +94,11 @@ check('…and seeds none the module does not',
 
 console.log('\nAnd the events the route can emit are the events the log accepts\n');
 
-// The CHECK constraint on admission_audit_log.event.
-const eventBlock = /event\s+text not null check \(event in \(([\s\S]*?)\)\)/.exec(migration)?.[1] ?? '';
-const inCheck = [...eventBlock.matchAll(/'([A-Z_]+)'/g)].map((m) => m[1]);
+// EVERY `check (event in (...))` in the corpus, not the first one. 026 widens
+// the constraint with an ALTER rather than restating the CREATE TABLE, so a
+// pattern that stopped at the first block was reading the superseded list.
+const inCheck = [...migration.matchAll(/check \(event in \(([\s\S]*?)\)\)/g)]
+  .flatMap((block) => [...block[1].matchAll(/'([A-Z_]+)'/g)].map((m) => m[1]));
 
 check('every event the module declares is accepted by the constraint',
   W.ADMISSION_EVENTS.filter((e) => !inCheck.includes(e)), []);

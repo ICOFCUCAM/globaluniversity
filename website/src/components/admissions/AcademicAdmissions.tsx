@@ -37,7 +37,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { courses, MODE_LABEL } from '@/content/courses';
 import {
-  ACADEMIC_DECISIONS, DECISION_CHECKS, canDecide,
+  ACADEMIC_DECISIONS, DECISION_CHECKS, canDecide, canRetryIssuance, ISSUANCE_STEPS,
   type AcademicDecision, type DecisionRefusal,
 } from '@/lib/admissionWorkflow';
 import {
@@ -61,6 +61,7 @@ interface Application {
   faculty: string | null;
   campus: string | null;
   status: string | null;
+  intake: string | null;
   fee_registered_at: string | null;
   created_at: string | null;
 }
@@ -78,6 +79,10 @@ export default function AcademicAdmissions({ role }: { role?: UserRole }) {
   const [open, setOpen] = useState<Application | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [busy, setBusy] = useState(false);
+  // The confirmation stands between the button and the six consequences. It is
+  // not ceremony: the action reserves a number, creates an account and issues a
+  // signed document, and none of that is undoable by pressing something else.
+  const [confirming, setConfirming] = useState(false);
   const [result, setResult] = useState<{ tone: 'ok' | 'bad'; text: string } | null>(null);
 
   // The Superadministrator acting here is exercising another office's
@@ -89,8 +94,14 @@ export default function AcademicAdmissions({ role }: { role?: UserRole }) {
   const load = useCallback(async () => {
     const { data, error } = await supabase
       .from('students')
-      .select('id, first_name, last_name, email, matric_no, program, degree_type, faculty, campus, status, fee_registered_at, created_at')
-      .in('status', ['ready_for_academic_review', 'fee_paid', 'documents_verified', 'documents_required'])
+      .select('id, first_name, last_name, email, matric_no, program, degree_type, faculty, campus, status, intake, fee_registered_at, created_at')
+      .in('status', [
+        'ready_for_academic_review', 'fee_paid', 'documents_verified', 'documents_required',
+        // AND THE ONES THAT STOPPED PART WAY. An issuance that failed after the
+        // letter was generated used to leave `approved` — off this queue, out
+        // of sight, recoverable only by editing rows. It belongs here.
+        'admission_processing', 'admission_processing_failed',
+      ])
       .order('fee_registered_at', { ascending: true, nullsFirst: false })
       .limit(100);
     setReachable(!error);
@@ -113,9 +124,18 @@ export default function AcademicAdmissions({ role }: { role?: UserRole }) {
     };
   }, [rows]);
 
-  async function submit() {
-    if (!open || !draft) return;
+  /** Retry the issuance for a row in the queue, without opening the detail. */
+  async function submitFor(a: Application) {
+    await submit(true, a);
+  }
+
+  async function submit(retry = false, target?: Application) {
+    // `open` is set by the caller in the same tick, so a retry launched from a
+    // table row cannot rely on it having been applied yet.
+    const subject = target ?? open;
+    if (!subject || (!draft && !retry)) return;
     setBusy(true);
+    setConfirming(false);
     setResult(null);
     const { data: sess } = await supabase.auth.getSession();
     const token = sess.session?.access_token;
@@ -126,29 +146,48 @@ export default function AcademicAdmissions({ role }: { role?: UserRole }) {
         'content-type': 'application/json',
         ...(token ? { authorization: `Bearer ${token}` } : {}),
       },
+      // THE BROWSER ASKS; IT DOES NOT DECIDE. Nothing here names the approver,
+      // the role, the student number or the resulting status — the server reads
+      // the caller from the token, re-reads the application, re-checks the
+      // programme gate, and determines every one of those itself.
       body: JSON.stringify({
-        applicationId: open.id,
-        decision: draft.decision,
-        reason: draft.reason.trim() || undefined,
-        overrideReason: isOverride ? draft.overrideReason.trim() : undefined,
+        applicationId: subject.id,
+        decision: draft?.decision ?? 'approve',
+        reason: draft?.reason.trim() || undefined,
+        overrideReason: isOverride ? draft?.overrideReason.trim() : undefined,
+        retry: retry || undefined,
       }),
     });
     const json = await res.json().catch(() => ({}));
     setBusy(false);
 
     if (!json?.ok) {
-      // The server's refusal, in the words the workflow module holds — so the
-      // screen and the route cannot drift into explaining it differently.
+      // An ISSUANCE that failed is not a refusal — the decision stands and the
+      // record says so. Say which step stopped, and that it can be retried.
+      if (json?.error === 'issuance-failed') {
+        setResult({
+          tone: 'bad',
+          text: `The decision is recorded, but the University could not ${json.step}: ${json.detail}. `
+            + 'The application is marked "Issuance failed" and can be retried from this queue — '
+            + 'nothing needs to be corrected by hand.',
+        });
+        load();
+        return;
+      }
+      // Otherwise the server's refusal, in the words the workflow module holds,
+      // so the screen and the route cannot explain it differently.
       const known = DECISION_CHECKS[json?.error as DecisionRefusal];
       setResult({ tone: 'bad', text: known ?? `The decision was refused: ${json?.error ?? 'unknown'}` });
+      load();
       return;
     }
 
+    const label = draft ? ACADEMIC_DECISIONS[draft.decision].label : 'Issuance';
     setResult({
       tone: 'ok',
       text: json.emailSent === false
         ? `Recorded. The admission package could not be emailed — student number ${json.studentNumber}, temporary password ${json.password}. Pass these on directly.`
-        : `${ACADEMIC_DECISIONS[draft.decision].label} recorded${json.studentNumber ? ` — student number ${json.studentNumber}` : ''}.`,
+        : `${label} recorded${json.studentNumber ? ` — student number ${json.studentNumber}` : ''}.`,
     });
     setOpen(null);
     setDraft(null);
@@ -247,16 +286,32 @@ export default function AcademicAdmissions({ role }: { role?: UserRole }) {
                     <Td>{a.fee_registered_at ? 'Confirmed' : 'Not confirmed'}</Td>
                     <Td>{a.status}</Td>
                     <Td align="right">
-                      <button
-                        onClick={() => {
-                          setOpen(a);
-                          setDraft({ decision: 'approve', reason: '', overrideReason: '' });
-                          setResult(null);
-                        }}
-                        className={`${BTN_SECONDARY} px-3 py-1.5 text-xs`}
-                      >
-                        Review
-                      </button>
+                      {/* AN ISSUANCE THAT STOPPED PART WAY IS RETRIED, NOT
+                          RE-DECIDED. The decision was validly taken and is
+                          immutable; this resumes underneath it. Before the
+                          issuance states existed these applications sat in
+                          `approved`, off this queue, and the only way back was
+                          editing rows in the SQL editor. */}
+                      {canRetryIssuance(a.status) ? (
+                        <button
+                          onClick={() => { setOpen(a); setDraft(null); setResult(null); submitFor(a); }}
+                          disabled={busy}
+                          className={`${BTN_PRIMARY} px-3 py-1.5 text-xs`}
+                        >
+                          Retry issuance
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setOpen(a);
+                            setDraft({ decision: 'approve', reason: '', overrideReason: '' });
+                            setResult(null);
+                          }}
+                          className={`${BTN_SECONDARY} px-3 py-1.5 text-xs`}
+                        >
+                          Review
+                        </button>
+                      )}
                     </Td>
                   </tr>
                 );
@@ -341,7 +396,9 @@ export default function AcademicAdmissions({ role }: { role?: UserRole }) {
 
             <div className="flex flex-wrap gap-2 border-t border-[#f0ece4] pt-4 dark:border-[#2a2333]">
               <button
-                onClick={submit}
+                onClick={() => (
+                  ['approve', 'conditional'].includes(draft.decision) ? setConfirming(true) : submit()
+                )}
                 disabled={busy || !!overrideTooShort}
                 className={draft.decision === 'reject' ? BTN_DANGER : BTN_PRIMARY}
               >
@@ -355,6 +412,53 @@ export default function AcademicAdmissions({ role }: { role?: UserRole }) {
             </div>
           </div>
         </Card>
+      )}
+
+      {/* ------------------------------------------------------------------
+          CONFIRM ACADEMIC ADMISSION.
+
+          Six consequences, named, before the button that causes them. The
+          University asked for this and it is right: the action reserves a
+          number, creates an account and issues a signed document under the
+          Head of Academic Affairs' signature, and none of it is undone by
+          pressing something else afterwards — a reversal is a second decision,
+          permanently beside the first.
+          ------------------------------------------------------------------ */}
+      {confirming && open && draft && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-[#1f1a27]">
+            <h2 className="font-heading text-lg font-bold text-[#422e59] dark:text-[#e4dcf0]">
+              Confirm academic admission
+            </h2>
+            <p className={`mt-2 text-sm leading-relaxed ${TEXT.body}`}>
+              You are approving{' '}
+              <strong>{[open.first_name, open.last_name].filter(Boolean).join(' ') || 'this applicant'}</strong>{' '}
+              for admission to <strong>{open.program ?? 'the named programme'}</strong>
+              {open.intake ? <> for the <strong>{open.intake}</strong> session</> : null}.
+            </p>
+            <p className={`mt-3 text-xs font-semibold uppercase tracking-[0.12em] ${TEXT.faint}`}>
+              This action will
+            </p>
+            <ul className={`mt-2 space-y-1.5 text-sm ${TEXT.muted}`}>
+              {ISSUANCE_STEPS.map((step) => (
+                <li key={step} className="flex items-start gap-2">
+                  <span aria-hidden="true" className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#c5a55a]" />
+                  {step.charAt(0).toUpperCase() + step.slice(1)}
+                </li>
+              ))}
+              <li className="flex items-start gap-2">
+                <span aria-hidden="true" className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#c5a55a]" />
+                Record this permanently in the audit trail, against your name and office
+              </li>
+            </ul>
+            <div className="mt-6 flex flex-wrap justify-end gap-2">
+              <button onClick={() => setConfirming(false)} className={BTN_SECONDARY}>Cancel</button>
+              <button onClick={() => submit()} disabled={busy} className={BTN_PRIMARY}>
+                {busy ? <><Loader2 size={15} className="animate-spin" /> Working…</> : 'Approve & issue admission'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

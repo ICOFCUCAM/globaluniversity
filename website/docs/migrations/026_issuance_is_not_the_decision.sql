@@ -1,43 +1,4 @@
 -- ===========================================================================
--- ICOF GLOBAL UNIVERSITY — MIGRATIONS 026, IN ORDER
---
--- GENERATED FILE. DO NOT EDIT.
---   Generator: scripts/build-migration-run.mjs
---   Rebuild:   node scripts/build-migration-run.mjs --out=RUN-OUTSTANDING.sql 026
---
--- ---------------------------------------------------------------------------
--- HOW TO RUN IT
---
--- Supabase SQL editor: paste the whole file and run once.
--- psql:                psql "<connection string>" -f docs/migrations/RUN-OUTSTANDING.sql
---
--- Every migration in it is idempotent and destroys nothing, so running it twice
--- is safe. It is NOT wrapped in a transaction: each file is written to run
--- statement by statement, and wrapping them would mean a failure in the last
--- one silently undid the first.
---
--- ---------------------------------------------------------------------------
--- WHAT TO EXPECT IN THE OUTPUT
---
--- Some of these raise NOTICE deliberately — they report on the state they
--- found rather than changing it silently. A notice is information, not a
--- warning. An ERROR is a real failure and stops the run.
---
--- ---------------------------------------------------------------------------
--- AFTERWARDS
---
--- Run docs/migrations/VERIFY.sql to see what landed.
--- ===========================================================================
-
--- ===========================================================================
--- ===========================================================================
---
---   026_issuance_is_not_the_decision.sql
---
--- ===========================================================================
--- ===========================================================================
-
--- ===========================================================================
 -- 026 — "THE HEAD APPROVED" AND "THE UNIVERSITY ISSUED" ARE TWO EVENTS
 --
 -- Run after 025. Idempotent; destroys nothing. Safe on a live database.
@@ -248,4 +209,3 @@ select s.student_number, s.first_name, s.last_name, s.status, s.program
 from students s
 where s.status in ('approved', 'admission_processing', 'admission_processing_failed')
 order by s.decided_at desc nulls last;
-

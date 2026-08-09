@@ -82,7 +82,20 @@ export const ADMISSION_STATES = [
   /** Sent back to the Admissions Office with a reason. */
   'returned',
   // ---- Issuance and enrolment -----------------------------------------
-  /** The package exists and the account has been created. */
+  // ---------------------------------------------------------------------
+  // THE DECISION AND THE ISSUANCE ARE TWO EVENTS.
+  //
+  // `approved` was carrying both: "the Head approved this applicant" and "the
+  // University completed the issuance". They come apart the moment a package
+  // fails to generate or an account fails to create — the decision stands and
+  // nothing was issued, and calling that `approved` made a half-finished
+  // admission indistinguishable from an untouched one.
+  // ---------------------------------------------------------------------
+  /** Issuance is under way: package, number, account. */
+  'admission_processing',
+  /** Issuance stopped part way. Recoverable, and retried from the desk. */
+  'admission_processing_failed',
+  /** The package exists and the account behind it does too. */
   'admission_issued',
   /** The Registrar has completed enrolment. */
   'enrolled',
@@ -126,8 +139,31 @@ export const DECIDABLE_FROM: AdmissionState[] = [
 
 /** Terminal, as far as the academic decision is concerned. */
 export const ALREADY_DECIDED: AdmissionState[] = [
-  'approved', 'conditional', 'rejected', 'admission_issued', 'enrolled',
+  'approved', 'conditional', 'rejected',
+  'admission_processing', 'admission_processing_failed',
+  'admission_issued', 'enrolled',
 ];
+
+/**
+ * States an issuance can be RESUMED from.
+ *
+ * The decision is not re-taken. It was validly taken the first time and it is
+ * immutable; a retry resumes the issuance under the decision that already
+ * exists — which is why the trail shows one approval and two issuance attempts
+ * rather than two approvals.
+ *
+ * `approved` is here because a database that has not had migration 026 leaves a
+ * failed issuance in that state, and those applications must still be
+ * recoverable from the desk rather than by hand in the SQL editor.
+ */
+export const RESUMABLE_FROM: AdmissionState[] = [
+  'approved', 'conditional', 'admission_processing', 'admission_processing_failed',
+];
+
+/** Can the issuance be retried without taking the decision again? */
+export function canRetryIssuance(state: string | null | undefined): boolean {
+  return RESUMABLE_FROM.includes(state as AdmissionState);
+}
 
 /**
  * Every event appended to the trail.
@@ -146,6 +182,9 @@ export const ADMISSION_EVENTS = [
   'ACADEMIC_CONDITIONALLY_APPROVED',
   'ACADEMIC_REJECTED',
   'ACADEMIC_RETURNED',
+  'ISSUANCE_STARTED',
+  'ISSUANCE_FAILED',
+  'ISSUANCE_RETRIED',
   'ADMISSION_LETTER_GENERATED',
   'ADMISSION_PACKAGE_ISSUED',
   'ACCOUNT_CREATED',
@@ -234,7 +273,12 @@ export const APPLICANT_STAGES = [
   { key: 'documents', label: 'Documents verified', states: ['documents_required', 'documents_verified'] },
   { key: 'review', label: 'Under academic review', states: ['fee_pending', 'fee_paid', 'ready_for_academic_review'] },
   { key: 'decision', label: 'Decision made', states: ['approved', 'conditional', 'rejected', 'returned'] },
-  { key: 'documents-issued', label: 'Admission letter available', states: ['admission_issued'] },
+  // The applicant is told "Admission approved" while issuance is in progress or
+  // being retried. The academic decision in their favour is not in doubt; that
+  // an internal step needs another attempt is the University's problem to
+  // solve, not news to break to them while it is being solved.
+  { key: 'documents-issued', label: 'Admission letter available',
+    states: ['admission_processing', 'admission_processing_failed', 'admission_issued'] },
   { key: 'enrolment', label: 'Ready for enrolment', states: ['enrolled'] },
 ] as const;
 
