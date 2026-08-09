@@ -137,6 +137,13 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
     table: 'credential_templates',
     column: 'published_without_approval',
   },
+  {
+    file: '023_programme_application_approval.sql',
+    what: 'Which programmes may accept applications, who authorised each, and every change since.',
+    // The trail rather than the openings table: 008 created that one, so its
+    // presence would report 023 as run on a database that has only had 008.
+    table: 'admission_opening_events',
+  },
 ];
 
 /** What a probe came back as. */

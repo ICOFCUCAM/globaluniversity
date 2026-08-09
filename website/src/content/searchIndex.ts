@@ -1,6 +1,6 @@
 // Static search index for the public site. Kept alongside the content
 // modules so a new page is one entry away from being findable.
-import { courses } from './courses';
+import { courses, MODE_LABEL } from './courses';
 import { contentPages, degreeLevels } from './pages';
 import { programs } from './site';
 import { facultyList } from './faculties';
@@ -111,6 +111,6 @@ export const searchIndex: SearchEntry[] = [
     title: c.title,
     href: '/courses',
     section: `Course · ${c.code}`,
-    text: `${c.level} ${c.faculty} ${c.summary} ${c.online ? 'online' : 'on campus'}`,
+    text: `${c.level} ${c.faculty} ${c.summary} ${MODE_LABEL[c.mode]}`,
   })),
 ];

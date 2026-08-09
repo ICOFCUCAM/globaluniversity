@@ -3,7 +3,7 @@ import PageBanner from '@/components/PageBanner';
 import { Section } from '@/components/Section';
 import Cta from '@/components/Cta';
 import CourseCatalogue from '@/components/CourseCatalogue';
-import { courses } from '@/content/courses';
+import { courses, isOnline } from '@/content/courses';
 
 export const metadata: Metadata = {
   title: 'Course Catalogue',
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 };
 
 export default function CoursesPage() {
-  const onlineCount = courses.filter((c) => c.online).length;
+  const onlineCount = courses.filter(isOnline).length;
   const ld = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',

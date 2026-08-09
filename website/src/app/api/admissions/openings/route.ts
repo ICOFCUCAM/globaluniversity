@@ -28,11 +28,25 @@ export const runtime = 'nodejs';
 export const revalidate = 60;
 
 export interface Opening {
-  kind: 'level' | 'field';
+  /**
+   * 'programme' is the grain the University governs at: the Director of
+   * Academic Affairs ticks the named programmes authorised to accept
+   * applications, and one that is not ticked stays closed even though the
+   * catalogue still lists it. 'level' and 'field' are migration 008's coarser
+   * gates and still apply.
+   */
+  kind: 'level' | 'field' | 'programme';
+  /** For a programme this is the course CODE, which is its stable name. */
   label: string;
   faculty: string | null;
   open: boolean;
   note: string | null;
+  /** Who authorised it, and when. Null on anything never ticked. */
+  approved_by_email?: string | null;
+  approved_at?: string | null;
+  /** Who last changed it, which is not always who approved it. */
+  updated_by_email?: string | null;
+  updated_at?: string | null;
 }
 
 function anonClient() {
@@ -47,16 +61,32 @@ export async function GET() {
 
   const { data, error } = await db
     .from('admission_openings')
-    .select('kind, label, faculty, open, note')
+    .select('kind, label, faculty, open, note, approved_by_email, approved_at, updated_by_email, updated_at')
     .order('kind')
     .order('label');
 
   if (error) {
+    // MIGRATION 008 RUN BUT NOT 023 is a real state, and it looks identical to
+    // "table absent" unless it is asked about: the approval columns are missing
+    // so the select above fails, and reporting that as unconfigured would take
+    // the LEVEL and FIELD gates out of service too. So it retries without them.
+    const retry = await db
+      .from('admission_openings')
+      .select('kind, label, faculty, open, note')
+      .order('kind')
+      .order('label');
+    if (!retry.error) {
+      return NextResponse.json({
+        ok: true, configured: true, approvalTrail: false, openings: (retry.data ?? []) as Opening[],
+      });
+    }
     // Table absent, or unreadable. Report it and let the caller fall back to
     // offering everything — see the header.
     return NextResponse.json({ ok: true, configured: false, openings: [], detail: error.message });
   }
-  return NextResponse.json({ ok: true, configured: true, openings: (data ?? []) as Opening[] });
+  return NextResponse.json({
+    ok: true, configured: true, approvalTrail: true, openings: (data ?? []) as Opening[],
+  });
 }
 
 export async function PATCH(request: Request) {
@@ -84,23 +114,67 @@ export async function PATCH(request: Request) {
   // An update that matches nothing is a no-op, which is the safe failure.
   let changed = 0;
   const missing: string[] = [];
+  const now = new Date().toISOString();
+
   for (const c of changes) {
+    const open = !!c.open;
+
+    // ---------------------------------------------------------------------
+    // WHO APPROVED IT IS NOT THE SAME QUESTION AS WHO TOUCHED IT LAST.
+    //
+    // `updated_by` answers the second and was the only thing recorded. The
+    // University asked for both: who authorised the programme, when, and who
+    // changed its status afterwards. So opening it STAMPS THE APPROVAL, and
+    // closing it leaves that stamp alone — the record of who opened it in the
+    // first place is exactly what an audit is asking for, and wiping it on
+    // close would destroy the answer at the moment it becomes interesting.
+    // ---------------------------------------------------------------------
+    const patch: Record<string, unknown> = {
+      open,
+      note: c.note ?? null,
+      updated_by: caller.id,
+      updated_by_email: caller.email ?? null,
+      updated_at: now,
+    };
+    if (open) {
+      patch.approved_by = caller.id;
+      patch.approved_by_email = caller.email ?? null;
+      patch.approved_at = now;
+    }
+
     const { data, error } = await admin
       .from('admission_openings')
-      .update({
-        open: !!c.open,
-        note: c.note ?? null,
-        updated_by: caller.id,
-        updated_at: new Date().toISOString(),
-      })
+      .update(patch)
       .eq('kind', c.kind)
       .eq('label', c.label)
-      .select('id');
+      .select('id, open');
     if (error) {
       return NextResponse.json({ ok: false, error: `update-failed: ${error.message}` }, { status: 500 });
     }
-    if (!data || data.length === 0) missing.push(`${c.kind}:${c.label}`);
-    else changed += data.length;
+    if (!data || data.length === 0) { missing.push(`${c.kind}:${c.label}`); continue; }
+    changed += data.length;
+
+    // The trail. Appended after the row is known to have changed, so it never
+    // claims a decision that did not land. A failure to write it is reported
+    // rather than swallowed: an approval nobody can account for afterwards is
+    // the thing this table exists to prevent.
+    const { error: trailError } = await admin.from('admission_opening_events').insert(
+      data.map((row: { id: string }) => ({
+        opening_id: row.id,
+        kind: c.kind,
+        label: c.label,
+        action: open ? 'opened' : 'closed',
+        actor_id: caller.id,
+        actor_email: caller.email ?? null,
+        actor_role: caller.role ?? null,
+        note: c.note ?? null,
+      })),
+    );
+    if (trailError && !/does not exist|schema cache/i.test(trailError.message)) {
+      return NextResponse.json(
+        { ok: false, error: `trail-failed: ${trailError.message}` }, { status: 500 },
+      );
+    }
   }
 
   return NextResponse.json({
