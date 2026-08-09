@@ -397,3 +397,84 @@ select (select count(*) from pg_policies
        (select count(*) from pg_trigger t join pg_class c on c.oid = t.tgrelid
          where c.relname = 'students' and t.tgname = 'students_guard_delete'
            and not t.tgisinternal)                                 as guard_trigger;
+
+-- 28. THE UNIVERSITY HAS NOT RULED, AND THE SYSTEM SAYS SO.            (019)
+--
+-- Expect: repeat_rule NULL, repeat_rule_confirmed false, both standing
+-- thresholds NULL, standing_confirmed false — until the University rules.
+--
+-- THIS IS THE ONE CHECK IN THIS FILE WHERE NULL IS THE CORRECT ANSWER, and it
+-- is here so the absence stays visible. A default of 'latest-replaces' would
+-- quietly raise the GPA of every student who has ever failed anything under a
+-- rule nobody made; a warning threshold of 2.00 would be a real number at a
+-- real university and not this one's.
+--
+-- When these become non-null, that is the University having decided. Until
+-- then, every attempt at a repeated course counts and is printed, and no
+-- transcript shows an academic standing.
+select repeat_rule, repeat_rule_confirmed,
+       standing_warning_below, standing_probation_below, standing_confirmed,
+       ruled_on, ruled_by
+  from academic_policy;
+
+-- 29. THE ACADEMIC RECORD CANNOT BE QUIETLY REWRITTEN.                 (019)
+--
+-- Expect: standing_trigger = 1, and zero rows from the second query.
+--
+-- A standing event that can be edited after the fact is not a record of what
+-- the University decided; it is a record of what somebody last wanted it to
+-- say. And an accepted transfer credit with nobody's name against the decision
+-- is a credit on a sealed transcript that nobody can be asked about.
+select (select count(*) from pg_trigger t join pg_class c on c.oid = t.tgrelid
+         where c.relname = 'academic_standing_events'
+           and t.tgname = 'academic_standing_events_no_update'
+           and not t.tgisinternal)                       as standing_trigger,
+       (select count(*) from academic_standing_events)   as standing_events,
+       (select count(*) from transfer_credits)           as transfer_credits,
+       (select count(*) from graduation_records)         as conferrals;
+
+-- Any accepted transfer credit with no decider, and any conferral that
+-- precedes its own Senate resolution. Both are refused by constraints, so a
+-- row here means a constraint was dropped.
+select id, institution, course_title
+  from transfer_credits
+ where accepted and (decided_by is null or decided_on is null)
+union all
+select id, 'CONFERRAL BEFORE SENATE APPROVAL', classification
+  from graduation_records
+ where conferred_on < senate_approved_on;
+
+-- 30. THE CREDENTIALS THAT CARRY A SIGNATURE, AND THOSE THAT DO NOT.   (020)
+--
+-- Expect: `unsigned` falls to zero once CREDENTIAL_SIGNING_KEY is set and the
+-- backfill has been run from Credentials → Register. Until then it equals the
+-- number of credentials issued before the key existed.
+--
+-- AN UNSIGNED CREDENTIAL IS NOT AN INVALID ONE. It carries the University's
+-- seal and verifies through /verify exactly as it always did; it simply cannot
+-- be checked by a stranger without asking this website.
+select count(*)                                      as credentials,
+       count(*) filter (where signature is not null) as signed,
+       count(*) filter (where signature is null)     as unsigned,
+       count(distinct signing_key_id)                as keys_used,
+       count(*) filter (where status = 'void')       as voided
+  from credentials_issued;
+
+-- 31. A VOID DOCUMENT SAYS WHY, AND A PUBLISHED SCALE CANNOT BE EDITED. (020)
+--
+-- Expect: zero rows from the first query, and exactly one active scale with no
+-- award_kind — the University-wide one — from the second.
+--
+-- A void with no reason is a document that vanished from use with nobody
+-- accountable for it. Two active scales is two answers to "what is a B", and
+-- which one applied would depend on row order.
+select credential_id, status, void_reason
+  from credentials_issued
+ where status = 'void'
+   and (void_reason is null or length(btrim(void_reason)) < 12
+        or voided_by is null or voided_at is null);
+
+select name, version, award_kind, pass_mark, max_point,
+       jsonb_array_length(bands) as bands, is_active, published_at
+  from grading_scales
+ order by award_kind nulls first, name, version;

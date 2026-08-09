@@ -111,49 +111,55 @@ as published.
 
 ## 2. Migrations, in order
 
-### First: ask the database what it is missing
+### Just run `RUN-ALL.sql`. It does not matter what state you are in.
 
-Do not work from memory, and do not work from this list. **Run
-`docs/migrations/WHAT-IS-OUTSTANDING.sql`** and let the database answer.
-
-It reads only — nothing is created, written or altered — and returns one row
-per migration marked `RUN`, `NOT RUN` or `skip`, followed by a single verdict
-line naming the outstanding files in the order to run them.
-
-It exists because nothing tracks these files. Supabase's own migration table
-records only what its CLI applied, and every one of these was run by hand in
-the SQL editor, so it has no record of them. The alternative — asking somebody
-which files they remember running — is worse than it sounds: a migration
-missed is a policy that was never created, and a policy that does not exist
-refuses exactly like a policy that does. Nothing looks wrong until the day
-somebody needs it to permit something.
-
-Each row probes for an object only that migration creates: a table, a policy, a
-function, a column, or for 011 and 012 the data the file writes. It cannot tell
-you a migration ran *completely* — a file that failed halfway may still have
-created the object it looks for — which is what `VERIFY.sql` is for, below.
-
-### Then: run what it named
-
-**On a database that is already live, run one file: `docs/migrations/RUN.sql`.**
-It carries 006 and 010 through 018 in order. Paste the whole file into the
-Supabase SQL editor and run it once, or
+One file, `docs/migrations/RUN-ALL.sql`: every migration from 000 to 020, in
+order. Paste the whole thing into the Supabase SQL editor and press Run, or
 
 ```
-psql "<connection string>" -f docs/migrations/RUN.sql
+psql "<connection string>" -f docs/migrations/RUN-ALL.sql
 ```
 
-Every migration in it is idempotent and destroys nothing, so running it twice is
-safe, and so is running it when some of it has already landed. It is
-deliberately **not** wrapped in a transaction: each file runs statement by
-statement, and wrapping them would mean a failure in the last one silently
-undoing the first.
+**It is safe on a database at any stage**, including one that already has
+everything. Every migration in it is idempotent and destroys nothing, so a file
+that has already run does nothing the second time. Tested from three starting
+states — empty, stopped at 018, and fully current — with zero errors from each.
 
-**On an empty project, run `docs/migrations/RUN-ALL.sql` instead** — 000 through
-018. Read its header first: 000 appoints two administrators and can only appoint
-accounts that already exist, so create them in Authentication → Users first.
+THIS PAGE USED TO SAY SOMETHING DIFFERENT AND WORSE. It said to run `RUN.sql`
+on a live database and `RUN-ALL.sql` only on an empty one. `RUN.sql` carries 006
+and 010 onwards and assumes 003, 004, 005, 007, 008 and 009 have already
+landed — so on a database that was behind in a way nobody had checked, it fails
+partway with half the work done. Measured, not guessed: against a database
+missing the early files, `RUN.sql` produced **178 errors** and `RUN-ALL.sql`
+produced none. Choosing between two files requires knowing
+something the reader is reading this page to find out. `RUN.sql` is still in the
+repository for anyone who wants the shorter file, but it is no longer the
+recommendation and nothing here asks you to decide.
 
-Afterwards run `docs/migrations/VERIFY.sql`, which makes 27 checks and reports
+On an EMPTY project, read the header of `RUN-ALL.sql` first: 000 appoints two
+administrators and can only appoint accounts that already exist, so create them
+in Authentication → Users before running it. Running it before they exist is
+harmless — it appoints nobody, and you re-run that section afterwards.
+
+### If you want to know what is outstanding before you run anything
+
+`docs/migrations/WHICH-ONES.sql` — twenty-five lines, reads only, and returns a
+single row naming the files that have not landed, or "Nothing outstanding."
+
+`docs/migrations/WHAT-IS-OUTSTANDING.sql` is the longer form: one row per
+migration marked `RUN` / `NOT RUN` / `skip`, with what each one does.
+
+Neither is required. `RUN-ALL.sql` reaches the same place without asking you to
+read a report first — they exist because "which of these has been run" is a
+reasonable question to want answered, not because you have to answer it.
+
+They exist at all because nothing tracks these files: Supabase's own migration
+table records only what its CLI applied, and every one of these was run by hand
+in the SQL editor. Working from memory is worse than it sounds — a missed
+migration is a policy that was never created, and a policy that does not exist
+refuses exactly like a policy that does.
+
+Afterwards run `docs/migrations/VERIFY.sql`, which makes 31 checks and reports
 what actually landed rather than what should have. Where
 `WHAT-IS-OUTSTANDING.sql` asks whether a migration ran, this asks whether its
 guarantees hold — that examination evidence cannot be rewritten, that nobody
