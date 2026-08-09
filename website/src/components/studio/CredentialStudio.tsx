@@ -1217,6 +1217,9 @@ function Readiness() {
   const [items, setItems] = React.useState<
     { id: string; label: string; state: string; detail: string; remedy?: string }[] | null
   >(null);
+  const [migrations, setMigrations] = React.useState<
+    { file: string; what: string; state: string; checkByHand?: string }[]
+  >([]);
   const [problem, setProblem] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -1227,7 +1230,7 @@ function Readiness() {
       const res = await fetch('/api/admin/readiness', {
         headers: { authorization: `Bearer ${token}` },
       }).then((r) => r.json()).catch(() => null);
-      if (res?.ok) setItems(res.items);
+      if (res?.ok) { setItems(res.items); setMigrations(res.migrations ?? []); }
       else setProblem(res?.error ?? 'The readiness check could not be run.');
     })();
   }, []);
@@ -1279,6 +1282,51 @@ function Readiness() {
             </li>
           ))}
         </ul>
+      )}
+
+      {/* --- WHAT THE DATABASE IS MISSING ----------------------------------
+          The University asked why it always had to ask for the migrations. It
+          should not have to: the list lived in a commit message, so finding out
+          what was outstanding meant one person asking another. The database is
+          asked instead, and this is the answer. */}
+      {migrations.length > 0 && (
+        <div className="rounded-xl border border-[#ded6c8] bg-white p-4 dark:border-[#3d3349] dark:bg-[#241d30]">
+          <h3 className="text-sm font-semibold text-[#33234a] dark:text-[#e4dcf0]">
+            Database migrations
+          </h3>
+          <p className="mt-1 text-xs leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">
+            Read from the database itself, not from a note. Anything outstanding is listed with
+            what it adds; run <code>docs/migrations/RUN-ALL.sql</code> in the Supabase SQL editor
+            and every one of them is applied in order. It is safe whatever state the database is
+            in — each migration changes nothing on a second run.
+          </p>
+          <ul className="mt-3 space-y-1.5">
+            {migrations.map((m) => (
+              <li key={m.file} className="flex items-start gap-2 text-xs leading-relaxed">
+                <span className={`mt-0.5 shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold ${
+                  m.state === 'applied' ? 'bg-emerald-100 text-emerald-700'
+                    : m.state === 'outstanding' ? 'bg-red-100 text-red-700'
+                      : 'bg-amber-100 text-amber-800'
+                }`}>
+                  {m.state === 'applied' ? 'run'
+                    : m.state === 'outstanding' ? 'NOT RUN'
+                      : m.state === 'unverifiable' ? 'check by hand' : 'unknown'}
+                </span>
+                <span className="text-[#4a4155] dark:text-[#c8c1d4]">
+                  <span className="font-mono">{m.file}</span> — {m.what}
+                  {/* NAMED RATHER THAN ASSUMED. A screen that says "all clear"
+                      about something it never looked at is worse than one that
+                      admits the gap. */}
+                  {m.checkByHand && (
+                    <span className="mt-0.5 block font-mono text-[10px] text-[#8a8194]">
+                      {m.checkByHand}
+                    </span>
+                  )}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </div>
   );
