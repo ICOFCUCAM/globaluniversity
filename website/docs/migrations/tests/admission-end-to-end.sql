@@ -1,9 +1,34 @@
 -- ===========================================================================
 -- THE END-TO-END ADMISSION, AND THE SIX WAYS IT CAN GO WRONG.
 --
--- Not part of any migration. Run against a scratch database to prove that the
--- guarantees the workflow claims are guarantees the database actually keeps.
+-- ---------------------------------------------------------------------------
+-- THIS FILE NEVER LEAVES ANYTHING BEHIND, ANYWHERE.
+-- ---------------------------------------------------------------------------
+--
+-- It is wrapped in an explicit transaction that ENDS IN ROLLBACK. Not "run it
+-- on a scratch database" — that instruction was in a chat message and the file
+-- was run on production, which is exactly what an instruction that lives
+-- outside the artefact is worth.
+--
+-- Everything below is performed for real: rows inserted, a decision recorded, a
+-- student number reserved, guards deliberately broken to watch them refuse. And
+-- then the whole transaction is discarded, so the database is in precisely the
+-- state it was in before, including the student-number counter.
+--
+-- This is the same manoeuvre every migration in this folder uses to prove its
+-- own rules, and it should have been used here from the start.
+--
+-- The earlier version cleaned up with DELETEs instead, and could not: an
+-- applicant carrying an admission decision cannot be deleted (the append-only
+-- trigger fires on the cascade), and migration 018 refuses to delete an
+-- admitted student outright. Both refusals are correct. A test that has to
+-- defeat the system's own guards to tidy up after itself is a test written the
+-- wrong way round.
+--
+-- Safe to run on production. Nothing it does survives the last line.
 -- ===========================================================================
+
+begin;
 
 do $$
 declare
@@ -169,21 +194,19 @@ begin
     -- decision, and a decision makes the applicant undeletable.
   end;
 
-  -- Clean up. The trails refuse deletes, so the triggers come off briefly.
-  alter table admission_audit_log disable trigger admission_audit_log_no_change;
-  alter table admission_decisions disable trigger admission_decisions_no_change;
-  delete from admission_audit_log where application_id in
-    (select id from students where matric_no like 'E2E-%');
-  delete from admission_decisions where application_id in
-    (select id from students where matric_no like 'E2E-%');
-  -- THE STUDENT ROW IS DELETED WHILE THE TRIGGERS ARE STILL OFF, and the
-  -- reason is a property worth knowing about: admission_decisions cascades on
-  -- students, and the append-only trigger fires on the CASCADE too. So once an
-  -- application carries a decision, DELETING THE APPLICANT IS REFUSED — an
-  -- admission cannot be erased by removing the person it was granted to.
-  delete from students where matric_no like 'E2E-%';
-  alter table admission_decisions enable trigger admission_decisions_no_change;
-  alter table admission_audit_log enable trigger admission_audit_log_no_change;
+  -- NO CLEANUP HERE. The rollback at the foot of the file discards every row
+  -- this block wrote, which is both simpler and stronger than deleting them —
+  -- and it does not require disabling the append-only triggers, which is a
+  -- manoeuvre no test should be performing on a live database.
 
   raise notice 'ALL SIX FAILURE CASES BEHAVE AS THEY SHOULD.';
 end $$;
+
+-- ===========================================================================
+-- DISCARD EVERYTHING.
+--
+-- The notices above are the result. Nothing else survives this line — no test
+-- applicant, no decision, no audit entry, and no consumed student number.
+-- ===========================================================================
+
+rollback;
