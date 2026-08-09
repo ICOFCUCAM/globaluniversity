@@ -296,9 +296,36 @@ console.log('\nWhat the Authority may do depends on the state of the document\n'
 
 const cur = { ...created, state: 'current' };
 check(
-  'the Authority may amend, reissue, revoke, print and email a current credential',
+  'the Authority may amend, reissue, revoke, void, print and email a current credential',
   A.actionsFor(cur, 'superadmin').sort(),
-  ['amend', 'email', 'print', 'reissue', 'revoke', 'verify', 'view'],
+  ['amend', 'email', 'print', 'reissue', 'revoke', 'verify', 'view', 'void'],
+);
+// VOID AND REVOKE ARE BOTH OFFERED, AND THAT IS THE POINT. Revoking withdraws
+// the award and marks the holder; voiding says the University issued the
+// document in error and the holder is not at fault. A screen offering only one
+// of them is how a registry's own mistake ends up recorded against a student.
+check(
+  'and both of them, so a clerical error is never recorded as a finding',
+  ['revoke', 'void'].filter((a) => !A.actionsFor(cur, 'superadmin').includes(a)),
+  [],
+);
+check(
+  'a void document may be viewed and verified — that is how the void reaches its holder',
+  A.actionsFor({ ...cur, state: 'void' }, 'superadmin').sort(),
+  ['verify', 'view'],
+);
+// NO FRESH COPIES OF A DOCUMENT WITHDRAWN AS AN ERROR. Printing one would put
+// the error back into the world.
+check(
+  '…and cannot be printed or emailed',
+  ['print', 'email'].filter((a) => A.actionsFor({ ...cur, state: 'void' }, 'superadmin').includes(a)),
+  [],
+);
+// THE REGISTRAR ISSUES AND DELIVERS; THEY DO NOT WITHDRAW.
+check(
+  'the Registrar may not void',
+  A.actionsFor(cur, 'registrar').includes('void'),
+  false,
 );
 check(
   'a superseded version may be viewed, verified and printed — but never amended again',

@@ -194,7 +194,10 @@ export function standingOf(type: Pick<CredentialType, 'category'>): string {
 // 2. VERSIONS — "Never destroy the previous certificate"
 // ---------------------------------------------------------------------------
 
-export type VersionState = 'current' | 'superseded' | 'revoked';
+// 'void' is a state of the DOCUMENT; the other three are states of the award.
+// Kept in the same union because the register holds one status column, and
+// separating them into two would mean every screen had to consult both.
+export type VersionState = 'current' | 'superseded' | 'revoked' | 'void';
 
 export interface CredentialVersion {
   id: string;
@@ -641,7 +644,7 @@ export function needsReason(action: AuditAction): boolean {
 // ---------------------------------------------------------------------------
 
 export type AuthorityAction =
-  | 'view' | 'amend' | 'reissue' | 'revoke' | 'print' | 'email' | 'verify';
+  | 'view' | 'amend' | 'reissue' | 'revoke' | 'void' | 'print' | 'email' | 'verify';
 
 /**
  * The privilege list from point 3, as a function of the document's state.
@@ -679,7 +682,11 @@ export function actionsFor(version: CredentialVersion, role: string): AuthorityA
 
   switch (version.state) {
     case 'current':
-      return [...base, 'amend', 'reissue', 'revoke', 'print', 'email'];
+      // VOID SITS BESIDE REVOKE AND IS NOT THE SAME ACT. Revoking withdraws the
+      // award; voiding says the University issued this document in error and
+      // the holder is not at fault. Offering only one of them is how a
+      // registry's own mistake ends up recorded as a finding against a student.
+      return [...base, 'amend', 'reissue', 'revoke', 'void', 'print', 'email'];
     case 'superseded':
       // Printing a superseded version is deliberately still allowed: a registry
       // sometimes has to produce the document as it stood. It prints with its
@@ -687,6 +694,12 @@ export function actionsFor(version: CredentialVersion, role: string): AuthorityA
       return [...base, 'print'];
     case 'revoked':
       // Nothing further. See above — revocation is final by design.
+      return base;
+    case 'void':
+      // A void document may still be looked at and verified — that is what
+      // makes the void visible to whoever is holding a copy of it. Nothing
+      // else: producing a fresh copy of a document withdrawn as an error puts
+      // the error back into the world.
       return base;
     default:
       return base;

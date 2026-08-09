@@ -67,6 +67,7 @@ import CertificateGenerator from '@/components/certificate/CertificateGenerator'
 import TranscriptGenerator from '@/components/transcript/TranscriptGenerator';
 import ManualTranscript from '@/components/transcript/ManualTranscript';
 import TranscriptRequestQueue from '@/components/credentials/TranscriptRequestQueue';
+import SigningStatus from '@/components/credentials/SigningStatus';
 import { PageHeader } from '@/components/ui/portal';
 import { FOCUS } from '@/lib/portalTheme';
 
@@ -221,7 +222,16 @@ export default function CredentialsWorkspace({ role }: { role?: UserRole }) {
           </div>
         </div>
       )}
-      {area === 'register' && <CredentialAuthority role={actualRole} embedded />}
+      {area === 'register' && (
+        <div className="space-y-6">
+          {/* SIGNING IS OPTIONAL AND FAILS SILENTLY BY DESIGN, which is right —
+              and which means an operator who set the key wrongly gets a
+              registry that looks entirely normal and signs nothing. The state
+              is shown where the register is managed. */}
+          <SigningStatus role={actualRole} />
+          <CredentialAuthority role={actualRole} embedded />
+        </div>
+      )}
       {area === 'design' && <CredentialStudio embedded />}
       {area === 'specimens' && <SpecimenGallery />}
     </div>

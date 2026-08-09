@@ -61,7 +61,7 @@ import { PageHeader } from '@/components/ui/portal';
 import ProduceCredential from './ProduceCredential';
 import {
   Loader2, Search, AlertTriangle, History, ShieldCheck,
-  FileWarning, Plus, ChevronRight, XCircle, CheckCircle2, Inbox, BadgeCheck,
+  FileWarning, Plus, ChevronRight, XCircle, CheckCircle2, Inbox, BadgeCheck, Ban,
 } from 'lucide-react';
 
 interface Row {
@@ -437,6 +437,8 @@ function AwardPanel({
   onError: (t: string) => void;
 }) {
   const [correcting, setCorrecting] = useState(false);
+  const [voiding, setVoiding] = useState(false);
+  const [voidReason, setVoidReason] = useState('');
   const [busy, setBusy] = useState(false);
   const [reason, setReason] = useState('');
   const [fields, setFields] = useState<Record<string, string>>({});
@@ -446,7 +448,9 @@ function AwardPanel({
     id: current.id,
     credentialRef: current.credentialRef,
     version: current.version,
-    state: current.status === 'revoked' ? 'revoked' : current.status === 'replaced' ? 'superseded' : 'current',
+    state: current.status === 'revoked' ? 'revoked'
+      : current.status === 'void' ? 'void'
+        : current.status === 'replaced' ? 'superseded' : 'current',
     issuedAt: current.issuedAt,
   };
   const actions = actionsFor(version, role ?? 'student');
@@ -498,6 +502,32 @@ function AwardPanel({
     onDone(out.message ?? 'Done.');
   }
 
+  /**
+   * Void this document — issued in error, holder not at fault.
+   *
+   * A SEPARATE HANDLER FROM `submit`, and a separate route, because the two
+   * write different things and mixing them behind one "reason" box is how an
+   * operator ends up revoking when they meant to void. The screen makes them
+   * look different too.
+   */
+  async function voidIt() {
+    setBusy(true);
+    const { data: session } = await supabase.auth.getSession();
+    const res = await fetch('/api/credential/void', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${session.session?.access_token ?? ''}`,
+      },
+      body: JSON.stringify({ credentialId: current.id, reason: voidReason.trim() }),
+    });
+    const out = await res.json().catch(() => ({ ok: false, error: 'no-reply' }));
+    setBusy(false);
+    if (!out.ok) { onError(out.detail ?? out.error ?? 'It was not voided.'); return; }
+    setVoiding(false); setVoidReason('');
+    onDone(out.message);
+  }
+
   async function submit() {
     setBusy(true);
     const { data: session } = await supabase.auth.getSession();
@@ -539,12 +569,16 @@ function AwardPanel({
                   ? 'bg-[#e9c14a]/15 text-[#8a6a10]'
                   : v.status === 'revoked'
                     ? 'bg-red-600/10 text-red-700 dark:text-red-300'
-                    : 'bg-emerald-600/10 text-emerald-700 dark:text-emerald-300'
+                    : v.status === 'void'
+                      ? 'bg-[#c5a55a]/20 text-[#7a5f10] dark:text-[#e0c778]'
+                      : 'bg-emerald-600/10 text-emerald-700 dark:text-emerald-300'
               }`}>
                 Version {v.version}
               </span>
               <span className="text-[#6b6076] dark:text-[#9c93ad]">
-                {v.status === 'replaced' ? 'Superseded' : v.status === 'revoked' ? 'Revoked' : 'Current'}
+                {v.status === 'replaced' ? 'Superseded'
+                  : v.status === 'revoked' ? 'Revoked'
+                    : v.status === 'void' ? 'Void — issued in error' : 'Current'}
                 {' · '}{new Date(v.issuedAt).toLocaleDateString('en-GB')}
               </span>
             </li>
@@ -569,6 +603,15 @@ function AwardPanel({
             <FileWarning size={13} /> Correct
           </button>
         )}
+        {actions.includes('void') && (
+          <button
+            type="button"
+            onClick={() => { setVoiding((v) => !v); setVoidReason(''); }}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[#c5a55a]/60 px-3 py-1.5 text-xs font-semibold text-[#422e59] dark:text-[#c5a55a]"
+          >
+            <Ban size={13} /> Void — issued in error
+          </button>
+        )}
         <a
           href={`/verify?id=${encodeURIComponent(award.ref)}`}
           target="_blank"
@@ -579,6 +622,65 @@ function AwardPanel({
         </a>
       </div>
 
+      {/* VOIDING, WITH ITS REASON — and with the distinction spelled out on
+          screen rather than left to the button label. An operator reaching for
+          this because a certificate went to the wrong graduate must not reach
+          for Revoke, which says something about the graduate. */}
+      {voiding && (
+        <div className="rounded-xl border border-[#c5a55a]/50 bg-[#fdf7e8] p-4 dark:bg-[#2a2333]">
+          <p className="text-sm font-semibold text-[#422e59] dark:text-[#e4dcf0]">
+            Void this document
+          </p>
+          <p className="mt-1 max-w-2xl text-xs leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">
+            Use this when the University issued the document in error — to the wrong student,
+            twice, or against a record that had not been approved. Anyone verifying the number is
+            told the document was issued in error and that <strong>the holder is not at fault</strong>.
+            It does not withdraw an award. To withdraw an award, revoke it.
+          </p>
+          <label className="mt-3 block">
+            <span className="text-xs font-semibold text-[#6b6076] dark:text-[#9c93ad]">
+              Why it was issued in error — recorded on the register and shown on verification
+            </span>
+            <input
+              value={voidReason}
+              onChange={(e) => setVoidReason(e.target.value)}
+              placeholder="e.g. issued against the wrong student record"
+              className="mt-1 w-full rounded-lg border border-[#ded6c8] bg-white px-3 py-2 text-sm dark:border-[#3d3349] dark:bg-[#1f1a27]"
+            />
+          </label>
+          <div className="mt-3 flex gap-2">
+            <button
+              type="button"
+              onClick={() => void voidIt()}
+              disabled={busy || voidReason.trim().length < 12}
+              className="rounded-lg bg-[#422e59] px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40"
+            >
+              {busy ? 'Voiding…' : 'Void it'}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setVoiding(false); setVoidReason(''); }}
+              className="rounded-lg border border-[#ece7de] px-3 py-1.5 text-xs text-[#6b6076] dark:border-[#2e2637] dark:text-[#9c93ad]"
+            >
+              Cancel
+            </button>
+          </div>
+          {voidReason.trim().length < 12 && (
+            <p className="mt-1.5 text-[11px] text-[#8a8194]">
+              A reason of at least a dozen characters. The register refuses a void without one.
+            </p>
+          )}
+        </div>
+      )}
+
+      {current.status === 'void' && (
+        <p className="rounded-xl border border-[#c5a55a]/50 bg-[#fdf7e8] p-4 text-xs leading-relaxed text-[#6b6076] dark:bg-[#2a2333] dark:text-[#9c93ad]">
+          <strong>This document is void.</strong> The University issued it in error, and anyone
+          verifying the number is told so — and told that the holder is not at fault. No further
+          copies can be produced from it. Issue a correct document in its place.
+        </p>
+      )}
+
       {/* THE THREE OUTPUTS, IN ONE PLACE.
           Print and Email used to be two small buttons in the row above, beside
           Correct and Revoke, with nothing anywhere to say a PDF was possible.
@@ -588,7 +690,7 @@ function AwardPanel({
           A revoked credential is deliberately excluded: producing a fresh copy
           of a withdrawn award is not a legitimate act, and the row above
           already explains why revocation is final. */}
-      {current.status !== 'revoked' && (
+      {current.status !== 'revoked' && current.status !== 'void' && (
         <ProduceCredential
           allowed={actions.includes('print')}
           mayEmail={actions.includes('email')}
