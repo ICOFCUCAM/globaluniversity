@@ -43,13 +43,14 @@ function check(label, actual, expected) {
 
 const dir = join(new URL('../../node_modules/.cache/icof', import.meta.url).pathname);
 mkdirSync(dir, { recursive: true });
-function bundle(source, name) {
+function bundle(source, name, jsx = false) {
   const outfile = join(dir, name);
   execFileSync('npx', [
     'esbuild', new URL(source, import.meta.url).pathname,
     '--bundle', '--format=esm', '--platform=node', `--outfile=${outfile}`, '--log-level=error',
     '--main-fields=module,main',
     `--alias:@=${new URL('..', import.meta.url).pathname.replace(/\/$/, '')}`,
+    ...(jsx ? ['--jsx=automatic', '--external:react', '--external:react-dom'] : []),
   ]);
   return outfile;
 }
@@ -306,5 +307,72 @@ check('the padded sheet still carries a year rather than being blank',
   paginate([yr(1), yr(2), yr(3)], 2).map((s) => s.years.length), [2, 1, 0]);
 check('a one-slot close is unchanged by the new argument',
   paginate([yr(1), yr(2), yr(3)], 1).length, paginate([yr(1), yr(2), yr(3)]).length);
+
+
+console.log('\nThe grid, which is the first thing a registrar recognises\n');
+
+// ---------------------------------------------------------------------------
+// WHY THE GRID IS TESTED AND NOT JUST LOOKED AT
+// ---------------------------------------------------------------------------
+//
+// The University asked three times for this table to stop looking like a web
+// table. Each boundary on its own instrument is TWO fine grey rules with a
+// thread of paper between them; a single stroke — however thin, however grey —
+// is a spreadsheet.
+//
+// The last attempt LOOKED right in a screenshot and was wrong: border-spacing
+// was set to 0.6pt, which is the correct proportion against a 0.5pt rule, and
+// the browser rounded it to zero. The two rules sat flush and drew one 2px
+// stroke — a heavier version of the very thing the pair replaces. Nothing in a
+// rendered image showed it; a measurement did.
+//
+// So the grid is asserted here, on the real component, where a browser cannot
+// round it away and a later tidy-up cannot quietly collapse it back.
+{
+  const React = (await import('react')).default;
+  const { renderToStaticMarkup } = await import('react-dom/server');
+  const { default: TranscriptMaster } =
+    await import(bundle('../components/transcript/TranscriptMaster.tsx', 'tm-grid.mjs', true));
+  const { DEFAULT_TRANSCRIPT_DESIGN } =
+    await import(bundle('./credentialTemplate.ts', 'tm-grid-tpl.mjs'));
+
+  const html = renderToStaticMarkup(React.createElement(TranscriptMaster, {
+    design: DEFAULT_TRANSCRIPT_DESIGN, data: SPECIMEN_TRANSCRIPT, specimen: true,
+  }));
+  const styles = html.match(/style="[^"]*"/g) ?? [];
+  const tables = styles.filter((s) => s.includes('border-collapse'));
+
+  check('every table on the sheet rules its cells separately',
+    tables.filter((s) => !s.includes('border-collapse:separate')).length, 0);
+  check('…and there are tables, so this is not passing on an empty set',
+    tables.length > 0, true);
+
+  // THE FAILURE THAT ALREADY HAPPENED ONCE. A spacing a browser rounds to zero
+  // is a spacing that does not exist, and the pair silently becomes a stroke.
+  check('the paper between the two rules is a whole pixel, not a fraction of a point',
+    tables.filter((s) => !/border-spacing:1px/.test(s)).length, 0);
+
+  // The perimeter is doubled too — table rule, paper, cell rule — and a shade
+  // stronger, which is what reads as the edge of the instrument.
+  check('every table draws its own outer rule, so the perimeter is a pair as well',
+    tables.filter((s) => !/border:0\.7pt solid #8a8a8a/.test(s)).length, 0);
+
+  // NOT BLACK, NOT THICK, NOT COLOURED, NOT ROUNDED. The University asked for
+  // each of these by name.
+  check('no rule anywhere on the sheet is black',
+    styles.filter((s) => /border[^;"]*:(?![^;"]*none)[^;"]*(#000|black)/.test(s)).length, 0);
+  check('no rule is 2pt or heavier',
+    styles.filter((s) => /border[^;"]*:\s*([2-9]|\d\d)(\.\d+)?pt/.test(s)).length, 0);
+  check('nothing on the grid is rounded',
+    styles.filter((s) => /border-radius/.test(s)).length, 0);
+  // THE TWO GREYS, AND THE INK OF THE SIGNATURE LINE — which is the one rule
+  // on the sheet that is not grid. A registrar signs on it, so it is drawn in
+  // the document's own ink like the writing it sits under, and it is named here
+  // rather than excluded, so that a fourth colour appearing anywhere fails.
+  check('the rules are the two greys, plus the ink the signature line is drawn in',
+    Array.from(new Set((html.match(/border[^;"]*solid (#[0-9a-f]{3,6})/g) ?? [])
+      .map((m) => m.slice(m.lastIndexOf('#'))))).sort(),
+    ['#8a8a8a', '#a8a8a8', DEFAULT_TRANSCRIPT_DESIGN.ink].sort());
+}
 
 process.exit(failures === 0 ? 0 : 1);

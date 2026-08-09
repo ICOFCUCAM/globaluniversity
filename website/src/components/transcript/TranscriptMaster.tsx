@@ -156,10 +156,57 @@ function asset(path: string, base?: string): string {
 //   MAJOR BOUNDARIES SLIGHTLY HEAVIER — the semester heading and the GPA
 //   summary — so the eye finds the sections without the grid shouting.
 //
+// ---------------------------------------------------------------------------
+// AND EVERY BOUNDARY IS TWO RULES, NOT ONE
+// ---------------------------------------------------------------------------
+//
+// The thing that made this read as a web table rather than as an instrument.
+// On the University's sheet no boundary is a single stroke: each one is two
+// fine grey rules with a thread of paper showing between them, the way a
+// formal document ruled on security stationery has always been printed. A
+// single 1px line — however grey, however thin — is a spreadsheet.
+//
+// It is drawn with the table's own mechanism rather than with a doubled
+// border, and that choice matters three ways:
+//
+//   THE GAP IS PAPER, NOT PAINT. `border-spacing` leaves the sheet showing
+//   through, so the security ground and the watermark run under the grid
+//   exactly as they do under everything else. A CSS `double` border paints its
+//   gap in the element's own background and would knock a white channel
+//   through the artwork along every rule on the page.
+//
+//   IT STAYS THIN. A `double` border needs three device pixels before it
+//   resolves into two lines — over 2pt on paper, which is a heavy black frame,
+//   the one thing this must not be.
+//
+//   IT ALIGNS BY CONSTRUCTION. The pairs are two cells' own edges, so every
+//   vertical meets every horizontal squarely and the cells stay rectangular
+//   down the whole record.
+//
+// The outer boundary is the table's own border, so the perimeter is doubled
+// too — table rule, paper, cell rule — and a shade stronger, which is what
+// makes it read as the edge of the instrument.
+//
 // No rounded corners, shadows, gradients, colour or decoration anywhere.
 const RULE = '0.5pt solid #a8a8a8';
 /** Section boundaries and the outer border: the same grey, a shade stronger. */
 const RULE_MAJOR = '0.7pt solid #8a8a8a';
+/**
+ * The thread of paper between the two rules of a boundary.
+ *
+ * ONE DEVICE PIXEL, NOT A FRACTION OF A POINT, AND THAT IS THE WHOLE LESSON
+ * HERE. It was 0.6pt, which is the right proportion against a 0.5pt rule and
+ * reads correctly in any drawing program — and a browser rounds it to nothing.
+ * Measured rather than looked at, `border-spacing` computed to 0px: the two
+ * rules sat flush and drew one 2px stroke, which is a heavier version of
+ * exactly the single line the pair exists to replace. It looked like an
+ * improvement in a screenshot.
+ *
+ * A pixel is the smallest gap that survives rounding at every scale this is
+ * drawn at — 0.26mm on paper, a shade wider than the 0.18mm rule, which is the
+ * proportion the University's own sheet shows.
+ */
+const RULE_GAP = '1px';
 
 /**
  * The table's typeface.
@@ -745,7 +792,10 @@ function Masthead({
         )}
       </div>
 
-      <table style={{ borderCollapse: 'separate', borderSpacing: '0.5pt', flex: '0 0 auto' }}>
+      <table style={{
+        borderCollapse: 'separate', borderSpacing: RULE_GAP, border: RULE_MAJOR,
+        flex: '0 0 auto',
+      }}>
         <tbody>
           {band([
             ['Surname', data.student.last_name],
@@ -987,7 +1037,6 @@ function YearTable({
   semesters: TranscriptMasterData['years'][number]['semesters'];
   ink: string; brand: string; yearLabel: string;
 }) {
-  const hair = RULE;
   const th: React.CSSProperties = {
     fontSize: '6.2pt', padding: '0.55mm 1mm', textAlign: 'left',
     color: ink, fontWeight: 400, verticalAlign: 'bottom', lineHeight: 1.15,
@@ -1019,7 +1068,12 @@ function YearTable({
 
   const headFor = (i: number, s?: typeof pair[number]) => (
     <>
-      <th style={{ ...th, fontSize: '6pt', color: brand, borderTop: hair }}>
+      {/* A NEW ACADEMIC YEAR OPENS HERE, so the rule above it is one of the
+          stronger pair — the same double treatment, a shade heavier, which is
+          what lets the eye find where Year Two begins without the grid
+          shouting. It was the thin rule, and the section read as one long
+          table. */}
+      <th style={{ ...th, fontSize: '6pt', color: brand }}>
         {i === 0 ? yearLabel : `Year ${inWords(year)}`}
       </th>
       {/* THE SESSION BESIDE THE SEMESTER, as the University's own sheet reads:
@@ -1029,12 +1083,12 @@ function YearTable({
           Printed only where the record carries it; nothing is counted forward
           from an admission date, because a repeated or interrupted year would
           make that a false statement under seal. */}
-      <th style={{ ...th, fontSize: '6pt', color: brand, borderTop: hair }}>
+      <th style={{ ...th, fontSize: '6pt', color: brand }}>
         {i === 0 ? 'First' : 'Second'} Semester
         {s?.session ? ` ${s.session}` : ''}
       </th>
       {['Credit\nValues', 'Grade', 'Credit\nEarned', 'Credit\nGPA', 'Grade\nPoints'].map((h) => (
-        <th key={h} rowSpan={2} style={{ ...th, textAlign: 'right', borderTop: hair, borderBottom: hair }}>
+        <th key={h} rowSpan={2} style={{ ...th, textAlign: 'right' }}>
           {h.split('\n').map((line, k) => <React.Fragment key={k}>{line}<br /></React.Fragment>)}
         </th>
       ))}
@@ -1070,7 +1124,12 @@ function YearTable({
       // draws nothing there, because the body cells carry no top or bottom rule
       // — which is why the entries in a semester still run on unbroken.
       borderCollapse: 'separate',
-      borderSpacing: '0.5pt',
+      borderSpacing: RULE_GAP,
+      // THE PERIMETER, DOUBLED. Without a border on the table itself the outer
+      // edge is a single cell rule while every boundary inside it is a pair —
+      // which is exactly the join a reader notices without being able to say
+      // why. With it: table rule, paper, cell rule, all the way round.
+      border: RULE_MAJOR,
       tableLayout: 'fixed',
       marginBottom: MM(2.5),
     }}>
@@ -1092,8 +1151,8 @@ function YearTable({
         <tr>
           {[0, 1].map((i) => (
             <React.Fragment key={i}>
-              <th style={{ ...th, borderBottom: hair }}>Subject<br />Codes</th>
-              <th style={{ ...th, borderBottom: hair }}>Name of Courses</th>
+              <th style={th}>Subject<br />Codes</th>
+              <th style={th}>Name of Courses</th>
             </React.Fragment>
           ))}
         </tr>
@@ -1163,8 +1222,9 @@ function TransferBlock({
 
   return (
     <table style={{
-      width: '100%', borderCollapse: 'separate', borderSpacing: '0.5pt', tableLayout: 'fixed',
-      fontFamily: TABLE_FACE, marginBottom: MM(2.5), border: RULE_MAJOR,
+      width: '100%', borderCollapse: 'separate', borderSpacing: RULE_GAP, border: RULE_MAJOR,
+      tableLayout: 'fixed',
+      fontFamily: TABLE_FACE, marginBottom: MM(2.5),
     }}>
       <colgroup>
         <col style={{ width: '26%' }} /><col style={{ width: '12%' }} />
@@ -1246,7 +1306,8 @@ function AcademicSummary({
         ACADEMIC SUMMARY
       </p>
       <table style={{
-        width: '100%', borderCollapse: 'separate', borderSpacing: '0.5pt', tableLayout: 'fixed',
+        width: '100%', borderCollapse: 'separate', borderSpacing: RULE_GAP, border: RULE_MAJOR,
+      tableLayout: 'fixed',
       }}>
         <tbody>
           <tr>
