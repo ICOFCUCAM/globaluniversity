@@ -46,7 +46,9 @@ import { can } from '@/lib/roles';
 import type { UserRole } from '@/lib/types';
 import { GRADING_SCALE } from '@/lib/grading';
 import { courses as CATALOGUE } from '@/content/courses';
-import { coursesForProgramme, programmesWithCourses } from '@/content/programmeCourses';
+import {
+  awaitingRegistryCode, coursesForProgramme, programmesWithCourses,
+} from '@/content/programmeCourses';
 import { ectsFor } from '@/content/creditFramework';
 import { awardKindOf, awardWording, nominalYears } from '@/lib/awards';
 import { buildTranscript, canIssueTranscript } from '@/lib/transcript';
@@ -173,6 +175,9 @@ function Form() {
   // but the paper register is the one thing this screen must never do.
   // ---------------------------------------------------------------------
   const schedule = React.useMemo(() => coursesForProgramme(programme), [programme]);
+  /** The courses on this schedule the faculty has not yet given a code. */
+  const awaiting = React.useMemo(
+    () => (schedule ? awaitingRegistryCode(schedule) : []), [schedule]);
 
   /** Has the operator typed anything into the rows yet? */
   const typedAnything = rows.some((r) => r.code.trim() || r.title.trim());
@@ -483,6 +488,26 @@ function Form() {
               {typedAnything && (
                 <p className="mt-1.5 text-[11px] text-[#a07c12]">
                   This replaces the rows you have already typed. Nothing else on the form changes.
+                </p>
+              )}
+
+              {/* WHICH CODES ARE THE FACULTY'S, AND WHICH ARE STANDING IN.
+                  The University's codes belong to the subject — BIS 250 is
+                  Bible Doctrine I on every programme — and the operator has the
+                  paper archive open in front of them. Naming the courses the
+                  faculty has not yet numbered turns a silent guess into a
+                  correction somebody can make in the moment. */}
+              {awaiting.length > 0 && (
+                <p className="mt-2 max-w-3xl rounded-lg border border-[#e9c14a]/40 bg-[#e9c14a]/10 p-2.5 text-[11px] leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">
+                  <strong>{awaiting.length} of these {schedule.courses.length} courses carry a
+                  programme code, not a faculty one.</strong>{' '}
+                  The University&rsquo;s registry numbers a subject once and every programme uses
+                  that number — Bible Doctrine I is BIS 250 on the Diploma and on the Bachelor
+                  alike. These {awaiting.length} are subjects the published listings do not yet
+                  number, so they stand in with the code from the programme brief:{' '}
+                  <span className="font-mono">{awaiting.slice(0, 6).map((c) => c.code).join(', ')}</span>
+                  {awaiting.length > 6 && ` and ${awaiting.length - 6} more`}. If the archive shows
+                  the faculty code, type it over — nothing here is fixed.
                 </p>
               )}
             </>

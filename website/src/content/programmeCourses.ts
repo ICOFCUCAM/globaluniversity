@@ -44,15 +44,31 @@
 import { bthCurriculum } from '@/content/bachelorOfTheology';
 import { bminSemesters } from '@/content/bachelorOfMinistry';
 import { diplomaOfTheologyCurriculum } from '@/content/curricula';
+import { facultyCode, type CodeSource } from '@/content/courseCodes';
 
 /** One course, ready to become a transcript row. */
 export interface ProgrammeCourse {
+  /** The code to print: the faculty's registry code where the subject has one. */
   code: string;
   title: string;
   /** ECTS, where the University has stated one. Null where it has not. */
   credits: number | null;
   year: number;
   semester: number;
+  /**
+   * Which scheme `code` is from.
+   *
+   * THE CODE BELONGS TO THE SUBJECT, NOT THE PROGRAMME — the University's own
+   * ruling, and the reason its transcripts have always read BIS 220 rather than
+   * a number counted off within one degree. Where the registry has published a
+   * code for a subject, that is what a document carries, on every programme.
+   * Where it has not, the programme's own code stands in and says so, so that
+   * a course still awaiting a faculty number is visible as one rather than
+   * disguised as settled. See courseCodes.ts.
+   */
+  codeSource: CodeSource;
+  /** The registry title this was matched to, where the wording differs. */
+  matchedTo?: string;
 }
 
 export interface ProgrammeSchedule {
@@ -79,14 +95,22 @@ function bth(): ProgrammeSchedule {
     const year = Math.floor(i / 2) + 1;
     const semester = (i % 2) + 1;
     for (const c of block.courses) {
-      courses.push({ code: c.code, title: c.title, credits: BTH_CREDITS, year, semester });
+      // THE FACULTY'S CODE WHERE THERE IS ONE. The brief numbers these courses
+      // BTH101 upwards, straight through the programme; the registry numbers
+      // the SUBJECT, which is why Bible Doctrine I reads BIS 250 on a Diploma
+      // transcript and must read BIS 250 here too.
+      const { code, source, matchedTo } = facultyCode(c.title, c.code);
+      courses.push({
+        code, codeSource: source, matchedTo, title: c.title, credits: BTH_CREDITS, year, semester,
+      });
     }
   });
   return {
     programme: 'Bachelor of Theology',
     courses,
     source: 'The published Bachelor of Theology structure — 36 courses, six semesters, 5 ECTS '
-      + 'each, 180 in total.',
+      + 'each, 180 in total. Codes are the faculty’s registry codes where the University has '
+      + 'published one for the subject.',
   };
 }
 
@@ -96,8 +120,17 @@ function bmin(): ProgrammeSchedule {
     const year = Math.floor(i / 2) + 1;
     const semester = (i % 2) + 1;
     for (const c of s.courses) {
+      // The Bachelor of Ministry carries its own prefixes — BIB, HIS, MIN —
+      // which are a second scheme for subjects the registry already numbers.
+      // They are left exactly as the University published them and marked as
+      // programme codes: reconciling two of the University's own schemes is a
+      // faculty decision, and doing it in a lookup table would quietly renumber
+      // a published programme.
+      const { code, source, matchedTo } = facultyCode(c.title, c.code);
       courses.push({
-        code: c.code,
+        code,
+        codeSource: source,
+        matchedTo,
         title: c.title,
         credits: typeof c.ects === 'number' ? c.ects : null,
         year,
@@ -116,8 +149,14 @@ function diplomaOfTheology(): ProgrammeSchedule {
   const courses: ProgrammeCourse[] = [];
   diplomaOfTheologyCurriculum.terms.forEach((term, i) => {
     for (const c of term.courses) {
+      // The Diploma IS the registry listing, so every code here is already a
+      // faculty code — and the same codes the Bachelor now carries for the same
+      // subjects, which is the point of the scheme.
+      const { code, source, matchedTo } = facultyCode(c.title, c.code);
       courses.push({
-        code: c.code,
+        code,
+        codeSource: source,
+        matchedTo,
         title: c.title,
         // NO CREDIT VALUES WERE SUPPLIED for this programme, and the curriculum
         // file says so. Filling in 3 because it is a common number would put an
@@ -154,6 +193,18 @@ export function coursesForProgramme(title: string | null | undefined): Programme
   if (!title) return null;
   const build = SCHEDULES[title.trim()];
   return build ? build() : null;
+}
+
+/**
+ * The courses on a schedule that the faculty has not yet given a registry code.
+ *
+ * Shown on the transcription screen rather than kept in a file somebody would
+ * have to think to open. An operator with the paper archive in front of them
+ * can type the real code straight over it; without this they would not know
+ * there was anything to check.
+ */
+export function awaitingRegistryCode(schedule: ProgrammeSchedule): ProgrammeCourse[] {
+  return schedule.courses.filter((c) => c.codeSource !== 'registry');
 }
 
 /** Which programmes can be filled in. Used to tell the operator, not to gate. */
