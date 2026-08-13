@@ -381,8 +381,24 @@ export async function POST(request: Request) {
       portalUrl: `${process.env.SITE_URL ?? 'https://iguc.net'}/portal`,
     };
     packageHtml = await admissionPackageHtml(packageInput);
-    await audit('ADMISSION_LETTER_GENERATED', undefined, decisionId, undefined,
-      { programme: programmeCode, mode: packageInput.mode });
+
+    // ---------------------------------------------------------------------
+    // WHETHER IT CAME OUT SEALED IS RECORDED, because otherwise it is
+    // invisible. documentSecurity.ts returns an unsealed document when
+    // CREDENTIAL_SECRET is absent or under 32 characters — the letter still
+    // generates, still carries the signature, and simply has no seal panel and
+    // no QR. Nothing on its face says so.
+    //
+    // A letter that reaches an embassy without the check code cannot be fixed
+    // afterwards without reissuing, so the audit trail says which letters went
+    // out sealed and which did not. `sealed` is read from the rendered
+    // document rather than from the environment: what matters is what the
+    // applicant received, not what the server believed it was configured with.
+    // ---------------------------------------------------------------------
+    const sealed = /Document seal/.test(packageHtml) && !/not sealed/i.test(packageHtml);
+    await audit('ADMISSION_LETTER_GENERATED', sealed ? undefined : 'issued WITHOUT a document seal',
+      decisionId, undefined,
+      { programme: programmeCode, mode: packageInput.mode, sealed });
   } catch (e) {
     return failIssuance('generate the admission package', String(e));
   }

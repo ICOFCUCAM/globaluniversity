@@ -93,9 +93,13 @@ export const SETTINGS: Setting[] = [
     name: 'CREDENTIAL_SECRET',
     importance: 'required',
     purpose: 'The key every certificate and transcript is sealed with.',
-    ifAbsent: 'NOTHING CAN BE ISSUED. The issue routes refuse rather than seal with a fallback, '
-      + 'because a credential system that works with a published key is worse than one that is '
-      + 'switched off — it produces documents people trust.',
+    ifAbsent: 'NO CERTIFICATE OR TRANSCRIPT CAN BE ISSUED. Those routes refuse rather than seal '
+      + 'with a fallback, because a credential system that works with a published key is worse '
+      + 'than one switched off — it produces documents people trust. '
+      + 'ADMISSION LETTERS ARE THE EXCEPTION and it is deliberate: an admission letter is not a '
+      + 'credential and is not on the register, so it still issues, unsealed, rather than holding '
+      + 'up an intake. Nothing on its face says it is unsealed, so the audit trail records '
+      + '`sealed: false` against every letter issued that way — see the decision route.',
     public: false,
     minLength: 32,
     area: 'credentials',
