@@ -255,6 +255,16 @@ export const DECISION_CHECKS = {
   'no-programme': 'The application names no programme.',
   'programme-closed': 'That programme is not open for application, so it cannot be admitted to.',
   'fee-not-confirmed': 'Finance has not confirmed the fee for this application.',
+  // This one reached the screen as the raw code, because the desk explains a
+  // refusal by looking it up here and there was nothing to find. A refusal a
+  // reader cannot act on is barely better than a silent one.
+  'override-reason-required': 'You are acting under administrative override, so a written reason '
+    + 'of at least twenty characters is required. Open the application with Review and give the '
+    + 'reason in the box beneath the decision.',
+  'no-decision-to-resume': 'There is no recorded academic decision for this application, so an '
+    + 'issuance cannot be resumed. It has to be decided rather than retried.',
+  'nothing-to-retry': 'This application is not part-way through issuance, so there is nothing to '
+    + 'retry.',
 } as const;
 
 export type DecisionRefusal = keyof typeof DECISION_CHECKS;

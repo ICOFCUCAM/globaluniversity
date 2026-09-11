@@ -30,6 +30,7 @@ import { UNIVERSITY } from '@/lib/constants';
 import { admissionsQueue } from '@/lib/admissions';
 import { can } from '@/lib/roles';
 import { statusMeta, toUniversal } from '@/lib/status';
+import DeleteApplicationPanel, { MIN_REASON } from './DeleteApplicationPanel';
 import type { Student } from '@/lib/types';
 import {
   Card, CardHeader, PageHeader, EmptyState, SkeletonRows, Detail,
@@ -55,6 +56,47 @@ export default function AdmissionsOffice() {
   const [signatory, setSignatory] = useState('');
   const [note, setNote] = useState('');
   const [conditions, setConditions] = useState<Condition[]>([]);
+
+  // Deleting. Showing the panel is courtesy: /api/admissions/delete reads the
+  // role from the caller's token and migration 018 holds the line in the
+  // database, so hiding it stops nothing — it just declines to offer a power
+  // the reader does not have.
+  const mayDelete = can(user?.role, 'delete-application');
+  const [deleteReason, setDeleteReason] = useState('');
+  const [deleteConfirm, setDeleteConfirm] = useState('');
+
+  async function onDelete() {
+    if (!selected || deleteReason.trim().length < MIN_REASON) return;
+    setBusy(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) {
+        setResult({ ok: false, text: 'Your session has expired. Sign in again.' });
+        return;
+      }
+      const res = await fetch('/api/admissions/delete', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+        body: JSON.stringify({ studentId: selected.id, reason: deleteReason.trim() }),
+      }).then((r) => r.json()).catch(() => null);
+
+      if (!res?.ok) {
+        // The route's `detail` is written to be read by a person. Preferring it
+        // to the machine code is the difference between an explanation and
+        // the word 'error'.
+        setResult({ ok: false, text: res?.detail ?? res?.error ?? 'The application was not deleted.' });
+        return;
+      }
+      setResult({ ok: true, text: `Application ${selected.matric_no} deleted. ${res.detail ?? ''}`.trim() });
+      setSelected(null);
+      setDeleteReason('');
+      setDeleteConfirm('');
+      await load();
+    } finally {
+      setBusy(false);
+    }
+  }
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -343,6 +385,31 @@ export default function AdmissionsOffice() {
                     Add one before admitting.
                   </p>
                 )}
+
+                {/* ----------------------------------------------------------
+                    DELETING, WHICH IS THE SUPERADMINISTRATOR'S ALONE.
+
+                    The privilege already existed and the panel already existed;
+                    what did not exist was a door onto them from this screen. It
+                    was wired only into the Finance and Registrar desk, and that
+                    desk's queue is `fee_paid` and `documents_required` — so a
+                    record that had been forwarded to this office was the one
+                    kind of application the person allowed to delete it could
+                    not reach.
+
+                    Test records are exactly the case: they get forwarded, they
+                    sit here, and there was nowhere to remove them from.
+                    ---------------------------------------------------------- */}
+                <DeleteApplicationPanel
+                  allowed={mayDelete}
+                  matricNo={selected.matric_no}
+                  reason={deleteReason}
+                  onReasonChange={setDeleteReason}
+                  confirmation={deleteConfirm}
+                  onConfirmationChange={setDeleteConfirm}
+                  onDelete={() => void onDelete()}
+                  busy={busy}
+                />
               </div>
             </>
           )}

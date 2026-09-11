@@ -217,7 +217,25 @@ export async function POST(request: Request) {
   }
 
   const isOverride = caller.role === 'superadmin';
-  if (isOverride && admitting && (!overrideReason || overrideReason.trim().length < 20)) {
+  // ---------------------------------------------------------------------
+  // A RETRY IS NOT A DECISION, SO THERE IS NOTHING TO JUSTIFY AGAIN.
+  //
+  // This refused every retry a Superadministrator attempted. The retry button
+  // sits on the queue row and does not open the decision panel — there is no
+  // decision to compose — so the override reason box was never on screen, and
+  // the request went up without one and came back 'override-reason-required'.
+  // The one role with the override banner was the one role that could not
+  // recover a failed issuance.
+  //
+  // The requirement is right for a DECISION and wrong for a RETRY. The decision
+  // was taken earlier, and if it was an override it was justified in writing at
+  // that moment and that reason is on the record. Resuming the issuance
+  // underneath it is mechanical: it creates no new authority, which is the
+  // whole point of 026 keeping the two apart. The retry is still audited as
+  // ISSUANCE_RETRIED against the actor and their office, so it is not silent.
+  // ---------------------------------------------------------------------
+  if (isOverride && admitting && !retry
+      && (!overrideReason || overrideReason.trim().length < 20)) {
     // The University asked that an administrative override be possible and
     // highly visible. Visible starts with the Superadministrator having to say
     // what could not wait, in writing, at the moment they take the decision.

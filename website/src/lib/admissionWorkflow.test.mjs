@@ -126,6 +126,61 @@ check('the database accepts the same four decisions',
   [...decisionCheck.matchAll(/'(\w+)'/g)].map((m) => m[1]).sort(),
   ['approve', 'conditional', 'reject', 'return']);
 
+console.log('\nEvery refusal the desk can receive, it can explain\n');
+
+// ---------------------------------------------------------------------------
+// THE BUG THIS CAUGHT. A Superadministrator pressing "Retry issuance" got the
+// bare string `override-reason-required` on screen, because the desk explains a
+// refusal by looking the code up in DECISION_CHECKS and there was no entry. The
+// refusal itself was also wrong — see the route — but even once fixed it could
+// still be reached, and a code a reader cannot act on is barely better than a
+// silent failure.
+//
+// So: every refusal the route returns to the CALLER as a fixed code must have
+// words to go with it. 5xx replies are excluded — those are faults rather than
+// refusals, they carry a message built at the time, and there is nothing useful
+// to write down in advance.
+// ---------------------------------------------------------------------------
+{
+  const route = readFileSync(join(here, '../app/api/admissions/decision/route.ts'), 'utf8');
+  const refusals = new Set();
+  for (const m of route.matchAll(
+    /error:\s*'([a-z-]+)'[^}]*\}\s*,\s*\{\s*status:\s*(4\d\d)/g,
+  )) refusals.add(m[1]);
+
+  check('the scan found the refusals at all', refusals.size > 3, true);
+
+  // WHAT IS DELIBERATELY NOT IN THE VOCABULARY.
+  //
+  // DECISION_CHECKS is the list of things the server re-verifies about an
+  // APPLICATION, in words a registrar can act on. These four are not that.
+  // `issuance-failed` the desk handles in its own branch, with the step and
+  // detail the route reports. The other three mean the browser sent something
+  // malformed — no application id, a decision that does not exist, a body that
+  // is not JSON — which a working screen cannot produce. Writing registrar-
+  // facing prose for a programming error would tell the reader to do something
+  // about a fault that is not theirs.
+  for (const notADomainRefusal of [
+    'issuance-failed', 'bad-json', 'missing-application-id', 'unknown-decision',
+  ]) refusals.delete(notADomainRefusal);
+
+  check('every refusal has words to explain it',
+    [...refusals].filter((e) => !(e in W.DECISION_CHECKS)).sort(), []);
+}
+
+// THE RETRY MUST NOT DEMAND AN OVERRIDE REASON. The panel that collects one is
+// not open during a retry — there is no decision being composed — so requiring
+// it made the button unusable for the only role that sees the override banner.
+{
+  const route = readFileSync(join(here, '../app/api/admissions/decision/route.ts'), 'utf8');
+  // The CONDITION, not a window of characters after it — the first attempt read
+  // a fixed 120 characters and the comment explaining the exemption pushed the
+  // exemption out of range, so the test failed on the code that fixes it.
+  const guard = /if \(isOverride && admitting([\s\S]*?)\)\s*\{/.exec(route)?.[1] ?? '';
+  check('the override guard was found', guard.length > 0, true);
+  check('a retry is exempt from the override reason', /!retry/.test(guard), true);
+}
+
 console.log('\nA decision cannot be taken twice, or at the wrong stage\n');
 
 // THE GUARD THAT MATTERS MOST. `approved` reaching canDecide() would let one
