@@ -162,12 +162,99 @@ export default function ConfigurationPanel() {
                       {s.ifAbsent}
                     </p>
                   )}
+
                 </div>
               </li>
             ))}
           </ul>
+
+          {/* ------------------------------------------------------------
+              SET IS NOT THE SAME AS WORKING.
+
+              The dots above say whether three strings are present. They
+              cannot tell a correct password from a wrong one, a port the
+              host allows from one it blocks, or a sender the provider
+              accepts from one it refuses. All of those show green here and
+              then fail at the first real admission — by which point the
+              student has been admitted, numbered and given an account, and
+              is the only person who has not been told.
+              ------------------------------------------------------------ */}
+          {area === 'mail' && <MailTest />}
         </div>
       ))}
+    </div>
+  );
+}
+
+/** Connect, authenticate, and send one message to the signed-in user. */
+function MailTest() {
+  const [busy, setBusy] = React.useState(false);
+  const [result, setResult] = React.useState<
+    { ok: boolean; stage?: string; detail?: string; to?: string } | null
+  >(null);
+
+  async function run() {
+    setBusy(true);
+    setResult(null);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const res = await fetch('/api/health/mail-test', {
+        method: 'POST',
+        headers: { authorization: `Bearer ${session.session?.access_token ?? ''}` },
+      }).catch(() => null);
+      const out = res ? await res.json().catch(() => null) : null;
+      setResult(out ?? {
+        ok: false,
+        detail: 'The test could not be reached. The deployment may still be building.',
+      });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // WHICH STEP FAILED, NAMED. "Invalid login" and "connection timed out" need
+  // completely different fixes, and one generic failure message sends somebody
+  // to check the wrong one.
+  const STAGE: Record<string, string> = {
+    configuration: 'Not configured',
+    connection: 'The mail server refused the connection',
+    recipient: 'Nowhere to send it',
+    delivery: 'The message was not accepted',
+  };
+
+  return (
+    <div className="mt-3">
+      <button
+        onClick={() => void run()}
+        disabled={busy}
+        className="rounded-lg border border-[#ded6c8] bg-white px-3 py-1.5 text-xs font-semibold text-[#422e59] transition-colors hover:bg-[#faf6ee] disabled:opacity-60 dark:border-[#3d3349] dark:bg-[#241f2c] dark:text-[#e4dcf0]"
+      >
+        {busy ? 'Sending…' : 'Send a test message to my address'}
+      </button>
+      <p className="mt-1 text-[11px] leading-relaxed text-[#8a8194]">
+        Goes only to the address on your own account, never to one typed in — the University’s
+        mail server should not be able to send arbitrary text to an arbitrary recipient.
+      </p>
+
+      {result && (
+        <div className={`mt-2 flex items-start gap-2 rounded-lg p-3 text-xs ${
+          result.ok
+            ? 'border border-emerald-600/30 bg-emerald-600/10 text-emerald-900 dark:text-emerald-200'
+            : 'border border-red-200 bg-red-50 text-red-800 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200'
+        }`}>
+          {result.ok
+            ? <Check size={14} className="mt-0.5 shrink-0" />
+            : <AlertTriangle size={14} className="mt-0.5 shrink-0" />}
+          <div>
+            <strong>
+              {result.ok
+                ? `Sent to ${result.to}.`
+                : STAGE[result.stage ?? ''] ?? 'The test did not succeed.'}
+            </strong>
+            {result.detail && <p className="mt-0.5 leading-relaxed">{result.detail}</p>}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

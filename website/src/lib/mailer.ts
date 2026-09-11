@@ -91,6 +91,55 @@ export function mailConfigured(env: NodeJS.ProcessEnv = process.env): boolean {
   return Boolean(env.SMTP_HOST?.trim() && env.SMTP_USER?.trim() && env.SMTP_PASS?.trim());
 }
 
+// ---------------------------------------------------------------------------
+// CONFIGURED IS NOT THE SAME AS WORKING.
+//
+// `mailConfigured()` answers whether three strings are present. It cannot tell
+// the difference between a correct password and a wrong one, a port the host
+// allows and one it blocks, or a sender the provider will accept and one it
+// will refuse. All of those report as configured and then fail at the moment
+// an admission is issued — which is the worst possible moment, because by then
+// a student has been admitted, a number reserved and an account created, and
+// the only person who does not know is the student.
+//
+// So this opens the connection and authenticates, without sending anything.
+// ---------------------------------------------------------------------------
+export async function verifyMail(): Promise<MailResult> {
+  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS } = process.env;
+
+  if (!mailConfigured()) {
+    return {
+      sent: false,
+      reason: 'not-configured',
+      detail:
+        'Outbound mail is not configured on this deployment: SMTP_HOST, SMTP_USER and SMTP_PASS '
+        + 'must all be set.',
+    };
+  }
+
+  const port = Number(SMTP_PORT ?? 587);
+  try {
+    const transporter = nodemailer.createTransport({
+      host: SMTP_HOST,
+      port,
+      secure: port === 465,
+      auth: { user: SMTP_USER, pass: SMTP_PASS },
+    });
+    await transporter.verify();
+    return { sent: true };
+  } catch (e) {
+    return {
+      sent: false,
+      reason: 'refused',
+      // The provider's own words. "Invalid login" and "connection timed out"
+      // need completely different fixes, and a generic failure message sends
+      // somebody to check the wrong one.
+      detail: `The mail server would not accept the connection: ${
+        e instanceof Error ? e.message : String(e)}`,
+    };
+  }
+}
+
 /**
  * Send one message.
  *

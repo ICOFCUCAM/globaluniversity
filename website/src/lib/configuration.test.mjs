@@ -24,7 +24,7 @@
 // ---------------------------------------------------------------------------
 
 import { execFileSync } from 'node:child_process';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 let failures = 0;
@@ -141,5 +141,31 @@ check('every public setting is named NEXT_PUBLIC_',
   SETTINGS.filter((s) => s.public && !s.name.startsWith('NEXT_PUBLIC_')).map((s) => s.name), []);
 check('and no secret is',
   SETTINGS.filter((s) => !s.public && s.name.startsWith('NEXT_PUBLIC_')).map((s) => s.name), []);
+
+console.log('\nThe mail test cannot be pointed at somebody else\n');
+
+// ---------------------------------------------------------------------------
+// THE PROPERTY THAT MATTERS MORE THAN THE FEATURE.
+//
+// An authenticated endpoint that sends text to an address taken from the
+// request body — through the University's mail server, over the University's
+// domain — is a relay for anybody who ever borrows a Superadministrator's
+// session, and the messages carry the University's reputation rather than the
+// sender's. The recipient is read from the caller's own profile, and there is
+// nothing in the body to point it anywhere else.
+//
+// Checked at source because the alternative is trusting a comment.
+// ---------------------------------------------------------------------------
+{
+  const route = readFileSync(
+    new URL('../app/api/health/mail-test/route.ts', import.meta.url).pathname, 'utf8',
+  );
+  check('the recipient comes from the signed-in caller',
+    /to:\s*g\.caller\.email\b/.test(route), true);
+  // The route never reads a body at all, which is the strongest form of this:
+  // there is no parsed input for a recipient to hide in.
+  check('the route reads no request body', /request\.(json|text|formData)\(/.test(route), false);
+  check('and it is behind a capability guard', /await guard\(request, '[a-z-]+'\)/.test(route), true);
+}
 
 process.exit(failures === 0 ? 0 : 1);
