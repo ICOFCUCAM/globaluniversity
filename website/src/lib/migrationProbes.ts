@@ -36,7 +36,10 @@ export interface MigrationProbe {
   /** What the University gets from it, in a sentence a registrar can read. */
   what: string;
   /**
-   * A table the migration creates, or one it adds `column` to.
+   * A table or view the migration creates, or a table it adds `column` to.
+   *
+   * A VIEW IS AS GOOD AS A TABLE HERE, because the probe reads through
+   * PostgREST and PostgREST serves both the same way.
    *
    * Absent where nothing can be read — naming a table a constraint-only
    * migration merely touches would read as though that table were the marker.
@@ -167,6 +170,16 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
     // the Readiness panel does not report it as fine without looking.
     cannotSee: "select state, label from admission_states where stage = 'issuance';"
       + "  -- it should list admission_processing and admission_processing_failed",
+  },
+  {
+    file: '027_the_states_the_pipeline_already_wrote.sql',
+    what: 'Declares the three states the pipeline has always written — registrar_approved, '
+      + 'declined and deferred — and adds the view that reports any status the vocabulary '
+      + 'does not know, so an application can no longer be invisible in silence.',
+    // The view, which no earlier migration creates. It reads through PostgREST
+    // exactly as a table does, so this one IS visible — unlike 026, which only
+    // added rows.
+    table: 'admission_status_coverage',
   },
 ];
 

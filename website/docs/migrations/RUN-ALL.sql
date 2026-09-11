@@ -1,9 +1,9 @@
 -- ===========================================================================
--- ICOF GLOBAL UNIVERSITY — MIGRATIONS 000, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013, 014, 015, 016, 017, 018, 019, 020, 021, 022, 023, 024, 025, 026, IN ORDER
+-- ICOF GLOBAL UNIVERSITY — MIGRATIONS 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013, 014, 015, 016, 017, 018, 019, 020, 021, 022, 023, 024, 025, 026, 027, IN ORDER
 --
 -- GENERATED FILE. DO NOT EDIT.
 --   Generator: scripts/build-migration-run.mjs
---   Rebuild:   node scripts/build-migration-run.mjs --out=RUN-ALL.sql 000 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020 021 022 023 024 025 026
+--   Rebuild:   node scripts/build-migration-run.mjs --out=RUN-ALL.sql 001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020 021 022 023 024 025 026 027
 --
 -- ---------------------------------------------------------------------------
 -- HOW TO RUN IT
@@ -24,23 +24,6 @@
 -- warning. An ERROR is a real failure and stops the run.
 --
 -- ---------------------------------------------------------------------------
--- BEFORE YOU RUN THIS ONE — it starts from an empty database
---
--- 000_complete.sql appoints two administrators, and it can only appoint an
--- account that already exists. Create them first:
---
---   Dashboard -> Authentication -> Users -> Add user   (tick "Auto Confirm User")
---     superadmin@iguc.net   system custody
---     tchamer@aol.com       day-to-day administration
---
--- Running the file before they exist is harmless. It simply appoints nobody,
--- and you re-run that section afterwards.
---
--- AND AFTERWARDS, DO THE SECURITY CHECK at the foot of 000. Until it passes,
--- any signed-in student can make themselves a Superadministrator from the
--- browser console. That is not a formality.
---
--- ---------------------------------------------------------------------------
 -- AFTERWARDS
 --
 -- Run docs/migrations/VERIFY.sql to see what landed.
@@ -49,80 +32,42 @@
 -- ===========================================================================
 -- ===========================================================================
 --
---   000_complete.sql
+--   001_full_schema.sql
 --
 -- ===========================================================================
 -- ===========================================================================
 
 -- ===========================================================================
--- ICOF GLOBAL UNIVERSITY — COMPLETE DATABASE SETUP
+-- ICOF Global University — full schema and admissions pipeline
 --
--- ONE FILE. Paste the whole thing into the Supabase SQL editor and press Run.
+-- Run this once, whole, in the Supabase SQL editor:
 --   Dashboard → SQL Editor → New query → paste → Run
 --
--- This is 001_full_schema.sql and 002_superadmin.sql merged into a single
--- script, in the right order, with nothing that creates something and then
--- replaces it later. If you run this, you do not need either of those files.
+-- SAFE TO RUN ON AN EMPTY PROJECT OR AN EXISTING ONE. Every statement is
+-- idempotent: `create table if not exists`, `add column if not exists`,
+-- `drop policy if exists` before each `create policy`. Running it twice
+-- changes nothing the second time, so it is safe to re-run after an edit.
 --
--- SAFE ON AN EMPTY PROJECT OR AN EXISTING ONE. Every statement is idempotent —
--- `create table if not exists`, `add column if not exists`, `drop policy if
--- exists` before each `create policy`. Running it twice changes nothing the
--- second time. It drops no table, truncates nothing and deletes no row.
+-- IT DOES NOT DROP ANYTHING. No `drop table`, no `truncate`, no `delete`.
+-- Existing data is untouched; existing tables gain the missing columns.
 --
--- BEFORE YOU RUN IT, create the two accounts it appoints, so section 14 has
--- something to promote:
---   Dashboard → Authentication → Users → Add user  (tick "Auto Confirm User")
---     superadmin@iguc.net   — system custody
---     tchamer@aol.com       — day-to-day administration
--- Running it first is harmless; just re-run section 14 afterwards.
---
--- AFTER IT FINISHES, do the three checks at the bottom. Section 15 (b) is the
--- one that matters: until it passes, any signed-in student can make themselves
--- a Superadministrator from the browser console.
+-- Read section 6 before you finish. It is the part that stops every
+-- applicant's date of birth and identity number being public.
 -- ===========================================================================
 
 
--- ===========================================================================
--- 0. CLEAR THE GUARD TRIGGERS FIRST
---
--- These are recreated, correctly, in sections 10 and 11. They are dropped here
--- because an earlier version of this migration installed a guard that refused
--- any change to profiles.role unless the connection was the service role — and
--- the SQL editor is not the service role, it is `postgres`. That version
--- blocked its own appointment statements with
---
---   ERROR: role may only be changed by the Superadministrator
---
--- and, worse, would block section 6 of this file on a re-run, before the
--- corrected version had a chance to replace it. Dropping first makes this file
--- safe to run whether or not that earlier attempt left anything behind.
--- ===========================================================================
-
--- Wrapped, because `drop trigger if exists ... on profiles` still raises if
--- `profiles` itself does not exist — which is the case on a fresh project,
--- where section 2 has not run yet.
-do $$
-begin
-  if to_regclass('public.profiles') is not null then
-    drop trigger if exists profiles_guard_privileges      on profiles;
-    drop trigger if exists profiles_guard_last_superadmin on profiles;
-  end if;
-end $$;
-
-
--- ===========================================================================
--- 1. EXTENSIONS
--- ===========================================================================
-
+-- ---------------------------------------------------------------------------
+-- 1. Extensions
+-- ---------------------------------------------------------------------------
 create extension if not exists "pgcrypto";  -- gen_random_uuid()
 
 
--- ===========================================================================
--- 2. CORE TABLES
+-- ---------------------------------------------------------------------------
+-- 2. Core tables
 --
--- Column names match src/lib/types.ts exactly. Rename anything here and the
+-- Column names match src/lib/types.ts exactly. If you rename anything here the
 -- portal stops reading it, so change both or neither.
--- ===========================================================================
+-- ---------------------------------------------------------------------------
 
 create table if not exists departments (
   id          uuid primary key default gen_random_uuid(),
@@ -251,85 +196,14 @@ create table if not exists audit_logs (
   created_at    timestamptz not null default now()
 );
 
--- One row per published credential design. Publishing writes a NEW row rather
--- than editing the active one, so a certificate issued under v1 can always be
--- re-rendered as it was issued. Editing a design in place would change what the
--- university appears to have attested to, for every graduate holding it.
-create table if not exists credential_templates (
-  id            uuid primary key default gen_random_uuid(),
-  kind          text not null check (kind in ('certificate', 'transcript')),
-  version       integer not null,
-  name          text not null,
-  design        jsonb not null,
-  is_active     boolean not null default false,
-  created_by    uuid references auth.users (id) on delete set null,
-  created_at    timestamptz not null default now(),
-  published_at  timestamptz,
-  unique (kind, version)
-);
 
-
--- Component marks.
+-- ---------------------------------------------------------------------------
+-- 3. Admissions pipeline columns
 --
--- The university has adopted its published four-part assessment scheme, so a
--- result is no longer a CA mark and an exam mark. `results` kept ca_score and
--- exam_score, which weighted the examination at 60% where the regulations say
--- 30% and had nowhere at all to record participation or presentations.
---
--- Stored as jsonb rather than as four columns because the scheme differs by
--- level: undergraduate courses are marked on participation, assignments,
--- examinations and presentations; master's courses on participation, research
--- paper, presentations and final examination; thesis courses on proposal,
--- methodology and final presentation. Four fixed columns would fit one of the
--- three and mislabel the others.
---
--- `scheme` records WHICH scheme the marks were entered under, alongside the
--- marks themselves. That is what makes an old result readable after the
--- regulations change: without it, a 2026 result would be re-weighted by a 2030
--- scheme and the transcript would quietly restate a grade the student was never
--- given.
---
--- ca_score and exam_score are kept, not dropped. They hold every mark entered
--- before this change and dropping them would destroy that record.
-alter table results
-  add column if not exists components jsonb,
-  add column if not exists scheme     text;
-
-
--- Payments. Receipts were being written into `documents` as base64-encoded
--- JSON, with the amount readable only by regex over the filename — which also
--- contains the student's name, so a name with a digit in it silently dropped
--- that payment from the totals. A financial record has to be a row: queryable,
--- summable, and visible to an audit that does not know an encoding.
---
--- `amount` is numeric, not text. Money held as text sorts "9,000" above
--- "10,000" and cannot be summed in SQL at all.
---
--- Currency is stored per row and never converted. The university charges two
--- bands — the ICOF scholarship rate for African and Global South students, and
--- a European rate for everyone else — so a single figure across both would be
--- meaningless. Reports group by currency.
-create table if not exists payments (
-  id            uuid primary key default gen_random_uuid(),
-  student_id    uuid references students (id) on delete set null,
-  reference     text not null unique,
-  amount        numeric(14,2) not null check (amount > 0),
-  currency      text not null check (currency in ('FCFA','USD','EUR','GBP','NGN')),
-  purpose       text not null,
-  method        text,
-  -- Who took the money. Finance verifies payments; nobody else may.
-  received_by   uuid references auth.users (id) on delete set null,
-  received_at   timestamptz not null default now(),
-  note          text,
-  created_at    timestamptz not null default now()
-);
-
-
--- ===========================================================================
--- 3. ADMISSIONS PIPELINE COLUMNS
---
--- What the Finance desk and the Registrar's desk write.
--- ===========================================================================
+-- These are what the Finance desk and the Registrar's desk write. On a fresh
+-- project section 2 already created `students`, so these add the rest; on an
+-- existing database they add only what is missing.
+-- ---------------------------------------------------------------------------
 
 alter table students
   add column if not exists payment_status       text default 'pending',
@@ -346,63 +220,21 @@ alter table students
   add column if not exists student_number       text,
   add column if not exists faculty              text,
   add column if not exists intake               text,
-  -- Where and how often the student studies. Neither was stored: the
-  -- application collected them, buried them in the free-text summary, and the
-  -- admission letter then had nothing to read — so every letter said whatever
-  -- the code's fallback happened to be. `mode` is on campus / online / both;
-  -- `attendance` is full or part time. They are two questions because they are
-  -- two questions: a part-time student on campus could not previously say so.
-  add column if not exists mode                 text,
-  add column if not exists attendance           text,
-  add column if not exists campus               text,
-  -- Links a student row to its auth account. Without it the students_own_row
-  -- policy in section 9 matches nothing and a student signs in to an empty
-  -- portal — no programme, no results, no transcript.
+  -- Links a student row to its auth account. Needed by the RLS policy in
+  -- section 6 so a student can read their own record and nobody else's.
   add column if not exists auth_user_id         uuid references auth.users (id) on delete set null;
 
 
--- ===========================================================================
--- 4. SUSPENSION AND STAFF LINKING
--- ===========================================================================
+-- ---------------------------------------------------------------------------
+-- 4. Indexes
+-- ---------------------------------------------------------------------------
 
-alter table profiles
-  -- Null means active. Set only by /api/admin/suspend, which also bans the auth
-  -- user so an existing token stops working. This column is the record, and it
-  -- is what the portal checks on the next page load.
-  add column if not exists suspended_at      timestamptz,
-  add column if not exists suspended_by      uuid references auth.users (id) on delete set null,
-  add column if not exists suspension_reason text;
-
-alter table lecturers
-  -- A lecturer needs an account to sign in and a lecturer row to be allocated a
-  -- course. This links the two.
-  add column if not exists auth_user_id uuid references auth.users (id) on delete set null;
-
-
--- ===========================================================================
--- 5. INDEXES
--- ===========================================================================
-
+-- Both desks read by status on every page load.
 create index if not exists students_status_created_idx on students (status, created_at);
 create index if not exists students_auth_user_idx      on students (auth_user_id);
 create index if not exists enrollments_student_idx     on enrollments (student_id);
 create index if not exists results_student_idx         on results (student_id);
 create index if not exists documents_student_idx       on documents (student_id);
--- One result per student per course.
---
--- Both mark-entry screens upsert with `onConflict: 'student_id,course_id'`, and
--- Postgres requires a unique index matching that target — without one every
--- upsert fails with "there is no unique or exclusion constraint matching the ON
--- CONFLICT specification". There was no such index, so saving marks had never
--- worked at all; the error was discarded by the caller, so nobody found out.
-create unique index if not exists results_student_course_key
-  on results (student_id, course_id);
-
-create index if not exists payments_student_idx        on payments (student_id);
-create index if not exists payments_received_idx       on payments (received_at);
-create index if not exists profiles_role_idx           on profiles (role);
-create index if not exists profiles_suspended_idx      on profiles (suspended_at);
-create index if not exists lecturers_auth_user_idx     on lecturers (auth_user_id);
 
 -- Student numbers must be unique. The generator derives the next sequence from
 -- the highest existing number for the year, so two approvals racing would both
@@ -411,42 +243,10 @@ create index if not exists lecturers_auth_user_idx     on lecturers (auth_user_i
 create unique index if not exists students_student_number_key
   on students (student_number) where student_number is not null;
 
--- Exactly one active design per kind. Without this, "which design is in force"
--- becomes a question with two answers.
-create unique index if not exists credential_templates_one_active
-  on credential_templates (kind) where is_active;
 
-
--- ===========================================================================
--- 6. VALID ROLES
---
--- A typo in a role is silent: the account signs in and can do nothing, with no
--- error anywhere to say why. This turns that into a failed update at the moment
--- it is made.
--- ===========================================================================
-
--- Round anything unrecognised down to 'student'. Least privilege is the safe
--- direction to round in.
-update profiles set role = 'student'
-where role not in (
-  'superadmin','admin','chancellor','vice-chancellor','registrar',
-  'finance-director','dean','hod','programme-coordinator','lecturer','finance',
-  'admissions-officer','library-staff','student-affairs','student','applicant',
-  'academic-office'
-);
-
-alter table profiles drop constraint if exists profiles_role_valid;
-alter table profiles add constraint profiles_role_valid check (role in (
-  'superadmin','admin','chancellor','vice-chancellor','registrar',
-  'finance-director','dean','hod','programme-coordinator','lecturer','finance',
-  'admissions-officer','library-staff','student-affairs','student','applicant',
-  'academic-office'
-));
-
-
--- ===========================================================================
--- 7. KEEP updated_at HONEST
--- ===========================================================================
+-- ---------------------------------------------------------------------------
+-- 5. Keep updated_at honest
+-- ---------------------------------------------------------------------------
 
 create or replace function set_updated_at() returns trigger as $$
 begin
@@ -464,25 +264,400 @@ create trigger results_updated_at before update on results
   for each row execute function set_updated_at();
 
 
--- ===========================================================================
--- 8. GIVE EVERY ACCOUNT A PROFILE
+-- ---------------------------------------------------------------------------
+-- 5b. Give every new account a profile
 --
--- Sign-in reads the role from `profiles`, not from the auth record: the portal
--- signs in, looks up the row, and refuses the session with "Profile not found"
--- when there is none. Creating a user in the dashboard without this produces an
--- account that authenticates and still cannot get in.
+-- The portal reads the signed-in user's role from `profiles`, not from the auth
+-- record: src/contexts/AuthContext.tsx signs in, looks up the row, and if there
+-- is none it rejects the session with "Profile not found. Please contact
+-- administrator." Creating a user in the Supabase dashboard therefore produces
+-- an account that authenticates and still cannot get in.
 --
--- THE ROLE IS ALWAYS 'student', never one taken from user_metadata.
--- raw_user_meta_data is caller-supplied: supabase.auth.signUp is callable from
--- any browser holding the publishable key and stores whatever is passed in
--- options.data. Honouring a role from there would let anyone sign themselves up
--- as a Superadministrator. The server routes set the real role immediately
--- afterwards with the service-role key, which section 10 makes the only path
--- that can raise a role at all.
+-- That is how staff accounts are made — there is no sign-up form, by design, so
+-- the Registrar, Finance and admin accounts are all created by hand in the
+-- dashboard. Without this trigger every one of them would be dead on arrival.
 --
 -- `security definer` is required: the insert into auth.users runs as
--- supabase_auth_admin, which has no rights on public.profiles.
+-- supabase_auth_admin, which has no rights on public.profiles. The function
+-- therefore runs as its owner instead, and search_path is pinned so it cannot
+-- be redirected to a shadowed table.
+--
+-- Every account starts as 'student', the least privileged role, whatever the
+-- caller asked for. Promote a staff account afterwards:
+--
+--   update profiles set role = 'admin' where email = 'registrar@iguc.net';
+--
+-- Valid roles are the sixteen in src/lib/types.ts: admin, chancellor,
+-- vice-chancellor, registrar, finance-director, dean, hod,
+-- programme-coordinator, lecturer, finance, admissions-officer, library-staff,
+-- student-affairs, student, applicant, academic-office.
+-- ---------------------------------------------------------------------------
+
+create or replace function handle_new_user() returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.profiles (id, email, full_name, role)
+  values (
+    new.id,
+    new.email,
+    coalesce(new.raw_user_meta_data->>'full_name', new.email),
+    -- ALWAYS 'student'. Never a role taken from user_metadata.
+    --
+    -- raw_user_meta_data is caller-supplied: supabase.auth.signUp is callable
+    -- from any browser holding the publishable key, and it stores whatever the
+    -- caller passes in options.data. Honouring a role from there would let
+    -- anyone sign themselves up as a Superadministrator. The server routes set
+    -- the real role immediately afterwards with the service-role key, which is
+    -- the only path that can raise a role at all.
+    'student'
+  )
+  on conflict (id) do nothing;
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function handle_new_user();
+
+-- Backfill: any account created before this trigger existed has no profile and
+-- cannot sign in. This gives each one the same row the trigger would have.
+insert into profiles (id, email, full_name, role)
+select
+  u.id,
+  u.email,
+  coalesce(u.raw_user_meta_data->>'full_name', u.email),
+  'student'  -- same reasoning as above; promote deliberately, never by metadata
+from auth.users u
+where not exists (select 1 from profiles p where p.id = u.id);
+
+
+-- ---------------------------------------------------------------------------
+-- 6. ROW-LEVEL SECURITY — THE IMPORTANT PART
+--
+-- The publishable key is in the site's JavaScript and is sent by every
+-- visitor's browser. That is normal and safe, but ONLY because RLS decides
+-- what that key can read. A table with RLS switched off is readable by anyone
+-- who opens the page source and copies the key.
+--
+-- `students.address` holds the full application text: date of birth, identity
+-- numbers, next of kin, medical disclosure, references. Getting this section
+-- wrong publishes all of it.
+--
+-- The two admissions desks are unaffected by everything below. They read
+-- through the service-role key, which bypasses RLS by design.
+-- ---------------------------------------------------------------------------
+
+alter table departments enable row level security;
+alter table profiles    enable row level security;
+alter table students    enable row level security;
+alter table lecturers   enable row level security;
+alter table courses     enable row level security;
+alter table enrollments enable row level security;
+alter table results     enable row level security;
+alter table documents   enable row level security;
+alter table audit_logs  enable row level security;
+
+-- Reference data anyone may read. Nothing here is personal.
+drop policy if exists departments_public_read on departments;
+create policy departments_public_read on departments for select using (true);
+
+drop policy if exists courses_public_read on courses;
+create policy courses_public_read on courses for select using (true);
+
+-- A signed-in user reads their own profile.
+drop policy if exists profiles_own on profiles;
+create policy profiles_own on profiles for select using (auth.uid() = id);
+
+drop policy if exists profiles_own_update on profiles;
+create policy profiles_own_update on profiles for update using (auth.uid() = id);
+
+-- A student reads their own record and nothing else. Note this grants SELECT
+-- only: a student cannot change their own programme, status or student number.
+drop policy if exists students_own_row on students;
+create policy students_own_row on students
+  for select using (auth.uid() = auth_user_id);
+
+drop policy if exists enrollments_own on enrollments;
+create policy enrollments_own on enrollments for select using (
+  student_id in (select id from students where auth_user_id = auth.uid())
+);
+
+drop policy if exists results_own on results;
+create policy results_own on results for select using (
+  student_id in (select id from students where auth_user_id = auth.uid())
+);
+
+drop policy if exists documents_own on documents;
+create policy documents_own on documents for select using (
+  student_id in (select id from students where auth_user_id = auth.uid())
+);
+
+-- Staff directory. Names and titles are already published on the website; if
+-- you would rather this were signed-in only, change `true` to
+-- `auth.uid() is not null`.
+drop policy if exists lecturers_public_read on lecturers;
+create policy lecturers_public_read on lecturers for select using (true);
+
+-- audit_logs deliberately gets NO policy. With RLS on and no policy, only the
+-- service role can read it — which is the correct answer for an audit trail.
+
+
+-- ---------------------------------------------------------------------------
+-- 7. Let the public application form write, without letting it read
+--
+-- /apply inserts a row using the publishable key. It needs INSERT and must not
+-- get SELECT — otherwise the same key that submits an application could also
+-- list every other application.
+-- ---------------------------------------------------------------------------
+
+drop policy if exists students_public_apply on students;
+create policy students_public_apply on students
+  for insert with check (status = 'applicant');
+
+
+-- ---------------------------------------------------------------------------
+-- 8. Verify — read the output of this
+-- ---------------------------------------------------------------------------
+
+-- Every table should show rowsecurity = true.
+select tablename, rowsecurity
+from pg_tables
+where schemaname = 'public'
+order by tablename;
+
+-- Confirm the pipeline columns landed. Expect 15 rows.
+select column_name
+from information_schema.columns
+where table_name = 'students'
+  and column_name in (
+    'payment_status','fee_reference','fee_amount','fee_currency',
+    'fee_registered_by','fee_registered_at','decision_reason','decided_by',
+    'decided_at','account_created_at','admission_conditions','student_number',
+    'faculty','intake','auth_user_id'
+  )
+order by column_name;
+
+-- Every auth account must have a profile or it cannot sign in. Expect 0 rows.
+select u.email, u.created_at
+from auth.users u
+where not exists (select 1 from profiles p where p.id = u.id);
+
+
 -- ===========================================================================
+-- CREATING THE FIRST STAFF ACCOUNT
+--
+-- There is no sign-up form. Students are created by the Registrar's approve
+-- route; everyone else is created here, in two steps:
+--
+--   1. Dashboard → Authentication → Users → Add user. Tick "Auto Confirm
+--      User", or the account cannot sign in until someone clicks an email.
+--   2. Promote it — the trigger in section 5b defaults every new account to
+--      'student':
+--
+--        update profiles
+--        set role = 'admin', full_name = 'Full Name'
+--        where email = 'registrar@iguc.net';
+--
+-- 'admin' sees the whole system. 'registrar' and 'finance' are the two
+-- admissions desks and deliberately cannot do each other's job — Finance
+-- cannot admit, the Registrar cannot edit payments (src/lib/roles.ts).
+-- ===========================================================================
+
+
+-- ===========================================================================
+-- AFTER RUNNING THIS, do the outside check. From a terminal — not the SQL
+-- editor, because the editor is authenticated and will always succeed:
+--
+--   curl -s "https://<your-project>.supabase.co/rest/v1/students?select=id,email&limit=1" \
+--     -H "apikey: <your publishable key>"
+--
+--   []                     RLS is holding. Correct.
+--   [{"id":...}]           Something above did not apply. Stop and fix it.
+--
+-- Then set SUPABASE_SERVICE_ROLE_KEY in Vercel — server-side, never with a
+-- NEXT_PUBLIC_ prefix. Without it the Registrar's approve button refuses
+-- rather than silently creating no account.
+-- ===========================================================================
+
+
+-- ===========================================================================
+-- ===========================================================================
+--
+--   002_superadmin.sql
+--
+-- ===========================================================================
+-- ===========================================================================
+
+-- ===========================================================================
+-- ICOF Global University — Superadministrator, suspension, credential designs
+--
+-- Run this AFTER 001_full_schema.sql, whole, in the Supabase SQL editor.
+-- Idempotent and additive: it creates nothing that 001 created, drops no table,
+-- and deletes no row. Running it twice changes nothing the second time.
+--
+-- SECTION 3 IS A SECURITY FIX AND IS NOT OPTIONAL. Until it runs, any signed-in
+-- user can promote themselves to Superadministrator from the browser console.
+-- See the explanation there before deciding to skip anything.
+-- ===========================================================================
+
+
+-- ---------------------------------------------------------------------------
+-- 0. Clear the guard triggers first
+--
+-- Recreated correctly in sections 3 and 5. Dropped here because an earlier
+-- version of this file installed a guard that refused any change to
+-- profiles.role unless the connection was the service role — and the SQL editor
+-- is `postgres`, not the service role. That version blocked its own section 9
+-- with "role may only be changed by the Superadministrator", and would block a
+-- re-run before the corrected version could replace it.
+-- ---------------------------------------------------------------------------
+
+do $$
+begin
+  if to_regclass('public.profiles') is not null then
+    drop trigger if exists profiles_guard_privileges      on profiles;
+    drop trigger if exists profiles_guard_last_superadmin on profiles;
+  end if;
+end $$;
+
+
+-- ---------------------------------------------------------------------------
+-- 1. Columns
+-- ---------------------------------------------------------------------------
+
+alter table profiles
+  -- Null means active. Set only by /api/admin/suspend, which also bans the auth
+  -- user so an existing token stops working; this column is the record and the
+  -- thing the portal checks on the next page load.
+  add column if not exists suspended_at      timestamptz,
+  add column if not exists suspended_by      uuid references auth.users (id) on delete set null,
+  add column if not exists suspension_reason text;
+
+alter table lecturers
+  -- A lecturer needs an account to sign in and a lecturer row to be allocated a
+  -- course. This links the two; without it the teaching record and the person
+  -- are only connected by a matching email address.
+  add column if not exists auth_user_id uuid references auth.users (id) on delete set null;
+
+create index if not exists profiles_role_idx      on profiles (role);
+create index if not exists profiles_suspended_idx on profiles (suspended_at);
+create index if not exists lecturers_auth_user_idx on lecturers (auth_user_id);
+
+
+-- ---------------------------------------------------------------------------
+-- 2. Valid roles, including the new one
+--
+-- A typo in a role is silent: the account signs in and can do nothing, with no
+-- error anywhere to say why. The constraint turns that into a failed update at
+-- the moment it is made.
+-- ---------------------------------------------------------------------------
+
+-- Anything unrecognised becomes 'student' rather than blocking the constraint.
+-- Least privilege is the safe direction to round in.
+update profiles set role = 'student'
+where role not in (
+  'superadmin','admin','chancellor','vice-chancellor','registrar',
+  'finance-director','dean','hod','programme-coordinator','lecturer','finance',
+  'admissions-officer','library-staff','student-affairs','student','applicant',
+  'academic-office'
+);
+
+alter table profiles drop constraint if exists profiles_role_valid;
+alter table profiles add constraint profiles_role_valid check (role in (
+  'superadmin','admin','chancellor','vice-chancellor','registrar',
+  'finance-director','dean','hod','programme-coordinator','lecturer','finance',
+  'admissions-officer','library-staff','student-affairs','student','applicant',
+  'academic-office'
+));
+
+
+-- ---------------------------------------------------------------------------
+-- 3. STOP USERS PROMOTING THEMSELVES  ← the security fix
+--
+-- 001 created this policy:
+--
+--   create policy profiles_own_update on profiles for update using (auth.uid() = id);
+--
+-- It was meant to let someone change their own display name. Postgres RLS
+-- cannot restrict which COLUMNS a policy covers, so it grants the whole row —
+-- including `role`. Any signed-in user, including a student, can open the
+-- browser console and run:
+--
+--   supabase.from('profiles').update({ role: 'superadmin' }).eq('id', myId)
+--
+-- and it succeeds. Every separation of duties in this system rests on that
+-- column, so until this section runs, none of them hold.
+--
+-- The fix is column-level privileges, which RLS does not provide and which
+-- apply underneath it: `authenticated` simply has no UPDATE right on these
+-- columns, so no policy can grant one. The service role keeps its rights, which
+-- is why /api/admin/* still works — and why promotion and suspension can now
+-- happen only through a route that authorises, records and audits them.
+-- ---------------------------------------------------------------------------
+
+revoke update on profiles from authenticated, anon;
+
+-- Grant back only the columns a person may legitimately change about
+-- themselves. Note what is absent: role, suspended_at, suspended_by,
+-- suspension_reason, id, created_at.
+grant update (full_name, avatar_url) on profiles to authenticated;
+
+-- Defence in depth. If a future migration re-grants the column by accident, or
+-- a policy is written that appears to allow it, this still refuses. It runs as
+-- a trigger, so it applies to every path except the ones that deliberately set
+-- session_replication_role — which the service role does not.
+create or replace function guard_profile_privileges() returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  -- Block the browser roles specifically, rather than allowing only the service
+  -- role. PostgREST switches to 'authenticated' or 'anon' for a request carrying
+  -- the publishable key, and to 'service_role' for one carrying the secret key;
+  -- the SQL editor runs as 'postgres'. Testing for "not service_role" would
+  -- therefore also block the SQL editor — including the appointment statements
+  -- in section 9 of this very file, which is how this was found.
+  if current_user in ('authenticated', 'anon') then
+    if new.role is distinct from old.role then
+      raise exception 'role may only be changed by the Superadministrator, through /api/admin/staff';
+    end if;
+    if new.suspended_at is distinct from old.suspended_at then
+      raise exception 'suspension may only be changed through /api/admin/suspend';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists profiles_guard_privileges on profiles;
+create trigger profiles_guard_privileges
+  before update on profiles
+  for each row execute function guard_profile_privileges();
+
+
+-- ---------------------------------------------------------------------------
+-- 4. The trigger from 001, corrected
+--
+-- 001 took the new account's role from raw_user_meta_data. That field is
+-- caller-supplied: `supabase.auth.signUp` is callable from any browser holding
+-- the publishable key and stores whatever is passed in options.data, so a
+-- self-registered user could have arrived as a Superadministrator.
+--
+-- Every account now starts as 'student'. The server routes set the real role
+-- immediately afterwards with the service-role key, which section 3 just made
+-- the only path that can raise a role at all.
+--
+-- ALSO DO THIS, IN THE DASHBOARD: Authentication → Providers → Email, turn OFF
+-- "Allow new users to sign up". The portal has no sign-up form, but the
+-- endpoint stays open until that switch is off, and an open endpoint means
+-- anyone can mint themselves a student account.
+-- ---------------------------------------------------------------------------
 
 create or replace function handle_new_user() returns trigger
 language plpgsql
@@ -507,326 +682,14 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function handle_new_user();
 
--- Backfill: accounts created before this trigger existed have no profile and
--- cannot sign in.
-insert into profiles (id, email, full_name, role)
-select u.id, u.email, coalesce(u.raw_user_meta_data->>'full_name', u.email), 'student'
-from auth.users u
-where not exists (select 1 from profiles p where p.id = u.id);
 
-
--- ===========================================================================
--- 9. ROW-LEVEL SECURITY
+-- ---------------------------------------------------------------------------
+-- 5. The last Superadministrator cannot be suspended
 --
--- The publishable key is in the site's JavaScript and is sent by every
--- visitor's browser. That is normal and safe, but ONLY because RLS decides what
--- that key can read. A table with RLS off is readable by anyone who opens the
--- page source and copies the key.
---
--- `students.address` holds the full application text: date of birth, identity
--- numbers, next of kin, medical disclosure, references. Getting this wrong
--- publishes all of it.
---
--- The admissions desks are unaffected by everything here. They read through the
--- service-role key, which bypasses RLS by design.
--- ===========================================================================
-
-alter table departments          enable row level security;
-alter table profiles             enable row level security;
-alter table students             enable row level security;
-alter table lecturers            enable row level security;
-alter table courses              enable row level security;
-alter table enrollments          enable row level security;
-alter table results              enable row level security;
-alter table documents            enable row level security;
-alter table audit_logs           enable row level security;
-alter table payments             enable row level security;
-alter table credential_templates enable row level security;
-
--- A policy on `profiles` that reads `profiles` recurses infinitely. The way out
--- is a security-definer function: owned by the table owner, so it reads past
--- RLS, and stable so the planner calls it once per statement.
-create or replace function auth_role() returns text
-language sql
-stable
-security definer
-set search_path = public
-as $$
-  select role from public.profiles where id = auth.uid();
-$$;
-
--- Reference data anyone may read. Nothing here is personal.
-drop policy if exists departments_public_read on departments;
-create policy departments_public_read on departments for select using (true);
-
-drop policy if exists courses_public_read on courses;
-create policy courses_public_read on courses for select using (true);
-
--- Staff directory. Names and titles are already published on the website; if
--- you would rather this were signed-in only, change `true` to
--- `auth.uid() is not null`.
-drop policy if exists lecturers_public_read on lecturers;
-create policy lecturers_public_read on lecturers for select using (true);
-
--- The appearance of a public document. The Certificate Generator renders it
--- with the publishable key, so it has to be readable.
-drop policy if exists credential_templates_read on credential_templates;
-create policy credential_templates_read on credential_templates for select using (true);
-
--- A signed-in user reads their own profile. Section 10 governs what they may
--- write to it, which is far less than this policy alone would allow.
-drop policy if exists profiles_own on profiles;
-create policy profiles_own on profiles for select using (auth.uid() = id);
-
-drop policy if exists profiles_own_update on profiles;
-create policy profiles_own_update on profiles for update using (auth.uid() = id);
-
--- The Accounts screen. profiles_own alone would show an empty table.
-drop policy if exists profiles_system_read on profiles;
-create policy profiles_system_read on profiles
-  for select using (auth_role() in ('superadmin', 'admin'));
-
--- A student reads their own record and nothing else. SELECT only: a student
--- cannot change their own programme, status or student number.
-drop policy if exists students_own_row on students;
-create policy students_own_row on students
-  for select using (auth.uid() = auth_user_id);
-
-drop policy if exists enrollments_own on enrollments;
-create policy enrollments_own on enrollments for select using (
-  student_id in (select id from students where auth_user_id = auth.uid())
-);
-
-drop policy if exists results_own on results;
-create policy results_own on results for select using (
-  student_id in (select id from students where auth_user_id = auth.uid())
-);
-
-drop policy if exists documents_own on documents;
-create policy documents_own on documents for select using (
-  student_id in (select id from students where auth_user_id = auth.uid())
-);
-
--- Staff may read applications.
---
--- WITHOUT THIS THE ADMISSIONS PIPELINE DOES NOT WORK AT ALL. `students_own_row`
--- alone restricts SELECT to `auth.uid() = auth_user_id`; an applicant has no
--- auth account so that column is null, and a Finance officer is not the
--- applicant. RLS therefore returned zero rows to every member of staff, so the
--- Finance queue, the Registrar's queue, the student register and every
--- dashboard count read empty — while the applications sat in the table.
-drop policy if exists students_staff_read on students;
-create policy students_staff_read on students
-  for select using (
-    auth_role() in (
-      'superadmin', 'admin', 'registrar', 'finance', 'finance-director',
-      'admissions-officer', 'dean', 'hod', 'programme-coordinator',
-      'academic-office', 'lecturer', 'student-affairs'
-    )
-  );
-
--- And the two desks may write. There was no UPDATE policy at all, so
--- registering a fee was refused even when the application could be seen.
--- Narrow on purpose: a lecturer or dean may read the register, and neither
--- appears here, because neither admits students nor takes money.
-drop policy if exists students_desk_update on students;
-create policy students_desk_update on students
-  for update using (
-    auth_role() in ('superadmin', 'admin', 'registrar', 'finance', 'finance-director', 'admissions-officer')
-  );
-
--- /apply inserts with the publishable key. It needs INSERT and must not get
--- SELECT — otherwise the key that submits an application could list every
--- other application.
-drop policy if exists students_public_apply on students;
-create policy students_public_apply on students
-  for insert with check (status = 'applicant');
-
--- A student may read their own payments and nothing else. Finance reads and
--- writes through the service role, which bypasses RLS.
-drop policy if exists payments_own on payments;
-create policy payments_own on payments for select using (
-  student_id in (select id from students where auth_user_id = auth.uid())
-);
-
-drop policy if exists payments_system_read on payments;
-create policy payments_system_read on payments
-  for select using (auth_role() in ('superadmin', 'admin', 'finance', 'finance-director'));
-
--- audit_logs and credential_templates get NO write policy and audit_logs gets
--- no read policy either. With RLS on and no policy, only the service role
--- reaches them — the correct answer for an audit trail, and for a table only
--- the Superadministrator's route may write.
-
-
--- ===========================================================================
--- 10. STOP USERS PROMOTING THEMSELVES  ← the one that matters
---
--- `profiles_own_update` above exists so someone can change their own display
--- name. Postgres RLS cannot restrict which COLUMNS a policy covers, so it
--- grants the whole row — including `role`. Without this section, any signed-in
--- user can open the browser console and run
---
---   supabase.from('profiles').update({ role: 'superadmin' }).eq('id', myId)
---
--- and it succeeds. Every separation of duties in this system rests on that
--- column, so until this runs, none of them hold.
---
--- The fix is column-level privileges, which apply underneath RLS: the browser
--- roles simply have no UPDATE right on those columns, so no policy can grant
--- one. The service role keeps its rights, which is why the /api/admin routes
--- still work — and why promotion and suspension can now happen only through a
--- route that authorises, records and audits them.
--- ===========================================================================
-
-revoke update on profiles from authenticated, anon;
-
--- Granted back: only what a person may legitimately change about themselves.
--- Absent: role, suspended_at, suspended_by, suspension_reason.
-grant update (full_name, avatar_url) on profiles to authenticated;
-
--- Defence in depth. If a later migration re-grants a column by accident, or a
--- policy is written that appears to allow it, this still refuses.
-create or replace function guard_profile_privileges() returns trigger
-language plpgsql
-security definer
-set search_path = public
-as $$
-begin
-  -- Block the browser roles specifically rather than allowing only the service
-  -- role. PostgREST switches to 'authenticated' or 'anon' for a request bearing
-  -- the publishable key and to 'service_role' for one bearing the secret key;
-  -- this SQL editor runs as 'postgres'. Testing for "not service_role" would
-  -- therefore also block the SQL editor, including section 14 of this file.
-  if current_user in ('authenticated', 'anon') then
-    if new.role is distinct from old.role then
-      raise exception 'role may only be changed by the Superadministrator, through /api/admin/staff';
-    end if;
-    if new.suspended_at is distinct from old.suspended_at then
-      raise exception 'suspension may only be changed through /api/admin/suspend';
-    end if;
-  end if;
-  return new;
-end;
-$$;
-
-drop trigger if exists profiles_guard_privileges on profiles;
-create trigger profiles_guard_privileges
-  before update on profiles
-  for each row execute function guard_profile_privileges();
-
-
--- ===========================================================================
--- 10b. THE ADMISSIONS PIPELINE — three offices, three permitted moves
---
--- Finance registers the fee. The Registrar verifies the record and forwards
--- it. The Admissions Office assesses and admits. No office can make another
--- office's move, and the Admissions Office cannot admit a record the Registrar
--- has not forwarded.
---
--- RLS cannot restrict columns, so this is a trigger — the same technique as
--- section 10.
--- ===========================================================================
-
-create or replace function guard_admissions_separation() returns trigger
-language plpgsql
-security definer
-set search_path = public
-as $$
-declare
-  actor text;
-begin
-  -- Server routes hold the service-role key and have already checked the
-  -- caller's capability in application code; this guard is for the browser.
-  if current_user not in ('authenticated', 'anon') then
-    return new;
-  end if;
-
-  actor := auth_role();
-
-  if actor in ('superadmin', 'admin') then
-    return new;
-  end if;
-
-  -- Payment fields: Finance only.
-  if (new.payment_status    is distinct from old.payment_status)
-     or (new.fee_reference     is distinct from old.fee_reference)
-     or (new.fee_amount        is distinct from old.fee_amount)
-     or (new.fee_currency      is distinct from old.fee_currency)
-     or (new.fee_registered_by is distinct from old.fee_registered_by)
-     or (new.fee_registered_at is distinct from old.fee_registered_at)
-  then
-    if actor not in ('finance', 'finance-director') then
-      raise exception 'only the Finance office may register or alter a payment';
-    end if;
-  end if;
-
-  -- Decision fields: the two offices that decide, and nobody else.
-  --
-  -- The Registrar records the verification and forwards; the Admissions Office
-  -- records the admission. Finance appears in neither list, which is the point
-  -- — the office that takes the money never writes a decision.
-  if (new.decision_reason      is distinct from old.decision_reason)
-     or (new.decided_by          is distinct from old.decided_by)
-     or (new.decided_at          is distinct from old.decided_at)
-     or (new.student_number      is distinct from old.student_number)
-     or (new.admission_conditions is distinct from old.admission_conditions)
-     or (new.account_created_at  is distinct from old.account_created_at)
-  then
-    if actor not in ('registrar', 'admissions-officer') then
-      raise exception 'only the Registrar or the Admissions Office may record a decision';
-    end if;
-  end if;
-
-  -- `status` moves through the pipeline, and which move is allowed depends on
-  -- who is making it. Three offices, three permitted moves, and no office can
-  -- make another's.
-  if new.status is distinct from old.status then
-    -- Finance registers the fee and nothing else.
-    if actor in ('finance', 'finance-director') and new.status <> 'fee_paid' then
-      raise exception 'the Finance office may only move an application to fee_paid';
-    end if;
-
-    -- The Registrar verifies the record and forwards it, or asks for documents,
-    -- or declines. It does not admit: 'approved' and 'conditional' are the
-    -- Admissions Office's, and this is what stops the Registrar bypassing them.
-    if actor = 'registrar'
-       and new.status not in ('registrar_approved', 'documents_required', 'rejected', 'deferred')
-    then
-      raise exception 'the Registrar verifies and forwards; admitting belongs to the Admissions Office';
-    end if;
-
-    -- The Admissions Office admits, and only from a record the Registrar has
-    -- forwarded. An application that skipped the Registrar cannot be admitted.
-    if actor = 'admissions-officer' then
-      if new.status not in ('approved', 'conditional', 'rejected', 'deferred') then
-        raise exception 'the Admissions Office may admit, decline or defer';
-      end if;
-      if new.status in ('approved', 'conditional') and old.status <> 'registrar_approved' then
-        raise exception 'this record has not been verified and forwarded by the Registrar';
-      end if;
-    end if;
-  end if;
-
-  return new;
-end;
-$$;
-
-drop trigger if exists students_guard_separation on students;
-create trigger students_guard_separation
-  before update on students
-  for each row execute function guard_admissions_separation();
-
-
-
-
--- ===========================================================================
--- 11. THE LAST SUPERADMINISTRATOR CANNOT BE SUSPENDED OR DEMOTED
---
--- Not a rail against clumsiness — a governance one. An institution whose only
--- holder of system custody is locked out has nobody with the standing to unlock
--- anyone, and recovery means editing the database by hand.
--- ===========================================================================
+-- Not a safety rail for clumsiness — a governance one. An institution whose
+-- only holder of system custody is locked out has no one with the standing to
+-- unlock anyone, and recovery means editing the database by hand.
+-- ---------------------------------------------------------------------------
 
 create or replace function guard_last_superadmin() returns trigger
 language plpgsql
@@ -837,14 +700,18 @@ declare
   remaining integer;
 begin
   if new.suspended_at is not null and old.suspended_at is null and old.role = 'superadmin' then
-    select count(*) into remaining from public.profiles
+    select count(*) into remaining
+    from public.profiles
     where role = 'superadmin' and suspended_at is null and id <> old.id;
     if remaining = 0 then
       raise exception 'cannot suspend the last active Superadministrator';
     end if;
   end if;
+  -- The same applies to demotion: promoting yourself out of the role is the
+  -- other way to end up with none.
   if new.role is distinct from 'superadmin' and old.role = 'superadmin' then
-    select count(*) into remaining from public.profiles
+    select count(*) into remaining
+    from public.profiles
     where role = 'superadmin' and suspended_at is null and id <> old.id;
     if remaining = 0 then
       raise exception 'cannot remove the last active Superadministrator';
@@ -860,18 +727,18 @@ create trigger profiles_guard_last_superadmin
   for each row execute function guard_last_superadmin();
 
 
--- ===========================================================================
--- 12. THE AUDIT TRAIL IS APPEND-ONLY
+-- ---------------------------------------------------------------------------
+-- 6. The audit trail becomes append-only
 --
--- RLS already means only the service role can read audit_logs. That is not the
--- same as being unfalsifiable: the service role could also delete from it, and
--- the routes hold that key.
+-- audit_logs already has RLS on with no policy, so only the service role can
+-- read it. That is not the same as being unfalsifiable: the service role could
+-- also delete from it, and the routes that write to it hold that key.
 --
--- These refuse UPDATE and DELETE for everyone, service role included. The
--- Superadministrator can read the log of their own actions and cannot remove a
--- line from it. A record the most powerful account can edit is not a record of
--- anything.
--- ===========================================================================
+-- These triggers refuse UPDATE and DELETE on the table for everyone, service
+-- role included. The Superadministrator can read the log of their own actions
+-- and cannot remove a line from it. A record that the most powerful account can
+-- edit is not a record of anything.
+-- ---------------------------------------------------------------------------
 
 create or replace function refuse_audit_mutation() returns trigger
 language plpgsql as $$
@@ -889,10 +756,71 @@ create trigger audit_logs_no_delete before delete on audit_logs
   for each statement execute function refuse_audit_mutation();
 
 
--- ===========================================================================
--- 13. PUBLISHED CREDENTIAL DESIGNS ARE PERMANENT
--- ===========================================================================
+-- ---------------------------------------------------------------------------
+-- 7. Let the Superadministrator see every account
+--
+-- profiles_own restricts SELECT to your own row, which is right for students
+-- and wrong for the Accounts screen — it would show an empty table.
+--
+-- A policy on `profiles` that reads `profiles` recurses infinitely. The way out
+-- is a security-definer function: owned by the table owner, so it reads past
+-- RLS, and stable so the planner calls it once per statement.
+-- ---------------------------------------------------------------------------
 
+create or replace function auth_role() returns text
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select role from public.profiles where id = auth.uid();
+$$;
+
+drop policy if exists profiles_system_read on profiles;
+create policy profiles_system_read on profiles
+  for select using (auth_role() in ('superadmin', 'admin'));
+
+
+-- ---------------------------------------------------------------------------
+-- 8. Credential designs
+--
+-- One row per published version. Publishing writes a new row rather than
+-- editing the active one, so a certificate issued under v1 can always be
+-- re-rendered as it was issued — see src/lib/credentialTemplate.ts for why that
+-- is not a nicety.
+-- ---------------------------------------------------------------------------
+
+create table if not exists credential_templates (
+  id            uuid primary key default gen_random_uuid(),
+  kind          text not null check (kind in ('certificate', 'transcript')),
+  version       integer not null,
+  name          text not null,
+  design        jsonb not null,
+  is_active     boolean not null default false,
+  created_by    uuid references auth.users (id) on delete set null,
+  created_at    timestamptz not null default now(),
+  published_at  timestamptz,
+  unique (kind, version)
+);
+
+-- Exactly one active version per kind. Without this, two actives would make
+-- "which design is in force" a question with two answers.
+create unique index if not exists credential_templates_one_active
+  on credential_templates (kind) where is_active;
+
+alter table credential_templates enable row level security;
+
+-- Anyone may read a design: it is the appearance of a public document, and the
+-- Certificate Generator renders it with the publishable key.
+drop policy if exists credential_templates_read on credential_templates;
+create policy credential_templates_read on credential_templates for select using (true);
+
+-- No INSERT or UPDATE policy at all. Writing is the service role's alone, which
+-- means /api/admin/credential-template, which requires 'publish-credential-
+-- template', which only the Superadministrator holds.
+
+-- Published versions are permanent. Editing one would change what the
+-- university appears to have attested to, for every graduate holding it.
 create or replace function refuse_template_edit() returns trigger
 language plpgsql as $$
 begin
@@ -916,57 +844,43 @@ create trigger credential_templates_immutable
   for each row execute function refuse_template_edit();
 
 
--- ===========================================================================
--- 14. APPOINT THE SUPERADMINISTRATOR AND THE ADMINISTRATOR
+-- ---------------------------------------------------------------------------
+-- 9. Appoint the Superadministrator
 --
--- These do nothing unless the accounts already exist in Authentication → Users.
--- If you created them after running this file, re-run just this section.
+-- Create both accounts first in the dashboard:
+--   Authentication → Users → Add user → tick "Auto Confirm User"
+--
+--   superadmin@iguc.net   → Superadministrator (system custody)
+--   tchamer@aol.com       → System Administrator (day-to-day)
+--
+-- Then this promotes them. Edit the addresses if you used different ones.
 --
 -- The split matters: system custody sits on a university mailbox the
 -- institution controls, not a personal one. If the personal account is ever
 -- compromised, the attacker gets an administrator — who cannot assign roles,
 -- cannot suspend anyone, and cannot redesign a certificate.
--- ===========================================================================
+-- ---------------------------------------------------------------------------
 
-update profiles
-set role = 'superadmin',
-    full_name = coalesce(nullif(full_name, ''), 'Superadministrator')
+update profiles set role = 'superadmin', full_name = coalesce(nullif(full_name, ''), 'Superadministrator')
 where lower(email) = 'superadmin@iguc.net';
 
-update profiles
-set role = 'admin',
-    full_name = coalesce(nullif(full_name, ''), 'System Administrator')
+update profiles set role = 'admin', full_name = coalesce(nullif(full_name, ''), 'System Administrator')
 where lower(email) = 'tchamer@aol.com';
 
--- THE ADMISSIONS OFFICER. Uncomment and put the real address in.
---
--- Without one, the pipeline stops one step short of working. The Registrar can
--- verify and forward, and the record sits at 'registrar_approved' with nobody
--- holding the role that may move it to 'approved' — section 10b refuses the
--- Registrar that move on purpose. No error is shown to anyone; applications
--- simply accumulate in a queue no desk is watching.
---
--- The account must already exist in Authentication → Users.
 
--- update profiles
--- set role = 'admissions-officer',
---     full_name = coalesce(nullif(full_name, ''), 'Admissions Officer')
--- where lower(email) = 'admissions@iguc.net';
+-- ---------------------------------------------------------------------------
+-- 10. Verify — read every one of these
+-- ---------------------------------------------------------------------------
 
+-- (a) There must be at least one. If this is empty, the account was never
+--     created in the dashboard or the email differs.
+select email, full_name, role, suspended_at
+from profiles
+where role in ('superadmin', 'admin')
+order by role, email;
 
--- ===========================================================================
--- 15. VERIFY — READ THE OUTPUT OF ALL FIVE
--- ===========================================================================
-
--- (a) Eleven tables, every one with rowsecurity = true.
-select tablename, rowsecurity
-from pg_tables
-where schemaname = 'public'
-order by tablename;
-
--- (b) THE IMPORTANT ONE. `authenticated` must appear ONLY for full_name and
---     avatar_url. If `role` is in this list, section 10 did not apply and any
---     student can make themselves a Superadministrator.
+-- (b) `authenticated` must NOT appear with update on role. Expect rows only for
+--     full_name and avatar_url.
 select grantee, privilege_type, column_name
 from information_schema.column_privileges
 where table_name = 'profiles'
@@ -974,7 +888,7 @@ where table_name = 'profiles'
   and privilege_type = 'UPDATE'
 order by grantee, column_name;
 
--- (c) All five guards present. Expect 5 rows.
+-- (c) All five guards must be present. Expect 5 rows.
 select tgname from pg_trigger
 where tgname in (
   'profiles_guard_privileges', 'profiles_guard_last_superadmin',
@@ -982,56 +896,32 @@ where tgname in (
 )
 order by tgname;
 
--- (d) The appointments. Expect superadmin@iguc.net and tchamer@aol.com. Empty
---     means the accounts were not created in the dashboard, or the addresses
---     differ — create them, then re-run section 14.
-select email, full_name, role, suspended_at
-from profiles
-where role in ('superadmin', 'admin')
-order by role, email;
-
--- (e) Every auth account has a profile, or it cannot sign in. Expect 0 rows.
-select u.email, u.created_at
-from auth.users u
+-- (d) Every account still has a profile. Expect 0 rows.
+select u.email from auth.users u
 where not exists (select 1 from profiles p where p.id = u.id);
 
 
 -- ===========================================================================
--- FIVE THINGS TO DO AFTER THIS FINISHES
+-- AFTER RUNNING THIS
 --
 -- 1. Dashboard → Authentication → Providers → Email → turn OFF "Allow new
---    users to sign up". The portal has no sign-up form, but the endpoint stays
---    open until that switch is off, and open means anyone can mint themselves
---    a student account.
+--    users to sign up". Section 4 explains why: the portal has no sign-up
+--    form, but the endpoint stays open until that switch is off.
 --
--- 2. Prove RLS is holding, FROM A TERMINAL — not this editor, which is
---    authenticated and will always succeed:
+-- 2. Prove section 3 worked, from a browser console signed in as any student:
 --
---      curl -s "https://bhpsftesricwotkziokd.supabase.co/rest/v1/students?select=id,email&limit=1" \
---        -H "apikey: sb_publishable_lQm8dFmj8PnQinSZooQbVg_WAfKJcGS"
+--      await supabase.from('profiles').update({role:'superadmin'}).eq('id', user.id)
 --
---      []            RLS is holding. Correct.
---      [{"id":...}]  Stop. Every applicant's date of birth and identity number
---                    is public.
+--    It must return an error. If it returns success, stop — every separation of
+--    duties in this system is currently decorative.
 --
--- 3. Set SUPABASE_SERVICE_ROLE_KEY in Vercel — server-side, never with a
---    NEXT_PUBLIC_ prefix. Without it the Registrar's approve button and every
---    /api/admin route refuse rather than silently doing nothing.
+-- 3. Sign in as superadmin@iguc.net. Two menu items appear that appear for no
+--    one else: Accounts, and Credential Studio.
 --
--- 4. Set CREDENTIAL_SECRET in Vercel — 32 characters or more, server-side,
---    never NEXT_PUBLIC_. This is the key every admission letter, transcript and
---    certificate is sealed with. Without it the system does not fail loudly: it
---    keeps issuing admission letters, each one printed "Not sealed", carrying
---    no verification code and no QR. They are genuine letters that nobody can
---    check. Set it BEFORE the first admission goes out — changing it later
---    invalidates the seal on every document already issued under the old one.
---
---      openssl rand -hex 32
---
--- 5. Appoint the Admissions Officer — section 14, the commented block. The
---    pipeline is Finance → Registrar → Admissions Office, and with no holder of
---    the third role, approved applications stop at 'registrar_approved' and
---    nothing tells anyone why.
+-- 4. In the Credential Studio, publish v1 of the certificate without changing
+--    anything. The built-in default is a faithful copy of the previous design,
+--    so v1 records "this is what we were already issuing" before any change is
+--    made against it.
 -- ===========================================================================
 
 
@@ -8869,4 +8759,239 @@ select s.student_number, s.first_name, s.last_name, s.status, s.program
 from students s
 where s.status in ('approved', 'admission_processing', 'admission_processing_failed')
 order by s.decided_at desc nulls last;
+
+
+-- ===========================================================================
+-- ===========================================================================
+--
+--   027_the_states_the_pipeline_already_wrote.sql
+--
+-- ===========================================================================
+-- ===========================================================================
+
+-- ===========================================================================
+-- 027 — THE THREE STATES THE PIPELINE ALREADY WROTE AND NOBODY HAD DECLARED
+--
+-- Run after 026. Idempotent; destroys nothing. Safe on a live database.
+--
+-- ---------------------------------------------------------------------------
+-- WHY
+-- ---------------------------------------------------------------------------
+--
+-- The University asked why some applications were completely invisible in the
+-- administration portal. Nothing had been deleted and no policy was refusing
+-- the read: the rows were there, and no screen asked for them.
+--
+-- Every desk carried its own hand-written list of statuses in its own query —
+-- six lists, in four files, none able to see the others, all written before
+-- 023–026 widened the vocabulary. A state on no list is a record that exists
+-- and that nothing fetches.
+--
+-- It was not a corner case. ALL FOUR of the Head of Academic Affairs' outcomes
+-- fell through: approve produces `admission_issued`, reject produces
+-- `rejected`, and the panel meant to show decided applications was looking for
+-- `approved` and `declined`. The office took a decision and the application
+-- left every admissions screen in the system.
+--
+-- The queues are fixed in the application, where they belong — they read from
+-- ADMISSION_DESKS in src/lib/admissionWorkflow.ts, and admissionDesks.test.mjs
+-- fails if a state lands on no desk. This migration is the database's half.
+--
+-- ---------------------------------------------------------------------------
+-- WHAT THE DATABASE'S HALF IS
+-- ---------------------------------------------------------------------------
+--
+-- THREE STATES THAT WERE ALWAYS LIVE AND WERE NEVER DECLARED. `registrar_
+-- approved`, `declined` and `deferred` are written by src/lib/admissions.ts
+-- and have been since the first pipeline. They were absent from
+-- admission_states, which meant the vocabulary was not the vocabulary — and
+-- because `students.status` carries no CHECK constraint, nothing ever said so.
+--
+-- They keep their existing spellings. `declined` is the REGISTRAR refusing at
+-- verification and `rejected` is the HEAD OF ACADEMIC AFFAIRS refusing on
+-- academic grounds; folding one into the other would lose which office
+-- refused, which is the first thing anybody re-reading a refusal asks.
+--
+-- AND A VIEW THAT MAKES THE NEXT ONE LOUD. `admission_status_coverage` reports
+-- every distinct status actually present in `students`, how many records hold
+-- it, and whether the vocabulary knows it. A status nobody declared now shows
+-- up as a row with a count against it instead of as an empty queue.
+--
+-- ---------------------------------------------------------------------------
+-- WHAT THIS DOES NOT DO, AND WHY
+-- ---------------------------------------------------------------------------
+--
+-- IT DOES NOT CONSTRAIN `students.status`. A CHECK or a foreign key to
+-- admission_states would be the obvious move and it would be wrong: that
+-- column carries the ENROLLED STUDENT statuses too — `active`, `graduated`,
+-- `suspended`, `deferred` — which are not admission states and have their own
+-- list in src/lib/constants.ts. Constraining it to the admission vocabulary
+-- would refuse writes on the student register.
+--
+-- That overlap is a real design fault and it is not this migration's to fix.
+-- Separating an application's state from a student's standing is a schema
+-- change with a data migration behind it, and it is the University's call.
+-- The view is the honest interim: it cannot prevent the mess, it can only
+-- refuse to hide it.
+-- ===========================================================================
+
+
+-- ===========================================================================
+-- 1. THE THREE STATES
+--
+-- The trigger from 025 refuses INSERT into admission_states, on the grounds
+-- that a new state is a code change and not a row. This IS the code change —
+-- they are added to src/lib/admissionWorkflow.ts in the same commit — so the
+-- trigger comes off for exactly these three inserts and goes straight back.
+-- ===========================================================================
+
+do $$
+begin
+  alter table admission_states disable trigger admission_states_locked;
+
+  insert into admission_states (state, stage, applicant_label, label, sort_order) values
+    ('registrar_approved', 'verification', 'Under academic review',
+     'Verified — with the Admissions Office', 75),
+    ('declined',           'closed',       'Application unsuccessful',
+     'Declined by the Registrar',            121),
+    ('deferred',           'closed',       'Deferred to a later intake',
+     'Deferred',                             122)
+  on conflict (state) do update
+    set stage = excluded.stage,
+        applicant_label = excluded.applicant_label,
+        label = excluded.label,
+        sort_order = excluded.sort_order;
+
+  -- `deferred` IS NOT A REFUSAL and its labels say so. The applicant is not
+  -- being considered for this intake and has to be told that; what they must
+  -- not be told is that they were turned down, because they were not.
+  alter table admission_states enable trigger admission_states_locked;
+end $$;
+
+
+-- ===========================================================================
+-- 2. THE VIEW THAT MAKES AN UNDECLARED STATUS VISIBLE
+--
+-- The whole defect was a silence: a status no query named produced an empty
+-- list, and an empty list is indistinguishable from no applications. This is
+-- the one place that can tell the difference, because it starts from what is
+-- in the table rather than from what somebody remembered to ask for.
+-- ===========================================================================
+
+create or replace view admission_status_coverage as
+select
+  s.status,
+  count(*)                                as records,
+  (a.state is not null)                   as in_vocabulary,
+  a.stage,
+  a.label
+from students s
+left join admission_states a on a.state = s.status
+group by s.status, a.state, a.stage, a.label
+order by (a.state is not null), count(*) desc;
+
+comment on view admission_status_coverage is
+  'Every status actually present in students, and whether admission_states '
+  'declares it. Rows with in_vocabulary = false are records the admissions '
+  'screens may not be able to show. Note that the enrolled-student statuses '
+  '(active, graduated, suspended) legitimately appear as false: students.status '
+  'carries both vocabularies.';
+
+
+-- ===========================================================================
+-- 3. PERFORMING THE RULES
+-- ===========================================================================
+
+-- The proof runs inside a plpgsql sub-block, which is a savepoint: raising at
+-- the end rolls every row below back and leaves nothing behind. An explicit
+-- `begin; … rollback;` cannot be used — a file carrying its own transaction
+-- cannot be safely concatenated into RUN-ALL.sql, and
+-- scripts/build-migration-run.mjs refuses to build one that does.
+
+do $$
+declare
+  app uuid;
+  refused boolean;
+  seen boolean;
+begin
+ begin
+  -- FIRST, THAT THE STATES ARE ACTUALLY THERE. Writing one into students.status
+  -- and reading it back would prove nothing: that column has no CHECK
+  -- constraint and accepts any string at all. 026 shipped with a proof that
+  -- passed on a run where its INSERT had failed. This one reads the vocabulary.
+  if (select count(*) from admission_states
+      where state in ('registrar_approved', 'declined', 'deferred')) <> 3 then
+    raise exception '027 FAILED: the three legacy states were not added to the vocabulary';
+  end if;
+
+  -- AND THAT THEY DID NOT LAND ON TOP OF ANYTHING. `declined` and `rejected`
+  -- are two different offices refusing and must stay distinguishable.
+  if (select label from admission_states where state = 'declined')
+     = (select label from admission_states where state = 'rejected') then
+    raise exception '027 FAILED: the Registrar''s refusal and the academic refusal read alike';
+  end if;
+
+  -- ---- THE VIEW SEES A STATUS NOBODY DECLARED --------------------------
+  insert into students (first_name, last_name, matric_no, email, status)
+  values ('Proof', '027', 'PROOF-027', 'proof-027@iguc.net', 'a_state_nobody_declared')
+  returning id into app;
+
+  select not in_vocabulary into seen
+    from admission_status_coverage where status = 'a_state_nobody_declared';
+  if seen is not true then
+    raise exception '027 FAILED: an undeclared status did not show up as undeclared';
+  end if;
+
+  -- …AND REPORTS A DECLARED ONE AS DECLARED, so the column above is actually
+  -- discriminating rather than returning true for everything.
+  update students set status = 'registrar_approved' where id = app;
+  select in_vocabulary into seen
+    from admission_status_coverage where status = 'registrar_approved';
+  if seen is not true then
+    raise exception '027 FAILED: a declared status was reported as unknown';
+  end if;
+
+  -- ---- AND THE STATE LIST IS STILL THE SOFTWARE'S ----------------------
+  refused := false;
+  begin
+    insert into admission_states (state, stage, applicant_label, label, sort_order)
+    values ('invented', 'closed', 'x', 'x', 999);
+  exception when others then refused := true;
+  end;
+  if not refused then
+    raise exception '027 FAILED: the state vocabulary was left unlocked';
+  end if;
+
+  raise exception 'PROOF_ROLLBACK';
+ exception when others then
+   -- Anything that is not the sentinel is a real failure and must not be eaten.
+   if sqlerrm <> 'PROOF_ROLLBACK' then raise; end if;
+ end;
+
+ raise notice '027 OK — the three states the pipeline writes are declared, the two refusals stay '
+              'distinguishable, an undeclared status is visible, and the vocabulary is still locked.';
+end $$;
+
+
+-- ===========================================================================
+-- 4. VERIFY
+-- ===========================================================================
+
+-- The three states, as the University's own screens will now label them.
+select state as code, label, applicant_label, stage
+from admission_states
+where state in ('registrar_approved', 'declined', 'deferred')
+order by sort_order;
+
+-- ---------------------------------------------------------------------------
+-- THE ONE TO READ. Every status actually in the table, commonest first, with
+-- the undeclared ones at the top.
+--
+-- `active`, `graduated` and `suspended` are EXPECTED to show in_vocabulary =
+-- false: they are student statuses rather than admission states and share the
+-- column. Anything else showing false is an application the admissions screens
+-- may not be able to display, and it should be reported rather than corrected
+-- here.
+-- ---------------------------------------------------------------------------
+select * from admission_status_coverage;
 

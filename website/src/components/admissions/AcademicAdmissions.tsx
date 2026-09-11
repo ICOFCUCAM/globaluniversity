@@ -38,8 +38,9 @@ import { supabase } from '@/lib/supabase';
 import { courses, MODE_LABEL } from '@/content/courses';
 import {
   ACADEMIC_DECISIONS, DECISION_CHECKS, canDecide, canRetryIssuance, ISSUANCE_STEPS,
-  type AcademicDecision, type DecisionRefusal,
+  statesForDesk, type AcademicDecision, type DecisionRefusal,
 } from '@/lib/admissionWorkflow';
+import { stages, stageOf, stageChipClass } from '@/lib/admissions';
 import {
   Card, CardHeader, Figure, EmptyState, Skeleton, PageHeader,
   TableShell, THead, TBody, Th, Td,
@@ -64,7 +65,19 @@ interface Application {
   intake: string | null;
   fee_registered_at: string | null;
   created_at: string | null;
+  decided_at?: string | null;
 }
+
+// Module-level: naming it inside the component would rebuild `load` on every
+// render, and `load` is a useEffect dependency.
+//
+// ONE LITERAL, NOT A CONCATENATION. supabase-js infers the row type from the
+// column list as a string LITERAL type; splitting it over two lines with `+`
+// widens it to `string` and the query silently returns GenericStringError[]
+// instead of the row shape. It fails the build rather than at runtime, which is
+// the good outcome, but the reason is not obvious from the error.
+// eslint-disable-next-line max-len
+const COLUMNS = 'id, first_name, last_name, email, matric_no, program, degree_type, faculty, campus, status, intake, fee_registered_at, created_at, decided_at';
 
 /** The decision the desk is composing, before it is sent. */
 interface Draft {
@@ -75,6 +88,7 @@ interface Draft {
 
 export default function AcademicAdmissions({ role }: { role?: UserRole }) {
   const [rows, setRows] = useState<Application[] | null>(null);
+  const [decided, setDecided] = useState<Application[] | null>(null);
   const [reachable, setReachable] = useState(true);
   const [open, setOpen] = useState<Application | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -92,20 +106,26 @@ export default function AcademicAdmissions({ role }: { role?: UserRole }) {
   const isOverride = role === 'superadmin';
 
   const load = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('students')
-      .select('id, first_name, last_name, email, matric_no, program, degree_type, faculty, campus, status, intake, fee_registered_at, created_at')
-      .in('status', [
-        'ready_for_academic_review', 'fee_paid', 'documents_verified', 'documents_required',
-        // AND THE ONES THAT STOPPED PART WAY. An issuance that failed after the
-        // letter was generated used to leave `approved` — off this queue, out
-        // of sight, recoverable only by editing rows. It belongs here.
-        'admission_processing', 'admission_processing_failed',
-      ])
-      .order('fee_registered_at', { ascending: true, nullsFirst: false })
-      .limit(100);
-    setReachable(!error);
-    setRows(data ?? []);
+    const [queue, settled] = await Promise.all([
+      supabase
+        .from('students')
+        .select(COLUMNS)
+        .in('status', statesForDesk('academic'))
+        .order('fee_registered_at', { ascending: true, nullsFirst: false })
+        .limit(100),
+      // WHAT THIS DESK HAS ALREADY DECIDED. Its absence is the defect: the
+      // Head of Academic Affairs pressed a button and the application left the
+      // screen with no way to confirm what had happened to it.
+      supabase
+        .from('students')
+        .select(COLUMNS)
+        .in('status', statesForDesk('academic-decided'))
+        .order('decided_at', { ascending: false, nullsFirst: false })
+        .limit(50),
+    ]);
+    setReachable(!queue.error && !settled.error);
+    setRows(queue.data ?? []);
+    setDecided(settled.data ?? []);
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -312,6 +332,66 @@ export default function AcademicAdmissions({ role }: { role?: UserRole }) {
                           Review
                         </button>
                       )}
+                    </Td>
+                  </tr>
+                );
+              })}
+            </TBody>
+          </TableShell>
+        )}
+      </Card>
+
+      {/* ------------------------------------------------------------------
+          WHAT THIS DESK HAS DECIDED.
+
+          The panel whose absence was the defect. Every outcome this screen can
+          produce — issued, rejected, conditional, returned — left the
+          application off every queue in the system, so the Head of Academic
+          Affairs pressed a button and watched the record disappear with no
+          way to confirm what had become of it.
+          ------------------------------------------------------------------ */}
+      <Card>
+        <CardHeader
+          title="Decided"
+          subtitle="What this desk has already determined, most recent first"
+        />
+        {decided === null ? (
+          <div className="space-y-2 p-5">
+            {Array.from({ length: 3 }, (_, i) => <Skeleton key={i} className="h-9 w-full" />)}
+          </div>
+        ) : decided.length === 0 ? (
+          <EmptyState
+            icon={<CheckCircle2 size={22} />}
+            title="Nothing decided yet"
+            description="Applications you approve, reject, conditionally approve or return appear here."
+          />
+        ) : (
+          <TableShell>
+            <THead>
+              <tr>
+                <Th>Applicant</Th><Th>Programme</Th><Th>Outcome</Th><Th>Decided</Th>
+              </tr>
+            </THead>
+            <TBody>
+              {decided.map((a) => {
+                const stage = stages[stageOf(a)];
+                return (
+                  <tr key={a.id}>
+                    <Td>
+                      <span className="font-medium">{[a.first_name, a.last_name].filter(Boolean).join(' ') || '—'}</span>
+                      <span className="block text-[11px] text-[#a49bb0]">{a.matric_no}</span>
+                    </Td>
+                    <Td>{a.program ?? '—'}</Td>
+                    <Td>
+                      <span className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ${stageChipClass[stage.tone]}`}>
+                        {stage.label}
+                      </span>
+                    </Td>
+                    <Td>
+                      {a.decided_at
+                        ? new Date(a.decided_at).toLocaleDateString('en-GB',
+                          { day: 'numeric', month: 'short', year: 'numeric' })
+                        : '—'}
                     </Td>
                   </tr>
                 );

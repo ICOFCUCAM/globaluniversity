@@ -63,8 +63,13 @@ for (const probe of MIGRATION_PROBES) {
       || new RegExp(`create table if not exists ${probe.table}[\\s\\S]*?\\b${probe.column}\\b`, 'i').test(sql);
     check(`${probe.file} adds ${probe.table}.${probe.column}`, adds, true);
   } else {
-    check(`${probe.file} creates ${probe.table}`,
-      new RegExp(`create table if not exists ${probe.table}\\b`, 'i').test(sql), true);
+    // A VIEW COUNTS. The probe reads through PostgREST, which serves a view
+    // exactly as it serves a table — so `admission_status_coverage` is as good
+    // a marker as any table, and insisting on CREATE TABLE would have forced
+    // 027 to be listed as unverifiable when it is nothing of the kind.
+    const creates = new RegExp(`create table if not exists ${probe.table}\\b`, 'i').test(sql)
+      || new RegExp(`create (?:or replace )?view ${probe.table}\\b`, 'i').test(sql);
+    check(`${probe.file} creates ${probe.table}`, creates, true);
   }
 }
 

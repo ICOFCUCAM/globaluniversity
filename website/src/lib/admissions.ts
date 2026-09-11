@@ -31,19 +31,44 @@
 // ---------------------------------------------------------------------------
 
 import { supabase } from './supabase';
+import { statesForDesk, type AdmissionDeskKey } from './admissionWorkflow';
 import type { Student } from './types';
 
 /**
  * Where an application has reached. Stored in `students.status` so the
  * existing Student Management view continues to work unchanged.
  */
+// ---------------------------------------------------------------------------
+// EVERY STATE A DESK CAN NOW SHOW NEEDS A CHIP.
+//
+// This list held six. The desks now show nineteen, because they used to hide
+// thirteen — and an unknown state fell through `stageOf` to `applicant`, so an
+// application the Head of Academic Affairs had just admitted would have
+// rendered as a red "Awaiting fee". Widening the queues without widening this
+// would have replaced an invisible record with a mislabelled one.
+// ---------------------------------------------------------------------------
 export type AdmissionStage =
   | 'applicant' // submitted, payment not yet verified — RED
+  | 'fee_pending' // awaiting Finance
   | 'fee_paid' // Finance verified the payment — BLUE, visible to the Registrar
+  | 'under_review' // the Admissions Office has it open
   | 'documents_required' // Registrar asked for more documents; back with the applicant
-  | 'approved' // Registrar approved; account created and credentials sent
-  | 'declined' // Registrar rejected
-  | 'active'; // enrolled and studying
+  | 'documents_verified' // documents checked and accepted
+  | 'registrar_approved' // Registrar verified and forwarded
+  | 'ready_for_academic_review' // on the Head of Academic Affairs' desk
+  | 'approved' // the academic decision, and only that
+  | 'conditional' // admitted with conditions
+  | 'returned' // sent back to the Admissions Office for correction
+  | 'rejected' // refused by the Head of Academic Affairs
+  | 'declined' // refused by the Registrar
+  | 'deferred' // held over to a later intake
+  | 'admission_processing' // issuance under way
+  | 'admission_processing_failed' // issuance stopped part way; retriable
+  | 'admission_issued' // the package exists and the account behind it does too
+  | 'enrolled' // the Registrar has completed enrolment
+  | 'withdrawn' // left before or during study
+  | 'active' // enrolled and studying
+  | 'unknown'; // anything this file has not been taught
 
 /**
  * Payment status is tracked separately from application status because the two
@@ -104,11 +129,124 @@ export const stages: Record<AdmissionStage, StageMeta> = {
     description: 'Registered and studying.',
     actionableBy: null,
   },
+
+  // ---- The states the six above did not name -----------------------------
+
+  fee_pending: {
+    label: 'Fee pending',
+    tone: 'red',
+    description: 'Finance has not yet confirmed the application fee.',
+    actionableBy: 'finance',
+  },
+  under_review: {
+    label: 'Under review',
+    tone: 'blue',
+    description: 'The Admissions Office has the application open for assessment.',
+    actionableBy: null,
+  },
+  documents_verified: {
+    label: 'Documents verified',
+    tone: 'blue',
+    description: 'The supporting documents have been checked and accepted.',
+    actionableBy: null,
+  },
+  registrar_approved: {
+    label: 'Verified — with the Admissions Office',
+    tone: 'blue',
+    description:
+      'The Registrar has verified the record and forwarded it. The Admissions Office assesses it next.',
+    actionableBy: null,
+  },
+  ready_for_academic_review: {
+    label: 'Awaiting academic decision',
+    tone: 'blue',
+    description:
+      'Verified and paid. The application is on the desk of the Head of Academic Affairs, who takes the decision.',
+    actionableBy: null,
+  },
+  conditional: {
+    label: 'Conditionally approved',
+    tone: 'green',
+    description: 'Admitted with conditions recorded against the record.',
+    actionableBy: null,
+  },
+  returned: {
+    label: 'Returned for correction',
+    tone: 'amber',
+    description:
+      'The Head of Academic Affairs returned the application to the Admissions Office to be corrected.',
+    actionableBy: null,
+  },
+  rejected: {
+    label: 'Rejected',
+    tone: 'grey',
+    // The label distinguishes the two refusals rather than showing the same
+    // word twice. Who refused an application is the first thing anybody
+    // re-reading a refusal asks.
+    description: 'The Head of Academic Affairs refused the application on academic grounds.',
+    actionableBy: null,
+  },
+  deferred: {
+    label: 'Deferred',
+    tone: 'amber',
+    description: 'Held over to a later intake. No decision has been taken on the application.',
+    actionableBy: null,
+  },
+  admission_processing: {
+    label: 'Issuing…',
+    tone: 'blue',
+    description:
+      'The decision is recorded and the University is issuing the package, the number and the account.',
+    actionableBy: null,
+  },
+  admission_processing_failed: {
+    label: 'Issuance failed — retry',
+    tone: 'amber',
+    description:
+      'The decision stands and an issuance step did not complete. It is retried from the Admissions '
+      + 'approval desk; nothing needs correcting by hand.',
+    actionableBy: null,
+  },
+  admission_issued: {
+    label: 'Admission issued',
+    tone: 'green',
+    description:
+      'The admission package has been issued and the account behind it exists. The applicant has been admitted.',
+    actionableBy: null,
+  },
+  enrolled: {
+    label: 'Enrolled',
+    tone: 'green',
+    description: 'The Registrar has completed enrolment.',
+    actionableBy: null,
+  },
+  withdrawn: {
+    label: 'Withdrawn',
+    tone: 'grey',
+    description: 'The applicant or student left before or during study.',
+    actionableBy: null,
+  },
+
+  // THE HONEST FALLBACK. `stageOf` used to return 'applicant' for anything it
+  // did not recognise, which labelled an unknown state "Awaiting fee" in red —
+  // a confident, specific and wrong answer. This one says it does not know.
+  unknown: {
+    label: 'Unrecognised status',
+    tone: 'grey',
+    description:
+      'The record carries a status this system has not been taught. It is shown rather than hidden, '
+      + 'because a record nobody can see is worse than one nobody can name.',
+    actionableBy: null,
+  },
 };
 
-export function stageOf(student: Pick<Student, 'status'>): AdmissionStage {
+// The parameter is widened to a nullable status because the body already
+// handles one (`?? ''`) and the callers already have one: a row read straight
+// from `students` types `status` as `string | null`. Declaring it non-null only
+// forced a cast at every call site, which is the wrong way round.
+export function stageOf(student: { status?: string | null }): AdmissionStage {
   const s = (student.status ?? '').toLowerCase();
-  return (s in stages ? s : 'applicant') as AdmissionStage;
+  return (s in stages ? s : 'unknown') as AdmissionStage;
 }
 
 /** Tailwind classes for a stage chip, keyed by the university's own colours. */
@@ -122,15 +260,42 @@ export const stageChipClass: Record<StageMeta['tone'], string> = {
 
 // --- Queues ----------------------------------------------------------------
 
-/** Finance desk: everything waiting for the fee to be registered. */
-export async function financeQueue(): Promise<Student[]> {
-  const { data, error } = await supabase
+// ---------------------------------------------------------------------------
+// ONE QUERY, AND THE STATES COME FROM THE WORKFLOW MODULE.
+//
+// Each of these used to name its own statuses inline. That is how an
+// application became invisible: the lists were written before the vocabulary
+// grew, nothing compared them against it, and a state on no list is a record
+// that exists and that no screen asks for. Reading them from ADMISSION_DESKS
+// means adding a state to the workflow and forgetting a desk is a test
+// failure rather than a silence.
+// ---------------------------------------------------------------------------
+
+/**
+ * The applications one desk is responsible for.
+ *
+ * `order` differs by desk on purpose. A queue of work is fairest oldest-first;
+ * a record of what has been dealt with is most useful newest-first.
+ */
+export async function queueFor(
+  desk: AdmissionDeskKey,
+  opts: { order?: { column: string; ascending: boolean }; limit?: number } = {},
+): Promise<Student[]> {
+  const { column, ascending } = opts.order ?? { column: 'created_at', ascending: true };
+  let q = supabase
     .from('students')
     .select('*')
-    .eq('status', 'applicant')
-    .order('created_at', { ascending: true });
+    .in('status', statesForDesk(desk))
+    .order(column, { ascending, nullsFirst: false });
+  if (opts.limit) q = q.limit(opts.limit);
+  const { data, error } = await q;
   if (error) throw new Error(error.message);
   return (data ?? []) as Student[];
+}
+
+/** Finance desk: everything waiting for the fee to be registered. */
+export async function financeQueue(): Promise<Student[]> {
+  return queueFor('finance');
 }
 
 /**
@@ -150,13 +315,7 @@ export async function financeQueue(): Promise<Student[]> {
  * verified, even by mistake.
  */
 export async function admissionsQueue(): Promise<Student[]> {
-  const { data, error } = await supabase
-    .from('students')
-    .select('*')
-    .eq('status', 'registrar_approved')
-    .order('decided_at', { ascending: true });
-  if (error) throw new Error(error.message);
-  return (data ?? []) as Student[];
+  return queueFor('admissions-office', { order: { column: 'decided_at', ascending: true } });
 }
 
 /**
@@ -187,13 +346,7 @@ export async function forwardToAdmissions(
 }
 
 export async function registrarQueue(): Promise<Student[]> {
-  const { data, error } = await supabase
-    .from('students')
-    .select('*')
-    .in('status', ['fee_paid', 'documents_required'])
-    .order('created_at', { ascending: true });
-  if (error) throw new Error(error.message);
-  return (data ?? []) as Student[];
+  return queueFor('registrar');
 }
 
 /**
@@ -218,16 +371,19 @@ export async function requestDocuments(
   if (error) throw new Error(error.message);
 }
 
-/** Everything the two desks have already dealt with, newest first. */
+/**
+ * Everything the two desks have already dealt with, newest first.
+ *
+ * This panel looked for `approved` and `declined` alone, which are the two
+ * outcomes the OLD Registrar-led pipeline produced. Every outcome the Head of
+ * Academic Affairs can reach — `admission_issued`, `rejected`, `conditional` —
+ * fell outside it, so a decided application showed here as nothing at all.
+ */
 export async function processedApplications(): Promise<Student[]> {
-  const { data, error } = await supabase
-    .from('students')
-    .select('*')
-    .in('status', ['approved', 'declined'])
-    .order('updated_at', { ascending: false })
-    .limit(100);
-  if (error) throw new Error(error.message);
-  return (data ?? []) as Student[];
+  return queueFor('processed', {
+    order: { column: 'updated_at', ascending: false },
+    limit: 100,
+  });
 }
 
 // --- Transitions -----------------------------------------------------------
