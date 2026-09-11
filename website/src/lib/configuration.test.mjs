@@ -142,6 +142,42 @@ check('every public setting is named NEXT_PUBLIC_',
 check('and no secret is',
   SETTINGS.filter((s) => !s.public && s.name.startsWith('NEXT_PUBLIC_')).map((s) => s.name), []);
 
+console.log('\nThe SMTP port, which decides whether the connection is encrypted\n');
+
+// ---------------------------------------------------------------------------
+// 465 IS IMPLICIT TLS AND 587 UPGRADES WITH STARTTLS, so `secure` is derived
+// from the port rather than configured separately — which makes a mistyped port
+// a silent downgrade rather than an error.
+//
+// `Number('')` is 0, not NaN. An SMTP_PORT saved with an empty value — which a
+// hosting panel accepts without complaint — used to mean port 0 with TLS off.
+// That fails, but it fails looking like a network fault, and the thing people
+// then check is the host name.
+// ---------------------------------------------------------------------------
+{
+  const outM = join(dir, 'mailer.mjs');
+  // nodemailer STAYS EXTERNAL. Bundling it into ESM rewrites its internal
+  // `require('events')` into a shim that throws on first call, so the import
+  // fails before a single assertion runs. Node imports the CommonJS package
+  // directly without complaint; it just must not be flattened into the bundle.
+  execFileSync('npx', [
+    'esbuild', new URL('./mailer.ts', import.meta.url).pathname,
+    '--bundle', '--format=esm', '--platform=node', '--external:nodemailer',
+    `--outfile=${outM}`, '--log-level=error',
+  ]);
+  const { smtpPort } = await import(outM);
+
+  check('the University’s own port survives', smtpPort('465'), 465);
+  check('and selects implicit TLS', smtpPort('465') === 465, true);
+  check('whitespace around it is tolerated', smtpPort(' 465 '), 465);
+  check('unset falls back to STARTTLS', smtpPort(undefined), 587);
+  // THE ONE THAT WAS BROKEN. Not 0.
+  check('an empty value falls back rather than becoming port 0', smtpPort(''), 587);
+  check('so does a non-number', smtpPort('mail.iguc.net'), 587);
+  check('and so does something out of range', smtpPort('70000'), 587);
+  check('a caller’s own fallback is honoured', smtpPort(undefined, 2525), 2525);
+}
+
 console.log('\nThe mail test cannot be pointed at somebody else\n');
 
 // ---------------------------------------------------------------------------

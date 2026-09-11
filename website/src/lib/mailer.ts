@@ -104,6 +104,23 @@ export function mailConfigured(env: NodeJS.ProcessEnv = process.env): boolean {
 //
 // So this opens the connection and authenticates, without sending anything.
 // ---------------------------------------------------------------------------
+/**
+ * The port to connect on, and therefore whether the connection is encrypted.
+ *
+ * SEPARATED OUT AND HARDENED because `secure` is derived from it. `Number('')`
+ * is 0, not NaN, so an SMTP_PORT saved with an empty value — which a hosting
+ * panel will accept without complaint — used to produce a connection to port 0
+ * with TLS switched off. That fails, but it fails looking like a network fault
+ * rather than a typing mistake, and the fix people reach for is the host name.
+ *
+ * Anything that is not a positive port number falls back to 587, the STARTTLS
+ * default, rather than to something that cannot work.
+ */
+export function smtpPort(raw: string | undefined, fallback = 587): number {
+  const n = Number(String(raw ?? '').trim());
+  return Number.isInteger(n) && n > 0 && n <= 65535 ? n : fallback;
+}
+
 export async function verifyMail(): Promise<MailResult> {
   const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS } = process.env;
 
@@ -117,7 +134,7 @@ export async function verifyMail(): Promise<MailResult> {
     };
   }
 
-  const port = Number(SMTP_PORT ?? 587);
+  const port = smtpPort(SMTP_PORT);
   try {
     const transporter = nodemailer.createTransport({
       host: SMTP_HOST,
@@ -160,7 +177,7 @@ export async function send(request: MailRequest): Promise<MailResult> {
     };
   }
 
-  const port = Number(SMTP_PORT ?? request.fallbackPort ?? 587);
+  const port = smtpPort(SMTP_PORT, smtpPort(String(request.fallbackPort ?? '')));
 
   try {
     const transporter = nodemailer.createTransport({
