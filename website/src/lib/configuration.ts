@@ -50,6 +50,16 @@ export interface Setting {
   public: boolean;
   /** A minimum length, where a short value is as bad as none. */
   minLength?: number;
+  /**
+   * Set on a variable that is a HAZARD WHEN PRESENT rather than when absent.
+   *
+   * Every other row on this report asks "is it set?" and treats absence as the
+   * problem. NEXT_PUBLIC_ENABLE_DEMO inverts that: on a developer's machine it
+   * is a convenience, and on the production deployment it puts one-click
+   * administrator sign-in on the public login page. A report that only ever
+   * warns about things being missing cannot say so.
+   */
+  dangerIfSet?: string;
   /** Which group it belongs to on the report. */
   area: 'database' | 'credentials' | 'mail' | 'proctoring' | 'social' | 'site' | 'ai';
 }
@@ -72,6 +82,18 @@ export const SETTINGS: Setting[] = [
       + 'may then see.',
     ifAbsent: 'Nobody can sign in — not a student, not the Registrar, not the '
       + 'Superadministrator. The public site still renders; the portal is unreachable.',
+    public: true,
+    area: 'database',
+  },
+  {
+    // Supabase's newer name for the same key. Accepted as an alternative to
+    // NEXT_PUBLIC_SUPABASE_ANON_KEY, so a project created after the rename
+    // works without anybody having to know there was one. Either will do;
+    // neither being set is what breaks.
+    name: 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
+    importance: 'optional',
+    purpose: 'An alternative spelling of the publishable key, under Supabase’s newer name.',
+    ifAbsent: 'Nothing, as long as NEXT_PUBLIC_SUPABASE_ANON_KEY is set. One of the two must be.',
     public: true,
     area: 'database',
   },
@@ -134,7 +156,36 @@ export const SETTINGS: Setting[] = [
     purpose: 'The University’s own address, used in QR codes, verification links and the '
       + 'absolute image URLs on an emailed transcript.',
     ifAbsent: 'Falls back to https://iguc.net. A deployment served from any other address issues '
-      + 'credentials whose QR codes point somewhere else.',
+      + 'credentials whose QR codes point somewhere else. NOTE that most of the system reads '
+      + 'SITE_URL, below — this one is read only by the credential routes.',
+    public: true,
+    area: 'site',
+  },
+  {
+    // ---------------------------------------------------------------------
+    // THE ONE THE ADMISSION LETTER ACTUALLY READS, and it was not on this
+    // report at all. Somebody setting up a deployment from this panel would
+    // have set NEXT_PUBLIC_SITE_URL, seen everything green, and sent admission
+    // letters whose sign-in link came from a hard-coded fallback.
+    // ---------------------------------------------------------------------
+    name: 'SITE_URL',
+    importance: 'recommended',
+    purpose: 'The address the portal is served from. The admission letter’s sign-in link, the '
+      + 'identity card and the staff welcome email are all built from it.',
+    ifAbsent: 'Falls back to https://iguc.net. An admission letter would then tell every new '
+      + 'student to sign in at an address the portal may not answer on.',
+    public: false,
+    area: 'site',
+  },
+  {
+    // NOT A SECRET AND NOT MISSING — a hazard when present. See `dangerIfSet`.
+    name: 'NEXT_PUBLIC_ENABLE_DEMO',
+    importance: 'optional',
+    purpose: 'Adds one-click role buttons to the login screen, for development only.',
+    ifAbsent: 'Nothing, which is what it should be on the University’s deployment. The demo '
+      + 'buttons are compiled out entirely.',
+    dangerIfSet: 'The login page offers one-click sign-in as an administrator, to anybody who '
+      + 'opens it. Delete this variable from the host and redeploy.',
     public: true,
     area: 'site',
   },
@@ -146,6 +197,22 @@ export const SETTINGS: Setting[] = [
     purpose: 'The mail server credentials are emailed through.',
     ifAbsent: 'The Email button reports that outbound mail is not configured and sends nothing. '
       + 'Printing and PDFs are unaffected.',
+    public: false,
+    area: 'mail',
+  },
+  {
+    // ---------------------------------------------------------------------
+    // THIS DECIDES WHETHER THE CONNECTION IS ENCRYPTED, which is why it is on
+    // the report rather than left as an implementation detail. 465 is implicit
+    // TLS and anything else upgrades with STARTTLS, so a wrong value is a
+    // silent downgrade rather than an error.
+    // ---------------------------------------------------------------------
+    name: 'SMTP_PORT',
+    importance: 'optional',
+    purpose: 'The port to send on, and therefore the encryption: 465 is implicit TLS, 587 '
+      + 'upgrades with STARTTLS.',
+    ifAbsent: 'Falls back to 587. A provider that requires 465 will refuse or hang, because the '
+      + 'connection would not be encrypted from the start.',
     public: false,
     area: 'mail',
   },
@@ -172,6 +239,15 @@ export const SETTINGS: Setting[] = [
     importance: 'optional',
     purpose: 'The address graduates see a credential arrive from.',
     ifAbsent: 'Falls back to SMTP_USER.',
+    public: false,
+    area: 'mail',
+  },
+  {
+    name: 'APPLY_TO',
+    importance: 'optional',
+    purpose: 'Where a submitted application form is emailed inside the University.',
+    ifAbsent: 'The application is still recorded and still appears on the Finance desk; nobody is '
+      + 'emailed to say it arrived.',
     public: false,
     area: 'mail',
   },
@@ -216,6 +292,14 @@ export const SETTINGS: Setting[] = [
     public: false,
     area: 'ai',
   },
+  {
+    name: 'ANTHROPIC_MODEL',
+    importance: 'optional',
+    purpose: 'Which model the social-post assistant drafts with.',
+    ifAbsent: 'A sensible default is used. Set it only to pin a particular model.',
+    public: false,
+    area: 'ai',
+  },
 ];
 
 export interface SettingReport extends Setting {
@@ -240,6 +324,15 @@ export interface ConfigurationReport {
    * look completely normal.
    */
   exposedSecrets: string[];
+  /**
+   * Variables that are a hazard BECAUSE they are set.
+   *
+   * The rest of this report asks whether something is missing. A deployment
+   * with NEXT_PUBLIC_ENABLE_DEMO set is fully configured by every other
+   * measure and offers one-click administrator sign-in to any visitor, so
+   * "everything is set" is exactly the wrong answer to give about it.
+   */
+  dangerouslySet: string[];
 }
 
 /** Read the settings against an environment. Values are never returned. */
@@ -253,16 +346,30 @@ export function inspect(env: NodeJS.ProcessEnv = process.env): ConfigurationRepo
     };
   });
 
+  // Names that are DECLARED public settings in their own right. Without this,
+  // adding SITE_URL made NEXT_PUBLIC_SITE_URL — a legitimate, separately
+  // declared browser variable — read as a leaked copy of it, purely because one
+  // name is the other with a prefix. A false alarm here is not harmless: this
+  // warning tells somebody to rotate a key, and one that cries wolf is one
+  // people learn to dismiss on the day it is real.
+  const legitimatelyPublic = new Set(SETTINGS.filter((s) => s.public).map((s) => s.name));
+
   const exposedSecrets: string[] = [];
   for (const s of SETTINGS) {
     if (s.public) continue;
     // Both the exact public alias and the value having been copied under one.
     const alias = `NEXT_PUBLIC_${s.name}`;
+    if (legitimatelyPublic.has(alias)) continue;
     if ((env[alias] ?? '').trim()) exposedSecrets.push(alias);
   }
 
+  // THE INVERTED CHECK. Everything else here warns about an absence; these
+  // warn about a presence, and the only one so far is the demo login.
+  const dangerouslySet = settings.filter((s) => s.dangerIfSet && s.set).map((s) => s.name);
+
   return {
     settings,
+    dangerouslySet,
     missingRequired: settings.filter((s) => s.importance === 'required' && !s.set).map((s) => s.name),
     missingRecommended: settings
       .filter((s) => s.importance === 'recommended' && !s.set).map((s) => s.name),

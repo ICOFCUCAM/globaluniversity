@@ -129,6 +129,16 @@ check('a correctly configured deployment reports none',
 // somebody to dismiss the warning that matters.
 check('the variables that are supposed to be public are not flagged',
   inspect({ ...MINIMUM, NEXT_PUBLIC_SITE_URL: 'https://iguc.net' }).exposedSecrets, []);
+// AND THE PREFIX ALONE IS NOT EVIDENCE. NEXT_PUBLIC_SITE_URL is SITE_URL with a
+// prefix, and is also a declared public variable in its own right. Reading it
+// as a leaked copy would tell somebody to rotate a key that is a web address.
+check('a declared public variable is not read as a leak of its private namesake',
+  inspect({ ...MINIMUM, SITE_URL: 'https://iguc.net', NEXT_PUBLIC_SITE_URL: 'https://iguc.net' })
+    .exposedSecrets, []);
+// While a genuine one still is.
+check('but a real leaked secret still is',
+  inspect({ ...MINIMUM, NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY: 'leaked' }).exposedSecrets,
+  ['NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY']);
 
 console.log('\nThe list itself\n');
 
@@ -141,6 +151,67 @@ check('every public setting is named NEXT_PUBLIC_',
   SETTINGS.filter((s) => s.public && !s.name.startsWith('NEXT_PUBLIC_')).map((s) => s.name), []);
 check('and no secret is',
   SETTINGS.filter((s) => !s.public && s.name.startsWith('NEXT_PUBLIC_')).map((s) => s.name), []);
+
+console.log('\nEvery variable the code reads is on the report\n');
+
+// ---------------------------------------------------------------------------
+// THE DEFECT THIS CATCHES, FOUND ON THE UNIVERSITY'S OWN DEPLOYMENT.
+//
+// The panel named NEXT_PUBLIC_SITE_URL and almost nothing read it. The
+// admission letter's sign-in link, the identity card and the staff welcome
+// email are all built from SITE_URL, which was on no report at all. Somebody
+// configuring a deployment from that panel would have set the advertised
+// variable, seen every dot green, and sent admission letters pointing at a
+// hard-coded fallback.
+//
+// SMTP_PORT was missing the same way, and it is the variable that decides
+// whether the mail connection is encrypted.
+//
+// So the list is checked against the code rather than maintained beside it.
+// ---------------------------------------------------------------------------
+{
+  const srcDir = new URL('../', import.meta.url).pathname;
+  // Both shapes: `process.env.NAME`, and `const { NAME } = process.env`.
+  const direct = execFileSync('grep', [
+    '-rhoE', 'process\\.env\\.[A-Z_0-9]+', '--include=*.ts', '--include=*.tsx', srcDir,
+  ]).toString().split('\n').map((s) => s.replace('process.env.', '')).filter(Boolean);
+
+  const destructured = (execFileSync('grep', [
+    '-rhoE', 'const \\{[^}]*\\} = process\\.env', '--include=*.ts', '--include=*.tsx', srcDir,
+  ]).toString().match(/[A-Z_0-9]{3,}/g) ?? []);
+
+  const used = [...new Set([...direct, ...destructured])].sort();
+  check('the scan found variables at all', used.length > 8, true);
+
+  const declared = SETTINGS.map((s) => s.name);
+  // NODE_ENV and friends are the platform's, not the University's.
+  const PLATFORM = ['NODE_ENV', 'VERCEL', 'VERCEL_ENV', 'VERCEL_URL', 'PORT'];
+  check('nothing the code reads is missing from the report',
+    used.filter((v) => !declared.includes(v) && !PLATFORM.includes(v)), []);
+}
+
+console.log('\nA variable that is dangerous when SET, not when missing\n');
+
+{
+  // NEXT_PUBLIC_ENABLE_DEMO puts one-click administrator sign-in on the public
+  // login page. Every other check here treats absence as the fault, so without
+  // this the report would call such a deployment fully operational.
+  const clean = inspect(MINIMUM);
+  check('a deployment without it is not warned about', clean.dangerouslySet, []);
+  check('…and is still reported operational', clean.operational, true);
+
+  const demo = inspect({ ...MINIMUM, NEXT_PUBLIC_ENABLE_DEMO: 'true' });
+  check('setting it raises the warning', demo.dangerouslySet, ['NEXT_PUBLIC_ENABLE_DEMO']);
+
+  // AND IT IS NOT MISTAKEN FOR A LEAKED SECRET. It is genuinely a browser
+  // variable; flagging it as an exposed secret would send somebody to rotate a
+  // key that does not exist.
+  check('and it is not reported as an exposed secret', demo.exposedSecrets, []);
+
+  // The warning is useless without words, and the words live on the row.
+  const row = demo.settings.find((s) => s.name === 'NEXT_PUBLIC_ENABLE_DEMO');
+  check('the warning carries an explanation', (row?.dangerIfSet ?? '').length > 40, true);
+}
 
 console.log('\nThe SMTP port, which decides whether the connection is encrypted\n');
 

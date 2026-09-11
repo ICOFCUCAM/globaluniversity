@@ -25,6 +25,8 @@ interface Row {
   purpose: string;
   ifAbsent: string;
   minLength?: number;
+  /** Present on a variable that is a hazard when set rather than when absent. */
+  dangerIfSet?: string;
 }
 
 interface Report {
@@ -34,6 +36,7 @@ interface Report {
   missingRequired: string[];
   missingRecommended?: string[];
   exposedSecrets?: string[];
+  dangerouslySet?: string[];
   settings: Row[];
   note?: string;
   error?: string;
@@ -114,6 +117,27 @@ export default function ConfigurationPanel() {
             <strong>A secret is published to every visitor.</strong>{' '}
             {report.exposedSecrets!.join(', ')} — anything named NEXT_PUBLIC_ is compiled into the
             browser bundle. Delete it from the host and rotate the key immediately.
+          </div>
+        </div>
+      )}
+
+      {/* SET, AND THAT IS THE PROBLEM. Every other warning on this panel is
+          about an absence. A deployment with the demo login enabled is fully
+          configured by every other measure and offers one-click administrator
+          sign-in to anybody who opens the login page. */}
+      {(report.dangerouslySet?.length ?? 0) > 0 && (
+        <div className="mt-4 flex items-start gap-2 rounded-lg border border-red-300 bg-red-50 p-3 text-xs text-red-900 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200">
+          <ShieldAlert size={16} className="mt-0.5 shrink-0" />
+          <div>
+            <strong>Set, and it should not be on this deployment.</strong>
+            {report.dangerouslySet!.map((name) => {
+              const row = report.settings.find((s) => s.name === name);
+              return (
+                <p key={name} className="mt-0.5 leading-relaxed">
+                  <span className="font-mono">{name}</span> — {row?.dangerIfSet ?? ''}
+                </p>
+              );
+            })}
           </div>
         </div>
       )}

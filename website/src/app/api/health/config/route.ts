@@ -73,9 +73,16 @@ export async function GET(request: Request) {
     // one misconfiguration where the site looks entirely normal and the whole
     // database is readable by anyone who opens the developer tools.
     exposedSecrets: report.exposedSecrets,
+    // Set and dangerous, as opposed to missing. Carried beside exposedSecrets
+    // because the panel treats them the same way: loudly, and above the list.
+    dangerouslySet: report.dangerouslySet,
+    // EVERY FIELD THE PANEL READS MUST SURVIVE THIS MAP. Dropping `area` once
+    // made the panel render its group heading as "UNDEFINED"; `dangerIfSet` is
+    // the same hazard, and losing it would turn the red warning into a red
+    // warning with no sentence in it.
     settings: report.settings.map(
-      ({ name, area, importance, set, tooShort, purpose, ifAbsent, minLength }) => ({
-        name, area, importance, set, tooShort, purpose, ifAbsent, minLength,
+      ({ name, area, importance, set, tooShort, purpose, ifAbsent, minLength, dangerIfSet }) => ({
+        name, area, importance, set, tooShort, purpose, ifAbsent, minLength, dangerIfSet,
       }),
     ),
   });
