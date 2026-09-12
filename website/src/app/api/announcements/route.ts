@@ -52,6 +52,9 @@ import {
   canReleaseExternally,
   MIN_REJECTION_REASON,
   MIN_RETRACTION_REASON,
+  MIN_OVERRIDE_REASON,
+  MIN_ERASURE_REASON,
+  canPublishAsEmergency,
   type AnnouncementEvent,
   type DestinationKey,
 } from '@/lib/announcements';
@@ -67,6 +70,14 @@ const CAPABILITY: Record<string, Capability> = {
   publish: 'publish-announcement' as Capability,
   retract: 'publish-announcement' as Capability,
   release: 'publish-announcement' as Capability,
+  // ITS OWN CAPABILITY, not a corner of publish. See roles.ts: an override
+  // that anybody who can publish may also reach for is not an emergency
+  // procedure, it is the fast way to publish.
+  emergency: 'override-announcement-clearance' as Capability,
+  // The Superadministrator alone. A system capability, because destroying a
+  // record of something the University said is not running the University.
+  erase: 'erase-announcement' as Capability,
+  variants: 'compose-announcement' as Capability,
 };
 
 // eslint-disable-next-line max-len
@@ -199,12 +210,34 @@ export async function POST(request: Request) {
       id = data.id as string;
     }
 
+    // The per-platform adaptations, replaced wholesale for the same reason as
+    // the media: a version deleted from the composer has to actually go.
+    const variants = (Array.isArray(body.variants) ? body.variants : [])
+      .map((v) => v as Record<string, unknown>)
+      .filter((v) => typeof v.platform === 'string' && String(v.body ?? '').trim())
+      .map((v) => ({
+        platform: String(v.platform),
+        body: String(v.body),
+        hashtags: Array.isArray(v.hashtags) ? v.hashtags.map(String) : [],
+        // WHETHER A PERSON WROTE IT. An assistant draft nobody read and a
+        // sentence somebody chose are different things, and the University
+        // publishing the first under its own name without knowing which is
+        // what this column exists to prevent.
+        source: v.source === 'assistant' ? 'assistant' : 'human',
+      }));
+
     // The media, replaced wholesale. A picture removed from the form has to
     // actually come off the announcement, and merging would leave it there.
     await admin.from('announcement_media').delete().eq('announcement_id', id);
     if (media.length) {
       await admin.from('announcement_media')
         .insert(media.map((m) => ({ ...m, announcement_id: id })));
+    }
+
+    await admin.from('announcement_variants').delete().eq('announcement_id', id);
+    if (variants.length) {
+      await admin.from('announcement_variants')
+        .insert(variants.map((v) => ({ ...v, announcement_id: id })));
     }
 
     // The destinations chosen. Replaced wholesale rather than merged: a
@@ -351,6 +384,95 @@ export async function POST(request: Request) {
       detail: 'Taken off the portal. Copies already published to external networks are NOT '
         + 'deleted by this — remove each one on the network itself, and remember that people '
         + 'who saw it still saw it.',
+    });
+  }
+
+  // =========================================================================
+  // EMERGENCY — published by one person, and the record says so forever
+  // =========================================================================
+  if (action === 'emergency') {
+    const row = await load(body.id);
+    if (!row) return bad('announcement-not-found', 404);
+
+    if (!canPublishAsEmergency(row)) {
+      return bad('not-an-emergency', 409,
+        row.category !== 'emergency'
+          ? 'Only an announcement in the Emergency category can be published without a second '
+            + 'pair of eyes. An override anything could use is not an emergency procedure — it '
+            + 'is the fast way to publish, and it becomes the only way.'
+          : `This announcement is ${String(row.status).replace(/_/g, ' ')} and cannot be `
+            + 'published.');
+    }
+
+    const reason = String(body.reason ?? '').trim();
+    if (reason.length < MIN_OVERRIDE_REASON) {
+      return bad('override-needs-a-reason', 400,
+        'Say what the emergency is. The closure, the outage or the security notice is the '
+        + 'reason — "urgent" is the hurry, which is not the same thing.');
+    }
+
+    const now = new Date().toISOString();
+    const { error } = await admin.from('announcements').update({
+      status: 'published',
+      published_by: caller.id,
+      published_at: now,
+      // THE MARK IS PERMANENT. Anybody reading this in two years sees that
+      // nobody else read it first.
+      published_without_clearance: true,
+      override_reason: reason,
+      override_by: caller.id,
+      override_at: now,
+    }).eq('id', row.id as string);
+    if (error) return bad(`not-published: ${error.message}`, 500);
+
+    await admin.from('announcement_destinations')
+      .update({ state: 'delivered', delivered_at: now })
+      .eq('announcement_id', row.id as string).eq('destination', 'portal');
+
+    await record(row.id as string, 'ADMINISTRATIVE_OVERRIDE',
+      row.status as string, 'published', row, reason, { emergency: true });
+    await record(row.id as string, 'PUBLISHED', row.status as string, 'published', row);
+
+    return NextResponse.json({
+      ok: true,
+      status: 'published',
+      withoutClearance: true,
+      detail: 'Published immediately, without a second pair of eyes. That is recorded against '
+        + 'this announcement permanently. Send it to the networks separately — this put it on '
+        + 'the portal.',
+    });
+  }
+
+  // =========================================================================
+  // ERASE — the Superadministrator alone, and a tombstone remains
+  // =========================================================================
+  if (action === 'erase') {
+    const row = await load(body.id);
+    if (!row) return bad('announcement-not-found', 404);
+
+    const reason = String(body.reason ?? '').trim();
+    if (reason.length < MIN_ERASURE_REASON) {
+      return bad('erasure-needs-a-reason', 400,
+        'This is the only act in this system that destroys something. Say why — "wrong" is not '
+        + 'an account of it.');
+    }
+
+    // THROUGH THE ONE DOOR. 040's function writes the tombstone before it
+    // deletes anything, and it is the only thing the history trigger lets
+    // past. A direct DELETE here would be refused by the database.
+    const { data, error } = await admin.rpc('erase_announcement', {
+      p_announcement: row.id,
+      p_deleted_by: caller.id,
+      p_reason: reason,
+    });
+    if (error) return bad(`not-erased: ${error.message}`, 500);
+
+    return NextResponse.json({
+      ok: true,
+      tombstone: data,
+      detail: 'Erased. The text is gone and cannot be recovered; the record that it existed, '
+        + 'who wrote it and why it was removed remains. If it had already been published to a '
+        + 'network it is STILL THERE — go and delete it on each one.',
     });
   }
 

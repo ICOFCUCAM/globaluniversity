@@ -655,3 +655,80 @@ export function startingVariants(
     return { platform, body: text, hashtags: [], source: 'assistant' as const, editedBy: null };
   });
 }
+
+// ---------------------------------------------------------------------------
+// 8. THE EMERGENCY, AND THE ERASURE
+// ---------------------------------------------------------------------------
+
+/** The least an emergency override may say, and the least an erasure may. */
+export const MIN_OVERRIDE_REASON = 20;
+export const MIN_ERASURE_REASON = 20;
+
+/**
+ * Whether this announcement may be published without a second pair of eyes.
+ *
+ * ONLY AN EMERGENCY, AND THE DATABASE AGREES. An override that any announcement
+ * could use is not an emergency procedure; it is the fast way to publish, and
+ * within a month it is the only way anybody publishes. 040 restricts it to the
+ * `emergency` category in a CHECK constraint, so this is the screen agreeing
+ * with the rule rather than being the rule.
+ *
+ * A campus closure at two in the morning has no second pair of eyes, and a
+ * system that cannot say so makes somebody choose between the procedure and
+ * telling students the campus is shut.
+ */
+export function canPublishAsEmergency(a: AnnouncementLike): boolean {
+  return a.category === 'emergency'
+    && (a.status === 'draft' || a.status === 'submitted' || a.status === 'approved');
+}
+
+/** The categories that justify going out uncleared. One, deliberately. */
+export const EMERGENCY_CATEGORY: Category = 'emergency';
+
+/**
+ * What an emergency notice is for, shown on the screen beside the override.
+ *
+ * Named rather than left to judgement, because "is this an emergency?" asked in
+ * a hurry is answered yes far more often than it should be. These are the
+ * University's own examples and the list is what the override is for.
+ */
+export const EMERGENCY_EXAMPLES = [
+  'Campus closure',
+  'Examination changes',
+  'Security notices',
+  'System outage',
+  'Weather disruption',
+  'Urgent student notification',
+];
+
+export interface ErasureTarget extends AnnouncementLike {
+  destinations_reached?: string[];
+}
+
+/**
+ * What erasing this announcement will and will not do, said before the click.
+ *
+ * THE PART PEOPLE GET WRONG. Deleting here does not reach into Facebook. A
+ * notice that has already been published to four networks is still on four
+ * networks, and somebody has to go and remove each one. A confirmation dialog
+ * that does not say so is implying the opposite.
+ */
+export function erasureWarnings(a: ErasureTarget): string[] {
+  const out: string[] = [];
+  const reached = (a.destinations_reached ?? []).filter((d) => d !== 'portal');
+
+  out.push('The text of this announcement is destroyed and cannot be recovered. What remains '
+    + 'is a record that it existed, who wrote it, who removed it and why.');
+
+  if (reached.length) {
+    out.push(`It has already been published to ${reached.join(', ')}. Removing it here does NOT `
+      + 'remove it there — go to each network and delete the post, and remember that people '
+      + 'who saw it still saw it.');
+  }
+  if (a.status === 'published') {
+    out.push('It is live on the portal now. Consider retracting it instead: a retraction takes '
+      + 'it down and keeps the record of what was said, which is what an enquiry a year from '
+      + 'now will ask for.');
+  }
+  return out;
+}

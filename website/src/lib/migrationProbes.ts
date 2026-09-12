@@ -302,6 +302,15 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
     // of the migration ran.
     table: 'announcement_media',
   },
+  {
+    file: '040_emergency_publishing_and_erasure.sql',
+    what: 'Lets one person publish an emergency notice without a second pair of eyes — only an '
+      + 'emergency, only with a stated reason, and the record says so permanently. And lets the '
+      + 'Superadministrator erase an announcement, which 038 made impossible: the text is '
+      + 'destroyed and a tombstone records that it existed, who removed it and where it had '
+      + 'already reached.',
+    table: 'announcement_tombstones',
+  },
 ];
 
 /** What a probe came back as. */

@@ -37,12 +37,16 @@ import { useAuth } from '@/contexts/AuthContext';
 import { can } from '@/lib/roles';
 import { BTN_PRIMARY, BTN_SECONDARY, INPUT, LABEL, FOCUS } from '@/lib/portalTheme';
 import {
-  Megaphone, Plus, Loader2, Check, X, Send, Eye, AlertTriangle, Globe,
+  Megaphone, Plus, Loader2, Check, X, Send, Eye, AlertTriangle, Globe, Siren,
 } from 'lucide-react';
+import PlatformPreview from './PlatformPreview';
+import type { Variant } from '@/lib/social';
 import {
   CATEGORIES, CATEGORY_LABELS, AUDIENCES, AUDIENCE_LABELS,
   DESTINATIONS, DESTINATION_KEYS, CANONICAL_DESTINATION,
   STATE_LABELS, describeDelivery, objectionsTo, blocks, reachesTheWorld,
+  canPublishAsEmergency, erasureWarnings, EMERGENCY_EXAMPLES,
+  MIN_OVERRIDE_REASON, MIN_ERASURE_REASON,
   type Category, type DestinationKey, type DeliveryState, type AnnouncementState,
 } from '@/lib/announcements';
 
@@ -53,6 +57,8 @@ interface Row {
   category: string;
   audiences: string[];
   status: AnnouncementState;
+  published_without_clearance?: boolean;
+  override_reason?: string | null;
   author_id: string;
   approved_by: string | null;
   published_at: string | null;
@@ -70,7 +76,7 @@ interface DestRow {
 // supabase-js collapse the inferred type to GenericStringError[], and the
 // failure is silent — everything reads as an error object at runtime.
 // eslint-disable-next-line max-len
-const COLUMNS = 'id, title, body, category, audiences, status, author_id, approved_by, published_at, created_at';
+const COLUMNS = 'id, title, body, category, audiences, status, author_id, approved_by, published_at, created_at, published_without_clearance, override_reason';
 
 const TABS = [
   { key: 'all', label: 'All' },
@@ -92,6 +98,10 @@ export default function AnnouncementModule() {
   const mayClear = can(user?.role, 'approve-announcement');
   const mayPublish = can(user?.role, 'publish-announcement');
   const mayRelease = mayPublish && can(user?.role, 'publish-social-post');
+  const mayOverride = can(user?.role, 'override-announcement-clearance');
+  // THE SUPERADMINISTRATOR ALONE. A system capability, not an operational one:
+  // destroying a record of something the University said is not running it.
+  const mayErase = can(user?.role, 'erase-announcement');
 
   const [rows, setRows] = useState<Row[] | null>(null);
   const [dests, setDests] = useState<DestRow[]>([]);
@@ -324,6 +334,25 @@ export default function AnnouncementModule() {
                 )
               )}
 
+              {/* ---------------------------------------------------------------
+                  PUBLISHING AT TWO IN THE MORNING. A campus closure has no
+                  second pair of eyes. The override exists for that and the
+                  record says permanently that nobody else read it.
+                  --------------------------------------------------------- */}
+              {mayOverride && canPublishAsEmergency(r) && (
+                <>
+                  <input value={reason} onChange={(e) => setReason(e.target.value)}
+                    placeholder="What the emergency is"
+                    className={`${INPUT} w-72 text-xs`} />
+                  <button disabled={busy || reason.trim().length < MIN_OVERRIDE_REASON}
+                    onClick={() => void act({ action: 'emergency', id: r.id, reason })}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-red-700 px-3 py-1.5
+                               text-xs font-semibold text-white disabled:opacity-40">
+                    <Siren size={14} /> Publish now, uncleared
+                  </button>
+                </>
+              )}
+
               {(r.status === 'approved' || r.status === 'scheduled') && mayPublish && (
                 <button disabled={busy} onClick={() => void act({ action: 'publish', id: r.id })}
                   className={BTN_PRIMARY}>
@@ -351,6 +380,44 @@ export default function AnnouncementModule() {
                 </>
               )}
             </div>
+
+            {/* THE MARK IS PERMANENT. Anybody reading this in two years sees
+                that nobody else read it first. */}
+            {r.published_without_clearance && (
+              <p className="mt-3 flex items-start gap-2 rounded-lg bg-red-50 px-3 py-2 text-xs
+                            text-red-900">
+                <Siren size={13} className="mt-0.5 shrink-0" />
+                Published without a second pair of eyes. {r.override_reason}
+              </p>
+            )}
+
+            {mayErase && (
+              <details className="mt-3">
+                <summary className="cursor-pointer text-xs text-[#a49bb0] hover:text-red-700">
+                  Erase this announcement
+                </summary>
+                <div className="mt-2 space-y-2 rounded-lg bg-red-50 p-3">
+                  {/* SAID BEFORE THE CLICK, AND THE PART PEOPLE GET WRONG:
+                      deleting here does not reach into Facebook. */}
+                  {erasureWarnings({
+                    status: r.status,
+                    destinations_reached: destsFor(r.id)
+                      .filter((d) => d.state === 'delivered').map((d) => d.destination),
+                  }).map((w) => (
+                    <p key={w} className="text-xs leading-relaxed text-red-900">{w}</p>
+                  ))}
+                  <input value={reason} onChange={(e) => setReason(e.target.value)}
+                    placeholder="Why this is being destroyed"
+                    className={`${INPUT} w-full text-xs`} />
+                  <button disabled={busy || reason.trim().length < MIN_ERASURE_REASON}
+                    onClick={() => void act({ action: 'erase', id: r.id, reason })}
+                    className="rounded-lg bg-red-700 px-3 py-1.5 text-xs font-semibold text-white
+                               disabled:opacity-40">
+                    Erase permanently
+                  </button>
+                </div>
+              </details>
+            )}
 
             {open?.id === r.id && (
               <p className="mt-4 whitespace-pre-wrap border-t border-[#f0ece4] pt-4 text-sm
@@ -384,6 +451,7 @@ function Compose({
   const [destinations, setDestinations] = useState<string[]>([CANONICAL_DESTINATION]);
   const [imagePath, setImagePath] = useState('');
   const [imageAlt, setImageAlt] = useState('');
+  const [variants, setVariants] = useState<Variant[]>([]);
 
   const draft = { title, body, category, audiences };
   const media = imagePath
@@ -458,6 +526,20 @@ function Compose({
             </button>
           ))}
         </div>
+        {category === 'emergency' && (
+          // NAMED RATHER THAN LEFT TO JUDGEMENT. "Is this an emergency?" asked
+          // in a hurry is answered yes far more often than it should be, and
+          // an emergency category that means everything means nothing.
+          <p className="flex items-start gap-2 rounded-lg bg-red-50 px-3 py-2 text-xs
+                        leading-relaxed text-red-900">
+            <AlertTriangle size={13} className="mt-0.5 shrink-0" />
+            <span>
+              An emergency notice may be published by one person without a second pair of eyes,
+              and the record says so permanently. It is for: {EMERGENCY_EXAMPLES.join(', ')}.
+              If it is not one of those, it is not an emergency.
+            </span>
+          </p>
+        )}
       </fieldset>
 
       <fieldset className="space-y-2">
@@ -506,6 +588,23 @@ function Compose({
         </div>
       </fieldset>
 
+      {/* ---------------------------------------------------------------------
+          PUBLISHING TO FIVE NETWORKS IS PUBLISHING FIVE THINGS. Until somebody
+          has seen the five, "publish to 5 destinations" is a button pressed on
+          trust. The text shown is the text the publisher will send — the same
+          function, not a second one that might differ.
+          --------------------------------------------------------------- */}
+      <section className="space-y-3">
+        <h2 className={LABEL}>Preview</h2>
+        <PlatformPreview
+          master={{ title, body }}
+          media={media}
+          destinations={destinations}
+          variants={variants}
+          onVariants={setVariants}
+        />
+      </section>
+
       {objections.length > 0 && (
         <ul className="space-y-2 rounded-xl bg-[#faf6ee] p-4 text-xs text-[#6b5a2f]
                        dark:bg-[#241f2c] dark:text-[#c3b48f]">
@@ -520,6 +619,7 @@ function Compose({
           onClick={() => onDone({
             action: 'draft', title, body, category, audiences, destinations,
             media: media.map((m) => ({ storagePath: m.storage_path, altText: m.alt_text })),
+            variants,
           })}>
           {busy ? <><Loader2 size={15} className="animate-spin" /> Saving…</> : 'Save as draft'}
         </button>

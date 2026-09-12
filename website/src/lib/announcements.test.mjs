@@ -307,5 +307,93 @@ console.log('\nA destination is a publishing job, and the schema says so\n');
     /no engagement has been collected/.test(sql), true);
 }
 
+console.log('\nAn emergency is published by one person, and only an emergency\n');
+
+{
+  const emergency = { category: 'emergency', status: 'draft' };
+  check('an emergency draft can go out uncleared', A.canPublishAsEmergency(emergency), true);
+  check('one awaiting clearance can too, because waiting is the problem',
+    A.canPublishAsEmergency({ ...emergency, status: 'submitted' }), true);
+
+  // THE HALF THAT MATTERS. An override anything could use is not an emergency
+  // procedure — it is the fast way to publish, and within a month it is the
+  // only way anybody publishes.
+  for (const c of ['general', 'admissions', 'academic', 'finance', 'graduation', 'events']) {
+    check(`a ${c} notice cannot`, A.canPublishAsEmergency({ ...emergency, category: c }), false);
+  }
+  check('and one already published has nothing to override',
+    A.canPublishAsEmergency({ ...emergency, status: 'published' }), false);
+
+  // NAMED RATHER THAN LEFT TO JUDGEMENT. "Is this an emergency?" asked in a
+  // hurry is answered yes far more often than it should be.
+  check('the University’s own examples are on the screen',
+    A.EMERGENCY_EXAMPLES.length >= 6, true);
+  check('a reason must be more than a word', A.MIN_OVERRIDE_REASON >= 20, true);
+}
+
+console.log('\nErasing says what it will and will not do\n');
+
+{
+  // THE PART PEOPLE GET WRONG. Deleting here does not reach into Facebook.
+  const published = { status: 'published', destinations_reached: ['portal', 'facebook', 'x'] };
+  const w = A.erasureWarnings(published);
+  check('it says the text cannot be recovered',
+    w.some((x) => /cannot be recovered/.test(x)), true);
+  check('it names the networks it will NOT remove it from',
+    w.some((x) => /facebook, x/.test(x) && /does NOT/.test(x)), true);
+  check('and it offers retraction instead, which keeps the record',
+    w.some((x) => /retracting it instead/.test(x)), true);
+
+  // The portal is not listed as somewhere to go and delete it by hand: the
+  // portal is this system, and the erasure has already removed it there.
+  check('the portal is not in the go-and-delete-it list',
+    w.some((x) => /does NOT/.test(x) && /portal/.test(x)), false);
+
+  const draft = A.erasureWarnings({ status: 'draft', destinations_reached: [] });
+  check('an unpublished draft carries only the one warning', draft.length, 1);
+  check('a reason must be more than a word', A.MIN_ERASURE_REASON >= 20, true);
+}
+
+console.log('\nThe database holds both, not only the screen\n');
+
+{
+  const sql = readFileSync(
+    join(here, '../../docs/migrations/040_emergency_publishing_and_erasure.sql'), 'utf8');
+
+  check('only an emergency may publish uncleared',
+    /announcements_override_is_an_emergency/.test(sql) && /category = 'emergency'/.test(sql),
+    true);
+  check('the history is still append-only for UPDATE',
+    /tg_op = 'DELETE' and coalesce\(current_setting\('icof.erasing'/.test(sql), true);
+  check('erasure goes through one function that writes a tombstone first',
+    /insert into announcement_tombstones[\s\S]{0,600}?delete from announcements/.test(sql), true);
+  check('and that function is not reachable from a browser',
+    /revoke all on function erase_announcement\(uuid, uuid, text\) from anon, authenticated/
+      .test(sql), true);
+  check('the tombstone does not keep the body',
+    /announcement_tombstones \(([\s\S]*?)\);/.exec(sql)?.[1].includes(' body ') ?? true, false);
+}
+
+console.log('\nThe generator is the one the social composer already uses\n');
+
+{
+  const preview = readFileSync(
+    join(here, '../components/announcements/PlatformPreview.tsx'), 'utf8');
+
+  // A SECOND GENERATOR WOULD BE A SECOND BRIEF, drifting from the first, and
+  // two ideas of how the University sounds.
+  check('it calls the existing draft route', /\/api\/social\/draft/.test(preview), true);
+  check('and does not reimplement the brief', /ASSISTANT_BRIEF/.test(preview), false);
+
+  // The preview must show what the PUBLISHER will send. A preview built from a
+  // different code path is a preview of something else, and it is trusted.
+  check('the preview uses the same function the publisher does',
+    /previewFor/.test(preview), true);
+  check('a drafted version is labelled as one',
+    /Drafted, not written/.test(preview), true);
+  check('and editing it makes it the editor’s',
+    /source: 'human'/.test(preview), true);
+}
+
 console.log(failures === 0 ? '\nAll announcement checks passed.' : `\n${failures} check(s) failed.`);
 process.exit(failures === 0 ? 0 : 1);

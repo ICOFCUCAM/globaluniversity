@@ -183,6 +183,13 @@ export const OPERATIONAL_CAPABILITIES = [
   'compose-announcement',
   'approve-announcement',
   'publish-announcement',
+  // PUBLISHING AN EMERGENCY WITHOUT A SECOND PAIR OF EYES. Its own capability
+  // rather than a corner of 'publish-announcement', because an override
+  // anybody who can publish may also reach for is not an emergency procedure —
+  // it is the fast way to publish, and within a month it is the only way
+  // anybody publishes. The database restricts it to the `emergency` category
+  // and requires a stated reason; this restricts who may reach for it at all.
+  'override-announcement-clearance',
   // APPROVING IS NOT PUBLISHING, and they are separate on purpose. Migration
   // 014 refuses to let an author approve their own post — the same separation
   // 005 required of certificate designs and 009 of grades. An announcement is
@@ -310,6 +317,21 @@ export const OPERATIONAL_CAPABILITIES = [
  * makes the Superadministrator a distinct office rather than a longer title.
  */
 export const SYSTEM_CAPABILITIES = [
+  // ---------------------------------------------------------------------
+  // ERASING AN ANNOUNCEMENT. The Superadministrator alone, and it is a SYSTEM
+  // capability rather than an operational one for the reason this list exists:
+  // an Administrator runs the University, and destroying a record of something
+  // the University said is not running it.
+  //
+  // 038 made deletion impossible outright and the University has ruled that at
+  // least one person must be able to. A notice posted to the wrong audience,
+  // or naming somebody who has asked to be removed, is a real thing that has
+  // to be able to go. What it leaves behind is a tombstone — the text is
+  // destroyed, the fact that it existed is not — because a registry that can
+  // make a notice vanish without trace cannot answer "did you ever publish
+  // that?", and the answer "no" would be unverifiable even when true.
+  // ---------------------------------------------------------------------
+  'erase-announcement',
   // Who exists, and who may act
   'assign-roles',
   'create-staff-account',
