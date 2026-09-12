@@ -203,6 +203,16 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
     cannotSee: "select has_table_privilege('authenticated', "
       + "'public.admission_status_coverage', 'SELECT');  -- it should be false",
   },
+  {
+    file: '030_functions_pin_their_search_path.sql',
+    what: 'Stops every function resolving table names against whatever the caller set, and takes '
+      + 'the student-number reserver off the public API — anybody could call it in a loop and '
+      + 'push the University’s numbering arbitrarily far forward.',
+    // Grants and function settings. Nothing the application can read.
+    cannotSee: 'select count(*) from pg_proc p join pg_namespace s on s.oid = p.pronamespace '
+      + "where s.nspname = 'public' and p.prokind = 'f' and not exists (select 1 from "
+      + "unnest(coalesce(p.proconfig,'{}'::text[])) c where c like 'search_path=%');  -- 0",
+  },
 ];
 
 /** What a probe came back as. */
