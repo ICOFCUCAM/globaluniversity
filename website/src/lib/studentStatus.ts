@@ -127,3 +127,33 @@ export function isOnRoll(row: StatusCarrier | null | undefined): boolean {
   const s = studentStatusOf(row);
   return s === 'active' || s === 'suspended';
 }
+
+/**
+ * Whether this record may hold a current student identity card.
+ *
+ * ---------------------------------------------------------------------------
+ * STATED AS WHAT IS REQUIRED, NEVER AS WHAT IS BARRED
+ * ---------------------------------------------------------------------------
+ *
+ * This lived in the card route as a DENYLIST of eight statuses, and a denylist
+ * has to name every state that exists or it lets one through. It let thirteen
+ * through. `draft` — an application the applicant had not submitted — passed
+ * it. So did `declined`, `returned`, `approved` and `admission_issued`, which
+ * means somebody offered a place but never registered could be handed a
+ * document saying they are a student of this University. The route's own
+ * refusal message says that is the one thing it exists to prevent.
+ *
+ * It lives here rather than in the route so the test can CALL it. A rule that
+ * can only be checked by reading the source around it is a rule nobody has
+ * watched refuse anything.
+ *
+ * A card is a CURRENT document. A graduate's would say they are a student here
+ * and they are not; a withdrawn student's the same. A suspended student is
+ * still the University's student and keeps the card they have — but a new one
+ * is not issued while the suspension stands.
+ */
+export function mayHoldAStudentCard(
+  row: (StatusCarrier & { status?: string | null }) | null | undefined,
+): boolean {
+  return row?.status === 'enrolled' && studentStatusOf(row) === 'active';
+}
