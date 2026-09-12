@@ -216,6 +216,14 @@ export interface Appointment {
 
   place_of_duty?: string | null;
   reports_to_name?: string | null;
+  working_hours?: string | null;
+
+  // THE BODY THE LETTER NAMES, which is not `authorized_by`. That is a user
+  // id — the officer who clicked approve. The letter says "on the authority of
+  // the University Council", and putting an administrator's name where a
+  // governing body belongs is wrong on a document somebody relies on for years.
+  appointing_authority?: string | null;
+  authority_decided_on?: string | null;
 
   salary_amount?: number | null;
   salary_currency?: string | null;
@@ -427,6 +435,26 @@ export function letterReference(year: number, sequence: number): string {
   return `APT-${year}-${String(sequence).padStart(4, '0')}`;
 }
 
+/**
+ * The reference as the LETTER prints it, which is not the one the register
+ * files it under.
+ *
+ * THE UNIVERSITY WROTE BOTH and they are not interchangeable. The letter body
+ * reads `IGUC/HR/APT/2026/0042` — the institution's own filing convention,
+ * with the office in it — and the archive key is `APT-2026-0042`, because a
+ * reference with slashes cannot go in a URL path without escaping and the
+ * verification link is exactly where it ends up.
+ *
+ * Rather than overriding either, the short form is stored and the long form is
+ * derived from it. One fact, printed one way and filed another, and neither
+ * can drift because there is only one of them.
+ */
+export function printedReference(ref: string): string {
+  const parts = parseReference(ref);
+  if (!parts) return ref;
+  return `IGUC/HR/APT/${parts.year}/${String(parts.sequence).padStart(4, '0')}`;
+}
+
 /** The parts back out of a reference, for a register lookup. */
 export function parseReference(ref: string): { year: number; sequence: number } | null {
   const m = /^APT-(\d{4})-(\d{4,})$/.exec(ref.trim());
@@ -619,4 +647,63 @@ export function verificationStatus(
   if (appointment.status === 'withdrawn' || appointment.status === 'declined') return 'Not in force';
   if (appointment.status === 'ended') return 'Ended';
   return 'Valid';
+}
+
+// ---------------------------------------------------------------------------
+// 8. THE BOARD
+// ---------------------------------------------------------------------------
+//
+// COMPUTED HERE, NOT IN THE SCREEN. Five counters that each answer a question
+// somebody is actually asking — how many are waiting on me, how many letters
+// are sitting unsent, how many contracts end soon — and a screen that worked
+// them out inline would state the rules a sixth time, differently.
+//
+// "EXPIRING SOON" IS THE ONE THAT EARNS ITS PLACE. A fixed-term appointment
+// that lapses because nobody noticed is somebody turning up to work at an
+// institution that no longer employs them, and until 041 there was nowhere the
+// question could even be asked.
+
+export interface Counters {
+  pendingApproval: number;
+  approved: number;
+  lettersToIssue: number;
+  active: number;
+  expiringSoon: number;
+}
+
+/** How far ahead "soon" looks. Ninety days: a term's notice, roughly. */
+export const EXPIRING_WINDOW_DAYS = 90;
+
+export function countersFor(
+  rows: (Appointment & { end_date?: string | null })[],
+  today = new Date(),
+): Counters {
+  const horizon = new Date(today);
+  horizon.setUTCDate(horizon.getUTCDate() + EXPIRING_WINDOW_DAYS);
+  const iso = (d: Date) => d.toISOString().slice(0, 10);
+
+  const is = (s: string) => rows.filter((r) => r.status === s).length;
+
+  return {
+    // WAITING ON SOMEBODY ELSE. An amendment awaiting approval is awaiting
+    // approval, and counting it separately would let it sit unseen.
+    pendingApproval: is('submitted') + is('amendment_requested'),
+    approved: is('approved'),
+    // A LETTER GENERATED AND NOT SENT is the state this counter exists for.
+    // `approved` is included because a letter that has not been generated has
+    // certainly not been issued, and both are work sitting on a desk.
+    lettersToIssue: is('approved') + is('letter_generated'),
+    active: is('active') + is('accepted'),
+    expiringSoon: rows.filter((r) => {
+      if (r.status !== 'active' && r.status !== 'accepted') return false;
+      if (!r.end_date) return false;
+      return r.end_date >= iso(today) && r.end_date <= iso(horizon);
+    }).length,
+  };
+}
+
+/** What the list column says, in the University\'s words rather than the code\'s. */
+export function boardStatus(a: Appointment): string {
+  if (a.status === 'approved' || a.status === 'letter_generated') return 'Letter ready';
+  return STATE_LABELS[a.status as AppointmentState] ?? String(a.status ?? '');
 }

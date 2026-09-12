@@ -331,6 +331,15 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
     table: 'lecturers',
     column: 'appointment_id',
   },
+  {
+    file: '043_working_hours_and_the_appointing_authority.sql',
+    what: 'Two fields the letter has to state and the record did not carry — working hours, and '
+      + 'the body that made the appointment, which is not the officer who approved it here. '
+      + 'And a hash over the archived letter, so “this is the document we sent” can be proved '
+      + 'rather than rested on a trigger having worked.',
+    table: 'appointment_letters',
+    column: 'content_hash',
+  },
 ];
 
 /** What a probe came back as. */

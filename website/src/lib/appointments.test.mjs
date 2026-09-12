@@ -389,5 +389,89 @@ console.log('\nHR issues eleven kinds of letter, not one\n');
   check('…and it blocks', A.blocked(unknown), true);
 }
 
+console.log('\nThe reference is filed one way and printed another\n');
+
+{
+  // THE UNIVERSITY WROTE BOTH. The letter body reads IGUC/HR/APT/2026/0042 and
+  // the archive key is APT-2026-0042, because a reference with slashes cannot
+  // go in a URL path and the verification link is where it ends up. One fact,
+  // stored once, rendered two ways — so neither can drift.
+  check('the stored form is URL-safe', A.letterReference(2026, 42), 'APT-2026-0042');
+  check('the printed form is the filing convention',
+    A.printedReference('APT-2026-0042'), 'IGUC/HR/APT/2026/0042');
+  check('and the printed form is derived, not stored separately',
+    A.printedReference(A.letterReference(2026, 7)), 'IGUC/HR/APT/2026/0007');
+  check('something that is not a reference passes through unchanged',
+    A.printedReference('not-a-reference'), 'not-a-reference');
+}
+
+console.log('\nThe letter refuses an incomplete record rather than printing a blank\n');
+
+{
+  const L = await (async () => {
+    const o = join(cache, 'appointmentLetter.mjs');
+    execFileSync('npx', [
+      'esbuild', join(here, 'appointmentLetter.ts'), '--bundle', '--format=esm',
+      '--platform=node', `--outfile=${o}`, '--log-level=error',
+      `--alias:@=${join(here, '..')}`, '--external:qrcode',
+    ]);
+    return import(o);
+  })();
+
+  // SPELLED OUT RATHER THAN LOCALISED, for the same reason as the history:
+  // toLocaleDateString gives "Sept" on one ICU build and "Sep" on the next, so
+  // a document generated on the server and previewed in a browser could
+  // disagree about its own date.
+  check('a date prints in full', L.longDate('2026-09-12'), '12 September 2026');
+  check('and nothing prints as nothing', L.longDate(null), '');
+
+  const args = {
+    reference: 'APT-2026-0042', issuedOn: '2026-09-12', version: 1,
+    signatoryName: 'The Registrar', signatoryRole: 'Registrar',
+    siteUrl: 'https://example.test',
+  };
+
+  // A LETTER WITH AN EMPTY LINE WHERE THE START DATE SHOULD BE looks finished,
+  // gets signed, and the omission is discovered by the appointee.
+  let refused = false;
+  try {
+    await L.appointmentLetterHtml({ ...args, appointment: { ...complete, start_date: null } });
+  } catch (e) {
+    refused = /not complete/.test(String(e.message));
+  }
+  check('an incomplete record produces no letter', refused, true);
+
+  const out = await L.appointmentLetterHtml({ ...args, appointment: complete });
+  check('the printed reference is on the page',
+    out.html.includes('IGUC/HR/APT/2026/0042'), true);
+  check('and so is the name, the position and the date', [
+    out.html.includes('A Specimen Appointee'),
+    out.html.includes('Lecturer in Theology'),
+    out.html.includes('12 September 2026'),
+  ], [true, true, true]);
+
+  // EVERY ROW COMES OUT OF THE RECORD. Nothing is typed at the moment of
+  // generating, which is the whole point.
+  check('the working hours row appears when recorded',
+    (await L.appointmentLetterHtml({
+      ...args, appointment: { ...complete, working_hours: '40 hours per week' },
+    })).html.includes('40 hours per week'), true);
+  // A BLANK BESIDE "PROBATION" READS AS "NONE", which is a claim the
+  // University has not made. The row is omitted instead.
+  check('a row with nothing in it is omitted rather than left empty',
+    (await L.appointmentLetterHtml({
+      ...args, appointment: { ...complete, probation_months: null },
+    })).html.includes('Probation'), false);
+
+  // THE SALARY IS PRINTED WITH ITS CURRENCY AND PERIOD OR NOT AT ALL.
+  check('the remuneration prints in full', out.html.includes('FCFA 450,000 per month'), true);
+  check('and an unpaid post has no remuneration row',
+    (await L.appointmentLetterHtml({
+      ...args,
+      appointment: { ...complete, employment_type: 'honorary',
+        salary_amount: null, salary_currency: null, salary_period: null },
+    })).html.includes('Remuneration'), false);
+}
+
 console.log(failures === 0 ? '\nAll appointment checks passed.' : `\n${failures} check(s) failed.`);
 process.exit(failures === 0 ? 0 : 1);
