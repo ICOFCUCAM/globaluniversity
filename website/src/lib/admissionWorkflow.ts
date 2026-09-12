@@ -207,11 +207,15 @@ export const ADMISSION_EVENTS = [
   'APPLICATION_SUBMITTED',
   'DOCUMENT_VERIFIED',
   'FEE_CONFIRMED',
+  /** The Admissions Office sends it, with its recommendation, to be decided. */
+  'FORWARDED_FOR_ACADEMIC_REVIEW',
   'ACADEMIC_REVIEW_STARTED',
   'ACADEMIC_APPROVED',
   'ACADEMIC_CONDITIONALLY_APPROVED',
   'ACADEMIC_REJECTED',
   'ACADEMIC_RETURNED',
+  /** Sent back to a NAMED office with a reason, rather than merely back. */
+  'RETURNED_TO_OFFICE',
   'ISSUANCE_STARTED',
   'ISSUANCE_FAILED',
   'ISSUANCE_RETRIED',
@@ -226,6 +230,48 @@ export const ADMISSION_EVENTS = [
 ] as const;
 
 export type AdmissionEvent = (typeof ADMISSION_EVENTS)[number];
+
+// ---------------------------------------------------------------------------
+// WHERE WORK GOES BACK TO, AND WHY A RETURN IS NOT A REFUSAL
+// ---------------------------------------------------------------------------
+//
+// Admissions Approval is the last stage, so a problem found there had only two
+// exits: approve anyway, or reject an applicant who has done nothing wrong.
+// The fault is usually not theirs — an incomplete verification, a fee
+// discrepancy, an assessment that needs correcting — and none of those is a
+// reason to refuse somebody a place.
+//
+// A return names the office, carries a reason, and puts the application on
+// that office's own queue. `finance` is here because a fee discrepancy is a
+// real reason to send work back, and it is the ONLY way the deciding desk
+// touches Finance at all: by returning to it, never by overruling it. Finance
+// is a gate, not an authority, and that cuts both ways.
+// ---------------------------------------------------------------------------
+export const RETURN_TARGETS = {
+  'admissions-office': {
+    label: 'Admissions Office',
+    hint: 'The assessment or the documents need correcting.',
+  },
+  registrar: {
+    label: 'Office of the Registrar',
+    hint: 'The verification is incomplete or the record is wrong.',
+  },
+  finance: {
+    label: 'Finance Office',
+    hint: 'There is a discrepancy in the fee. This desk cannot alter it.',
+  },
+} as const;
+
+export type ReturnTarget = keyof typeof RETURN_TARGETS;
+
+/** The states the Admissions Office may forward for an academic decision. */
+export const FORWARDABLE_FROM: AdmissionState[] = [
+  'registrar_approved', 'under_review', 'documents_verified', 'returned',
+];
+
+export function canForward(state: string | null | undefined): boolean {
+  return FORWARDABLE_FROM.includes(state as AdmissionState);
+}
 
 /** The event an academic decision appends. */
 export const EVENT_FOR_DECISION: Record<AcademicDecision, AdmissionEvent> = {
@@ -265,6 +311,9 @@ export const DECISION_CHECKS = {
     + 'issuance cannot be resumed. It has to be decided rather than retried.',
   'nothing-to-retry': 'This application is not part-way through issuance, so there is nothing to '
     + 'retry.',
+  'return-needs-an-office': 'A return has to name the office it goes back to. Choose Admissions, '
+    + 'the Registrar or Finance — a return that names nowhere leaves the application sitting with '
+    + 'nobody, which is the thing it replaced.',
 } as const;
 
 export type DecisionRefusal = keyof typeof DECISION_CHECKS;
@@ -372,13 +421,16 @@ export const ADMISSION_DESKS = {
   finance: {
     label: 'Awaiting fee',
     office: 'Finance Office',
-    states: ['applicant', 'fee_pending'],
+    // `returned` because a fee discrepancy can be sent back here — the only
+    // way the deciding desk touches Finance at all.
+    states: ['applicant', 'fee_pending', 'returned'],
   },
   /** The Registrar: fee cleared, awaiting verification. */
   registrar: {
     label: 'Awaiting verification',
     office: 'Office of the Registrar',
-    states: ['fee_paid', 'documents_required'],
+    // `returned` because the deciding desk can send a verification back here.
+    states: ['fee_paid', 'documents_required', 'returned'],
   },
   /**
    * The Admissions Office: records forwarded to it, and records sent back to it.
@@ -441,6 +493,46 @@ export const NOT_ON_ANY_DESK: Record<string, string> = {
   draft: 'An application the applicant has started and not submitted. It is '
     + 'theirs until they send it, and no office can act on a form that has not '
     + 'been handed in.',
+};
+
+// ---------------------------------------------------------------------------
+// STATES THE VOCABULARY DECLARES AND NO CODE PRODUCES
+// ---------------------------------------------------------------------------
+//
+// A state on a desk that nothing ever writes is a queue that is empty for a
+// reason nobody can see. It is the mirror of the invisibility defect: there,
+// records existed and no screen asked for them; here, screens ask and no
+// record can ever arrive.
+//
+// These are written down rather than removed, because each one names a step of
+// the University's own five-stage design that has not been built yet. Removing
+// them would erase the gap; declaring them makes it countable, and
+// admissionDesks.test.mjs fails on any unreachable state that is not listed
+// here with a reason.
+// ---------------------------------------------------------------------------
+export const NOT_YET_REACHABLE: Record<string, string> = {
+  // THE JOURNEY HAS NO END. An admitted student never becomes an enrolled one,
+  // because the Registrar's enrolment step does not exist.
+  enrolled:
+    'The Registrar has no enrolment screen, so an issued admission is the last state a student '
+    + 'can reach. Nothing can record that they actually took up the place.',
+
+  under_review:
+    'The Admissions Office has no control that marks an application as being examined, so a '
+    + 'record it is working on is indistinguishable from one nobody has opened.',
+
+  documents_verified:
+    'Verification is recorded only by its absence — an application stops being '
+    + '`documents_required` — so there is no positive statement that the documents were checked '
+    + 'and accepted.',
+
+  fee_pending:
+    'Finance works from `applicant`, which already means the fee is unconfirmed. This state '
+    + 'says the same thing twice and nothing writes it.',
+
+  withdrawn:
+    'An applicant who withdraws is handled by the Registrar declining or deferring. There is no '
+    + 'control for a withdrawal the applicant themselves initiates.',
 };
 
 /** The states one desk lists. */

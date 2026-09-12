@@ -55,6 +55,7 @@ const MIGRATION_FILES = [
   '024_admission_decision_authority.sql',
   '026_issuance_is_not_the_decision.sql',
   '027_the_states_the_pipeline_already_wrote.sql',
+  '032_forwarding_and_returning.sql',
 ].map((f) => readFileSync(join(here, '../../docs/migrations/', f), 'utf8'));
 
 const migration = MIGRATION_FILES.join('\n');

@@ -53,7 +53,7 @@ import { courses, MODE_LABEL } from '@/content/courses';
 import { UNIVERSITY } from '@/lib/constants';
 import {
   ACADEMIC_DECISIONS, EVENT_FOR_DECISION, canDecide, isDecided, canRetryIssuance, officeFor,
-  type AcademicDecision, type AdmissionEvent,
+  RETURN_TARGETS, type AcademicDecision, type AdmissionEvent, type ReturnTarget,
 } from '@/lib/admissionWorkflow';
 
 export const runtime = 'nodejs';
@@ -90,6 +90,12 @@ export async function POST(request: Request) {
     conditions?: { requirement: string; dueBy: string }[];
     overrideReason?: string;
     /**
+     * Which office a return goes back to. Required on a return, meaningless
+     * otherwise: "sent back" without saying to whom is how the single
+     * `returned` state left work sitting with nobody.
+     */
+    returnTo?: ReturnTarget;
+    /**
      * Resume an issuance that stopped part way, under the decision ALREADY
      * recorded. The decision is not taken again — it was validly taken and it
      * is immutable — so the trail shows one approval and two issuance
@@ -103,13 +109,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: 'bad-json' }, { status: 400 });
   }
 
-  const { applicationId, reason, conditions, overrideReason, retry } = body;
+  const { applicationId, reason, conditions, overrideReason, retry, returnTo } = body;
   const decision = body.decision as AcademicDecision;
   if (!applicationId) {
     return NextResponse.json({ ok: false, error: 'missing-application-id' }, { status: 400 });
   }
   if (!decision || !(decision in ACADEMIC_DECISIONS)) {
     return NextResponse.json({ ok: false, error: 'unknown-decision' }, { status: 400 });
+  }
+  // A RETURN THAT NAMES NOWHERE IS THE THING THIS REPLACED. Refused rather
+  // than defaulted: guessing which office should pick the work up is how an
+  // application ends up sitting with an office that is not expecting it.
+  if (decision === 'return' && !(returnTo && returnTo in RETURN_TARGETS)) {
+    return NextResponse.json({ ok: false, error: 'return-needs-an-office' }, { status: 400 });
   }
 
   const admin = createClient(SUPABASE_URL, serviceKey, {
@@ -316,12 +328,32 @@ export async function POST(request: Request) {
   // and the status is the decision's own, not `admission_issued`.
   // -----------------------------------------------------------------------
   if (!admitting && !retry) {
+    // ---------------------------------------------------------------------
+    // A RETURN NAMES THE OFFICE IT GOES BACK TO.
+    //
+    // This desk is the last stage, so a problem found here used to have two
+    // exits: approve anyway, or reject an applicant who has done nothing
+    // wrong. An incomplete verification and a fee discrepancy are not grounds
+    // to refuse somebody a place — they are grounds to send the work back to
+    // whoever can finish it.
+    // ---------------------------------------------------------------------
+    const returning = decision === 'return';
     const { error } = await admin.from('students').update({
       status: newStatus,
       decided_by: caller.id,
       decided_at: new Date().toISOString(),
       decision_reason: reason ?? null,
+      ...(returning ? {
+        returned_to: returnTo,
+        returned_reason: reason ?? null,
+        returned_at: new Date().toISOString(),
+        returned_by: caller.id,
+      } : {}),
     }).eq('id', applicationId);
+    if (!error && returning) {
+      await audit('RETURNED_TO_OFFICE', `returned to ${returnTo}`, decisionId,
+        { from: app.status, to: newStatus }, { returned_to: returnTo });
+    }
     if (error) {
       return NextResponse.json(
         { ok: false, error: `decision-recorded-but-status-not-updated: ${error.message}` },
