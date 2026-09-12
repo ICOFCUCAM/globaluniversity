@@ -36,27 +36,51 @@ function check(label, actual, expected) {
 
 // --- The published scale, typed out from the university's document. ---------
 // grade, min, max, points
+//
+// VERSION 2, the American four-point scale, which the University has adopted
+// and applied to past transcripts as well as future ones. Version 1 is asserted
+// separately below: it has to still be in the file, and it has to not be the
+// one anything computes on.
 const PUBLISHED = [
-  ['A',  94, 100, 4.00],
-  ['A-', 91, 93,  3.33],
-  ['B+', 89, 90,  3.00],
-  ['B',  85, 88,  2.67],
-  ['B-', 81, 84,  2.33],
-  ['C+', 77, 80,  2.00],
-  ['C',  73, 76,  1.67],
-  ['C-', 70, 72,  1.33],
-  ['D+', 67, 69,  1.00],
-  ['D',  65, 66,  0.67],
+  ['A',  93, 100, 4.00],
+  ['A-', 90, 92,  3.70],
+  ['B+', 87, 89,  3.30],
+  ['B',  83, 86,  3.00],
+  ['B-', 80, 82,  2.70],
+  ['C+', 77, 79,  2.30],
+  ['C',  73, 76,  2.00],
+  ['C-', 70, 72,  1.70],
+  ['D+', 67, 69,  1.30],
+  ['D',  65, 66,  1.00],
   ['F',   0, 64,  0.00],
 ];
 
 // --- Read the scale the code will actually use. -----------------------------
 const reg = readFileSync(new URL('../content/regulations.ts', import.meta.url), 'utf8');
-const bands = [...reg.matchAll(/grade: '([^']+)',\s*descriptor: '[^']*',\s*range: '([^']+)',\s*points: '([^']+)'/g)]
-  .map(([, grade, range, points]) => {
-    const [min, max] = range.replace('%', '').split(/[–-]/).map((n) => Number(n.trim()));
-    return [grade, min, max, Number(points)];
-  });
+
+/**
+ * ONE NAMED EXPORT, NOT EVERY BAND IN THE FILE.
+ *
+ * This used to scan the whole file, which worked for exactly as long as there
+ * was one scale in it. The moment version 1 was kept alongside version 2 the
+ * scan returned twenty-two bands, two grades called A, and marks landing in two
+ * bands at once — and it reported that as the scale being broken rather than as
+ * the test looking in the wrong place. A test that cannot tell "the file has a
+ * second scale in it" from "the scale is wrong" is worse than no test.
+ */
+function scaleNamed(name) {
+  const head = `export const ${name}: GradeBand[] = [`;
+  const from = reg.indexOf(head);
+  if (from < 0) throw new Error(`regulations.ts has no ${name}`);
+  const body = reg.slice(from + head.length, reg.indexOf('];', from));
+  return [...body.matchAll(/grade: '([^']+)',\s*descriptor: '[^']*',\s*range: '([^']+)',\s*points: '([^']+)'/g)]
+    .map(([, grade, range, points]) => {
+      const [min, max] = range.replace('%', '').split(/[–-]/).map((n) => Number(n.trim()));
+      return [grade, min, max, Number(points)];
+    });
+}
+
+const bands = scaleNamed('gradeScale');
 
 check('regulations.ts holds all eleven published bands', bands.length, PUBLISHED.length);
 for (let i = 0; i < PUBLISHED.length; i++) {
@@ -74,8 +98,64 @@ const bandFor = (score) => bands.find(([, min, max]) => score >= min && score <=
 check('50% is a fail under the published scale', bandFor(50), 'F');
 check('64% is a fail', bandFor(64), 'F');
 check('65% is the lowest pass', bandFor(65), 'D');
-check('94% is an A', bandFor(94), 'A');
+check('93% is an A', bandFor(93), 'A');
 check('100% is an A', bandFor(100), 'A');
+
+// THE ONE THING VERSION 2 MUST NOT HAVE DONE. The American scale conventionally
+// runs D- down to 60 and passes there. Adopting that would have turned every
+// mark from 60 to 64 into a pass on every transcript the University has issued,
+// retroactively — credit it never awarded, and possibly degrees it never
+// conferred. The University asked for the points to be less harsh, not for the
+// pass line to move, so 60 stays a fail and there is no D-.
+check('60% is still a fail', bandFor(60), 'F');
+check('there is no D- band', bands.some(([g]) => g === 'D-'), false);
+
+console.log('\nVersion 1 is kept, and is not what anything computes on\n');
+
+// A figure computed under version 1 is printed on documents the University has
+// already sealed. Deleting the scale that produced them would leave nobody able
+// to explain a 3.14 that recomputes to 3.40.
+{
+  const v1 = scaleNamed('gradeScaleV1');
+  check('version 1 is still in the file', v1.length, 11);
+  check('…and it is the old scale, unaltered', v1[1], ['A-', 91, 93, 3.33]);
+  check('…while the scale in force is version 2', bands[1], ['A-', 90, 92, 3.70]);
+  check('the version in force is declared',
+    Number(/export const gradeScaleVersion = (\d+)/.exec(reg)?.[1]), 2);
+
+  // grading.ts is what every GPA, classification and transcript is computed
+  // from. It must read the active scale and must not have been pointed at the
+  // superseded one.
+  const g = readFileSync(new URL('./grading.ts', import.meta.url), 'utf8');
+  check('grading.ts does not compute on the superseded scale', /gradeScaleV1/.test(g), false);
+}
+
+console.log('\nThe classification bands moved with the scale\n');
+
+// ---------------------------------------------------------------------------
+// THE TRAP THIS CLOSES. Lifting A- from 3.33 to 3.70 without lifting the First
+// Class boundary would have left First Class sitting at 3.33 — which on the new
+// scale is between B+ and B, not an A- at all. The University would have gone
+// on printing "First Class Honours: an A- average or above" while awarding it
+// for a B+ average. Nobody edits a number in one file and remembers a number in
+// another, so the boundaries are checked against the letters they claim.
+// ---------------------------------------------------------------------------
+{
+  const from = reg.indexOf('export const classificationBands');
+  const body = reg.slice(from, reg.indexOf('];', from));
+  const claimed = [...body.matchAll(/min: ([\d.]+), label: '([^']+)', basis: '(?:an?|the) ([A-F][+-]?)/g)]
+    .map(([, min, label, letter]) => ({ min: Number(min), label, letter }));
+
+  check('every band states the letter it stands for', claimed.length, 5);
+
+  const pointsFor = (letter) => bands.find(([g]) => g === letter)?.[3];
+  const wrong = claimed.filter((b) => pointsFor(b.letter) !== b.min)
+    .map((b) => `${b.label} claims ${b.letter} but sits at ${b.min}`);
+  check('each boundary is the grade point of the letter it names', wrong, []);
+
+  check('First Class is an A- average', claimed[0].min, 3.70);
+  check('Second Class Upper is a B average', claimed[1].min, 3.00);
+}
 
 // --- Every mark from 0 to 100 lands in exactly one band. --------------------
 // Off-by-one gaps between bands are the classic grading bug: a scale reading

@@ -58,7 +58,26 @@ create table if not exists admission_states (
   sort_order  integer not null
 );
 
-insert into admission_states (state, stage, applicant_label, sort_order) values
+-- ---------------------------------------------------------------------------
+-- SEEDED ONLY WHILE THIS IS STILL 024'S TABLE.
+--
+-- Running the bundle a second time used to stop dead here, twice over. 025 puts
+-- a trigger on this table that refuses an INSERT — a new admission state is a
+-- code change, not a row — and it fires before ON CONFLICT is considered. And
+-- 025 adds a NOT NULL `label` column, which this statement, written before that
+-- column existed, does not supply.
+--
+-- Neither is a fault in 025. This seed simply belongs to the moment before it:
+-- once 025 has run, the vocabulary is 025's, 026's and 027's, they maintain
+-- every one of these rows including their labels, and there is nothing here
+-- left to do. So the guard is the presence of 025's column, and this becomes a
+-- no-op the moment the table has moved on.
+--
+-- Found by running RUN-ALL.sql a second time. A migration is not idempotent
+-- because it says so.
+-- ---------------------------------------------------------------------------
+insert into admission_states (state, stage, applicant_label, sort_order)
+select * from (values
   ('draft',                    'application',  'Application started',        10),
   ('applicant',                'application',  'Application received',       20),
   ('under_review',             'verification', 'Application received',       30),
@@ -74,6 +93,13 @@ insert into admission_states (state, stage, applicant_label, sort_order) values
   ('admission_issued',         'issuance',     'Admission letter available',130),
   ('enrolled',                 'enrolment',    'Ready for enrolment',       140),
   ('withdrawn',                'closed',       'Withdrawn',                 150)
+) as v(state, stage, applicant_label, sort_order)
+where not exists (
+  select 1 from information_schema.columns
+   where table_schema = 'public'
+     and table_name = 'admission_states'
+     and column_name = 'label'
+)
 on conflict (state) do update
   set stage = excluded.stage,
       applicant_label = excluded.applicant_label,

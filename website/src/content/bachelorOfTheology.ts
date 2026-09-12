@@ -82,15 +82,6 @@ export const bthOutcomes = [
   'Engage constructively with people from different cultural, social, and religious backgrounds.',
 ];
 
-export const bthStructure = [
-  { year: 'Year One', semester: 'Semester One', courses: 6, credits: 30 },
-  { year: 'Year One', semester: 'Semester Two', courses: 6, credits: 30 },
-  { year: 'Year Two', semester: 'Semester Three', courses: 6, credits: 30 },
-  { year: 'Year Two', semester: 'Semester Four', courses: 6, credits: 30 },
-  { year: 'Year Three', semester: 'Semester Five', courses: 6, credits: 30 },
-  { year: 'Year Three', semester: 'Semester Six', courses: 6, credits: 30 },
-];
-
 export interface BthSemester {
   year: string;
   label: string;
@@ -123,6 +114,43 @@ export interface BthSemester {
  * Advanced Homiletics up to Semester Five, gives 36 courses, six per semester,
  * 5 ECTS each: 30 per semester, 180 total. Both problems close together.
  *
+ * ---------------------------------------------------------------------------
+ * THE CREDIT VALUES ARE NO LONGER A FLAT FIVE
+ * ---------------------------------------------------------------------------
+ *
+ * The University has ruled three things, and between them they decide every
+ * number in this array:
+ *
+ *   1. A course taught in two numbered parts carries 3. There are eight of
+ *      them: Bible Survey I and II, Bible Doctrine I and II, Research
+ *      Methodology I and II, Systematic Theology I and II. Christology I has no
+ *      second part in this structure, and the University has said that is no
+ *      obstacle — it is not one of them and stays at 5.
+ *   2. The thesis carries 20, not the 5 it had and not the 21 the arithmetic
+ *      first produced.
+ *   3. Every semester is 30 credits, and the award is 180.
+ *
+ * THOSE THREE LEAVE EXACTLY ONE ARRANGEMENT, which is why the semesters below
+ * are not the ones the brief set out. Thirty-five courses must total 160; eight
+ * of them at 3 is 24, so twenty-seven must total 136, and twenty-seven fives is
+ * 135. One credit is unaccounted for, and the University asked that credit
+ * values rise rather than fall to close a gap, so ONE COURSE CARRIES 6:
+ * BTH101, the course that opens the degree and the area — courseCodes.ts calls
+ * it exactly that in assigning it BIS 210. That is the single value here chosen
+ * rather than ruled on, and it moves to any other course with a word.
+ *
+ * A semester of 30 can then only be built three ways — six 5s, five 3s and
+ * three 5s, or the 6 with three 3s and three 5s — so the eight 3-credit courses
+ * can only split five and three. Semester One takes the 6 and the three that
+ * open Scripture and doctrine; Semester Four takes the other five, which puts
+ * Research Methodology I and II in the semester before the thesis year and
+ * teaches Systematic Theology as one two-part sequence. Bible Doctrine II
+ * travels with them, which is the cost of the arrangement: the survey pair stay
+ * together and doctrine is split across the years instead.
+ *
+ * The thesis semester therefore carries the thesis and two courses. That is not
+ * a thin semester; it is 20 credits of supervised research and a defence.
+ *
  * The four new codes are non-sequential by semester (BTH111 sits in Semester
  * One, after BTH110 in Semester Two). That is deliberate: renumbering the
  * existing courses would be the fifth renaming of the same codes in this
@@ -134,7 +162,7 @@ export const bthCurriculum: BthSemester[] = [
     year: 'Year One',
     label: 'Semester One',
     courses: [
-      { code: 'BTH101', title: 'Introduction to Biblical Studies', units: [
+      { code: 'BTH101', title: 'Introduction to Biblical Studies', ects: 6, units: [
         'The Nature of Theology', 'Divine Revelation', 'The Inspiration of Scripture',
         'The Canon of Scripture', 'Biblical Authority', 'Formation of the Old Testament',
         'Formation of the New Testament', 'Biblical Geography and Archaeology',
@@ -143,7 +171,7 @@ export const bthCurriculum: BthSemester[] = [
         'Scripture, Doctrine, and Christian Ministry',
         'Global and Contextual Interpretation of Scripture',
       ] },
-      { code: 'BTH102', title: 'Bible Survey I', units: [
+      { code: 'BTH102', title: 'Bible Survey I', ects: 3, units: [
         'Introduction to the Old Testament', 'The Book of Genesis', 'Abraham and the Covenant Promise',
         'Moses, the Exodus, and the Covenant at Sinai', 'The Books of the Law',
         'Joshua: Entering the Promised Land', 'Judges: The Cycle of Failure and Restoration',
@@ -152,7 +180,7 @@ export const bthCurriculum: BthSemester[] = [
         'Exile, Judgment, and Restoration', 'Old Testament Messianic Hope',
         'Old Testament Theology and Christian Ministry',
       ] },
-      { code: 'BTH103', title: 'Bible Survey II', units: [
+      { code: 'BTH103', title: 'Bible Survey II', ects: 3, units: [
         'Introduction to the Prophetic Movement', 'Isaiah: The Holy King and the Suffering Servant',
         'Jeremiah: Judgment and the New Covenant', 'Ezekiel: The Glory and Restoration of Yahuah',
         'Daniel: The Kingdom of Yahuah Among the Nations', 'Job: Suffering, Faith, and Sovereignty',
@@ -163,7 +191,7 @@ export const bthCurriculum: BthSemester[] = [
         'The Book of Acts and the Birth of the New Covenant Community',
         'Pentecost, Mission, Africa, and the Global Expansion of the Assembly',
       ] },
-      { code: 'BTH104', title: 'Bible Doctrine I', units: [
+      { code: 'BTH104', title: 'Bible Doctrine I', ects: 3, units: [
         'What is Theology?', 'Sources for Theological Reflection', 'Revelation and the Word of Yahuah',
         'The Existence and Nature of Yahuah', 'The Triune Nature of Yahuah', 'Yahuah as Creator',
         'The Creation and Identity of Humanity', 'Human Dignity, Race, and Identity',
@@ -172,68 +200,68 @@ export const bthCurriculum: BthSemester[] = [
         'Evil, Suffering, and the Problem of Humanity', 'Salvation in the Purpose of Yahuah',
         'Covenant Theology', 'Redemption and the Restoration of Creation',
       ] },
-      { code: 'BTH105', title: 'Evangelism and Missions Introduction' },
-      { code: 'BTH111', title: 'Introduction to Church History', contents: ['The apostolic assembly', 'The Church Fathers', 'Persecution under Rome', 'The ecumenical councils', 'Canon and creeds', 'Constantine and the imperial church', 'Monasticism', 'Early African Christianity: Alexandria, Carthage, Ethiopia'] },
+      { code: 'BTH105', title: 'Evangelism and Missions Introduction', ects: 5 },
+      { code: 'BTH107', title: 'Old Testament History and Theology', ects: 5, contents: ['Patriarchs', 'Exodus', 'Israel’s covenant identity', 'Kingdom period', 'Prophets', 'Exile', 'Restoration'] },
+      { code: 'BTH111', title: 'Introduction to Church History', ects: 5, contents: ['The apostolic assembly', 'The Church Fathers', 'Persecution under Rome', 'The ecumenical councils', 'Canon and creeds', 'Constantine and the imperial church', 'Monasticism', 'Early African Christianity: Alexandria, Carthage, Ethiopia'] },
     ],
   },
   {
     year: 'Year One',
     label: 'Semester Two',
     courses: [
-      { code: 'BTH106', title: 'Bible Doctrine II', contents: ['Pneumatology', 'Ecclesiology', 'Eschatology', 'Angelology', 'Demonology', 'Spiritual warfare', 'Kingdom theology'] },
-      { code: 'BTH107', title: 'Old Testament History and Theology', contents: ['Patriarchs', 'Exodus', 'Israel’s covenant identity', 'Kingdom period', 'Prophets', 'Exile', 'Restoration'] },
-      { code: 'BTH108', title: 'Christology I', contents: ['Identity of Yahusha', 'Messianic prophecy', 'Incarnation', 'Humanity and divinity', 'Kingdom ministry', 'African and global interpretations of Yahusha'] },
-      { code: 'BTH109', title: 'Pentateuch Studies', contents: ['Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy', 'Covenant theology', 'Torah and Christian theology'] },
-      { code: 'BTH110', title: 'Christian Psychology and Human Relations', contents: ['Human personality', 'Spiritual formation', 'Pastoral relationships', 'Emotional maturity', 'Family systems', 'Conflict resolution'] },
-      { code: 'BTH112', title: 'Advanced Church History', contents: ['The medieval church', 'The Reformation', 'Counter-Reformation', 'Revival and awakening movements', 'The missionary century', 'Colonialism and the African church', 'Independent African churches', 'The contemporary global church'] },
+      { code: 'BTH108', title: 'Christology I', ects: 5, contents: ['Identity of Yahusha', 'Messianic prophecy', 'Incarnation', 'Humanity and divinity', 'Kingdom ministry', 'African and global interpretations of Yahusha'] },
+      { code: 'BTH109', title: 'Pentateuch Studies', ects: 5, contents: ['Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy', 'Covenant theology', 'Torah and Christian theology'] },
+      { code: 'BTH110', title: 'Christian Psychology and Human Relations', ects: 5, contents: ['Human personality', 'Spiritual formation', 'Pastoral relationships', 'Emotional maturity', 'Family systems', 'Conflict resolution'] },
+      { code: 'BTH112', title: 'Advanced Church History', ects: 5, contents: ['The medieval church', 'The Reformation', 'Counter-Reformation', 'Revival and awakening movements', 'The missionary century', 'Colonialism and the African church', 'Independent African churches', 'The contemporary global church'] },
+      { code: 'BTH203', title: 'Christian Ethics', ects: 5, contents: ['Biblical morality', 'Justice', 'Human dignity', 'Bioethics', 'Sexual ethics', 'Economic ethics', 'Political responsibility'] },
+      { code: 'BTH204', title: 'Christian Education', ects: 5, contents: ['Teaching ministry', 'Discipleship', 'Curriculum development', 'Adult education', 'Children ministry'] },
     ],
   },
   {
     year: 'Year Two',
     label: 'Semester Three',
     courses: [
-      { code: 'BTH201', title: 'Hermeneutics and Biblical Interpretation', contents: ['Principles of interpretation', 'Historical-critical method', 'Literary interpretation', 'Canonical interpretation', 'Contextual interpretation', 'African hermeneutics', 'Liberation hermeneutics', 'Feminist hermeneutics', 'Postcolonial interpretation', 'Hebrew and Greek background'] },
-      { code: 'BTH202', title: 'Homiletics I', contents: ['Theology of preaching', 'Biblical preaching', 'Sermon preparation', 'Expository preaching', 'Prophetic preaching', 'Contextual preaching', 'Preaching in African churches'] },
-      { code: 'BTH203', title: 'Christian Ethics', contents: ['Biblical morality', 'Justice', 'Human dignity', 'Bioethics', 'Sexual ethics', 'Economic ethics', 'Political responsibility'] },
-      { code: 'BTH204', title: 'Christian Education', contents: ['Teaching ministry', 'Discipleship', 'Curriculum development', 'Adult education', 'Children ministry'] },
-      { code: 'BTH205', title: 'Research Methodology I', contents: ['Academic research', 'Theology research methods', 'Citation styles', 'Literature review', 'Research proposal writing'] },
-      { code: 'BTH211', title: 'Introduction to Biblical Hebrew', contents: ['The Hebrew alphabet and vowel system', 'Nouns and the definite article', 'The verbal system: qal perfect and imperfect', 'Pronouns and suffixes', 'Reading unpointed text', 'Lexicons and concordances', 'Translating narrative from Genesis', 'Hebrew word study for preaching'] },
+      { code: 'BTH201', title: 'Hermeneutics and Biblical Interpretation', ects: 5, contents: ['Principles of interpretation', 'Historical-critical method', 'Literary interpretation', 'Canonical interpretation', 'Contextual interpretation', 'African hermeneutics', 'Liberation hermeneutics', 'Feminist hermeneutics', 'Postcolonial interpretation', 'Hebrew and Greek background'] },
+      { code: 'BTH202', title: 'Homiletics I', ects: 5, contents: ['Theology of preaching', 'Biblical preaching', 'Sermon preparation', 'Expository preaching', 'Prophetic preaching', 'Contextual preaching', 'Preaching in African churches'] },
+      { code: 'BTH207', title: 'Epistles Studies', ects: 5, contents: ['Pauline theology', 'Hebrews', 'General Epistles', 'New Covenant theology'] },
+      { code: 'BTH208', title: 'Pneumatology', ects: 5, contents: ['Holy Spirit theology', 'Gifts of the Spirit', 'Pentecostal theology', 'Spiritual formation', 'Mission empowerment'] },
+      { code: 'BTH209', title: 'Spiritual Leadership', ects: 5, contents: ['Biblical leadership models', 'Servant leadership', 'Pastoral leadership', 'Organizational leadership', 'Ethical leadership'] },
+      { code: 'BTH211', title: 'Introduction to Biblical Hebrew', ects: 5, contents: ['The Hebrew alphabet and vowel system', 'Nouns and the definite article', 'The verbal system: qal perfect and imperfect', 'Pronouns and suffixes', 'Reading unpointed text', 'Lexicons and concordances', 'Translating narrative from Genesis', 'Hebrew word study for preaching'] },
     ],
   },
   {
     year: 'Year Two',
     label: 'Semester Four',
     courses: [
-      { code: 'BTH206', title: 'Systematic Theology I', contents: ['Doctrine of Yahuah', 'Trinity', 'Scripture', 'Creation', 'Humanity', 'Sin', 'Revelation'] },
-      { code: 'BTH207', title: 'Epistles Studies', contents: ['Pauline theology', 'Hebrews', 'General Epistles', 'New Covenant theology'] },
-      { code: 'BTH208', title: 'Pneumatology', contents: ['Holy Spirit theology', 'Gifts of the Spirit', 'Pentecostal theology', 'Spiritual formation', 'Mission empowerment'] },
-      { code: 'BTH209', title: 'Spiritual Leadership', contents: ['Biblical leadership models', 'Servant leadership', 'Pastoral leadership', 'Organizational leadership', 'Ethical leadership'] },
-      { code: 'BTH210', title: 'Research Methodology II', contents: ['Advanced theological research', 'Thesis preparation', 'Academic writing'] },
-      { code: 'BTH212', title: 'Introduction to New Testament Greek', contents: ['The Greek alphabet and pronunciation', 'Nouns, cases and the article', 'Present and aorist verbs', 'Participles and infinitives', 'Prepositions and conjunctions', 'Using lexicons and critical apparatus', 'Translating from the Gospel of John', 'Greek word study for exegesis'] },
+      { code: 'BTH106', title: 'Bible Doctrine II', ects: 3, contents: ['Pneumatology', 'Ecclesiology', 'Eschatology', 'Angelology', 'Demonology', 'Spiritual warfare', 'Kingdom theology'] },
+      { code: 'BTH205', title: 'Research Methodology I', ects: 3, contents: ['Academic research', 'Theology research methods', 'Citation styles', 'Literature review', 'Research proposal writing'] },
+      { code: 'BTH206', title: 'Systematic Theology I', ects: 3, contents: ['Doctrine of Yahuah', 'Trinity', 'Scripture', 'Creation', 'Humanity', 'Sin', 'Revelation'] },
+      { code: 'BTH210', title: 'Research Methodology II', ects: 3, contents: ['Advanced theological research', 'Thesis preparation', 'Academic writing'] },
+      { code: 'BTH309', title: 'Systematic Theology II', ects: 3, contents: ['Christology', 'Salvation', 'Ecclesiology', 'Eschatology'] },
+      { code: 'BTH212', title: 'Introduction to New Testament Greek', ects: 5, contents: ['The Greek alphabet and pronunciation', 'Nouns, cases and the article', 'Present and aorist verbs', 'Participles and infinitives', 'Prepositions and conjunctions', 'Using lexicons and critical apparatus', 'Translating from the Gospel of John', 'Greek word study for exegesis'] },
+      { code: 'BTH303', title: 'Spiritual Formation', ects: 5, contents: ['Prayer', 'Worship', 'Holiness', 'Character formation', 'Discipleship'] },
+      { code: 'BTH307', title: 'Family Theology and Marriage Studies', ects: 5 },
     ],
   },
   {
     year: 'Year Three',
     label: 'Semester Five',
     courses: [
-      { code: 'BTH301', title: 'Advanced Hermeneutics' },
-      { code: 'BTH302', title: 'Acts and Apostolic Mission', contents: ['Pentecost', 'Early assembly', 'Paul', 'Peter', 'African Christianity', 'Global mission'] },
-      { code: 'BTH303', title: 'Spiritual Formation', contents: ['Prayer', 'Worship', 'Holiness', 'Character formation', 'Discipleship'] },
-      { code: 'BTH304', title: 'Missiology and Global Christianity', contents: ['Biblical mission', 'Historical mission', 'Catholic mission', 'Protestant mission', 'Evangelical mission', 'Pentecostal mission', 'African mission', 'Asian theology', 'Latin American theology'] },
-      { code: 'BTH305', title: 'ICT, Technology and Global Ministry', contents: ['Digital ministry', 'Artificial intelligence and theology', 'Online churches', 'Technology ethics', 'Global communication'] },
-      { code: 'BTH306', title: 'Advanced Homiletics' },
+      { code: 'BTH301', title: 'Advanced Hermeneutics', ects: 5 },
+      { code: 'BTH302', title: 'Acts and Apostolic Mission', ects: 5, contents: ['Pentecost', 'Early assembly', 'Paul', 'Peter', 'African Christianity', 'Global mission'] },
+      { code: 'BTH304', title: 'Missiology and Global Christianity', ects: 5, contents: ['Biblical mission', 'Historical mission', 'Catholic mission', 'Protestant mission', 'Evangelical mission', 'Pentecostal mission', 'African mission', 'Asian theology', 'Latin American theology'] },
+      { code: 'BTH305', title: 'ICT, Technology and Global Ministry', ects: 5, contents: ['Digital ministry', 'Artificial intelligence and theology', 'Online churches', 'Technology ethics', 'Global communication'] },
+      { code: 'BTH306', title: 'Advanced Homiletics', ects: 5 },
+      { code: 'BTH308', title: 'Spiritual Warfare and Demonology', ects: 5 },
     ],
   },
   {
     year: 'Year Three',
     label: 'Semester Six',
     courses: [
-      { code: 'BTH307', title: 'Family Theology and Marriage Studies' },
-      { code: 'BTH308', title: 'Spiritual Warfare and Demonology' },
-      { code: 'BTH309', title: 'Systematic Theology II', contents: ['Christology', 'Salvation', 'Ecclesiology', 'Eschatology'] },
-      { code: 'BTH310', title: 'African Theology and Contextual Theology', contents: ['African Theology', 'Contextual Theology', 'Liberation Theology', 'Identity and Biblical Interpretation'] },
-      { code: 'BTH311', title: 'Ecotheology and Creation Care', contents: ['Creation theology', 'Environmental responsibility', 'Climate justice', 'African ecological perspectives'] },
-      { code: 'BTH312', title: 'Bachelor Thesis and Defense', contents: ['Research proposal', 'Literature review', 'Methodology', 'Thesis writing', 'Oral defense'] },
+      { code: 'BTH310', title: 'African Theology and Contextual Theology', ects: 5, contents: ['African Theology', 'Contextual Theology', 'Liberation Theology', 'Identity and Biblical Interpretation'] },
+      { code: 'BTH311', title: 'Ecotheology and Creation Care', ects: 5, contents: ['Creation theology', 'Environmental responsibility', 'Climate justice', 'African ecological perspectives'] },
+      { code: 'BTH312', title: 'Bachelor Thesis and Defense', ects: 20, contents: ['Research proposal', 'Literature review', 'Methodology', 'Thesis writing', 'Oral defense'] },
     ],
   },
 ];
@@ -279,3 +307,23 @@ export const bthProgression = [
   { label: 'Master of Arts in Theology', href: '/degrees/masters-degrees' },
   { label: 'Doctoral programmes', href: '/degrees/doctoral' },
 ];
+
+/**
+ * The structure table the programme page prints: one row per semester.
+ *
+ * DERIVED, NOT RESTATED. It used to be a second list saying "6 courses, 30
+ * credits" six times, and it was true only for as long as nobody changed the
+ * course list. The moment the credit values stopped being a flat five it became
+ * a table that disagreed with the curriculum printed directly beneath it, on
+ * the same page, about the same degree. Counting the courses is the only way
+ * the two cannot drift apart.
+ */
+export const bthStructure = bthCurriculum.map((s) => ({
+  year: s.year,
+  semester: s.label,
+  courses: s.courses.length,
+  credits: s.courses.reduce((n, c) => n + (c.ects ?? 0), 0),
+}));
+
+/** Every credit in the award, added up. The University's ruling: 180. */
+export const bthTotalCredits = bthStructure.reduce((n, s) => n + s.credits, 0);

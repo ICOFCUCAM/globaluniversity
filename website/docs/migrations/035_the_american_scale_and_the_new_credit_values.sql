@@ -1,43 +1,4 @@
 -- ===========================================================================
--- ICOF GLOBAL UNIVERSITY — MIGRATIONS 035, IN ORDER
---
--- GENERATED FILE. DO NOT EDIT.
---   Generator: scripts/build-migration-run.mjs
---   Rebuild:   node scripts/build-migration-run.mjs --out=RUN-OUTSTANDING.sql 035
---
--- ---------------------------------------------------------------------------
--- HOW TO RUN IT
---
--- Supabase SQL editor: paste the whole file and run once.
--- psql:                psql "<connection string>" -f docs/migrations/RUN-OUTSTANDING.sql
---
--- Every migration in it is idempotent and destroys nothing, so running it twice
--- is safe. It is NOT wrapped in a transaction: each file is written to run
--- statement by statement, and wrapping them would mean a failure in the last
--- one silently undid the first.
---
--- ---------------------------------------------------------------------------
--- WHAT TO EXPECT IN THE OUTPUT
---
--- Some of these raise NOTICE deliberately — they report on the state they
--- found rather than changing it silently. A notice is information, not a
--- warning. An ERROR is a real failure and stops the run.
---
--- ---------------------------------------------------------------------------
--- AFTERWARDS
---
--- Run docs/migrations/VERIFY.sql to see what landed.
--- ===========================================================================
-
--- ===========================================================================
--- ===========================================================================
---
---   035_the_american_scale_and_the_new_credit_values.sql
---
--- ===========================================================================
--- ===========================================================================
-
--- ===========================================================================
 -- 035 — THE AMERICAN GRADING SCALE, APPLIED TO EVERYTHING ALREADY ISSUED,
 --       AND THE CREDIT VALUES THAT GO WITH IT.
 -- ===========================================================================
@@ -687,4 +648,3 @@ select count(*) as results_with_no_enrolment
   left join enrollments e on e.id = r.enrollment_id
  where r.total_score is not null
    and (e.id is null or e.academic_year is null or e.semester is null);
-

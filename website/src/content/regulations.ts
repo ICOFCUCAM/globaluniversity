@@ -23,8 +23,67 @@ export interface GradeBand {
   points: string;
 }
 
-/** The university's grading scale, exactly as published. */
+/**
+ * THE SCALE IN FORCE. Version 2, the American four-point scale.
+ *
+ * ---------------------------------------------------------------------------
+ * WHAT CHANGED AND WHY
+ * ---------------------------------------------------------------------------
+ *
+ * Version 1 was the University's own scale and it was severe in a way that was
+ * hard to see until it was set beside the scale most of the world reads a
+ * transcript against. An A needed 94. A- was worth 3.33 where an American A-
+ * is 3.70. B+ occupied two percentage points, 89 and 90, so a student one mark
+ * below an A- fell to 3.00. A graduate averaging a solid B across three years
+ * came out at 2.67 and was classified Second Class Lower by a system that had
+ * just called every one of their grades "Above Average".
+ *
+ * The University has ruled that the scale moves to the American format, and
+ * that version 2 applies to past transcripts as well as future ones. So the
+ * bands widen to the conventional American ones and the points become the
+ * conventional American points.
+ *
+ * ---------------------------------------------------------------------------
+ * WHAT DID NOT CHANGE, DELIBERATELY
+ * ---------------------------------------------------------------------------
+ *
+ * THE PASS MARK IS STILL 65. The American scale usually runs D- down to 60 and
+ * passes at 60, and adopting that would have turned every mark between 60 and
+ * 64 from a fail into a pass, retroactively, across every transcript the
+ * University has ever issued. That is not a softer scale; it is the University
+ * awarding credit it never awarded, and possibly degrees it never conferred.
+ * The University asked for the points to be less harsh. It did not ask to
+ * change who passed, so this scale has no D- and F still runs to 64.
+ *
+ * Version 1 is kept below rather than deleted, because a figure computed under
+ * it exists on issued documents and somebody will one day need to know what
+ * scale produced it.
+ */
 export const gradeScale: GradeBand[] = [
+  { grade: 'A', descriptor: 'Excellent', range: '93–100%', points: '4.00' },
+  { grade: 'A-', descriptor: 'Very Good', range: '90–92%', points: '3.70' },
+  { grade: 'B+', descriptor: 'Good', range: '87–89%', points: '3.30' },
+  { grade: 'B', descriptor: 'Above Average', range: '83–86%', points: '3.00' },
+  { grade: 'B-', descriptor: 'Average', range: '80–82%', points: '2.70' },
+  { grade: 'C+', descriptor: 'Satisfactory', range: '77–79%', points: '2.30' },
+  { grade: 'C', descriptor: 'Satisfactory', range: '73–76%', points: '2.00' },
+  { grade: 'C-', descriptor: 'Below Satisfactory', range: '70–72%', points: '1.70' },
+  { grade: 'D+', descriptor: 'Pass', range: '67–69%', points: '1.30' },
+  { grade: 'D', descriptor: 'Pass', range: '65–66%', points: '1.00' },
+  { grade: 'F', descriptor: 'Fail', range: '0–64%', points: '0.00' },
+];
+
+/** Which version of the scale `gradeScale` is. Recorded against every GPA. */
+export const gradeScaleVersion = 2;
+
+/**
+ * The scale version 2 replaced, kept so a figure computed under it can be
+ * explained rather than merely disbelieved.
+ *
+ * NOT USED IN ANY COMPUTATION. It is here to be read, and the retroactive
+ * migration names it as what it recomputed away from.
+ */
+export const gradeScaleV1: GradeBand[] = [
   { grade: 'A', descriptor: 'Excellent', range: '94–100%', points: '4.00' },
   { grade: 'A-', descriptor: 'Very Good', range: '91–93%', points: '3.33' },
   { grade: 'B+', descriptor: 'Good', range: '89–90%', points: '3.00' },
@@ -38,7 +97,7 @@ export const gradeScale: GradeBand[] = [
   { grade: 'F', descriptor: 'Fail', range: '0–64%', points: '0.00' },
 ];
 
-/** The lowest mark that earns credit, read off the scale above. */
+/** The lowest mark that earns credit, read off the scale above. Unchanged. */
 export const passMark = '65%';
 
 export const specialGrades: { code: string; meaning: string }[] = [
@@ -177,12 +236,26 @@ export const assessmentSchemes: AssessmentScheme[] = [
  * a student asked why 2.40 divides an Upper from a Lower could not be told
  * which grade average that represents, because it represents none.
  */
+/**
+ * MOVED WITH THE SCALE, AND ANCHORED TO THE SAME LETTERS.
+ *
+ * Every boundary here is a grade point that exists on `gradeScale`, and the
+ * `basis` says which letter it is. That is not decoration: it is the reason
+ * these numbers could be changed safely. Version 2 lifted A- from 3.33 to 3.70
+ * and B from 2.67 to 3.00, so leaving the boundaries where they were would have
+ * quietly redefined First Class from "an A- average" to "a B+ average" and
+ * handed out a classification nobody voted for.
+ *
+ * So the letters are what is fixed and the numbers follow them. A student needs
+ * exactly the same average performance for a First as they did yesterday; what
+ * changed is what that performance is worth as a number.
+ */
 export const classificationBands: { min: number; label: string; basis: string }[] = [
-  { min: 3.33, label: 'First Class Honours', basis: 'an A- average or above' },
-  { min: 2.67, label: 'Second Class Honours (Upper Division)', basis: 'a B average or above' },
-  { min: 2.00, label: 'Second Class Honours (Lower Division)', basis: 'a C+ average or above' },
-  { min: 1.33, label: 'Third Class Honours', basis: 'a C- average or above' },
-  { min: 0.67, label: 'Pass', basis: 'a D average — the lowest passing grade' },
+  { min: 3.70, label: 'First Class Honours', basis: 'an A- average or above' },
+  { min: 3.00, label: 'Second Class Honours (Upper Division)', basis: 'a B average or above' },
+  { min: 2.30, label: 'Second Class Honours (Lower Division)', basis: 'a C+ average or above' },
+  { min: 1.70, label: 'Third Class Honours', basis: 'a C- average or above' },
+  { min: 1.00, label: 'Pass', basis: 'a D average — the lowest passing grade' },
 ];
 
 /**

@@ -243,6 +243,19 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
     table: 'students',
     column: 'enrolled_at',
   },
+  {
+    file: '035_the_american_scale_and_the_new_credit_values.sql',
+    what: 'Puts the American grading scale in force and applies it to transcripts already '
+      + 'issued — every grade point and every average is restated, with a record of what each '
+      + 'one was before. Sets the Bachelor of Theology credit values: the eight two-part '
+      + 'courses at 3 and the thesis at 20.',
+    // The record of the restatement, which no earlier migration creates. Chosen
+    // over the scale_version columns because it is the thing that would be
+    // missing if the migration half-ran: the columns can exist with nothing
+    // restated into them, and a Readiness panel reporting "applied" on that
+    // would be vouching for a recompute that never happened.
+    table: 'grading_scale_restatements',
+  },
 ];
 
 /** What a probe came back as. */

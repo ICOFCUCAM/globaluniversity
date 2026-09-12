@@ -69,10 +69,42 @@ check('three years', new Set(bth.courses.map((c) => c.year)).size, 3);
 check('two semesters in each',
   [1, 2, 3].map((y) => new Set(bth.courses.filter((c) => c.year === y).map((c) => c.semester)).size),
   [2, 2, 2]);
-check('six courses a semester',
-  [...new Set(bth.courses.map((c) => `${c.year}.${c.semester}`))]
-    .map((k) => bth.courses.filter((c) => `${c.year}.${c.semester}` === k).length),
-  [6, 6, 6, 6, 6, 6]);
+// ---------------------------------------------------------------------------
+// THIRTY CREDITS A SEMESTER, NOT SIX COURSES A SEMESTER.
+//
+// This asserted [6,6,6,6,6,6] courses, which was true while every course was
+// worth five and was never the rule. The University's rule is the credit load:
+// thirty a semester, a hundred and eighty in the award. Once the two-part
+// courses dropped to 3 and the thesis rose to 20, six-a-semester and
+// thirty-a-semester stopped being the same statement, and only one of them is
+// the one a degree is built on.
+//
+// The course counts are checked too, but as a consequence rather than a rule —
+// they are the only shape the three rulings leave, so a change to any credit
+// value shows up here as the semesters failing to balance.
+// ---------------------------------------------------------------------------
+const semesterKeys = [...new Set(bth.courses.map((c) => `${c.year}.${c.semester}`))];
+const inSemester = (k) => bth.courses.filter((c) => `${c.year}.${c.semester}` === k);
+
+check('thirty credits in every semester',
+  semesterKeys.map((k) => inSemester(k).reduce((t, c) => t + (c.credits ?? 0), 0)),
+  [30, 30, 30, 30, 30, 30]);
+check('and the course counts that follow from it',
+  semesterKeys.map((k) => inSemester(k).length), [7, 6, 6, 8, 6, 3]);
+
+// The values themselves, named rather than merely summed. A scale that adds up
+// to 180 can still have the thesis at 5 and a survey course at 20.
+const creditOf = (title) => bth.courses.find((c) => c.title === title)?.credits;
+check('the thesis carries twenty', creditOf('Bachelor Thesis and Defense'), 20);
+check('a course taught in two parts carries three',
+  ['Bible Survey I', 'Bible Survey II', 'Bible Doctrine I', 'Bible Doctrine II',
+    'Research Methodology I', 'Research Methodology II',
+    'Systematic Theology I', 'Systematic Theology II'].map(creditOf),
+  [3, 3, 3, 3, 3, 3, 3, 3]);
+// Christology I is numbered I and has no second part in this structure. The
+// University has ruled that is no obstacle and it is not one of them.
+check('a course numbered I with no second part is not one of them',
+  creditOf('Christology I'), 5);
 
 // THE ORDERING IS THE THING THAT GOES WRONG SILENTLY. If the year and semester
 // were derived from the wrong index, a third-year course would land in year one

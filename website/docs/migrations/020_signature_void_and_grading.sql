@@ -292,6 +292,7 @@ where not exists (select 1 from grading_scales where name = 'University grading 
 do $$
 declare
   scale_id uuid;
+  active_id uuid;
   refused boolean;
 begin
   -- ---- A published scale cannot be edited --------------------------------
@@ -308,8 +309,24 @@ begin
   end if;
 
   -- …but activating and deactivating it still work.
-  update grading_scales set is_active = false where id = scale_id;
-  update grading_scales set is_active = true  where id = scale_id;
+  --
+  -- ON WHICHEVER SCALE IS CURRENTLY ACTIVE, NOT ON VERSION 1. This proof used
+  -- to name version 1 and switch it off and back on, which was correct for
+  -- exactly as long as version 1 was the only scale the University had. 035
+  -- published version 2 and deactivated version 1 — and re-running this file
+  -- after that turned version 1 back on while version 2 was still on, which the
+  -- unique index over the active global scale refuses. So a bundle that had
+  -- been run once could not be run twice, and the failure pointed at 020 rather
+  -- than at the assumption inside it.
+  --
+  -- Found by running RUN-ALL.sql a second time. A migration is not idempotent
+  -- because it says so.
+  select id into active_id from grading_scales
+   where name = 'University grading scale' and is_active and award_kind is null;
+  if active_id is null then active_id := scale_id; end if;
+
+  update grading_scales set is_active = false where id = active_id;
+  update grading_scales set is_active = true  where id = active_id;
 
   -- ---- Two active global scales are impossible ---------------------------
   refused := false;
