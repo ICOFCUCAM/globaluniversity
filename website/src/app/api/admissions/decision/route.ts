@@ -450,22 +450,65 @@ export async function POST(request: Request) {
   //        is not an account.
   // =======================================================================
   const password = generatePassword();
+  const metadata = {
+    full_name: fullName, role: 'student',
+    student_number: studentNumber, matric_no: app.matric_no, program: app.program,
+  };
+
+  let authUserId: string | undefined;
   const { data: created, error: authErr } = await admin.auth.admin.createUser({
     email: app.email,
     password,
     email_confirm: true,
-    user_metadata: {
-      full_name: fullName, role: 'student',
-      student_number: studentNumber, matric_no: app.matric_no, program: app.program,
-    },
+    user_metadata: metadata,
   });
-  if (authErr || !created?.user?.id) {
+
+  if (created?.user?.id) {
+    authUserId = created.user.id;
+  } else if (/already.*registered|email.?exists|already been registered/i.test(authErr?.message ?? '')) {
+    // ---------------------------------------------------------------------
+    // A RETRY MUST NOT TRIP OVER ITS OWN LAST ATTEMPT.
+    //
+    // An issuance that created the account and then failed at a later step
+    // leaves the account behind. On the next retry `createUser` refuses the
+    // address, so the recovery path the University was promised refused every
+    // application it was most needed for — the ones that had got furthest.
+    //
+    // The account is reused rather than duplicated, and its password is reset
+    // to the temporary one that goes out with this letter, so the credentials
+    // the applicant receives are the credentials that work.
+    // ---------------------------------------------------------------------
+    const { data: existing } = await admin
+      .from('profiles').select('id, role').eq('email', app.email).maybeSingle();
+
+    if (!existing?.id) {
+      return failIssuance('create the account',
+        'that email address is already registered but no profile could be found for it');
+    }
+    // NEVER RESET A STAFF PASSWORD. If the address already belongs to somebody
+    // who is not a student, reusing it would hand an applicant an account with
+    // another person's authority. That is a refusal, not a recovery.
+    if (existing.role && existing.role !== 'student') {
+      return failIssuance('create the account',
+        `that email address already belongs to a ${existing.role} account. An applicant cannot be `
+        + 'admitted onto a member of staff’s login; correct the address on the application first.');
+    }
+
+    const { error: resetErr } = await admin.auth.admin.updateUserById(existing.id, {
+      password, email_confirm: true, user_metadata: metadata,
+    });
+    if (resetErr) return failIssuance('create the account', resetErr.message);
+    authUserId = existing.id;
+    await audit('ACCOUNT_CREATED', 'reused the account a previous attempt had created',
+      decisionId, undefined, { reused: true });
+  }
+
+  if (!authUserId) {
     // THE BOUNDARY THE UNIVERSITY ASKED TO BE PROVED. The decision stands, the
     // letter exists, the number is reserved, and there is no account — so the
     // record says admission_processing_failed and not a word more.
     return failIssuance('create the account', authErr?.message ?? 'no id returned');
   }
-  const authUserId = created.user.id;
 
   const { error: profErr } = await admin.from('profiles').upsert(
     { id: authUserId, email: app.email, full_name: fullName, role: 'student' },
@@ -495,10 +538,18 @@ export async function POST(request: Request) {
     decision_reason: reason ?? null,
   }).eq('id', applicationId);
   if (updErr) {
-    return NextResponse.json(
-      { ok: false, error: `account-created-but-status-not-updated: ${updErr.message}`, decisionId },
-      { status: 500 },
-    );
+    // ---------------------------------------------------------------------
+    // THIS RETURNED WITHOUT MARKING THE FAILURE, and the University found it:
+    // an application sat in `admission_processing` — reading as an issuance
+    // still in progress — for ever, with no ISSUANCE_FAILED entry in the
+    // trail. Every other failure in this function goes through failIssuance
+    // and this one did not, which is exactly the state 026 exists to abolish.
+    //
+    // The decision stands and the account exists; what did not happen is the
+    // record being marked issued. That is recoverable, so it is recorded as a
+    // failed issuance like any other and the desk offers the retry.
+    // ---------------------------------------------------------------------
+    return failIssuance('mark the admission issued', updErr.message);
   }
   // THE LETTER IS REBUILT WITH THE REAL NUMBER. It was generated at step 3
   // before the number existed, to prove it COULD be generated before anything

@@ -1,43 +1,4 @@
 -- ===========================================================================
--- ICOF GLOBAL UNIVERSITY — MIGRATIONS 028, IN ORDER
---
--- GENERATED FILE. DO NOT EDIT.
---   Generator: scripts/build-migration-run.mjs
---   Rebuild:   node scripts/build-migration-run.mjs --out=RUN-OUTSTANDING.sql 028
---
--- ---------------------------------------------------------------------------
--- HOW TO RUN IT
---
--- Supabase SQL editor: paste the whole file and run once.
--- psql:                psql "<connection string>" -f docs/migrations/RUN-OUTSTANDING.sql
---
--- Every migration in it is idempotent and destroys nothing, so running it twice
--- is safe. It is NOT wrapped in a transaction: each file is written to run
--- statement by statement, and wrapping them would mean a failure in the last
--- one silently undid the first.
---
--- ---------------------------------------------------------------------------
--- WHAT TO EXPECT IN THE OUTPUT
---
--- Some of these raise NOTICE deliberately — they report on the state they
--- found rather than changing it silently. A notice is information, not a
--- warning. An ERROR is a real failure and stops the run.
---
--- ---------------------------------------------------------------------------
--- AFTERWARDS
---
--- Run docs/migrations/VERIFY.sql to see what landed.
--- ===========================================================================
-
--- ===========================================================================
--- ===========================================================================
---
---   028_student_numbers_start_above_the_existing_ones.sql
---
--- ===========================================================================
--- ===========================================================================
-
--- ===========================================================================
 -- 028 — A RESERVED STUDENT NUMBER MUST NOT BE ONE ALREADY ISSUED
 --
 -- Run after 027. Idempotent; destroys nothing. Safe on a live database.
@@ -218,4 +179,3 @@ select
 from (select distinct year from student_number_counters) y
 left join student_number_counters c on c.year = y.year
 order by y.year;
-

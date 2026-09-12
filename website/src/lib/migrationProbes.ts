@@ -181,6 +181,17 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
     // added rows.
     table: 'admission_status_coverage',
   },
+  {
+    file: '028_student_numbers_start_above_the_existing_ones.sql',
+    what: 'Stops a reserved student number colliding with one already issued — which refused '
+      + 'the first admission after 024 on any year that already had students.',
+    // Replaces a function and adds no table and no column, so the application
+    // cannot see it. Named here rather than left out: a readiness screen that
+    // says "all clear" about something it never looked at is worse than one
+    // that admits the gap.
+    cannotSee: "select prosrc like '%greatest(student_number_counters.next_value%' as has_028 "
+      + "from pg_proc where proname = 'reserve_student_number';  -- it should be true",
+  },
 ];
 
 /** What a probe came back as. */
