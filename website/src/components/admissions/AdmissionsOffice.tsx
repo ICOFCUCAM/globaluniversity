@@ -27,7 +27,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { UNIVERSITY } from '@/lib/constants';
-import { admissionsQueue } from '@/lib/admissions';
+import { admissionsQueue, forwardForAcademicReview } from '@/lib/admissions';
 import { can } from '@/lib/roles';
 import { statusMeta, toUniversal } from '@/lib/status';
 import DeleteApplicationPanel, { MIN_REASON } from './DeleteApplicationPanel';
@@ -118,52 +118,45 @@ export default function AdmissionsOffice() {
   // decision the Head of Academic Affairs makes.
   useEffect(() => { setSignatory((s) => s || UNIVERSITY.headOfAcademicAffairs); }, []);
 
-  async function admit() {
+  // ---------------------------------------------------------------------
+  // THIS OFFICE RECOMMENDS. IT DOES NOT ADMIT.
+  //
+  // It used to call /api/admissions/admit, which created the account and
+  // emailed the package — so the office that ASSESSES was also the office that
+  // ADMITTED, while the letter went out over a signature belonging to an
+  // office that never saw the button.
+  //
+  // The University set the authority out plainly: an academic recommendation
+  // here, the decision at Admissions Approval. So the recommendation travels
+  // with the application and the office that signs the letter decides.
+  //
+  // This is also what finally produces `ready_for_academic_review` — a state
+  // the vocabulary has declared since 024 that nothing could reach.
+  // ---------------------------------------------------------------------
+  async function forward() {
     if (!selected) return;
     setBusy(true);
     setResult(null);
-
-    const { data: sessionData } = await supabase.auth.getSession();
-    const token = sessionData.session?.access_token;
-    if (!token) {
-      setBusy(false);
-      setResult({ ok: false, text: 'Your session has expired. Sign in again.' });
-      return;
-    }
-
-    const res = await fetch('/api/admissions/admit', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
-      body: JSON.stringify({
-        studentId: selected.id,
-        note: note.trim() || undefined,
-        conditions: conditions.filter((c) => c.requirement.trim() && c.dueBy.trim()),
-        headOfAdmissions: signatory.trim() || undefined,
-      }),
-    }).then((r) => r.json()).catch(() => null);
-
-    setBusy(false);
-
-    if (!res?.ok) {
-      setResult({ ok: false, text: explain(res?.error ?? 'no-response') });
-      return;
-    }
-    if (res.emailSent) {
+    try {
+      await forwardForAcademicReview(selected.id, {
+        recommendation: note.trim() || undefined,
+        byUserId: user?.id ?? '',
+      });
       setResult({
         ok: true,
-        text: `Admitted. Student number ${res.studentNumber}. The admission package has been emailed to ${res.email}.`,
+        text: `${[selected.first_name, selected.last_name].filter(Boolean).join(' ')} has been forwarded `
+          + 'to Admissions Approval with your recommendation. The Head of Academic Affairs takes '
+          + 'the decision and signs the letter.',
       });
-    } else {
-      // The admission stands; only delivery failed. Say exactly that, because
-      // the applicant is now admitted and does not know it.
-      setResult({
-        ok: false,
-        text: `Admitted as ${res.studentNumber}, but the package was NOT emailed (${res.error}). The applicant has not been told. Send it to ${res.email} yourself — the temporary password is ${res.password}.`,
-      });
+      setNote('');
+      setConditions([]);
+      setSelected(null);
+      await load();
+    } catch (e) {
+      setResult({ ok: false, text: (e as Error).message });
+    } finally {
+      setBusy(false);
     }
-    setNote('');
-    setConditions([]);
-    void load();
   }
 
   if (!allowed) {
@@ -365,19 +358,18 @@ export default function AdmissionsOffice() {
                 <div className="flex items-start gap-2 rounded-lg border border-[#e8dcc0] bg-[#faf6ee] px-4 py-3 text-xs leading-relaxed text-[#6b5a2f] dark:border-[#3d3349] dark:bg-[#241f2c] dark:text-[#c3b48f]">
                   <Mail size={14} className="mt-0.5 flex-shrink-0" />
                   <p>
-                    Admitting issues the student number, creates the student&apos;s account, and
-                    emails <strong>{selected.email}</strong> the full admission package — the letter
-                    signed by the Head of Academic Affairs, the conditions, the terms for{' '}
-                    {(selected as any).mode || 'their mode'} study
-                    and for the other, the fee arrangements and the academic regulations.
-                    <strong> The applicant will have been told. This cannot be taken back.</strong>
+                    Forwarding sends this application, and your recommendation, to Admissions
+                    Approval. <strong>Nothing is issued here and the applicant is not told
+                    anything</strong> — no student number, no account, no letter. The Head of
+                    Academic Affairs takes the decision and signs it, and may return the
+                    application to this office if the assessment needs correcting.
                   </p>
                 </div>
 
-                <button onClick={admit} disabled={busy || !selected.email} className={BTN_PRIMARY}>
+                <button onClick={forward} disabled={busy} className={BTN_PRIMARY}>
                   {busy
-                    ? <><Loader2 size={15} className="animate-spin" /> Admitting…</>
-                    : <><Send size={15} /> Admit and send the package</>}
+                    ? <><Loader2 size={15} className="animate-spin" /> Forwarding…</>
+                    : <><Send size={15} /> Forward for academic decision</>}
                 </button>
                 {!selected.email && (
                   <p className="text-xs text-red-700">

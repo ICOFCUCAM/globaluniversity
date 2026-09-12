@@ -38,7 +38,8 @@ import { supabase } from '@/lib/supabase';
 import { courses, MODE_LABEL } from '@/content/courses';
 import {
   ACADEMIC_DECISIONS, DECISION_CHECKS, canDecide, canRetryIssuance, ISSUANCE_STEPS,
-  statesForDesk, type AcademicDecision, type DecisionRefusal,
+  statesForDesk, RETURN_TARGETS,
+  type AcademicDecision, type DecisionRefusal, type ReturnTarget,
 } from '@/lib/admissionWorkflow';
 import { stages, stageOf, stageChipClass } from '@/lib/admissions';
 import {
@@ -84,6 +85,8 @@ interface Draft {
   decision: AcademicDecision;
   reason: string;
   overrideReason: string;
+  /** Which office a return goes back to. Only meaningful on a return. */
+  returnTo?: ReturnTarget;
 }
 
 export default function AcademicAdmissions({ role }: { role?: UserRole }) {
@@ -177,6 +180,7 @@ export default function AcademicAdmissions({ role }: { role?: UserRole }) {
         applicationId: subject.id,
         decision: draft?.decision ?? 'approve',
         reason: draft?.reason.trim() || undefined,
+        returnTo: draft?.decision === 'return' ? draft.returnTo : undefined,
         overrideReason: isOverride ? draft?.overrideReason.trim() : undefined,
         retry: retry || undefined,
       }),
@@ -278,6 +282,10 @@ export default function AcademicAdmissions({ role }: { role?: UserRole }) {
         + (json.passwordReset ? ', with a new temporary password. The previous one no longer works.' : '.'),
     });
   }
+
+  // A RETURN WITHOUT AN OFFICE IS REFUSED BY THE SERVER, so the button says so
+  // before it is pressed rather than after.
+  const returnWithoutOffice = !!draft && draft.decision === 'return' && !draft.returnTo;
 
   const overrideTooShort = isOverride && draft
     && ['approve', 'conditional'].includes(draft.decision)
@@ -559,6 +567,47 @@ export default function AcademicAdmissions({ role }: { role?: UserRole }) {
                 ))}
               </div>
             </div>
+
+            {/* ------------------------------------------------------------
+                A RETURN NAMES WHERE IT GOES.
+
+                This desk is the last stage, so a problem found here used to
+                have two exits: approve anyway, or reject an applicant who has
+                done nothing wrong. An incomplete verification or a fee
+                discrepancy is not grounds to refuse somebody a place — it is
+                grounds to send the work back to whoever can finish it.
+                ------------------------------------------------------------ */}
+            {draft.decision === 'return' && (
+              <div>
+                <p className={LABEL}>Return it to</p>
+                <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                  {(Object.keys(RETURN_TARGETS) as ReturnTarget[]).map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => setDraft({ ...draft, returnTo: t })}
+                      className={`rounded-lg border px-3 py-2 text-left text-xs transition-colors ${FOCUS} ${
+                        draft.returnTo === t
+                          ? 'border-[#422e59] bg-[#422e59] text-white'
+                          : 'border-[#ded6c8] bg-white text-[#422e59] hover:bg-[#faf6ee] dark:border-[#3d3349] dark:bg-[#241f2c] dark:text-[#e4dcf0]'
+                      }`}
+                    >
+                      <span className="block font-semibold">{RETURN_TARGETS[t].label}</span>
+                      <span className={`mt-0.5 block leading-snug ${
+                        draft.returnTo === t ? 'text-white/80' : 'text-[#8a8194]'
+                      }`}>
+                        {RETURN_TARGETS[t].hint}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                {!draft.returnTo && (
+                  <p className="mt-1 text-[11px] text-[#8a8194]">
+                    Choose an office. A return that names nowhere leaves the application sitting
+                    with nobody, which is what this replaced.
+                  </p>
+                )}
+              </div>
+            )}
 
             <div>
               <label className={LABEL} htmlFor="decision-reason">

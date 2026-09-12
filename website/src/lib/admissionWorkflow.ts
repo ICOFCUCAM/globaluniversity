@@ -207,11 +207,15 @@ export const ADMISSION_EVENTS = [
   'APPLICATION_SUBMITTED',
   'DOCUMENT_VERIFIED',
   'FEE_CONFIRMED',
+  /** The Admissions Office sends it, with its recommendation, to be decided. */
+  'FORWARDED_FOR_ACADEMIC_REVIEW',
   'ACADEMIC_REVIEW_STARTED',
   'ACADEMIC_APPROVED',
   'ACADEMIC_CONDITIONALLY_APPROVED',
   'ACADEMIC_REJECTED',
   'ACADEMIC_RETURNED',
+  /** Sent back to a NAMED office with a reason, rather than merely back. */
+  'RETURNED_TO_OFFICE',
   'ISSUANCE_STARTED',
   'ISSUANCE_FAILED',
   'ISSUANCE_RETRIED',
@@ -226,6 +230,48 @@ export const ADMISSION_EVENTS = [
 ] as const;
 
 export type AdmissionEvent = (typeof ADMISSION_EVENTS)[number];
+
+// ---------------------------------------------------------------------------
+// WHERE WORK GOES BACK TO, AND WHY A RETURN IS NOT A REFUSAL
+// ---------------------------------------------------------------------------
+//
+// Admissions Approval is the last stage, so a problem found there had only two
+// exits: approve anyway, or reject an applicant who has done nothing wrong.
+// The fault is usually not theirs — an incomplete verification, a fee
+// discrepancy, an assessment that needs correcting — and none of those is a
+// reason to refuse somebody a place.
+//
+// A return names the office, carries a reason, and puts the application on
+// that office's own queue. `finance` is here because a fee discrepancy is a
+// real reason to send work back, and it is the ONLY way the deciding desk
+// touches Finance at all: by returning to it, never by overruling it. Finance
+// is a gate, not an authority, and that cuts both ways.
+// ---------------------------------------------------------------------------
+export const RETURN_TARGETS = {
+  'admissions-office': {
+    label: 'Admissions Office',
+    hint: 'The assessment or the documents need correcting.',
+  },
+  registrar: {
+    label: 'Office of the Registrar',
+    hint: 'The verification is incomplete or the record is wrong.',
+  },
+  finance: {
+    label: 'Finance Office',
+    hint: 'There is a discrepancy in the fee. This desk cannot alter it.',
+  },
+} as const;
+
+export type ReturnTarget = keyof typeof RETURN_TARGETS;
+
+/** The states the Admissions Office may forward for an academic decision. */
+export const FORWARDABLE_FROM: AdmissionState[] = [
+  'registrar_approved', 'under_review', 'documents_verified', 'returned',
+];
+
+export function canForward(state: string | null | undefined): boolean {
+  return FORWARDABLE_FROM.includes(state as AdmissionState);
+}
 
 /** The event an academic decision appends. */
 export const EVENT_FOR_DECISION: Record<AcademicDecision, AdmissionEvent> = {
@@ -265,6 +311,9 @@ export const DECISION_CHECKS = {
     + 'issuance cannot be resumed. It has to be decided rather than retried.',
   'nothing-to-retry': 'This application is not part-way through issuance, so there is nothing to '
     + 'retry.',
+  'return-needs-an-office': 'A return has to name the office it goes back to. Choose Admissions, '
+    + 'the Registrar or Finance — a return that names nowhere leaves the application sitting with '
+    + 'nobody, which is the thing it replaced.',
 } as const;
 
 export type DecisionRefusal = keyof typeof DECISION_CHECKS;
@@ -372,13 +421,16 @@ export const ADMISSION_DESKS = {
   finance: {
     label: 'Awaiting fee',
     office: 'Finance Office',
-    states: ['applicant', 'fee_pending'],
+    // `returned` because a fee discrepancy can be sent back here — the only
+    // way the deciding desk touches Finance at all.
+    states: ['applicant', 'fee_pending', 'returned'],
   },
   /** The Registrar: fee cleared, awaiting verification. */
   registrar: {
     label: 'Awaiting verification',
     office: 'Office of the Registrar',
-    states: ['fee_paid', 'documents_required'],
+    // `returned` because the deciding desk can send a verification back here.
+    states: ['fee_paid', 'documents_required', 'returned'],
   },
   /**
    * The Admissions Office: records forwarded to it, and records sent back to it.
@@ -459,18 +511,6 @@ export const NOT_ON_ANY_DESK: Record<string, string> = {
 // here with a reason.
 // ---------------------------------------------------------------------------
 export const NOT_YET_REACHABLE: Record<string, string> = {
-  // THE MOST CONSEQUENTIAL ONE. This is the state the five-stage design puts
-  // on the Head of Academic Affairs' desk, and nothing produces it. Records
-  // reach that desk only because `fee_paid` and `documents_required` are in
-  // DECIDABLE_FROM as a compatibility measure — the older pipeline's states.
-  // The Admissions Office still admits directly through /api/admissions/admit
-  // instead of forwarding for an academic decision, so the doorway into the
-  // final stage was never built.
-  ready_for_academic_review:
-    'Nothing forwards an application for academic review. The Admissions Office still admits '
-    + 'directly through the older route, so records reach the deciding desk through the '
-    + 'compatibility states rather than through the stage that was designed for it.',
-
   // THE JOURNEY HAS NO END. An admitted student never becomes an enrolled one,
   // because the Registrar's enrolment step does not exist.
   enrolled:

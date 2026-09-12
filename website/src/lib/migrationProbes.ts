@@ -220,6 +220,14 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
       + 'University can see what it actually sent a student.',
     table: 'admission_letters',
   },
+  {
+    file: '032_forwarding_and_returning.sql',
+    what: 'Lets the Admissions Office forward an application for an academic decision — the '
+      + 'doorway into the final stage, which the vocabulary declared and nothing could reach — '
+      + 'and lets a return name the office it goes back to rather than merely going back.',
+    table: 'students',
+    column: 'returned_to',
+  },
 ];
 
 /** What a probe came back as. */

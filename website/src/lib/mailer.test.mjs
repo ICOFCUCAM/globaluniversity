@@ -76,7 +76,11 @@ console.log('\nEvery office that sends mail has somewhere for a reply to go\n');
 
 {
   const offices = officesThatSendMail();
-  check('the scan found the sending offices', offices.length >= 4, true);
+  // A FLOOR, TO CATCH A BROKEN SCAN rather than to pin the count. It was four
+  // until the two legacy admit routes were retired; the Admissions Office no
+  // longer sends anything, because it forwards rather than admits. A scan that
+  // has stopped working returns zero, which is what this is guarding against.
+  check('the scan found the sending offices', offices.length >= 3, true);
 
   const unaddressed = offices.filter(
     (o) => !(o in OFFICE_REPLY_TO) && !(o in OFFICE_WITHOUT_REPLY_TO),

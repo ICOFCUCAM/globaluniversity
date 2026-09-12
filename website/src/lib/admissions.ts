@@ -31,7 +31,7 @@
 // ---------------------------------------------------------------------------
 
 import { supabase } from './supabase';
-import { statesForDesk, type AdmissionDeskKey } from './admissionWorkflow';
+import { statesForDesk, FORWARDABLE_FROM, type AdmissionDeskKey } from './admissionWorkflow';
 import type { Student } from './types';
 
 /**
@@ -279,23 +279,51 @@ export const stageChipClass: Record<StageMeta['tone'], string> = {
  */
 export async function queueFor(
   desk: AdmissionDeskKey,
-  opts: { order?: { column: string; ascending: boolean }; limit?: number } = {},
+  opts: {
+    order?: { column: string; ascending: boolean };
+    limit?: number;
+    /**
+     * Scope `returned` to work sent back to THIS office.
+     *
+     * A return now names where it goes — Finance, the Registrar or the
+     * Admissions Office — so a desk listing every `returned` record would show
+     * all three offices each other's work. Without it, returning something to
+     * Finance would put it on the Admissions Office's queue as well, and both
+     * would assume the other was dealing with it.
+     */
+    returnedTo?: string;
+  } = {},
 ): Promise<Student[]> {
   const { column, ascending } = opts.order ?? { column: 'created_at', ascending: true };
-  let q = supabase
-    .from('students')
-    .select('*')
-    .in('status', statesForDesk(desk))
-    .order(column, { ascending, nullsFirst: false });
-  if (opts.limit) q = q.limit(opts.limit);
-  const { data, error } = await q;
-  if (error) throw new Error(error.message);
-  return (data ?? []) as Student[];
+  const states = statesForDesk(desk);
+
+  const run = async (inStates: string[], returnedTo?: string) => {
+    if (!inStates.length) return [] as Student[];
+    let q = supabase.from('students').select('*').in('status', inStates);
+    if (returnedTo) q = q.eq('returned_to', returnedTo);
+    q = q.order(column, { ascending, nullsFirst: false });
+    if (opts.limit) q = q.limit(opts.limit);
+    const { data, error } = await q;
+    if (error) throw new Error(error.message);
+    return (data ?? []) as Student[];
+  };
+
+  // Two queries rather than one, because `returned` is filtered on a second
+  // column and the rest are not. Combining them would apply the office filter
+  // to every state and empty the queue.
+  if (opts.returnedTo && states.includes('returned')) {
+    const [ordinary, returned] = await Promise.all([
+      run(states.filter((s) => s !== 'returned')),
+      run(['returned'], opts.returnedTo),
+    ]);
+    return [...ordinary, ...returned];
+  }
+  return run(states);
 }
 
 /** Finance desk: everything waiting for the fee to be registered. */
 export async function financeQueue(): Promise<Student[]> {
-  return queueFor('finance');
+  return queueFor('finance', { returnedTo: 'finance' });
 }
 
 /**
@@ -315,7 +343,12 @@ export async function financeQueue(): Promise<Student[]> {
  * verified, even by mistake.
  */
 export async function admissionsQueue(): Promise<Student[]> {
-  return queueFor('admissions-office', { order: { column: 'decided_at', ascending: true } });
+  return queueFor('admissions-office', {
+    order: { column: 'decided_at', ascending: true },
+    // Only work returned to THIS office. A fee discrepancy returned to Finance
+    // is Finance's to resolve and must not sit here as well.
+    returnedTo: 'admissions-office',
+  });
 }
 
 /**
@@ -346,7 +379,45 @@ export async function forwardToAdmissions(
 }
 
 export async function registrarQueue(): Promise<Student[]> {
-  return queueFor('registrar');
+  return queueFor('registrar', { returnedTo: 'registrar' });
+}
+
+/**
+ * The Admissions Office forwards for an academic decision.
+ *
+ * IT DOES NOT ADMIT, AND THAT IS THE CHANGE. This office used to call
+ * /api/admissions/admit, which created the account and emailed the package —
+ * so the office that ASSESSES was also the office that ADMITTED, and the
+ * signature on the letter belonged to an office that never saw the button.
+ *
+ * The University set out the authority plainly: this office makes an academic
+ * RECOMMENDATION, and Admissions Approval is the final authority. So the
+ * recommendation travels with the application and the office that signs the
+ * letter decides.
+ *
+ * This is also the doorway into `ready_for_academic_review`, which the
+ * vocabulary declared and nothing produced.
+ */
+export async function forwardForAcademicReview(
+  studentId: string,
+  opts: { recommendation?: string; byUserId: string },
+): Promise<void> {
+  const { error } = await supabase
+    .from('students')
+    .update({
+      status: 'ready_for_academic_review',
+      academic_recommendation: opts.recommendation?.trim() || null,
+      // Cleared: an application being forwarded is no longer sitting with
+      // whichever office it was last returned to.
+      returned_to: null,
+      decided_by: opts.byUserId,
+      decided_at: new Date().toISOString(),
+    })
+    .eq('id', studentId)
+    // Only from a state this office legitimately holds. Without it a stale tab
+    // could forward a record that has since been decided.
+    .in('status', FORWARDABLE_FROM);
+  if (error) throw new Error(error.message);
 }
 
 /**
@@ -474,34 +545,6 @@ export async function transferProgramme(
     .eq('id', studentId)
     .in('status', ['fee_paid', 'documents_required']);
   if (error) throw new Error(error.message);
-}
-
-/**
- * Registrar approves. This is the only route by which a student account comes
- * into existence, so it runs server-side: creating an auth user requires the
- * service-role key, which must never reach the browser, and the welcome email
- * carries a password that must not be generated client-side either.
- */
-export async function approveApplication(
-  studentId: string,
-  opts: {
-    byUserId: string;
-    note?: string;
-    /**
-     * Conditions attached to a conditional admission. The student is admitted
-     * either way; passing conditions records them against the master record so
-     * they stay enforceable, rather than living in an email nobody can act on.
-     */
-    conditions?: { requirement: string; dueBy: string }[];
-  },
-): Promise<{ ok: boolean; error?: string; email?: string }> {
-  const res = await fetch('/api/admissions/approve', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ studentId, ...opts }),
-  });
-  const json = await res.json().catch(() => ({ ok: false, error: 'bad-response' }));
-  return json as { ok: boolean; error?: string; email?: string };
 }
 
 /**
