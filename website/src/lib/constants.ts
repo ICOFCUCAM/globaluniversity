@@ -41,6 +41,11 @@ export const UNIVERSITY = {
   headOfAcademicAffairs: 'Prof Aaron Ndenka',
   headOfAcademicAffairsPostNominals: 'Ph.D. (Fin.), Ph.D. (Syst. Theol.)',
   admissionsEmail: 'admissions@iguc.net',
+  // The Head of Academic Affairs' office, created by the University on
+  // 12 September 2026. The admission letter is signed by this office, so an
+  // admitted student replying to ask about their decision should reach it
+  // rather than the inbox that handles applications.
+  academicAffairsEmail: 'academicoffice@iguc.net',
   viceChancellor: 'Prof Chamayah Meyembi',
   // The two offices above the Vice Chancellor, from the university's own first
   // certificate. Both sign a degree certificate; neither was in this system.
@@ -61,6 +66,48 @@ export const UNIVERSITY = {
   chancellor: 'Bishop Bernie L Wade, PhD',
   chancellorOffice: 'Chancellor & ICOF International Presiding Bishop',
   president: 'Dr. Raymond L Young',
+};
+
+// ---------------------------------------------------------------------------
+// WHERE A REPLY TO EACH OFFICE SHOULD GO
+// ---------------------------------------------------------------------------
+//
+// Every email the system sends goes out from ONE address — whatever MAIL_FROM
+// or SMTP_USER is set to — because that is the account the mail server
+// authenticates. The office only ever appeared as a display name:
+//
+//   From: "ICOF Global University — Office of Academic Affairs" <admissions@…>
+//
+// So an admitted student replying to ask about their decision reached the
+// inbox that handles applications, and a graduate querying a certificate
+// reached it too, though the Registrar signed that one. Five offices send
+// through this system and every reply landed in the same place.
+//
+// The sender cannot be varied without a second set of SMTP credentials, and it
+// does not need to be: Reply-To is the field that decides where an answer
+// goes, and it costs nothing. The letter still comes from the account with the
+// sending history; the reply reaches the office that can answer it.
+//
+// KEYED BY THE EXACT STRING the sending route passes as `office`, because that
+// is what the mailer has to match on. mailer.test.mjs fails if a route names
+// an office this table does not know.
+// ---------------------------------------------------------------------------
+export const OFFICE_REPLY_TO: Record<string, string> = {
+  'Office of Academic Affairs': UNIVERSITY.academicAffairsEmail,
+  'Office of the Registrar': UNIVERSITY.email,
+  'Office of Admissions': UNIVERSITY.admissionsEmail,
+  'Admissions Office': UNIVERSITY.admissionsEmail,
+};
+
+/**
+ * Offices that deliberately have no reply address, and why.
+ *
+ * Written down so the test can be exhaustive. An office missing from both
+ * tables is a reply going to the wrong place, silently.
+ */
+export const OFFICE_WITHOUT_REPLY_TO: Record<string, string> = {
+  'System Administration': 'The mail test sends only to the signed-in operator’s own address, '
+    + 'so a reply-to would point them at themselves.',
 };
 
 // Portal imagery. Previously eleven URLs on the original template's
