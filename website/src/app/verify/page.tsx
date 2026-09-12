@@ -17,6 +17,22 @@ function VerifyInner() {
       programme?: string | null; issuedOn?: string | null; status?: string;
     };
   } | null>(null);
+  // ---------------------------------------------------------------------
+  // A LETTER IS NOT A CREDENTIAL, and the register that answers for it is a
+  // different one. An appointment letter and a letter from the Vice-Chancellor
+  // carry a REFERENCE (APT-2026-0042, VC-2026-0042), not a credential number,
+  // and /api/document reads the two verification views written to be read by
+  // strangers.
+  // ---------------------------------------------------------------------
+  const [document, setDocument] = useState<{
+    found?: boolean;
+    note?: string;
+    document?: string; reference?: string; status?: string;
+    holder?: string; position?: string; unit?: string | null;
+    kind?: string; office?: string;
+    issued?: string; version?: number; currentVersion?: number;
+    signatureMode?: string;
+  } | null>(null);
   const [register, setRegister] = useState<{
     status: string; note: string; issuedOn?: string | null;
     revokedOn?: string | null; revocationReason?: string | null;
@@ -28,6 +44,23 @@ function VerifyInner() {
     if (!id) return;
     setLooking(true);
     setByNumber(null);
+    setDocument(null);
+
+    // ONE BOX, TWO REGISTERS. A reader holding a document types what is printed
+    // on it; asking them which KIND of register it belongs to would be asking
+    // them to know something the document does not tell them. The shape of the
+    // reference decides.
+    if (/^[A-Z]{2,4}-\d{4}-\d{4,}$/i.test(id)) {
+      const res = await fetch(`/api/document?reference=${encodeURIComponent(id)}`)
+        .then((r) => r.json())
+        .catch(() => null);
+      setDocument(res ?? {
+        found: false,
+        note: 'The register could not be reached. Try again shortly.',
+      });
+      setLooking(false);
+      return;
+    }
     const res = await fetch(`/api/credential?id=${encodeURIComponent(id)}`)
       .then((r) => r.json())
       .catch(() => null);
@@ -127,8 +160,77 @@ function VerifyInner() {
             <p className="mt-2.5 text-xs leading-relaxed text-brand-muted">
               This confirms whether the university issued a credential with that number, and what it
               says. Compare it against the document in front of you. It does not disclose anything
-              else from the holder&apos;s record.
+              else from the holder&apos;s record. A letter carries a reference instead
+              &mdash; <span className="font-mono">APT-2026-0042</span> or{' '}
+              <span className="font-mono">VC-2026-0042</span> &mdash; and that works here too.
             </p>
+
+            {/* ----------------------------------------------------------------
+                A LETTER OF THE UNIVERSITY.
+
+                WHAT IS SHOWN DIFFERS BY DOCUMENT, and deliberately. An
+                appointment letter names the holder and the post, because that
+                is what a bank or an embassy is checking. Correspondence names
+                NEITHER the recipient NOR the subject: a warning letter is
+                correspondence, and printing "To: [name] — Subject: Final
+                written warning" would publish a disciplinary record to anybody
+                who scanned a code off a desk. The view behind this carries
+                neither field at all, so the page cannot show them by mistake.
+                ---------------------------------------------------------------- */}
+            {document && (
+              <div className={`mt-5 rounded-xl border p-4 text-left ${
+                !document.found
+                  ? 'border-amber-300 bg-amber-50'
+                  : document.status === 'Valid'
+                    ? 'border-emerald-300 bg-emerald-50'
+                    : 'border-amber-300 bg-amber-50'
+              }`}>
+                <p className="font-sans text-[10px] font-bold uppercase tracking-[0.18em] text-brand-gold-ink">
+                  Document verification
+                </p>
+                {!document.found ? (
+                  // NOT "FORGED". A reference the register does not hold is most
+                  // often a typo, or a document that predates the register.
+                  // Telling a bank somebody's letter is fraudulent on that
+                  // evidence would cost somebody a job.
+                  <p className="mt-2 text-sm leading-relaxed text-brand-ink">{document.note}</p>
+                ) : (
+                  <dl className="mt-3 space-y-2 text-sm">
+                    {([
+                      ['Document', document.document],
+                      ['Reference', document.reference],
+                      ['Status', document.status === 'Valid'
+                        ? '\u2713 VALID' : document.status],
+                      ['Holder', document.holder],
+                      ['Position', document.position],
+                      ['Faculty or office', document.unit || document.office],
+                      ['Letter type', document.kind],
+                      ['Issue date', document.issued],
+                      ['Version', document.version ? String(document.version) : null],
+                      ['Signature', document.signatureMode === 'specimen'
+                        ? 'Reproduced signature of the authorising officer' : null],
+                    ] as [string, string | null | undefined][])
+                      .filter(([, v]) => v)
+                      .map(([k, v]) => (
+                        <div key={k} className="flex flex-wrap justify-between gap-2">
+                          <dt className="text-brand-muted">{k}</dt>
+                          <dd className={`font-medium text-brand-ink ${
+                            k === 'Reference' ? 'font-mono' : ''}`}>{v}</dd>
+                        </div>
+                      ))}
+                  </dl>
+                )}
+                {document.note && document.found && (
+                  <p className="mt-3 text-xs leading-relaxed text-brand-muted">{document.note}</p>
+                )}
+                {document.found && (
+                  <p className="mt-3 border-t border-black/10 pt-2 text-xs leading-relaxed text-brand-muted">
+                    This confirms the University&apos;s register holds this document and whether it
+                    still stands. It discloses nothing further about the person it concerns.
+                  </p>
+                )}
+              </div>
+            )}
 
             {byNumber && (
               <div className={`mt-5 rounded-xl border p-4 ${

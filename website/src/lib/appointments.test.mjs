@@ -368,8 +368,14 @@ console.log('\nAnd the migrations hold the same lifecycle\n');
     /staff_follows_an_issued_appointment/.test(sql), true);
   check('the reference shape is enforced',
     /\^APT-\[0-9\]\{4\}-\[0-9\]\{4,\}\$/.test(sql), true);
+  // MATCHED ON THE VIEW, NOT ON "create or replace". It was the latter, and
+  // both 042 and 049 now DROP the view before creating it — because `create or
+  // replace view` cannot remove a column, and 049 widens this one. The
+  // assertion was about the view existing, so it now asks that.
   check('and the public verification view exists',
-    /create or replace view appointment_letter_verification/.test(sql), true);
+    /create view appointment_letter_verification/.test(sql), true);
+  check('…and it is dropped before it is created, so a re-run can narrow it',
+    /drop view if exists appointment_letter_verification/.test(sql), true);
 }
 
 console.log('\nHR issues eleven kinds of letter, not one\n');

@@ -42,6 +42,7 @@ import {
 } from '@/lib/correspondence';
 import { correspondenceLetterHtml } from '@/lib/correspondenceLetter';
 import { contentHash } from '@/lib/officialDocument';
+import { sanitiseLetterHtml } from '@/lib/letterMarkup';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -62,7 +63,7 @@ const CAPABILITY: Record<string, Capability> = {
 // from this text, and anything it cannot read at compile time collapses the
 // result to GenericStringError[] — silently, with no error at the call site.
 // eslint-disable-next-line max-len
-const COLUMNS = 'id, kind, originating_office, subject, body, recipient_name, recipient_org, recipient_email, recipient_address, status, initiated_by, prepared_by, authorized_by, authorized_at, scheduled_for, issued_at, preparation_brief, preparation_requested_by, withdrawn_reason';
+const COLUMNS = 'id, kind, originating_office, subject, body, body_format, recipient_name, recipient_org, recipient_email, recipient_address, status, initiated_by, prepared_by, authorized_by, authorized_at, scheduled_for, issued_at, preparation_brief, preparation_requested_by, withdrawn_reason';
 
 const bad = (error: string, status: number, detail?: string) =>
   NextResponse.json({ ok: false, error, ...(detail ? { detail } : {}) }, { status });
@@ -78,10 +79,23 @@ function fieldsFrom(body: Record<string, unknown>) {
     kind: text('kind'),
     originating_office: text('office'),
     subject: text('subject'),
+    // ---------------------------------------------------------------------
+    // SANITISED ON THE WAY IN, and this is the only place it happens.
+    //
+    // What is stored is what is printed and what is hashed. Sanitising on the
+    // way out instead would mean the archived bytes and the page are different
+    // documents, and the SHA-256 in the archive would prove the wrong one.
+    //
     // NOT TRIMMED TO NULL. An empty body is legitimate while a delegated letter
     // is being prepared — 046 permits it in exactly that one state — so it is
     // stored as the empty string rather than turned into "unset".
-    body: body.body === undefined ? null : String(body.body ?? ''),
+    // ---------------------------------------------------------------------
+    body: body.body === undefined
+      ? null
+      : (body.bodyFormat === 'html'
+        ? sanitiseLetterHtml(String(body.body ?? ''))
+        : String(body.body ?? '')),
+    body_format: body.bodyFormat === 'html' ? 'html' : 'plain',
     recipient_name: text('recipientName'),
     recipient_org: text('recipientOrg'),
     recipient_email: text('recipientEmail'),
@@ -398,6 +412,24 @@ export async function POST(request: Request) {
     const issuedOn = new Date().toISOString().slice(0, 10);
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.iguc.net';
 
+    // ---------------------------------------------------------------------
+    // A REPRODUCED SIGNATURE, ONLY IF THE UNIVERSITY HAS ENABLED ONE FOR THIS
+    // PERSON — and only their own.
+    //
+    // Read by owner_id = the caller, never by a name or a role. An officer's
+    // signature that a route will attach on request for whoever asks is a
+    // forgery kit with an audit trail. 049 keeps the specimen switched off
+    // until somebody other than its owner enables it with a stated authority;
+    // this is the half that refuses to reach for somebody else's.
+    // ---------------------------------------------------------------------
+    const { data: specimen } = await admin.from('signature_specimens')
+      .select('id, image, owner_name, owner_role, enabled, revoked_at')
+      .eq('owner_id', caller.id)
+      .eq('enabled', true)
+      .is('revoked_at', null)
+      .maybeSingle();
+    const sig = specimen as Record<string, unknown> | null;
+
     let generated;
     try {
       generated = await correspondenceLetterHtml({
@@ -407,9 +439,11 @@ export async function POST(request: Request) {
         version: 1,
         // THE AUTHORITY SIGNS, NOT THE PREPARER. A letter an administrator
         // typed for the Vice-Chancellor is a Vice-Chancellor's letter.
-        signatoryName: String(body.signatoryName ?? caller.email ?? ''),
-        signatoryRole: String(body.signatoryRole ?? 'Vice-Chancellor'),
+        signatoryName: String(body.signatoryName ?? sig?.owner_name ?? caller.email ?? ''),
+        signatoryRole: String(body.signatoryRole ?? sig?.owner_role ?? 'Vice-Chancellor'),
         siteUrl,
+        signatureImage: (sig?.image as string | undefined) ?? null,
+        authorizedOn: (row.authorized_at as string | null)?.slice(0, 10) ?? null,
       });
     } catch (e) {
       return bad('not-generated', 409, e instanceof Error ? e.message : String(e));
@@ -427,8 +461,14 @@ export async function POST(request: Request) {
       content_hash: await contentHash(generated.html),
       sealed: !!generated.seal,
       seal_code: generated.seal?.code ?? null,
-      signatory_name: String(body.signatoryName ?? caller.email ?? ''),
-      signatory_role: String(body.signatoryRole ?? 'Vice-Chancellor'),
+      signatory_name: String(body.signatoryName ?? sig?.owner_name ?? caller.email ?? ''),
+      signatory_role: String(body.signatoryRole ?? sig?.owner_role ?? 'Vice-Chancellor'),
+      // HOW IT WAS SIGNED, recorded on the document itself. A reader in five
+      // years needs to know whether the signature on their copy was reproduced
+      // or typed, and the archive is the only place that can say.
+      signature_mode: sig?.image ? 'specimen' : 'typed',
+      signature_specimen_id: sig?.image ? sig.id : null,
+      authorized_on: (row.authorized_at as string | null)?.slice(0, 10) ?? null,
       created_by: caller.id,
     });
     if (archiveError) return bad(`not-archived: ${archiveError.message}`, 500);

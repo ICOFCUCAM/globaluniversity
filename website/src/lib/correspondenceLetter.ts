@@ -39,13 +39,14 @@
 import { UNIVERSITY } from './constants';
 import { sealDocument, type DocumentSeal } from './documentSecurity';
 import {
-  escape, longDate, documentStyles, letterhead, signatureBlock, sealPanel,
+  escape, longDate, documentStyles, letterhead, signatureBlock, sealPanel, runningFooter,
   DOCUMENT_FAMILIES,
 } from './officialDocument';
 import {
   KIND_LABELS, OFFICE_LABELS, printedReference, objectionsTo, blocks,
   type Correspondence, type LetterKind, type Office,
 } from './correspondence';
+import { isSanitised } from './letterMarkup';
 
 export { PAGE, PRINTABLE, longDate } from './officialDocument';
 
@@ -66,6 +67,18 @@ export interface CorrespondenceLetterInput {
   signatoryName: string;
   signatoryRole: string;
   siteUrl: string;
+  /**
+   * A specimen signature to reproduce, where the University has enabled one for
+   * the signatory.
+   *
+   * EXPLICIT AND CONTROLLED, as the University asked — never an image dropped
+   * onto every document. 049 keeps a specimen switched off until somebody OTHER
+   * than its owner enables it with a stated authority, and the archived letter
+   * records which mode it was signed in.
+   */
+  signatureImage?: string | null;
+  /** The date the authority cleared it, printed under the signature block. */
+  authorizedOn?: string | null;
 }
 
 export interface GeneratedCorrespondence {
@@ -122,6 +135,23 @@ export async function correspondenceLetterHtml(
     );
   }
 
+  // ---------------------------------------------------------------------
+  // AN ASSERTION, NOT A SECOND SANITISER.
+  //
+  // The body is sanitised on the way IN, so what is stored is already safe and
+  // printing it is a copy. If a stored body does not survive `isSanitised`,
+  // something wrote to the column without going through the sanitiser — and the
+  // right response is to refuse to put the University's seal on it, not to
+  // clean it up quietly and print something nobody wrote.
+  // ---------------------------------------------------------------------
+  if (c.body_format === 'html' && !isSanitised(String(c.body ?? ''), 'html')) {
+    throw new Error(
+      'The body of this letter is not in the form the editor produces, so it will not be '
+      + 'printed. Something wrote to it directly. Open it, check it reads as intended, and '
+      + 'save it again before issuing.',
+    );
+  }
+
   let seal: DocumentSeal | null = null;
   try {
     seal = sealCorrespondence(c, input.reference, input.issuedOn, input.siteUrl);
@@ -169,14 +199,21 @@ ${addressed}
 
 <p><strong>${escape(c.subject)}</strong></p>
 
-<!-- THE AUTHORITY'S OWN WORDS, escaped and otherwise untouched. pre-wrap keeps
-     the paragraphing they typed; nothing reflows or "tidies" a letter that
-     somebody is about to sign. -->
-<p class="letterbody">${escape(c.body)}</p>
+<!-- THE AUTHORITY'S OWN WORDS, and NOTHING reflows or "tidies" a letter that
+     somebody is about to sign.
+     A plain body is escaped and printed with pre-wrap, so the paragraphing they
+     typed is the paragraphing that prints. An html body was sanitised against a
+     closed allow-list before it was stored, and is emitted as the markup it is —
+     asserted above rather than re-cleaned here, so the archived bytes and the
+     printed bytes are one document and the hash proves it. -->
+${c.body_format === 'html'
+  ? `<div class="letterbody rich">${c.body ?? ''}</div>`
+  : `<p class="letterbody">${escape(c.body)}</p>`}
 
 ${signatureBlock({ name: input.signatoryName, role: input.signatoryRole })}
 
 ${await sealPanel(seal, printedReference(input.reference), input.version)}
+${runningFooter(printedReference(input.reference), kind)}
 `,
   };
 }

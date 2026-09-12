@@ -213,7 +213,18 @@ end $$;
 -- anybody holding a photograph of their letter would be a data breach with a
 -- QR code on it.
 
-create or replace view appointment_letter_verification
+-- ---------------------------------------------------------------------------
+-- DROPPED FIRST, NOT REPLACED.
+--
+-- `create or replace view` can add a column and cannot remove one. 049 widens
+-- this view with `signature_mode`, so on a SECOND run of RUN-ALL this statement
+-- tried to replace the wider view with the narrower one and Postgres refused:
+-- "cannot drop columns from view". The first pass was clean and the second was
+-- not, which is precisely what running it twice is for.
+-- ---------------------------------------------------------------------------
+drop view if exists appointment_letter_verification;
+
+create view appointment_letter_verification
 with (security_invoker = false) as
 select l.reference,
        'Appointment Letter'::text            as document,

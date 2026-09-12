@@ -43,7 +43,7 @@ import { sealDocument, type DocumentSeal } from './documentSecurity';
 // within a day of the first being touched. See officialDocument.ts for where
 // the line between the shared press and the unshared workflow is drawn.
 import {
-  PAGE, PRINTABLE, escape, longDate, documentStyles, letterhead, signatureBlock, sealPanel,
+  PAGE, PRINTABLE, escape, longDate, documentStyles, letterhead, signatureBlock, sealPanel, runningFooter,
   DOCUMENT_FAMILIES,
 } from './officialDocument';
 import {
@@ -212,6 +212,7 @@ ${signatureBlock({
 })}
 
 ${await sealPanel(seal, printedReference(input.reference), input.version)}
+${runningFooter(printedReference(input.reference), DOCUMENT_FAMILIES.appointment.label)}
 `,
   };
 }

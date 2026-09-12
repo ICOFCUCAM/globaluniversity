@@ -143,10 +143,68 @@ export function documentStyles(): string {
   .sign { margin-top: 12px; break-inside: avoid; page-break-inside: avoid; }
   .byauthority { letter-spacing: .1em; font-size: 9pt; font-weight: bold; margin-bottom: 10px; }
   .sign .line { border-top: 1px solid #1c1720; width: 62mm; margin-top: 16px; }
-  .seal { margin-top: 8px; border-top: 1px solid #e6e0ee; padding-top: 6px;
+  /* A REPRODUCED SIGNATURE SITS ON THE RULE. Bounded in both directions: an
+     oversized specimen would push the seal panel onto a second page, which is
+     the failure the page-count tests exist to catch. */
+  .sign .sig { display: block; max-height: 18mm; max-width: 62mm; margin-bottom: -6px; }
+  .sign .authorised { font-size: 8.5pt; color: #5c5366; margin-top: 4px; }
+  /* A rich-text body is markup, not pre-wrapped text, so it must NOT inherit
+     white-space: pre-wrap — the editor's own newlines would double every gap. */
+  .letterbody.rich { white-space: normal; }
+  .letterbody.rich h2, .letterbody.rich h3 { text-align: left; letter-spacing: normal;
+    text-transform: none; font-size: 11pt; margin: 10px 0 4px; }
+  .letterbody.rich ul, .letterbody.rich ol { margin: 6px 0; padding-left: 18px; }
+  .letterbody.rich blockquote { margin: 6px 0 6px 18px; font-style: italic; }
+  /* THE PAGE BREAK THE AUTHOR ASKED FOR, and invisible on the page itself. */
+  .letterbody.rich hr.page-break { break-before: page; page-break-before: always;
+    border: 0; height: 0; margin: 0; }
+  .seal { margin-top: 6px; border-top: 1px solid #e6e0ee; padding-top: 5px;
           display: flex; gap: 12px; align-items: center; font-size: 8pt; color: #5c5366;
           break-inside: avoid; page-break-inside: avoid; }
   .none { color: #8a8194; font-style: italic; }
+
+  /* -------------------------------------------------------------------
+     THE RUNNING FOOTER.
+
+     "position: fixed" inside a print stylesheet is how Chromium repeats an
+     element on every page — it is the ONLY mechanism it has. (No backticks in
+     this comment: the whole stylesheet is a template literal, and a pair of
+     them here ended it mid-sentence.) CSS paged-media margin boxes — @page with
+     a @bottom-right box counting pages — are the standard way to do this and
+     Chromium does not implement them, so a page
+     number cannot be printed by the document itself. It comes from the
+     browser's own print header/footer instead, and pretending otherwise by
+     printing "Page 1 of 1" on every page would be worse than printing nothing.
+
+     The footer carries what a reader of page three actually needs: which
+     document this is, and where to check it.
+     ------------------------------------------------------------------- */
+  .footer { display: none; }
+  @media print {
+    .footer {
+      display: block;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      border-top: 1px solid #e6e0ee;
+      padding-top: 3px;
+      font: 7.5pt/1.2 Georgia, 'Times New Roman', serif;
+      color: #8a8194;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    /* THE LAST PAGE NEEDS ROOM FOR IT. Without this the seal panel prints on
+       top of the footer — two things in the same place, which looks like a
+       fault in the document rather than in the stylesheet.
+       18px, MEASURED: the footer is 7.5pt over 1.2 line-height plus 3px of
+       padding and a 1px rule, which is a shade under 17. At the first value —
+       22 — the appointment letter came to 1006px against a 987px page and the
+       page test refused it for having only 26px of headroom, which is a letter
+       that fits on this machine and on no other. */
+    body { padding-bottom: 18px; }
+  }
 `;
 }
 
@@ -197,6 +255,16 @@ export interface Signature {
   byAuthorityOf?: string | null;
   /** The closing above the rule. */
   closing?: string;
+  /**
+   * A reproduced signature, where the University has enabled one.
+   *
+   * A data URI and never a URL. A signature fetched over HTTP is a signature
+   * anybody can download, and one that fails to load leaves a letter that looks
+   * unsigned — on a document nobody can reissue because it is in the archive.
+   */
+  image?: string | null;
+  /** When the authority cleared it. */
+  authorizedOn?: string | null;
 }
 
 export function signatureBlock(s: Signature): string {
@@ -205,9 +273,18 @@ export function signatureBlock(s: Signature): string {
     ? `<p class="byauthority">BY AUTHORITY OF ${escape(s.byAuthorityOf.toUpperCase())}</p>`
     : ''}
   <p>${escape(s.closing ?? 'Yours sincerely,')}</p>
+  ${s.image && s.image.startsWith('data:image/')
+    // THE RULE IS DRAWN EITHER WAY. A reproduced signature sits ON it, not
+    // instead of it: a document with an image and no line looks like a picture
+    // of a letter, and one with a line and no image is a letter waiting to be
+    // signed. Both are correct documents and they must look different.
+    ? `<img class="sig" src="${escape(s.image)}" alt="">`
+    : ''}
   <div class="line"></div>
   <p><strong>${escape(s.name)}</strong><br>${escape(s.role)}<br>
   ${escape(UNIVERSITY.name)}</p>
+  ${s.authorizedOn
+    ? `<p class="authorised">Authorised ${escape(longDate(s.authorizedOn))}</p>` : ''}
 </div>`;
 }
 
@@ -294,6 +371,25 @@ export const DOCUMENT_FAMILIES: Record<string, DocumentFamily> = {
  */
 export function supersedes(current: { version?: number | null } | null): number {
   return (current?.version ?? 0) + 1;
+}
+
+/**
+ * The footer that repeats on every printed page.
+ *
+ * WHAT A READER OF PAGE THREE NEEDS. A multi-page letter separated from its
+ * first page is a sheet of paper with no reference on it and nothing to say
+ * which institution issued it — which is exactly the page that gets
+ * photocopied, faxed and filed on its own.
+ *
+ * NO PAGE NUMBER, and that is a limitation rather than a choice: printing one
+ * requires CSS paged-media margin boxes, which Chromium does not implement. The
+ * browser's own print footer supplies it.
+ */
+export function runningFooter(printedReference: string, document: string): string {
+  return `<div class="footer">
+  <span>${escape(UNIVERSITY.name)} · ${escape(document)}</span>
+  <span>${escape(printedReference)} · ${escape(UNIVERSITY.website)}/verify</span>
+</div>`;
 }
 
 /** SHA-256 over the document as sent, so "this is what we issued" is provable. */

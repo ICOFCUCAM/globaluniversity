@@ -391,6 +391,18 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
       + 'unapproved job description cannot be attached to an appointment.',
     table: 'positions',
   },
+  {
+    file: '049_verification_signatures_and_the_written_letter.sql',
+    what: 'A stranger holding a letter from the Vice-Chancellor can now check it — 045 built '
+      + 'the register and gave it nothing to answer with. The public view names no recipient '
+      + 'and no subject, because a warning letter is correspondence. A reproduced signature '
+      + 'becomes an explicit controlled feature: off until somebody other than its owner '
+      + 'switches it on with a stated authority, and every letter records how it was signed. '
+      + 'And the Vice-Chancellor can write a letter rather than type one.',
+    // The signature store is the marker: the verification view could be
+    // confused with 042's, and `body_format` is a column on a table 045 made.
+    table: 'signature_specimens',
+  },
 ];
 
 /** What a probe came back as. */

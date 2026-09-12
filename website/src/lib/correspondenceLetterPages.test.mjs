@@ -126,7 +126,12 @@ async function measure(label, body) {
   const m = await page.evaluate(() => {
     const sign = document.querySelector('.sign');
     const seal = document.querySelector('.seal');
+    const foot = document.querySelector('.footer');
+    const footStyle = foot ? getComputedStyle(foot) : null;
     return {
+      footerPosition: footStyle?.position ?? 'absent',
+      footerVisible: footStyle?.display ?? 'absent',
+      footerText: foot?.textContent?.trim() ?? '',
       height: Math.ceil(document.body.getBoundingClientRect().height),
       width: Math.ceil(document.body.getBoundingClientRect().width),
       signTop: sign ? Math.round(sign.getBoundingClientRect().top) : -1,
@@ -170,6 +175,25 @@ for (const [label, body] of [['short', SHORT], ['long', LONG]]) {
   check('nothing runs past the right edge', m.overflowing, []);
   check('the seal sits below the signature', m.sealTop > m.signTop, true);
   check('and it is the last thing on the document', m.sealBottom >= m.height - 40, true);
+
+  // ---------------------------------------------------------------------
+  // THE RUNNING FOOTER, MEASURED AS A COMPUTED STYLE.
+  //
+  // "position: fixed" is the ONLY mechanism Chromium has for repeating an
+  // element on every printed page — CSS paged-media margin boxes are the
+  // standard way and Chromium does not implement them. So the footer repeating
+  // is exactly equivalent to it computing as fixed UNDER PRINT, and that is
+  // what this asks. Reading the stylesheet would not: the rule sits inside an
+  // @media print block, and a screen-media measurement reports display: none
+  // and position: static while the printed page is correct.
+  // ---------------------------------------------------------------------
+  check('the footer is fixed under print, which is what repeats it',
+    m.footerPosition, 'fixed');
+  check('…and it is visible under print', m.footerVisible !== 'none', true);
+  // WHAT A READER OF PAGE THREE NEEDS. A later page separated from the first is
+  // a sheet with no reference on it and nothing saying who issued it.
+  check('…and carries the reference', m.footerText.includes('IGUC/VC/2026/0042'), true);
+  check('…and where to check it', m.footerText.includes('/verify'), true);
 
   // READ OFF THE RENDERED PAGE, not the source. A field present in the markup
   // and hidden by CSS is absent from the document.

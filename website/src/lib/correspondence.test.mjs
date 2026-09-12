@@ -165,9 +165,16 @@ console.log('\nThe reference is filed one way and printed another\n');
 console.log('\nAnd 045 holds the same line\n');
 
 {
-  const sql = readFileSync(
-    join(here, '../../docs/migrations/045_official_correspondence_and_who_initiated_it.sql'),
-    'utf8');
+  // BOTH FILES, because the vocabulary is not all in one. 045 declared fourteen
+  // kinds and 049 restated the constraint to add promotion, official-response
+  // and special-assignment. Reading only 045 reported the three newest as
+  // unknown to the database when they are in the constraint currently in
+  // force — a test asserting where a rule was written rather than whether it
+  // holds.
+  const sql = [
+    '045_official_correspondence_and_who_initiated_it.sql',
+    '049_verification_signatures_and_the_written_letter.sql',
+  ].map((f) => readFileSync(join(here, '../../docs/migrations/', f), 'utf8')).join('\n');
 
   // THE DATABASE PERMITS THE ONE-OFFICE LETTER, which is the thing a future
   // "consistency" change would break. There is no constraint saying the

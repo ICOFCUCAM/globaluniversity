@@ -34,14 +34,17 @@
 // move the authority along with the typing.
 // ---------------------------------------------------------------------------
 
+import { letterPlainText } from './letterMarkup';
+
 // ---------------------------------------------------------------------------
 // 1. THE KINDS
 // ---------------------------------------------------------------------------
 
 export const LETTER_KINDS = [
-  'general', 'appointment', 'reappointment', 'invitation', 'commendation',
-  'recommendation', 'government', 'university', 'partnership', 'directive',
-  'warning', 'authorization', 'special', 'other',
+  'general', 'appointment', 'reappointment', 'promotion', 'invitation',
+  'commendation', 'recommendation', 'government', 'university', 'partnership',
+  'directive', 'warning', 'authorization', 'official-response',
+  'special-assignment', 'special', 'other',
 ] as const;
 
 export type LetterKind = (typeof LETTER_KINDS)[number];
@@ -50,6 +53,7 @@ export const KIND_LABELS: Record<LetterKind, string> = {
   general: 'General correspondence',
   appointment: 'Appointment',
   reappointment: 'Reappointment',
+  promotion: 'Promotion',
   invitation: 'Invitation',
   commendation: 'Commendation',
   recommendation: 'Recommendation',
@@ -59,6 +63,8 @@ export const KIND_LABELS: Record<LetterKind, string> = {
   directive: 'Directive',
   warning: 'Warning',
   authorization: 'Authorization',
+  'official-response': 'Official response',
+  'special-assignment': 'Special assignment',
   special: 'Special letter',
   other: 'Other',
 };
@@ -153,6 +159,15 @@ export interface Correspondence {
   recipient_email?: string | null;
   /** A postal address, because a letter to a ministry is often posted. */
   recipient_address?: string | null;
+  /**
+   * 'plain' or 'html'.
+   *
+   * HTML is what the rich-text editor produced, sanitised against a closed
+   * allow-list BEFORE it was stored — so the archived bytes and the printed
+   * bytes are one document and the hash proves the one that went out. See
+   * letterMarkup.ts.
+   */
+  body_format?: string | null;
   status?: string | null;
   initiated_by?: string | null;
   prepared_by?: string | null;
@@ -225,7 +240,11 @@ export interface Objection {
 export function objectionsTo(c: Correspondence): Objection[] {
   const out: Objection[] = [];
   const subject = (c.subject ?? '').trim();
-  const body = (c.body ?? '').trim();
+  // MEASURED AS PROSE, NOT AS MARKUP. A rich-text body of `<p></p><p></p><p></p>`
+  // is forty characters of nothing, and a minimum-length check that counted the
+  // tags would pass it — then the Vice-Chancellor would authorise an empty
+  // letter that the screen had told them was long enough.
+  const body = letterPlainText(c.body ?? '', c.body_format).trim();
 
   if (!isLetterKind(c.kind)) {
     out.push({
