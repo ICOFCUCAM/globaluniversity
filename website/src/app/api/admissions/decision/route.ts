@@ -412,7 +412,26 @@ export async function POST(request: Request) {
   //    the unique index, showing an error for a decision already taken.
   // =======================================================================
   let studentNumber: string | null = null;
-  {
+
+  // ---------------------------------------------------------------------
+  // A RETRY MUST NOT BURN ANOTHER NUMBER.
+  //
+  // This reserved unconditionally, and the number was written to the record
+  // only at step 6. So an issuance that reserved a number and then failed at
+  // any later step lost it: the counter had moved, nothing carried the
+  // reservation, and the next attempt took a fresh one. Each retry consumed
+  // another number permanently, with nothing in any record explaining the
+  // gaps in the University's sequence.
+  //
+  // The reservation is now idempotent in both directions. An application that
+  // already carries a number keeps it — it is that student's, and a second one
+  // would be a second identity for the same person — and a number that IS
+  // reserved is written to the record immediately, so it survives whatever
+  // fails next.
+  // ---------------------------------------------------------------------
+  if (app.student_number) {
+    studentNumber = String(app.student_number);
+  } else {
     const { data, error } = await admin.rpc('reserve_student_number', { p_year: intakeYear });
     if (!error && typeof data === 'string') studentNumber = data;
   }
@@ -427,6 +446,16 @@ export async function POST(request: Request) {
     studentNumber = `${prefix}${String(last ? Number(last.slice(prefix.length)) + 1 : 1).padStart(5, '0')}`;
   }
 
+  // THE RESERVATION IS PERSISTED AT ONCE, before anything that can fail. This
+  // is what makes the block above idempotent rather than merely well-meaning:
+  // whatever happens next, the number is on the record and the next attempt
+  // will find it instead of taking another.
+  if (!app.student_number) {
+    const { error: holdErr } = await admin
+      .from('students').update({ student_number: studentNumber }).eq('id', applicationId);
+    if (holdErr) return failIssuance('reserve the student number', holdErr.message);
+  }
+
   // =======================================================================
   // 5 & 6. THE ACCOUNT, THEN THE PROFILE. The portal reads the role from
   //        `profiles`; an account with no profile row cannot sign in, so it
@@ -439,14 +468,35 @@ export async function POST(request: Request) {
   };
 
   let authUserId: string | undefined;
-  const { data: created, error: authErr } = await admin.auth.admin.createUser({
-    email: app.email,
-    password,
-    email_confirm: true,
-    user_metadata: metadata,
-  });
 
-  if (created?.user?.id) {
+  // ---------------------------------------------------------------------
+  // ALREADY LINKED? Then the account exists and this is a resumption.
+  //
+  // THE PASSWORD IS STILL SET ON IT, and that is not optional. A retry
+  // generates a fresh temporary password and prints it in the covering email;
+  // reusing the account without applying that password would send the
+  // applicant credentials that do not work, which is worse than failing.
+  // ---------------------------------------------------------------------
+  if (app.auth_user_id) {
+    const { error: linkErr } = await admin.auth.admin.updateUserById(
+      String(app.auth_user_id), { password, email_confirm: true, user_metadata: metadata },
+    );
+    if (linkErr) return failIssuance('create the account', linkErr.message);
+    authUserId = String(app.auth_user_id);
+  }
+
+  const { data: created, error: authErr } = authUserId
+    ? { data: null, error: null }
+    : await admin.auth.admin.createUser({
+      email: app.email,
+      password,
+      email_confirm: true,
+      user_metadata: metadata,
+    });
+
+  if (authUserId) {
+    // Already settled above.
+  } else if (created?.user?.id) {
     authUserId = created.user.id;
   } else if (/already.*registered|email.?exists|already been registered/i.test(authErr?.message ?? '')) {
     // ---------------------------------------------------------------------
@@ -491,6 +541,13 @@ export async function POST(request: Request) {
     // letter exists, the number is reserved, and there is no account — so the
     // record says admission_processing_failed and not a word more.
     return failIssuance('create the account', authErr?.message ?? 'no id returned');
+  }
+
+  // THE LINK IS PERSISTED AT ONCE, for the same reason the number is: an
+  // account created and then lost to a later failure is an orphan the next
+  // retry cannot find, and the applicant ends up with two.
+  if (!app.auth_user_id) {
+    await admin.from('students').update({ auth_user_id: authUserId }).eq('id', applicationId);
   }
 
   const { error: profErr } = await admin.from('profiles').upsert(
