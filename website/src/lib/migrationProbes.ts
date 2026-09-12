@@ -228,6 +228,13 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
     table: 'students',
     column: 'returned_to',
   },
+  {
+    file: '033_reevaluation.sql',
+    what: 'Lets a decided application be put back on the desk with a reason — an appeal upheld, '
+      + 'a document reported as forged — without editing the decision already taken.',
+    table: 'students',
+    column: 'reopened_reason',
+  },
 ];
 
 /** What a probe came back as. */
