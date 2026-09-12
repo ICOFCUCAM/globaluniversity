@@ -256,6 +256,30 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
     // would be vouching for a recompute that never happened.
     table: 'grading_scale_restatements',
   },
+  {
+    file: '036_the_steps_nothing_could_write.sql',
+    what: 'Makes three states the University declared in 024 reachable for the first time: an '
+      + 'application the Admissions Office has opened, a fee that has been asked for, and '
+      + 'documents that were positively checked rather than merely no longer outstanding.',
+    // A widened CHECK constraint adds no table and no column. Named here with
+    // the query to run rather than left out: a Readiness panel that says "all
+    // clear" about something it never looked at is worse than one that admits
+    // the gap.
+    cannotSee: "select pg_get_constraintdef(oid) like '%ADMISSION_OPENED%' as has_036 "
+      + "from pg_constraint where conname = 'admission_audit_log_event_check';"
+      + '  -- it should be true',
+  },
+  {
+    file: '037_a_student_is_not_an_application.sql',
+    what: 'Splits `students.status` into the admission state and what became of the student. '
+      + 'Two vocabularies shared one column and two words appeared in both, so an applicant who '
+      + 'declined a place and a student who left in their second year were the same value — and '
+      + 'conferring a degree overwrote the record of the enrolment it rested on.',
+    // The record of what the split moved. Chosen over the column itself
+    // because the column can exist with nothing migrated into it, and a panel
+    // reporting "applied" on that would be vouching for a split that never ran.
+    table: 'student_status_split',
+  },
 ];
 
 /** What a probe came back as. */

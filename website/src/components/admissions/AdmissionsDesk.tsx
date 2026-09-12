@@ -20,6 +20,7 @@ import DeleteApplicationPanel from './DeleteApplicationPanel';
 import { CheckCircle2, XCircle, Wallet, Loader2, AlertTriangle, Mail, RefreshCw, FileQuestion, Lock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { can } from '@/lib/roles';
+import VerificationSteps from './VerificationSteps';
 import type { Student } from '@/lib/types';
 import { statusMeta } from '@/lib/status';
 import { commonConditions } from '@/lib/lifecycle';
@@ -461,6 +462,24 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
                     {detail.summary}
                   </pre>
                 </details>
+              )}
+
+              {/* ---------------------------------------------------------------
+                  ASKING FOR THE FEE IS NOT THE SAME AS NOT HAVING IT.
+                  `applicant` is a fee nobody has asked for; `fee_pending` is a
+                  fee that has been asked for and has not arrived. Finance
+                  worked only from the first, so an applicant could be chased
+                  for money they were never asked for, and nothing in the record
+                  could tell the two apart.
+                  --------------------------------------------------------- */}
+              {selected && (
+                <div className="mt-6">
+                  <VerificationSteps
+                    application={{ id: selected.id, status: selected.status ?? null }}
+                    desk={desk}
+                    onDone={(m) => { setFlash({ tone: 'ok', message: m }); void load(); }}
+                  />
+                </div>
               )}
 
               {/* Finance action */}

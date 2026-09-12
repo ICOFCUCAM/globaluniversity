@@ -161,6 +161,21 @@ begin
   end if;
 
   -- ---- THE VIEW SEES A STATUS NOBODY DECLARED --------------------------
+  -- ---------------------------------------------------------------------
+  -- THE CONSTRAINT 037 ADDS HAS TO COME OFF FOR THIS ONE INSERT.
+  --
+  -- This proof writes a status nobody declared, deliberately, to watch the
+  -- coverage view report it. 037 later gave `students.status` its first CHECK
+  -- constraint — so on any rerun of the bundle after 037 has run, the proof
+  -- that the view can SEE a stray status was refused by the rule that stops
+  -- one being WRITTEN. Two correct rules, colliding.
+  --
+  -- The drop is inside the same block as the PROOF_ROLLBACK, and Postgres rolls
+  -- DDL back with everything else, so the constraint is restored the instant
+  -- this block ends. Found by running RUN-ALL.sql a second time.
+  -- ---------------------------------------------------------------------
+  alter table students drop constraint if exists students_status_check;
+
   insert into students (first_name, last_name, matric_no, email, status)
   values ('Proof', '027', 'PROOF-027', 'proof-027@iguc.net', 'a_state_nobody_declared')
   returning id into app;

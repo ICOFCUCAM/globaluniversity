@@ -23,7 +23,7 @@
 // ---------------------------------------------------------------------------
 
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, readFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 let failures = 0;
@@ -51,14 +51,26 @@ const W = await import(out);
 // so when 026 added two states and three events the test reported them missing
 // from a database that has them — the check was right, the corpus was short.
 // Anything later that adds a state or an event belongs in this list.
-const MIGRATION_FILES = [
-  '024_admission_decision_authority.sql',
-  '026_issuance_is_not_the_decision.sql',
-  '027_the_states_the_pipeline_already_wrote.sql',
-  '032_forwarding_and_returning.sql',
-  '033_reevaluation.sql',
-  '034_enrolment_and_withdrawal.sql',
-].map((f) => readFileSync(join(here, '../../docs/migrations/', f), 'utf8'));
+// ---------------------------------------------------------------------------
+// EVERY MIGRATION, NOT A LIST OF THEM.
+//
+// This was six filenames, typed out. It was accurate on the day it was written
+// and then 036 widened the event vocabulary and this file did not know, so the
+// test that exists to catch the code and the database disagreeing was reading a
+// database that had moved on without it. A hand-maintained list of the files
+// that might matter is the same drift the test is for.
+//
+// The RUN-*.sql bundles are excluded because they are these files concatenated,
+// and reading both would double every match.
+// ---------------------------------------------------------------------------
+const MIGRATION_DIR = join(here, '../../docs/migrations/');
+const MIGRATION_FILES = readdirSync(MIGRATION_DIR)
+  .filter((f) => /^\d{3}_.*\.sql$/.test(f))
+  // 000 is 001 and 002 merged; including it alongside them reads the same DDL
+  // twice, which matters for the "seeds none the module does not" direction.
+  .filter((f) => !f.startsWith('000_'))
+  .sort()
+  .map((f) => readFileSync(join(MIGRATION_DIR, f), 'utf8'));
 
 const migration = MIGRATION_FILES.join('\n');
 
@@ -79,7 +91,7 @@ const STAGES = 'application|verification|academic|issuance|enrolment|closed';
 // is where 026's seed lives, so both its states were reported missing from the
 // file that adds them.
 const seedsOnly = MIGRATION_FILES
-  .map((text) => text.split(/-- \d+\. PERFORMING THE RULES/)[0])
+  .map((text) => text.split(/-- (?:\d+\. )?PERFORMING THE RULES/)[0])
   .join('\n');
 
 // A seeded row is a tuple whose SECOND value is one of the six stages, whose
@@ -124,7 +136,18 @@ check('the approve button says what it does',
   W.ACADEMIC_DECISIONS.approve.label, 'Approve & issue admission');
 
 // The migration's decision CHECK must accept exactly these four.
-const decisionCheck = /decision\s+text not null check \(decision in \(([^)]*)\)\)/.exec(migration)?.[1] ?? '';
+//
+// SCOPED TO `admission_decisions`, and it has to be. 005 gives the senate's
+// credential approvals a `decision` column too, checked against 'approved' and
+// 'rejected' — a different table recording a different act by a different body.
+// While this test read a hand-picked list of six migrations, 005 was not among
+// them and the ambiguity never surfaced; reading every migration found it at
+// once, and an unscoped search took the senate's two words as the Head of
+// Academic Affairs' four.
+const admissionDecisionsTable =
+  /create table if not exists admission_decisions \(([\s\S]*?)\n\);/.exec(migration)?.[1] ?? '';
+const decisionCheck =
+  /decision\s+text not null check \(decision in \(([^)]*)\)\)/.exec(admissionDecisionsTable)?.[1] ?? '';
 check('the database accepts the same four decisions',
   [...decisionCheck.matchAll(/'(\w+)'/g)].map((m) => m[1]).sort(),
   ['approve', 'conditional', 'reject', 'return']);

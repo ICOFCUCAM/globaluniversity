@@ -170,5 +170,17 @@ export const SEMESTERS = [
   { value: 2, label: 'Second Semester' },
 ];
 
-export const STUDENT_STATUSES = ['active', 'graduated', 'suspended', 'withdrawn', 'deferred'];
+/**
+ * MOVED TO src/lib/studentStatus.ts, WITH ONE VALUE FEWER.
+ *
+ * This list had `deferred` in it, which is an ADMISSION outcome — an offer held
+ * to a later intake — and it also appears in ADMISSION_STATES. Two lists, one
+ * word, two meanings, and both were written to the same database column. That
+ * is the whole fault 037 splits apart, so the vocabulary lives beside the
+ * functions that read it rather than here among the institutional facts.
+ *
+ * Re-exported so nothing that imports it from here breaks, and so a search for
+ * the name finds the explanation rather than only the new list.
+ */
+export { STUDENT_STATUSES } from './studentStatus';
 export const RESULT_STATUSES = ['pending', 'submitted', 'approved', 'rejected'];

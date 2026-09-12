@@ -205,6 +205,10 @@ export function canRetryIssuance(state: string | null | undefined): boolean {
  */
 export const ADMISSION_EVENTS = [
   'APPLICATION_SUBMITTED',
+  /** A named person in the Admissions Office has opened the application. */
+  'ADMISSION_OPENED',
+  /** Finance has asked the applicant for the fee. Not that it has arrived. */
+  'FEE_REQUESTED',
   'DOCUMENT_VERIFIED',
   'FEE_CONFIRMED',
   /** The Admissions Office sends it, with its recommendation, to be decided. */
@@ -327,6 +331,128 @@ export const FORWARDABLE_FROM: AdmissionState[] = [
 
 export function canForward(state: string | null | undefined): boolean {
   return FORWARDABLE_FROM.includes(state as AdmissionState);
+}
+
+// ---------------------------------------------------------------------------
+// THE THREE STATES NOTHING COULD WRITE.
+//
+// `under_review`, `fee_pending` and `documents_verified` were declared in 024,
+// seeded into `admission_states`, listed on desks, and unreachable. Three
+// states the University had decided existed and its system could not produce.
+//
+// WHAT EACH ONE IS FOR, AND WHY IT IS NOT THE STATE BESIDE IT.
+//
+//   under_review vs applicant
+//     `applicant` means the form arrived. `under_review` means a named person
+//     in the Admissions Office has opened it. The difference matters on the
+//     morning somebody asks why an application has sat for three weeks: one of
+//     these says nobody has looked at it and the other says who has.
+//
+//   fee_pending vs applicant
+//     This registry's own note said fee_pending "says the same thing twice",
+//     and that was true while Finance worked only from `applicant`. It is not
+//     the same thing: `applicant` is a fee nobody has asked for, `fee_pending`
+//     is a fee that has been asked for and has not arrived. An applicant chased
+//     for money they were never asked for is the complaint this distinction
+//     prevents.
+//
+//   documents_verified vs not-documents_required
+//     Verification was recorded only by its ABSENCE — an application stopped
+//     being `documents_required`. So "the documents were checked and accepted"
+//     and "nobody has looked at the documents" were the same value. This is the
+//     positive statement.
+//
+// EACH ONE IS A STEP A NAMED OFFICE TAKES, so each names the capability that
+// takes it. The route reads this table and nothing else; adding a step here is
+// what makes it possible, which is the whole point of the registry.
+// ---------------------------------------------------------------------------
+
+export interface VerificationStep {
+  /** What the office is doing, in the words the button uses. */
+  label: string;
+  /** The states this step may be taken from. */
+  from: AdmissionState[];
+  to: AdmissionState;
+  event: AdmissionEvent;
+  /** The capability that takes it. Checked server-side, never in the browser. */
+  capability: string;
+  /** Which desk the control belongs on. */
+  desk: AdmissionDeskKey;
+  /** Whether the step must be accompanied by a note. */
+  needsNote: boolean;
+}
+
+export const VERIFICATION_STEPS = {
+  open: {
+    label: 'Open for review',
+    // NOT from `draft`. An application the applicant has not submitted is not
+    // the University's to open.
+    from: ['applicant', 'fee_paid', 'registrar_approved', 'documents_required'],
+    to: 'under_review',
+    event: 'ADMISSION_OPENED',
+    capability: 'process-applications',
+    desk: 'admissions-office',
+    needsNote: false,
+  },
+  'request-fee': {
+    label: 'Request the fee',
+    from: ['applicant', 'under_review'],
+    to: 'fee_pending',
+    event: 'FEE_REQUESTED',
+    // FINANCE IS A GATE, NOT AN AUTHORITY. Asking for money is Finance's, and
+    // it is deliberately not the capability that decides anything.
+    capability: 'verify-payment',
+    desk: 'finance',
+    needsNote: false,
+  },
+  'verify-documents': {
+    label: 'Record documents verified',
+    from: ['under_review', 'documents_required', 'registrar_approved', 'fee_paid'],
+    to: 'documents_verified',
+    event: 'DOCUMENT_VERIFIED',
+    capability: 'process-applications',
+    desk: 'admissions-office',
+    // A POSITIVE STATEMENT NEEDS SOMETHING BEHIND IT. "Verified" with no note
+    // is a tick nobody is accountable for, and this is the record a registrar
+    // is asked to stand behind when a certificate is challenged years later.
+    needsNote: true,
+  },
+} as const satisfies Record<string, VerificationStep>;
+
+export type VerificationStepKey = keyof typeof VERIFICATION_STEPS;
+
+/** The least a verification note may say. Short, but not nothing. */
+export const MIN_VERIFICATION_NOTE = 6;
+
+export function isVerificationStep(key: string): key is VerificationStepKey {
+  return Object.prototype.hasOwnProperty.call(VERIFICATION_STEPS, key);
+}
+
+/**
+ * Whether this step may be taken from this state.
+ *
+ * Refuses a step that would not move anything, which is not pedantry: taking
+ * `under_review` on an application already under review appends an event
+ * saying it was opened, by a second person, at a later time, and the trail then
+ * reads as though it had been opened twice.
+ */
+export function canTakeVerificationStep(
+  key: string,
+  state: string | null | undefined,
+): boolean {
+  if (!isVerificationStep(key)) return false;
+  const step: VerificationStep = VERIFICATION_STEPS[key];
+  return step.from.includes(state as AdmissionState) && state !== step.to;
+}
+
+/** The steps available from a state, for the desk that draws the buttons. */
+export function verificationStepsFrom(
+  state: string | null | undefined,
+  desk?: AdmissionDeskKey,
+): (VerificationStep & { key: VerificationStepKey })[] {
+  return (Object.keys(VERIFICATION_STEPS) as VerificationStepKey[])
+    .map((key) => ({ key, ...(VERIFICATION_STEPS[key] as VerificationStep) }))
+    .filter((s) => canTakeVerificationStep(s.key, state) && (!desk || s.desk === desk));
 }
 
 /** The event an academic decision appends. */
@@ -581,14 +707,18 @@ export const ADMISSION_DESKS = {
   'admissions-office': {
     label: 'Awaiting assessment',
     office: 'Admissions Office',
-    states: ['registrar_approved', 'under_review', 'returned'],
+    // `documents_verified` IS THIS OFFICE'S, not the deciding desk's. It means
+    // this office has checked the documents and has not yet forwarded — work in
+    // hand, not work handed on. It sat on the academic desk only because
+    // nothing could produce it and the question had never arisen.
+    states: ['registrar_approved', 'under_review', 'documents_verified', 'returned'],
   },
   /** The Head of Academic Affairs: awaiting the academic decision. */
   academic: {
     label: 'Awaiting decision',
     office: 'Office of Academic Affairs',
     states: [
-      'ready_for_academic_review', 'fee_paid', 'documents_verified', 'documents_required',
+      'ready_for_academic_review', 'fee_paid', 'documents_required',
       // An issuance that stopped part way is retried from this desk, so it has
       // to be on it.
       'admission_processing', 'admission_processing_failed',
@@ -661,21 +791,17 @@ export const NOT_ON_ANY_DESK: Record<string, string> = {
 // here with a reason.
 // ---------------------------------------------------------------------------
 export const NOT_YET_REACHABLE: Record<string, string> = {
-  // THE JOURNEY HAS NO END. An admitted student never becomes an enrolled one,
-  // because the Registrar's enrolment step does not exist.
-  under_review:
-    'The Admissions Office has no control that marks an application as being examined, so a '
-    + 'record it is working on is indistinguishable from one nobody has opened.',
-
-  documents_verified:
-    'Verification is recorded only by its absence — an application stops being '
-    + '`documents_required` — so there is no positive statement that the documents were checked '
-    + 'and accepted.',
-
-  fee_pending:
-    'Finance works from `applicant`, which already means the fee is unconfirmed. This state '
-    + 'says the same thing twice and nothing writes it.',
-
+  // EMPTY, AND THAT IS THE POINT.
+  //
+  // It held `under_review`, `documents_verified` and `fee_pending` — three
+  // states the University had declared, seeded and put on desks, and that
+  // nothing in the system could write. VERIFICATION_STEPS builds the doorway
+  // into each, /api/admissions/verification takes them, and the desks draw the
+  // buttons.
+  //
+  // KEPT RATHER THAN DELETED. The next state somebody declares ahead of the
+  // control that produces it belongs here, named, with why — which is better
+  // than it being absent from a list nobody remembered existed.
 };
 
 /** The states one desk lists. */

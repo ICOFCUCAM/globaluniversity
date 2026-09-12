@@ -42,6 +42,7 @@
 // ---------------------------------------------------------------------------
 
 import { NextResponse } from 'next/server';
+import { hasGraduated, studentStatusOf } from '@/lib/studentStatus';
 import { signContentHashWith, type SecretDb } from '@/lib/documentSignature';
 import { guard, audit } from '@/lib/adminAuth';
 import {
@@ -76,7 +77,7 @@ export async function POST(request: Request) {
 
   const { data: student, error: readErr } = await admin
     .from('students')
-    .select('id, student_number, matric_no, first_name, middle_name, last_name, program, status')
+    .select('id, student_number, matric_no, first_name, middle_name, last_name, program, status, student_status')
     .eq('id', body.studentId)
     .maybeSingle();
   if (readErr) {
@@ -89,13 +90,18 @@ export async function POST(request: Request) {
   // A certificate is a statement that someone completed a programme. Issuing one
   // to a record that is not marked graduated would be the university attesting
   // to something its own register denies.
-  if (String(student.status ?? '').toLowerCase() !== 'graduated') {
+  // READ FROM `student_status`, NOT `status`. Before 037 these were the same
+  // column, and conferring a degree wrote 'graduated' OVER 'enrolled' — the
+  // University destroying its own record of having enrolled somebody in the act
+  // of graduating them. The two facts now live in two columns and both survive.
+  if (!hasGraduated(student)) {
     return NextResponse.json({
       ok: false,
       error: 'not-graduated',
       detail:
-        `This record stands at "${student.status}". A degree certificate states that the holder ` +
-        'completed the programme; it cannot be issued before the record says so.',
+        `This record stands at "${studentStatusOf(student) ?? student.status}". A degree `
+        + 'certificate states that the holder completed the programme; it cannot be issued '
+        + 'before the record says so.',
     }, { status: 409 });
   }
 
