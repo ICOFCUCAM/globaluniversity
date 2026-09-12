@@ -24,10 +24,10 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { UNIVERSITY } from '@/lib/constants';
+import PortalMasthead from '@/components/portal/PortalMasthead';
 import { roleLabels } from '@/lib/roles';
 import { Card, Figure, Skeleton } from '@/components/ui/portal';
-import { BTN_SECONDARY, FOCUS } from '@/lib/portalTheme';
+import { FOCUS } from '@/lib/portalTheme';
 import type { ViewType, UserRole } from '@/lib/types';
 import {
   Users, GraduationCap, BookOpen, Building2, ClipboardList,
@@ -162,18 +162,10 @@ export default function OfficeDashboard({ onNavigate }: { onNavigate?: (v: ViewT
 
   return (
     <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-2xl bg-[#33234a] p-6 text-white">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#e9c14a]">
-          {roleLabels[user?.role ?? 'student']}
-        </p>
-        <h1 className="mt-1.5 font-heading text-2xl font-bold">
-          Welcome back{user?.name ? `, ${user.name.split(' ')[0]}` : ''}
-        </h1>
-        <p className="mt-1 text-sm text-white/65">
-          {UNIVERSITY.name} ·{' '}
-          {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-        </p>
-      </div>
+      <PortalMasthead
+        eyebrow={roleLabels[user?.role ?? 'student']}
+        title={`Welcome back${user?.name ? `, ${user.name.split(' ')[0]}` : ''}`}
+      />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {loading

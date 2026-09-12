@@ -50,6 +50,46 @@ good. Send the large original if you have it and it can be resized here.
 seal, a cut-out. A photograph saved as PNG is typically five times the size for
 no visible gain.
 
+## The two photographs the portal uses
+
+Two files, one caller each, and they must never be the same picture:
+
+    public/images/sign-in-hero.jpg   the sign-in screen, full-bleed
+    public/images/hall.jpg           the masthead inside the management system
+
+`sign-in-hero.jpg` is the university's own choice and replaced the graduation
+hall on the sign-in screen. It arrived on `main` as `ChatGPT Image Aug 9, 2026,
+06_56_24 PM.png` and was renamed and re-encoded on the way onto this branch,
+for two reasons worth remembering next time:
+
+- **The name.** Files here are served at the path they are committed under, so
+  spaces and commas become `%20` and `%2C` in the URL. That works right up
+  until something in the chain does not encode it.
+- **The weight.** 2,053 KB of PNG for a photograph is about eight times what it
+  needs to be, and the bill is paid by every visitor on a handset. The same
+  plate as a JPEG is 247 KB. See Formats above: `.png` is for transparency,
+  not for pictures.
+
+`hall.jpg` is the graduation hall, which the sign-in screen used until that
+replacement. It moved rather than being retired: it is the university's own
+photograph of its own congregation, and it now appears in the system the
+people in it are recorded by.
+
+Three things worth knowing before changing either:
+
+- **The masthead one is texture, not a subject.** The band blends it on
+  luminosity over the university's aubergine, so what survives is its light and
+  shade, not its colour, and nothing in it is legible as a scene. Choose for
+  shape and contrast, not for content — that is what keeps the masthead the
+  university's colour whatever is uploaded.
+- **If the masthead file is absent, nothing breaks.** The band renders as the
+  wash alone — darker and plainer, and completely intact. There is no
+  placeholder to remove and no broken image to explain.
+- **Never point both names at one file.** The administrator's dashboard used to
+  paste the sign-in photograph into its own band, so the reader met the same
+  picture twice in four seconds. `src/components/portal/portalMasthead.test.mjs`
+  fails if that returns.
+
 ## Rights
 
 Same rule as anywhere: the university needs to own the photograph or have

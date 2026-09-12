@@ -15,6 +15,8 @@
 // ---------------------------------------------------------------------------
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import DeleteApplicationPanel from './DeleteApplicationPanel';
 import { CheckCircle2, XCircle, Wallet, Loader2, AlertTriangle, Mail, RefreshCw, FileQuestion, Lock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { can } from '@/lib/roles';
@@ -82,6 +84,11 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
   const [deferReason, setDeferReason] = useState('');
   const [newProgramme, setNewProgramme] = useState('');
   const [conditions, setConditions] = useState<{ requirement: string; dueBy: string }[]>([]);
+  // Deleting an application. Two fields, not one: the reason, and a typed
+  // confirmation. See the panel below for why a second step earns its place
+  // here when it would be friction anywhere else on this screen.
+  const [deleteReason, setDeleteReason] = useState('');
+  const [deleteConfirm, setDeleteConfirm] = useState('');
   const [condText, setCondText] = useState('');
   const [condDue, setCondDue] = useState('');
 
@@ -168,6 +175,56 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
     }
   }
 
+  /**
+   * Destroy the application record.
+   *
+   * Goes through the route rather than deleting from the browser, because the
+   * audit entry has to be written FIRST and by something that cannot be
+   * skipped. A client-side delete followed by a client-side log is two calls a
+   * closed tab can separate.
+   */
+  async function onDelete() {
+    if (!selected || deleteReason.trim().length < 12) return;
+    setBusy(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) {
+        setFlash({ tone: 'bad', message: 'Your session has expired. Sign in again.' });
+        return;
+      }
+
+      const res = await fetch('/api/admissions/delete', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+        body: JSON.stringify({ studentId: selected.id, reason: deleteReason.trim() }),
+      }).then((r) => r.json()).catch(() => null);
+
+      if (!res?.ok) {
+        // The route's `detail` is written to be read by a person — an admitted
+        // student, a missing reason, a failed audit write. Preferring it to the
+        // machine code is the difference between an explanation and 'error'.
+        setFlash({
+          tone: 'bad',
+          message: res?.detail ?? res?.error ?? 'The application was not deleted.',
+        });
+        return;
+      }
+
+      setFlash({
+        tone: 'ok',
+        message: `Application ${selected.matric_no} deleted. `
+          + 'The audit trail records who, when, why, and what the record contained.',
+      });
+      setDeleteReason('');
+      setDeleteConfirm('');
+      setSelected(null);
+      await load();
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function onDecline() {
     if (!selected || !declineReason.trim()) return;
     setBusy(true);
@@ -248,6 +305,10 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
   const mayReject = can(user?.role, 'reject-application');
   const mayDefer = can(user?.role, 'defer-admission');
   const mayTransfer = can(user?.role, 'transfer-programme');
+  // THE SUPERADMINISTRATOR ALONE. Not drawn for anyone else — but the absence
+  // of the panel is courtesy. /api/admissions/delete reads the role from the
+  // caller's token, and migration 018 holds the line in the database.
+  const mayDelete = can(user?.role, 'delete-application');
 
   return (
     <div className="space-y-6">
@@ -665,6 +726,17 @@ export default function AdmissionsDesk({ desk }: { desk: Desk }) {
                     </button>
                   </div>
                   )}
+
+                  <DeleteApplicationPanel
+                    allowed={mayDelete}
+                    matricNo={selected.matric_no}
+                    reason={deleteReason}
+                    onReasonChange={setDeleteReason}
+                    confirmation={deleteConfirm}
+                    onConfirmationChange={setDeleteConfirm}
+                    onDelete={() => void onDelete()}
+                    busy={busy}
+                  />
                 </div>
               )}
             </div>

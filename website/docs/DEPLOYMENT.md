@@ -111,26 +111,60 @@ as published.
 
 ## 2. Migrations, in order
 
-**On a database that is already live, run one file: `docs/migrations/RUN.sql`.**
-It carries 006 and 010 through 017 in order. Paste the whole file into the
-Supabase SQL editor and run it once, or
+### Just run `RUN-ALL.sql`. It does not matter what state you are in.
+
+One file, `docs/migrations/RUN-ALL.sql`: every migration from 000 to 020, in
+order. Paste the whole thing into the Supabase SQL editor and press Run, or
 
 ```
-psql "<connection string>" -f docs/migrations/RUN.sql
+psql "<connection string>" -f docs/migrations/RUN-ALL.sql
 ```
 
-Every migration in it is idempotent and destroys nothing, so running it twice is
-safe, and so is running it when some of it has already landed. It is
-deliberately **not** wrapped in a transaction: each file runs statement by
-statement, and wrapping them would mean a failure in the last one silently
-undoing the first.
+**It is safe on a database at any stage**, including one that already has
+everything. Every migration in it is idempotent and destroys nothing, so a file
+that has already run does nothing the second time. Tested from three starting
+states — empty, stopped at 018, and fully current — with zero errors from each.
 
-**On an empty project, run `docs/migrations/RUN-ALL.sql` instead** — 000 through
-017. Read its header first: 000 appoints two administrators and can only appoint
-accounts that already exist, so create them in Authentication → Users first.
+THIS PAGE USED TO SAY SOMETHING DIFFERENT AND WORSE. It said to run `RUN.sql`
+on a live database and `RUN-ALL.sql` only on an empty one. `RUN.sql` carries 006
+and 010 onwards and assumes 003, 004, 005, 007, 008 and 009 have already
+landed — so on a database that was behind in a way nobody had checked, it fails
+partway with half the work done. Measured, not guessed: against a database
+missing the early files, `RUN.sql` produced **178 errors** and `RUN-ALL.sql`
+produced none. Choosing between two files requires knowing
+something the reader is reading this page to find out. `RUN.sql` is still in the
+repository for anyone who wants the shorter file, but it is no longer the
+recommendation and nothing here asks you to decide.
 
-Afterwards run `docs/migrations/VERIFY.sql`, which makes 25 checks and reports
-what actually landed rather than what should have.
+On an EMPTY project, read the header of `RUN-ALL.sql` first: 000 appoints two
+administrators and can only appoint accounts that already exist, so create them
+in Authentication → Users before running it. Running it before they exist is
+harmless — it appoints nobody, and you re-run that section afterwards.
+
+### If you want to know what is outstanding before you run anything
+
+`docs/migrations/WHICH-ONES.sql` — twenty-five lines, reads only, and returns a
+single row naming the files that have not landed, or "Nothing outstanding."
+
+`docs/migrations/WHAT-IS-OUTSTANDING.sql` is the longer form: one row per
+migration marked `RUN` / `NOT RUN` / `skip`, with what each one does.
+
+Neither is required. `RUN-ALL.sql` reaches the same place without asking you to
+read a report first — they exist because "which of these has been run" is a
+reasonable question to want answered, not because you have to answer it.
+
+They exist at all because nothing tracks these files: Supabase's own migration
+table records only what its CLI applied, and every one of these was run by hand
+in the SQL editor. Working from memory is worse than it sounds — a missed
+migration is a policy that was never created, and a policy that does not exist
+refuses exactly like a policy that does.
+
+Afterwards run `docs/migrations/VERIFY.sql`, which makes 31 checks and reports
+what actually landed rather than what should have. Where
+`WHAT-IS-OUTSTANDING.sql` asks whether a migration ran, this asks whether its
+guarantees hold — that examination evidence cannot be rewritten, that nobody
+approves their own post, that a candidate cannot read their own answer key,
+that the secret store has no policy at all.
 
 Some of these raise `NOTICE` deliberately — they report on the state they found
 rather than changing it silently. A notice is information. An `ERROR` is a real
@@ -158,6 +192,10 @@ The individual files, for reference:
 | 015 | `015_examination_and_proctoring.sql` | **Fourteen tables, split along the line that matters.** Evidence — events, answers, recordings, identity and device checks — is append-only, enforced by triggers, not by convention. Decisions — session determinations, incidents, findings, marks, reports — are made by people and recorded as theirs. Second reader on findings, second marker on marks, reports immutable once signed. |
 | 016 | `016_examination_papers.sql` | The paper each candidate actually saw, set once and never again. Replaces the own-read policy with a view that omits the paper column, because the paper carries the answer key. |
 | 017 | `017_secret_store.sql` | AES-256-GCM sealed tokens. RLS enabled and **no policy at all** — unreadable through the publishable key by construction rather than by a rule somebody could later widen. The migration asserts no policy exists, so adding one fails the check on purpose. |
+| 018 | `018_delete_application.sql` | **Who may delete an application: the Superadministrator alone.** Nobody could before — `students` had no DELETE policy and RLS refuses an operation with no policy — but "refused because nobody wrote the policy" is silently undone by the next person who widens something unrelated. A trigger backs it for service-role callers, and refuses an admitted student's row outright: withdrawal is a status, not a deletion. |
+| 019 | `019_academic_record.sql` | **The record a real transcript is built from.** Study mode, campus, specialization and admission/completion dates on `students`; `attempt` on `results` so a repeat no longer overwrites the failure; and six tables — `transfer_credits`, `academic_honours`, `graduation_records`, `academic_standing_events` (append-only), `transcript_requests`, and `academic_policy`, which is deliberately almost empty: the repeat rule and the standing thresholds are the University's to state, and defaulting them would raise every repeating student's GPA under a rule nobody made. |
+| 020 | `020_signature_void_and_grading.sql` | **A signature anyone can check, voiding, and a grading scale the University owns.** A detached Ed25519 signature over the content hash — the existing seal is an HMAC and only the University can check it, so a receiving institution has to trust this website; a signature verifies offline, forever, against the public key at `/api/credential/key`. VOID is a new state, distinct from revoked: revoking withdraws the award and marks the holder, voiding says the University issued the document in error and the holder is not at fault. And `grading_scales`, versioned and never edited, with the published bands seeded so nothing changes on the day it runs. |
+| 021 | `021_signing_key_in_the_store.sql` | **The system can keep the signing key.** Admits `signing_key` to the sealed store 017 built, so the key is generated in the portal and held encrypted in the University's own database — no environment variable and no redeploy. It holds a KEYRING, not a key: every key the University has ever used, with the active one named, so rotating publishes the retired public half rather than silently making every earlier signature uncheckable. |
 
 Each file ends with `select` statements that verify what it did, and 013
 onwards *perform* their rules rather than checking a trigger exists — the proof
@@ -249,3 +287,60 @@ real intake:
   every applicant's record is public, including the application text stored in
   the address column. The query is in `docs/ADMISSIONS-PIPELINE.md` §5b.
 - Run the verification `select`s at the foot of 009 and 010 and read the output.
+
+---
+
+## Turning on document signing
+
+Optional. Without it, credentials are sealed and verify through `/verify`
+exactly as they do now — they simply cannot be checked by a receiving
+institution without trusting this website.
+
+**Make a key. The system can keep it for you.**
+
+**Credentials → Register → Document signing → Generate a signing key.** The key
+is generated on the University's own server and sealed into its secret store —
+the same AES-256-GCM store the social tokens live in, with row-level security
+and no policy at all, so it is unreadable through the publishable key by
+construction. **Nothing to paste, and no redeploy**: signing starts with the
+next credential.
+
+That does NOT remove `SECRET_STORE_KEY` — something has to encrypt the store,
+and that something cannot live inside it. So it trades a long multi-line secret
+for a short single-line one, and if `SECRET_STORE_KEY` is already set for the
+social connections, it trades it for nothing at all. If `SECRET_STORE_KEY` is
+ever lost the stored signing key is unrecoverable; credentials already signed
+stay valid, but a new key has to be generated.
+
+**Rotating is safe.** Every key the University has ever held is kept, and every
+public half is published at `/api/credential/key` with its id. A credential
+records which key signed it, so one signed years ago still verifies after a
+rotation. Nothing has to be remembered by a person.
+
+**If you would rather hold it yourself**, either:
+
+- `npm run make-signing-key` — best, because a key made in a terminal never
+  crosses a network. It prints the key and the steps; it writes no file.
+- Or, with no terminal: **Credentials -> Register -> Document signing ->
+  Generate a signing key.** Generated on the University's own server, shown
+  once, stored nowhere.
+
+**Set it.** In Vercel: Settings -> Environment Variables -> Add New. Name it
+`CREDENTIAL_SIGNING_KEY`, paste the whole key including the BEGIN and END
+lines, and choose Production. An environment variable takes precedence over
+anything stored, so this is also how you override a stored key.
+
+**Redeploy.** A new variable does not reach a deployment that is already
+running. This is the step people miss.
+
+**Check it.** Open `/api/credential/key`. It should report `"configured": true`
+and the key id. Credentials -> Register says the same in words.
+
+**Sign what is already there.** Credentials -> Register -> Document signing ->
+*Sign them*. It adds a signature over each credential's existing content hash;
+no hash, seal or fact changes, so every document already in a graduate's hand
+verifies exactly as it did.
+
+**Keep the key.** Losing it invalidates nothing already signed, but nothing can
+ever be re-signed under it. It is not in the secret store, because the server
+needs it before it can open the secret store.

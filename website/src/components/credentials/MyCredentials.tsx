@@ -34,6 +34,7 @@
 // ---------------------------------------------------------------------------
 
 import { useCallback, useEffect, useState } from 'react';
+import RequestTranscript from '@/components/transcript/RequestTranscript';
 import { supabase } from '@/lib/supabase';
 
 import { Card, PageHeader, EmptyState, SkeletonRows } from '@/components/ui/portal';
@@ -57,6 +58,11 @@ interface CredentialRow {
 export default function MyCredentials() {
 
   const [rows, setRows] = useState<CredentialRow[] | null>(null);
+  // THE STUDENT ROW THIS ACCOUNT BELONGS TO, so a transcript can be requested
+  // from the screen where the holder is already looking at their documents.
+  // Read under the same own-row policy the credentials are; a student who has
+  // no student record simply cannot request one, and is told so.
+  const [studentId, setStudentId] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
 
@@ -79,6 +85,17 @@ export default function MyCredentials() {
 
   useEffect(() => { void load(); }, [load]);
 
+  useEffect(() => {
+    void (async () => {
+      const { data: session } = await supabase.auth.getSession();
+      const uid = session.session?.user?.id;
+      if (!uid) return;
+      const { data } = await supabase
+        .from('students').select('id').eq('auth_user_id', uid).maybeSingle();
+      setStudentId((data as { id?: string } | null)?.id ?? null);
+    })();
+  }, []);
+
   function shareUrl(credentialId: string): string {
     return `${window.location.origin}/verify?id=${encodeURIComponent(credentialId)}`;
   }
@@ -95,6 +112,11 @@ export default function MyCredentials() {
         title="My credentials"
         subtitle="Every award the university has issued to you, and a link you can send to an employer."
       />
+
+      {/* ASKING FOR A TRANSCRIPT BELONGS WHERE THE DOCUMENTS ARE. A student
+          looking for their transcript and not finding one should be able to ask
+          for it there, rather than being told to email the registry. */}
+      <RequestTranscript studentId={studentId} />
 
       {problem && (
         <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">

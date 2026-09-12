@@ -210,7 +210,7 @@ export const erpModules: ErpModule[] = [
       'Office hours',
       'Research',
     ],
-    working: ['Grade book', 'Assignments', 'Question bank', 'Learning analytics'],
+    working: ['Grade book', 'Assignments', 'Question bank', 'Student early warning'],
     next: ['Attendance', 'Course allocation, so "assigned courses" is a real constraint', 'Office hours'],
     roles: ['lecturer'],
   },

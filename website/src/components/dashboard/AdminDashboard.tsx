@@ -27,16 +27,18 @@
 
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { UNIVERSITY, IMAGES } from '@/lib/constants';
 import { useAuth } from '@/contexts/AuthContext';
 import CommandCentrePanel from './CommandCentrePanel';
+import PortalMasthead, {
+  MASTHEAD_BTN_PRIMARY, MASTHEAD_BTN_SECONDARY,
+} from '@/components/portal/PortalMasthead';
 import { can } from '@/lib/roles';
 import { roleLabels } from '@/lib/roles';
 import { statusMeta, toUniversal } from '@/lib/status';
 import {
   Card, CardHeader, Figure, EmptyState, Skeleton, TableShell, THead, TBody, Th, Td,
 } from '@/components/ui/portal';
-import { BTN_PRIMARY, BTN_SECONDARY, FOCUS } from '@/lib/portalTheme';
+import { FOCUS } from '@/lib/portalTheme';
 import type { ViewType } from '@/lib/types';
 import {
   Users, GraduationCap, BookOpen, Building2, ClipboardList,
@@ -134,37 +136,26 @@ export default function AdminDashboard({ onNavigate }: { onNavigate?: (v: ViewTy
 
   return (
     <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-2xl bg-[#33234a] p-6 text-white">
-        <div className="relative z-10 max-w-2xl">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#e9c14a]">
-            {roleLabels[user?.role ?? 'admin'] ?? 'Administrator'}
-          </p>
-          <h1 className="mt-1.5 font-heading text-2xl font-bold">
-            Welcome back{user?.name ? `, ${user.name.split(' ')[0]}` : ''}
-          </h1>
-          <p className="mt-1 text-sm text-white/65">
-            {UNIVERSITY.name} ·{' '}
-            {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-          </p>
-          {(counts.awaitingRegistrar > 0 || counts.awaitingFinance > 0) && (
-            <div className="mt-4 flex flex-wrap gap-2">
+      <PortalMasthead
+        eyebrow={roleLabels[user?.role ?? 'admin'] ?? 'Administrator'}
+        title={`Welcome back${user?.name ? `, ${user.name.split(' ')[0]}` : ''}`}
+        actions={
+          counts.awaitingRegistrar > 0 || counts.awaitingFinance > 0 ? (
+            <>
               {counts.awaitingFinance > 0 && (
-                <button onClick={go('admissions-finance')} className={`${BTN_PRIMARY} bg-[#e9c14a] text-[#241a30] hover:bg-[#f3d27a]`}>
+                <button onClick={go('admissions-finance')} className={MASTHEAD_BTN_PRIMARY}>
                   <Wallet size={15} /> {counts.awaitingFinance} awaiting Finance
                 </button>
               )}
               {counts.awaitingRegistrar > 0 && (
-                <button onClick={go('admissions-registrar')} className={`${BTN_SECONDARY} border-white/25 bg-white/10 text-white hover:bg-white/20`}>
+                <button onClick={go('admissions-registrar')} className={MASTHEAD_BTN_SECONDARY}>
                   <Stamp size={15} /> {counts.awaitingRegistrar} awaiting the Registrar
                 </button>
               )}
-            </div>
-          )}
-        </div>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={IMAGES.hero} alt="" className="absolute right-0 top-0 h-full w-1/3 object-cover opacity-15" />
-        <div className="absolute right-0 top-0 h-full w-1/2 bg-gradient-to-l from-transparent to-[#33234a]" />
-      </div>
+            </>
+          ) : undefined
+        }
+      />
 
       {!reachable && (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">

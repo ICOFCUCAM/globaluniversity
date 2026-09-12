@@ -44,11 +44,17 @@
 // ---------------------------------------------------------------------------
 
 import { NextResponse } from 'next/server';
+import { can } from '@/lib/roles';
 import { guard } from '@/lib/adminAuth';
 import { send, mailConfigured } from '@/lib/mailer';
-import { UNIVERSITY } from '@/lib/constants';
+import { UNIVERSITY, IMAGES } from '@/lib/constants';
 import { verificationQrSvg } from '@/lib/documentSecurity';
 import { CATEGORY_PROFILES, type CredentialCategory } from '@/lib/credentialAuthority';
+import { masterFromCredential } from '@/lib/transcriptMaster';
+import { transcriptDocumentHtml } from '@/lib/transcriptDocumentHtml';
+import {
+  defaultDesign, withDefaults, type CredentialDesign, type CredentialKind,
+} from '@/lib/credentialTemplate';
 
 export const runtime = 'nodejs';
 
@@ -102,7 +108,7 @@ export async function POST(request: Request) {
     }, { status: 409 });
   }
 
-  const html = await renderCredential(credential);
+  const html = await renderCredential(credential, admin);
 
   // -------------------------------------------------------------------------
   // PRINT
@@ -139,6 +145,36 @@ export async function POST(request: Request) {
   // EMAIL
   // -------------------------------------------------------------------------
   let to = input.to?.trim();
+  /** Set when the address is not the holder's own — a receiving university. */
+  let forwarding = false;
+
+  if (to) {
+    // THE HOLE THIS CLOSES. The comment below has always warned that "a
+    // caller-supplied address on a route that delivers a sealed credential is
+    // a way to have the University post somebody's degree to a stranger" — and
+    // the code then accepted `input.to` from anyone who could email at all.
+    //
+    // Forwarding to a receiving university is a real and necessary act, so the
+    // answer is not to refuse it; it is to make it a distinct permission, held
+    // by the registry offices whose work it is, and to say in the trail that
+    // the record went to a third party rather than to the student.
+    const { data: holder } = credential.student_id
+      ? await admin.from('students').select('email').eq('id', credential.student_id).maybeSingle()
+      : { data: null };
+
+    forwarding = (holder?.email ?? '').toLowerCase() !== to.toLowerCase();
+
+    if (forwarding && !can(caller.role, 'forward-credential')) {
+      return NextResponse.json({
+        ok: false,
+        error: 'not-permitted:forward-credential',
+        detail:
+          'This address is not the holder’s own, so sending it would disclose their academic '
+          + 'record to a third party. Your role may send a credential to the student it belongs '
+          + 'to; forwarding it elsewhere is the registry’s to do.',
+      }, { status: 403 });
+    }
+  }
 
   if (!to) {
     // FROM THE STUDENT RECORD, not from the request, whenever there is a
@@ -219,17 +255,25 @@ export async function POST(request: Request) {
     credential_ref: credential.credential_id,
     action: 'emailed',
     to_version: credential.version ?? 1,
-    reason: `Sent to ${to}`,
+    // NAMES THE THIRD PARTY AS A THIRD PARTY. "Sent to admissions@other.edu"
+    // and "sent to the graduate" are different disclosures and the trail has
+    // to be readable as such years later, when nobody remembers whose address
+    // that was.
+    reason: forwarding
+      ? `Forwarded to ${to} — not the holder’s own address`
+      : `Sent to ${to}`,
     actor_id: caller.id,
     actor_role: caller.role,
     actor_email: caller.email,
     document_hash: credential.content_hash,
-    detail: { to },
+    detail: { to, forwarded: forwarding },
   });
 
   return NextResponse.json({
     ok: true,
-    message: `Sent to ${to} and recorded on the audit trail.`,
+    message: forwarding
+      ? `Forwarded to ${to}. Recorded on the audit trail as a disclosure to a third party.`
+      : `Sent to ${to} and recorded on the audit trail.`,
   });
 }
 
@@ -302,7 +346,10 @@ function coveringLetter(i: LetterInput): string {
  * opened years later on a machine with no network — and a certificate that
  * needs the internet to look like a certificate is not a document.
  */
-async function renderCredential(c: Record<string, any>): Promise<string> {
+async function renderCredential(
+  c: Record<string, any>,
+  admin: { from: (t: string) => any },
+): Promise<string> {
   const verifyUrl = `${SITE}/verify?id=${encodeURIComponent(c.credential_id)}`;
   const qr = await verificationQrSvg(verifyUrl, 104).catch(() => '');
 
@@ -316,6 +363,35 @@ async function renderCredential(c: Record<string, any>): Promise<string> {
 
   const e = (s: unknown) => String(s ?? '')
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  // A TRANSCRIPT IS NOT A CERTIFICATE AND MUST NOT BE PRINTED AS ONE.
+  //
+  // This function rendered a landscape certificate for every `kind` on the
+  // register. Once transcripts could be issued, that meant the University
+  // would email a transcript that said "has been admitted to the degree of"
+  // over a document with no marks on it — a sealed, verifiable statement of
+  // something the record does not say. Portrait, tabular, and it lists the
+  // courses.
+  //
+  // AND IT IS NOW THE SAME TRANSCRIPT THE REGISTRAR SEES. This branch used to
+  // call a hand-written HTML string in this file — portrait, five columns, no
+  // grade system, no crest, no legend. It has been deleted. `TranscriptMaster`
+  // is rendered here, exactly as the Issue screen and the Studio render it, so
+  // there is one document rather than four.
+  if (c.kind === 'transcript') {
+    const design = await activeDesign(admin, 'transcript');
+    return await transcriptDocumentHtml({
+      design,
+      data: masterFromCredential(c, {
+        qrSvg: qr,
+        // ABSOLUTE, so the crest resolves when the file is opened away from the
+        // site. `sealSrc` below does better still when the PNG can be read off
+        // disk, and this is what stands in when it cannot.
+        assetBase: SITE,
+        sealSrc: await inlineSeal(),
+      }),
+    });
+  }
 
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
@@ -384,4 +460,60 @@ async function renderCredential(c: Record<string, any>): Promise<string> {
     </div>
   </div>
 </div></body></html>`;
+}
+
+
+/**
+ * The published design for a kind of credential, read on the server.
+ *
+ * THE SAME ROW THE STUDIO PUBLISHES AND THE SAME FALLBACK THE PORTAL USES —
+ * `useCredentialTemplate` does exactly this in the browser. A delivery route
+ * that rendered under the built-in default while the Studio previewed a
+ * published design would put the University's approved layout on screen and a
+ * different one in the graduate's inbox.
+ *
+ * A read failure falls back rather than refusing: a deployment that has not run
+ * the templates migration must still be able to hand a graduate their document.
+ */
+async function activeDesign(
+  admin: { from: (t: string) => any },
+  kind: CredentialKind,
+): Promise<CredentialDesign> {
+  try {
+    const { data } = await admin
+      .from('credential_templates')
+      .select('design')
+      .eq('kind', kind)
+      .eq('is_active', true)
+      .maybeSingle();
+    if (!data?.design) return defaultDesign(kind);
+    return withDefaults(kind, data.design as Partial<CredentialDesign>);
+  } catch {
+    return defaultDesign(kind);
+  }
+}
+
+/**
+ * The University's seal as a data: URI, so an emailed transcript keeps its
+ * watermark on a machine with no network.
+ *
+ * BEST EFFORT, AND SAID SO. `public/` is not guaranteed to be readable from a
+ * serverless function on every host, so this returns undefined when it cannot
+ * read the file and the caller falls back to an absolute URL on the site. The
+ * document is never blocked on it — a transcript that refuses to send because
+ * a watermark could not be embedded would be a worse failure than a watermark
+ * that has to be fetched.
+ */
+let sealCache: string | null | undefined;
+async function inlineSeal(): Promise<string | undefined> {
+  if (sealCache !== undefined) return sealCache ?? undefined;
+  try {
+    const { readFile } = await import('node:fs/promises');
+    const { join } = await import('node:path');
+    const bytes = await readFile(join(process.cwd(), 'public', IMAGES.seal.replace(/^\//, '')));
+    sealCache = `data:image/png;base64,${bytes.toString('base64')}`;
+  } catch {
+    sealCache = null;
+  }
+  return sealCache ?? undefined;
 }

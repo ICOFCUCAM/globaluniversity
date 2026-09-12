@@ -52,15 +52,16 @@ import { runQuery } from '@/lib/runQuery';
 import { can } from '@/lib/roles';
 import type { UserRole } from '@/lib/types';
 import {
-  actionsFor, describeEvent, CATEGORY_PROFILES, CREDENTIAL_CATEGORIES,
+  actionsFor, statusLabel, describeEvent, CATEGORY_PROFILES, CREDENTIAL_CATEGORIES,
   problemsWithType, movesFor, canMove,
   type CredentialVersion, type CredentialCategory, type AuditEvent,
   type CorrectionState,
 } from '@/lib/credentialAuthority';
 import { PageHeader } from '@/components/ui/portal';
+import ProduceCredential from './ProduceCredential';
 import {
-  Loader2, Search, AlertTriangle, History, ShieldCheck, Printer, Mail,
-  FileWarning, Plus, ChevronRight, XCircle, CheckCircle2, Inbox, BadgeCheck,
+  Loader2, Search, AlertTriangle, History, ShieldCheck,
+  FileWarning, Plus, ChevronRight, XCircle, CheckCircle2, Inbox, BadgeCheck, Ban,
 } from 'lucide-react';
 
 interface Row {
@@ -76,6 +77,9 @@ interface Row {
   status: string;
   issuedAt: string;
   contentHash: string;
+  /** Why the University withdrew it as issued in error. Null unless void. */
+  voidReason: string | null;
+  voidedAt: string | null;
 }
 
 interface CorrectionRow {
@@ -89,12 +93,16 @@ interface CorrectionRow {
 
 type Tab = 'register' | 'corrections' | 'types' | 'trail';
 
-export default function CredentialAuthority({ role }: { role?: UserRole }) {
+export default function CredentialAuthority(
+  { role, embedded }: { role?: UserRole; embedded?: boolean },
+) {
   const [tab, setTab] = useState<Tab>('register');
   const [rows, setRows] = useState<Row[] | null>(null);
   const [corrections, setCorrections] = useState<CorrectionRow[]>([]);
   const [trail, setTrail] = useState<AuditEvent[]>([]);
   const [notReady, setNotReady] = useState<string | null>(null);
+  /** A failure of the correction or audit read, which used to be swallowed. */
+  const [secondaryError, setSecondaryError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<string | null>(null);
   const [message, setMessage] = useState<{ tone: 'ok' | 'bad'; text: string } | null>(null);
@@ -104,7 +112,7 @@ export default function CredentialAuthority({ role }: { role?: UserRole }) {
   const load = useCallback(async () => {
     const { data, error } = await runQuery(supabase
       .from('credentials_issued')
-      .select('id, credential_id, version, supersedes_id, kind, holder_name, award, classification, programme, status, issued_at, content_hash')
+      .select('id, credential_id, version, supersedes_id, kind, holder_name, award, classification, programme, status, issued_at, content_hash, void_reason, voided_at')
       .order('issued_at', { ascending: false })
       .limit(400));
 
@@ -131,6 +139,8 @@ export default function CredentialAuthority({ role }: { role?: UserRole }) {
       status: r.status,
       issuedAt: r.issued_at,
       contentHash: r.content_hash,
+      voidReason: r.void_reason ?? null,
+      voidedAt: r.voided_at ?? null,
     })));
 
     const [c, t] = await Promise.all([
@@ -141,6 +151,29 @@ export default function CredentialAuthority({ role }: { role?: UserRole }) {
         .select('id, credential_ref, action, from_version, to_version, reason, actor_role, actor_email, occurred_at')
         .order('occurred_at', { ascending: false }).limit(80),
     ]);
+
+    // THESE TWO ERRORS WERE DISCARDED, and the panes below say "No correction
+    // request is waiting" and "Nothing has been recorded yet" from an empty
+    // array. So a failed read — a missing table, a policy that does not admit
+    // this role, a dropped connection — was reported to the Authority as a
+    // clean sheet.
+    //
+    // On the audit trail that is the worst possible failure mode. The pane
+    // exists to answer "what was done to this credential", and answering
+    // "nothing" when the truth is "the trail could not be read" is how an
+    // amendment goes unnoticed. Empty and unreadable are different states and
+    // the screen now distinguishes them.
+    const failures = [
+      c.error ? `correction requests (${c.error.message})` : null,
+      t.error ? `the credential audit trail (${t.error.message})` : null,
+    ].filter(Boolean);
+    setSecondaryError(
+      failures.length > 0
+        ? `Could not read ${failures.join(' or ')}. `
+          + 'The panes below are not empty — they are unread, and nothing in them should be '
+          + 'taken as a statement that no action was recorded.'
+        : null,
+    );
 
     setCorrections((c.data ?? []).map((r: Record<string, any>) => ({
       id: String(r.id),
@@ -210,20 +243,32 @@ export default function CredentialAuthority({ role }: { role?: UserRole }) {
     }] : []),
     ...(can(role, 'create-credential-type')
       ? [{ id: 'types' as Tab, label: 'Kinds of credential', icon: <Plus size={15} /> }] : []),
-    { id: 'trail', label: 'Audit trail', icon: <History size={15} /> },
+    { id: 'trail', label: 'Audit', icon: <History size={15} /> },
   ];
 
   return (
-    <div className="mx-auto max-w-6xl space-y-5">
-      <PageHeader
-        title="Credential authority"
-        subtitle="Everything the University has issued. Corrections supersede; nothing is overwritten."
-      />
+    <div className={embedded ? 'space-y-5' : 'mx-auto max-w-6xl space-y-5'}>
+      {/* SUPPRESSED WHEN EMBEDDED. The workspace above already carries the
+          title and this exact sentence; rendering both printed the same line
+          twice, four lines apart, under two different headings. */}
+      {!embedded && (
+        <PageHeader
+          title="Credential authority"
+          subtitle="Everything the University has issued. Corrections supersede; nothing is overwritten."
+        />
+      )}
 
       {notReady && (
         <div className="flex items-start gap-3 rounded-xl border border-[#e9c14a]/40 bg-[#e9c14a]/10 p-4 text-sm">
           <AlertTriangle size={18} className="mt-0.5 flex-shrink-0 text-[#a07c12]" />
           <span className="text-[#6b6076] dark:text-[#9c93ad]">{notReady}</span>
+        </div>
+      )}
+
+      {secondaryError && (
+        <div className="flex items-start gap-3 rounded-xl border border-[#e9c14a]/40 bg-[#e9c14a]/10 p-4 text-sm">
+          <AlertTriangle size={18} className="mt-0.5 flex-shrink-0 text-[#a07c12]" />
+          <span className="text-[#6b6076] dark:text-[#9c93ad]">{secondaryError}</span>
         </div>
       )}
 
@@ -365,17 +410,24 @@ export default function CredentialAuthority({ role }: { role?: UserRole }) {
 // ---------------------------------------------------------------------------
 
 function StatusPill({ row, versions }: { row: Row; versions: number }) {
-  const tone = row.status === 'revoked'
-    ? 'bg-red-600/10 text-red-700 dark:text-red-300'
-    : row.status === 'replaced'
-      ? 'bg-[#e9c14a]/15 text-[#8a6a10]'
-      : 'bg-emerald-600/10 text-emerald-700 dark:text-emerald-300';
+  // THE WORDS AND THE TONE COME FROM `statusLabel`, not from a ternary here.
+  // The ternary this replaces had no case for 'void' and fell through to green
+  // "Current", so a document the University had withdrawn as issued in error
+  // showed in the register as the standing credential. See statusLabel.
+  const { label, tone } = statusLabel(row.status, row.version, versions);
 
-  const label = row.status === 'revoked' ? 'Revoked'
-    : row.status === 'replaced' ? 'Superseded'
-      : versions > 1 ? `Current · v${row.version}` : 'Current';
+  const TONES: Record<typeof tone, string> = {
+    current: 'bg-emerald-600/10 text-emerald-700 dark:text-emerald-300',
+    superseded: 'bg-[#e9c14a]/15 text-[#8a6a10]',
+    revoked: 'bg-red-600/10 text-red-700 dark:text-red-300',
+    void: 'bg-[#c5a55a]/20 text-[#7a5f10] dark:text-[#e0c778]',
+  };
 
-  return <span className={`flex-shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${tone}`}>{label}</span>;
+  return (
+    <span className={`flex-shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${TONES[tone]}`}>
+      {label}
+    </span>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -397,6 +449,8 @@ function AwardPanel({
   onError: (t: string) => void;
 }) {
   const [correcting, setCorrecting] = useState(false);
+  const [voiding, setVoiding] = useState(false);
+  const [voidReason, setVoidReason] = useState('');
   const [busy, setBusy] = useState(false);
   const [reason, setReason] = useState('');
   const [fields, setFields] = useState<Record<string, string>>({});
@@ -406,7 +460,9 @@ function AwardPanel({
     id: current.id,
     credentialRef: current.credentialRef,
     version: current.version,
-    state: current.status === 'revoked' ? 'revoked' : current.status === 'replaced' ? 'superseded' : 'current',
+    state: current.status === 'revoked' ? 'revoked'
+      : current.status === 'void' ? 'void'
+        : current.status === 'replaced' ? 'superseded' : 'current',
     issuedAt: current.issuedAt,
   };
   const actions = actionsFor(version, role ?? 'student');
@@ -458,6 +514,32 @@ function AwardPanel({
     onDone(out.message ?? 'Done.');
   }
 
+  /**
+   * Void this document — issued in error, holder not at fault.
+   *
+   * A SEPARATE HANDLER FROM `submit`, and a separate route, because the two
+   * write different things and mixing them behind one "reason" box is how an
+   * operator ends up revoking when they meant to void. The screen makes them
+   * look different too.
+   */
+  async function voidIt() {
+    setBusy(true);
+    const { data: session } = await supabase.auth.getSession();
+    const res = await fetch('/api/credential/void', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${session.session?.access_token ?? ''}`,
+      },
+      body: JSON.stringify({ credentialId: current.id, reason: voidReason.trim() }),
+    });
+    const out = await res.json().catch(() => ({ ok: false, error: 'no-reply' }));
+    setBusy(false);
+    if (!out.ok) { onError(out.detail ?? out.error ?? 'It was not voided.'); return; }
+    setVoiding(false); setVoidReason('');
+    onDone(out.message);
+  }
+
   async function submit() {
     setBusy(true);
     const { data: session } = await supabase.auth.getSession();
@@ -495,16 +577,20 @@ function AwardPanel({
           {award.versions.map((v) => (
             <li key={v.id} className="flex items-baseline gap-2 text-xs">
               <span className={`rounded px-1.5 py-0.5 font-medium ${
-                v.status === 'replaced'
+                statusLabel(v.status).tone === 'superseded'
                   ? 'bg-[#e9c14a]/15 text-[#8a6a10]'
-                  : v.status === 'revoked'
+                  : statusLabel(v.status).tone === 'revoked'
                     ? 'bg-red-600/10 text-red-700 dark:text-red-300'
-                    : 'bg-emerald-600/10 text-emerald-700 dark:text-emerald-300'
+                    : statusLabel(v.status).tone === 'void'
+                      ? 'bg-[#c5a55a]/20 text-[#7a5f10] dark:text-[#e0c778]'
+                      : 'bg-emerald-600/10 text-emerald-700 dark:text-emerald-300'
               }`}>
                 Version {v.version}
               </span>
               <span className="text-[#6b6076] dark:text-[#9c93ad]">
-                {v.status === 'replaced' ? 'Superseded' : v.status === 'revoked' ? 'Revoked' : 'Current'}
+                {/* THE SAME FUNCTION THE LIST USES. Two places naming the same
+                    state in their own words is how they come to disagree. */}
+                {v.status === 'void' ? 'Void — issued in error' : statusLabel(v.status).label}
                 {' · '}{new Date(v.issuedAt).toLocaleDateString('en-GB')}
               </span>
             </li>
@@ -529,24 +615,13 @@ function AwardPanel({
             <FileWarning size={13} /> Correct
           </button>
         )}
-        {actions.includes('print') && (
+        {actions.includes('void') && (
           <button
             type="button"
-            onClick={() => void deliver('print')}
-            disabled={busy}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-[#ece7de] px-3 py-1.5 text-xs text-[#6b6076] disabled:opacity-40 dark:border-[#2e2637] dark:text-[#9c93ad]"
+            onClick={() => { setVoiding((v) => !v); setVoidReason(''); }}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[#c5a55a]/60 px-3 py-1.5 text-xs font-semibold text-[#422e59] dark:text-[#c5a55a]"
           >
-            {busy ? <Loader2 size={13} className="animate-spin" /> : <Printer size={13} />} Print
-          </button>
-        )}
-        {actions.includes('email') && (
-          <button
-            type="button"
-            onClick={() => void deliver('email')}
-            disabled={busy}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-[#ece7de] px-3 py-1.5 text-xs text-[#6b6076] disabled:opacity-40 dark:border-[#2e2637] dark:text-[#9c93ad]"
-          >
-            {busy ? <Loader2 size={13} className="animate-spin" /> : <Mail size={13} />} Email to student
+            <Ban size={13} /> Void — issued in error
           </button>
         )}
         <a
@@ -558,6 +633,97 @@ function AwardPanel({
           <ShieldCheck size={13} /> Verify as a stranger would
         </a>
       </div>
+
+      {/* VOIDING, WITH ITS REASON — and with the distinction spelled out on
+          screen rather than left to the button label. An operator reaching for
+          this because a certificate went to the wrong graduate must not reach
+          for Revoke, which says something about the graduate. */}
+      {voiding && (
+        <div className="rounded-xl border border-[#c5a55a]/50 bg-[#fdf7e8] p-4 dark:bg-[#2a2333]">
+          <p className="text-sm font-semibold text-[#422e59] dark:text-[#e4dcf0]">
+            Void this document
+          </p>
+          <p className="mt-1 max-w-2xl text-xs leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">
+            Use this when the University issued the document in error — to the wrong student,
+            twice, or against a record that had not been approved. Anyone verifying the number is
+            told the document was issued in error and that <strong>the holder is not at fault</strong>.
+            It does not withdraw an award. To withdraw an award, revoke it.
+          </p>
+          <label className="mt-3 block">
+            <span className="text-xs font-semibold text-[#6b6076] dark:text-[#9c93ad]">
+              Why it was issued in error — recorded on the register and shown on verification
+            </span>
+            <input
+              value={voidReason}
+              onChange={(e) => setVoidReason(e.target.value)}
+              placeholder="e.g. issued against the wrong student record"
+              className="mt-1 w-full rounded-lg border border-[#ded6c8] bg-white px-3 py-2 text-sm dark:border-[#3d3349] dark:bg-[#1f1a27]"
+            />
+          </label>
+          <div className="mt-3 flex gap-2">
+            <button
+              type="button"
+              onClick={() => void voidIt()}
+              disabled={busy || voidReason.trim().length < 12}
+              className="rounded-lg bg-[#422e59] px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40"
+            >
+              {busy ? 'Voiding…' : 'Void it'}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setVoiding(false); setVoidReason(''); }}
+              className="rounded-lg border border-[#ece7de] px-3 py-1.5 text-xs text-[#6b6076] dark:border-[#2e2637] dark:text-[#9c93ad]"
+            >
+              Cancel
+            </button>
+          </div>
+          {voidReason.trim().length < 12 && (
+            <p className="mt-1.5 text-[11px] text-[#8a8194]">
+              A reason of at least a dozen characters. The register refuses a void without one.
+            </p>
+          )}
+        </div>
+      )}
+
+      {current.status === 'void' && (
+        <div className="rounded-xl border border-[#c5a55a]/50 bg-[#fdf7e8] p-4 text-xs leading-relaxed text-[#6b6076] dark:bg-[#2a2333] dark:text-[#9c93ad]">
+          <p>
+            <strong>This document is void.</strong> The University issued it in error, and anyone
+            verifying the number is told so — and told that the holder is not at fault. No further
+            copies can be produced from it. Issue a correct document in its place.
+          </p>
+          {/* THE REASON, WHICH THE DATABASE REQUIRES AND THIS SCREEN WAS NOT
+              SHOWING. A registrar looking at a void document and unable to see
+              why it was voided has to go to the audit trail to find out what
+              their own register already knows. */}
+          {current.voidReason && (
+            <p className="mt-2">
+              <strong>Reason:</strong> {current.voidReason}
+              {current.voidedAt && ` · recorded ${new Date(current.voidedAt).toLocaleDateString('en-GB')}`}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* THE THREE OUTPUTS, IN ONE PLACE.
+          Print and Email used to be two small buttons in the row above, beside
+          Correct and Revoke, with nothing anywhere to say a PDF was possible.
+          A registrar looking for "how do I send this graduate their
+          certificate" had to recognise a 13px icon.
+
+          A revoked credential is deliberately excluded: producing a fresh copy
+          of a withdrawn award is not a legitimate act, and the row above
+          already explains why revocation is final. */}
+      {current.status !== 'revoked' && current.status !== 'void' && (
+        <ProduceCredential
+          allowed={actions.includes('print')}
+          mayEmail={actions.includes('email')}
+          onProduce={() => void deliver('print')}
+          onEmail={() => void deliver('email')}
+          busy={busy}
+          superseded={current.status === 'replaced'}
+        />
+      )}
 
       {current.status === 'revoked' && (
         <p className="rounded-lg bg-red-600/5 p-3 text-xs text-[#6b6076] dark:text-[#9c93ad]">
@@ -942,11 +1108,24 @@ function CredentialTypes({ onDone, onError }: { onDone: (t: string) => void; onE
  * account.
  */
 function AuditTrail({ events }: { events: AuditEvent[] }) {
+  // The reciprocal of the note on the system audit log. Two append-only trails
+  // exist and each one says what the other holds, so neither reads as the
+  // complete record when it is half of it.
+  const scope = (
+    <p className="mt-3 text-xs leading-relaxed text-[#8a8194]">
+      Actions taken on <em>issued</em> credentials. Account changes, role grants and published
+      designs are recorded separately, in the <strong>System audit log</strong>.
+    </p>
+  );
+
   if (events.length === 0) {
     return (
-      <p className="rounded-xl border border-dashed border-[#ece7de] p-8 text-center text-sm text-[#6b6076] dark:border-[#2e2637] dark:text-[#9c93ad]">
-        Nothing has been recorded yet.
-      </p>
+      <div>
+        <p className="rounded-xl border border-dashed border-[#ece7de] p-8 text-center text-sm text-[#6b6076] dark:border-[#2e2637] dark:text-[#9c93ad]">
+          Nothing has been recorded yet.
+        </p>
+        {scope}
+      </div>
     );
   }
   return (
@@ -955,6 +1134,7 @@ function AuditTrail({ events }: { events: AuditEvent[] }) {
         Append-only. Nothing here can be edited or deleted by anyone, including the
         Superadministrator — the database refuses it, not this screen.
       </p>
+      {scope}
       <ol className="mt-3 divide-y divide-[#ece7de] dark:divide-[#2e2637]">
         {events.map((e) => (
           <li key={e.id} className="py-2.5">

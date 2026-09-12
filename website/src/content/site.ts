@@ -96,7 +96,15 @@ export const site = {
           heading: 'Community',
           items: [
             { label: 'Alumni', href: '/alumni' },
-            { label: 'Careers at IGUC', href: '/careers' },
+            // 'Careers at IGUC' pointed at /careers, which does not exist:
+            // there is no src/app/careers and `careers` is not one of the
+            // slugs in pages.ts, so it was the not-found page — offered from
+            // the navigation bar and again from the footer, on every page.
+            //
+            // Removed rather than pointed somewhere plausible. A university
+            // offering "Careers at IGUC" is read as "we are hiring", and
+            // landing that reader on /about is a worse answer than not making
+            // the offer. It returns when there is a page with posts on it.
             { label: 'Contact', href: '/contact' },
             { label: 'Institutional Documents', href: '/documents' },
             { label: 'Policies', href: '/policies' },

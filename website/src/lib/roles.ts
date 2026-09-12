@@ -109,6 +109,20 @@ export const OPERATIONAL_CAPABILITIES = [
   'manage-student-accounts',
   // Registrar
   'admit-student',
+  // ---------------------------------------------------------------------
+  // THE ACADEMIC ADMISSION DECISION, held apart from 'admit-student'.
+  //
+  // 'admit-student' is the old capability and it is what the Admissions Office
+  // and the Registrar hold: process the file, and in a pinch admit from it.
+  // 'decide-admission' is the ACADEMIC act — the decision the Head of Academic
+  // Affairs signs page 1 of the letter for — and it is deliberately a
+  // different key so the two cannot be granted by accident together.
+  //
+  // Only 'academic-office' and the Superadministrator hold it. The
+  // Superadministrator's use of it is recorded as an administrative override
+  // with a stated reason, never as an academic decision.
+  // ---------------------------------------------------------------------
+  'decide-admission',
   'reject-application',
   'request-documents',
   'assign-programme',
@@ -221,6 +235,11 @@ export const OPERATIONAL_CAPABILITIES = [
   // degree more easily than it can confer one has the balance the wrong way
   // round. This change makes issuing easier, not revoking.
   'issue-credential',
+  // Sending a sealed credential to an address that is NOT the holder's — a
+  // receiving university, an employer's verification desk. Separate from
+  // emailing it to the student, because it is the University disclosing
+  // somebody's academic record to a third party.
+  'forward-credential',
   // Which programmes the university is currently admitting to. An academic
   // decision — what the faculty is ready to teach this year — not an
   // administrative one, which is why it is not in the Admissions Officer's set.
@@ -284,6 +303,22 @@ export const SYSTEM_CAPABILITIES = [
   // What the university's awards look like and whether they stand
   'design-credentials',
   'publish-credential-template',
+  /**
+   * Publishing a design the three approving offices have not signed.
+   *
+   * THE UNIVERSITY'S OWN AUTHORITY, held by the Superadministrator alone —
+   * "he is more of the VC of the university". It is a separate capability from
+   * publishing rather than part of it, because the two are different acts: one
+   * carries out a decision the Senate has taken, the other takes the decision.
+   * A future role that may publish must not inherit the power to publish
+   * unapproved simply by holding the first.
+   *
+   * It is not a way round the control. The database still refuses unless the
+   * row says so and carries a reason of at least forty characters, stamps the
+   * hour itself, and marks the version permanently — see migration 022. What
+   * this capability decides is WHO may take that route.
+   */
+  'publish-without-senate',
   'revoke-credential',
   // AMENDING AN ALREADY-ISSUED CREDENTIAL. Distinct from designing one, and
   // far graver: it changes what the university is recorded as having said on a
@@ -298,6 +333,32 @@ export const SYSTEM_CAPABILITIES = [
   // Connecting the INSTITUTION's accounts, so that every administrator can
   // publish through them without ever holding their credentials.
   'connect-university-social',
+  // DESTROYING AN APPLICATION RECORD.
+  //
+  // Systemic rather than operational, and therefore the Superadministrator's
+  // alone, because it is the only act in the admissions pipeline that leaves
+  // nothing behind. Rejecting an application is a decision and is recorded;
+  // deleting one removes the evidence that the person ever applied — including
+  // what Finance saw, what the Registrar verified and why the Admissions
+  // Office decided as it did.
+  //
+  // An Admissions Officer who could do this could erase a candidate they had
+  // mishandled. That is exactly the class of act this hierarchy exists to keep
+  // out of an operational role.
+  'delete-application',
+  // TRANSCRIBING A RECORD THE SYSTEM NEVER HELD.
+  //
+  // A transcript for a year that predates this database cannot be derived from
+  // marks — there are none. It has to be typed from a paper register, and the
+  // University then seals it and stands behind it.
+  //
+  // That is a genuinely different act from issuing a transcript, and it is the
+  // Superadministrator's alone: everything the approval chain exists to
+  // guarantee — that four offices saw each mark — is absent by construction.
+  // The safeguard is not a signature; it is that the document says on its face
+  // that it was transcribed from an archived record, and the register says so
+  // for ever.
+  'transcribe-historical-record',
   // Held by the three approving offices, and deliberately NOT by the
   // Superadministrator who designs. An approval you give to your own work is a
   // countersignature, not a control.
@@ -394,6 +455,7 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
     // And issuing the certificate itself. The Registry keeps the academic
     // record and produces the instrument that attests to it.
     'issue-credential',
+    'forward-credential',
     'set-admission-openings',
   ],
 
@@ -405,6 +467,11 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   'academic-office': [
     'assign-lecturers', 'build-timetable', 'manage-courses',
     'approve-credential-design', 'recompute-gpa',
+    // THE ACADEMIC ADMISSION DECISION. This office signs page 1 of the
+    // admission letter, so it is the office that takes the decision the
+    // signature attests to. Nobody else holds this except the
+    // Superadministrator, whose use of it is recorded as an override.
+    'decide-admission',
     'admit-student', 'reject-application', 'request-documents',
     // Publication, alongside the Registrar, for the same reason 'admit-student'
     // is held by two offices: a term's results must not sit unpublished because
@@ -413,6 +480,7 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
     // alone.
     'publish-results',
     'issue-credential',
+    'forward-credential',
     'set-admission-openings',
   ],
 

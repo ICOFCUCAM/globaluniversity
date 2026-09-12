@@ -26,13 +26,15 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { UNIVERSITY } from '@/lib/constants';
+import PortalMasthead, {
+  MASTHEAD_BTN_PRIMARY, MASTHEAD_BTN_SECONDARY,
+} from '@/components/portal/PortalMasthead';
 import { roleLabels } from '@/lib/roles';
 import { statusMeta, toUniversal } from '@/lib/status';
 import {
   Card, CardHeader, Figure, EmptyState, Skeleton, TableShell, THead, TBody, Th, Td,
 } from '@/components/ui/portal';
-import { BTN_PRIMARY, BTN_SECONDARY, FOCUS } from '@/lib/portalTheme';
+import { FOCUS } from '@/lib/portalTheme';
 import type { ViewType } from '@/lib/types';
 import { Stamp, Users, FileText, ArrowRight, Inbox, GraduationCap } from 'lucide-react';
 
@@ -88,32 +90,26 @@ export default function RegistrarDashboard({ onNavigate }: { onNavigate?: (v: Vi
 
   return (
     <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-2xl bg-[#33234a] p-6 text-white">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#e9c14a]">
-          {roleLabels[user?.role ?? 'registrar']}
-        </p>
-        <h1 className="mt-1.5 font-heading text-2xl font-bold">
-          Welcome back{user?.name ? `, ${user.name.split(' ')[0]}` : ''}
-        </h1>
-        <p className="mt-1 text-sm text-white/65">
-          {UNIVERSITY.name} ·{' '}
-          {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-        </p>
-        <div className="mt-4 flex flex-wrap gap-2">
-          {awaiting + documentsRequested > 0 ? (
-            <button onClick={go('admissions-registrar')} className={`${BTN_PRIMARY} bg-[#e9c14a] text-[#241a30] hover:bg-[#f3d27a]`}>
-              <Stamp size={15} /> {awaiting + documentsRequested} awaiting your decision
+      <PortalMasthead
+        eyebrow={roleLabels[user?.role ?? 'registrar']}
+        title={`Welcome back${user?.name ? `, ${user.name.split(' ')[0]}` : ''}`}
+        actions={
+          <>
+            {awaiting + documentsRequested > 0 ? (
+              <button onClick={go('admissions-registrar')} className={MASTHEAD_BTN_PRIMARY}>
+                <Stamp size={15} /> {awaiting + documentsRequested} awaiting your decision
+              </button>
+            ) : (
+              <button onClick={go('admissions-registrar')} className={MASTHEAD_BTN_SECONDARY}>
+                <Stamp size={15} /> Registrar desk
+              </button>
+            )}
+            <button onClick={go('students')} className={MASTHEAD_BTN_SECONDARY}>
+              <Users size={15} /> Student register
             </button>
-          ) : (
-            <button onClick={go('admissions-registrar')} className={`${BTN_SECONDARY} border-white/25 bg-white/10 text-white hover:bg-white/20`}>
-              <Stamp size={15} /> Registrar desk
-            </button>
-          )}
-          <button onClick={go('students')} className={`${BTN_SECONDARY} border-white/25 bg-white/10 text-white hover:bg-white/20`}>
-            <Users size={15} /> Student register
-          </button>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {/* This office's work. There is no Finance figure here on purpose. */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">

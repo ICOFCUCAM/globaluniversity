@@ -1,5 +1,10 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import PortalMasthead, {
+  MASTHEAD_BTN_PRIMARY, MASTHEAD_BTN_SECONDARY,
+} from '@/components/portal/PortalMasthead';
+import { SampleDataNotice } from '@/components/ui/portal';
+import { CARD } from '@/lib/portalTheme';
 import {
   BookOpen, Users, ClipboardList, Upload, Video,
   Calendar, TrendingUp, ArrowRight, CheckCircle2
@@ -21,40 +26,52 @@ export default function LecturerDashboard({ onNavigate }: LecturerDashboardProps
 
   return (
     <div className="space-y-6">
-      {/* Welcome */}
-      <div className="bg-gradient-to-r from-emerald-700 to-emerald-900 rounded-2xl p-6 text-white">
-        <p className="text-emerald-200 text-sm">Welcome back,</p>
-        <h1 className="text-2xl font-bold mt-1">{user?.name}</h1>
-        <p className="text-emerald-200 text-sm mt-1">{user?.staffId} · Department of Computer Science</p>
-        <div className="flex gap-3 mt-4">
-          <button
-            onClick={() => onNavigate('results')}
-            className="px-4 py-2 bg-white text-emerald-800 font-semibold rounded-lg text-sm hover:bg-emerald-50 transition-colors"
-          >
-            Enter Results
-          </button>
-          <button
-            onClick={() => onNavigate('lms')}
-            className="px-4 py-2 bg-white/15 hover:bg-white/25 rounded-lg text-sm transition-colors"
-          >
-            Upload Materials
-          </button>
-        </div>
-      </div>
+      {/* The lecturer's masthead.
+
+          It was an emerald gradient — a colour belonging to nothing else in
+          this system — carrying the line "Department of Computer Science",
+          which is not a department this university has. The department is gone
+          rather than replaced with a guess: the staff identifier is a fact, and
+          the rest of this screen has none to add to it yet. */}
+      <PortalMasthead
+        eyebrow="Lecturer"
+        title={user?.name ? 'Welcome back,' : 'Welcome back'}
+        accent={user?.name ?? undefined}
+        lead={user?.staffId || undefined}
+        actions={
+          <>
+            <button onClick={() => onNavigate('results')} className={MASTHEAD_BTN_PRIMARY}>
+              <ClipboardList size={15} /> Enter results
+            </button>
+            <button onClick={() => onNavigate('lms')} className={MASTHEAD_BTN_SECONDARY}>
+              <Upload size={15} /> Upload materials
+            </button>
+          </>
+        }
+      />
+
+      {/* EVERY FIGURE BELOW IS INVENTED. Three assigned courses, 194 students,
+          two results pending, twenty-four uploads — none of it counted, and the
+          courses named are Computer Science ones this university does not
+          teach. Saying so is not a fix; the fix is to count them, as the
+          administrator's, Registrar's and Finance dashboards now do. Until
+          that is done, a lecturer must not be able to mistake this screen for
+          their own record. */}
+      <SampleDataNotice what="figures and courses" />
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: 'Assigned Courses', value: 3, icon: <BookOpen size={20} />, color: 'from-blue-500 to-blue-600' },
-          { label: 'Total Students', value: 194, icon: <Users size={20} />, color: 'from-emerald-500 to-emerald-600' },
-          { label: 'Results Pending', value: 2, icon: <ClipboardList size={20} />, color: 'from-amber-500 to-amber-600' },
-          { label: 'Materials Uploaded', value: 24, icon: <Upload size={20} />, color: 'from-purple-500 to-purple-600' },
+          { label: 'Assigned Courses', value: 3, icon: <BookOpen size={20} /> },
+          { label: 'Total Students', value: 194, icon: <Users size={20} /> },
+          { label: 'Results Pending', value: 2, icon: <ClipboardList size={20} /> },
+          { label: 'Materials Uploaded', value: 24, icon: <Upload size={20} /> },
         ].map((stat, i) => (
-          <div key={i} className="bg-white rounded-xl p-4 border border-[#ece7de] dark:border-[#2e2637]">
-            <div className={`p-2.5 rounded-xl bg-gradient-to-br ${stat.color} text-white shadow-lg w-fit`}>
+          <div key={i} className={`${CARD} p-4`}>
+            <div className="w-fit rounded-xl bg-[#faf6ee] p-2.5 text-[#c5a55a] ring-1 ring-[#ece0c4] dark:bg-[#241f2c] dark:ring-[#3d3349]">
               {stat.icon}
             </div>
-            <p className="text-2xl font-bold text-[#33234a] dark:text-[#e4dcf0] mt-3">{stat.value}</p>
+            <p className="mt-3 font-heading text-2xl font-bold tabular-nums text-[#33234a] dark:text-[#e4dcf0]">{stat.value}</p>
             <p className="text-xs text-[#6b6076] dark:text-[#9c93ad]">{stat.label}</p>
           </div>
         ))}

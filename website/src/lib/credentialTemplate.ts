@@ -49,6 +49,59 @@ export interface Signatory {
   name: string;
   /** Printed under the name, e.g. "Vice Chancellor". */
   office: string;
+  /**
+   * A scanned signature, as a data URI, printed on the rule.
+   *
+   * ---------------------------------------------------------------------------
+   * WHY IT LIVES IN THE DESIGN AND NOT ON THE CREDENTIAL
+   * ---------------------------------------------------------------------------
+   *
+   * Because the design is versioned and never edited in place. A certificate
+   * issued in 2026 keeps the 2026 template for ever, so it keeps the signature
+   * of whoever held the office in 2026 — which is what a signature is FOR. Put
+   * on the credential instead, a later correction would have to carry the image
+   * forward by hand; put in a single current record, re-rendering a 2019
+   * certificate would show today's Registrar signing a document they never saw.
+   *
+   * ---------------------------------------------------------------------------
+   * A DATA URI, NEVER A LINK
+   * ---------------------------------------------------------------------------
+   *
+   * An `https://…` signature is two failures waiting. The document stops
+   * carrying a signature the day the host moves, and until then every graduate
+   * who opens their certificate tells that host they did. A sealed document has
+   * to be complete in itself; validateDesign refuses anything else.
+   *
+   * Optional, and blank is a real answer: the rule is then simply signed by
+   * hand, which is what the University has always done.
+   */
+  signature?: string;
+}
+
+/**
+ * What may be affixed as a signature.
+ *
+ * PNG FIRST, and the studio says so, because a signature is ink on paper with
+ * nothing behind it — a JPEG carries a white box that prints as a white box
+ * over the frame. SVG is refused outright: it is a document, it can carry
+ * script, and it would be rendered inside a page that shows sealed credentials.
+ */
+export const SIGNATURE_TYPES = ['image/png', 'image/webp', 'image/jpeg'] as const;
+
+/**
+ * The ceiling on a signature image, in bytes of encoded data URI.
+ *
+ * A signature is a few strokes; 400KB is generous for one at print resolution
+ * and small enough that a design carrying four of them stays a row somebody can
+ * read. The limit exists mainly to catch a photograph pasted in by mistake.
+ */
+export const SIGNATURE_MAX_BYTES = 400_000;
+
+/** Is this a signature the University could actually print? */
+export function isSignatureImage(value: string): boolean {
+  const m = /^data:([a-z]+\/[a-z0-9.+-]+);base64,[A-Za-z0-9+/=]+$/i.exec(value.trim());
+  if (!m) return false;
+  return (SIGNATURE_TYPES as readonly string[]).includes(m[1].toLowerCase());
 }
 
 export interface CredentialDesign {
@@ -460,7 +513,14 @@ export const DEFAULT_TRANSCRIPT_DESIGN: CredentialDesign = {
     programmeLead: 'in the programme of',
     validity: 'This transcript is invalid without the seal of the University.',
   },
-  signatories: [{ name: '', office: 'Registrar' }],
+  // BOTH OFFICES THE SHEET ACTUALLY PRINTS. It carried only the Registrar, so
+  // the Signatures & seal panel offered one row for a document that closes with
+  // two — and the Vice-Chancellor's signature had nowhere to be affixed
+  // without adding a signatory by hand.
+  signatories: [
+    { name: '', office: 'Vice-Chancellor' },
+    { name: '', office: 'Registrar' },
+  ],
   footnote: 'Issued under the seal of ICOF Global University. Verify at iguc.net/verify.',
   security: {
     ...DEFAULT_CERTIFICATE_DESIGN.security,
@@ -508,6 +568,22 @@ export function withDefaults(
  * issued, and it should fail at the moment of publishing rather than at the
  * moment a graduate opens it.
  */
+/**
+ * The widest frame a sheet of this paper can carry, in millimetres.
+ *
+ * ONE RULE, TWO PLACES. The validator refuses beyond it and the studio's slider
+ * stops at it, and they read it from here — a limit written twice is a limit
+ * that will one day be two different numbers, which is how the studio came to
+ * offer a slider that stopped at 10mm for a built-in frame of 11.
+ *
+ * A quarter of the short edge. Past that the document is a frame with a note
+ * inside it, which is a judgement about the paper rather than about taste.
+ */
+export function maxBorderWidthMm(pageSize: CredentialDesign['pageSize']): number {
+  const shortEdgeMm = pageSize === 'Letter' ? 216 : 210;
+  return Math.round(shortEdgeMm / 4);
+}
+
 export function validateDesign(d: CredentialDesign, kind: CredentialKind = 'certificate'): string[] {
   const problems: string[] = [];
   const hex = /^#[0-9a-fA-F]{6}$/;
@@ -557,8 +633,30 @@ export function validateDesign(d: CredentialDesign, kind: CredentialKind = 'cert
       'takes it with it.',
     );
   }
-  if (d.borderWidthMm < 0 || d.borderWidthMm > 10) {
-    problems.push('Border width must be between 0 and 10 mm.');
+  // THE BORDER IS A CHOICE, AND THIS USED TO REFUSE THE UNIVERSITY'S OWN.
+  //
+  // The ceiling was 10mm and the built-in certificate is an 11mm ornate frame,
+  // so "Reset to the built-in default" produced a design the validator would
+  // not publish — with a message that reads as though a border were compulsory
+  // when the truth was the opposite: the default was too wide for a limit
+  // nobody had checked it against.
+  //
+  // The limit itself was invented. What actually matters is that the frame
+  // cannot swallow the sheet, so it is now measured against the sheet: a
+  // quarter of the short edge, which on A4 is 52mm and on no paper is a
+  // number a designer will meet by accident.
+  //
+  // And it is not checked at all when there is no border, because then the
+  // width draws nothing.
+  if (d.border !== 'none') {
+    const ceiling = maxBorderWidthMm(d.pageSize);
+    if (d.borderWidthMm < 0 || d.borderWidthMm > ceiling) {
+      problems.push(
+        `Border width must be between 0 and ${ceiling} mm on ${d.pageSize} — beyond that the `
+        + 'frame leaves too little sheet for the document it frames. Choose Border: none if the '
+        + 'design should carry no frame at all.',
+      );
+    }
   }
   if (d.sealOpacity < 0 || d.sealOpacity > 1) {
     problems.push('Seal opacity must be between 0 and 1.');
@@ -568,6 +666,24 @@ export function validateDesign(d: CredentialDesign, kind: CredentialKind = 'cert
   }
   if (d.signatories.some((s) => !s.office.trim())) {
     problems.push('Every signatory needs an office. A signature over a blank line attests to nothing.');
+  }
+  // A SIGNATURE THAT IS NOT PART OF THE DOCUMENT IS NOT A SIGNATURE. A link
+  // fails the day the host moves and reports every reader to it meanwhile.
+  for (const sig of d.signatories) {
+    if (!sig.signature) continue;
+    if (!isSignatureImage(sig.signature)) {
+      problems.push(
+        `The signature for ${sig.office || 'a signatory'} is not an image the document can carry. `
+        + 'Affix a PNG, WebP or JPEG file — a web address will not do, because a sealed document '
+        + 'has to be complete in itself.',
+      );
+    } else if (sig.signature.length > SIGNATURE_MAX_BYTES) {
+      problems.push(
+        `The signature for ${sig.office || 'a signatory'} is larger than `
+        + `${Math.round(SIGNATURE_MAX_BYTES / 1000)}KB. That is a photograph rather than a `
+        + 'signature; scan the strokes alone, on a transparent background.',
+      );
+    }
   }
   // Only the lines this kind of document actually prints. A stored design may
   // carry keys from another kind — checking those would refuse a perfectly good

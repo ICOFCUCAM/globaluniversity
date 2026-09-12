@@ -69,7 +69,39 @@ export const UNIVERSITY = {
 // All replaced with the university's own files from /public.
 export const IMAGES = {
   logo: '/images/site-icon.png',
-  hero: '/images/hall.jpg',
+  // ---------------------------------------------------------------------
+  // THE SIGN-IN SCREEN'S PHOTOGRAPH
+  // ---------------------------------------------------------------------
+  //
+  // The University's own choice, and it replaced the graduation hall here on
+  // instruction. It arrived as `ChatGPT Image Aug 9, 2026, 06_56_24 PM.png`
+  // and was renamed and re-encoded on the way in: a name carrying spaces and
+  // commas becomes a URL carrying %20 and %2C, which works until something
+  // along the way does not encode it — and 2,053 KB of PNG for a photograph
+  // is about eight times what it needs to be, on a page every student and
+  // member of staff loads. The same plate is 247 KB as a JPEG.
+  hero: '/images/sign-in-hero.jpg',
+  // ---------------------------------------------------------------------
+  // THE MANAGEMENT SYSTEM'S PHOTOGRAPH — A DIFFERENT ONE
+  // ---------------------------------------------------------------------
+  //
+  // Separate from `hero` because no image on this site is used twice, and
+  // this one was: the administrator's dashboard pasted the sign-in screen's
+  // photograph into the right-hand third of its welcome band, so the reader
+  // met the same picture twice in four seconds. Signing in should change the
+  // scene.
+  //
+  // It is the graduation hall, which the sign-in screen used until the
+  // University replaced it there. Moving it here rather than retiring it is
+  // the whole point: it is the university's own photograph of its own
+  // congregation, and the one place it is now shown is the system the people
+  // in it are recorded by.
+  //
+  // IF THIS FILE IS NOT PRESENT the masthead renders as the aubergine wash
+  // alone and nothing breaks: it is painted as a background layer over a
+  // gradient that is always drawn, never as an <img> that could 404 into a
+  // broken glyph across the top of every dashboard. See PortalMasthead.tsx.
+  portalHero: '/images/hall.jpg',
   seal: '/images/site-icon.png',
   professors: [
     '/images/wp/ndenka.jpg',

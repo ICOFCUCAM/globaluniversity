@@ -26,8 +26,17 @@
 
 import { NextResponse } from 'next/server';
 import { guard } from '@/lib/adminAuth';
+import { MIGRATION_PROBES, stateFromError, type ProbeState } from '@/lib/migrationProbes';
 
 export const runtime = 'nodejs';
+
+export interface MigrationStatus {
+  file: string;
+  what: string;
+  state: ProbeState;
+  /** Set where the migration cannot be seen from here: what to run by hand. */
+  checkByHand?: string;
+}
 
 export interface ReadinessItem {
   id: string;
@@ -177,9 +186,51 @@ export async function GET(request: Request) {
     });
   }
 
+  // -------------------------------------------------------------------------
+  // WHICH MIGRATIONS THIS DATABASE IS MISSING
+  // -------------------------------------------------------------------------
+  //
+  // The University asked why it always had to ask. It should not have to: the
+  // list lived in a commit message, so finding out what was outstanding meant
+  // one person asking another. Now the database is asked instead.
+  //
+  // Each probe is a head-only read, so nothing is transferred and nothing is
+  // written. A probe that fails for any reason OTHER than a missing table or
+  // column is reported as unknown rather than as outstanding — sending somebody
+  // to run SQL that is already applied is its own kind of damage.
+  const migrations: MigrationStatus[] = [];
+  for (const probe of MIGRATION_PROBES) {
+    if (probe.cannotSee) {
+      migrations.push({
+        file: probe.file, what: probe.what, state: 'unverifiable', checkByHand: probe.cannotSee,
+      });
+      continue;
+    }
+    const { error } = await admin
+      .from(probe.table!)
+      .select(probe.column ?? 'id', { count: 'exact', head: true })
+      .limit(1);
+    migrations.push({ file: probe.file, what: probe.what, state: stateFromError(error) });
+  }
+
+  const outstanding = migrations.filter((m) => m.state === 'outstanding');
+  items.push({
+    id: 'migrations',
+    label: 'Database migrations',
+    state: outstanding.length === 0 ? 'ready' : 'missing',
+    detail: outstanding.length === 0
+      ? `Every migration this check can see has been run (${migrations.length} checked).`
+      : `${outstanding.length} not run: ${outstanding.map((m) => m.file.slice(0, 3)).join(', ')}.`,
+    remedy: outstanding.length === 0 ? undefined :
+      'Run docs/migrations/RUN-ALL.sql in the Supabase SQL editor. It is safe whatever state the '
+      + 'database is in — it carries every migration in order and each one is written to change '
+      + 'nothing on a second run. The screens that need these tables will refuse until it is done.',
+  });
+
   return NextResponse.json({
     ok: true,
     ready: items.every((i) => i.state === 'ready'),
     items,
+    migrations,
   });
 }

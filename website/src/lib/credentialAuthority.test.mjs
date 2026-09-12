@@ -296,9 +296,36 @@ console.log('\nWhat the Authority may do depends on the state of the document\n'
 
 const cur = { ...created, state: 'current' };
 check(
-  'the Authority may amend, reissue, revoke, print and email a current credential',
+  'the Authority may amend, reissue, revoke, void, print and email a current credential',
   A.actionsFor(cur, 'superadmin').sort(),
-  ['amend', 'email', 'print', 'reissue', 'revoke', 'verify', 'view'],
+  ['amend', 'email', 'print', 'reissue', 'revoke', 'verify', 'view', 'void'],
+);
+// VOID AND REVOKE ARE BOTH OFFERED, AND THAT IS THE POINT. Revoking withdraws
+// the award and marks the holder; voiding says the University issued the
+// document in error and the holder is not at fault. A screen offering only one
+// of them is how a registry's own mistake ends up recorded against a student.
+check(
+  'and both of them, so a clerical error is never recorded as a finding',
+  ['revoke', 'void'].filter((a) => !A.actionsFor(cur, 'superadmin').includes(a)),
+  [],
+);
+check(
+  'a void document may be viewed and verified — that is how the void reaches its holder',
+  A.actionsFor({ ...cur, state: 'void' }, 'superadmin').sort(),
+  ['verify', 'view'],
+);
+// NO FRESH COPIES OF A DOCUMENT WITHDRAWN AS AN ERROR. Printing one would put
+// the error back into the world.
+check(
+  '…and cannot be printed or emailed',
+  ['print', 'email'].filter((a) => A.actionsFor({ ...cur, state: 'void' }, 'superadmin').includes(a)),
+  [],
+);
+// THE REGISTRAR ISSUES AND DELIVERS; THEY DO NOT WITHDRAW.
+check(
+  'the Registrar may not void',
+  A.actionsFor(cur, 'registrar').includes('void'),
+  false,
 );
 check(
   'a superseded version may be viewed, verified and printed — but never amended again',
@@ -336,18 +363,95 @@ check(
   ['verify', 'view'],
 );
 
+console.log('\nWhat the register calls a document in each state\n');
+
+// THE BUG THIS SECTION EXISTS BECAUSE OF. Voiding shipped with a route, a
+// migration, a capability check and a passing actionsFor test — and the pill in
+// the register's list had no case for it, so it fell through to green
+// "Current". A document the University had withdrawn as issued in error
+// appeared as the standing credential. Every layer was right and the sentence a
+// registrar reads was the opposite of the truth.
+check('an issued credential reads as current',
+  A.statusLabel('issued').label, 'Current');
+check('…and names its version once there is more than one',
+  A.statusLabel('issued', 2, 2).label, 'Current \u00b7 v2');
+check('a superseded one says so', A.statusLabel('replaced').label, 'Superseded');
+check('a revoked one says so', A.statusLabel('revoked').label, 'Revoked');
+check('AND A VOID ONE SAYS SO — the case that was missing',
+  A.statusLabel('void').label, 'Void');
+
+// The tone is what the eye reads before the word.
+check('a void document is never shown in the current tone',
+  A.statusLabel('void').tone === 'current', false);
+check('and is marked as withdrawn', A.statusLabel('void').withdrawn, true);
+check('as is a revoked one', A.statusLabel('revoked').withdrawn, true);
+check('while a superseded one is not withdrawn — the award still stands',
+  A.statusLabel('replaced').withdrawn, false);
+
+// AN UNKNOWN STATUS FAILS SAFE. The failure that matters is a withdrawn
+// document reading as a standing one; never the reverse.
+check('an unknown status is never reported as current',
+  A.statusLabel('confiscated').tone === 'current', false);
+check('and is treated as withdrawn until somebody teaches this code otherwise',
+  A.statusLabel('confiscated').withdrawn, true);
+check('and says plainly that it is unknown rather than inventing a label',
+  A.statusLabel('confiscated').label.includes('Unknown'), true);
+
 console.log('\nThe library and the migration agree\n');
 
 const sql = readFileSync(join(root, 'docs/migrations/013_social_and_credential_authority.sql'), 'utf8');
 
-const actionsInDb = (sql.match(/action\s+text not null check \(action in\s*\n?([\s\S]*?)\)\),/) ?? [])[1];
+// THE VOCABULARY IS SET BY 013 AND EXTENDED BY 020, so the check reads both.
+// Reading only 013 is what made this test fail the day 'voided' was added — the
+// action WAS accepted by the database, by a constraint the test did not know
+// existed. A vocabulary check that looks at one of two definitions reports a
+// disagreement that is not there, and would miss one that is.
+const sql020 = readFileSync(
+  join(root, 'docs/migrations/020_signature_void_and_grading.sql'), 'utf8',
+);
+
+const actionsIn013 = (sql.match(/action\s+text not null check \(action in\s*\n?([\s\S]*?)\)\),/) ?? [])[1] ?? '';
+const actionsIn020 = (sql020.match(/check \(action in\s*\n?([\s\S]*?)\)\);/) ?? [])[1] ?? '';
+const actionsInDb = `${actionsIn013}\n${actionsIn020}`;
+
 check(
   'every audit action the code writes is one the database accepts',
-  A.AUDIT_ACTIONS.filter((a) => !new RegExp(`'${a}'`).test(actionsInDb ?? '')),
+  A.AUDIT_ACTIONS.filter((a) => !new RegExp(`'${a}'`).test(actionsInDb)),
+  [],
+);
+// AND THE LATER CONSTRAINT DID NOT DROP ANY. 020 replaces 013's constraint
+// rather than adding to it — a check constraint cannot be extended in place —
+// so an action left out of the rewrite would be silently un-recordable.
+check(
+  'and the constraint 020 rewrites still admits everything 013 did',
+  (actionsIn013.match(/'[a-z_]+'/g) ?? []).filter((a) => !actionsIn020.includes(a)),
   [],
 );
 
 const categoriesInDb = (sql.match(/category\s+text not null check \(category in\s*\n?\s*\(([^)]+)\)/) ?? [])[1];
+// EVERY STATUS THE DATABASE CAN STORE HAS A LABEL.
+//
+// This is the guard that would have caught the void bug on the day it shipped:
+// 020 taught the database a fourth status, and nothing made the interface learn
+// it. Read from the migration rather than from the constant, so adding a status
+// to the schema and forgetting the screen fails here.
+const statusesInDb = (sql020.match(
+  /add constraint credentials_issued_status_check\s*\n?\s*check \(status in \(([^)]*)\)/,
+) ?? [])[1] ?? '';
+const dbStatuses = (statusesInDb.match(/'[a-z_]+'/g) ?? []).map((v) => v.replace(/'/g, ''));
+
+check('the migration was read', dbStatuses.length > 0, true);
+check(
+  'every status the database can store has a label in the interface',
+  dbStatuses.filter((st) => A.statusLabel(st).label.includes('Unknown')),
+  [],
+);
+check(
+  'and the code\u2019s own list of statuses matches the database\u2019s',
+  [...A.CREDENTIAL_STATUSES].sort(),
+  [...dbStatuses].sort(),
+);
+
 check(
   'every category the code offers is one the database accepts',
   A.CREDENTIAL_CATEGORIES.filter((c) => !new RegExp(`'${c}'`).test(categoriesInDb ?? '')),

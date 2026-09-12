@@ -1,9 +1,9 @@
 -- ===========================================================================
--- ICOF GLOBAL UNIVERSITY — MIGRATIONS 006, 010, 011, 012, 013, 014, 015, 016, 017, IN ORDER
+-- ICOF GLOBAL UNIVERSITY — MIGRATIONS 006, 010, 011, 012, 013, 014, 015, 016, 017, 018, 019, 020, 021, IN ORDER
 --
 -- GENERATED FILE. DO NOT EDIT.
 --   Generator: scripts/build-migration-run.mjs
---   Rebuild:   node scripts/build-migration-run.mjs 006 010 011 012 013 014 015 016 017
+--   Rebuild:   node scripts/build-migration-run.mjs --out=RUN.sql 006 010 011 012 013 014 015 016 017 018 019 020 021
 --
 -- ---------------------------------------------------------------------------
 -- HOW TO RUN IT
@@ -3489,4 +3489,1466 @@ begin
 
   raise notice 'Secret store installed: RLS on, no policy, sealed values only.';
 end $$;
+
+
+-- ===========================================================================
+-- ===========================================================================
+--
+--   018_delete_application.sql
+--
+-- ===========================================================================
+-- ===========================================================================
+
+-- ===========================================================================
+-- 018 — DELETING AN APPLICATION, AND WHO MAY
+--
+-- The University's instruction: only the Superadministrator may delete an
+-- application.
+--
+-- ---------------------------------------------------------------------------
+-- WHAT THIS CHANGES, WHICH IS LESS THAN IT SOUNDS
+-- ---------------------------------------------------------------------------
+--
+-- Nobody could delete an application before this migration either. `students`
+-- has row-level security enabled and carried policies for SELECT, INSERT and
+-- UPDATE and none for DELETE — and under RLS an operation with no policy is
+-- refused. So the rule already held, by accident, for everyone including the
+-- Superadministrator.
+--
+-- "Refused because nobody wrote the policy" and "refused because the
+-- University decided" look identical from the application and are not the same
+-- thing. The first is silently undone by the next person who adds a broad
+-- policy to fix something unrelated. This states the decision, so that undoing
+-- it takes saying so.
+--
+-- ---------------------------------------------------------------------------
+-- WHY DELETION IS RESTRICTED AT ALL
+-- ---------------------------------------------------------------------------
+--
+-- Rejecting an application is a decision, and it is recorded: who rejected it,
+-- when, and on what grounds. Deleting one removes the evidence that the person
+-- ever applied — what Finance saw, what the Registrar verified, why the
+-- Admissions Office decided as it did.
+--
+-- An Admissions Officer who could delete could erase a candidate they had
+-- mishandled, and the record of the mishandling with them. That is the class of
+-- act this hierarchy exists to keep out of an operational role, which is why
+-- 'delete-application' sits in SYSTEM_CAPABILITIES beside 'assign-roles' rather
+-- than beside 'reject-application'.
+--
+-- ---------------------------------------------------------------------------
+-- AND WHY AN ADMITTED STUDENT IS NOT DELETABLE BY ANYBODY
+-- ---------------------------------------------------------------------------
+--
+-- Once an application is admitted it stops being an application. It has an auth
+-- account, a student number, possibly marks, payments and an issued credential.
+-- Deleting that row does not tidy a queue; it detaches a person from their own
+-- academic record and leaves rows in six tables pointing at nothing.
+--
+-- So the policy admits the Superadministrator, and a trigger refuses the row
+-- regardless of who is asking once it has become a student record. Withdrawal
+-- is a status, not a deletion.
+-- ===========================================================================
+
+-- ---------------------------------------------------------------------------
+-- 1. THE POLICY
+-- ---------------------------------------------------------------------------
+
+drop policy if exists students_superadmin_delete on students;
+create policy students_superadmin_delete on students
+  for delete using (auth_role() = 'superadmin');
+
+
+-- ---------------------------------------------------------------------------
+-- 2. THE TRIGGER
+--
+-- The policy governs the publishable key. The service-role key bypasses RLS
+-- entirely — and every write this application makes to `students` from a route
+-- goes through the service role. A policy alone would therefore be a rule that
+-- holds for the browser and not for the server, which is the wrong way round.
+--
+-- BEFORE DELETE, so it refuses rather than reports afterwards.
+-- ---------------------------------------------------------------------------
+
+create or replace function guard_application_delete() returns trigger
+language plpgsql
+as $$
+begin
+  -- An admitted student is not an application. `auth_user_id` is set at the
+  -- moment of admission and `student_number` with it; either one means this
+  -- row has become somebody's academic identity.
+  if old.auth_user_id is not null or old.student_number is not null then
+    raise exception
+      'This record has been admitted (student %) and is no longer an application. '
+      'Deleting it would detach a person from their own academic record. '
+      'Withdraw or suspend the student instead.',
+      coalesce(old.student_number, old.auth_user_id::text)
+      using errcode = 'check_violation';
+  end if;
+
+  return old;
+end;
+$$;
+
+drop trigger if exists students_guard_delete on students;
+create trigger students_guard_delete
+  before delete on students
+  for each row execute function guard_application_delete();
+
+
+-- ---------------------------------------------------------------------------
+-- 3. PROOF
+--
+-- Performs the rules rather than checking that the trigger exists. A test that
+-- confirms a trigger is present proves the migration ran; it does not prove the
+-- trigger refuses anything.
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  applicant_id uuid;
+  admitted_id  uuid;
+  refused      boolean;
+  n            int;
+begin
+  -- (a) An ordinary application can be deleted by a caller that bypasses RLS.
+  insert into students (matric_no, first_name, last_name, email, status)
+  values ('DEL-PROOF-018', 'Delete', 'Proof', 'delete-proof-018@example.invalid', 'applicant')
+  returning id into applicant_id;
+
+  delete from students where id = applicant_id;
+  get diagnostics n = row_count;
+  if n <> 1 then
+    raise exception '018 FAILED: an ordinary application could not be deleted (% rows)', n;
+  end if;
+
+  -- (b) An admitted record cannot be deleted BY ANYONE, service role included.
+  insert into students (matric_no, first_name, last_name, email, status, student_number)
+  values ('ADM-PROOF-018', 'Admitted', 'Proof', 'admitted-proof-018@example.invalid',
+          'approved', 'ICOF209900001')
+  returning id into admitted_id;
+
+  refused := false;
+  begin
+    delete from students where id = admitted_id;
+  exception when others then
+    refused := true;
+  end;
+
+  if not refused then
+    raise exception
+      '018 FAILED: an admitted student was deleted. The trigger did not refuse.';
+  end if;
+
+  -- Clean up the proof row the only way the rule permits.
+  update students set student_number = null, auth_user_id = null where id = admitted_id;
+  delete from students where id = admitted_id;
+
+  raise notice '018 ok: applications are deletable, admitted students are not.';
+end $$;
+
+-- (c) The policy exists, names the Superadministrator, and names nobody else.
+do $$
+declare
+  qual text;
+begin
+  select pg_get_expr(polqual, polrelid) into qual
+  from pg_policy
+  where polname = 'students_superadmin_delete';
+
+  if qual is null then
+    raise exception '018 FAILED: the delete policy was not created.';
+  end if;
+
+  if qual not like '%superadmin%' then
+    raise exception '018 FAILED: the delete policy does not name superadmin: %', qual;
+  end if;
+
+  -- The failure this catches is somebody "fixing" a permissions complaint by
+  -- widening the policy. Any other role appearing here is that fix.
+  if qual ~ 'registrar|admissions-officer|finance|dean|hod|academic-office'
+     or qual ~ '''admin''' then
+    raise exception
+      '018 FAILED: the delete policy admits a role other than superadmin: %', qual;
+  end if;
+
+  raise notice '018 ok: only the Superadministrator holds the delete policy.';
+end $$;
+
+select
+  'students delete policy' as check,
+  polname                  as policy,
+  pg_get_expr(polqual, polrelid) as using_expression
+from pg_policy
+where polname = 'students_superadmin_delete';
+
+
+-- ===========================================================================
+-- ===========================================================================
+--
+--   019_academic_record.sql
+--
+-- ===========================================================================
+-- ===========================================================================
+
+-- ===========================================================================
+-- 019 — THE ACADEMIC RECORD A REAL TRANSCRIPT IS BUILT FROM
+--
+-- The University set out what its transcript must carry: study mode and
+-- campus, award distinguished from programme and specialization, transfer
+-- credits with the institution they came from, every attempt at a repeated
+-- course, academic standing, honours, and the conferral of the degree.
+--
+-- Almost none of that could be recorded. `students` had no study mode, no
+-- campus, no specialization, no admission or completion date and no standing;
+-- `results` had no notion of a second attempt; there was nowhere at all to put
+-- a transfer credit, an honour, or a conferral.
+--
+-- So the transcript could not have printed those things however it was
+-- designed. This is the record; the document follows it.
+--
+-- ---------------------------------------------------------------------------
+-- WHAT THIS MIGRATION REFUSES TO DECIDE
+-- ---------------------------------------------------------------------------
+--
+-- Three of the University's requirements are POLICY, not schema, and this file
+-- deliberately does not invent them:
+--
+--   WHAT A REPEATED COURSE DOES TO THE GPA. "The transcript should indicate
+--   whether the first grade remains in GPA, is replaced, is excluded, or is
+--   retained as an academic attempt" — and the University added "this should
+--   be controlled by the university's academic policy". There is no rule here
+--   yet, so `academic_policy.repeat_rule` is NULL and every attempt counts and
+--   is shown. A default of 'latest-replaces' would quietly raise the GPA of
+--   every student who has ever failed anything, under a rule nobody made.
+--
+--   WHERE ACADEMIC STANDING TURNS. Warning at 2.0, probation at 1.5 — those
+--   are real numbers at real universities and they are not this University's
+--   until it says so. Both thresholds are NULL and standing is set by a person
+--   until they are stated.
+--
+--   WHAT EARNS AN HONOUR. Dean's List at what average, over what load. The
+--   table records the honour and who awarded it; nothing computes one.
+--
+-- This follows `awards.cgpa_confirmed`, already in the schema for the same
+-- reason: the interface shows the difference between a threshold the
+-- University stated and one the system supplied, rather than presenting both
+-- as equally authoritative.
+--
+-- ---------------------------------------------------------------------------
+-- AND WHY STANDING DEFAULTS TO NULL RATHER THAN 'GOOD STANDING'
+-- ---------------------------------------------------------------------------
+--
+-- Because a transcript reading "Academic Standing: Good Standing" is the
+-- University stating that it has looked at the record and found it sound. For
+-- a student nobody has assessed that is not a harmless default; it is a
+-- favourable assertion made by a column default. NULL prints nothing, and
+-- nothing is what the University has said.
+--
+-- Idempotent. Run it twice; the second run changes nothing.
+-- ===========================================================================
+
+-- ---------------------------------------------------------------------------
+-- 1. THE STUDENT'S PARTICULARS THE TRANSCRIPT PRINTS
+-- ---------------------------------------------------------------------------
+
+alter table students
+  add column if not exists place_of_birth  text,
+  -- The teaching location. A university with more than one must say which one
+  -- taught the programme: a receiving institution assessing the award needs to
+  -- know where the study happened, and "ICOF Global University" alone does not
+  -- answer it.
+  add column if not exists campus          text,
+  add column if not exists mode_of_study   text,
+  -- Distinguished from `program`. The University asked that the award, the
+  -- programme and the specialization be three lines, "particularly important
+  -- when you eventually have many specializations".
+  add column if not exists specialization  text,
+  -- DATES, not years. `admission_year` is an integer and cannot express
+  -- "September 2023", which is what a transcript prints and what a credential
+  -- evaluator compares against a visa.
+  add column if not exists admitted_on     date,
+  add column if not exists completed_on    date,
+  add column if not exists academic_standing text;
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'students_mode_of_study_check') then
+    alter table students add constraint students_mode_of_study_check
+      check (mode_of_study is null or mode_of_study in
+             ('on-campus', 'online', 'distance', 'blended'));
+  end if;
+
+  if not exists (select 1 from pg_constraint where conname = 'students_academic_standing_check') then
+    alter table students add constraint students_academic_standing_check
+      check (academic_standing is null or academic_standing in
+             ('good-standing', 'warning', 'probation', 'suspended',
+              'graduated', 'withdrawn', 'dismissed'));
+  end if;
+end $$;
+
+-- ---------------------------------------------------------------------------
+-- 2. THE UNIVERSITY'S ACADEMIC POLICY — ONE ROW, MOSTLY EMPTY ON PURPOSE
+-- ---------------------------------------------------------------------------
+
+create table if not exists academic_policy (
+  -- Exactly one row, enforced below. A policy table with two rows is a
+  -- university with two policies and no way to tell which applies.
+  id                       boolean primary key default true check (id),
+
+  -- WHAT A REPEATED COURSE DOES. NULL until the University rules.
+  repeat_rule              text,
+  repeat_rule_confirmed    boolean not null default false,
+
+  -- WHERE STANDING TURNS. NULL until the University rules.
+  standing_warning_below   numeric(3,2),
+  standing_probation_below numeric(3,2),
+  standing_confirmed       boolean not null default false,
+
+  -- Whether a transcript may be issued to a student with an unpaid balance.
+  -- The University's own regulations say documents are held until it is paid;
+  -- this records whether that is enforced by the system or by the counter.
+  hold_on_fee_balance      boolean not null default false,
+
+  ruled_on                 date,
+  ruled_by                 text,
+  updated_at               timestamptz not null default now()
+);
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'academic_policy_repeat_rule_check') then
+    alter table academic_policy add constraint academic_policy_repeat_rule_check
+      check (repeat_rule is null or repeat_rule in
+             ('all-attempts-count',   -- every attempt is in the GPA
+              'latest-replaces',      -- the most recent attempt replaces earlier ones
+              'best-replaces',        -- the highest attempt replaces earlier ones
+              'excluded-from-gpa'));  -- earlier attempts are shown but not counted
+  end if;
+
+  -- A CONFIRMED RULE MUST BE A RULE. `confirmed = true` with `repeat_rule`
+  -- NULL would be the system reporting that the University has ruled, when it
+  -- has recorded nothing.
+  if not exists (select 1 from pg_constraint where conname = 'academic_policy_confirmed_check') then
+    alter table academic_policy add constraint academic_policy_confirmed_check
+      check ((not repeat_rule_confirmed or repeat_rule is not null)
+         and (not standing_confirmed
+              or (standing_warning_below is not null
+                  and standing_probation_below is not null)));
+  end if;
+end $$;
+
+insert into academic_policy (id) values (true) on conflict (id) do nothing;
+
+alter table academic_policy enable row level security;
+
+drop policy if exists academic_policy_read on academic_policy;
+create policy academic_policy_read on academic_policy
+  for select using (auth.uid() is not null);
+
+-- ONLY THE SUPERADMINISTRATOR. A rule that decides how every GPA in the
+-- University is computed is not an operational setting.
+drop policy if exists academic_policy_write on academic_policy;
+create policy academic_policy_write on academic_policy
+  for update using (auth_role() = 'superadmin') with check (auth_role() = 'superadmin');
+
+-- ---------------------------------------------------------------------------
+-- 3. EVERY ATTEMPT AT A COURSE IS KEPT
+-- ---------------------------------------------------------------------------
+--
+-- "The system should retain every attempt." It could not: nothing in `results`
+-- distinguished a second sitting from the first, so a repeat was recorded by
+-- editing the original row and the failure ceased to exist.
+
+alter table results
+  add column if not exists attempt integer not null default 1,
+  -- What this attempt does to the GPA, once the University has a rule. NULL
+  -- means the rule has not been applied to this row — which, while
+  -- `repeat_rule` is NULL, is every row, and the transcript says so rather
+  -- than implying a policy.
+  add column if not exists gpa_disposition text;
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'results_attempt_check') then
+    alter table results add constraint results_attempt_check check (attempt >= 1);
+  end if;
+
+  if not exists (select 1 from pg_constraint where conname = 'results_gpa_disposition_check') then
+    alter table results add constraint results_gpa_disposition_check
+      check (gpa_disposition is null or gpa_disposition in ('counts', 'replaced', 'excluded'));
+  end if;
+end $$;
+
+create index if not exists results_student_course_attempt_idx
+  on results (student_id, course_id, attempt);
+
+-- ---------------------------------------------------------------------------
+-- 4. TRANSFER CREDIT
+-- ---------------------------------------------------------------------------
+--
+-- "The student should not have to lose the history of where previous credits
+-- came from." A credit accepted from elsewhere is a DECISION of this
+-- University about another institution's teaching, and it is recorded as
+-- somebody's decision, with the institution named.
+
+create table if not exists transfer_credits (
+  id             uuid primary key default gen_random_uuid(),
+  student_id     uuid not null references students (id) on delete cascade,
+
+  -- Where it came from. Named on the transcript, because a credit with no
+  -- source is a credit a receiving institution cannot weigh.
+  institution    text not null,
+  course_code    text,
+  course_title   text not null,
+  credits        numeric(5,2) not null check (credits > 0),
+
+  -- What this University accepted, which may be less than what was offered.
+  accepted       boolean not null default false,
+  credits_accepted numeric(5,2) check (credits_accepted >= 0),
+
+  -- Whether it counts toward the award, and toward which one.
+  award_id       uuid references awards (id) on delete set null,
+
+  -- WHOSE DECISION IT WAS. Required when accepted: a credit that appears on a
+  -- sealed transcript with nobody's name against the decision is a credit
+  -- nobody can be asked about.
+  decided_by     uuid,
+  decided_on     date,
+  note           text,
+
+  created_at     timestamptz not null default now(),
+  updated_at     timestamptz not null default now()
+);
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'transfer_credits_decided_check') then
+    alter table transfer_credits add constraint transfer_credits_decided_check
+      check (not accepted or (decided_by is not null and decided_on is not null
+                              and credits_accepted is not null));
+  end if;
+end $$;
+
+create index if not exists transfer_credits_student_idx on transfer_credits (student_id);
+
+alter table transfer_credits enable row level security;
+
+drop policy if exists transfer_credits_read on transfer_credits;
+create policy transfer_credits_read on transfer_credits
+  for select using (
+    auth_role() in ('superadmin', 'admin', 'registrar', 'academic-office',
+                    'programme-coordinator', 'dean', 'hod')
+    or exists (select 1 from students s
+                where s.id = transfer_credits.student_id and s.auth_user_id = auth.uid())
+  );
+
+drop policy if exists transfer_credits_write on transfer_credits;
+create policy transfer_credits_write on transfer_credits
+  for insert with check (
+    auth_role() in ('superadmin', 'admin', 'registrar', 'academic-office')
+  );
+
+drop policy if exists transfer_credits_update on transfer_credits;
+create policy transfer_credits_update on transfer_credits
+  for update using (
+    auth_role() in ('superadmin', 'admin', 'registrar', 'academic-office')
+  );
+
+-- ---------------------------------------------------------------------------
+-- 5. HONOURS AND DISTINCTIONS
+-- ---------------------------------------------------------------------------
+--
+-- Recorded, never computed. Nothing in this migration decides that a student
+-- has made the Dean's List, because the University has not said what earns it.
+
+create table if not exists academic_honours (
+  id             uuid primary key default gen_random_uuid(),
+  student_id     uuid not null references students (id) on delete cascade,
+
+  kind           text not null,
+  title          text not null,
+  academic_year  text,
+  semester       integer,
+  awarded_on     date not null,
+  awarded_by     uuid,
+  note           text,
+  created_at     timestamptz not null default now()
+);
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'academic_honours_kind_check') then
+    alter table academic_honours add constraint academic_honours_kind_check
+      check (kind in ('deans-list', 'distinction', 'excellence',
+                      'scholarship', 'award', 'recognition'));
+  end if;
+end $$;
+
+create index if not exists academic_honours_student_idx on academic_honours (student_id);
+
+alter table academic_honours enable row level security;
+
+drop policy if exists academic_honours_read on academic_honours;
+create policy academic_honours_read on academic_honours
+  for select using (
+    auth_role() in ('superadmin', 'admin', 'registrar', 'academic-office',
+                    'programme-coordinator', 'dean', 'hod')
+    or exists (select 1 from students s
+                where s.id = academic_honours.student_id and s.auth_user_id = auth.uid())
+  );
+
+drop policy if exists academic_honours_write on academic_honours;
+create policy academic_honours_write on academic_honours
+  for insert with check (
+    auth_role() in ('superadmin', 'admin', 'registrar', 'academic-office')
+  );
+
+-- ---------------------------------------------------------------------------
+-- 6. CONFERRAL — WHAT TIES THE TRANSCRIPT TO THE DEGREE
+-- ---------------------------------------------------------------------------
+--
+-- "Conferred: 15 July 2027 · Senate approval date · Convocation date · Degree
+-- certificate number." A conferral is an act of the Senate, so the date it
+-- resolved is not optional decoration — it is the authority for the award, and
+-- a conferral recorded without it says the University granted a degree with no
+-- record of deciding to.
+
+create table if not exists graduation_records (
+  id                 uuid primary key default gen_random_uuid(),
+  student_id         uuid not null references students (id) on delete cascade,
+  award_id           uuid references awards (id) on delete set null,
+
+  senate_approved_on date not null,
+  conferred_on       date not null,
+  convocation_on     date,
+
+  classification     text,
+  -- The University's own sequence for the graduating cohort.
+  graduation_number  text,
+  -- Links the transcript to the certificate on the credential register.
+  certificate_credential_id text,
+
+  recorded_by        uuid,
+  created_at         timestamptz not null default now(),
+
+  -- One conferral of one award to one student. A second is a reissue of the
+  -- certificate, not a second degree.
+  unique (student_id, award_id)
+);
+
+do $$
+begin
+  -- A DEGREE CANNOT BE CONFERRED BEFORE THE SENATE RESOLVED TO CONFER IT.
+  if not exists (select 1 from pg_constraint where conname = 'graduation_records_order_check') then
+    alter table graduation_records add constraint graduation_records_order_check
+      check (conferred_on >= senate_approved_on);
+  end if;
+end $$;
+
+create index if not exists graduation_records_student_idx on graduation_records (student_id);
+
+alter table graduation_records enable row level security;
+
+drop policy if exists graduation_records_read on graduation_records;
+create policy graduation_records_read on graduation_records
+  for select using (
+    auth_role() in ('superadmin', 'admin', 'registrar', 'academic-office',
+                    'programme-coordinator', 'dean', 'vice-chancellor')
+    or exists (select 1 from students s
+                where s.id = graduation_records.student_id and s.auth_user_id = auth.uid())
+  );
+
+drop policy if exists graduation_records_write on graduation_records;
+create policy graduation_records_write on graduation_records
+  for insert with check (
+    auth_role() in ('superadmin', 'registrar', 'academic-office', 'vice-chancellor')
+  );
+
+-- ---------------------------------------------------------------------------
+-- 7. ACADEMIC STANDING IS A HISTORY, NOT A FIELD
+-- ---------------------------------------------------------------------------
+--
+-- `students.academic_standing` is where the record stands today. This is how
+-- it got there, and it is APPEND-ONLY: a student moved from probation to good
+-- standing has a history that matters to them, and a column alone erases it
+-- every time it is set.
+
+create table if not exists academic_standing_events (
+  id             uuid primary key default gen_random_uuid(),
+  student_id     uuid not null references students (id) on delete cascade,
+  from_standing  text,
+  to_standing    text not null,
+  reason         text not null,
+  cgpa_at_change numeric(3,2),
+  decided_by     uuid,
+  decided_at     timestamptz not null default now()
+);
+
+create index if not exists academic_standing_events_student_idx
+  on academic_standing_events (student_id, decided_at desc);
+
+create or replace function refuse_standing_mutation() returns trigger
+language plpgsql as $$
+begin
+  raise exception
+    'academic_standing_events is append-only. A standing that can be edited '
+    'after the fact is not a record of what the University decided; it is a '
+    'record of what somebody last wanted it to say.'
+    using errcode = 'check_violation';
+end;
+$$;
+
+drop trigger if exists academic_standing_events_no_update on academic_standing_events;
+create trigger academic_standing_events_no_update
+  before update or delete on academic_standing_events
+  for each row execute function refuse_standing_mutation();
+
+alter table academic_standing_events enable row level security;
+
+drop policy if exists academic_standing_events_read on academic_standing_events;
+create policy academic_standing_events_read on academic_standing_events
+  for select using (
+    auth_role() in ('superadmin', 'admin', 'registrar', 'academic-office',
+                    'programme-coordinator', 'dean', 'hod')
+    or exists (select 1 from students s
+                where s.id = academic_standing_events.student_id
+                  and s.auth_user_id = auth.uid())
+  );
+
+drop policy if exists academic_standing_events_write on academic_standing_events;
+create policy academic_standing_events_write on academic_standing_events
+  for insert with check (
+    auth_role() in ('superadmin', 'admin', 'registrar', 'academic-office')
+  );
+
+-- ---------------------------------------------------------------------------
+-- 8. A STUDENT ASKING FOR THEIR OWN TRANSCRIPT
+-- ---------------------------------------------------------------------------
+--
+-- "Request Official Transcript — Digital PDF / Printed copy / Both."
+--
+-- A REQUEST IS NOT AN ISSUE. This table holds the asking; the credential
+-- register holds the document. Keeping them apart is what lets a request be
+-- refused, queued behind a fee, or fulfilled twice, without any of that
+-- touching the sealed record.
+
+create table if not exists transcript_requests (
+  id             uuid primary key default gen_random_uuid(),
+  student_id     uuid not null references students (id) on delete cascade,
+  requested_by   uuid,
+  requested_at   timestamptz not null default now(),
+
+  kind           text not null default 'official',
+  delivery       text not null default 'pdf',
+
+  status         text not null default 'requested',
+  -- Set when it is fulfilled. Points at credentials_issued.credential_id.
+  credential_ref text,
+  decided_by     uuid,
+  decided_at     timestamptz,
+  note           text
+);
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'transcript_requests_kind_check') then
+    alter table transcript_requests add constraint transcript_requests_kind_check
+      check (kind in ('official', 'unofficial', 'interim', 'graduation',
+                      'academic-record', 'external-evaluation'));
+  end if;
+
+  if not exists (select 1 from pg_constraint where conname = 'transcript_requests_delivery_check') then
+    alter table transcript_requests add constraint transcript_requests_delivery_check
+      check (delivery in ('pdf', 'print', 'both'));
+  end if;
+
+  if not exists (select 1 from pg_constraint where conname = 'transcript_requests_status_check') then
+    alter table transcript_requests add constraint transcript_requests_status_check
+      check (status in ('requested', 'in-progress', 'issued', 'refused', 'cancelled'));
+  end if;
+
+  -- A REFUSAL MUST SAY WHY. A request declined with no note is a student told
+  -- no by a system with nobody to ask.
+  if not exists (select 1 from pg_constraint where conname = 'transcript_requests_refusal_check') then
+    alter table transcript_requests add constraint transcript_requests_refusal_check
+      check (status <> 'refused' or (note is not null and length(btrim(note)) >= 8));
+  end if;
+end $$;
+
+create index if not exists transcript_requests_student_idx
+  on transcript_requests (student_id, requested_at desc);
+create index if not exists transcript_requests_open_idx
+  on transcript_requests (status) where status in ('requested', 'in-progress');
+
+alter table transcript_requests enable row level security;
+
+drop policy if exists transcript_requests_read on transcript_requests;
+create policy transcript_requests_read on transcript_requests
+  for select using (
+    auth_role() in ('superadmin', 'admin', 'registrar', 'academic-office')
+    or exists (select 1 from students s
+                where s.id = transcript_requests.student_id and s.auth_user_id = auth.uid())
+  );
+
+-- A STUDENT MAY ASK FOR THEIR OWN, AND ONLY THEIR OWN.
+drop policy if exists transcript_requests_own_insert on transcript_requests;
+create policy transcript_requests_own_insert on transcript_requests
+  for insert with check (
+    auth_role() in ('superadmin', 'admin', 'registrar', 'academic-office')
+    or exists (select 1 from students s
+                where s.id = transcript_requests.student_id and s.auth_user_id = auth.uid())
+  );
+
+-- BUT ONLY THE REGISTRY DECIDES ONE. A student who could update their own
+-- request could mark it issued.
+drop policy if exists transcript_requests_decide on transcript_requests;
+create policy transcript_requests_decide on transcript_requests
+  for update using (
+    auth_role() in ('superadmin', 'admin', 'registrar', 'academic-office')
+  ) with check (
+    auth_role() in ('superadmin', 'admin', 'registrar', 'academic-office')
+  );
+
+-- ===========================================================================
+-- 9. PERFORMING THE RULES, RATHER THAN ASSERTING THAT TRIGGERS EXIST
+--
+-- Every check below does the thing the rule forbids and expects to be
+-- refused. A test that reads pg_trigger proves a trigger is attached; it does
+-- not prove the trigger does what its name says.
+-- ===========================================================================
+
+do $$
+declare
+  s_id uuid;
+  ev_id uuid;
+  refused boolean;
+begin
+  -- A student to test against, removed at the end.
+  insert into students (matric_no, first_name, last_name, status)
+  values ('MIG019/PROOF', 'Migration', 'Proof', 'applicant')
+  returning id into s_id;
+
+  -- ---- Standing history cannot be rewritten ------------------------------
+  insert into academic_standing_events (student_id, to_standing, reason)
+  values (s_id, 'probation', 'Proof of the append-only rule')
+  returning id into ev_id;
+
+  refused := false;
+  begin
+    update academic_standing_events set to_standing = 'good-standing' where id = ev_id;
+  exception when others then refused := true;
+  end;
+  if not refused then
+    raise exception '019 FAILED: a standing event could be edited after the fact';
+  end if;
+
+  refused := false;
+  begin
+    delete from academic_standing_events where id = ev_id;
+  exception when others then refused := true;
+  end;
+  if not refused then
+    raise exception '019 FAILED: a standing event could be deleted';
+  end if;
+
+  -- ---- An accepted transfer credit must name who accepted it -------------
+  refused := false;
+  begin
+    insert into transfer_credits (student_id, institution, course_title, credits, accepted)
+    values (s_id, 'Another University', 'Old Testament Survey', 6, true);
+  exception when others then refused := true;
+  end;
+  if not refused then
+    raise exception '019 FAILED: a credit was accepted with nobody''s name against it';
+  end if;
+
+  -- …and is accepted normally when it does.
+  insert into transfer_credits (student_id, institution, course_title, credits,
+                                accepted, credits_accepted, decided_by, decided_on)
+  values (s_id, 'Another University', 'Old Testament Survey', 6,
+          true, 6, gen_random_uuid(), current_date);
+
+  -- ---- A degree cannot be conferred before the Senate resolved -----------
+  refused := false;
+  begin
+    insert into graduation_records (student_id, senate_approved_on, conferred_on)
+    values (s_id, current_date, current_date - 1);
+  exception when others then refused := true;
+  end;
+  if not refused then
+    raise exception '019 FAILED: a degree was conferred before the Senate approved it';
+  end if;
+
+  -- ---- A refused request must say why ------------------------------------
+  refused := false;
+  begin
+    insert into transcript_requests (student_id, status) values (s_id, 'refused');
+  exception when others then refused := true;
+  end;
+  if not refused then
+    raise exception '019 FAILED: a request was refused with no reason recorded';
+  end if;
+
+  -- ---- The policy row cannot claim a ruling it does not hold -------------
+  refused := false;
+  begin
+    update academic_policy set repeat_rule_confirmed = true, repeat_rule = null;
+  exception when others then refused := true;
+  end;
+  if not refused then
+    raise exception '019 FAILED: the policy reported a ruling with no rule recorded';
+  end if;
+
+  -- ---- Study mode is a closed list ---------------------------------------
+  refused := false;
+  begin
+    update students set mode_of_study = 'correspondence' where id = s_id;
+  exception when others then refused := true;
+  end;
+  if not refused then
+    raise exception '019 FAILED: an unknown study mode was accepted';
+  end if;
+
+  -- Clean up. The standing event resists deletion by design, so the student
+  -- row is removed with the trigger disabled for this transaction only.
+  set constraints all immediate;
+  alter table academic_standing_events disable trigger academic_standing_events_no_update;
+  delete from academic_standing_events where student_id = s_id;
+  alter table academic_standing_events enable trigger academic_standing_events_no_update;
+  delete from transfer_credits where student_id = s_id;
+  delete from transcript_requests where student_id = s_id;
+  delete from students where id = s_id;
+
+  raise notice '019 OK — standing is append-only, an accepted credit names its decider, a '
+               'conferral cannot precede the Senate, a refusal states its reason, the policy '
+               'cannot claim an unrecorded ruling, and study mode is a closed list.';
+end $$;
+
+-- ---------------------------------------------------------------------------
+-- 10. WHAT THE UNIVERSITY STILL HAS TO RULE ON
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  p record;
+begin
+  select * into p from academic_policy where id;
+
+  if not p.repeat_rule_confirmed then
+    raise notice 'OUTSTANDING RULING — repeated courses. `academic_policy.repeat_rule` is not '
+                 'set, so every attempt counts toward the GPA and every attempt is printed. '
+                 'Set it to one of all-attempts-count / latest-replaces / best-replaces / '
+                 'excluded-from-gpa when the University rules, and set repeat_rule_confirmed.';
+  end if;
+
+  if not p.standing_confirmed then
+    raise notice 'OUTSTANDING RULING — academic standing. No threshold is recorded, so standing '
+                 'is whatever a person sets and nothing is computed. A transcript shows no '
+                 'standing at all until one is recorded against the student.';
+  end if;
+end $$;
+
+-- What landed.
+select 'students'                  as object, count(*) as columns_added from information_schema.columns
+ where table_schema = 'public' and table_name = 'students'
+   and column_name in ('place_of_birth','campus','mode_of_study','specialization',
+                       'admitted_on','completed_on','academic_standing')
+union all
+select 'results', count(*) from information_schema.columns
+ where table_schema = 'public' and table_name = 'results'
+   and column_name in ('attempt','gpa_disposition')
+union all
+select 'new tables', count(*) from information_schema.tables
+ where table_schema = 'public'
+   and table_name in ('academic_policy','transfer_credits','academic_honours',
+                      'graduation_records','academic_standing_events','transcript_requests');
+
+
+-- ===========================================================================
+-- ===========================================================================
+--
+--   020_signature_void_and_grading.sql
+--
+-- ===========================================================================
+-- ===========================================================================
+
+-- ===========================================================================
+-- 020 — A SIGNATURE ANYONE CAN CHECK, VOIDING, AND A GRADING SCALE THE
+--       UNIVERSITY CAN CHANGE WITHOUT A DEPLOYMENT
+--
+-- Three gaps, named honestly in the last review and closed here.
+--
+-- ---------------------------------------------------------------------------
+-- 1. THE SEAL IS A SECRET; THE SIGNATURE IS NOT
+-- ---------------------------------------------------------------------------
+--
+-- Every credential already carries an HMAC seal over its content hash. An HMAC
+-- is a SHARED-SECRET construction: it proves a document is genuine only to
+-- somebody who holds CREDENTIAL_SECRET, which is the University and nobody
+-- else. That is why verification has to go through /verify — the University is
+-- the only party that can perform the check.
+--
+-- A receiving university, a credential evaluator or an immigration officer
+-- cannot check it offline, and must trust that the website they are looking at
+-- is the University's. For most purposes /verify is enough. For a document
+-- handed to an authority that will archive it for thirty years, it is not.
+--
+-- So each credential now also carries a DETACHED Ed25519 SIGNATURE over the
+-- same content hash, made with a private key the University holds and
+-- verifiable by anyone with the matching PUBLIC key, which is published. The
+-- seal is unchanged and still governs; the signature is an additional,
+-- independently checkable statement.
+--
+-- WHAT THIS IS STILL NOT, and the interface must not claim otherwise: it is not
+-- a PAdES or X.509 signature embedded in a PDF, so Adobe Reader will not show a
+-- blue tick. Doing that needs a certificate from a public authority the
+-- University would have to buy and be audited for. Calling this "digitally
+-- signed" without that distinction is the kind of overstatement that gets a
+-- registry's documents rejected the first time somebody checks properly.
+--
+-- ---------------------------------------------------------------------------
+-- 2. VOIDING IS NOT REVOKING, AND THE DIFFERENCE MATTERS TO THE HOLDER
+-- ---------------------------------------------------------------------------
+--
+-- REVOKED says the University has withdrawn the award. It is a finding against
+-- the holder and it is what /verify reports to anyone who asks.
+--
+-- VOID says this DOCUMENT should never have existed — issued to the wrong
+-- student, issued twice, issued against a record that had not been approved.
+-- The holder has done nothing wrong and their award, if they have one, stands.
+--
+-- Recording both as 'revoked' would put a mark against a student for a
+-- registry clerk's mistake, permanently and visibly, on a public verification
+-- service. They are separate states.
+--
+-- Neither deletes anything. The row stays, the reason is required, and both are
+-- on the audit trail.
+--
+-- ---------------------------------------------------------------------------
+-- 3. THE GRADING SCALE IS THE UNIVERSITY'S, NOT THE REPOSITORY'S
+-- ---------------------------------------------------------------------------
+--
+-- It lives in src/content/regulations.ts, which means changing a band is a code
+-- edit and a deployment — and means a programme that grades differently cannot
+-- exist at all. The University asked for it to be configurable.
+--
+-- The published scale REMAINS THE FALLBACK and is not deleted: a deployment
+-- that has not run this migration, or a database with no active scale, still
+-- grades exactly as it does today rather than failing or defaulting to nothing.
+--
+-- AND A SCALE IS VERSIONED, NEVER EDITED. A transcript issued in 2026 was
+-- computed under the 2026 bands; rewriting them would change what the
+-- University said about a graduate after the fact, which is the same rule the
+-- credential templates already follow.
+--
+-- Idempotent. Run it twice; the second run changes nothing.
+-- ===========================================================================
+
+-- ---------------------------------------------------------------------------
+-- 1. VOIDING, AND THE SIGNATURE
+-- ---------------------------------------------------------------------------
+
+alter table credentials_issued
+  add column if not exists signature      text,
+  -- Which key signed it. A key is eventually rotated, and a signature with no
+  -- record of the key it was made with becomes unverifiable the day that
+  -- happens.
+  add column if not exists signing_key_id text,
+  add column if not exists void_reason    text,
+  add column if not exists voided_by      uuid,
+  add column if not exists voided_at      timestamptz;
+
+-- 'void' joins the existing states. The constraint is replaced rather than
+-- added to, because a check constraint cannot be extended in place.
+do $$
+declare
+  con text;
+begin
+  select conname into con
+    from pg_constraint
+   where conrelid = 'credentials_issued'::regclass
+     and contype = 'c'
+     and pg_get_constraintdef(oid) ilike '%status%'
+     and pg_get_constraintdef(oid) ilike '%issued%'
+   limit 1;
+
+  if con is not null then
+    execute format('alter table credentials_issued drop constraint %I', con);
+  end if;
+
+  alter table credentials_issued add constraint credentials_issued_status_check
+    check (status in ('issued', 'revoked', 'replaced', 'void'));
+end $$;
+
+-- A VOID DOCUMENT MUST SAY WHY. "Voided" with no reason is a document that
+-- vanished from use with nobody accountable for the decision.
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'credentials_issued_void_check') then
+    alter table credentials_issued add constraint credentials_issued_void_check
+      check (status <> 'void'
+             or (void_reason is not null and length(btrim(void_reason)) >= 12
+                 and voided_by is not null and voided_at is not null));
+  end if;
+end $$;
+
+create index if not exists credentials_void_idx
+  on credentials_issued (voided_at) where status = 'void';
+
+-- ---------------------------------------------------------------------------
+-- 1b. 'voided' JOINS THE AUDITED ACTIONS
+-- ---------------------------------------------------------------------------
+--
+-- The audit table's action list is a closed vocabulary on purpose: an action
+-- outside it fails the insert, which is the right failure, because the
+-- alternative is an act that happened and was not recorded. Voiding is a new
+-- act, so it has to be admitted to the list — and the route writes the trail
+-- BEFORE it changes the document, so without this the void would have been
+-- refused rather than silently unrecorded.
+
+do $$
+declare
+  con text;
+begin
+  select conname into con
+    from pg_constraint
+   where conrelid = 'credential_audit_events'::regclass
+     and contype = 'c'
+     and pg_get_constraintdef(oid) ilike '%action%'
+     and pg_get_constraintdef(oid) ilike '%reinstated%'
+   limit 1;
+
+  if con is not null then
+    execute format('alter table credential_audit_events drop constraint %I', con);
+  end if;
+
+  alter table credential_audit_events add constraint credential_audit_events_action_check
+    check (action in
+      ('issued', 'corrected', 'reissued', 'revoked', 'reinstated', 'voided',
+       'printed', 'emailed', 'template_created', 'template_published',
+       'type_created', 'correction_requested', 'correction_reviewed',
+       'correction_approved', 'correction_rejected'));
+end $$;
+
+-- ---------------------------------------------------------------------------
+-- 2. THE GRADING SCALE, VERSIONED
+-- ---------------------------------------------------------------------------
+
+create table if not exists grading_scales (
+  id            uuid primary key default gen_random_uuid(),
+
+  name          text not null,
+  version       integer not null default 1,
+
+  -- NULL applies to the whole University. A value scopes the scale to one
+  -- award kind, so a doctorate can be graded differently from a certificate
+  -- without a second system.
+  award_kind    text,
+
+  -- The lowest mark that earns credit, under this scale.
+  pass_mark     numeric(5,2) not null,
+  -- The top of the scale, so a GPA can be printed over its own denominator.
+  max_point     numeric(3,2) not null,
+
+  -- [{ grade, points, min, max, descriptor }, …] in descending order.
+  bands         jsonb not null,
+
+  is_active     boolean not null default false,
+  published_by  uuid,
+  published_at  timestamptz,
+  created_at    timestamptz not null default now(),
+
+  unique (name, version)
+);
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'grading_scales_kind_check') then
+    alter table grading_scales add constraint grading_scales_kind_check
+      check (award_kind is null or award_kind in
+             ('doctorate', 'masters', 'bachelors', 'diploma', 'certificate'));
+  end if;
+
+  -- A SCALE WITH NO BANDS WOULD GRADE EVERY MARK AS NOTHING.
+  if not exists (select 1 from pg_constraint where conname = 'grading_scales_bands_check') then
+    alter table grading_scales add constraint grading_scales_bands_check
+      check (jsonb_typeof(bands) = 'array' and jsonb_array_length(bands) > 0);
+  end if;
+end $$;
+
+-- ONE ACTIVE SCALE PER SCOPE. Two would mean two answers to "what is a B",
+-- and which one applied would depend on row order.
+create unique index if not exists grading_scales_active_global_idx
+  on grading_scales ((true)) where is_active and award_kind is null;
+create unique index if not exists grading_scales_active_kind_idx
+  on grading_scales (award_kind) where is_active and award_kind is not null;
+
+-- A PUBLISHED SCALE IS NEVER EDITED. Publishing a change writes a new version;
+-- the old one stays exactly as it was, because a transcript issued under it was
+-- computed with those bands and rewriting them changes what the University said
+-- about a graduate after the fact.
+create or replace function refuse_published_scale_edit() returns trigger
+language plpgsql as $$
+begin
+  if old.published_at is null then
+    return new;                       -- a draft may still be worked on
+  end if;
+  -- Activating and deactivating are the only permitted changes.
+  if new.name = old.name
+     and new.version = old.version
+     and new.award_kind is not distinct from old.award_kind
+     and new.pass_mark = old.pass_mark
+     and new.max_point = old.max_point
+     and new.bands = old.bands then
+    return new;
+  end if;
+  raise exception
+    'Grading scale "% v%" has been published and cannot be edited. Publish a new '
+    'version instead: a transcript issued under this scale was computed with these '
+    'bands, and changing them alters what the University said about a graduate '
+    'after the fact.', old.name, old.version
+    using errcode = 'check_violation';
+end;
+$$;
+
+drop trigger if exists grading_scales_no_edit on grading_scales;
+create trigger grading_scales_no_edit
+  before update on grading_scales
+  for each row execute function refuse_published_scale_edit();
+
+alter table grading_scales enable row level security;
+
+drop policy if exists grading_scales_read on grading_scales;
+create policy grading_scales_read on grading_scales
+  for select using (auth.uid() is not null);
+
+-- THE SUPERADMINISTRATOR ALONE. A grading scale decides every classification
+-- the University awards; it sits with the credential design, not with
+-- operations.
+drop policy if exists grading_scales_write on grading_scales;
+create policy grading_scales_write on grading_scales
+  for insert with check (auth_role() = 'superadmin');
+
+drop policy if exists grading_scales_update on grading_scales;
+create policy grading_scales_update on grading_scales
+  for update using (auth_role() = 'superadmin') with check (auth_role() = 'superadmin');
+
+-- ---------------------------------------------------------------------------
+-- 3. SEEDING THE PUBLISHED SCALE, SO NOTHING CHANGES ON THE DAY THIS RUNS
+-- ---------------------------------------------------------------------------
+--
+-- The bands below are the University's published regulations, transcribed —
+-- the same eleven the repository already carries. Seeding them means the table
+-- and the code agree from the first minute, and the University can then publish
+-- a version 2 rather than starting from an empty screen.
+
+insert into grading_scales (name, version, award_kind, pass_mark, max_point, bands,
+                            is_active, published_at)
+select 'University grading scale', 1, null, 65, 4.00,
+  '[{"grade":"A",  "points":4.00,"min":94,"max":100,"descriptor":"Excellent"},
+    {"grade":"A-", "points":3.33,"min":91,"max":93, "descriptor":"Very Good"},
+    {"grade":"B+", "points":3.00,"min":89,"max":90, "descriptor":"Good"},
+    {"grade":"B",  "points":2.67,"min":85,"max":88, "descriptor":"Above Average"},
+    {"grade":"B-", "points":2.33,"min":81,"max":84, "descriptor":"Average"},
+    {"grade":"C+", "points":2.00,"min":77,"max":80, "descriptor":"Satisfactory"},
+    {"grade":"C",  "points":1.67,"min":73,"max":76, "descriptor":"Satisfactory"},
+    {"grade":"C-", "points":1.33,"min":70,"max":72, "descriptor":"Below Satisfactory"},
+    {"grade":"D+", "points":1.00,"min":67,"max":69, "descriptor":"Pass"},
+    {"grade":"D",  "points":0.67,"min":65,"max":66, "descriptor":"Pass"},
+    {"grade":"F",  "points":0.00,"min":0, "max":64, "descriptor":"Fail"}]'::jsonb,
+  true, now()
+where not exists (select 1 from grading_scales where name = 'University grading scale' and version = 1);
+
+-- ===========================================================================
+-- 4. PERFORMING THE RULES
+-- ===========================================================================
+
+do $$
+declare
+  scale_id uuid;
+  refused boolean;
+begin
+  -- ---- A published scale cannot be edited --------------------------------
+  select id into scale_id from grading_scales
+   where name = 'University grading scale' and version = 1;
+
+  refused := false;
+  begin
+    update grading_scales set pass_mark = 50 where id = scale_id;
+  exception when others then refused := true;
+  end;
+  if not refused then
+    raise exception '020 FAILED: a published grading scale could be edited';
+  end if;
+
+  -- …but activating and deactivating it still work.
+  update grading_scales set is_active = false where id = scale_id;
+  update grading_scales set is_active = true  where id = scale_id;
+
+  -- ---- Two active global scales are impossible ---------------------------
+  refused := false;
+  begin
+    insert into grading_scales (name, version, pass_mark, max_point, bands, is_active)
+    values ('A second opinion', 1, 50, 5.00,
+            '[{"grade":"A","points":5.00,"min":70,"max":100}]'::jsonb, true);
+  exception when others then refused := true;
+  end;
+  if not refused then
+    raise exception '020 FAILED: the University had two active grading scales at once';
+  end if;
+
+  -- ---- A scale with no bands is refused ----------------------------------
+  refused := false;
+  begin
+    insert into grading_scales (name, version, pass_mark, max_point, bands)
+    values ('Empty', 1, 50, 4.00, '[]'::jsonb);
+  exception when others then refused := true;
+  end;
+  if not refused then
+    raise exception '020 FAILED: a grading scale with no bands was accepted';
+  end if;
+
+  -- ---- Voiding requires a reason and an author ---------------------------
+  refused := false;
+  begin
+    -- `facts` IS SUPPLIED SO THE REFUSAL IS THE ONE BEING TESTED. Without it
+    -- the insert failed on a NOT NULL column and the proof passed for the
+    -- wrong reason — a green check that proves nothing is worse than none.
+    insert into credentials_issued
+      (credential_id, kind, holder_name, award, facts, content_hash, seal_code, status)
+    values ('IGUC-VOID-PROOF-020', 'transcript', 'Proof', 'Proof',
+            '{}'::jsonb, 'deadbeef', 'PROOF-CODE', 'void');
+  exception when others then refused := true;
+  end;
+  if not refused then
+    raise exception '020 FAILED: a credential was voided with no reason recorded';
+  end if;
+
+  -- …and is accepted when it carries one.
+  --
+  -- ROLLED BACK RATHER THAN DELETED. A credential is never deleted — 004's
+  -- own trigger refuses it, correctly — so a proof row inserted here would
+  -- stay on the University's register for ever as a document that never
+  -- existed. The insert happens inside a subtransaction that is unwound by
+  -- raising, so the rule is genuinely exercised and the register is untouched.
+  begin
+    insert into credentials_issued
+      (credential_id, kind, holder_name, award, facts, content_hash, seal_code,
+       status, void_reason, voided_by, voided_at)
+    values ('IGUC-VOID-PROOF-020', 'transcript', 'Proof', 'Proof',
+            '{}'::jsonb, 'deadbeef', 'PROOF-CODE', 'void',
+            'Issued against the wrong student record', gen_random_uuid(), now());
+
+    if not exists (select 1 from credentials_issued
+                    where credential_id = 'IGUC-VOID-PROOF-020' and status = 'void') then
+      raise exception '020 FAILED: a properly reasoned void was not accepted';
+    end if;
+
+    raise exception 'PROOF_ROLLBACK';
+  exception when others then
+    if sqlerrm <> 'PROOF_ROLLBACK' then raise; end if;
+  end;
+
+  if exists (select 1 from credentials_issued where credential_id = 'IGUC-VOID-PROOF-020') then
+    raise exception '020 FAILED: the proof row was left on the register';
+  end if;
+
+  -- ---- The trail accepts a void, and still refuses an invented action ----
+  refused := false;
+  begin
+    insert into credential_audit_events (credential_ref, action, actor_role)
+    values ('IGUC-PROOF-020', 'deleted', 'superadmin');
+  exception when others then refused := true;
+  end;
+  if not refused then
+    raise exception '020 FAILED: the audit trail accepted an action outside its vocabulary';
+  end if;
+
+  begin
+    insert into credential_audit_events (credential_ref, action, actor_role, reason)
+    values ('IGUC-PROOF-020', 'voided', 'superadmin', 'Proof that voided is auditable');
+    raise exception 'PROOF_ROLLBACK';
+  exception when others then
+    if sqlerrm <> 'PROOF_ROLLBACK' then
+      raise exception '020 FAILED: a void could not be written to the audit trail (%)', sqlerrm;
+    end if;
+  end;
+
+  raise notice '020 OK — a published scale cannot be edited, the University cannot hold two '
+               'active scales, an empty scale is refused, voiding requires a stated reason '
+               'and a named author, and ''voided'' is an auditable action.';
+end $$;
+
+-- ---------------------------------------------------------------------------
+-- 5. WHAT THE UNIVERSITY STILL HAS TO DO
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  signed integer;
+  total  integer;
+begin
+  select count(*) filter (where signature is not null), count(*)
+    into signed, total
+    from credentials_issued;
+
+  if total > 0 and signed = 0 then
+    raise notice 'NOTHING IS SIGNED YET. Set CREDENTIAL_SIGNING_KEY on the server and reissue, '
+                 'or run the backfill in docs/DEPLOYMENT.md. Credentials issued before the key '
+                 'existed keep their HMAC seal and verify normally through /verify; they simply '
+                 'carry no independently checkable signature.';
+  end if;
+end $$;
+
+select 'credentials_issued' as object,
+       count(*) filter (where column_name in
+             ('signature','signing_key_id','void_reason','voided_by','voided_at')) as columns_added
+  from information_schema.columns
+ where table_schema = 'public' and table_name = 'credentials_issued'
+union all
+select 'grading_scales rows', count(*)::bigint from grading_scales;
+
+
+-- ===========================================================================
+-- ===========================================================================
+--
+--   021_signing_key_in_the_store.sql
+--
+-- ===========================================================================
+-- ===========================================================================
+
+-- ===========================================================================
+-- 021 — THE SIGNING KEY LIVES IN THE UNIVERSITY'S OWN SECRET STORE
+--
+-- The University asked: "can't the system keep the key?"
+--
+-- It can. 017 built a sealed store — AES-256-GCM, row-level security with NO
+-- policy at all, so it is unreadable through the publishable key by
+-- construction rather than by a rule somebody could later widen. It was built
+-- for social tokens. A signing key is the same kind of thing and belongs in the
+-- same place.
+--
+-- This migration does one thing: admits 'signing_key' to the store's list of
+-- kinds. That list is closed on purpose, so a value it does not know cannot be
+-- written.
+--
+-- ---------------------------------------------------------------------------
+-- WHAT THIS DOES AND DOES NOT REMOVE
+-- ---------------------------------------------------------------------------
+--
+-- IT REMOVES: pasting a multi-line PEM into a hosting dashboard, and redeploying
+-- to make it take effect. The key is generated in the portal, kept by the
+-- system, and used from the next request onwards.
+--
+-- IT DOES NOT REMOVE: the need for SECRET_STORE_KEY. Something has to encrypt
+-- the store, and that something cannot itself live in the store. So this trades
+-- a long multi-line secret for a short single-line one — and if SECRET_STORE_KEY
+-- is already set for the social connections, it trades it for nothing at all.
+--
+-- Saying "the system keeps the key" without that sentence would be selling a
+-- guarantee this does not provide.
+--
+-- ---------------------------------------------------------------------------
+-- AND WHAT IT MEANS IF SECRET_STORE_KEY IS LOST
+-- ---------------------------------------------------------------------------
+--
+-- The signing key is unrecoverable. Credentials already signed stay valid and
+-- verifiable — their signatures and the public key are unaffected — but nothing
+-- can ever be signed with that key again, and a new one has to be generated and
+-- published. This is the same exposure the social tokens already carry, and it
+-- is the price of the store encrypting anything at all.
+--
+-- Idempotent. Run it twice; the second run changes nothing.
+-- ===========================================================================
+
+do $$
+declare
+  con text;
+begin
+  select conname into con
+    from pg_constraint
+   where conrelid = 'secret_store'::regclass
+     and contype = 'c'
+     and pg_get_constraintdef(oid) ilike '%kind%'
+     and pg_get_constraintdef(oid) ilike '%social_tokens%'
+   limit 1;
+
+  if con is not null then
+    execute format('alter table secret_store drop constraint %I', con);
+  end if;
+
+  alter table secret_store add constraint secret_store_kind_check
+    check (kind in ('social_tokens', 'proctoring', 'signing_key', 'other'));
+end $$;
+
+-- ===========================================================================
+-- PERFORMING THE RULES
+-- ===========================================================================
+
+do $$
+declare
+  refused boolean;
+  -- A well-formed sealed value: three base64url segments, as the store's own
+  -- constraint requires. Not a real key — nothing here is ever a real secret.
+  fake_sealed constant text := 'AAAAAAAAAAAAAAAA.BBBBBBBBBBBBBBBB.CCCCCCCCCCCCCCCCCCCC';
+begin
+  -- ---- A signing key may now be stored --------------------------------
+  begin
+    insert into secret_store (ref, kind, sealed)
+    values ('proof-021', 'signing_key', fake_sealed);
+    raise exception 'PROOF_ROLLBACK';
+  exception when others then
+    if sqlerrm <> 'PROOF_ROLLBACK' then
+      raise exception '021 FAILED: a signing key could not be stored (%)', sqlerrm;
+    end if;
+  end;
+
+  if exists (select 1 from secret_store where ref = 'proof-021') then
+    raise exception '021 FAILED: the proof row was left in the store';
+  end if;
+
+  -- ---- …and an unknown kind still cannot be ---------------------------
+  refused := false;
+  begin
+    insert into secret_store (ref, kind, sealed)
+    values ('proof-021b', 'passwords', fake_sealed);
+  exception when others then refused := true;
+  end;
+  if not refused then
+    raise exception '021 FAILED: the store accepted a kind outside its vocabulary';
+  end if;
+
+  -- ---- AND PLAINTEXT IS STILL REFUSED ---------------------------------
+  -- The rule that matters most: a value that does not look sealed is a value
+  -- somebody wrote by hand, which for a signing key would be the private key
+  -- itself sitting in a database column.
+  refused := false;
+  begin
+    insert into secret_store (ref, kind, sealed)
+    values ('proof-021c', 'signing_key', '-----BEGIN PRIVATE KEY-----');
+  exception when others then refused := true;
+  end;
+  if not refused then
+    raise exception '021 FAILED: an unsealed private key was accepted into the store';
+  end if;
+
+  raise notice '021 OK — a signing key may be stored, an unknown kind may not, and a private '
+               'key written in plaintext is still refused.';
+end $$;
+
+-- ---------------------------------------------------------------------------
+-- The store, and whether the University is holding a key in it.
+-- ---------------------------------------------------------------------------
+
+do $$
+begin
+  if not exists (select 1 from secret_store where kind = 'signing_key') then
+    raise notice 'NO SIGNING KEY IS STORED. Generate one at Credentials -> Register -> Document '
+                 'signing, and choose to let the system keep it. Until then, credentials carry '
+                 'the University''s seal and verify through /verify exactly as before.';
+  end if;
+end $$;
+
+select kind, count(*) as stored from secret_store group by kind order by kind;
 

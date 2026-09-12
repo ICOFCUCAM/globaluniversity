@@ -13,6 +13,16 @@
 import { NextResponse } from 'next/server';
 import { guard, audit } from '@/lib/adminAuth';
 import { validateDesign, withDefaults, type CredentialKind } from '@/lib/credentialTemplate';
+import { can } from '@/lib/roles';
+
+/**
+ * The shortest reason the University will accept for going round its own
+ * approval chain.
+ *
+ * Forty characters, matching the constraint in migration 022. "urgent" is not a
+ * reason; the sentence has to say what could not wait.
+ */
+const OVERRIDE_REASON_MIN = 40;
 
 export const runtime = 'nodejs';
 
@@ -117,7 +127,19 @@ export async function POST(request: Request) {
  *     refuses this while any office is outstanding or has rejected it.
  */
 export async function PATCH(request: Request) {
-  let body: { templateId?: string; decision?: string; note?: string; publish?: boolean };
+  let body: {
+    templateId?: string; decision?: string; note?: string; publish?: boolean;
+    /**
+     * Publish without the three approving offices.
+     *
+     * The University has ruled that the Superadministrator may do this. It is
+     * not a flag that skips a check — the database still refuses unless the row
+     * itself says so and carries a reason, and it stamps the hour. See
+     * migration 022.
+     */
+    overrideApproval?: boolean;
+    overrideReason?: string;
+  };
   try {
     body = await request.json();
   } catch {
@@ -142,6 +164,32 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ ok: false, error: 'template-not-found' }, { status: 404 });
     }
 
+    // ---- PUBLISHING WITHOUT THE SENATE ---------------------------------
+    //
+    // Refused here as well as in the database, and for a different reason: the
+    // database enforces that an override is recorded, this enforces that the
+    // person taking it is the one the University named. A route that only
+    // relied on the trigger would let any caller holding publish rights take
+    // the University's own authority.
+    const override = Boolean(body.overrideApproval);
+    const overrideReason = String(body.overrideReason ?? '').trim();
+    if (override && !can(caller.role, 'publish-without-senate')) {
+      return NextResponse.json({
+        ok: false,
+        error: 'not-permitted',
+        detail: 'Publishing without the approving offices is the Superadministrator\'s alone.',
+      }, { status: 403 });
+    }
+    if (override && overrideReason.length < OVERRIDE_REASON_MIN) {
+      return NextResponse.json({
+        ok: false,
+        error: 'reason-required',
+        detail: `A publication under the University's own authority must say what could not wait, `
+          + `in at least ${OVERRIDE_REASON_MIN} characters. Somebody reading the version history `
+          + 'in five years is the audience.',
+      }, { status: 422 });
+    }
+
     // Only one design per kind is in force. Stand the current one down first —
     // the partial unique index allows a single active row per kind, so the
     // other order fails.
@@ -156,6 +204,12 @@ export async function PATCH(request: Request) {
         lifecycle: 'published',
         is_active: true,
         published_at: new Date().toISOString(),
+        // WRITTEN EVEN WHEN FALSE, so a row can never be left carrying an
+        // override from an earlier attempt.
+        published_without_approval: override,
+        override_reason: override ? overrideReason : null,
+        overridden_by: override ? caller.id : null,
+        overridden_by_email: override ? caller.email : null,
       })
       .eq('id', tpl.id);
 
@@ -170,9 +224,18 @@ export async function PATCH(request: Request) {
       entityType: 'credential_template',
       entityId: tpl.id,
       performedBy: caller.id,
-      details: { kind: tpl.kind, version: tpl.version, name: tpl.name, by_email: caller.email },
+      details: {
+        kind: tpl.kind, version: tpl.version, name: tpl.name, by_email: caller.email,
+        // THE TRAIL SAYS WHICH KIND OF PUBLICATION IT WAS. An override that
+        // reads the same as a Senate-approved publication in the audit log is
+        // an override nobody will ever find.
+        without_approval: override,
+        override_reason: override ? overrideReason : undefined,
+      },
     });
-    return NextResponse.json({ ok: true, published: tpl, auditWarning: auditErr ?? undefined });
+    return NextResponse.json({
+      ok: true, published: tpl, withoutApproval: override, auditWarning: auditErr ?? undefined,
+    });
   }
 
   // -------- approving --------

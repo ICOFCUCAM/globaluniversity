@@ -119,6 +119,32 @@ const PAGE_MM = {
   Letter: { portrait: [216, 279], landscape: [279, 216] },
 } as const;
 
+/**
+ * The classification line, without repeating the lead-in.
+ *
+ * FOUND BY THE SPECIMEN BOOK, which is the point of having one. The Master of
+ * Divinity specimen printed "with with Distinction", because the design's
+ * `classificationLead` is "with" and the classification had been written the
+ * way a person says it out loud.
+ *
+ * The convention is that the field holds the class alone — "Second Class
+ * Honours (Upper Division)" — and that convention is right. But a registrar
+ * types what they expect to READ, the certificate is sealed at issue, and the
+ * mistake is then on a document in somebody's hands that cannot be edited. A
+ * two-line guard is cheaper than a reissue.
+ *
+ * Case-insensitive, and matches only a whole leading word, so a classification
+ * that legitimately begins "Withdrawn…" is untouched.
+ */
+export function joinClassification(lead: string, classification: string): string {
+  const trimmed = classification.trim();
+  const escaped = lead.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const alreadyLed = new RegExp(`^${escaped}\\b\\s*`, 'i');
+  return alreadyLed.test(trimmed)
+    ? `${lead} ${trimmed.replace(alreadyLed, '')}`.trim()
+    : `${lead} ${trimmed}`.trim();
+}
+
 const CertificateDocument = forwardRef<HTMLDivElement, {
   design: CredentialDesign;
   data: CertificateData;
@@ -369,6 +395,12 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
       `}</style>
     <div
       id={DOC_ID}
+      // THE CLASS THE PRINT STYLESHEET LOOKS FOR. A page carrying this is a
+      // page whose purpose is the document: the portal chrome around it is
+      // dropped from the printed flow rather than merely made invisible, and
+      // the site-wide "print in black on white paper" reset stands down so the
+      // frame, the guilloché and the ground survive. See globals.css.
+      className="icof-document"
       ref={ref}
       // The document announces what it is and what it says.
       //
@@ -394,7 +426,7 @@ const CertificateDocument = forwardRef<HTMLDivElement, {
       aria-label={
         `${data.duplicateOf ? 'Duplicate degree certificate' : 'Degree certificate'} of ` +
         `${UNIVERSITY.name}, conferring ${data.degree}` +
-        `${aw.classified && data.classification ? ` with ${data.classification}` : ''}` +
+        `${aw.classified && data.classification ? ` ${joinClassification('with', data.classification)}` : ''}` +
         ` upon ${data.fullName}. Credential number ${data.credentialId}.`
       }
       style={{
@@ -850,7 +882,15 @@ backgroundImage: `url("${art.micro}")`,
           // No box round it. The rule under the degree carries the eye down; a
           // bordered panel in the middle of a certificate reads as a form field.
           <p style={{ ...body(design), margin: '2.5mm 0 0', fontSize: '14px', fontStyle: 'italic' }}>
-            {design.wording.classificationLead} {data.classification}
+            {/* THE LEAD-IN IS NOT PRINTED TWICE.
+                `classificationLead` is "with", and the field holds the class —
+                "Second Class Honours (Upper Division)". But a registrar typing
+                what they expect to READ on the certificate types "with
+                Distinction", and the certificate then said "with with
+                Distinction" on a document that cannot be edited after issue.
+                The convention is the field without the lead-in; this makes
+                following it optional rather than a trap. */}
+            {joinClassification(design.wording.classificationLead, data.classification)}
           </p>
         )}
 
@@ -931,7 +971,7 @@ backgroundImage: `url("${art.micro}")`,
               counterweight. */}
           {sec.qr && <div aria-hidden="true" style={{ flex: '0 0 26mm' }} />}
 
-          <SignatureColumn design={design} sigs={leftSigs} />
+          <SignatureColumn design={design} sigs={leftSigs} specimen={specimen} />
 
           <div style={{
             flex: mounted ? '0 0 46mm' : '0 0 38mm',
@@ -974,7 +1014,7 @@ backgroundImage: `url("${art.micro}")`,
             )}
           </div>
 
-          <SignatureColumn design={design} sigs={rightSigs} />
+          <SignatureColumn design={design} sigs={rightSigs} specimen={specimen} />
 
           {/* Verification. The only thing on this page that settles the
               question, and printed as prominently as the seal. */}
@@ -1052,7 +1092,9 @@ backgroundImage: `url("${art.micro}")`,
  * Presiding Bishop" needs a line to itself at this size, and an office
  * abbreviated to fit is an office misnamed.
  */
-function SignatureColumn({ design, sigs }: { design: CredentialDesign; sigs: Signatory[] }) {
+function SignatureColumn({
+  design, sigs, specimen,
+}: { design: CredentialDesign; sigs: Signatory[]; specimen?: boolean }) {
   if (!sigs.length) return <div style={{ flex: '1 1 0' }} />;
   return (
     // 15mm between the ranks, not 5.
@@ -1066,6 +1108,29 @@ function SignatureColumn({ design, sigs }: { design: CredentialDesign; sigs: Sig
     <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '15mm' }}>
       {sigs.map((s, i) => (
         <div key={`${s.office}-${i}`}>
+          {/* THE SIGNATURE SITS ON THE RULE, not above a gap, because that is
+              where a pen puts it — the strokes cross the line. It is drawn in
+              the clear space that was already reserved for a hand to sign in,
+              so a design with signatures and one without lay out identically
+              and nothing below moves.
+
+              NEVER ON A SPECIMEN. A specimen is designed to look exactly like
+              the real thing, and a specimen carrying the Vice-Chancellor's
+              actual signature is a forger's starting material handed over in a
+              file that anybody may download. The rule prints bare instead. */}
+          {s.signature && !specimen && (
+            <div style={{
+              height: '9mm', marginBottom: '-2.2mm', display: 'flex', alignItems: 'flex-end',
+              overflow: 'hidden',
+            }}>
+              <img
+                src={s.signature}
+                alt=""
+                aria-hidden="true"
+                style={{ maxHeight: '9mm', maxWidth: '52mm', objectFit: 'contain' }}
+              />
+            </div>
+          )}
           <div style={{
             borderTop: `0.3mm solid ${design.ink}`,
             paddingTop: '1.5mm',

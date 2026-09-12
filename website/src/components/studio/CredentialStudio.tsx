@@ -45,15 +45,21 @@ import { useAuth } from '@/contexts/AuthContext';
 import { can } from '@/lib/roles';
 import {
   defaultDesign,
+  maxBorderWidthMm,
+  isSignatureImage,
+  SIGNATURE_MAX_BYTES,
+  SIGNATURE_TYPES,
   validateDesign,
   withDefaults,
   type CredentialDesign,
   type CredentialKind,
 } from '@/lib/credentialTemplate';
 import CertificateDocument from '@/components/certificate/CertificateDocument';
-import TranscriptDocument from '@/components/transcript/TranscriptDocument';
+import { TranscriptPreview } from '@/components/transcript/TranscriptMaster';
+import { SPECIMEN_TRANSCRIPT } from '@/lib/transcriptSpecimen';
 import { uvLayerSvg } from '@/lib/credentialArt';
 import ApprovalQueue from './ApprovalQueue';
+import SignaturePad from './SignaturePad';
 import { WORDING_KEYS, TITLE_FONTS } from '@/lib/credentialTemplate';
 import { MERGE_FIELDS, fieldsUsedBy } from '@/lib/credentialAuthority';
 import { SECURITY_PATTERNS, watermarkName } from '@/lib/securityPatterns';
@@ -83,42 +89,6 @@ const SECTIONS = [
 
 type SectionId = (typeof SECTIONS)[number]['id'];
 
-const SAMPLE_TRANSCRIPT = {
-  fullName: 'Grace Nalova Meyembi',
-  studentNumber: 'ICOF202600451',
-  dateOfBirth: '14 March 2004',
-  programme: 'Bachelor of Theology',
-  faculty: 'Faculty of Theology and Christian Counselling',
-  admitted: 'September 2023',
-  completed: 'July 2026',
-  terms: [
-    {
-      label: 'Year 1 · First Semester',
-      courses: [
-        { code: 'THE101', title: 'Introduction to Systematic Theology', credits: 3, grade: 'A', points: 4.0 },
-        { code: 'BIB105', title: 'Old Testament Survey', credits: 3, grade: 'A-', points: 3.67 },
-        { code: 'CCN110', title: 'Foundations of Christian Counselling', credits: 3, grade: 'B+', points: 3.33 },
-      ],
-      credits: 9,
-      gpa: 3.67,
-    },
-    {
-      label: 'Year 1 · Second Semester',
-      courses: [
-        { code: 'THE102', title: 'Doctrine of God', credits: 3, grade: 'A', points: 4.0 },
-        { code: 'BIB106', title: 'New Testament Survey', credits: 3, grade: 'B+', points: 3.33 },
-      ],
-      credits: 6,
-      gpa: 3.67,
-    },
-  ],
-  totalCredits: 15,
-  cgpa: 3.67,
-  classification: 'First Class Honours',
-  credentialId: 'IGUC-TRN-26A9-F8K2-P19D',
-  sealCode: 'ICOF-7T2M-XQ4V-K93B',
-};
-
 interface VersionRow {
   id: string;
   kind: CredentialKind;
@@ -126,6 +96,10 @@ interface VersionRow {
   name: string;
   is_active: boolean;
   published_at: string | null;
+  /** True where the Superadministrator published without the three offices. */
+  published_without_approval?: boolean;
+  override_reason?: string | null;
+  overridden_by_email?: string | null;
   design: Partial<CredentialDesign>;
 }
 
@@ -138,7 +112,7 @@ const SAMPLE = {
   sealCode: 'ICOF-7T2M-XQ4V-K93B',
 };
 
-export default function CredentialStudio() {
+export default function CredentialStudio({ embedded }: { embedded?: boolean } = {}) {
   const { user } = useAuth();
   const allowed = can(user?.role, 'design-credentials');
   // An approving office is not a designer and must not become one — but it has
@@ -164,7 +138,7 @@ export default function CredentialStudio() {
       setLoading(true);
       const { data } = await supabase
         .from('credential_templates')
-        .select('id, kind, version, name, is_active, published_at, design')
+        .select('id, kind, version, name, is_active, published_at, design, published_without_approval, override_reason, overridden_by_email')
         .eq('kind', kind)
         .order('version', { ascending: false });
       if (!live) return;
@@ -252,7 +226,7 @@ export default function CredentialStudio() {
     setVersionName('');
     const { data } = await supabase
       .from('credential_templates')
-      .select('id, kind, version, name, is_active, published_at, design')
+      .select('id, kind, version, name, is_active, published_at, design, published_without_approval, override_reason, overridden_by_email')
       .eq('kind', kind)
       .order('version', { ascending: false });
     setVersions((data ?? []) as VersionRow[]);
@@ -264,15 +238,17 @@ export default function CredentialStudio() {
   if (!allowed && approver) {
     return (
       <div className="space-y-5">
-        <div>
-          <h2 className="flex items-center gap-2 font-heading text-xl font-bold text-[#422e59] dark:text-[#e4dcf0]">
-            <ShieldCheck size={20} /> Credential approvals
-          </h2>
-          <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">
-            Designs submitted for the university&apos;s approval. You are one of the three offices
-            that must sign before a design can be published.
-          </p>
-        </div>
+        {!embedded && (
+          <div>
+            <h2 className="flex items-center gap-2 font-heading text-xl font-bold text-[#422e59] dark:text-[#e4dcf0]">
+              <ShieldCheck size={20} /> Credential approvals
+            </h2>
+            <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">
+              Designs submitted for the university&apos;s approval. You are one of the three offices
+              that must sign before a design can be published.
+            </p>
+          </div>
+        )}
         <ApprovalQueue />
       </div>
     );
@@ -297,20 +273,29 @@ export default function CredentialStudio() {
   }
 
   const preview = kind === 'transcript'
-    ? <TranscriptDocument design={design} data={SAMPLE_TRANSCRIPT} specimen />
+    // THE DOCUMENT THE UNIVERSITY ACTUALLY ISSUES. This previewed
+    // TranscriptDocument.tsx — a third layout again, over a Computer Science
+    // record — so the Superadministrator approved a design nobody ever
+    // received. It is now the same component the Issue screen and the emailed
+    // copy render, over the University's own Bachelor of Theology.
+    ? <TranscriptPreview design={design} data={SPECIMEN_TRANSCRIPT} scale={0.7} specimen />
     : <CertificateDocument design={design} data={SAMPLE} previewGuides specimen />;
 
   return (
     <div className="space-y-5">
-      <div>
-        <h2 className="flex items-center gap-2 font-heading text-xl font-bold text-[#422e59] dark:text-[#e4dcf0]">
-          <Palette size={20} /> Credential Studio
-        </h2>
-        <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">
-          The design, the security features and the issuing rules for every credential the
-          university awards. Publishing creates a new version — nothing already issued changes.
-        </p>
-      </div>
+      {/* Suppressed inside the Credentials workspace, which already names the
+          area. Two headings one line apart read as a nesting bug. */}
+      {!embedded && (
+        <div>
+          <h2 className="flex items-center gap-2 font-heading text-xl font-bold text-[#422e59] dark:text-[#e4dcf0]">
+            <Palette size={20} /> Credential Studio
+          </h2>
+          <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">
+            The design, the security features and the issuing rules for every credential the
+            university awards. Publishing creates a new version — nothing already issued changes.
+          </p>
+        </div>
+      )}
 
       {message && (
         <div className={`flex items-start gap-2 rounded-xl border p-3 text-sm ${
@@ -425,11 +410,19 @@ export default function CredentialStudio() {
                       ? `${design.bleedMm}mm of artwork past the trim, with trim marks. For a commercial press — an office laser printer cannot bleed and will cut the frame off.`
                       : 'None. Correct for office printing. A commercial press needs 3mm, or the guillotine leaves a white sliver wherever it falls short of the trim line.'}
                   </p>
-                  <Row label="Border width">
-                    <input type="range" min={0} max={10} step={0.5} value={design.borderWidthMm}
-                      onChange={(e) => set('borderWidthMm', Number(e.target.value))} className="w-full" />
-                    <span className="w-12 text-right text-xs text-[#6b6076] dark:text-[#9c93ad]">{design.borderWidthMm}mm</span>
-                  </Row>
+                  {/* NOT SHOWN WHEN THERE IS NO BORDER. A slider that draws
+                      nothing invites somebody to move it and conclude the
+                      control is broken. And the range stopped at 10mm while the
+                      University's own default frame is 11 — so the built-in
+                      certificate could not be represented on its own slider. */}
+                  {design.border !== 'none' && (
+                    <Row label="Border width">
+                      <input type="range" min={0} max={maxBorderWidthMm(design.pageSize)} step={0.5}
+                        value={design.borderWidthMm}
+                        onChange={(e) => set('borderWidthMm', Number(e.target.value))} className="w-full" />
+                      <span className="w-12 text-right text-xs text-[#6b6076] dark:text-[#9c93ad]">{design.borderWidthMm}mm</span>
+                    </Row>
+                  )}
                 </Panel>
 
                 <Panel
@@ -687,6 +680,20 @@ export default function CredentialStudio() {
               </Panel>
 
               <Panel title="Signatories" hint="Leave a name blank to print whoever currently holds the office. The office outlives the holder, and a certificate should not need republishing because a Registrar retired.">
+                {/* WHY THE SIGNATURE BELONGS HERE AND NOT ON THE CREDENTIAL.
+                    A published design is never edited — publishing writes a new
+                    version — so a certificate issued this year keeps this year's
+                    signatures for ever, which is what a signature is for. */}
+                <p className="text-[11px] leading-relaxed text-[#8a8194]">
+                  <strong>Sign here</strong> and the officer signs on screen — mouse, finger or
+                  stylus, in the ink of their choice — and the strokes are kept on their own, with
+                  nothing behind them. <strong>Upload a scan</strong> is for a wet signature on
+                  paper; scan the strokes alone on a transparent background, because a PNG with the
+                  paper still behind it prints as a white box over the frame. Either way it prints
+                  on the rule of every credential issued under this design, and specimens never
+                  carry it: a specimen with a real officer&rsquo;s signature is a forger&rsquo;s
+                  starting material.
+                </p>
                 {design.signatories.map((sig, i) => (
                   <div key={i} className="flex items-center gap-2">
                     <input
@@ -709,6 +716,15 @@ export default function CredentialStudio() {
                       }}
                       className="min-w-0 flex-1 rounded-lg border border-[#ded6c8] px-2 py-1.5 text-xs dark:border-[#3d3349]"
                     />
+                    <SignatureAffix
+                      value={sig.signature}
+                      office={sig.office}
+                      onChange={(signature) => {
+                        const next = [...design.signatories];
+                        next[i] = { ...next[i], signature };
+                        set('signatories', next);
+                      }}
+                    />
                     <button
                       onClick={() => set('signatories', design.signatories.filter((_, j) => j !== i))}
                       className="rounded-lg p-1.5 text-[#a49bb0] hover:bg-red-50 hover:text-red-600"
@@ -724,6 +740,20 @@ export default function CredentialStudio() {
                 >
                   <Plus size={13} /> Add signatory
                 </button>
+                {/* SAID WHERE THE CONFUSION HAPPENS. The preview on this screen
+                    is a specimen, so it will not show what was just affixed —
+                    and a designer who does not know that reasonably concludes
+                    the affixing failed and does it again. The thumbnail beside
+                    the office is the confirmation; this says why it is the only
+                    one. */}
+                {design.signatories.some((s) => s.signature) && (
+                  <p className="rounded-lg border border-[#422e59]/25 bg-[#422e59]/[0.06] p-2.5 text-[11px] leading-relaxed text-[#6b6076] dark:border-[#c5a55a]/30 dark:bg-[#c5a55a]/10 dark:text-[#9c93ad]">
+                    <strong>The preview will not show it.</strong> Everything drawn on this screen
+                    is overprinted SPECIMEN, and a specimen never carries a real signature — the
+                    thumbnail beside the office is your confirmation that it is affixed. It prints
+                    on credentials issued under this design, once published.
+                  </p>
+                )}
               </Panel>
 
               <PreviewFrame kind={kind}>{preview}</PreviewFrame>
@@ -798,6 +828,19 @@ export default function CredentialStudio() {
                         </p>
                         <p className="text-xs text-[#a49bb0]">
                           {v.published_at ? new Date(v.published_at).toLocaleString('en-GB') : 'not published'}
+                          {/* SAID HERE, NOT ONLY AT THE MOMENT IT WAS DONE. A
+                              version published without the approving offices
+                              has to be recognisable years later by somebody
+                              auditing what the University issued — which is the
+                              whole point of recording it. */}
+                          {v.published_without_approval && (
+                            <span className="mt-0.5 block text-[11px] leading-relaxed text-[#8a3f14] dark:text-[#e5a877]">
+                              Published under the University&rsquo;s own authority
+                              {v.overridden_by_email ? ` by ${v.overridden_by_email}` : ''} — the
+                              approving offices did not sign this version.
+                              {v.override_reason ? ` “${v.override_reason}”` : ''}
+                            </span>
+                          )}
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
@@ -1174,6 +1217,9 @@ function Readiness() {
   const [items, setItems] = React.useState<
     { id: string; label: string; state: string; detail: string; remedy?: string }[] | null
   >(null);
+  const [migrations, setMigrations] = React.useState<
+    { file: string; what: string; state: string; checkByHand?: string }[]
+  >([]);
   const [problem, setProblem] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -1184,7 +1230,7 @@ function Readiness() {
       const res = await fetch('/api/admin/readiness', {
         headers: { authorization: `Bearer ${token}` },
       }).then((r) => r.json()).catch(() => null);
-      if (res?.ok) setItems(res.items);
+      if (res?.ok) { setItems(res.items); setMigrations(res.migrations ?? []); }
       else setProblem(res?.error ?? 'The readiness check could not be run.');
     })();
   }, []);
@@ -1236,6 +1282,51 @@ function Readiness() {
             </li>
           ))}
         </ul>
+      )}
+
+      {/* --- WHAT THE DATABASE IS MISSING ----------------------------------
+          The University asked why it always had to ask for the migrations. It
+          should not have to: the list lived in a commit message, so finding out
+          what was outstanding meant one person asking another. The database is
+          asked instead, and this is the answer. */}
+      {migrations.length > 0 && (
+        <div className="rounded-xl border border-[#ded6c8] bg-white p-4 dark:border-[#3d3349] dark:bg-[#241d30]">
+          <h3 className="text-sm font-semibold text-[#33234a] dark:text-[#e4dcf0]">
+            Database migrations
+          </h3>
+          <p className="mt-1 text-xs leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">
+            Read from the database itself, not from a note. Anything outstanding is listed with
+            what it adds; run <code>docs/migrations/RUN-ALL.sql</code> in the Supabase SQL editor
+            and every one of them is applied in order. It is safe whatever state the database is
+            in — each migration changes nothing on a second run.
+          </p>
+          <ul className="mt-3 space-y-1.5">
+            {migrations.map((m) => (
+              <li key={m.file} className="flex items-start gap-2 text-xs leading-relaxed">
+                <span className={`mt-0.5 shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold ${
+                  m.state === 'applied' ? 'bg-emerald-100 text-emerald-700'
+                    : m.state === 'outstanding' ? 'bg-red-100 text-red-700'
+                      : 'bg-amber-100 text-amber-800'
+                }`}>
+                  {m.state === 'applied' ? 'run'
+                    : m.state === 'outstanding' ? 'NOT RUN'
+                      : m.state === 'unverifiable' ? 'check by hand' : 'unknown'}
+                </span>
+                <span className="text-[#4a4155] dark:text-[#c8c1d4]">
+                  <span className="font-mono">{m.file}</span> — {m.what}
+                  {/* NAMED RATHER THAN ASSUMED. A screen that says "all clear"
+                      about something it never looked at is worse than one that
+                      admits the gap. */}
+                  {m.checkByHand && (
+                    <span className="mt-0.5 block font-mono text-[10px] text-[#8a8194]">
+                      {m.checkByHand}
+                    </span>
+                  )}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </div>
   );
@@ -1331,5 +1422,130 @@ function MergeFields({ design }: { design: CredentialDesign }) {
         })}
       </ul>
     </Panel>
+  );
+}
+
+/**
+ * Affixing one officer's signature.
+ *
+ * THE FILE NEVER LEAVES THE BROWSER until the design is published. It is read
+ * into a data URI here and travels inside the design, which is what makes the
+ * document complete in itself — see the note on Signatory.signature for why a
+ * link would not do.
+ *
+ * The checks are here AND in validateDesign, deliberately. This one is so the
+ * Superadministrator learns immediately, with the file in front of them, that
+ * they picked a photograph or a PDF; the other is so that a design which got
+ * past this screen by any route still cannot be published.
+ */
+function SignatureAffix({
+  value, office, onChange,
+}: {
+  value?: string;
+  office: string;
+  onChange: (signature: string | undefined) => void;
+}) {
+  const [error, setError] = React.useState<string | null>(null);
+  const [signing, setSigning] = React.useState(false);
+  const id = React.useId();
+
+  function take(file: File | undefined) {
+    setError(null);
+    if (!file) return;
+    if (!(SIGNATURE_TYPES as readonly string[]).includes(file.type)) {
+      setError('PNG, WebP or JPEG only. A PDF or an SVG is a document, not an image.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onerror = () => setError('That file could not be read.');
+    reader.onload = () => {
+      const uri = String(reader.result ?? '');
+      // THE SAME TWO RULES THE VALIDATOR APPLIES, so nothing can be affixed here
+      // that publishing would then refuse.
+      if (!isSignatureImage(uri)) {
+        setError('That is not an image this document can carry.');
+        return;
+      }
+      if (uri.length > SIGNATURE_MAX_BYTES) {
+        setError(
+          `Larger than ${Math.round(SIGNATURE_MAX_BYTES / 1000)}KB — that is a photograph of a `
+          + 'page rather than a signature. Crop to the strokes and save as a transparent PNG.',
+        );
+        return;
+      }
+      onChange(uri);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  if (signing) {
+    return (
+      <SignaturePad
+        office={office}
+        onDone={(sig) => { onChange(sig); setSigning(false); setError(null); }}
+        onCancel={() => setSigning(false)}
+      />
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-1.5">
+      {value ? (
+        <>
+          {/* Shown on a light ground, because a signature scanned with
+              transparency is invisible against a dark panel and the designer
+              would think the affixing had failed. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={value}
+            alt={`Signature affixed for ${office || 'this office'}`}
+            className="h-7 w-24 rounded border border-[#ded6c8] bg-white object-contain p-0.5 dark:border-[#3d3349]"
+          />
+          <button
+            onClick={() => setSigning(true)}
+            className={`whitespace-nowrap rounded-lg px-1.5 py-1 text-[11px] text-[#6b6076] hover:text-[#422e59] dark:text-[#9c93ad] ${FOCUS}`}
+            title="Sign again"
+          >
+            Sign again
+          </button>
+          <button
+            onClick={() => { onChange(undefined); setError(null); }}
+            className="rounded-lg p-1.5 text-[#a49bb0] hover:bg-red-50 hover:text-red-600"
+            aria-label={`Remove the signature for ${office || 'this office'}`}
+            title="Remove this signature"
+          >
+            <Trash2 size={13} />
+          </button>
+        </>
+      ) : (
+        <>
+          {/* SIGNING COMES FIRST, and the file second. The University asked why
+              affixing a signature opened a file chooser — the answer is that it
+              should not have to. An officer at the machine signs here; the file
+              is for the scan of a wet signature, which is a different and still
+              legitimate thing. */}
+          <button
+            onClick={() => setSigning(true)}
+            className={`whitespace-nowrap rounded-lg border border-[#422e59]/40 px-2 py-1.5 text-[11px] font-medium text-[#422e59] hover:bg-[#422e59]/[0.06] dark:border-[#c5a55a]/40 dark:text-[#c8c1d4] ${FOCUS}`}
+          >
+            Sign here
+          </button>
+          <label
+            htmlFor={id}
+            className={`cursor-pointer whitespace-nowrap rounded-lg border border-dashed border-[#ded6c8] px-2 py-1.5 text-[11px] text-[#6b6076] hover:border-[#422e59] hover:text-[#422e59] dark:border-[#3d3349] dark:text-[#9c93ad] ${FOCUS}`}
+          >
+            Upload a scan
+          </label>
+        </>
+      )}
+      <input
+        id={id}
+        type="file"
+        accept={SIGNATURE_TYPES.join(',')}
+        className="sr-only"
+        onChange={(e) => { take(e.target.files?.[0]); e.currentTarget.value = ''; }}
+      />
+      {error && <span className="max-w-[14rem] text-[10px] leading-tight text-red-700">{error}</span>}
+    </div>
   );
 }

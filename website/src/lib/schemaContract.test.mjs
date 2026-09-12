@@ -326,11 +326,35 @@ function permitted(table, column) {
     new RegExp(`alter\\s+table\\s+${table}\\s+add\\s+column\\s+(?:if\\s+not\\s+exists\\s+)?${column}[\\s\\S]*?;`, 'i'),
   );
 
-  for (const scope of [create?.[1], alter?.[0]]) {
+  // A LATER MIGRATION THAT REPLACES THE CONSTRAINT IS THE ONE THAT GOVERNS.
+  //
+  // A check constraint cannot be extended in place, so adding a value to a
+  // closed vocabulary means dropping the old constraint and adding a new one —
+  // which is what 020 does to `credential_audit_events.action` and to
+  // `credentials_issued.status`. This function read only the create block and
+  // the add-column alters, so it reported the ORIGINAL vocabulary and failed a
+  // value the database in fact accepts.
+  //
+  // The last matching `add constraint` wins, because migrations run in order
+  // and the last one to define the column is the one in force.
+  const replacements = [...allSql.matchAll(
+    new RegExp(
+      `alter\\s+table\\s+${table}\\s+add\\s+constraint\\s+\\w+\\s*`
+      + `check\\s*\\(\\s*${column}\\s+in\\s*\\(([^)]*)\\)`,
+      'gi',
+    ),
+  )];
+  const last = replacements[replacements.length - 1];
+
+  for (const scope of [last?.[1], create?.[1], alter?.[0]]) {
     if (!scope) continue;
-    const m = scope.match(
-      new RegExp(`\\b${column}\\b[\\s\\S]{0,120}?check\\s*\\(\\s*${column}\\s+in\\s*\\(([^)]*)\\)`, 'i'),
-    );
+    // The replacement match is already the value list; the others are blocks
+    // that still have to be searched for the check.
+    const m = scope === last?.[1]
+      ? [null, scope]
+      : scope.match(
+        new RegExp(`\\b${column}\\b[\\s\\S]{0,120}?check\\s*\\(\\s*${column}\\s+in\\s*\\(([^)]*)\\)`, 'i'),
+      );
     if (m) {
       return m[1].split(',').map((s) => s.trim().replace(/^'|'$/g, '')).filter(Boolean).sort();
     }

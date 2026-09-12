@@ -304,21 +304,50 @@ export function microtext(studentNumber: string, code: string): string {
  * Error correction is set to M, which tolerates roughly 15% of the symbol being
  * lost. A letter that has been folded through the QR still scans.
  */
+// ---------------------------------------------------------------------------
+// THE QR CODE, DRAWN WITHOUT REACT — AND THE OUTAGE THAT PUT IT THAT WAY
+// ---------------------------------------------------------------------------
+//
+// This used to render qrcode.react's <QRCodeSVG> through react-dom/server, and
+// it broke every sealed document the University can issue:
+//
+//   TypeError: Cannot read properties of null (reading 'useMemo')
+//
+// In a Next.js route handler `react` resolves to its react-server build, where
+// the hook dispatcher is null because component hooks do not exist in that
+// environment. QRCodeSVG calls useMemo, so the render throws the moment a
+// document needs a seal panel.
+//
+// It reached the University as a failed admission — "the decision is recorded,
+// but the University could not generate the admission package" — and it was
+// never only the admission letter. Certificates, transcripts and identity
+// cards all call this, all from route handlers, and all with the same result.
+// The delivery route wraps it in `.catch(() => '')`, so there it was worse
+// than a failure: a credential went out with no verification QR at all and
+// nothing said so.
+//
+// IT WAS NEVER CAUGHT because it cannot be reproduced outside Next. In plain
+// Node — which is where every test and the specimen generator run — `react`
+// resolves to the ordinary build, the dispatcher is present, and the component
+// renders perfectly. The test suite was green for the whole time this was
+// broken in production.
+//
+// A DOCUMENT GENERATOR HAS NO BUSINESS INSTANTIATING A UI FRAMEWORK. The fix
+// is not to coax React into working in a server context; it is to stop asking
+// a component library to produce a static SVG. `qrcode` encodes straight to
+// markup, with no renderer, no dispatcher and no environment to be wrong
+// about.
+// ---------------------------------------------------------------------------
 export async function verificationQrSvg(url: string, size = 96): Promise<string> {
-  // Imported here rather than at the top of the file. Next refuses a static
-  // import of react-dom/server anywhere in a module that might be reached from
-  // a client component, and it is right to: the check exists because shipping a
-  // server renderer to a browser is both a size and a security problem. Inside
-  // the function, on a route that already declares runtime = 'nodejs', it is
-  // exactly what it looks like — server-side rendering of an SVG.
-  const [{ createElement }, { renderToStaticMarkup }, { QRCodeSVG }] = await Promise.all([
-    import('react'),
-    import('react-dom/server'),
-    import('qrcode.react'),
-  ]);
-  return renderToStaticMarkup(
-    createElement(QRCodeSVG, { value: url, size, level: 'M', marginSize: 1 }),
-  );
+  const { toString } = await import('qrcode');
+  return toString(url, {
+    type: 'svg',
+    width: size,
+    // `M` and a one-module quiet zone, matching what the previous renderer
+    // produced, so existing documents and new ones scan alike.
+    errorCorrectionLevel: 'M',
+    margin: 1,
+  });
 }
 
 

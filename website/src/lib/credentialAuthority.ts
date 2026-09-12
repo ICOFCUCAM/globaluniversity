@@ -194,7 +194,10 @@ export function standingOf(type: Pick<CredentialType, 'category'>): string {
 // 2. VERSIONS — "Never destroy the previous certificate"
 // ---------------------------------------------------------------------------
 
-export type VersionState = 'current' | 'superseded' | 'revoked';
+// 'void' is a state of the DOCUMENT; the other three are states of the award.
+// Kept in the same union because the register holds one status column, and
+// separating them into two would mean every screen had to consult both.
+export type VersionState = 'current' | 'superseded' | 'revoked' | 'void';
 
 export interface CredentialVersion {
   id: string;
@@ -542,6 +545,11 @@ export function render(source: string, values: Record<string, string | null | un
  */
 export const AUDIT_ACTIONS = [
   'issued', 'corrected', 'reissued', 'revoked', 'reinstated',
+  // VOIDED IS NOT REVOKED. Revoking withdraws the award and is a finding
+  // against the holder; voiding says the University issued the document in
+  // error and the holder is not at fault. One vocabulary entry each, so the
+  // trail can never blur them.
+  'voided',
   'printed', 'emailed', 'template_created', 'template_published',
   'type_created', 'correction_requested', 'correction_reviewed',
   'correction_approved', 'correction_rejected',
@@ -605,6 +613,8 @@ export function describeEvent(e: AuditEvent): string {
       return `${who} approved the correction against${ref}${why}`;
     case 'correction_rejected':
       return `${who} rejected the correction against${ref}${why}`;
+    case 'voided':
+      return `${who} voided${ref} as issued in error${why}`;
     default:
       return `${who} acted on${ref}`;
   }
@@ -620,6 +630,9 @@ export function describeEvent(e: AuditEvent): string {
  */
 export const REASON_REQUIRED: AuditAction[] = [
   'corrected', 'reissued', 'revoked', 'reinstated', 'correction_rejected',
+  // A document withdrawn from use with no stated reason is one nobody can be
+  // asked about afterwards.
+  'voided',
 ];
 
 export function needsReason(action: AuditAction): boolean {
@@ -631,7 +644,7 @@ export function needsReason(action: AuditAction): boolean {
 // ---------------------------------------------------------------------------
 
 export type AuthorityAction =
-  | 'view' | 'amend' | 'reissue' | 'revoke' | 'print' | 'email' | 'verify';
+  | 'view' | 'amend' | 'reissue' | 'revoke' | 'void' | 'print' | 'email' | 'verify';
 
 /**
  * The privilege list from point 3, as a function of the document's state.
@@ -657,6 +670,68 @@ export type AuthorityAction =
  * The remedy for a revocation made in error is a new award with a new number,
  * which leaves both the revocation and the correction on the record.
  */
+/**
+ * Every status the credential register can hold.
+ *
+ * FROM THE DATABASE'S CONSTRAINT, kept here so the interface can be checked
+ * against it. `credentials_issued.status` is a closed list — 004 set three and
+ * 020 added 'void' — and a status the database can store but no screen can name
+ * is a document that appears in the register as something it is not.
+ */
+export const CREDENTIAL_STATUSES = ['issued', 'revoked', 'replaced', 'void'] as const;
+
+export type CredentialStatus = (typeof CREDENTIAL_STATUSES)[number];
+
+export interface StatusLabel {
+  /** The words a registrar reads. */
+  label: string;
+  /** Which of the four tones the pill takes. */
+  tone: 'current' | 'superseded' | 'revoked' | 'void';
+  /** True when this document should not be relied on. */
+  withdrawn: boolean;
+}
+
+/**
+ * What the register calls a document in this state.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY THIS IS A FUNCTION AND NOT A TERNARY IN THE COMPONENT
+ * ---------------------------------------------------------------------------
+ *
+ * Because it was a ternary in the component, and it had no case for 'void'.
+ * Voiding shipped with a route, a migration, a capability check and a passing
+ * test of `actionsFor` — and the pill fell through its final `: 'Current'`, so
+ * a document the University had withdrawn as issued in error appeared in the
+ * register as the standing credential. Every layer was correct and the answer
+ * a registrar read was still the opposite of the truth.
+ *
+ * A chain of ternaries cannot be tested and cannot be exhaustive. This can be
+ * both, and `CREDENTIAL_STATUSES` is what the test walks.
+ *
+ * AN UNKNOWN STATUS IS NEVER 'CURRENT'. A status this code has not been taught
+ * is reported as unknown and treated as withdrawn, because the failure that
+ * matters is a withdrawn document reading as a standing one — never the
+ * reverse.
+ */
+export function statusLabel(status: string, version = 1, versions = 1): StatusLabel {
+  switch (status) {
+    case 'issued':
+      return {
+        label: versions > 1 ? `Current \u00b7 v${version}` : 'Current',
+        tone: 'current',
+        withdrawn: false,
+      };
+    case 'replaced':
+      return { label: 'Superseded', tone: 'superseded', withdrawn: false };
+    case 'revoked':
+      return { label: 'Revoked', tone: 'revoked', withdrawn: true };
+    case 'void':
+      return { label: 'Void', tone: 'void', withdrawn: true };
+    default:
+      return { label: `Unknown status: ${status}`, tone: 'void', withdrawn: true };
+  }
+}
+
 export function actionsFor(version: CredentialVersion, role: string): AuthorityAction[] {
   const isAuthority = role === 'superadmin' || role === 'vice-chancellor';
   const base: AuthorityAction[] = ['view', 'verify'];
@@ -669,7 +744,11 @@ export function actionsFor(version: CredentialVersion, role: string): AuthorityA
 
   switch (version.state) {
     case 'current':
-      return [...base, 'amend', 'reissue', 'revoke', 'print', 'email'];
+      // VOID SITS BESIDE REVOKE AND IS NOT THE SAME ACT. Revoking withdraws the
+      // award; voiding says the University issued this document in error and
+      // the holder is not at fault. Offering only one of them is how a
+      // registry's own mistake ends up recorded as a finding against a student.
+      return [...base, 'amend', 'reissue', 'revoke', 'void', 'print', 'email'];
     case 'superseded':
       // Printing a superseded version is deliberately still allowed: a registry
       // sometimes has to produce the document as it stood. It prints with its
@@ -677,6 +756,12 @@ export function actionsFor(version: CredentialVersion, role: string): AuthorityA
       return [...base, 'print'];
     case 'revoked':
       // Nothing further. See above — revocation is final by design.
+      return base;
+    case 'void':
+      // A void document may still be looked at and verified — that is what
+      // makes the void visible to whoever is holding a copy of it. Nothing
+      // else: producing a fresh copy of a document withdrawn as an error puts
+      // the error back into the world.
       return base;
     default:
       return base;

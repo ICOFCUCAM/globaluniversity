@@ -546,8 +546,17 @@ main [id] {
    on a desk and one that cannot.
    --------------------------------------------------------------------------- */
 @media print {
-  /* Ink is the reader's, not ours. */
-  *, *::before, *::after {
+  /* Ink is the reader's, not ours.
+     EXCEPT ON A PAGE CARRYING A CREDENTIAL, where the ink is the University's
+     and the backgrounds ARE the document — the frame, the guilloché, the
+     security ground, the seal. This rule was written for the marketing pages
+     and quietly applied to every degree certificate printed from the portal,
+     stripping the artwork off it: an author !important beats the inline styles
+     the document draws itself with. It now stands down when a credential is on
+     the page. See the credential block below. */
+  body:not(:has(.icof-document)) *,
+  body:not(:has(.icof-document)) *::before,
+  body:not(:has(.icof-document)) *::after {
     background: transparent !important;
     color: #000 !important;
     box-shadow: none !important;
@@ -562,9 +571,11 @@ main [id] {
     display: none !important;
   }
 
-  /* A link whose destination is invisible is a dead end on paper. */
-  a[href^='http']::after,
-  a[href^='/']::after {
+  /* A link whose destination is invisible is a dead end on paper — on a web
+     page. On a certificate it would print a URL beside the verification line,
+     which is not what the document says. */
+  body:not(:has(.icof-document)) a[href^='http']::after,
+  body:not(:has(.icof-document)) a[href^='/']::after {
     content: ' (' attr(href) ')';
     font-size: 0.75em;
     word-break: break-all;
@@ -576,7 +587,102 @@ main [id] {
   article, figure, li, blockquote { break-inside: avoid; }
 
   section { padding: 0.75rem 0 !important; }
-  body { font-size: 11pt; line-height: 1.45; }
+  body:not(:has(.icof-document)) { font-size: 11pt; line-height: 1.45; }
 
   @page { margin: 18mm; }
+}
+
+/* ---------------------------------------------------------------------------
+   PRINTING A CREDENTIAL FROM INSIDE THE MANAGEMENT SYSTEM.
+
+   A certificate or a transcript is not a web page that happens to be printed.
+   It is a printed object being displayed on a screen, and every print button in
+   the portal produced the same three faults because the browser was asked to
+   print the PORTAL with the document somewhere inside it:
+
+     BLANK SHEETS. Each document sets `body * { visibility: hidden }` and makes
+     itself visible again — the usual trick, and it does hide the sidebar. But
+     hidden is not gone: the chrome still occupies its full height in the
+     printed flow, so a two-sheet transcript came out as six sheets, four of
+     them white, with the document sitting wherever the layout happened to put
+     it. That is what "6 empty pages" was.
+
+     A DOCUMENT PRINTED AT 55%. Previews are scaled down to fit a pane, and a
+     transform on an ancestor scales the print as well. The documents undo their
+     own preview wrapper; they cannot undo a second one added by whichever
+     screen is showing them, and the Studio adds one.
+
+     THE ARTWORK STRIPPED OFF. The marketing reset above forces every background
+     transparent, which is every security layer on the sheet.
+
+   The fix is to say what is true: when a credential is on the page, the
+   credential IS the print. Everything not on the path to it is dropped from the
+   flow — display: none, not visibility: hidden — and every ancestor is flattened
+   so nothing it inherited from the portal shell (a fixed height, a scroll
+   container, a scale) reaches the paper.
+
+   `:has()` is what makes it possible to say "an element that does not contain
+   the document" in CSS. Where it is unsupported the old behaviour returns —
+   a printable document surrounded by blank sheets, which is what everyone had
+   before this block existed.
+   --------------------------------------------------------------------------- */
+@media print {
+  /* Everything that neither contains, is, nor sits inside the document. */
+  body:has(.icof-document) *:not(:has(.icof-document), .icof-document, .icof-document *) {
+    display: none !important;
+  }
+
+  /* The path down to it, flattened. These are the portal's shell elements —
+     scroll panes with fixed heights, padded cards, and the preview wrappers
+     that scale a sheet down to fit a screen. */
+  body:has(.icof-document),
+  body:has(.icof-document) *:has(.icof-document) {
+    display: block !important;
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    transform: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: #fff !important;
+    box-shadow: none !important;
+  }
+
+  /* The document itself sits in the normal flow, not absolutely positioned.
+     Each document positions itself at the page corner to escape the chrome;
+     with the chrome gone that is not needed, and an absolutely positioned box
+     is the one thing browsers will not reliably break across sheets — which
+     matters for a transcript, whose whole point is that it runs to several. */
+  /* RELATIVE, NOT STATIC — and the difference is the whole document.
+     Every layer on a certificate (the security ground, the guilloché, the
+     watermark, the frame, the microtext course) is positioned `inset: 0`
+     against the sheet, and the sheet is what makes it their containing block.
+     Making it static hands them the page instead: a ground drawn 1000px tall
+     down the side of the paper, and a second sheet to hold the overflow. Which
+     is exactly the blank page this block exists to remove. */
+  body:has(.icof-document) .icof-document {
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+  }
+  body:has(.icof-document) .icof-document,
+  body:has(.icof-document) .icof-document * {
+    visibility: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* min-height matters as much as the rest: the portal shell is a full-height
+     application, and a 100vh floor on the page is another sheet of white. */
+  html:has(.icof-document), body:has(.icof-document) {
+    margin: 0 !important;
+    padding: 0 !important;
+    min-height: 0 !important;
+    height: auto !important;
+    background: #fff !important;
+  }
 }

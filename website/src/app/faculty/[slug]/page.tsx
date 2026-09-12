@@ -12,7 +12,7 @@ import { IconCampus } from '@/components/Icons';
 import { SpotlightGroup, SpotlightCard } from '@/components/Spotlight';
 import { facultyList, getFaculty } from '@/content/faculties';
 import { administration, contact, lecturers, programs, site } from '@/content/site';
-import { courses } from '@/content/courses';
+import { courses, isOnline, MODE_LABEL } from '@/content/courses';
 
 export function generateStaticParams() {
   return facultyList.map((f) => ({ slug: f.slug }));
@@ -103,7 +103,7 @@ export default function FacultyDetailPage({ params }: { params: { slug: string }
           (p) => norm(p.name) === norm(f.leadName!) || norm(p.name).startsWith(norm(f.leadName!)),
         )
       : undefined;
-  const onlineCount = facultyCourses.filter((c) => c.online).length;
+  const onlineCount = facultyCourses.filter(isOnline).length;
   const sibling = f.sharesProvisionWith ? getFaculty(f.sharesProvisionWith) : undefined;
 
   // The study ladder. A faculty teaching at five levels was showing a flat grid
@@ -597,11 +597,13 @@ export default function FacultyDetailPage({ params }: { params: { slug: string }
                 <span className="font-sans text-[10px] font-semibold uppercase tracking-[0.12em] text-brand-muted">
                   {c.level}
                 </span>
-                {c.online && (
-                  <span className="rounded-full bg-white px-2.5 py-1 font-sans text-[9px] font-bold uppercase tracking-[0.12em] text-brand-gold-ink">
-                    Online
-                  </span>
-                )}
+                {/* How it is taught, in the University's own three words:
+                    Campus, Online, Online / Campus. It printed ONLINE or
+                    nothing, so a campus course looked like an omission and an
+                    online-and-campus course looked online-only. */}
+                <span className="rounded-full bg-white px-2.5 py-1 font-sans text-[9px] font-bold uppercase tracking-[0.12em] text-brand-gold-ink">
+                  {MODE_LABEL[c.mode]}
+                </span>
               </div>
             ))}
           </div>

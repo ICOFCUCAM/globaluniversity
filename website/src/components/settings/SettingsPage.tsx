@@ -3,12 +3,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { roleLabels, can } from '@/lib/roles';
 import AdmissionOpenings from './AdmissionOpenings';
+import ConfigurationPanel from '@/components/system/ConfigurationPanel';
 import ConnectedAccounts from '@/components/social/ConnectedAccounts';
 import { GRADING_SCALE, CLASSIFICATION_BANDS, MAX_GRADE_POINT } from '@/lib/grading';
 import { UNIVERSITY } from '@/lib/constants';
 import {
-  User, Shield, Bell, Palette, Database, Save, CheckCircle2, DoorOpen, Share2,
-} from 'lucide-react';
+  User, Shield, Bell, Palette, Database, Save, CheckCircle2, DoorOpen, Share2, Settings2,} from 'lucide-react';
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -111,6 +111,14 @@ export default function SettingsPage() {
       ? [{ id: 'social', label: 'Connected social accounts', icon: <Share2 size={16} /> }]
       : []),
     { id: 'grading', label: 'Grading Scale', icon: <Database size={16} /> },
+    // WHAT THIS DEPLOYMENT IS ACTUALLY CONFIGURED TO DO. Almost every variable
+    // in this system is optional and degrades silently, which is right — and
+    // which means an unset one is invisible until somebody presses a button
+    // that quietly does nothing. The Superadministrator alone, because knowing
+    // which of a system's secrets are unset is reconnaissance.
+    ...(can(user?.role, 'design-credentials')
+      ? [{ id: 'configuration', label: 'Deployment configuration', icon: <Settings2 size={16} /> }]
+      : []),
     { id: 'notifications', label: 'Notifications', icon: <Bell size={16} /> },
     { id: 'security', label: 'Security', icon: <Shield size={16} /> },
   ];
@@ -186,6 +194,8 @@ export default function SettingsPage() {
           )}
 
           {activeTab === 'openings' && <AdmissionOpenings />}
+
+          {activeTab === 'configuration' && <ConfigurationPanel />}
 
           {activeTab === 'social' && (
             <div className="space-y-4">

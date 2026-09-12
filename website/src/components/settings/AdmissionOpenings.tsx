@@ -21,14 +21,28 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { courses, MODE_LABEL } from '@/content/courses';
 import { Loader2, CheckCircle2, AlertTriangle, DoorOpen } from 'lucide-react';
 
 interface Opening {
-  kind: 'level' | 'field';
+  kind: 'level' | 'field' | 'programme';
+  /** For a programme this is the course CODE. */
   label: string;
   faculty: string | null;
   open: boolean;
   note: string | null;
+  approved_by_email?: string | null;
+  approved_at?: string | null;
+  updated_by_email?: string | null;
+  updated_at?: string | null;
+}
+
+/** The catalogue, by code, so a row can show what it is rather than a code. */
+const CATALOGUE = new Map(courses.map((c) => [c.code, c]));
+
+function when(iso: string | null | undefined): string {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 export default function AdmissionOpenings() {
@@ -106,6 +120,7 @@ export default function AdmissionOpenings() {
     );
   }
 
+  const programmes = rows.filter((r) => r.kind === 'programme');
   const levels = rows.filter((r) => r.kind === 'level');
   const byFaculty = rows.filter((r) => r.kind === 'field').reduce<Record<string, Opening[]>>((acc, r) => {
     const f = r.faculty ?? 'Other';
@@ -149,6 +164,132 @@ export default function AdmissionOpenings() {
           admitting now and not teaching at all are different statements.
         </p>
       </div>
+
+      {/* ------------------------------------------------------------------
+          PROGRAMME MANAGEMENT — the grain the University governs at.
+
+          Award level and field of study are coarse: "Master's" and "Theology"
+          together do not say whether the Master of Divinity is admitting while
+          the Master of Theology is not. This table is the named programme, and
+          it is the one the Admissions Portal reads.
+
+          Absent until migration 023 is run, and its absence is silent on
+          purpose — the level and field lists below still work, so a database a
+          migration behind is a database with fewer controls, not a broken
+          screen.
+          ------------------------------------------------------------------ */}
+      {programmes.length > 0 && (
+        <section>
+          <h4 className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-[#8a7d1f]">
+            Programme management
+          </h4>
+          <p className="mt-1.5 text-xs leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">
+            {programmes.filter(isOpen).length} of {programmes.length} programmes are open. Only a
+            ticked programme is offered in the Admissions Portal.
+          </p>
+
+          {programmes.every((o) => !isOpen(o)) && (
+            <p className="mt-3 flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5 text-xs leading-relaxed text-amber-900">
+              <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" />
+              {/* THE STATE A FRESHLY-RUN 023 LEAVES THE UNIVERSITY IN, said
+                  plainly. Programmes are seeded closed because a control that
+                  defaults to permitting everything is not a control — but
+                  nobody should have to deduce that from an empty portal. */}
+              <span>
+                <strong>No programme is open, so the Admissions Portal is offering none.</strong>{' '}
+                Programmes arrive closed by design. Tick the ones Academic Affairs has authorised
+                and apply the changes.
+              </span>
+            </p>
+          )}
+
+          <div className="mt-3 overflow-x-auto rounded-xl border border-[#ece7de] dark:border-[#2e2637]">
+            <table className="w-full min-w-[46rem] text-left text-sm">
+              <thead>
+                <tr className="border-b border-[#ece7de] bg-[#faf8f4] text-[10px] uppercase tracking-[0.12em] text-[#8a8194] dark:border-[#2e2637] dark:bg-[#241f2c]">
+                  <th className="px-3 py-2.5 font-semibold">Programme</th>
+                  <th className="px-3 py-2.5 font-semibold">Faculty</th>
+                  <th className="px-3 py-2.5 font-semibold">Level</th>
+                  <th className="px-3 py-2.5 font-semibold">Delivery</th>
+                  <th className="px-3 py-2.5 font-semibold">Application</th>
+                  <th className="px-3 py-2.5 font-semibold">Approved by</th>
+                  <th className="px-3 py-2.5 font-semibold">Open</th>
+                </tr>
+              </thead>
+              <tbody>
+                {programmes.map((o) => {
+                  const c = CATALOGUE.get(o.label);
+                  const open = isOpen(o);
+                  const changed = key(o) in draft && draft[key(o)] !== o.open;
+                  return (
+                    <tr
+                      key={key(o)}
+                      className={`border-b border-[#f0ece4] last:border-0 dark:border-[#2a2333] ${changed ? 'bg-amber-50/60 dark:bg-amber-950/20' : ''}`}
+                    >
+                      <td className="px-3 py-2.5">
+                        <span className="font-medium text-[#33234a] dark:text-[#e4dcf0]">
+                          {c?.title ?? o.label}
+                        </span>
+                        <span className="ml-2 font-mono text-[10px] text-[#a49bb0]">{o.label}</span>
+                        {/* A code with no catalogue entry means the table and
+                            the content file have drifted. Said, not hidden. */}
+                        {!c && (
+                          <span className="ml-2 rounded bg-red-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase text-red-800">
+                            not in the catalogue
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2.5 text-xs text-[#6b6076] dark:text-[#9c93ad]">
+                        {c?.faculty ?? o.faculty ?? '—'}
+                      </td>
+                      <td className="px-3 py-2.5 text-xs text-[#6b6076] dark:text-[#9c93ad]">
+                        {c?.level ?? '—'}
+                      </td>
+                      <td className="px-3 py-2.5 text-xs text-[#6b6076] dark:text-[#9c93ad]">
+                        {c ? MODE_LABEL[c.mode] : '—'}
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <span className={`inline-flex items-center gap-1.5 text-xs font-semibold ${open ? 'text-emerald-700 dark:text-emerald-400' : 'text-[#a49bb0]'}`}>
+                          <span aria-hidden="true" className={`h-2 w-2 rounded-full ${open ? 'bg-emerald-500' : 'bg-[#c9c2b4]'}`} />
+                          {open ? 'Open' : 'Closed'}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2.5 text-xs text-[#6b6076] dark:text-[#9c93ad]">
+                        {o.approved_by_email ? (
+                          <>
+                            {o.approved_by_email}
+                            <span className="block text-[10px] text-[#a49bb0]">{when(o.approved_at)}</span>
+                            {/* Who changed it last, when that is somebody else.
+                                The University asked for both questions to be
+                                answerable and they have different answers the
+                                moment one office reverses another. */}
+                            {o.updated_by_email && o.updated_by_email !== o.approved_by_email && (
+                              <span className="block text-[10px] text-[#a49bb0]">
+                                changed by {o.updated_by_email}, {when(o.updated_at)}
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-[#a49bb0]">never approved</span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <input
+                          type="checkbox"
+                          aria-label={`Open ${c?.title ?? o.label} for application`}
+                          checked={open}
+                          onChange={(e) => setDraft((d) => ({ ...d, [key(o)]: e.target.checked }))}
+                          className="h-4 w-4 accent-[#422e59]"
+                        />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
       <section>
         <h4 className="font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-[#8a7d1f]">

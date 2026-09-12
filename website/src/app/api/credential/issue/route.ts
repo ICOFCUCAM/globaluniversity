@@ -42,6 +42,7 @@
 // ---------------------------------------------------------------------------
 
 import { NextResponse } from 'next/server';
+import { signContentHashWith, type SecretDb } from '@/lib/documentSignature';
 import { guard, audit } from '@/lib/adminAuth';
 import {
   newCredentialId, contentHash, sealAward, awardFields, verificationQrSvg, AWARD_FORMAT,
@@ -196,9 +197,21 @@ export async function POST(request: Request) {
   // The register row first. A credential in a graduate's hand that the
   // university has no record of is the failure this whole system exists to
   // prevent — better to fail with nothing issued.
-  const { error: regErr } = await admin.from('credentials_issued').insert({
+  // RETURNS THE ROW ID. The issue screen needs it to offer the three outputs
+  // — print, PDF, email — on the certificate it has just minted, rather than
+  // sending the registrar to the register to find the row they just created.
+  // Signed with the University's own key, so a receiving institution can check
+  // the certificate without trusting this website. See documentSignature.ts.
+  // The cast keeps the Supabase client's generated types out of the signing
+  // module's structural `SecretDb` shape — matching them made the compiler walk
+  // the whole generated schema and give up.
+  const signed = await signContentHashWith(admin as unknown as SecretDb, hash);
+
+  const { data: registered, error: regErr } = await admin.from('credentials_issued').insert({
     credential_id: credentialId,
     kind: 'certificate',
+    signature: signed.signature,
+    signing_key_id: signed.keyId,
     student_id: student.id,
     student_number: student.student_number ?? student.matric_no,
     holder_name: holderName,
@@ -210,7 +223,7 @@ export async function POST(request: Request) {
     seal_code: seal.code,
     template_version: body.templateVersion ?? null,
     issued_by: caller.id,
-  });
+  }).select('id').single();
   if (regErr) {
     return NextResponse.json({
       ok: false,
@@ -233,6 +246,8 @@ export async function POST(request: Request) {
   return NextResponse.json({
     ok: true,
     credential: {
+      /** The register row, for the delivery route. */
+      id: registered?.id ?? null,
       credentialId,
       holderName,
       award: facts.award,
