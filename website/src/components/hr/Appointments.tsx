@@ -35,6 +35,7 @@ import { BTN_PRIMARY, BTN_SECONDARY, INPUT, LABEL, FOCUS } from '@/lib/portalThe
 import { Plus, Loader2, Check, X, AlertTriangle, Users } from 'lucide-react';
 import {
   EMPLOYMENT_TYPES, EMPLOYMENT_LABELS, CURRENCIES, SALARY_PERIODS, PERIOD_LABELS,
+  DEFAULT_CURRENCY, DEFAULT_PERIOD,
   countersFor, boardStatus, missingFrom, blocked, remunerationLine, probationEnds,
   STATE_LABELS, EXPIRING_WINDOW_DAYS,
   type Appointment, type AppointmentState,
@@ -307,7 +308,7 @@ function NewAppointment({
     positionTitle: '', unitName: '', employmentType: 'permanent',
     startDate: '', endDate: '', effectiveDate: '', probationMonths: '',
     placeOfDuty: '', reportsToName: '', workingHours: '', terms: '',
-    salaryAmount: '', salaryCurrency: 'FCFA', salaryPeriod: 'month',
+    salaryAmount: '', salaryCurrency: DEFAULT_CURRENCY, salaryPeriod: DEFAULT_PERIOD,
     appointingAuthority: '', authorityDecidedOn: '',
   });
 

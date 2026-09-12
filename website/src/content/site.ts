@@ -344,7 +344,12 @@ export const homeFaculties = {
   items: [
     { name: 'Faculty of Theology', image: '/images/wp/fac-theology.jpg' },
     { name: 'Faculty of Education', image: '/images/wp/fac-education.png' },
-    { name: 'Faculty of Business & Management Science', image: '/images/wp/fac-business.jpg' },
+    // "and", not "&". The University's ruling, and the rest of the site already
+    // said it: every other reference — the faculty list, the programme
+    // catalogue, the school field on each programme — reads "Business and
+    // Management Science". This line was the only ampersand, which is how a
+    // faculty comes to have two names on one website.
+    { name: 'Faculty of Business and Management Science', image: '/images/wp/fac-business.jpg' },
     { name: 'Faculty of Engineering & Technology', image: '/images/wp/fac-engineering.jpg' },
   ],
 };

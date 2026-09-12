@@ -166,7 +166,11 @@ begin
     -- as tampering on every letter that has one.
     update appointments set status = 'approved', authorized_by = other,
                             authorized_at = now() where id = a_id;
-    update appointments set status = 'issued', issued_at = now() where id = a_id;
+    -- THE APPOINTMENT IS NOT MARKED ISSUED HERE, and it used to be. It never
+    -- needed to be: archiving a letter does not require the appointment to say
+    -- `issued`, and 047 now refuses that order anyway — an appointment reaches
+    -- `issued` only once a letter is in the archive, which is the opposite way
+    -- round from the line that stood here. Removed rather than worked around.
 
     refused := false;
     begin

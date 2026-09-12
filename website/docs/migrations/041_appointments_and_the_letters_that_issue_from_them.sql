@@ -507,11 +507,33 @@ begin
     -- "450,000" with no currency and no period is not a figure anybody can
     -- rely on, and each half looks complete on its own, which is how the
     -- omission reaches a signature.
+    --
+    -- THE TRIGGER 047 ADDS IS STOOD DOWN FOR THIS ONE CHECK. It fills in
+    -- dollars and a monthly period when an amount arrives with neither, which
+    -- is the University's ruling and is exactly what makes this constraint
+    -- stop firing on a database that has had 047. Running the two in order
+    -- therefore reported "041 FAILED" on the SECOND pass and not the first —
+    -- the constraint had not gone anywhere, but nothing could reach it.
+    --
+    -- Disabled inside the rolled-back block, so it is disabled for the length
+    -- of this proof and for nothing else.
+    if exists (select 1 from pg_trigger
+                where tgname = 'appointments_money_is_in_dollars'
+                  and tgrelid = 'appointments'::regclass) then
+      alter table appointments disable trigger appointments_money_is_in_dollars;
+    end if;
+
     refused := false;
     begin
       update appointments set salary_amount = 450000 where id = a_id;
     exception when others then refused := true;
     end;
+
+    if exists (select 1 from pg_trigger
+                where tgname = 'appointments_money_is_in_dollars'
+                  and tgrelid = 'appointments'::regclass) then
+      alter table appointments enable trigger appointments_money_is_in_dollars;
+    end if;
     if not refused then
       raise exception '041 FAILED: a salary was recorded with no currency and no period';
     end if;

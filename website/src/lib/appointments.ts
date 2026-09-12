@@ -49,6 +49,19 @@
 export const APPOINTMENT_STATES = [
   /** Being drafted by Human Resources. */
   'draft',
+  // ---------------------------------------------------------------------
+  // THE OFFICE'S OWN CHECK, BEFORE THE FILE REACHES THE AUTHORITY.
+  //
+  // The one state the University's proposed lifecycle had that this one did
+  // not. Everything else it named already existed under another name —
+  // `pending_vc` IS `submitted` (submitted TO the Vice-Chancellor),
+  // `letter_ready` IS `letter_generated`, and `letter_generation` is not a
+  // state at all but the second a document is being rendered.
+  //
+  // 047 refuses a review by whoever drafted it, so this cannot become a
+  // ceremony the drafter performs on their own work.
+  // ---------------------------------------------------------------------
+  'under_review',
   /** Sent for approval. The drafter can no longer edit it. */
   'submitted',
   /** Approved by somebody other than the drafter. No letter yet. */
@@ -84,7 +97,8 @@ export type AppointmentState = (typeof APPOINTMENT_STATES)[number];
 
 export const STATE_LABELS: Record<AppointmentState, string> = {
   draft: 'Draft',
-  submitted: 'Awaiting approval',
+  under_review: 'Under review in the office',
+  submitted: 'Awaiting the Vice-Chancellor',
   approved: 'Approved',
   letter_generated: 'Letter generated',
   issued: 'Letter issued',
@@ -104,7 +118,23 @@ export const STATE_LABELS: Record<AppointmentState, string> = {
  * would suggest every appointment passes through being declined.
  */
 export const LIFECYCLE: AppointmentState[] = [
-  'draft', 'submitted', 'approved', 'letter_generated', 'issued', 'accepted', 'active',
+  'draft', 'under_review', 'submitted', 'approved', 'letter_generated',
+  'issued', 'accepted', 'active',
+];
+
+/**
+ * The path a VC-originated appointment takes.
+ *
+ * SHORTER, AND LEGITIMATELY SO. There is no office to review a file the
+ * Vice-Chancellor wrote, and inserting one would be the artificial HR loop the
+ * University asked not to have. It still passes through `approved`, because an
+ * appointment commits the University's money and 041 refuses an approval by the
+ * drafter — a Vice-Chancellor who wants no second pair of eyes takes the
+ * `made_on_sole_authority` route in 045, which is permitted, recorded and
+ * permanent.
+ */
+export const LIFECYCLE_VC_ORIGINATED: AppointmentState[] = [
+  'draft', 'approved', 'letter_generated', 'issued', 'accepted', 'active',
 ];
 
 /** States from which an issued appointment can be amended. */
@@ -175,8 +205,30 @@ export const MUST_END: EmploymentType[] = ['fixed-term'];
  */
 export const USUALLY_UNPAID: EmploymentType[] = ['honorary'];
 
-export const CURRENCIES = ['FCFA', 'USD', 'EUR', 'GBP', 'NGN'] as const;
-export const SALARY_PERIODS = ['hour', 'month', 'year', 'session'] as const;
+// ---------------------------------------------------------------------------
+// THE UNIVERSITY'S APPOINTMENTS ARE IN DOLLARS.
+//
+// Its ruling, and consistent with the fee schedule, which it converted from
+// francs at 600 to the dollar. USD is first because a select list's first entry
+// is what most rows end up carrying.
+//
+// FCFA STAYS ON THE LIST. Appointments recorded in francs before the ruling are
+// still francs — restating somebody's salary in another currency is a decision
+// about their pay, not a data migration — and a currency the register holds but
+// the screen cannot display is a row nobody can edit.
+// ---------------------------------------------------------------------------
+export const CURRENCIES = ['USD', 'FCFA', 'EUR', 'GBP', 'NGN'] as const;
+
+/** What an appointment is priced in unless somebody says otherwise. */
+export const DEFAULT_CURRENCY = 'USD';
+export const DEFAULT_PERIOD = 'month';
+
+// 'contract' and 'stipend' are the two the University added and the two a
+// visiting appointment needs: a sum for the whole engagement, and an honorarium
+// that is not a salary at all.
+export const SALARY_PERIODS = [
+  'hour', 'month', 'year', 'session', 'contract', 'stipend',
+] as const;
 
 export type Currency = (typeof CURRENCIES)[number];
 export type SalaryPeriod = (typeof SALARY_PERIODS)[number];
@@ -186,6 +238,125 @@ export const PERIOD_LABELS: Record<SalaryPeriod, string> = {
   month: 'per month',
   year: 'per annum',
   session: 'per session',
+  contract: 'for the contract',
+  stipend: 'as a stipend',
+};
+
+// ---------------------------------------------------------------------------
+// ALLOWANCES — NONE OF THEM ASSUMED
+// ---------------------------------------------------------------------------
+//
+// The University's instruction: "Do not assume that every appointment has every
+// allowance." So an allowance an appointment does not carry has no row, rather
+// than a row of zero. The two are different facts and the letter prints them
+// differently — a nil housing allowance is a housing allowance of nothing,
+// which is a statement the University has not made.
+
+export const ALLOWANCE_KINDS = [
+  'housing', 'transport', 'communication', 'responsibility',
+  'research', 'entertainment', 'medical', 'other',
+] as const;
+
+export type AllowanceKind = (typeof ALLOWANCE_KINDS)[number];
+
+export const ALLOWANCE_LABELS: Record<AllowanceKind, string> = {
+  housing: 'Housing allowance',
+  transport: 'Transport allowance',
+  communication: 'Communication allowance',
+  responsibility: 'Responsibility allowance',
+  research: 'Research allowance',
+  entertainment: 'Entertainment allowance',
+  medical: 'Medical allowance',
+  other: 'Other allowance',
+};
+
+export interface Allowance {
+  kind?: string | null;
+  label?: string | null;
+  amount?: number | null;
+  currency?: string | null;
+  period?: string | null;
+  note?: string | null;
+}
+
+/** What an allowance is called on the letter. 'other' has to say. */
+export function allowanceName(a: Allowance): string {
+  if (a.kind === 'other') return (a.label ?? '').trim() || 'Other allowance';
+  return ALLOWANCE_LABELS[a.kind as AllowanceKind] ?? ((a.label ?? '').trim() || 'Allowance');
+}
+
+/**
+ * An allowance as one line: "Housing allowance — USD 400 per month".
+ *
+ * NEVER SUMMED WITH THE SALARY HERE. A monthly salary and an annual research
+ * allowance do not add, and a figure that quietly combined them would be a
+ * wrong number on a signed letter. The letter lists them; the University reads
+ * them.
+ */
+export function allowanceLine(a: Allowance): string | null {
+  if (a.amount == null || !a.currency) return null;
+  const period = PERIOD_LABELS[a.period as SalaryPeriod] ?? a.period ?? '';
+  return `${allowanceName(a)} — ${a.currency} ${Number(a.amount).toLocaleString('en-US')}`
+    + (period ? ` ${period}` : '');
+}
+
+// ---------------------------------------------------------------------------
+// THE SECOND AXIS — WHAT THE UNIVERSITY IS DOING
+// ---------------------------------------------------------------------------
+//
+// The University named fourteen "appointment types" and they are two lists.
+// Six say what KIND OF EMPLOYMENT this is — visiting, part-time, adjunct,
+// probationary — and those are `EMPLOYMENT_TYPES` above. Eight say what the
+// UNIVERSITY IS DOING, and those are here.
+//
+// A promotion to a full-time post is both. In one column it is neither: the
+// register could then answer how many promotions were made this year, or how
+// many part-time staff there are, but never both — and the second answer would
+// silently omit everybody whose row said "Promotion".
+
+export const APPOINTMENT_ACTIONS = [
+  'initial', 'reappointment', 'promotion', 'renewal', 'extension',
+  'transfer', 'confirmation', 'amendment',
+] as const;
+
+export type AppointmentAction = (typeof APPOINTMENT_ACTIONS)[number];
+
+export const ACTION_LABELS: Record<AppointmentAction, string> = {
+  initial: 'Initial Appointment',
+  reappointment: 'Reappointment',
+  promotion: 'Promotion',
+  renewal: 'Renewal',
+  extension: 'Contract Extension',
+  transfer: 'Transfer',
+  confirmation: 'Confirmation of Appointment',
+  amendment: 'Appointment Amendment',
+};
+
+/**
+ * The actions that are always about an earlier appointment.
+ *
+ * A promotion with nothing behind it is either a first appointment somebody
+ * mislabelled, or a record that has lost its predecessor. Both want correcting,
+ * and neither is visible without asking. 047 refuses these in the database.
+ */
+export const CONTINUES_AN_EARLIER: AppointmentAction[] = [
+  'promotion', 'renewal', 'extension', 'confirmation',
+];
+
+export function isAppointmentAction(v: unknown): v is AppointmentAction {
+  return typeof v === 'string' && (APPOINTMENT_ACTIONS as readonly string[]).includes(v);
+}
+
+/** How the letter opens, which is not the same sentence for each action. */
+export const ACTION_OPENING: Record<AppointmentAction, string> = {
+  initial: 'We are pleased to formally appoint you as',
+  reappointment: 'We are pleased to reappoint you as',
+  promotion: 'We are pleased to inform you that you have been promoted to the post of',
+  renewal: 'We are pleased to renew your appointment as',
+  extension: 'We are pleased to extend your appointment as',
+  transfer: 'You are hereby transferred to the post of',
+  confirmation: 'We are pleased to confirm your appointment as',
+  amendment: 'Your appointment is amended, with effect from the date below, as',
 };
 
 export function isEmploymentType(v: unknown): v is EmploymentType {

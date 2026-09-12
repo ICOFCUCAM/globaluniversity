@@ -370,6 +370,27 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
     // which 045 already created.
     table: 'correspondence_events',
   },
+  {
+    file: '047_the_money_the_actors_and_the_two_axes.sql',
+    what: 'The University’s appointments are priced in dollars from here on, and an '
+      + 'appointment can carry allowances — housing, transport, responsibility — each '
+      + 'with its own amount and period, none assumed. The record also names five people '
+      + 'instead of three: who reviewed it and who issued it were previously guessed at. And '
+      + 'it closes a door: nothing reaches `issued` without both an approval and an archived '
+      + 'letter behind it.',
+    // THE ALLOWANCES ARE THE MARKER. `reviewed_by` is a column on a table 041
+    // already created; this is a table that did not exist before.
+    table: 'appointment_allowances',
+  },
+  {
+    file: '048_the_job_descriptions_and_what_they_inherit.sql',
+    what: 'A register of the University’s forty-six posts, and a job description for each, '
+      + 'inherited from one of eight family profiles so the confidentiality clause is written '
+      + 'once rather than forty-six times. EVERYTHING IT SEEDS IS A DRAFT: the wording is a '
+      + 'first draft for the University to read, nobody may activate what they wrote, and an '
+      + 'unapproved job description cannot be attached to an appointment.',
+    table: 'positions',
+  },
 ];
 
 /** What a probe came back as. */

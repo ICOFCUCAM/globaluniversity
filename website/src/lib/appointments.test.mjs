@@ -254,9 +254,21 @@ console.log('\nFour facts where there used to be one\n');
   for (const st of ['letter_generated', 'issued', 'accepted', 'active']) {
     check(`${st} is its own state`, A.APPOINTMENT_STATES.includes(st), true);
   }
-  check('and the ordinary path is a chain of seven',
-    A.LIFECYCLE, ['draft', 'submitted', 'approved', 'letter_generated', 'issued',
-      'accepted', 'active']);
+  // EIGHT SINCE 047, not seven. `under_review` is the office's own check
+  // before the file reaches the Vice-Chancellor — the one state the
+  // University's proposed lifecycle had that this one did not. Everything else
+  // it named already existed under another name.
+  check('and the ordinary path is a chain of eight',
+    A.LIFECYCLE, ['draft', 'under_review', 'submitted', 'approved', 'letter_generated',
+      'issued', 'accepted', 'active']);
+
+  // AND THE VC'S OWN PATH IS SHORTER, LEGITIMATELY. There is no office to
+  // review a file the Vice-Chancellor wrote, and inserting one would be the
+  // artificial HR loop the University asked not to have. It still passes
+  // through `approved`, because an appointment commits money.
+  check('a VC-originated appointment skips the office review',
+    A.LIFECYCLE_VC_ORIGINATED.includes('under_review'), false);
+  check('…but not the approval', A.LIFECYCLE_VC_ORIGINATED.includes('approved'), true);
   // THE CLOSURES ARE NOT ON IT. Drawing them in a line would suggest every
   // appointment passes through being declined.
   check('the closures are not steps along it',
@@ -334,12 +346,18 @@ console.log('\nWhat a reader of the document is told\n');
     A.verificationStatus(current, { status: 'ended' }), 'Ended');
 }
 
-console.log('\nAnd 042 holds the same lifecycle\n');
+console.log('\nAnd the migrations hold the same lifecycle\n');
 
 {
-  const sql = readFileSync(
-    join(here, '../../docs/migrations/042_the_appointment_lifecycle_and_the_staff_record.sql'),
-    'utf8');
+  // BOTH FILES, because the vocabulary is not all in one. 042 declared eleven
+  // states and 047 restated the constraint to add `under_review`; reading only
+  // 042 reported the newest state as unknown to the database when it is in the
+  // constraint currently in force. A test that reads one of two files is
+  // asserting where a rule was written rather than whether it holds.
+  const sql = [
+    '042_the_appointment_lifecycle_and_the_staff_record.sql',
+    '047_the_money_the_actors_and_the_two_axes.sql',
+  ].map((f) => readFileSync(join(here, '../../docs/migrations/', f), 'utf8')).join('\n');
 
   for (const st of A.APPOINTMENT_STATES) {
     check(`the database knows '${st}'`, sql.includes(`'${st}'`), true);

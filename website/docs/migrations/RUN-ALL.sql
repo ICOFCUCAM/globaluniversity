@@ -1,9 +1,9 @@
 -- ===========================================================================
--- ICOF GLOBAL UNIVERSITY — MIGRATIONS 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013, 014, 015, 016, 017, 018, 019, 020, 021, 022, 023, 024, 025, 026, 027, 028, 029, 030, 031, 032, 033, 034, 035, 036, 037, 038, 039, 040, 041, 042, 043, 044, 045, 046, IN ORDER
+-- ICOF GLOBAL UNIVERSITY — MIGRATIONS 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013, 014, 015, 016, 017, 018, 019, 020, 021, 022, 023, 024, 025, 026, 027, 028, 029, 030, 031, 032, 033, 034, 035, 036, 037, 038, 039, 040, 041, 042, 043, 044, 045, 046, 047, 048, IN ORDER
 --
 -- GENERATED FILE. DO NOT EDIT.
 --   Generator: scripts/build-migration-run.mjs
---   Rebuild:   node scripts/build-migration-run.mjs --out=RUN-ALL.sql 001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020 021 022 023 024 025 026 027 028 029 030 031 032 033 034 035 036 037 038 039 040 041 042 043 044 045 046
+--   Rebuild:   node scripts/build-migration-run.mjs --out=RUN-ALL.sql 001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020 021 022 023 024 025 026 027 028 029 030 031 032 033 034 035 036 037 038 039 040 041 042 043 044 045 046 047 048
 --
 -- ---------------------------------------------------------------------------
 -- HOW TO RUN IT
@@ -13757,11 +13757,33 @@ begin
     -- "450,000" with no currency and no period is not a figure anybody can
     -- rely on, and each half looks complete on its own, which is how the
     -- omission reaches a signature.
+    --
+    -- THE TRIGGER 047 ADDS IS STOOD DOWN FOR THIS ONE CHECK. It fills in
+    -- dollars and a monthly period when an amount arrives with neither, which
+    -- is the University's ruling and is exactly what makes this constraint
+    -- stop firing on a database that has had 047. Running the two in order
+    -- therefore reported "041 FAILED" on the SECOND pass and not the first —
+    -- the constraint had not gone anywhere, but nothing could reach it.
+    --
+    -- Disabled inside the rolled-back block, so it is disabled for the length
+    -- of this proof and for nothing else.
+    if exists (select 1 from pg_trigger
+                where tgname = 'appointments_money_is_in_dollars'
+                  and tgrelid = 'appointments'::regclass) then
+      alter table appointments disable trigger appointments_money_is_in_dollars;
+    end if;
+
     refused := false;
     begin
       update appointments set salary_amount = 450000 where id = a_id;
     exception when others then refused := true;
     end;
+
+    if exists (select 1 from pg_trigger
+                where tgname = 'appointments_money_is_in_dollars'
+                  and tgrelid = 'appointments'::regclass) then
+      alter table appointments enable trigger appointments_money_is_in_dollars;
+    end if;
     if not refused then
       raise exception '041 FAILED: a salary was recorded with no currency and no period';
     end if;
@@ -14296,12 +14318,22 @@ begin
       raise exception '042 FAILED: an appointment was amended with no reason and nobody asking';
     end if;
 
-    -- Walk it properly: approved, letter generated, issued.
+    -- ---- WALK IT PROPERLY: approved, letter generated, ISSUED -------------
+    --
+    -- THE LETTER IS ARCHIVED BEFORE THE STATUS SAYS ISSUED, and it did not use
+    -- to be. 047 refuses an appointment to reach `issued` with no document
+    -- behind it — the University's own rule — so this proof walked a path the
+    -- system no longer permits, and reported "042 FAILED" on the second pass
+    -- of RUN-ALL while passing cleanly on the first.
+    --
+    -- The fix is not to stand the rule down. It is that this order was always
+    -- the right one: the appointee is holding the letter, and a register that
+    -- says a letter went out before one existed is the thing 047 closes.
     update appointments
        set status = 'approved', authorized_by = other, authorized_at = now() where id = a_id;
     update appointments
        set status = 'letter_generated', letter_generated_at = now() where id = a_id;
-    update appointments set status = 'issued', issued_at = now() where id = a_id;
+    -- …and `issued` is set below, AFTER the letter is in the archive.
 
     -- ---- THE REFERENCE IS THE SHAPE THE UNIVERSITY ASKED FOR --------------
     refused := false;
@@ -14317,6 +14349,10 @@ begin
     insert into appointment_letters (appointment_id, reference, issued_on, html, kind)
     values (a_id, 'APT-2026-0042', current_date, '<p>Version one.</p>', 'issued')
     returning id into l_id;
+
+    -- NOW it can be issued, and not before. The archive holds the document the
+    -- appointee is about to be holding.
+    update appointments set status = 'issued', issued_at = now() where id = a_id;
 
     -- ---- A SECOND VERSION SAYS WHY THERE IS ONE ---------------------------
     -- Somebody is holding version 1 and has just been sent version 2.
@@ -14629,7 +14665,11 @@ begin
     -- as tampering on every letter that has one.
     update appointments set status = 'approved', authorized_by = other,
                             authorized_at = now() where id = a_id;
-    update appointments set status = 'issued', issued_at = now() where id = a_id;
+    -- THE APPOINTMENT IS NOT MARKED ISSUED HERE, and it used to be. It never
+    -- needed to be: archiving a letter does not require the appointment to say
+    -- `issued`, and 047 now refuses that order anyway — an appointment reaches
+    -- `issued` only once a letter is in the archive, which is the opposite way
+    -- round from the line that stood here. Removed rather than worked around.
 
     refused := false;
     begin
@@ -16052,4 +16092,1469 @@ select c.subject, c.originating_office, c.preparation_requested_at,
   from correspondence c
  where c.status = 'preparing'
  order by c.preparation_requested_at;
+
+
+-- ===========================================================================
+-- ===========================================================================
+--
+--   047_the_money_the_actors_and_the_two_axes.sql
+--
+-- ===========================================================================
+-- ===========================================================================
+
+-- ===========================================================================
+-- 047 — THE MONEY, THE ACTORS, AND THE TWO AXES OF AN APPOINTMENT
+-- ===========================================================================
+--
+-- ---------------------------------------------------------------------------
+-- WHAT CHANGES THE MOMENT THIS RUNS
+-- ---------------------------------------------------------------------------
+--
+-- 1. THE UNIVERSITY'S APPOINTMENTS ARE IN DOLLARS. New appointments default to
+--    USD, following the fee schedule, which the University converted to dollars
+--    at 600 FCFA to the dollar. EXISTING ROWS ARE NOT TOUCHED — an appointment
+--    already recorded in francs stays in francs, because restating somebody's
+--    salary in another currency is a decision about their pay, not a data
+--    migration.
+--
+-- 2. AN APPOINTMENT CAN CARRY ALLOWANCES. Housing, transport, communication,
+--    responsibility, research — each with its own amount and period, none
+--    assumed. Until now a salary was one number, so an appointment worth
+--    $2,000 basic plus $400 housing could only be recorded as $2,400, and the
+--    letter then stated something the University had not decided.
+--
+-- 3. THE RECORD NAMES FIVE PEOPLE, NOT THREE. `reviewed_by` and `issued_by`
+--    join the three that existed. "Who issued this?" was previously answerable
+--    only by inference from `authorized_by`, which is wrong whenever the
+--    authority approves on Monday and the letter goes out on Thursday.
+--
+-- 4. A CLOSED DOOR — READ THIS ONE. An appointment can no longer reach
+--    `issued` unless a letter for it is archived. The University's own words:
+--    "an appointment cannot be issued without an approved decision and an
+--    archived appointment document". Until now `issued` was a status somebody
+--    could set with no document behind it, and the appointee would then be
+--    holding nothing while the register said a letter had gone.
+--
+-- ---------------------------------------------------------------------------
+-- THE ONE THING TO READ TWICE
+-- ---------------------------------------------------------------------------
+--
+-- THE UNIVERSITY'S LIST OF APPOINTMENT TYPES IS TWO LISTS. Asked for fourteen
+-- types — Initial, Reappointment, Promotion, Renewal, Contract Extension,
+-- Transfer, Acting, Visiting, Part-Time, Full-Time, Adjunct, Probationary,
+-- Confirmation, Amendment — and they are not one vocabulary. Six of them say
+-- what KIND OF EMPLOYMENT this is (visiting, part-time, adjunct, probationary)
+-- and eight say WHAT THE UNIVERSITY IS DOING (promoting, renewing,
+-- transferring, confirming).
+--
+-- A promotion to a full-time post is both. Put in one column, it is neither:
+-- the University can then ask how many promotions it made this year or how many
+-- part-time staff it has, but never both, and the answer to the second silently
+-- excludes everybody whose row says "Promotion".
+--
+-- So `employment_type` keeps its meaning and `appointment_action` is added
+-- beside it. Nothing existing is renamed and no existing row changes.
+-- ===========================================================================
+
+
+-- ===========================================================================
+-- 1. THE MONEY
+-- ===========================================================================
+
+-- ---------------------------------------------------------------------------
+-- NEW ROWS ARE IN DOLLARS — AND THIS IS A TRIGGER, NOT A COLUMN DEFAULT.
+--
+-- It was `alter column salary_currency set default 'USD'` for about ten
+-- minutes, and the proof below refused it immediately: a column default applies
+-- to EVERY insert, so an honorary appointment carrying no pay at all came out
+-- with a currency and no amount, which 041 correctly refuses as an incomplete
+-- salary. The University would have discovered it the first time it appointed
+-- somebody unpaid.
+--
+-- The rule the University actually stated is conditional — "money is in
+-- dollars" — and a default cannot express a condition. This can: if an amount
+-- is given and nobody said in what, it is dollars.
+--
+-- EXISTING ROWS ARE NOT TOUCHED. An appointment already recorded in francs
+-- stays in francs; restating somebody's salary in another currency is a
+-- decision about their pay, not a data migration.
+-- ---------------------------------------------------------------------------
+alter table appointments alter column salary_currency drop default;
+
+create or replace function appointment_money_is_in_dollars() returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  if new.salary_amount is not null and new.salary_currency is null then
+    new.salary_currency := 'USD';
+  end if;
+  -- A FIGURE WITH NO PERIOD IS NOT A SALARY, and monthly is what the
+  -- University's own schedule is quoted over. Stated here rather than left to
+  -- whichever screen happened to post the row.
+  if new.salary_amount is not null and new.salary_period is null then
+    new.salary_period := 'month';
+  end if;
+  return new;
+end $$;
+
+drop trigger if exists appointments_money_is_in_dollars on appointments;
+create trigger appointments_money_is_in_dollars
+  before insert or update on appointments
+  for each row execute function appointment_money_is_in_dollars();
+
+do $$
+begin
+  -- THE PERIODS THE UNIVERSITY ACTUALLY PAYS OVER. 'contract' and 'stipend' are
+  -- the two that were missing and the two a visiting appointment needs: a sum
+  -- for the whole engagement, and an honorarium that is not a salary at all.
+  if not exists (select 1 from pg_constraint where conname = 'appointments_salary_period_known') then
+    alter table appointments add constraint appointments_salary_period_known
+      check (salary_period is null or salary_period in
+             ('hour', 'month', 'year', 'session', 'contract', 'stipend'));
+  end if;
+
+  if not exists (select 1 from pg_constraint where conname = 'appointments_currency_known') then
+    alter table appointments add constraint appointments_currency_known
+      check (salary_currency is null or salary_currency in
+             ('USD', 'FCFA', 'EUR', 'GBP', 'NGN'))
+      -- NOT VALID. There may be rows carrying a currency typed before there was
+      -- a list, and refusing to run rather than naming them would leave the
+      -- whole migration unapplied over somebody's historic spelling.
+      not valid;
+  end if;
+end $$;
+
+-- ---------------------------------------------------------------------------
+-- ALLOWANCES — EACH ONE ITS OWN ROW
+-- ---------------------------------------------------------------------------
+--
+-- NOT SEVEN COLUMNS ON `appointments`. Seven columns says every appointment has
+-- seven allowances and six of them are zero, which is a claim the University has
+-- not made: an honorary appointment has none, and a Dean's responsibility
+-- allowance is not a nil housing allowance. A row that does not exist says
+-- "this appointment does not carry one", and a row of zero says "it carries one
+-- and it is nothing" — two different facts, and the letter prints them
+-- differently.
+
+create table if not exists appointment_allowances (
+  id             uuid primary key default gen_random_uuid(),
+  appointment_id uuid not null references appointments (id) on delete cascade,
+
+  kind           text not null check (kind in (
+                   'housing', 'transport', 'communication', 'responsibility',
+                   'research', 'entertainment', 'medical', 'other')),
+  -- WHAT IT IS CALLED ON THE LETTER, where 'other' needs a name and the rest
+  -- have one. An allowance printed as "Other: $200" tells the appointee
+  -- nothing.
+  label          text,
+
+  amount         numeric(14, 2) not null check (amount > 0),
+  currency       text not null default 'USD'
+                   check (currency in ('USD', 'FCFA', 'EUR', 'GBP', 'NGN')),
+  period         text not null default 'month'
+                   check (period in ('hour', 'month', 'year', 'session',
+                                     'contract', 'stipend', 'once')),
+
+  note           text,
+  created_at     timestamptz not null default now()
+);
+
+create index if not exists appointment_allowances_appointment_idx
+  on appointment_allowances (appointment_id);
+
+do $$
+begin
+  -- AN 'other' ALLOWANCE SAYS WHAT IT IS.
+  if not exists (select 1 from pg_constraint where conname = 'appointment_allowances_other_is_named') then
+    alter table appointment_allowances add constraint appointment_allowances_other_is_named
+      check (kind <> 'other' or (label is not null and length(btrim(label)) >= 3));
+  end if;
+
+  -- ONE OF EACH KIND, except 'other' which may recur because it is the
+  -- catch-all and two different named allowances are two rows.
+  if not exists (select 1 from pg_indexes
+                  where indexname = 'appointment_allowances_one_of_each_idx') then
+    create unique index appointment_allowances_one_of_each_idx
+      on appointment_allowances (appointment_id, kind) where kind <> 'other';
+  end if;
+end $$;
+
+-- THE TOTAL, COMPUTED WHERE IT CANNOT DRIFT. A screen adding these up would be
+-- a second answer to "what does this post pay", and the two would disagree the
+-- first time somebody changed a rounding rule.
+create or replace view appointment_remuneration
+with (security_invoker = true) as
+  select a.id as appointment_id,
+         a.salary_amount,
+         a.salary_currency,
+         a.salary_period,
+         coalesce(sum(al.amount) filter (
+           where al.currency = a.salary_currency and al.period = a.salary_period), 0)
+           as allowances_same_basis,
+         count(al.id) as allowance_count,
+         -- SAID OUT LOUD WHEN THEY CANNOT BE ADDED. A monthly salary and an
+         -- annual research allowance do not sum, and a view that quietly added
+         -- them would put a wrong figure on a letter.
+         count(al.id) filter (
+           where al.currency <> a.salary_currency or al.period <> a.salary_period)
+           as allowances_on_another_basis
+    from appointments a
+    left join appointment_allowances al on al.appointment_id = a.id
+   group by a.id, a.salary_amount, a.salary_currency, a.salary_period;
+
+alter table appointment_allowances enable row level security;
+
+drop policy if exists appointment_allowances_read on appointment_allowances;
+create policy appointment_allowances_read on appointment_allowances
+  for select to authenticated
+  using (exists (select 1 from appointments a where a.id = appointment_allowances.appointment_id));
+
+
+-- ===========================================================================
+-- 2. THE FIVE ACTORS
+-- ===========================================================================
+--
+-- initiated_by  — whose appointment this is. 045.
+-- drafted_by    — who typed it. 041.
+-- reviewed_by   — who checked it before it went to the authority. Here.
+-- authorized_by — who approved it. 041.
+-- issued_by     — who sent the letter. Here.
+--
+-- THE LAST TWO ARE NOT THE SAME PERSON AND WERE NOT THE SAME ACT. An authority
+-- approves on Monday; the letter goes out on Thursday. Reading `issued_by` off
+-- `authorized_by` is right most of the time and wrong exactly when somebody is
+-- asking.
+
+alter table appointments
+  add column if not exists reviewed_by uuid references auth.users (id) on delete set null,
+  add column if not exists reviewed_at timestamptz,
+  add column if not exists issued_by uuid references auth.users (id) on delete set null;
+
+do $$
+begin
+  -- A REVIEW NAMES ITS REVIEWER AND ITS MOMENT, or it is not a review.
+  if not exists (select 1 from pg_constraint where conname = 'appointments_review_is_complete') then
+    alter table appointments add constraint appointments_review_is_complete
+      check ((reviewed_by is null) = (reviewed_at is null));
+  end if;
+
+  -- ---------------------------------------------------------------------
+  -- AND A REVIEWER IS NOT THE DRAFTER.
+  --
+  -- The point of an internal review is that a second person in the office
+  -- reads it before it reaches the Vice-Chancellor. A drafter who reviews
+  -- their own work has performed a ceremony, and the Vice-Chancellor is then
+  -- told the file was checked when it was not.
+  -- ---------------------------------------------------------------------
+  if not exists (select 1 from pg_constraint where conname = 'appointments_reviewer_is_not_the_drafter') then
+    alter table appointments add constraint appointments_reviewer_is_not_the_drafter
+      check (reviewed_by is null or drafted_by is null or reviewed_by <> drafted_by)
+      not valid;
+  end if;
+end $$;
+
+
+-- ===========================================================================
+-- 3. THE SECOND AXIS — WHAT THE UNIVERSITY IS DOING
+-- ===========================================================================
+
+alter table appointments
+  add column if not exists appointment_action text,
+  -- WHAT THIS ONE REPLACES OR CONTINUES. A promotion is a promotion FROM
+  -- something, and a renewal renews a term that existed. Without this the
+  -- register holds two unconnected appointments for one person and cannot say
+  -- which came first.
+  add column if not exists supersedes_appointment_id uuid references appointments (id)
+    on delete set null;
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'appointments_action_known') then
+    alter table appointments add constraint appointments_action_known
+      check (appointment_action is null or appointment_action in (
+        'initial', 'reappointment', 'promotion', 'renewal', 'extension',
+        'transfer', 'confirmation', 'amendment'));
+  end if;
+
+  -- ---------------------------------------------------------------------
+  -- THE ACTIONS THAT ARE ALWAYS ABOUT AN EARLIER APPOINTMENT.
+  --
+  -- A promotion, renewal, extension or confirmation with nothing behind it is
+  -- one of two things: a first appointment somebody mislabelled, or a record
+  -- that has lost its predecessor. Both need correcting and neither is
+  -- visible without this.
+  -- ---------------------------------------------------------------------
+  if not exists (select 1 from pg_constraint where conname = 'appointments_continuation_has_a_predecessor') then
+    alter table appointments add constraint appointments_continuation_has_a_predecessor
+      check (appointment_action is null
+             or appointment_action not in ('promotion', 'renewal', 'extension', 'confirmation')
+             or supersedes_appointment_id is not null)
+      not valid;
+  end if;
+
+  -- AND NOTHING SUPERSEDES ITSELF.
+  if not exists (select 1 from pg_constraint where conname = 'appointments_nothing_supersedes_itself') then
+    alter table appointments add constraint appointments_nothing_supersedes_itself
+      check (supersedes_appointment_id is null or supersedes_appointment_id <> id);
+  end if;
+end $$;
+
+comment on column appointments.appointment_action is
+  'What the University is doing: initial, reappointment, promotion, renewal, extension, '
+  'transfer, confirmation, amendment. The SECOND axis — employment_type says what kind of '
+  'employment it is (permanent, visiting, part-time). A promotion to a full-time post is '
+  'both, and one column could record only one of them.';
+
+
+-- ===========================================================================
+-- 4. THE INTERNAL REVIEW STATE
+-- ===========================================================================
+--
+-- ONE STATE ADDED, NOTHING RENAMED. The University proposed
+-- draft → submitted → under_review → pending_vc → approved → letter_generation
+-- → letter_ready → issued. Most of that already exists under other names, and
+-- renaming a live vocabulary rewrites every row and every guard in the system
+-- for no gain.
+--
+--   pending_vc        is what `submitted` already means — submitted TO the VC.
+--   letter_ready      is what `letter_generated` already means.
+--   letter_generation is not a state. It is the second the document is being
+--                     rendered, and a state nothing can be in for long is a
+--                     state a screen shows by accident during a refresh.
+--   returned          is `draft` again, with a RETURNED event in the history
+--                     saying why. A separate state would make "returned" a
+--                     place an appointment can sit forever without anybody
+--                     owning it.
+--
+-- `under_review` is the one that was genuinely missing: the office's own check
+-- before the file reaches the Vice-Chancellor.
+
+do $$
+declare
+  con text;
+begin
+  select conname into con from pg_constraint
+   where conrelid = 'appointments'::regclass and contype = 'c'
+     and pg_get_constraintdef(oid) like '%amendment_requested%'
+     and pg_get_constraintdef(oid) like '%letter_generated%'
+   limit 1;
+
+  if con is not null then
+    execute format('alter table appointments drop constraint %I', con);
+  end if;
+
+  if not exists (select 1 from pg_constraint where conname = 'appointments_status_known') then
+    alter table appointments add constraint appointments_status_known
+      check (status in (
+        'draft', 'under_review', 'submitted', 'approved', 'letter_generated',
+        'issued', 'accepted', 'active', 'amendment_requested',
+        'declined', 'withdrawn', 'ended'));
+  end if;
+end $$;
+
+
+-- ===========================================================================
+-- 5. THE DOOR THE UNIVERSITY ASKED TO CLOSE
+-- ===========================================================================
+--
+-- "An appointment cannot be `issued` without an approved decision and an
+-- archived appointment document."
+--
+-- A TRIGGER RATHER THAN A CHECK, because a check constraint cannot read another
+-- table. Until now `issued` was a status somebody could set with nothing behind
+-- it: the register said a letter had gone and the appointee was holding
+-- nothing.
+
+create or replace function refuse_issue_without_a_document() returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if new.status in ('issued', 'accepted', 'active')
+     and (old.status is distinct from new.status) then
+
+    if new.authorized_by is null or new.authorized_at is null then
+      raise exception
+        'This appointment has not been approved, so no letter can be issued from it. '
+        'Approval and issue are two acts by two authorities, and this is the second one '
+        'asking for the first.'
+        using errcode = 'check_violation';
+    end if;
+
+    if not exists (
+      select 1 from appointment_letters l
+       where l.appointment_id = new.id and l.superseded_at is null
+    ) then
+      raise exception
+        'No appointment letter is archived for this appointment, so it cannot be marked '
+        'issued. Generate the letter first: an appointment recorded as issued with no '
+        'document behind it is an appointee holding nothing while the register says '
+        'otherwise.'
+        using errcode = 'check_violation';
+    end if;
+  end if;
+  return new;
+end $$;
+
+drop trigger if exists appointments_issue_needs_a_document on appointments;
+create trigger appointments_issue_needs_a_document
+  before update on appointments
+  for each row execute function refuse_issue_without_a_document();
+
+
+-- ===========================================================================
+-- 6. PERFORMING THE RULES
+-- ===========================================================================
+
+do $$
+declare
+  refused boolean;
+  a_id uuid;
+  b_id uuid;
+  someone uuid;
+  other uuid;
+begin
+  select id into someone from auth.users limit 1;
+  select id into other from auth.users where id <> someone limit 1;
+  if someone is null or other is null then
+    raise notice '047: fewer than two accounts, so the rules could not be exercised';
+    return;
+  end if;
+
+  begin
+    -- ---- AN APPOINTMENT WITH NO PAY AT ALL IS STILL VALID -----------------
+    -- THE CASE A COLUMN DEFAULT BROKE. An honorary appointment carries no
+    -- salary, and a default currency gave it one with no amount beside it —
+    -- refused by 041, correctly, as an incomplete salary. Proved first because
+    -- it is the case nobody would have tried until the University appointed
+    -- somebody unpaid.
+    insert into appointments
+      (full_name, position_title, unit_name, employment_type, start_date,
+       terms, status, drafted_by)
+    values ('An Honorary Appointee', 'Honorary Fellow', 'Faculty of Theology', 'honorary',
+            current_date + 30, 'The terms.', 'draft', someone)
+    returning id into b_id;
+    if (select salary_currency from appointments where id = b_id) is not null then
+      raise exception '047 FAILED: an unpaid appointment was given a currency';
+    end if;
+    delete from appointments where id = b_id;
+
+    -- ---- AND ONE WITH PAY IS PRICED IN DOLLARS ----------------------------
+    insert into appointments
+      (full_name, position_title, unit_name, employment_type, start_date,
+       terms, status, drafted_by, salary_amount)
+    values ('A Specimen Appointee', 'Lecturer', 'Faculty of Theology', 'permanent',
+            current_date + 30, 'The terms.', 'draft', someone, 2000)
+    returning id into a_id;
+
+    if (select salary_currency from appointments where id = a_id) is distinct from 'USD' then
+      raise exception '047 FAILED: an appointment created without a currency came out in %, '
+                      'not dollars',
+        coalesce((select salary_currency from appointments where id = a_id), 'nothing');
+    end if;
+    if (select salary_period from appointments where id = a_id) is distinct from 'month' then
+      raise exception '047 FAILED: a figure with no period given did not become a monthly one';
+    end if;
+
+    -- ---- AN ALLOWANCE IS ITS OWN ROW WITH ITS OWN BASIS --------------------
+    insert into appointment_allowances (appointment_id, kind, amount, period)
+    values (a_id, 'housing', 400, 'month');
+
+    refused := false;
+    begin
+      insert into appointment_allowances (appointment_id, kind, amount, period)
+      values (a_id, 'housing', 100, 'month');
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '047 FAILED: one appointment carries two housing allowances';
+    end if;
+
+    -- ---- AN 'other' ALLOWANCE SAYS WHAT IT IS ------------------------------
+    refused := false;
+    begin
+      insert into appointment_allowances (appointment_id, kind, amount, period)
+      values (a_id, 'other', 100, 'month');
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '047 FAILED: an allowance called "other" and nothing else was accepted';
+    end if;
+
+    -- ---- AND NOTHING IS SILENTLY ADDED ACROSS BASES ------------------------
+    insert into appointment_allowances (appointment_id, kind, amount, period, currency)
+    values (a_id, 'research', 1200, 'year', 'USD');
+    if (select allowances_same_basis from appointment_remuneration
+         where appointment_id = a_id) <> 400 then
+      raise exception '047 FAILED: an annual allowance was added to a monthly salary';
+    end if;
+    if (select allowances_on_another_basis from appointment_remuneration
+         where appointment_id = a_id) <> 1 then
+      raise exception '047 FAILED: the allowance on another basis was not reported as one';
+    end if;
+
+    -- ---- A REVIEWER IS NOT THE DRAFTER -------------------------------------
+    refused := false;
+    begin
+      update appointments set reviewed_by = someone, reviewed_at = now() where id = a_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '047 FAILED: the drafter reviewed their own appointment, so the '
+                      'Vice-Chancellor is told a file was checked that nobody read';
+    end if;
+    update appointments set reviewed_by = other, reviewed_at = now() where id = a_id;
+
+    -- ---- A REVIEW WITH NO MOMENT IS NOT A REVIEW ---------------------------
+    refused := false;
+    begin
+      update appointments set reviewed_at = null where id = a_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '047 FAILED: an appointment was reviewed at no particular time';
+    end if;
+
+    -- ---- THE INTERNAL REVIEW STATE IS REACHABLE ----------------------------
+    update appointments set status = 'under_review' where id = a_id;
+    refused := false;
+    begin
+      update appointments set status = 'being_thought_about' where id = a_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '047 FAILED: the status vocabulary accepted a state nobody declared';
+    end if;
+
+    -- ---- A PROMOTION IS A PROMOTION FROM SOMETHING -------------------------
+    refused := false;
+    begin
+      update appointments set appointment_action = 'promotion' where id = a_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '047 FAILED: a promotion was recorded with nothing behind it';
+    end if;
+    update appointments set appointment_action = 'initial' where id = a_id;
+
+    insert into appointments
+      (full_name, position_title, unit_name, employment_type, start_date, terms,
+       status, drafted_by, appointment_action, supersedes_appointment_id)
+    values ('A Specimen Appointee', 'Senior Lecturer', 'Faculty of Theology', 'permanent',
+            current_date + 400, 'The terms.', 'draft', someone, 'promotion', a_id)
+    returning id into b_id;
+
+    refused := false;
+    begin
+      update appointments set supersedes_appointment_id = b_id where id = b_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '047 FAILED: an appointment superseded itself';
+    end if;
+
+    -- ---- AND THE DOOR: NO DOCUMENT, NO ISSUE -------------------------------
+    update appointments
+       set status = 'approved', authorized_by = other, authorized_at = now()
+     where id = a_id;
+
+    refused := false;
+    begin
+      update appointments set status = 'issued', issued_at = now() where id = a_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '047 FAILED: an appointment was issued with no letter archived for it, '
+                      'so the register says a document went out that does not exist';
+    end if;
+
+    -- With a letter archived, it goes.
+    insert into appointment_letters (appointment_id, reference, issued_on, html)
+    values (a_id, 'APT-2026-9047', current_date, '<p>The letter.</p>');
+    update appointments set status = 'issued', issued_at = now(), issued_by = other
+     where id = a_id;
+
+    -- ---- AND AN UNAPPROVED ONE STILL CANNOT, EVEN WITH A DOCUMENT ----------
+    insert into appointment_letters (appointment_id, reference, issued_on, html)
+    values (b_id, 'APT-2026-9048', current_date, '<p>The letter.</p>');
+    refused := false;
+    begin
+      update appointments set status = 'issued', issued_at = now() where id = b_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '047 FAILED: an appointment nobody approved was issued because a '
+                      'document happened to exist for it';
+    end if;
+
+    raise exception 'PROOF_ROLLBACK';
+  exception
+    when others then
+      if sqlerrm <> 'PROOF_ROLLBACK' then raise; end if;
+  end;
+
+  raise notice '047 OK: new appointments are priced in dollars and existing ones are untouched';
+  raise notice '047 OK: allowances are separate rows, one of each kind, never summed across '
+               'different currencies or periods';
+  raise notice '047 OK: a reviewer is not the drafter, and a review names its moment';
+  raise notice '047 OK: a promotion, renewal, extension or confirmation names what it follows';
+  raise notice '047 OK: nothing is issued without both an approval and an archived letter';
+end $$;
+
+
+-- ===========================================================================
+-- 7. VERIFY — READ THIS OUTPUT
+-- ===========================================================================
+
+-- What the University pays, by currency. Anything still in francs is a record
+-- made before this migration and is deliberately left alone.
+select salary_currency, salary_period, count(*) as appointments
+  from appointments
+ where salary_amount is not null
+ group by 1, 2
+ order by 1, 2;
+
+-- Appointments recorded as issued. After this migration every one of them has a
+-- letter behind it; if this returns rows, they predate the trigger and want
+-- looking at.
+select a.id, a.full_name, a.position_title, a.issued_at
+  from appointments a
+ where a.status in ('issued', 'accepted', 'active')
+   and not exists (select 1 from appointment_letters l
+                    where l.appointment_id = a.id and l.superseded_at is null)
+ order by a.issued_at;
+
+-- The two axes, crossed. This is the question that could not be asked before.
+select coalesce(appointment_action, '(not stated)') as action,
+       employment_type,
+       count(*) as appointments
+  from appointments
+ group by 1, 2
+ order by 1, 2;
+
+
+-- ===========================================================================
+-- ===========================================================================
+--
+--   048_the_job_descriptions_and_what_they_inherit.sql
+--
+-- ===========================================================================
+-- ===========================================================================
+
+-- ===========================================================================
+-- 048 — THE JOB DESCRIPTIONS, AND WHAT THEY INHERIT
+-- ===========================================================================
+--
+-- ---------------------------------------------------------------------------
+-- WHAT CHANGES THE MOMENT THIS RUNS
+-- ---------------------------------------------------------------------------
+--
+-- 1. THE UNIVERSITY GETS A REGISTER OF ITS POSTS. Forty-six of them, seeded
+--    with title, job code, family and reporting line. That is structure, not
+--    content: it says the post exists and where it sits, and nothing about what
+--    the holder does.
+--
+-- 2. EVERY POST HAS A JOB DESCRIPTION, INHERITED FROM ITS FAMILY. Eight family
+--    profiles carry the clauses that are genuinely common — an academic's
+--    teaching and research duties, a director's financial authority — and each
+--    post adds its own on top. Forty-six separate documents would be forty-six
+--    places to update the confidentiality clause, and within a year they would
+--    say four different things.
+--
+-- 3. NOTHING IS APPROVED. Every profile this migration writes is a DRAFT, at
+--    the University's instruction, and a draft cannot be attached to an
+--    appointment letter. Activating one requires somebody other than its
+--    author, exactly as 044 requires of a document template.
+--
+-- ---------------------------------------------------------------------------
+-- THE ONE THING TO READ TWICE
+-- ---------------------------------------------------------------------------
+--
+-- THE SEEDED WORDING IS NOT THE UNIVERSITY'S POLICY YET. It is a first draft
+-- written to be edited, and it is marked `draft` for that reason rather than as
+-- a formality. A job description states what somebody may authorise, what they
+-- must escalate, and what they are assessed on — it is the document produced
+-- when a dismissal is challenged. Nothing in it should reach a letter until the
+-- University has read it and somebody other than its author has activated it.
+--
+-- The Readiness panel and `position_profiles_unapproved` both report what is
+-- still sitting in draft, so this cannot be forgotten quietly.
+-- ===========================================================================
+
+
+-- ===========================================================================
+-- 1. THE POSTS
+-- ===========================================================================
+
+create table if not exists positions (
+  id             uuid primary key default gen_random_uuid(),
+
+  -- IGUC-ACA-LEC. The code is what a job description, an appointment and an
+  -- establishment return all name, and a title is not stable enough to be a
+  -- key: "Lecturer" and "Lecturer I" are the same post with a grade attached.
+  job_code       text not null unique check (job_code ~ '^[A-Z][A-Z0-9-]{2,23}$'),
+  title          text not null check (length(btrim(title)) >= 3),
+
+  -- THE FAMILY IS THE REUSE. Everything common to a family is written once on
+  -- the family's own profile and inherited.
+  family         text not null check (family in (
+                   'executive', 'academic-administration', 'faculty-leadership',
+                   'administration', 'student-services', 'ict',
+                   'academic-staff', 'other')),
+
+  -- WHERE IT SITS. Free text against the University's stated structure rather
+  -- than a foreign key: not every post belongs to a faculty, and a nullable
+  -- key to a table that does not cover half the establishment is worse than a
+  -- name.
+  unit_name      text,
+  faculty        text,
+  reports_to     text,
+  supervises     text,
+  duty_station   text,
+
+  employment_category text,
+  grade          text,
+
+  -- ---------------------------------------------------------------------
+  -- WHAT THE POST IS USUALLY WORTH — INDICATIVE, AND IT NEVER REACHES A
+  -- LETTER BY ITSELF.
+  --
+  -- The University's ruling: a figure may be carried on a template, and the
+  -- box may be left empty. So a post can hold one, and the Vice-Chancellor
+  -- can take it or type over it when making the appointment — but the letter
+  -- prints `appointments.salary_amount` and nothing else. A figure that could
+  -- print from here would be the University stating a salary it had not
+  -- decided for the person holding the letter.
+  -- ---------------------------------------------------------------------
+  indicative_salary_amount   numeric(14, 2)
+    check (indicative_salary_amount is null or indicative_salary_amount > 0),
+  indicative_salary_currency text
+    check (indicative_salary_currency is null or indicative_salary_currency in
+           ('USD', 'FCFA', 'EUR', 'GBP', 'NGN')),
+  indicative_salary_period   text
+    check (indicative_salary_period is null or indicative_salary_period in
+           ('hour', 'month', 'year', 'session', 'contract', 'stipend')),
+
+  -- A post the University no longer fills stays in the register. An
+  -- appointment made to it in 2026 must still name something in 2036.
+  active         boolean not null default true,
+
+  created_at     timestamptz not null default now()
+);
+
+create index if not exists positions_family_idx on positions (family, title);
+
+-- Added separately as well, so a database that already has `positions` from an
+-- earlier run of this file picks them up rather than silently lacking them.
+alter table positions
+  add column if not exists indicative_salary_amount numeric(14, 2),
+  add column if not exists indicative_salary_currency text,
+  add column if not exists indicative_salary_period text;
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'positions_indicative_salary_is_complete') then
+    alter table positions add constraint positions_indicative_salary_is_complete
+      check ((indicative_salary_amount is null)
+             or (indicative_salary_currency is not null and indicative_salary_period is not null));
+  end if;
+end $$;
+
+comment on column positions.indicative_salary_amount is
+  'What the post is usually worth. INDICATIVE ONLY — a letter prints appointments.salary_amount '
+  'and never this. It exists so the Vice-Chancellor can take a figure or type over it when '
+  'making the appointment, and so that the box may be left empty.';
+
+
+-- ===========================================================================
+-- 2. THE JOB DESCRIPTION
+-- ===========================================================================
+--
+-- VERSIONED, WITH ONE ACTIVE AT A TIME, ACTIVATED BY SOMEBODY OTHER THAN ITS
+-- AUTHOR. The same shape as 044's document templates, deliberately: a job
+-- description is a document the University issues and is held to, and a second
+-- arrangement for versioning one would be a second answer to "which wording was
+-- in force when this person was appointed".
+
+create table if not exists position_profiles (
+  id             uuid primary key default gen_random_uuid(),
+
+  -- EITHER a post's own profile, OR a family's. Exactly one, never both and
+  -- never neither — a profile belonging to nothing cannot be found, and one
+  -- belonging to both would be inherited by itself.
+  position_id    uuid references positions (id) on delete cascade,
+  family         text check (family in (
+                   'executive', 'academic-administration', 'faculty-leadership',
+                   'administration', 'student-services', 'ict',
+                   'academic-staff', 'other')),
+
+  version        integer not null default 1 check (version >= 1),
+
+  -- Why the post exists. The one section that is never inherited, because a
+  -- purpose shared between two posts means one of them is undefined.
+  job_purpose    text,
+
+  status         text not null default 'draft'
+                   check (status in ('draft', 'active', 'superseded')),
+
+  effective_from date,
+
+  created_by     uuid references auth.users (id) on delete set null,
+  activated_by   uuid references auth.users (id) on delete set null,
+  activated_at   timestamptz,
+
+  created_at     timestamptz not null default now(),
+  updated_at     timestamptz not null default now()
+);
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'position_profiles_belongs_to_one_thing') then
+    alter table position_profiles add constraint position_profiles_belongs_to_one_thing
+      check ((position_id is not null) <> (family is not null));
+  end if;
+
+  -- ---------------------------------------------------------------------
+  -- NOBODY ACTIVATES THE JOB DESCRIPTION THEY WROTE.
+  --
+  -- The same rule 044 applies to a letter template and 005 to a certificate
+  -- design, and it matters more here than in either: a job description says
+  -- what its holder may authorise and what they are assessed on. One person
+  -- writing and approving that alone is one person deciding the terms on
+  -- which somebody else can be dismissed.
+  -- ---------------------------------------------------------------------
+  if not exists (select 1 from pg_constraint where conname = 'position_profiles_second_pair_of_eyes') then
+    alter table position_profiles add constraint position_profiles_second_pair_of_eyes
+      check (activated_by is null or created_by is null or activated_by <> created_by);
+  end if;
+
+  if not exists (select 1 from pg_constraint where conname = 'position_profiles_activation_is_complete') then
+    alter table position_profiles add constraint position_profiles_activation_is_complete
+      check (status <> 'active' or (activated_by is not null and activated_at is not null));
+  end if;
+
+  -- AN ACTIVE PROFILE SAYS WHY THE POST EXISTS. A job description with no
+  -- purpose is a list of tasks, and the first question at any review is what
+  -- the post is for.
+  if not exists (select 1 from pg_constraint where conname = 'position_profiles_active_states_its_purpose') then
+    alter table position_profiles add constraint position_profiles_active_states_its_purpose
+      check (status <> 'active'
+             or (job_purpose is not null and length(btrim(job_purpose)) >= 40));
+  end if;
+end $$;
+
+-- ONE ACTIVE PROFILE PER POST, and one per family.
+create unique index if not exists position_profiles_one_active_per_post_idx
+  on position_profiles (position_id) where status = 'active' and position_id is not null;
+create unique index if not exists position_profiles_one_active_per_family_idx
+  on position_profiles (family) where status = 'active' and family is not null;
+
+create unique index if not exists position_profiles_version_per_post_idx
+  on position_profiles (position_id, version) where position_id is not null;
+create unique index if not exists position_profiles_version_per_family_idx
+  on position_profiles (family, version) where family is not null;
+
+
+-- ===========================================================================
+-- 3. THE CLAUSES
+-- ===========================================================================
+--
+-- ONE TABLE, NOT TWENTY COLUMNS. The University named about twenty sections and
+-- said most are "where applicable" — which as columns means twenty mostly-null
+-- fields, and no way to number the responsibilities within one. As rows, a
+-- section that does not apply simply has none, and the numbering the University
+-- asked for is the ordinal.
+
+create table if not exists position_profile_clauses (
+  id             uuid primary key default gen_random_uuid(),
+  profile_id     uuid not null references position_profiles (id) on delete cascade,
+
+  section        text not null check (section in (
+                   -- The responsibilities, in the University's own grouping.
+                   'key-responsibilities', 'institutional', 'academic',
+                   'administrative', 'financial', 'people-management',
+                   'student', 'research', 'ict', 'compliance',
+                   -- Decision-making authority, split three ways as asked. The
+                   -- split is the point: "may recommend" and "may authorise"
+                   -- are the difference between advice and a commitment.
+                   'may-authorize', 'may-recommend', 'must-obtain-approval',
+                   -- The rest.
+                   'reporting', 'performance-areas', 'performance-indicators',
+                   'qualifications', 'experience', 'technical-skills',
+                   'behavioural-competencies', 'working-relationships',
+                   'confidentiality', 'evaluation', 'amendment')),
+
+  ordinal        integer not null check (ordinal >= 1),
+  body           text not null check (length(btrim(body)) >= 10),
+
+  created_at     timestamptz not null default now(),
+
+  unique (profile_id, section, ordinal)
+);
+
+create index if not exists position_profile_clauses_profile_idx
+  on position_profile_clauses (profile_id, section, ordinal);
+
+
+-- ===========================================================================
+-- 4. THE INHERITANCE, RESOLVED IN ONE PLACE
+-- ===========================================================================
+--
+-- A POST'S JOB DESCRIPTION IS ITS FAMILY'S CLAUSES PLUS ITS OWN. Resolved here
+-- rather than in the application, because a screen and a letter working it out
+-- separately would be two answers to "what does this job description say", and
+-- the one that matters is whichever got printed.
+--
+-- A post's own clause in a section REPLACES the family's for that section. It
+-- does not merge: a Dean whose financial authority differs from the family's
+-- needs to state it, not to have it appended to a paragraph that contradicts it.
+
+create or replace view position_job_description
+with (security_invoker = true) as
+  with own_sections as (
+    select pp.position_id, c.section
+      from position_profiles pp
+      join position_profile_clauses c on c.profile_id = pp.id
+     where pp.position_id is not null and pp.status = 'active'
+     group by 1, 2
+  )
+  select p.id as position_id,
+         p.job_code,
+         p.title,
+         p.family,
+         c.section,
+         c.ordinal,
+         c.body,
+         case when pp.position_id is not null then 'position' else 'family' end as source
+    from positions p
+    join position_profiles pp
+      on pp.status = 'active'
+     and (pp.position_id = p.id or (pp.family = p.family and pp.position_id is null))
+    join position_profile_clauses c on c.profile_id = pp.id
+   -- A FAMILY CLAUSE IS DROPPED WHERE THE POST HAS ITS OWN IN THAT SECTION.
+   where pp.position_id is not null
+      or not exists (select 1 from own_sections o
+                      where o.position_id = p.id and o.section = c.section);
+
+-- What is still waiting to be read and approved. Named so the Readiness panel
+-- can ask, and so "we will approve them later" has somewhere to be counted.
+create or replace view position_profiles_unapproved
+with (security_invoker = true) as
+  select pp.id,
+         coalesce(p.title, 'Family: ' || pp.family) as what,
+         coalesce(p.job_code, pp.family) as code,
+         pp.version,
+         pp.created_at,
+         (select count(*) from position_profile_clauses c where c.profile_id = pp.id) as clauses
+    from position_profiles pp
+    left join positions p on p.id = pp.position_id
+   where pp.status = 'draft';
+
+
+-- ===========================================================================
+-- 5. AN APPOINTMENT NAMES THE POST AND THE WORDING IN FORCE
+-- ===========================================================================
+--
+-- THE DOROTHY RULE AGAIN, from 044. An appointment letter that referred to "the
+-- job description" and nothing more would be unreadable the moment the job
+-- description changed — and the appointee is holding the version they were
+-- given. `on delete restrict` means a profile that has been attached to an
+-- appointment can never be deleted.
+
+alter table appointments
+  add column if not exists position_id uuid references positions (id) on delete set null,
+  add column if not exists position_profile_id uuid references position_profiles (id)
+    on delete restrict;
+
+do $$
+begin
+  -- A JOB DESCRIPTION ATTACHED TO AN APPOINTMENT IS AN APPROVED ONE. This is
+  -- the door the draft state exists to close: a first draft written by one
+  -- person must not reach an appointee as the terms of their post.
+  if not exists (select 1 from pg_constraint where conname = 'appointments_jd_is_approved') then
+    alter table appointments add constraint appointments_jd_is_approved
+      check (position_profile_id is null or position_profile_approved(position_profile_id))
+      not valid;
+  end if;
+exception
+  when undefined_function then
+    -- The function is created below; on a first run the constraint is added
+    -- after it. Nothing to do here.
+    null;
+end $$;
+
+create or replace function position_profile_approved(p uuid) returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from position_profiles pp
+     where pp.id = p and pp.status in ('active', 'superseded')
+  );
+$$;
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'appointments_jd_is_approved') then
+    alter table appointments add constraint appointments_jd_is_approved
+      check (position_profile_id is null or position_profile_approved(position_profile_id))
+      not valid;
+  end if;
+end $$;
+
+
+-- ===========================================================================
+-- 6. WHO CAN READ AND WRITE
+-- ===========================================================================
+
+alter table positions enable row level security;
+alter table position_profiles enable row level security;
+alter table position_profile_clauses enable row level security;
+
+drop policy if exists positions_read on positions;
+create policy positions_read on positions
+  for select to authenticated using (true);
+
+drop policy if exists position_profiles_read on position_profiles;
+create policy position_profiles_read on position_profiles
+  for select to authenticated using (true);
+
+drop policy if exists position_profile_clauses_read on position_profile_clauses;
+create policy position_profile_clauses_read on position_profile_clauses
+  for select to authenticated using (true);
+
+
+-- ===========================================================================
+-- 7. THE REGISTER OF POSTS
+-- ===========================================================================
+--
+-- STRUCTURE ONLY. Title, code, family and reporting line — where the post sits,
+-- not what its holder does. The four faculties are the University's own, as
+-- stated on its site. Nothing else here asserts that a post is filled, and no
+-- person is named.
+
+insert into positions (job_code, title, family, reports_to, unit_name) values
+  -- Executive
+  ('EXE-VC',    'Vice-Chancellor',              'executive', 'The University Council', 'Office of the Vice-Chancellor'),
+  ('EXE-DVC',   'Deputy Vice-Chancellor',       'executive', 'Vice-Chancellor', 'Office of the Vice-Chancellor'),
+  ('EXE-PVC',   'Pro-Vice-Chancellor',          'executive', 'Vice-Chancellor', 'Office of the Vice-Chancellor'),
+  ('EXE-SEC',   'University Secretary',         'executive', 'Vice-Chancellor', 'Office of the Vice-Chancellor'),
+
+  -- Academic administration
+  ('ACA-REG',   'Registrar',                    'academic-administration', 'Vice-Chancellor', 'Registry'),
+  ('ACA-DREG',  'Deputy Registrar',             'academic-administration', 'Registrar', 'Registry'),
+  ('ACA-DAA',   'Director of Academic Affairs', 'academic-administration', 'Vice-Chancellor', 'Academic Affairs'),
+  ('ACA-DADM',  'Director of Admissions',       'academic-administration', 'Registrar', 'Admissions'),
+  ('ACA-DEXR',  'Director of Examinations and Records', 'academic-administration', 'Registrar', 'Examinations and Records'),
+  ('ACA-DGRAD', 'Dean of Graduate Studies',     'academic-administration', 'Director of Academic Affairs', 'Graduate Studies'),
+  ('ACA-DRES',  'Director of Research',         'academic-administration', 'Vice-Chancellor', 'Research'),
+  ('ACA-DQA',   'Director of Quality Assurance','academic-administration', 'Vice-Chancellor', 'Quality Assurance'),
+
+  -- Faculties. The four are the University's own.
+  ('FAC-DTHE',  'Dean, Faculty of Theology',    'faculty-leadership', 'Director of Academic Affairs', 'Faculty of Theology'),
+  ('FAC-DENG',  'Dean, Faculty of Engineering and Technology', 'faculty-leadership', 'Director of Academic Affairs', 'Faculty of Engineering and Technology'),
+  ('FAC-DBMS',  'Dean, Faculty of Business and Management Science', 'faculty-leadership', 'Director of Academic Affairs', 'Faculty of Business and Management Science'),
+  ('FAC-DEDU',  'Dean, Faculty of Education',   'faculty-leadership', 'Director of Academic Affairs', 'Faculty of Education'),
+  ('FAC-HOD',   'Head of Department',           'faculty-leadership', 'Dean of Faculty', null),
+  ('FAC-PC',    'Programme Coordinator',        'faculty-leadership', 'Head of Department', null),
+  ('FAC-ADMIN', 'Faculty Administrator',        'faculty-leadership', 'Dean of Faculty', null),
+
+  -- Administration
+  ('ADM-FIN',   'Finance Director',             'administration', 'Vice-Chancellor', 'Finance'),
+  ('ADM-HR',    'Human Resources Director',     'administration', 'Vice-Chancellor', 'Human Resources'),
+  ('ADM-PROC',  'Procurement Director',         'administration', 'Vice-Chancellor', 'Administration'),
+  ('ADM-DIR',   'Administrative Director',      'administration', 'Vice-Chancellor', 'Administration'),
+
+  -- Student services
+  ('STU-DSA',   'Director of Student Affairs',  'student-services', 'Vice-Chancellor', 'Student Affairs'),
+  ('STU-INTL',  'International Relations Director', 'student-services', 'Vice-Chancellor', 'International Relations'),
+  ('STU-LIB',   'University Librarian',         'student-services', 'Director of Academic Affairs', 'Library'),
+  ('STU-CAR',   'Career Services Director',     'student-services', 'Director of Student Affairs', 'Student Affairs'),
+  ('STU-ALU',   'Alumni Relations Officer',     'student-services', 'Director of Student Affairs', 'Alumni Relations'),
+
+  -- ICT
+  ('ICT-DIR',   'Director of ICT',              'ict', 'Vice-Chancellor', 'ICT'),
+  ('ICT-SYS',   'Systems Administrator',        'ict', 'Director of ICT', 'ICT'),
+  ('ICT-SUP',   'IT Support Officer',           'ict', 'Director of ICT', 'ICT'),
+  ('ICT-SEC',   'Information Security Officer', 'ict', 'Director of ICT', 'ICT'),
+
+  -- Academic staff
+  ('ACS-PROF',  'Professor',                    'academic-staff', 'Head of Department', null),
+  ('ACS-ASSOC', 'Associate Professor',          'academic-staff', 'Head of Department', null),
+  ('ACS-SLEC',  'Senior Lecturer',              'academic-staff', 'Head of Department', null),
+  ('ACS-LEC',   'Lecturer',                     'academic-staff', 'Head of Department', null),
+  ('ACS-ALEC',  'Assistant Lecturer',           'academic-staff', 'Head of Department', null),
+  ('ACS-RF',    'Research Fellow',              'academic-staff', 'Director of Research', 'Research'),
+
+  -- Other
+  ('OTH-CHAP',  'Director of Chaplaincy',       'other', 'Vice-Chancellor', 'Chaplaincy'),
+  ('OTH-COMM',  'Communications and Public Relations Director', 'other', 'Vice-Chancellor', 'Communications'),
+  ('OTH-EXO',   'Examination Officer',          'other', 'Director of Examinations and Records', 'Examinations and Records'),
+  ('OTH-ADMO',  'Admissions Officer',           'other', 'Director of Admissions', 'Admissions'),
+  ('OTH-REGO',  'Registry Officer',             'other', 'Registrar', 'Registry')
+on conflict (job_code) do nothing;
+
+
+-- ===========================================================================
+-- 8. THE FAMILY JOB DESCRIPTIONS — DRAFTS, EVERY ONE
+-- ===========================================================================
+--
+-- WRITTEN TO BE EDITED. These are a starting point for the University, not its
+-- policy, and every one is `draft` so that none of them can reach an appointee
+-- until somebody has read it and somebody else has activated it.
+
+do $$
+declare
+  fam text;
+  pid uuid;
+begin
+  foreach fam in array array['executive', 'academic-administration', 'faculty-leadership',
+                             'administration', 'student-services', 'ict',
+                             'academic-staff', 'other']
+  loop
+    if exists (select 1 from position_profiles where family = fam and position_id is null) then
+      continue;
+    end if;
+
+    insert into position_profiles (family, version, status, job_purpose)
+    values (fam, 1, 'draft',
+      'DRAFT FOR THE UNIVERSITY''S APPROVAL. This profile states the duties common to every '
+      || 'post in the ' || replace(fam, '-', ' ') || ' family. It has not been approved and '
+      || 'must not be attached to an appointment until it has been read and activated.')
+    returning id into pid;
+
+    -- ---- The clauses every post in the University carries -----------------
+    insert into position_profile_clauses (profile_id, section, ordinal, body) values
+      (pid, 'institutional', 1,
+       'Uphold the mission, statutes and regulations of ICOF Global University, and conduct '
+       'the duties of the post in accordance with the University''s policies in force from '
+       'time to time.'),
+      (pid, 'institutional', 2,
+       'Represent the University professionally in dealings with students, colleagues, '
+       'partner institutions and the public.'),
+      (pid, 'compliance', 1,
+       'Comply with the University''s policies on conduct, conflict of interest, data '
+       'protection and safeguarding, and report any breach that comes to notice.'),
+      (pid, 'confidentiality', 1,
+       'Treat student records, staff records, examination material and the University''s '
+       'commercial and legal affairs as confidential, during the appointment and after it '
+       'ends.'),
+      (pid, 'reporting', 1,
+       'Report to the officer named in the letter of appointment, and provide such written '
+       'reports as that officer or the Vice-Chancellor may require.'),
+      (pid, 'evaluation', 1,
+       'Performance is reviewed annually against the key performance areas set out in this '
+       'job description, and at the end of any probationary period.'),
+      (pid, 'amendment', 1,
+       'This job description may be amended by the University after consultation with the '
+       'post-holder. An amended version is issued as a new version; the version in force at '
+       'the date of appointment remains on the record.'),
+      (pid, 'must-obtain-approval', 1,
+       'Any commitment of University funds, any public statement made on behalf of the '
+       'University, and any agreement with an external body require the prior approval of '
+       'the Vice-Chancellor or of the officer to whom that authority has been delegated in '
+       'writing.');
+
+    -- ---- And what distinguishes the family --------------------------------
+    if fam = 'academic-staff' then
+      insert into position_profile_clauses (profile_id, section, ordinal, body) values
+        (pid, 'academic', 1, 'Teach the courses allocated by the Head of Department, to the '
+         'syllabus approved for the programme, and keep the teaching materials current.'),
+        (pid, 'academic', 2, 'Set, invigilate and mark assessments in accordance with the '
+         'University''s examination regulations, and submit marks by the published deadline.'),
+        (pid, 'academic', 3, 'Supervise student projects, dissertations and theses as '
+         'allocated.'),
+        (pid, 'student', 1, 'Act as academic adviser to allocated students and be available '
+         'to them at published consultation times.'),
+        (pid, 'research', 1, 'Pursue an active programme of research or scholarship '
+         'appropriate to the discipline and the grade of the post, and publish its results.'),
+        (pid, 'performance-areas', 1, 'Teaching quality, assessment turnaround, student '
+         'progression, research output, and contribution to the department.'),
+        (pid, 'qualifications', 1, 'A qualification in the discipline appropriate to the '
+         'grade of the post, as set out in the University''s conditions of service.'),
+        (pid, 'may-recommend', 1, 'Recommend marks, progression decisions and programme '
+         'changes to the Head of Department.');
+
+    elsif fam = 'faculty-leadership' then
+      insert into position_profile_clauses (profile_id, section, ordinal, body) values
+        (pid, 'academic', 1, 'Lead the academic work of the faculty or department, including '
+         'curriculum design, programme review and the maintenance of academic standards.'),
+        (pid, 'people-management', 1, 'Allocate teaching, supervise the academic staff of the '
+         'unit, and conduct their annual performance review.'),
+        (pid, 'administrative', 1, 'Chair the meetings of the unit, maintain its records, and '
+         'report to the Director of Academic Affairs.'),
+        (pid, 'student', 1, 'Deal with student academic matters within the unit, including '
+         'appeals at first instance.'),
+        (pid, 'may-authorize', 1, 'Approve course allocations and the unit''s teaching '
+         'timetable.'),
+        (pid, 'may-recommend', 1, 'Recommend appointments, promotions and programme approvals '
+         'to the Vice-Chancellor through the Director of Academic Affairs.'),
+        (pid, 'performance-areas', 1, 'Academic standards, student progression and '
+         'completion, staff development, and the timely conduct of the unit''s business.');
+
+    elsif fam = 'executive' then
+      insert into position_profile_clauses (profile_id, section, ordinal, body) values
+        (pid, 'institutional', 3, 'Exercise the authority conferred by the statutes of the '
+         'University and by the Council, and account to the Council for its exercise.'),
+        (pid, 'people-management', 1, 'Lead the officers of the University and oversee the '
+         'performance of the offices reporting to the post.'),
+        (pid, 'financial', 1, 'Oversee the financial position of the University within the '
+         'budget approved by the Council.'),
+        (pid, 'may-authorize', 1, 'Authorise appointments, official correspondence and '
+         'institutional decisions within the authority conferred by the statutes.'),
+        (pid, 'performance-areas', 1, 'Institutional standing, academic quality, financial '
+         'sustainability, and governance.');
+
+    elsif fam = 'academic-administration' then
+      insert into position_profile_clauses (profile_id, section, ordinal, body) values
+        (pid, 'administrative', 1, 'Direct the office named in the letter of appointment and '
+         'ensure its statutory and regulatory obligations are met.'),
+        (pid, 'academic', 1, 'Maintain the integrity of the University''s academic records, '
+         'admissions decisions and examination processes within the remit of the office.'),
+        (pid, 'people-management', 1, 'Supervise the staff of the office and conduct their '
+         'annual performance review.'),
+        (pid, 'may-authorize', 1, 'Authorise the routine business of the office within '
+         'delegated limits set in writing by the Vice-Chancellor.'),
+        (pid, 'performance-areas', 1, 'Accuracy and completeness of records, turnaround of '
+         'the office''s business, and regulatory compliance.');
+
+    elsif fam = 'administration' then
+      insert into position_profile_clauses (profile_id, section, ordinal, body) values
+        (pid, 'administrative', 1, 'Direct the function named in the letter of appointment and '
+         'maintain its policies, procedures and records.'),
+        (pid, 'financial', 1, 'Manage the budget of the function, and account for expenditure '
+         'against it.'),
+        (pid, 'people-management', 1, 'Supervise the staff of the function and conduct their '
+         'annual performance review.'),
+        (pid, 'performance-areas', 1, 'Service standards, budget management, compliance, and '
+         'the timely conduct of the function''s business.');
+
+    elsif fam = 'student-services' then
+      insert into position_profile_clauses (profile_id, section, ordinal, body) values
+        (pid, 'student', 1, 'Provide the services of the office to students, and maintain the '
+         'standards published in the student handbook.'),
+        (pid, 'administrative', 1, 'Maintain the records of the office and report on its '
+         'activity to the officer named in the letter of appointment.'),
+        (pid, 'performance-areas', 1, 'Student satisfaction, responsiveness, and the accuracy '
+         'of the office''s records.');
+
+    elsif fam = 'ict' then
+      insert into position_profile_clauses (profile_id, section, ordinal, body) values
+        (pid, 'ict', 1, 'Maintain the availability, integrity and security of the University''s '
+         'information systems.'),
+        (pid, 'ict', 2, 'Administer access to those systems in accordance with the '
+         'University''s role matrix, and grant no access that has not been authorised.'),
+        (pid, 'compliance', 2, 'Maintain the audit trails the University relies on, and take '
+         'no action that alters or removes a record of what a system has done.'),
+        (pid, 'performance-areas', 1, 'System availability, security posture, backup and '
+         'recovery, and responsiveness to support requests.');
+
+    else
+      insert into position_profile_clauses (profile_id, section, ordinal, body) values
+        (pid, 'administrative', 1, 'Carry out the duties of the office as directed by the '
+         'officer named in the letter of appointment.'),
+        (pid, 'performance-areas', 1, 'Accuracy, timeliness, and the standards set for the '
+         'office.');
+    end if;
+  end loop;
+end $$;
+
+
+-- ===========================================================================
+-- 9. PERFORMING THE RULES
+-- ===========================================================================
+
+do $$
+declare
+  refused boolean;
+  someone uuid;
+  other uuid;
+  fam_id uuid;
+  pos_id uuid;
+  own_id uuid;
+  n integer;
+begin
+  select id into someone from auth.users limit 1;
+  select id into other from auth.users where id <> someone limit 1;
+  if someone is null or other is null then
+    raise notice '048: fewer than two accounts, so the rules could not be exercised';
+    return;
+  end if;
+
+  begin
+    select id into pos_id from positions where job_code = 'ACS-LEC';
+    select id into fam_id from position_profiles
+      where family = 'academic-staff' and position_id is null;
+
+    -- ---- A PROFILE BELONGS TO A POST OR A FAMILY, NEVER BOTH ---------------
+    refused := false;
+    begin
+      insert into position_profiles (position_id, family, status)
+      values (pos_id, 'academic-staff', 'draft');
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '048 FAILED: a profile belonged to a post and a family at once, so it '
+                      'is inherited by itself';
+    end if;
+
+    refused := false;
+    begin
+      insert into position_profiles (status) values ('draft');
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '048 FAILED: a profile belonging to nothing was accepted';
+    end if;
+
+    -- ---- NOBODY ACTIVATES WHAT THEY WROTE ---------------------------------
+    update position_profiles set created_by = someone where id = fam_id;
+    refused := false;
+    begin
+      update position_profiles
+         set status = 'active', activated_by = someone, activated_at = now()
+       where id = fam_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '048 FAILED: the author of a job description activated it alone, so one '
+                      'person set the terms on which somebody else can be dismissed';
+    end if;
+
+    -- ---- AND AN ACTIVE ONE SAYS WHY THE POST EXISTS ------------------------
+    refused := false;
+    begin
+      update position_profiles
+         set job_purpose = 'Teaching.', status = 'active',
+             activated_by = other, activated_at = now()
+       where id = fam_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '048 FAILED: a job description was approved with no statement of what '
+                      'the post is for';
+    end if;
+
+    update position_profiles
+       set status = 'active', activated_by = other, activated_at = now()
+     where id = fam_id;
+
+    -- ---- THE POST INHERITS THE FAMILY'S CLAUSES ----------------------------
+    select count(*) into n from position_job_description where position_id = pos_id;
+    if n = 0 then
+      raise exception '048 FAILED: a Lecturer inherited nothing from the academic staff family';
+    end if;
+    if not exists (select 1 from position_job_description
+                    where position_id = pos_id and source = 'family') then
+      raise exception '048 FAILED: nothing in the Lecturer''s job description came from the '
+                      'family, so the inheritance is not working';
+    end if;
+
+    -- ---- AND ITS OWN CLAUSE REPLACES THE FAMILY'S FOR THAT SECTION ---------
+    insert into position_profiles (position_id, version, status, job_purpose,
+                                   created_by, activated_by, activated_at)
+    values (pos_id, 1, 'active',
+            'To teach the courses of the department to the standard the University requires, '
+            'and to supervise the students allocated to the post.',
+            someone, other, now())
+    returning id into own_id;
+    insert into position_profile_clauses (profile_id, section, ordinal, body)
+    values (own_id, 'research', 1,
+            'Pursue research in the discipline as agreed annually with the Head of Department.');
+
+    if exists (select 1 from position_job_description
+                where position_id = pos_id and section = 'research' and source = 'family') then
+      raise exception '048 FAILED: a post with its own research clause still inherited the '
+                      'family''s, so the job description says two things about one duty';
+    end if;
+    -- …while the sections it did not restate still come from the family.
+    if not exists (select 1 from position_job_description
+                    where position_id = pos_id and section = 'confidentiality'
+                      and source = 'family') then
+      raise exception '048 FAILED: stating one section lost the rest of the family''s clauses';
+    end if;
+
+    -- ---- A DRAFT JOB DESCRIPTION CANNOT REACH AN APPOINTEE -----------------
+    -- The door the draft state exists to close, and 048 seeds everything as a
+    -- draft, so this is the guard that keeps the seeded wording off a letter.
+    insert into position_profiles (position_id, version, status, created_by)
+    values (pos_id, 2, 'draft', someone)
+    returning id into own_id;
+
+    -- (validate so the NOT VALID constraint applies to what follows)
+    alter table appointments validate constraint appointments_jd_is_approved;
+
+    refused := false;
+    begin
+      insert into appointments
+        (full_name, position_title, employment_type, start_date, terms, status,
+         drafted_by, position_id, position_profile_id)
+      values ('A Specimen Appointee', 'Lecturer', 'permanent', current_date + 30,
+              'The terms.', 'draft', someone, pos_id, own_id);
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '048 FAILED: an unapproved job description was attached to an '
+                      'appointment, so a first draft reached an appointee as the terms of '
+                      'their post';
+    end if;
+
+    -- ---- AN INDICATIVE FIGURE IS A COMPLETE ONE OR NONE AT ALL ------------
+    -- A number with no currency beside it is the thing that ends up on a
+    -- letter as "2000" and is read as dollars by one officer and francs by
+    -- the next.
+    refused := false;
+    begin
+      update positions set indicative_salary_amount = 2000 where id = pos_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '048 FAILED: a post carries an indicative figure in no currency';
+    end if;
+    update positions
+       set indicative_salary_amount = 2000, indicative_salary_currency = 'USD',
+           indicative_salary_period = 'month'
+     where id = pos_id;
+
+    -- …and the appointment still carries no salary, because an indicative
+    -- figure is not a decision about anybody's pay.
+    if exists (select 1 from appointments where position_id = pos_id
+                 and salary_amount = 2000) then
+      raise exception '048 FAILED: an indicative figure reached an appointment by itself';
+    end if;
+
+    raise exception 'PROOF_ROLLBACK';
+  exception
+    when others then
+      if sqlerrm <> 'PROOF_ROLLBACK' then raise; end if;
+  end;
+
+  raise notice '048 OK: an indicative salary on a post is complete or absent, and never '
+               'reaches a letter by itself';
+  raise notice '048 OK: a profile belongs to a post or a family and never to both or neither';
+  raise notice '048 OK: nobody activates the job description they wrote, and an approved one '
+               'states what the post is for';
+  raise notice '048 OK: a post inherits its family''s clauses, and its own clause replaces '
+               'the family''s for that section without losing the rest';
+  raise notice '048 OK: an unapproved job description cannot be attached to an appointment';
+end $$;
+
+
+-- ===========================================================================
+-- 10. VERIFY — READ THIS OUTPUT
+-- ===========================================================================
+
+-- The establishment, by family.
+select family, count(*) as posts from positions group by 1 order by 1;
+
+-- ---------------------------------------------------------------------------
+-- EVERYTHING WAITING TO BE READ AND APPROVED. This should be eight rows — the
+-- eight family profiles — and every one of them is a draft written to be
+-- edited, not the University's policy.
+-- ---------------------------------------------------------------------------
+select what, code, version, clauses from position_profiles_unapproved order by what;
 

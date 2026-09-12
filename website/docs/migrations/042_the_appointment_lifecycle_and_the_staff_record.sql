@@ -361,12 +361,22 @@ begin
       raise exception '042 FAILED: an appointment was amended with no reason and nobody asking';
     end if;
 
-    -- Walk it properly: approved, letter generated, issued.
+    -- ---- WALK IT PROPERLY: approved, letter generated, ISSUED -------------
+    --
+    -- THE LETTER IS ARCHIVED BEFORE THE STATUS SAYS ISSUED, and it did not use
+    -- to be. 047 refuses an appointment to reach `issued` with no document
+    -- behind it — the University's own rule — so this proof walked a path the
+    -- system no longer permits, and reported "042 FAILED" on the second pass
+    -- of RUN-ALL while passing cleanly on the first.
+    --
+    -- The fix is not to stand the rule down. It is that this order was always
+    -- the right one: the appointee is holding the letter, and a register that
+    -- says a letter went out before one existed is the thing 047 closes.
     update appointments
        set status = 'approved', authorized_by = other, authorized_at = now() where id = a_id;
     update appointments
        set status = 'letter_generated', letter_generated_at = now() where id = a_id;
-    update appointments set status = 'issued', issued_at = now() where id = a_id;
+    -- …and `issued` is set below, AFTER the letter is in the archive.
 
     -- ---- THE REFERENCE IS THE SHAPE THE UNIVERSITY ASKED FOR --------------
     refused := false;
@@ -382,6 +392,10 @@ begin
     insert into appointment_letters (appointment_id, reference, issued_on, html, kind)
     values (a_id, 'APT-2026-0042', current_date, '<p>Version one.</p>', 'issued')
     returning id into l_id;
+
+    -- NOW it can be issued, and not before. The archive holds the document the
+    -- appointee is about to be holding.
+    update appointments set status = 'issued', issued_at = now() where id = a_id;
 
     -- ---- A SECOND VERSION SAYS WHY THERE IS ONE ---------------------------
     -- Somebody is holding version 1 and has just been sent version 2.
