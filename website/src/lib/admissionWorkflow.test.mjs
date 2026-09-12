@@ -233,6 +233,43 @@ console.log('\nThe delivery mode picks the right terms in the admission letter\n
   check('and an empty mode falls back to campus', modeOf(''), 'campus');
 }
 
+console.log('\nIssuance is idempotent: a retry consumes nothing twice\n');
+
+// ---------------------------------------------------------------------------
+// THE DEFECT THIS CATCHES, WHICH THE UNIVERSITY NAMED AS A REQUIREMENT.
+//
+// The route reserved a student number unconditionally and wrote it to the
+// record only at the last step. An issuance that reserved a number and then
+// failed at any later step lost it: the counter had moved, nothing carried the
+// reservation, and the next attempt took a fresh one. Each retry consumed
+// another number permanently, leaving unexplained gaps in the University's
+// sequence — and the same shape of fault created a second account.
+//
+// Idempotence has two halves and both are checked. The reservation must be
+// SKIPPED when the record already carries one, and it must be PERSISTED
+// immediately so that the next attempt can find it.
+// ---------------------------------------------------------------------------
+{
+  const route = readFileSync(join(here, '../app/api/admissions/decision/route.ts'), 'utf8');
+
+  check('an application that already has a number keeps it',
+    /if \(app\.student_number\) \{\s*\n\s*studentNumber = String\(app\.student_number\)/.test(route), true);
+  check('…and a new one is written to the record before anything can fail',
+    /update\(\{ student_number: studentNumber \}\)/.test(route), true);
+
+  check('an application already linked to an account reuses it',
+    /if \(app\.auth_user_id\) \{[\s\S]{0,400}?updateUserById\(/.test(route), true);
+  check('…and a new account is linked to the record at once',
+    /update\(\{ auth_user_id: authUserId \}\)/.test(route), true);
+
+  // THE HALF THAT IS EASY TO GET WRONG. Reusing an account without applying
+  // the freshly generated password sends the applicant credentials that do not
+  // work — a failure disguised as a success, which is the worst kind.
+  const reuse = /if \(app\.auth_user_id\) \{([\s\S]*?)\n  \}/.exec(route)?.[1] ?? '';
+  check('and reusing an account still sets the password that was emailed',
+    /password/.test(reuse), true);
+}
+
 console.log('\nThe letter never invents a campus\n');
 
 // ---------------------------------------------------------------------------
