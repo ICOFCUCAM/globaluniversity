@@ -454,7 +454,21 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // institution where the Vice Chancellor can personally admit a student has
   // no separation of duties left to speak of, whatever its org chart says.
   chancellor: ['view-executive-dashboard', 'view-all-faculties', 'view-institutional-finance', 'view-admitted-students', 'monitor-progress'],
-  'vice-chancellor': ['view-executive-dashboard', 'view-all-faculties', 'view-institutional-finance', 'view-admitted-students', 'monitor-progress', 'department-reports', 'approve-credential-design'],
+  // ---------------------------------------------------------------------
+  // THE VICE-CHANCELLOR IS THE UNIVERSITY'S APPOINTING AUTHORITY.
+  //
+  // Staff, not students — and the distinction is the reason this is not a
+  // contradiction of the note above. A Vice Chancellor who can personally
+  // admit a student has no separation of duties left; a Vice Chancellor who
+  // appoints the staff is the institution's governance working as stated.
+  //
+  // AUTHORISING AND ISSUING TOGETHER, and HR holds neither. HR prepares,
+  // verifies and submits; the VC approves and issues. That is a cleaner split
+  // than a separate HR approval layer, because it puts the two halves in
+  // different offices rather than in two desks of the same one.
+  // ---------------------------------------------------------------------
+  'vice-chancellor': ['view-executive-dashboard', 'view-all-faculties', 'view-institutional-finance', 'view-admitted-students', 'monitor-progress', 'department-reports', 'approve-credential-design',
+    'authorize-appointment', 'issue-appointment-letter'],
 
   // Directs Finance. Still cannot admit.
   'finance-director': ['verify-payment', 'approve-refund', 'generate-invoice', 'manage-student-accounts', 'view-institutional-finance'],
@@ -494,16 +508,19 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // that they were appointed, and an HR assistant who may do the second should
   // not thereby do the first.
   // ---------------------------------------------------------------------
+  // HR PREPARES, VERIFIES AND SUBMITS. It does not issue, and that is the
+  // University's ruling rather than a design preference: the appointing
+  // authority is the Vice-Chancellor, so 'issue-appointment-letter' is absent
+  // from both HR roles and present on exactly one office.
   'hr-officer': [
     'draft-appointment',
-    'issue-appointment-letter',
   ],
 
   'hr-administrator': [
     'draft-appointment',
-    'issue-appointment-letter',
     // The employee record, which follows the letter and never precedes it —
-    // 042 refuses a staff row whose appointment has not been issued.
+    // 042 refuses a staff row whose appointment has not been issued. HR
+    // creates it AFTER the VC has issued; it cannot create it before.
     'create-student-record',
     'set-remuneration',
   ],

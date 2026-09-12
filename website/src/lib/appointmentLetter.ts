@@ -69,6 +69,33 @@ const escape = (v: unknown): string =>
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 
+// ---------------------------------------------------------------------------
+// THE PAGE, AS ONE SET OF NUMBERS.
+//
+// The CSS below is written from these and the page-count test measures against
+// them. They were two sets for about ten minutes: the margin changed here and
+// the test went on dividing by the old printable height, so a letter that had
+// just gained 46px of room was reported as fitting more tightly than before.
+// A measurement against a stale constant is worse than no measurement, because
+// it is believed.
+// ---------------------------------------------------------------------------
+export const PAGE = {
+  /** A4 at 96dpi, in CSS pixels. */
+  width: 794,
+  height: 1123,
+  /** The @page margin, in millimetres, exactly as the stylesheet uses it. */
+  marginTopMm: 12,
+  marginSideMm: 16,
+} as const;
+
+const PX_PER_MM = 96 / 25.4;
+
+/** The text block a letter actually has, derived rather than restated. */
+export const PRINTABLE = {
+  width: Math.round(PAGE.width - (2 * PAGE.marginSideMm * PX_PER_MM)),
+  height: Math.round(PAGE.height - (2 * PAGE.marginTopMm * PX_PER_MM)),
+} as const;
+
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'];
 
@@ -181,26 +208,45 @@ export async function appointmentLetterHtml(input: LetterInput): Promise<Generat
 <meta charset="utf-8">
 <title>Appointment Letter ${escape(printedReference(input.reference))}</title>
 <style>
-  @page { size: A4; margin: 18mm 16mm; }
-  body { font: 11pt/1.55 Georgia, 'Times New Roman', serif; color: #1c1720; margin: 0; }
+  /* ---------------------------------------------------------------------
+     MEASURED, NOT CHOSEN. With the first set of numbers a letter carrying a
+     realistic block of terms came to 1293px against a 987px printable page,
+     and the signature landed 40px onto page two — so the appointee turned over
+     and found a name, a line and a QR code. The spacing below is what brings a
+     full letter onto one page; src/lib/appointmentLetterPages.test.mjs renders
+     it in Chromium and refuses a signature that does not share its page with
+     the letter.
+     --------------------------------------------------------------------- */
+  @page { size: A4; margin: ${PAGE.marginTopMm}mm ${PAGE.marginSideMm}mm; }
+  body { font: 10.5pt/1.34 Georgia, 'Times New Roman', serif; color: #1c1720; margin: 0; }
+  p { margin: 6px 0; }
+  /* A PAGE BREAK NEVER STRANDS ONE LINE. Without these a long set of terms can
+     leave a single line at the foot of page one or the head of page two, which
+     reads as a printing fault on a document somebody is about to sign. */
+  p, .terms { orphans: 3; widows: 3; }
   .head { display: flex; gap: 14px; align-items: center;
           border-bottom: 2px solid #422e59; padding-bottom: 10px; }
   .head h1 { font-size: 15pt; margin: 0; letter-spacing: .04em; color: #422e59; }
   .head p { margin: 2px 0 0; font-size: 8.5pt; color: #5c5366; }
   h2 { font-size: 12pt; letter-spacing: .16em; text-align: center;
-       margin: 22px 0 4px; text-transform: uppercase; }
+       margin: 12px 0 3px; text-transform: uppercase; }
   .meta { display: flex; justify-content: space-between; font-size: 9.5pt;
-          color: #4a4155; margin-bottom: 18px; }
-  table { width: 100%; border-collapse: collapse; margin: 14px 0; }
-  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #e6e0ee;
-           font-size: 10pt; vertical-align: top; }
+          color: #4a4155; margin-bottom: 10px; }
+  table { width: 100%; border-collapse: collapse; margin: 9px 0; }
+  th, td { text-align: left; padding: 3px 8px; border-bottom: 1px solid #e6e0ee;
+           font-size: 9.5pt; vertical-align: top; }
   th { width: 38%; font-weight: normal; color: #5c5366; }
-  .terms { white-space: pre-wrap; font-size: 10pt; }
+  .terms { white-space: pre-wrap; font-size: 9.5pt; margin: 8px 0; }
   .auth { font-size: 9.5pt; color: #4a4155; font-style: italic; }
-  .sign { margin-top: 34px; }
-  .sign .line { border-top: 1px solid #1c1720; width: 62mm; margin-top: 30px; }
-  .seal { margin-top: 26px; border-top: 1px solid #e6e0ee; padding-top: 10px;
-          display: flex; gap: 12px; align-items: center; font-size: 8pt; color: #5c5366; }
+  /* KEPT TOGETHER. Even at this spacing a long set of terms can push the
+     signature over, and a signature separated from the letter it signs is the
+     failure this whole block exists to prevent. */
+  .sign { margin-top: 12px; break-inside: avoid; page-break-inside: avoid; }
+  .byauthority { letter-spacing: .1em; font-size: 9pt; font-weight: bold; margin-bottom: 10px; }
+  .sign .line { border-top: 1px solid #1c1720; width: 62mm; margin-top: 16px; }
+  .seal { margin-top: 8px; border-top: 1px solid #e6e0ee; padding-top: 6px;
+          display: flex; gap: 12px; align-items: center; font-size: 8pt; color: #5c5366;
+          break-inside: avoid; page-break-inside: avoid; }
   .none { color: #8a8194; font-style: italic; }
 </style>
 
@@ -242,6 +288,10 @@ ${authority}
 independently using the reference and code below.</p>
 
 <div class="sign">
+  <!-- THE AUTHORITY IS STATED ON THE PAGE, not inferred from whose name is at
+       the foot. A reader of this letter in five years needs to know it was made
+       by the office that may make it, and a signature alone does not say so. -->
+  <p class="byauthority">BY AUTHORITY OF THE VICE-CHANCELLOR</p>
   <p>Yours sincerely,</p>
   <div class="line"></div>
   <p><strong>${escape(input.signatoryName)}</strong><br>${escape(input.signatoryRole)}<br>

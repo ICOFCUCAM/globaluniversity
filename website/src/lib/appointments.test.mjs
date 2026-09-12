@@ -614,21 +614,43 @@ console.log('\nNobody can draft, approve and issue an appointment alone\n');
   // rank.
   check('only the system roles hold all three', canDoAll.sort(), ['admin', 'superadmin']);
 
-  check('an HR Officer prepares and generates but cannot approve', [
+  // HR PREPARES, VERIFIES AND SUBMITS — AND DOES NOT ISSUE. The University's
+  // ruling: the appointing authority is the Vice-Chancellor. An HR office that
+  // could issue would be an office that could appoint.
+  check('an HR Officer prepares but neither approves nor issues', [
     R.can('hr-officer', 'draft-appointment'),
-    R.can('hr-officer', 'issue-appointment-letter'),
     R.can('hr-officer', 'authorize-appointment'),
-  ], [true, true, false]);
+    R.can('hr-officer', 'issue-appointment-letter'),
+  ], [true, false, false]);
+
+  // AND THE VICE-CHANCELLOR HOLDS BOTH HALVES OF THE AUTHORITY, and no part of
+  // the preparation. Not a contradiction of the rule that a Vice Chancellor
+  // may not admit a student: staff and students are different, and appointing
+  // the staff is what the office is for.
+  check('the Vice-Chancellor authorises and issues', [
+    R.can('vice-chancellor', 'authorize-appointment'),
+    R.can('vice-chancellor', 'issue-appointment-letter'),
+  ], [true, true]);
+  check('…and does not draft or set pay', [
+    R.can('vice-chancellor', 'draft-appointment'),
+    R.can('vice-chancellor', 'set-remuneration'),
+  ], [false, false]);
+
+  // EXACTLY ONE OFFICE ISSUES. Asserted over the whole matrix, so a future
+  // grant made carelessly fails here.
+  const issuers = everyRole.filter((r) => R.can(r, 'issue-appointment-letter'));
+  check('only the Vice-Chancellor and the system roles can issue',
+    issuers.sort(), ['admin', 'superadmin', 'vice-chancellor']);
 
   // AND CANNOT DECIDE WHAT SOMEBODY IS PAID. Recording that somebody was
   // appointed and deciding their salary are different acts.
   check('…and cannot set a salary', R.can('hr-officer', 'set-remuneration'), false);
 
-  check('an HR Administrator issues and manages the record but cannot approve either', [
-    R.can('hr-administrator', 'issue-appointment-letter'),
+  check('an HR Administrator manages the record but neither approves nor issues', [
     R.can('hr-administrator', 'create-student-record'),
     R.can('hr-administrator', 'authorize-appointment'),
-  ], [true, true, false]);
+    R.can('hr-administrator', 'issue-appointment-letter'),
+  ], [true, false, false]);
 
   // A STUDENT CANNOT TOUCH ANY OF IT. The obvious case, asserted because it is
   // the one a mistake in the matrix would quietly grant.
@@ -637,6 +659,29 @@ console.log('\nNobody can draft, approve and issue an appointment alone\n');
     check(`a student holds no ${cap}`, R.can('student', cap), false);
     check(`nor does an applicant`, R.can('applicant', cap), false);
   }
+}
+
+console.log('\nThe authority reviews; it does not rewrite\n');
+
+{
+  // THE SAFEGUARD THE UNIVERSITY NAMED. If the salary, position or dates are
+  // wrong, the appointment goes back to HR for correction — the Vice-Chancellor
+  // does not edit HR's submission. Otherwise the trail reads "HR prepared, VC
+  // approved" about a record the VC changed, and nobody can say who wrote what.
+  check('a submitted appointment cannot be edited by anybody',
+    A.canEdit({ status: 'submitted' }), false);
+  check('nor can an approved one', A.canEdit({ status: 'approved' }), false);
+  check('only a draft can', A.canEdit({ status: 'draft' }), true);
+
+  // AND RETURNING IT IS THE WAY BACK. The route requires a reason, so the
+  // correction is described rather than guessed at.
+  const route = readFileSync(join(here, '../app/api/appointments/route.ts'), 'utf8');
+  check('returning to HR is an action the route offers',
+    /decision !== 'approve' && decision !== 'return'/.test(route), true);
+  check('…and it requires a reason',
+    /return-needs-a-reason/.test(route), true);
+  check('…and the editable check is the one that stops a rewrite',
+    /canEdit\(previous\)/.test(route), true);
 }
 
 console.log(failures === 0 ? '\nAll appointment checks passed.' : `\n${failures} check(s) failed.`);
