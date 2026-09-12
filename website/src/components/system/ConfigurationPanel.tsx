@@ -37,6 +37,13 @@ interface Report {
   missingRecommended?: string[];
   exposedSecrets?: string[];
   dangerouslySet?: string[];
+  deployment?: {
+    commit: string | null;
+    branch: string | null;
+    message: string | null;
+    environment: string | null;
+    available: boolean;
+  };
   settings: Row[];
   note?: string;
   error?: string;
@@ -104,6 +111,44 @@ export default function ConfigurationPanel() {
         Read from the running server, not from a document. No value is ever shown — only whether
         something is set.
       </p>
+
+      {/* ------------------------------------------------------------------
+          WHICH COMMIT IS RUNNING, before anything else on the page.
+
+          Two fixes were reported as not working and the guess was that a
+          branch needed merging. It did not; the deployment had simply not
+          rebuilt. Nobody could establish that from here, so it was settled by
+          guessing. Everything else on this panel describes a deployment — the
+          first thing to say is which one.
+          ------------------------------------------------------------------ */}
+      {report.deployment?.available ? (
+        <div className="mt-4 rounded-lg border border-[#ded6c8] bg-[#faf6ee] p-3 text-xs dark:border-[#3d3349] dark:bg-[#241f2c]">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-[#8a8194]">
+            Running now
+          </p>
+          <p className="mt-1 text-[#33234a] dark:text-[#e4dcf0]">
+            <span className="font-mono">{report.deployment.commit}</span>
+            {report.deployment.branch && (
+              <> on <span className="font-mono">{report.deployment.branch}</span></>
+            )}
+            {report.deployment.environment && <> · {report.deployment.environment}</>}
+          </p>
+          {report.deployment.message && (
+            <p className="mt-0.5 leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">
+              {report.deployment.message}
+            </p>
+          )}
+          <p className="mt-1 text-[11px] leading-relaxed text-[#8a8194]">
+            If this is not the commit you expect, the host has not rebuilt — the branch does not
+            need merging for a change to reach a deployment built from it.
+          </p>
+        </div>
+      ) : (
+        <div className="mt-4 rounded-lg border border-[#ded6c8] bg-[#faf6ee] p-3 text-xs text-[#6b6076] dark:border-[#3d3349] dark:bg-[#241f2c] dark:text-[#9c93ad]">
+          <strong>Which commit is running cannot be read.</strong> Enable “System Environment
+          Variables” in the host’s project settings and redeploy, and this will say.
+        </div>
+      )}
 
       {/* THE DANGEROUS ONE, FIRST AND LOUDEST. Anything named NEXT_PUBLIC_ is
           compiled into the browser bundle and served to every visitor. The

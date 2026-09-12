@@ -23,7 +23,7 @@
 
 import { NextResponse } from 'next/server';
 import { guard, adminClient } from '@/lib/adminAuth';
-import { inspect } from '@/lib/configuration';
+import { inspect, deploymentStamp } from '@/lib/configuration';
 
 export const runtime = 'nodejs';
 // ALWAYS FRESH. A cached configuration report is a report about a deployment
@@ -66,6 +66,9 @@ export async function GET(request: Request) {
   return NextResponse.json({
     ok: true,
     authenticated: true,
+    // WHICH COMMIT IS RUNNING. First, because every other answer on this page
+    // describes a deployment, and the first thing to establish is which one.
+    deployment: deploymentStamp(),
     operational: report.operational,
     missingRequired: report.missingRequired,
     missingRecommended: report.missingRecommended,

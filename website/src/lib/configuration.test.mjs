@@ -47,7 +47,7 @@ execFileSync('npx', [
   `--alias:@=${new URL('..', import.meta.url).pathname.replace(/\/$/, '')}`,
 ]);
 
-const { inspect, SETTINGS } = await import(outfile);
+const { inspect, SETTINGS, deploymentStamp } = await import(outfile);
 
 /** Everything a deployment cannot run without, and nothing else. */
 const MINIMUM = {
@@ -184,10 +184,45 @@ console.log('\nEvery variable the code reads is on the report\n');
   check('the scan found variables at all', used.length > 8, true);
 
   const declared = SETTINGS.map((s) => s.name);
-  // NODE_ENV and friends are the platform's, not the University's.
-  const PLATFORM = ['NODE_ENV', 'VERCEL', 'VERCEL_ENV', 'VERCEL_URL', 'PORT'];
+  // The platform's own, not the University's. Nobody sets these by hand and
+  // listing them as things to configure would be advice to break a deployment.
+  const PLATFORM = [
+    'NODE_ENV', 'VERCEL', 'VERCEL_ENV', 'VERCEL_URL', 'PORT',
+    'VERCEL_GIT_COMMIT_SHA', 'VERCEL_GIT_COMMIT_REF', 'VERCEL_GIT_COMMIT_MESSAGE',
+  ];
   check('nothing the code reads is missing from the report',
     used.filter((v) => !declared.includes(v) && !PLATFORM.includes(v)), []);
+}
+
+console.log('\nWhich commit is running, answered rather than guessed\n');
+
+// ---------------------------------------------------------------------------
+// The University reported two fixes as not working and guessed a branch needed
+// merging. It did not — the commits were pushed and the host had not rebuilt on
+// them — but nobody could establish that from the portal, so it was settled by
+// guessing. This is what makes it a fact instead.
+// ---------------------------------------------------------------------------
+{
+  const stamp = deploymentStamp({
+    VERCEL_GIT_COMMIT_SHA: '7971c5adf0123456789abcdef',
+    VERCEL_GIT_COMMIT_REF: 'claude/university-site-vercel-migration-vmsizi',
+    VERCEL_GIT_COMMIT_MESSAGE: 'Put the variables on the report\n\nA long body\nover lines.',
+    VERCEL_ENV: 'production',
+  });
+  check('the commit is shown short enough to read', stamp.commit, '7971c5adf');
+  // THE FIELD THAT ANSWERS THE QUESTION ASKED. Whether a merge is needed is a
+  // question about which branch the deployment was built from.
+  check('the branch is carried', stamp.branch, 'claude/university-site-vercel-migration-vmsizi');
+  check('only the subject line of the message', stamp.message, 'Put the variables on the report');
+  check('and the environment', stamp.environment, 'production');
+  check('it reports itself available', stamp.available, true);
+}
+{
+  // A HOST WITH THE SYSTEM VARIABLES SWITCHED OFF must say it cannot tell,
+  // rather than render an empty box that reads like a commit of nothing.
+  const blank = deploymentStamp({});
+  check('with nothing set it admits it cannot tell', blank.available, false);
+  check('and invents no commit', blank.commit, null);
 }
 
 console.log('\nA variable that is dangerous when SET, not when missing\n');

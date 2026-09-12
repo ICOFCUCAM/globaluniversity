@@ -336,6 +336,52 @@ export interface ConfigurationReport {
 }
 
 /** Read the settings against an environment. Values are never returned. */
+// ---------------------------------------------------------------------------
+// WHICH COMMIT IS ACTUALLY RUNNING.
+//
+// ---------------------------------------------------------------------------
+// WHY THIS EXISTS
+// ---------------------------------------------------------------------------
+//
+// The University reported that two fixes had not taken effect and guessed the
+// branch might need merging. It did not — the commits were pushed and the
+// deployment simply had not rebuilt on them — but there was no way for anybody
+// to establish that from the portal, and no way for me to establish it either.
+// The question "is the thing I am looking at the code that was written?" was
+// unanswerable by everyone involved, so it was answered by guessing.
+//
+// Vercel sets these on every build when "System Environment Variables" is
+// enabled. Read here rather than read from a file committed at build time,
+// because a stamp the repository writes is a stamp that can be stale in
+// exactly the case it is needed for.
+// ---------------------------------------------------------------------------
+
+export interface DeploymentStamp {
+  /** The commit the running build was made from, short form. */
+  commit: string | null;
+  /** The branch it came from — which is how "should this be merged?" is answered. */
+  branch: string | null;
+  /** Its subject line, so the commit is recognisable without looking it up. */
+  message: string | null;
+  /** 'production', 'preview' or 'development'. */
+  environment: string | null;
+  /** Absent when the system variables are switched off in the host. */
+  available: boolean;
+}
+
+export function deploymentStamp(env: NodeJS.ProcessEnv = process.env): DeploymentStamp {
+  const sha = (env.VERCEL_GIT_COMMIT_SHA ?? '').trim();
+  return {
+    commit: sha ? sha.slice(0, 9) : null,
+    branch: (env.VERCEL_GIT_COMMIT_REF ?? '').trim() || null,
+    // Only the subject. A full commit body would run to paragraphs in this
+    // codebase and the panel needs one line.
+    message: ((env.VERCEL_GIT_COMMIT_MESSAGE ?? '').trim().split('\n')[0] || null),
+    environment: (env.VERCEL_ENV ?? '').trim() || null,
+    available: Boolean(sha),
+  };
+}
+
 export function inspect(env: NodeJS.ProcessEnv = process.env): ConfigurationReport {
   const settings: SettingReport[] = SETTINGS.map((s) => {
     const raw = (env[s.name] ?? '').trim();
