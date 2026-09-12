@@ -213,6 +213,13 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
       + "where s.nspname = 'public' and p.prokind = 'f' and not exists (select 1 from "
       + "unnest(coalesce(p.proconfig,'{}'::text[])) c where c like 'search_path=%');  -- 0",
   },
+  {
+    file: '031_the_letters_the_university_has_issued.sql',
+    what: 'Keeps every admission package the University issues, with the outcome of its '
+      + 'delivery — so a letter that failed to send is in an outbox rather than gone, and the '
+      + 'University can see what it actually sent a student.',
+    table: 'admission_letters',
+  },
 ];
 
 /** What a probe came back as. */

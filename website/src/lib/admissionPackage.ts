@@ -191,6 +191,88 @@ const row = (k: string, v: string | undefined | null): string =>
     ? `<tr><td class="k">${esc(k)}</td><td class="v">${esc(String(v))}</td></tr>`
     : '';
 
+// ---------------------------------------------------------------------------
+// THE LETTER'S PARTICULARS, BUILT IN ONE PLACE.
+//
+// The decision route composed this object inline, which was fine while it was
+// the only caller. It stopped being fine the moment the University asked to
+// view and resend a letter already issued: a second place building the same
+// object is a second opinion about what the letter says, and the two would
+// drift. A "copy" that differs from what was sent is worse than no copy.
+//
+// THE SEAL IS WHAT MAKES THIS EXACT RATHER THAN APPROXIMATE. It is an HMAC
+// over the particulars, the issue date among them, so a re-render with the
+// same inputs and the same `issuedOn` produces the SAME seal and the same QR.
+// Pass the application's `decided_at` and the document regenerates byte for
+// byte; pass today's date instead and it is a different document wearing the
+// same name.
+// ---------------------------------------------------------------------------
+
+/** The columns of `students` the letter is made from. */
+export interface AdmissionApplicationRow {
+  first_name?: string | null;
+  middle_name?: string | null;
+  last_name?: string | null;
+  date_of_birth?: string | null;
+  gender?: string | null;
+  nationality?: string | null;
+  program?: string | null;
+  degree_type?: string | null;
+  faculty?: string | null;
+  campus?: string | null;
+  mode?: string | null;
+  attendance?: string | null;
+  intake?: string | null;
+  admission_year?: string | number | null;
+  matric_no?: string | null;
+}
+
+export function admissionPackageInputFor(
+  app: AdmissionApplicationRow,
+  opts: {
+    studentNumber: string;
+    portalUrl: string;
+    /** The catalogue entry, where the programme was matched. */
+    programme?: { faculty?: string; level?: string; modeLabel?: string };
+    conditions?: { requirement: string; dueBy: string }[];
+    /** The original decision date on a re-render. Today's date on a first issue. */
+    issuedOn?: Date;
+    temporaryPassword?: string;
+  },
+): AdmissionPackageInput {
+  const fullName = [app.first_name, app.middle_name, app.last_name].filter(Boolean).join(' ');
+  const intakeYear = Number(app.admission_year) || new Date().getFullYear();
+  return {
+    fullName: fullName || 'Applicant',
+    studentNumber: opts.studentNumber,
+    dateOfBirth: app.date_of_birth ?? undefined,
+    gender: app.gender ?? undefined,
+    nationality: app.nationality ?? undefined,
+    programme: [app.degree_type, app.program].filter(Boolean).join(' — ') || 'your programme',
+    faculty: app.faculty || opts.programme?.faculty || UNIVERSITY.name,
+    level: opts.programme?.level ?? app.degree_type ?? '',
+    campus: app.campus || 'Buea',
+    // THE DELIVERY MODE THE UNIVERSITY APPROVED, from the catalogue rather than
+    // from a default. It was `student.mode || 'On campus'`, so a programme
+    // taught at a distance produced a letter telling the holder they were
+    // expected in Buea — and the terms annexe followed the same wrong value.
+    mode: opts.programme?.modeLabel ?? (app.mode || 'Campus'),
+    attendance: app.attendance || 'Full time',
+    intake: app.intake || String(intakeYear),
+    applicationNumber: app.matric_no ?? '',
+    conditions: opts.conditions?.length ? opts.conditions : undefined,
+    // Signed by the office that took the decision. Never by whichever account
+    // pressed the button — that would put an administrator's name under a
+    // decision they did not make.
+    headOfAdmissions: UNIVERSITY.headOfAcademicAffairs,
+    postNominals: UNIVERSITY.headOfAcademicAffairsPostNominals,
+    registrar: UNIVERSITY.registrar,
+    issuedOn: opts.issuedOn,
+    portalUrl: opts.portalUrl,
+    temporaryPassword: opts.temporaryPassword,
+  };
+}
+
 export async function admissionPackageHtml(input: AdmissionPackageInput): Promise<string> {
   const issued = input.issuedOn ?? new Date();
   const issuedLong = issued.toLocaleDateString('en-GB', {
