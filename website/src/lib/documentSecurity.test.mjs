@@ -47,7 +47,13 @@ const bundle = join(dir, 'seal.mjs');
 execFileSync('npx', [
   'esbuild', new URL('./documentSecurity.ts', import.meta.url).pathname,
   '--bundle', '--format=esm', '--platform=node', `--outfile=${bundle}`, '--log-level=error',
+  // EVERY CJS PACKAGE STAYS EXTERNAL. Flattened into an ESM bundle, their
+  // internal `require` calls become a shim that throws on first use — which
+  // happens inside the function under test, so it reads as a failure of the
+  // code rather than of the bundling. Node imports them directly without
+  // complaint. `qrcode` joined this list when it replaced the React renderer.
   '--external:react', '--external:react-dom', '--external:qrcode.react',
+  '--external:qrcode',
 ]);
 
 process.env.CREDENTIAL_SECRET = 'k'.repeat(48);
@@ -216,6 +222,72 @@ check('and a presented code cannot pass', sealMatches(base, SITE, seal.code), fa
 
 process.env.CREDENTIAL_SECRET = 'short';
 check('a short key is refused as no key at all', sealParticulars(base, SITE).sealed, false);
+
+// ---------------------------------------------------------------------------
+// NO DOCUMENT IS BUILT WITH REACT.
+//
+// ---------------------------------------------------------------------------
+// THE OUTAGE THIS EXISTS TO PREVENT HAPPENING TWICE
+// ---------------------------------------------------------------------------
+//
+// verificationQrSvg rendered qrcode.react's <QRCodeSVG> through
+// react-dom/server. In a Next.js route handler `react` resolves to its
+// react-server build, where the hook dispatcher is null, so the render threw:
+//
+//   TypeError: Cannot read properties of null (reading 'useMemo')
+//
+// Every sealed document the University issues calls that function from a route
+// handler — the admission letter, certificates, transcripts and identity cards
+// — so every one of them failed. On the delivery route, which wraps the call
+// in `.catch(() => '')`, it was worse than a failure: the credential went out
+// with no verification QR and nothing said so.
+//
+// WHY NO TEST CAUGHT IT, WHICH IS THE POINT OF THIS ONE. It cannot be
+// reproduced outside Next. In plain Node — where every test here and the
+// specimen generator run — `react` resolves to the ordinary build, the
+// dispatcher is present, and the component renders perfectly. The suite was
+// green for the entire time production could not issue a document.
+//
+// A behavioural test therefore cannot catch it. A structural one can: a
+// document generator has no business instantiating a UI framework at all, so
+// the rule is that these modules do not import one. That is checkable here and
+// true regardless of which runtime resolves what.
+// ---------------------------------------------------------------------------
+console.log('\nNo document generator imports a UI framework\n');
+
+{
+  const { readFileSync } = await import('node:fs');
+  const { join } = await import('node:path');
+  const here = new URL('.', import.meta.url).pathname;
+
+  // The modules that build or seal a document server-side. A client component
+  // that draws a QR in the browser is a different thing and is not listed:
+  // React is exactly the right tool there.
+  const GENERATORS = [
+    'src/lib/documentSecurity.ts',
+    'src/lib/admissionPackage.ts',
+    'src/lib/credentialArt.ts',
+    'src/lib/documentSignature.ts',
+    'src/lib/securityPatterns.ts',
+  ];
+
+  const offenders = [];
+  for (const rel of GENERATORS) {
+    const text = readFileSync(join(here, '../../', rel), 'utf8');
+    // Static AND dynamic — the one that broke production was an `await
+    // import('react')` inside a function body, which no import-line scan sees.
+    for (const m of text.matchAll(
+      /(?:from|import)\s*\(?\s*['"](react|react-dom(?:\/server)?|qrcode\.react)['"]/g,
+    )) {
+      // A mention inside a comment is how the reason is recorded; only code counts.
+      const line = text.slice(text.lastIndexOf('\n', m.index) + 1, m.index + 40);
+      if (line.trimStart().startsWith('//') || line.trimStart().startsWith('*')) continue;
+      offenders.push(`${rel}: ${m[1]}`);
+    }
+  }
+  check('no server-side document generator imports react', offenders.length, 0);
+  if (offenders.length) console.error('      ' + offenders.join('\n      '));
+}
 
 console.log(failures === 0 ? '\nAll document-seal checks passed.' : `\n${failures} check(s) failed.`);
 process.exit(failures === 0 ? 0 : 1);
