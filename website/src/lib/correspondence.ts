@@ -151,6 +151,8 @@ export interface Correspondence {
   recipient_name?: string | null;
   recipient_org?: string | null;
   recipient_email?: string | null;
+  /** A postal address, because a letter to a ministry is often posted. */
+  recipient_address?: string | null;
   status?: string | null;
   initiated_by?: string | null;
   prepared_by?: string | null;
@@ -316,6 +318,82 @@ export const OFFICE_PREFIX: Record<Office, string> = {
  */
 export function reference(office: Office, year: number, sequence: number): string {
   return `${OFFICE_PREFIX[office]}-${year}-${String(sequence).padStart(4, '0')}`;
+}
+
+// ---------------------------------------------------------------------------
+// 7. THE BOARD
+// ---------------------------------------------------------------------------
+
+/**
+ * The tabs of the Correspondence Center, and which letters fall under each.
+ *
+ * COMPUTED HERE RATHER THAN ON THE SCREEN. A component working this out inline
+ * would state the rules a second time, differently, and the two would disagree
+ * the first time a state was added — which is exactly how the Announcements
+ * board came to show a scheduled post under both "Scheduled" and "Drafts".
+ */
+export const TABS = [
+  'drafts', 'awaiting-action', 'scheduled', 'issued', 'archive',
+] as const;
+
+export type Tab = (typeof TABS)[number];
+
+export const TAB_LABELS: Record<Tab, string> = {
+  drafts: 'Drafts',
+  'awaiting-action': 'Awaiting Action',
+  scheduled: 'Scheduled',
+  issued: 'Issued',
+  archive: 'Archive',
+};
+
+/**
+ * Which tab a letter belongs on. Exactly one, always.
+ *
+ * 'awaiting-action' IS THE ONE THAT EARNS ITS PLACE. It holds both halves of
+ * the waiting: a letter an administrator is preparing, and one that has come
+ * back and is sitting on the authority's desk. Somebody asking "what is waiting
+ * on me" wants both, and splitting them into two tabs means the second one is
+ * never opened.
+ */
+export function tabFor(c: Correspondence): Tab {
+  switch (c.status) {
+    case 'draft': return 'drafts';
+    case 'preparing':
+    case 'awaiting_authority':
+    case 'authorized': return 'awaiting-action';
+    case 'scheduled': return 'scheduled';
+    case 'issued': return 'issued';
+    default: return 'archive';
+  }
+}
+
+export function countersFor(list: Correspondence[]): Record<Tab, number> {
+  const out = { drafts: 0, 'awaiting-action': 0, scheduled: 0, issued: 0, archive: 0 };
+  for (const c of list) out[tabFor(c)] += 1;
+  return out;
+}
+
+/**
+ * What the screen should offer for this letter, given who is looking.
+ *
+ * A BUTTON THAT APPEARS AND THEN REFUSES is worse than one never offered: the
+ * person clicking it has already decided to do the thing, and the refusal reads
+ * as a fault in the system rather than as the rule it is.
+ */
+export function actionsFor(
+  c: Correspondence, callerId: string,
+  holds: { authorize?: boolean; issue?: boolean; compose?: boolean },
+): string[] {
+  const out: string[] = [];
+  if (canEdit(c) && (holds.compose || c.prepared_by === callerId)) out.push('edit');
+  if (holds.compose && canEdit(c) && !c.prepared_by) out.push('delegate');
+  if (c.status === 'preparing' && c.prepared_by === callerId) out.push('handback');
+  if (holds.authorize && canAuthorize(c, callerId)) out.push('authorize', 'schedule');
+  if (holds.authorize && c.status === 'awaiting_authority'
+      && c.prepared_by && c.prepared_by !== callerId) out.push('return');
+  if (holds.issue && canIssue(c)) out.push('issue');
+  if (canWithdraw(c) && (holds.authorize || holds.compose)) out.push('withdraw');
+  return out;
 }
 
 export function printedReference(ref: string): string {

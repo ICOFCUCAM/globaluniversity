@@ -357,6 +357,19 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
       + 'made on one office’s sole authority visible and permanent rather than quiet.',
     table: 'correspondence',
   },
+  {
+    file: '046_the_correspondence_history_and_the_delegated_draft.sql',
+    what: 'The history 045 left out — official correspondence was the only institutional act in '
+      + 'this system with no append-only record of who did what to it. Also makes “prepare this '
+      + 'letter” a real act: the Vice-Chancellor can hand a letter to an administrator with a '
+      + 'brief, before the letter exists, and the authority does not move with the typing. And '
+      + 'references are now allocated by the register rather than counted by the application, '
+      + 'so two officers issuing in the same second are not handed the same one.',
+    // THE HISTORY IS THE MARKER, because it is the thing whose absence means
+    // the register cannot say what happened — not a column on `correspondence`,
+    // which 045 already created.
+    table: 'correspondence_events',
+  },
 ];
 
 /** What a probe came back as. */

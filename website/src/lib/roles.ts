@@ -197,6 +197,26 @@ export const OPERATIONAL_CAPABILITIES = [
   'authorize-appointment',
   'issue-appointment-letter',
   'set-remuneration',
+  // ---------------------------------------------------------------------
+  // OFFICIAL CORRESPONDENCE — and here the separation is deliberately NOT
+  // the same shape.
+  //
+  // An appointment commits the University's MONEY, so 041 refuses an
+  // authorisation by the drafter and 'draft-appointment' and
+  // 'authorize-appointment' must land on two people. A letter commits the
+  // University's WORDS, and a letter to a ministry IS the Vice-Chancellor
+  // speaking. An office that holds all three of these may take a letter from
+  // blank page to issued alone, which is the point of them.
+  //
+  // 'prepare-correspondence' is the one that is held WITHOUT the others: an
+  // administrator asked to draft. They write it and hand it back, and the
+  // database refuses them to authorise what they prepared even if somebody
+  // later grants them the capability by mistake.
+  // ---------------------------------------------------------------------
+  'compose-correspondence',
+  'prepare-correspondence',
+  'authorize-correspondence',
+  'issue-correspondence',
   'compose-announcement',
   'approve-announcement',
   'publish-announcement',
@@ -453,7 +473,12 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // 'admit-student' and 'verify-payment' are deliberately absent from both: an
   // institution where the Vice Chancellor can personally admit a student has
   // no separation of duties left to speak of, whatever its org chart says.
-  chancellor: ['view-executive-dashboard', 'view-all-faculties', 'view-institutional-finance', 'view-admitted-students', 'monitor-progress'],
+  // The Chancellor holds the correspondence chain for the same reason the
+  // Vice-Chancellor does — it is their own office's letter — and holds none of
+  // the appointment capabilities, because the appointing authority is one
+  // office and naming two would make "who appoints here" a question.
+  chancellor: ['view-executive-dashboard', 'view-all-faculties', 'view-institutional-finance', 'view-admitted-students', 'monitor-progress',
+    'compose-correspondence', 'authorize-correspondence', 'issue-correspondence'],
   // ---------------------------------------------------------------------
   // THE VICE-CHANCELLOR IS THE UNIVERSITY'S APPOINTING AUTHORITY.
   //
@@ -468,7 +493,13 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // different offices rather than in two desks of the same one.
   // ---------------------------------------------------------------------
   'vice-chancellor': ['view-executive-dashboard', 'view-all-faculties', 'view-institutional-finance', 'view-admitted-students', 'monitor-progress', 'department-reports', 'approve-credential-design',
-    'authorize-appointment', 'issue-appointment-letter'],
+    'authorize-appointment', 'issue-appointment-letter',
+    // THE WHOLE CORRESPONDENCE CHAIN, IN ONE OFFICE. Not an oversight and not
+    // a convenience: the University's ruling is that the Vice-Chancellor
+    // starts and finishes their own letter, with no artificial loop through
+    // HR. See src/lib/correspondence.ts for where that line is drawn and why
+    // it does not extend to appointments.
+    'compose-correspondence', 'authorize-correspondence', 'issue-correspondence'],
 
   // Directs Finance. Still cannot admit.
   'finance-director': ['verify-payment', 'approve-refund', 'generate-invoice', 'manage-student-accounts', 'view-institutional-finance'],
@@ -518,6 +549,10 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
 
   'hr-administrator': [
     'draft-appointment',
+    // ASKED TO DRAFT, NOT TO DECIDE. This is the capability that exists to be
+    // held on its own: HR can write a letter the Vice-Chancellor requested and
+    // hand it back, and 045 refuses them to authorise what they prepared.
+    'prepare-correspondence',
     // The employee record, which follows the letter and never precedes it —
     // 042 refuses a staff row whose appointment has not been issued. HR
     // creates it AFTER the VC has issued; it cannot create it before.

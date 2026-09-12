@@ -37,7 +37,15 @@
 // ---------------------------------------------------------------------------
 
 import { UNIVERSITY } from './constants';
-import { sealDocument, verificationQrSvg, type DocumentSeal } from './documentSecurity';
+import { sealDocument, type DocumentSeal } from './documentSecurity';
+// THE PRESS, SHARED. The page, the letterhead, the signature block and the seal
+// panel were written here and again for correspondence; the second copy drifted
+// within a day of the first being touched. See officialDocument.ts for where
+// the line between the shared press and the unshared workflow is drawn.
+import {
+  PAGE, PRINTABLE, escape, longDate, documentStyles, letterhead, signatureBlock, sealPanel,
+  DOCUMENT_FAMILIES,
+} from './officialDocument';
 import {
   EMPLOYMENT_LABELS, remunerationLine, probationEnds, printedReference,
   missingFrom, blocked,
@@ -64,55 +72,11 @@ export interface GeneratedLetter {
   printed: string;
 }
 
-const escape = (v: unknown): string =>
-  String(v ?? '')
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-
-// ---------------------------------------------------------------------------
-// THE PAGE, AS ONE SET OF NUMBERS.
-//
-// The CSS below is written from these and the page-count test measures against
-// them. They were two sets for about ten minutes: the margin changed here and
-// the test went on dividing by the old printable height, so a letter that had
-// just gained 46px of room was reported as fitting more tightly than before.
-// A measurement against a stale constant is worse than no measurement, because
-// it is believed.
-// ---------------------------------------------------------------------------
-export const PAGE = {
-  /** A4 at 96dpi, in CSS pixels. */
-  width: 794,
-  height: 1123,
-  /** The @page margin, in millimetres, exactly as the stylesheet uses it. */
-  marginTopMm: 12,
-  marginSideMm: 16,
-} as const;
-
-const PX_PER_MM = 96 / 25.4;
-
-/** The text block a letter actually has, derived rather than restated. */
-export const PRINTABLE = {
-  width: Math.round(PAGE.width - (2 * PAGE.marginSideMm * PX_PER_MM)),
-  height: Math.round(PAGE.height - (2 * PAGE.marginTopMm * PX_PER_MM)),
-} as const;
-
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December'];
-
-/**
- * A date as the letter prints it: 12 September 2026.
- *
- * SPELLED OUT RATHER THAN LOCALISED. `toLocaleDateString` renders "Sept" on one
- * ICU build and "Sep" on the next, so the same document generated on the server
- * and previewed in a browser could disagree about its own date. A register
- * prints its own months.
- */
-export function longDate(iso: string | null | undefined): string {
-  if (!iso) return '';
-  const d = new Date(`${iso}T00:00:00Z`);
-  if (Number.isNaN(d.getTime())) return String(iso);
-  return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
-}
+// THE PAGE AND THE DATE COME FROM THE ENGINE. Re-exported because the page-count
+// test imports them from the letter it is measuring, which is the right place to
+// ask — a test that reads the geometry from somewhere other than the document
+// under test is measuring a number, not a page.
+export { PAGE, PRINTABLE, longDate };
 
 /**
  * Seal an appointment letter with the scheme every other IGUC document uses.
@@ -127,8 +91,8 @@ export function sealAppointment(
   a: Appointment, reference: string, issuedOn: string, siteUrl: string,
 ): DocumentSeal {
   return sealDocument(
-    'ICOFGU-APPOINTMENT-V1',
-    'Appointment Letter',
+    DOCUMENT_FAMILIES.appointment.scheme,
+    DOCUMENT_FAMILIES.appointment.label,
     {
       name: a.full_name ?? '',
       position: a.position_title ?? '',
@@ -161,10 +125,8 @@ export async function appointmentLetterHtml(input: LetterInput): Promise<Generat
   }
 
   let seal: DocumentSeal | null = null;
-  let qr = '';
   try {
     seal = sealAppointment(a, input.reference, input.issuedOn, input.siteUrl);
-    qr = await verificationQrSvg(seal.verifyUrl, 88);
   } catch {
     // UNSEALED RATHER THAN UNISSUED. CREDENTIAL_SECRET may be absent in a
     // deployment that has not been configured, and an appointment held up by a
@@ -207,56 +169,9 @@ export async function appointmentLetterHtml(input: LetterInput): Promise<Generat
     html: `<!doctype html>
 <meta charset="utf-8">
 <title>Appointment Letter ${escape(printedReference(input.reference))}</title>
-<style>
-  /* ---------------------------------------------------------------------
-     MEASURED, NOT CHOSEN. With the first set of numbers a letter carrying a
-     realistic block of terms came to 1293px against a 987px printable page,
-     and the signature landed 40px onto page two — so the appointee turned over
-     and found a name, a line and a QR code. The spacing below is what brings a
-     full letter onto one page; src/lib/appointmentLetterPages.test.mjs renders
-     it in Chromium and refuses a signature that does not share its page with
-     the letter.
-     --------------------------------------------------------------------- */
-  @page { size: A4; margin: ${PAGE.marginTopMm}mm ${PAGE.marginSideMm}mm; }
-  body { font: 10.5pt/1.34 Georgia, 'Times New Roman', serif; color: #1c1720; margin: 0; }
-  p { margin: 6px 0; }
-  /* A PAGE BREAK NEVER STRANDS ONE LINE. Without these a long set of terms can
-     leave a single line at the foot of page one or the head of page two, which
-     reads as a printing fault on a document somebody is about to sign. */
-  p, .terms { orphans: 3; widows: 3; }
-  .head { display: flex; gap: 14px; align-items: center;
-          border-bottom: 2px solid #422e59; padding-bottom: 10px; }
-  .head h1 { font-size: 15pt; margin: 0; letter-spacing: .04em; color: #422e59; }
-  .head p { margin: 2px 0 0; font-size: 8.5pt; color: #5c5366; }
-  h2 { font-size: 12pt; letter-spacing: .16em; text-align: center;
-       margin: 12px 0 3px; text-transform: uppercase; }
-  .meta { display: flex; justify-content: space-between; font-size: 9.5pt;
-          color: #4a4155; margin-bottom: 10px; }
-  table { width: 100%; border-collapse: collapse; margin: 9px 0; }
-  th, td { text-align: left; padding: 3px 8px; border-bottom: 1px solid #e6e0ee;
-           font-size: 9.5pt; vertical-align: top; }
-  th { width: 38%; font-weight: normal; color: #5c5366; }
-  .terms { white-space: pre-wrap; font-size: 9.5pt; margin: 8px 0; }
-  .auth { font-size: 9.5pt; color: #4a4155; font-style: italic; }
-  /* KEPT TOGETHER. Even at this spacing a long set of terms can push the
-     signature over, and a signature separated from the letter it signs is the
-     failure this whole block exists to prevent. */
-  .sign { margin-top: 12px; break-inside: avoid; page-break-inside: avoid; }
-  .byauthority { letter-spacing: .1em; font-size: 9pt; font-weight: bold; margin-bottom: 10px; }
-  .sign .line { border-top: 1px solid #1c1720; width: 62mm; margin-top: 16px; }
-  .seal { margin-top: 8px; border-top: 1px solid #e6e0ee; padding-top: 6px;
-          display: flex; gap: 12px; align-items: center; font-size: 8pt; color: #5c5366;
-          break-inside: avoid; page-break-inside: avoid; }
-  .none { color: #8a8194; font-style: italic; }
-</style>
+<style>${documentStyles()}</style>
 
-<div class="head">
-  <div>
-    <h1>${escape(UNIVERSITY.name)}</h1>
-    <p>${escape(UNIVERSITY.address)}</p>
-    <p>${escape(UNIVERSITY.phone)} · ${escape(UNIVERSITY.email)} · ${escape(UNIVERSITY.website)}</p>
-  </div>
-</div>
+${letterhead()}
 
 <h2>Appointment Letter</h2>
 
@@ -287,31 +202,16 @@ ${authority}
 <p>Please confirm your acceptance of this appointment in writing. This letter may be verified
 independently using the reference and code below.</p>
 
-<div class="sign">
-  <!-- THE AUTHORITY IS STATED ON THE PAGE, not inferred from whose name is at
-       the foot. A reader of this letter in five years needs to know it was made
-       by the office that may make it, and a signature alone does not say so. -->
-  <p class="byauthority">BY AUTHORITY OF THE VICE-CHANCELLOR</p>
-  <p>Yours sincerely,</p>
-  <div class="line"></div>
-  <p><strong>${escape(input.signatoryName)}</strong><br>${escape(input.signatoryRole)}<br>
-  ${escape(UNIVERSITY.name)}</p>
-</div>
+${signatureBlock({
+  // THE AUTHORITY IS STATED ON THE PAGE, not inferred from whose name is at the
+  // foot. A reader of this letter in five years needs to know it was made by the
+  // office that may make it, and a signature alone does not say so.
+  byAuthorityOf: 'the Vice-Chancellor',
+  name: input.signatoryName,
+  role: input.signatoryRole,
+})}
 
-<div class="seal">
-  ${qr}
-  <div>
-    ${seal
-      ? `<p><strong>Verification code:</strong> ${escape(seal.code)}</p>
-         <p>Check this document at ${escape(UNIVERSITY.website)}/verify</p>`
-      // SAID ON THE PAGE, not hidden. A letter that carries no seal must not
-      // look like one that does — a reader told to scan a code that is not
-      // there learns to distrust the ones that are.
-      : `<p class="none">This copy carries no verification seal. The University's signing
-         secret was not configured when it was generated.</p>`}
-    <p>${escape(printedReference(input.reference))} · version ${input.version}</p>
-  </div>
-</div>
+${await sealPanel(seal, printedReference(input.reference), input.version)}
 `,
   };
 }
