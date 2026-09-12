@@ -89,6 +89,9 @@ interface Draft {
 export default function AcademicAdmissions({ role }: { role?: UserRole }) {
   const [rows, setRows] = useState<Application[] | null>(null);
   const [decided, setDecided] = useState<Application[] | null>(null);
+  // Resending resets the applicant's password, so it is confirmed rather than
+  // done on one click. The old one stops working the moment it happens.
+  const [resending, setResending] = useState<Application | null>(null);
   const [reachable, setReachable] = useState(true);
   const [open, setOpen] = useState<Application | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -212,6 +215,68 @@ export default function AcademicAdmissions({ role }: { role?: UserRole }) {
     setOpen(null);
     setDraft(null);
     load();
+  }
+
+  /**
+   * Open the letter as it was issued.
+   *
+   * Fetched with the session token and opened from a blob rather than linked
+   * to directly: the route is guarded, and a plain <a href> carries no
+   * authorization header, so the link would simply refuse.
+   */
+  async function viewLetter(a: Application) {
+    setResult(null);
+    const { data: sess } = await supabase.auth.getSession();
+    const res = await fetch(`/api/admissions/letter?applicationId=${encodeURIComponent(a.id)}`, {
+      headers: { authorization: `Bearer ${sess.session?.access_token ?? ''}` },
+    }).catch(() => null);
+    if (!res?.ok) {
+      const json = await res?.json().catch(() => null);
+      setResult({ tone: 'bad', text: json?.detail ?? 'The letter could not be opened.' });
+      return;
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank', 'noopener');
+    // Released once the new tab has taken it. Revoking immediately would open
+    // a blank page.
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  }
+
+  async function resendLetter(a: Application) {
+    setBusy(true);
+    setResending(null);
+    setResult(null);
+    const { data: sess } = await supabase.auth.getSession();
+    const res = await fetch('/api/admissions/letter', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${sess.session?.access_token ?? ''}`,
+      },
+      body: JSON.stringify({ applicationId: a.id }),
+    }).catch(() => null);
+    const json = await res?.json().catch(() => null);
+    setBusy(false);
+
+    if (!json?.ok) {
+      setResult({
+        tone: 'bad',
+        text: json?.password
+          // THE PASSWORD HAS ALREADY CHANGED BY THIS POINT. Withholding it
+          // because the email failed would leave the student locked out of an
+          // account whose new password nobody knows.
+          ? `The password was reset but the email did not go (${json.detail}). Pass these on `
+            + `directly — ${json.email}, temporary password ${json.password}.`
+          : json?.detail ?? 'The letter was not resent.',
+      });
+      return;
+    }
+    setResult({
+      tone: 'ok',
+      text: `The admission package was sent again to ${json.email}`
+        + (json.passwordReset ? ', with a new temporary password. The previous one no longer works.' : '.'),
+    });
   }
 
   const overrideTooShort = isOverride && draft
@@ -370,6 +435,7 @@ export default function AcademicAdmissions({ role }: { role?: UserRole }) {
             <THead>
               <tr>
                 <Th>Applicant</Th><Th>Programme</Th><Th>Outcome</Th><Th>Decided</Th>
+                <Th align="right">Letter</Th>
               </tr>
             </THead>
             <TBody>
@@ -393,6 +459,27 @@ export default function AcademicAdmissions({ role }: { role?: UserRole }) {
                           { day: 'numeric', month: 'short', year: 'numeric' })
                         : '—'}
                     </Td>
+                    {/* ONLY AN ISSUED ADMISSION HAS A LETTER. A rejection and a
+                        return produce no package, so offering the controls for
+                        them would be offering something that does not exist. */}
+                    <Td align="right">
+                      {a.status === 'admission_issued' || a.status === 'enrolled' ? (
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => void viewLetter(a)}
+                            className={`${BTN_SECONDARY} px-3 py-1.5 text-xs`}
+                          >
+                            View
+                          </button>
+                          <button
+                            onClick={() => setResending(a)}
+                            className={`${BTN_SECONDARY} px-3 py-1.5 text-xs`}
+                          >
+                            Resend
+                          </button>
+                        </div>
+                      ) : <span className="text-[11px] text-[#a49bb0]">—</span>}
+                    </Td>
                   </tr>
                 );
               })}
@@ -400,6 +487,39 @@ export default function AcademicAdmissions({ role }: { role?: UserRole }) {
           </TableShell>
         )}
       </Card>
+
+      {/* Resending is confirmed, because it has a consequence the wording of a
+          button cannot carry on its own: the applicant's current password
+          stops working the moment it happens. */}
+      {resending && (
+        <Card>
+          <CardHeader
+            title={`Resend to ${[resending.first_name, resending.last_name].filter(Boolean).join(' ')}`}
+            subtitle={resending.email ?? 'no email on this record'}
+          />
+          <div className="space-y-3 p-5">
+            <div className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              <AlertTriangle size={16} className="mt-0.5 flex-shrink-0" />
+              <p>
+                The letter goes again exactly as it was issued. A{' '}
+                <strong>new temporary password</strong> is set and emailed with it, because the
+                original was never stored — so <strong>the password they have now will stop
+                working.</strong> If they can already sign in, they do not need this.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => void resendLetter(resending)}
+                disabled={busy}
+                className={BTN_PRIMARY}
+              >
+                {busy ? 'Sending…' : 'Send it again'}
+              </button>
+              <button onClick={() => setResending(null)} className={BTN_SECONDARY}>Cancel</button>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* The decision itself. Deliberately a separate step from the queue: an
           academic decision should not be one click away from a list. */}

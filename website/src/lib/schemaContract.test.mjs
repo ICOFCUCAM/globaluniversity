@@ -82,7 +82,14 @@ for (const file of migrations) {
 
   const sql = readFileSync(join(migrationDir, file), 'utf8')
     // Strip line comments so a column name inside prose is never counted.
-    .replace(/^\s*--.*$/gm, '');
+    .replace(/^\s*--.*$/gm, '')
+    // AND BLOCK COMMENTS, which hid columns rather than merely adding noise.
+    // A `/** what this column is for */` line inside a CREATE TABLE left the
+    // column definition after it beginning with `/`, so the name pattern —
+    // anchored on a letter — matched nothing and the column was never recorded.
+    // The contract then reported real columns as undefined. 024's
+    // `applicant_label` and every column 031 documents were invisible this way.
+    .replace(/\/\*[\s\S]*?\*\//g, '');
 
   // create table [if not exists] NAME ( ... );
   const createRe = /create\s+table\s+(?:if\s+not\s+exists\s+)?([a-z_][a-z0-9_.]*)\s*\(/gi;

@@ -48,7 +48,7 @@ import { randomBytes } from 'crypto';
 import { guard } from '@/lib/adminAuth';
 import { send, mailConfigured } from '@/lib/mailer';
 import { supabaseUrl as SUPABASE_URL } from '@/lib/supabase';
-import { admissionPackageHtml, admissionCoveringText } from '@/lib/admissionPackage';
+import { admissionPackageHtml, admissionCoveringText, admissionPackageInputFor } from '@/lib/admissionPackage';
 import { courses, MODE_LABEL } from '@/content/courses';
 import { UNIVERSITY } from '@/lib/constants';
 import {
@@ -370,34 +370,17 @@ export async function POST(request: Request) {
   let packageHtml: string;
   let packageInput: Parameters<typeof admissionPackageHtml>[0];
   try {
-    packageInput = {
-      fullName: fullName || 'Applicant',
+    // BUILT BY THE SHARED FUNCTION, not composed here. The letter can now be
+    // viewed and resent afterwards, and a second place assembling these
+    // particulars would be a second opinion about what the letter says.
+    packageInput = admissionPackageInputFor(app, {
       studentNumber: 'PENDING',
-      dateOfBirth: app.date_of_birth ?? undefined,
-      gender: app.gender ?? undefined,
-      nationality: app.nationality ?? undefined,
-      programme: [app.degree_type, app.program].filter(Boolean).join(' — ') || 'your programme',
-      faculty: app.faculty || programme?.faculty || UNIVERSITY.name,
-      level: programme?.level ?? app.degree_type ?? '',
-      campus: app.campus || 'Buea',
-      // THE DELIVERY MODE THE UNIVERSITY APPROVED, from the catalogue rather
-      // than from a default. It was `student.mode || 'On campus'`, so a
-      // programme taught at a distance produced a letter telling the holder
-      // they were expected in Buea — and the terms annexe followed the same
-      // wrong value.
-      mode: programme ? MODE_LABEL[programme.mode] : (app.mode || 'Campus'),
-      attendance: app.attendance || 'Full time',
-      intake: app.intake || String(intakeYear),
-      applicationNumber: app.matric_no ?? '',
-      conditions: decision === 'conditional' ? conditions : undefined,
-      // Signed by the office that took the decision. Never by whichever
-      // account pressed the button — that would put an administrator's name
-      // under a decision they did not make.
-      headOfAdmissions: UNIVERSITY.headOfAcademicAffairs,
-      postNominals: UNIVERSITY.headOfAcademicAffairsPostNominals,
-      registrar: UNIVERSITY.registrar,
       portalUrl: `${process.env.SITE_URL ?? 'https://iguc.net'}/portal`,
-    };
+      programme: programme
+        ? { faculty: programme.faculty, level: programme.level, modeLabel: MODE_LABEL[programme.mode] }
+        : undefined,
+      conditions: decision === 'conditional' ? conditions : undefined,
+    });
     packageHtml = await admissionPackageHtml(packageInput);
 
     // ---------------------------------------------------------------------
@@ -558,6 +541,50 @@ export async function POST(request: Request) {
   packageInput = { ...packageInput, studentNumber, temporaryPassword: password };
   packageHtml = await admissionPackageHtml(packageInput);
 
+  // =======================================================================
+  // 7b. THE LETTER IS KEPT, BEFORE ANYTHING IS ATTEMPTED WITH IT.
+  //
+  // The University's own point: a letter that is generated and does not go
+  // should still be somewhere. Written BEFORE the send rather than after it,
+  // because a copy made only on success is a copy that does not exist in the
+  // one case it is needed for — and a crash between generating and sending
+  // would lose it entirely.
+  //
+  // It is the record of what was ISSUED, not a retry buffer. Rebuilding from
+  // the application gives today's template; this is what the applicant
+  // actually received.
+  // =======================================================================
+  let letterId: string | undefined;
+  {
+    const { data: kept, error: keepErr } = await admin.from('admission_letters').insert({
+      application_id: applicationId,
+      student_number: studentNumber,
+      to_email: app.email,
+      issued_on: new Date().toISOString().slice(0, 10),
+      sealed: /Document seal/.test(packageHtml) && !/not sealed/i.test(packageHtml),
+      html: packageHtml,
+      delivery: 'pending',
+    }).select('id').maybeSingle();
+    // 031 not yet run is the one tolerable failure: the admission still
+    // completes and the letter still goes, it is simply not archived.
+    if (keepErr && !/does not exist|schema cache/i.test(keepErr.message)) {
+      await audit('WELCOME_EMAIL_FAILED', `the letter could not be archived: ${keepErr.message}`,
+        decisionId);
+    }
+    letterId = kept?.id;
+  }
+
+  /** Record what became of the letter, on the row that holds it. */
+  const recordDelivery = async (sent: boolean, detail?: string) => {
+    if (!letterId) return;
+    await admin.from('admission_letters').update({
+      delivery: sent ? 'sent' : 'failed',
+      delivery_detail: sent ? null : (detail ?? null),
+      attempts: 1,
+      updated_at: new Date().toISOString(),
+    }).eq('id', letterId);
+  };
+
   await audit('ADMISSION_PACKAGE_ISSUED', studentNumber, decisionId,
     { from: 'admission_processing', to: 'admission_issued' }, { student_number: studentNumber });
 
@@ -569,6 +596,9 @@ export async function POST(request: Request) {
   // =======================================================================
   if (!mailConfigured()) {
     await audit('WELCOME_EMAIL_FAILED', 'smtp-not-configured', decisionId);
+    // The letter exists and nothing was attempted with it. It sits in the
+    // outbox until somebody sends it.
+    await recordDelivery(false, 'outbound mail is not configured on this deployment');
     return NextResponse.json({
       ok: true, decision, status: 'admission_issued', decisionId,
       emailSent: false, error: 'smtp-not-configured',
@@ -591,6 +621,9 @@ export async function POST(request: Request) {
     delivery.sent ? app.email : delivery.detail,
     decisionId,
   );
+  // `detail` exists only on the failure branch of MailResult, which is the
+  // union doing its job: there is nothing to explain about a message that went.
+  await recordDelivery(delivery.sent, delivery.sent ? undefined : delivery.detail);
 
   return NextResponse.json({
     ok: true, decision, status: 'admission_issued', decisionId,
