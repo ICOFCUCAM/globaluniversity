@@ -46,6 +46,21 @@ export const UNIVERSITY = {
   // admitted student replying to ask about their decision should reach it
   // rather than the inbox that handles applications.
   academicAffairsEmail: 'academicoffice@iguc.net',
+
+  // ---------------------------------------------------------------------
+  // THE VICE-CHANCELLOR'S OFFICE.
+  //
+  // NOT INVENTED. The University publishes this address in its own content —
+  // src/content/site.ts carries it in the Vice-Chancellor's entry, three
+  // times. It is here so that appointment letters and official correspondence
+  // have one place to take a reply, rather than each route choosing.
+  //
+  // The mailer test found the gap: the appointment-letter route sent from the
+  // Office of the Vice-Chancellor and that office was in neither reply-to
+  // table, which means an appointee replying to their own letter of
+  // appointment would have had the reply go nowhere in particular.
+  // ---------------------------------------------------------------------
+  viceChancellorEmail: 'vc@iguc.net',
   viceChancellor: 'Prof Chamayah Meyembi',
   // The two offices above the Vice Chancellor, from the university's own first
   // certificate. Both sign a degree certificate; neither was in this system.
@@ -94,6 +109,7 @@ export const UNIVERSITY = {
 // ---------------------------------------------------------------------------
 export const OFFICE_REPLY_TO: Record<string, string> = {
   'Office of Academic Affairs': UNIVERSITY.academicAffairsEmail,
+  'Office of the Vice-Chancellor': UNIVERSITY.viceChancellorEmail,
   'Office of the Registrar': UNIVERSITY.email,
   'Office of Admissions': UNIVERSITY.admissionsEmail,
   'Admissions Office': UNIVERSITY.admissionsEmail,

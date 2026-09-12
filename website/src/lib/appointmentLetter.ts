@@ -63,6 +63,17 @@ export interface LetterInput {
   signatoryName: string;
   signatoryRole: string;
   siteUrl: string;
+  /**
+   * A specimen signature to reproduce, where the University has enabled one.
+   *
+   * EXPLICIT AND CONTROLLED, as the University asked — never an image dropped
+   * onto every document. 049 keeps a specimen off until somebody other than its
+   * owner enables it with a stated authority, and the archived letter records
+   * which mode it was signed in.
+   */
+  signatureImage?: string | null;
+  /** The date the authority approved it, printed under the signature block. */
+  authorizedOn?: string | null;
 }
 
 export interface GeneratedLetter {
@@ -209,6 +220,8 @@ ${signatureBlock({
   byAuthorityOf: 'the Vice-Chancellor',
   name: input.signatoryName,
   role: input.signatoryRole,
+  image: input.signatureImage,
+  authorizedOn: input.authorizedOn,
 })}
 
 ${await sealPanel(seal, printedReference(input.reference), input.version)}

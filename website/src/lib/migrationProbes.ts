@@ -403,6 +403,16 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
     // confused with 042's, and `body_format` is a column on a table 045 made.
     table: 'signature_specimens',
   },
+  {
+    file: '050_acceptance_the_activation_rule_and_the_full_audit.sql',
+    what: 'Acceptance stops being a timestamp. An acceptance now names WHO answered and WHICH '
+      + 'VERSION of which letter they were answering — the fact a dispute turns on when an '
+      + 'amended letter follows. A superseded letter can no longer be accepted. WHEN SOMEBODY '
+      + 'BECOMES STAFF is now a setting the University controls rather than an assumption in '
+      + 'the code, seeded to “accepted”. And the audit trail can record all fifteen '
+      + 'actions the University listed; six of them had no event to be recorded as.',
+    table: 'appointment_acceptances',
+  },
 ];
 
 /** What a probe came back as. */
