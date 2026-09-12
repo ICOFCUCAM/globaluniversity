@@ -180,6 +180,21 @@ export const OPERATIONAL_CAPABILITIES = [
   // not become a way round the authority that already governs the
   // University's outward voice.
   // ---------------------------------------------------------------------
+  // ---------------------------------------------------------------------
+  // APPOINTMENTS. Drafting an appointment and authorising one are two
+  // capabilities because they must be two people: an appointment letter
+  // commits the University to paying somebody, and 041 refuses an
+  // authorisation by the drafter in the database as well as here.
+  //
+  // 'set-remuneration' is separate again. Who holds which post is ordinary
+  // institutional information and what they are paid is not, and an HR
+  // assistant who can record an appointment should not thereby be able to
+  // decide a salary.
+  // ---------------------------------------------------------------------
+  'draft-appointment',
+  'authorize-appointment',
+  'issue-appointment-letter',
+  'set-remuneration',
   'compose-announcement',
   'approve-announcement',
   'publish-announcement',

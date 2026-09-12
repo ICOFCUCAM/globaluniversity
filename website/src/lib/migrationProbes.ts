@@ -311,6 +311,26 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
       + 'already reached.',
     table: 'announcement_tombstones',
   },
+  {
+    file: '041_appointments_and_the_letters_that_issue_from_them.sql',
+    what: 'Gives the University somewhere to record that it has appointed somebody — position, '
+      + 'employment type, start date, probation, place of duty, reporting officer and pay — and '
+      + 'makes the appointment letter an output generated from that record, versioned and '
+      + 'sealed, rather than the place the facts live.',
+    table: 'appointments',
+  },
+  {
+    file: '042_the_appointment_lifecycle_and_the_staff_record.sql',
+    what: 'Gives an appointment the full lifecycle — approved, letter generated, issued, '
+      + 'accepted, active — and the amendment path for when something changes after issuance. '
+      + 'Closes the door that mattered: a staff record can no longer be created from an '
+      + 'appointment that was never issued.',
+    // THE DOOR IT CLOSES, rather than a column on `appointments`. A staff row
+    // that names the appointment behind it is the whole point of 042, and it
+    // is the thing whose absence means the guard is not there.
+    table: 'lecturers',
+    column: 'appointment_id',
+  },
 ];
 
 /** What a probe came back as. */
