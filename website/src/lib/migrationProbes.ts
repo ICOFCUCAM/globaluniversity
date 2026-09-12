@@ -348,6 +348,15 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
       + 'document issued in 2026 was produced by the wording of 2026.',
     table: 'document_templates',
   },
+  {
+    file: '045_official_correspondence_and_who_initiated_it.sql',
+    what: 'A register of the University’s own official letters — invitations, commendations, '
+      + 'correspondence with a ministry, directives — which did not exist at all. Records who '
+      + 'INITIATED separately from who authorised, so an appointment proposed by HR and one '
+      + 'started by the Vice-Chancellor are finally distinguishable, and makes an appointment '
+      + 'made on one office’s sole authority visible and permanent rather than quiet.',
+    table: 'correspondence',
+  },
 ];
 
 /** What a probe came back as. */
