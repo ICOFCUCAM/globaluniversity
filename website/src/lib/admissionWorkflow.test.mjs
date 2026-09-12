@@ -233,6 +233,36 @@ console.log('\nThe delivery mode picks the right terms in the admission letter\n
   check('and an empty mode falls back to campus', modeOf(''), 'campus');
 }
 
+console.log('\nThe letter never invents a campus\n');
+
+// ---------------------------------------------------------------------------
+// THE DEFECT THIS CATCHES. `campus: app.campus || 'Buea'` printed Buea on the
+// admission letter of any applicant whose record named no campus — a place the
+// University had not said they would attend, on a formal document, produced by
+// a default. For a student admitted to study online it sat directly under
+// "Mode of study: Online", contradicting it.
+//
+// Read from the source rather than executed, because building the input pulls
+// in the whole package module and its Node crypto dependencies; what matters
+// here is that the fallback is not a place name.
+// ---------------------------------------------------------------------------
+{
+  const pkg = readFileSync(join(here, 'admissionPackage.ts'), 'utf8');
+  const builder = /export function admissionPackageInputFor[\s\S]*?\n}/.exec(pkg)?.[0] ?? '';
+  check('the builder was found', builder.length > 200, true);
+
+  // Not the campus line, and not anywhere else in it either.
+  const invents = /campus:\s*app\.campus\s*\|\|\s*'(?!')[A-Z]/.test(builder);
+  check('no place name is used as a fallback campus', invents, false);
+  check('an online student’s letter says Online', /'Online'/.test(builder), true);
+
+  // AND `row()` MUST DROP AN EMPTY VALUE, which is what makes omitting the
+  // campus safe rather than printing "Campus:" with nothing after it.
+  const rowFn = /const row = \(k: string, v: string \| undefined \| null\): string =>[\s\S]*?;/.exec(pkg)?.[0] ?? '';
+  check('an empty particular is omitted rather than printed blank',
+    /\?\s*`<tr>[\s\S]*?:\s*''/.test(rowFn), true);
+}
+
 console.log('\nAnd the catalogue’s three labels are the three the University gave\n');
 
 {

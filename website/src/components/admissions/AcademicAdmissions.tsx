@@ -463,7 +463,13 @@ export default function AcademicAdmissions({ role }: { role?: UserRole }) {
                         return produce no package, so offering the controls for
                         them would be offering something that does not exist. */}
                     <Td align="right">
-                      {a.status === 'admission_issued' || a.status === 'enrolled' ? (
+                      {/* `approved` and `conditional` are the older route's
+                          admitted states — it created the account and sent the
+                          package, then stopped short of `admission_issued`
+                          because that state did not exist yet. Every student
+                          admitted before this month is in one of them. */}
+                      {['admission_issued', 'enrolled', 'approved', 'conditional']
+                        .includes(a.status ?? '') ? (
                         <div className="flex justify-end gap-2">
                           <button
                             onClick={() => void viewLetter(a)}

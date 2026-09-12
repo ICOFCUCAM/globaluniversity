@@ -62,8 +62,23 @@ function generatePassword(): string {
   return Array.from(randomBytes(14), (b) => alphabet[b % alphabet.length]).join('');
 }
 
-/** Only an issued admission has a letter. */
-const HAS_A_LETTER = ['admission_issued', 'enrolled'];
+// ---------------------------------------------------------------------------
+// WHICH STATES HAVE A LETTER, AND WHY `approved` IS AMONG THEM.
+//
+// `approved` and `conditional` are what the OLDER route left behind. Before
+// 026 split the decision from the issuance, that route created the account,
+// emailed the package and stopped at `approved` — so a student admitted in
+// August is fully admitted and merely wears the old label.
+//
+// Excluding them meant the University could not produce a letter for anybody
+// admitted before the split, which is every student admitted until this month.
+//
+// The student number is the real test and it is checked separately: the new
+// route reaches `admission_issued` only once one is reserved, and the old one
+// only reaches `approved` the same way. A row in either state without a number
+// was never actually issued anything, and gets refused.
+// ---------------------------------------------------------------------------
+const HAS_A_LETTER = ['admission_issued', 'enrolled', 'approved', 'conditional'];
 
 function adminClient() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
