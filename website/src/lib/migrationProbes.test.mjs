@@ -126,6 +126,8 @@ console.log('\nAnd what it cannot see, it says so about\n');
       '021_signing_key_in_the_store.sql',
       '026_issuance_is_not_the_decision.sql',
       '028_student_numbers_start_above_the_existing_ones.sql',
+      '029_the_coverage_view_is_for_operators_only.sql',
+      '030_functions_pin_their_search_path.sql',
     ]);
   check('…and carries the check to run by hand',
     blind.every((p) => /select|pg_constraint/i.test(p.cannotSee)), true);

@@ -48,6 +48,28 @@ begin
   end if;
 end $$;
 
+-- ---------------------------------------------------------------------------
+-- SUPABASE'S DEFAULT PRIVILEGES, WITHOUT WHICH THIS HARNESS LIES ABOUT GRANTS.
+--
+-- A Supabase project grants anon, authenticated and service_role access to
+-- everything created in `public`, so a table or view a migration creates is on
+-- the API the moment it exists — which is precisely why a migration sometimes
+-- has to REVOKE. A plain Postgres grants none of that, so a proof asking "can
+-- a signed-in account read this?" answered no here and yes in production.
+--
+-- It was found by 029, whose own assertion — that candidates can still read
+-- their examination sitting through exam_sessions_mine — failed against this
+-- harness while being true on the University's database. The assertion was
+-- right and the harness was wrong.
+-- ---------------------------------------------------------------------------
+grant usage on schema public to anon, authenticated, service_role;
+alter default privileges in schema public
+  grant all on tables to anon, authenticated, service_role;
+alter default privileges in schema public
+  grant all on sequences to anon, authenticated, service_role;
+alter default privileges in schema public
+  grant all on functions to anon, authenticated, service_role;
+
 create schema if not exists auth;
 
 -- The columns the migrations actually touch, not the real table's shape.

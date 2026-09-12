@@ -1,9 +1,9 @@
 -- ===========================================================================
--- ICOF GLOBAL UNIVERSITY — MIGRATIONS 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013, 014, 015, 016, 017, 018, 019, 020, 021, 022, 023, 024, 025, 026, 027, 028, IN ORDER
+-- ICOF GLOBAL UNIVERSITY — MIGRATIONS 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013, 014, 015, 016, 017, 018, 019, 020, 021, 022, 023, 024, 025, 026, 027, 028, 029, 030, IN ORDER
 --
 -- GENERATED FILE. DO NOT EDIT.
 --   Generator: scripts/build-migration-run.mjs
---   Rebuild:   node scripts/build-migration-run.mjs --out=RUN-ALL.sql 001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020 021 022 023 024 025 026 027 028
+--   Rebuild:   node scripts/build-migration-run.mjs --out=RUN-ALL.sql 001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020 021 022 023 024 025 026 027 028 029 030
 --
 -- ---------------------------------------------------------------------------
 -- HOW TO RUN IT
@@ -9185,4 +9185,386 @@ select
 from (select distinct year from student_number_counters) y
 left join student_number_counters c on c.year = y.year
 order by y.year;
+
+
+-- ===========================================================================
+-- ===========================================================================
+--
+--   029_the_coverage_view_is_for_operators_only.sql
+--
+-- ===========================================================================
+-- ===========================================================================
+
+-- ===========================================================================
+-- 029 — THE STATUS COVERAGE VIEW IS AN OPERATOR'S TOOL, NOT A PUBLIC ONE
+--
+-- Run after 028. Idempotent; destroys nothing. Safe on a live database.
+--
+-- ---------------------------------------------------------------------------
+-- WHY
+-- ---------------------------------------------------------------------------
+--
+-- Supabase's own advisor flagged this, at CRITICAL, and it is right:
+--
+--   Security Definer View — public.admission_status_coverage
+--
+-- 027 added that view to answer "which statuses actually exist in the table,
+-- and does the vocabulary know them?" — a question an operator asks in the SQL
+-- editor while diagnosing why an application is invisible.
+--
+-- A Postgres view runs with its OWNER's privileges unless told otherwise, so
+-- it reads `students` past that table's row-level security. That is exactly
+-- what makes it useful to an operator and exactly what makes it wrong to leave
+-- reachable by everybody: the view has NO `where` clause of its own, so any
+-- signed-in account — a student — could read it through the API and learn the
+-- shape of the University's entire admissions pipeline. Not names, but how
+-- many people applied, how many were rejected, how many are stuck.
+--
+-- THE VIEW IS NOT THE PROBLEM; ITS AUDIENCE IS. It stays, and it is taken off
+-- the public API.
+--
+-- ---------------------------------------------------------------------------
+-- WHY exam_sessions_mine IS LEFT ALONE, THOUGH THE ADVISOR NAMES IT TOO
+-- ---------------------------------------------------------------------------
+--
+-- That view is security-definer ON PURPOSE and must stay that way. Migration
+-- 016 DROPPED the policy that let a candidate read their own row in
+-- exam_sessions — because that row carries the answer key of their own paper —
+-- and put this view in its place. The view carries its own gate,
+-- `where st.auth_user_id = auth.uid()`, and omits the key.
+--
+-- So a candidate reads their sitting through the view and has no other route
+-- to it. Making it security-invoker would return nothing to them and no
+-- candidate could see the examination they are sitting. The advisor is
+-- flagging a pattern; here the pattern is the mechanism.
+--
+-- The difference between the two is one line: that view filters by the caller
+-- and mine did not.
+-- ===========================================================================
+
+
+-- ===========================================================================
+-- 1. OFF THE PUBLIC API
+--
+-- PostgREST serves whatever `anon` and `authenticated` may select. Revoking is
+-- what removes it; the view itself is untouched and still readable by the
+-- service role, which is how the Readiness panel probes for 027 and how an
+-- operator reads it in the SQL editor.
+-- ===========================================================================
+
+do $$
+begin
+  if to_regclass('public.admission_status_coverage') is null then
+    raise exception '029 FAILED: admission_status_coverage is missing — run 027 first';
+  end if;
+
+  revoke all on public.admission_status_coverage from anon;
+  revoke all on public.admission_status_coverage from authenticated;
+
+  -- Stated rather than assumed. The service role is what the application's
+  -- admin routes hold, and the probe in src/lib/migrationProbes.ts reads this
+  -- view through it; a revoke that caught it too would turn the Readiness
+  -- panel's report of 027 from "applied" into "outstanding".
+  grant select on public.admission_status_coverage to service_role;
+end $$;
+
+comment on view public.admission_status_coverage is
+  'OPERATORS ONLY — revoked from anon and authenticated in 029. Every status '
+  'actually present in students, and whether admission_states declares it. It '
+  'reads past row-level security and carries no filter of its own, so it must '
+  'not be reachable through the public API. Rows with in_vocabulary = false are '
+  'records the admissions screens may not be able to show; the enrolled-student '
+  'statuses (active, graduated, suspended) appear there legitimately, because '
+  'students.status carries both vocabularies.';
+
+
+-- ===========================================================================
+-- 2. PERFORMING THE RULES
+-- ===========================================================================
+
+do $$
+begin
+  -- THE ADVISOR'S FINDING, CHECKED RATHER THAN ASSUMED CLOSED.
+  if has_table_privilege('anon', 'public.admission_status_coverage', 'SELECT') then
+    raise exception '029 FAILED: anon can still read the coverage view';
+  end if;
+  if has_table_privilege('authenticated', 'public.admission_status_coverage', 'SELECT') then
+    raise exception '029 FAILED: a signed-in account can still read the coverage view';
+  end if;
+
+  -- AND THE ONE THAT MUST STILL WORK. Revoking too widely would break the
+  -- Readiness panel rather than only the leak.
+  if not has_table_privilege('service_role', 'public.admission_status_coverage', 'SELECT') then
+    raise exception '029 FAILED: the service role can no longer read the coverage view, so the '
+                    'Readiness panel would report 027 as outstanding';
+  end if;
+
+  -- exam_sessions_mine IS DELIBERATELY UNTOUCHED. Asserted so that a future
+  -- migration written to satisfy the advisor in bulk has to notice this one
+  -- first: revoking it would leave candidates unable to read their own sitting.
+  if to_regclass('public.exam_sessions_mine') is not null
+     and not has_table_privilege('authenticated', 'public.exam_sessions_mine', 'SELECT') then
+    raise exception '029 FAILED: candidates can no longer read their own examination sitting';
+  end if;
+
+  raise notice '029 OK — the coverage view is readable by the service role and by nobody else, '
+               'and candidates can still read their own sitting.';
+end $$;
+
+
+-- ===========================================================================
+-- 3. VERIFY
+-- ===========================================================================
+
+-- Who may read each of the two views the advisor named. `admission_status_
+-- coverage` should be true for service_role only; `exam_sessions_mine` should
+-- be true for authenticated, because that view is how a candidate reads their
+-- own examination and it filters by the caller.
+select
+  v.view_name,
+  has_table_privilege('anon',          'public.' || v.view_name, 'SELECT') as anon_may_read,
+  has_table_privilege('authenticated', 'public.' || v.view_name, 'SELECT') as signed_in_may_read,
+  has_table_privilege('service_role',  'public.' || v.view_name, 'SELECT') as service_role_may_read
+from (values ('admission_status_coverage'), ('exam_sessions_mine')) as v(view_name)
+where to_regclass('public.' || v.view_name) is not null;
+
+
+-- ===========================================================================
+-- ===========================================================================
+--
+--   030_functions_pin_their_search_path.sql
+--
+-- ===========================================================================
+-- ===========================================================================
+
+-- ===========================================================================
+-- 030 — EVERY FUNCTION PINS ITS SEARCH PATH, AND THE ONE THAT MATTERS IS
+--       TAKEN OFF THE PUBLIC API
+--
+-- Run after 029. Idempotent; destroys nothing. Safe on a live database.
+--
+-- ---------------------------------------------------------------------------
+-- WHY — WHAT THE ADVISOR IS ACTUALLY WARNING ABOUT
+-- ---------------------------------------------------------------------------
+--
+-- Supabase's advisor names two dozen functions as "Function Search Path
+-- Mutable" and seven as executable by the public. Both come down to the same
+-- thing: a function that does not say where it looks for the tables it names
+-- can be made to look somewhere else.
+--
+-- A caller controls `search_path`. A function without one of its own resolves
+-- `students` against whatever the caller set — so a caller who creates their
+-- own `students` in a schema they control, and puts it first, has the function
+-- read and write THEIR table instead of the University's. For a plain function
+-- that is a bug; for a SECURITY DEFINER function, which runs with the owner's
+-- privileges, it is how a caller borrows those privileges.
+--
+-- It is not hypothetical for this database. Every append-only guard, every
+-- immutability trigger and every separation-of-duties check in these
+-- migrations is a function that names tables. They are the rules; a rule that
+-- can be pointed at a different table is not a rule.
+--
+-- ---------------------------------------------------------------------------
+-- AND ONE REAL EXPOSURE, NOT A THEORETICAL ONE
+-- ---------------------------------------------------------------------------
+--
+-- `reserve_student_number(integer)` is SECURITY DEFINER, directly callable,
+-- and was executable by anon and by every signed-in account. Anybody could
+-- call it in a loop and advance the University's student number counter as far
+-- as they liked. Nothing would break and nothing would be stolen; the next
+-- genuine admission would simply be numbered ICOF2026 09214 instead of
+-- ICOF202600003, for ever, with no explanation in any record.
+--
+-- The application calls it with the service role. Nobody else needs it.
+--
+-- ---------------------------------------------------------------------------
+-- WHAT IS DELIBERATELY LEFT ALONE
+-- ---------------------------------------------------------------------------
+--
+-- `auth_role()` KEEPS ITS EXECUTE GRANT. It is called from inside the
+-- row-level-security policies in 000 and 003, and a policy is evaluated as the
+-- querying user — so revoking it from `authenticated` would not harden the
+-- database, it would stop every member of staff reading anything at all. It
+-- gets its search_path pinned like everything else, which is the part that
+-- actually matters for it.
+--
+-- The trigger functions are revoked even though Postgres already refuses to
+-- call a trigger function directly. Closing a door that is already shut costs
+-- nothing and means the advisor's list reflects the database.
+-- ===========================================================================
+
+
+-- ===========================================================================
+-- 1. EVERY FUNCTION IN public PINS ITS SEARCH PATH
+--
+-- Done by looping over what is actually there rather than by listing names.
+-- The advisor named two dozen; a list would be right today and wrong the next
+-- time somebody adds a trigger, and this is exactly the kind of rule that is
+-- only worth having if it cannot be forgotten.
+--
+-- `public, pg_temp` with pg_temp LAST is the standard safe form: a temporary
+-- table a caller creates cannot shadow a real one.
+-- ===========================================================================
+
+do $$
+declare
+  f record;
+  n integer := 0;
+begin
+  for f in
+    select p.oid::regprocedure as sig
+      from pg_proc p
+      join pg_namespace s on s.oid = p.pronamespace
+     where s.nspname = 'public'
+       and p.prokind = 'f'
+       and not exists (
+         select 1 from unnest(coalesce(p.proconfig, '{}'::text[])) c
+          where c like 'search_path=%'
+       )
+  loop
+    execute format('alter function %s set search_path = public, pg_temp', f.sig);
+    n := n + 1;
+  end loop;
+  raise notice '030 — pinned the search path on % function(s)', n;
+end $$;
+
+
+-- ===========================================================================
+-- 2. THE NUMBER RESERVER IS THE SERVER'S ALONE
+-- ===========================================================================
+
+do $$
+begin
+  revoke execute on function public.reserve_student_number(integer) from public;
+  revoke execute on function public.reserve_student_number(integer) from anon;
+  revoke execute on function public.reserve_student_number(integer) from authenticated;
+  grant  execute on function public.reserve_student_number(integer) to service_role;
+end $$;
+
+comment on function public.reserve_student_number(integer) is
+  'Reserves the next student number for an intake year, above every number '
+  'already issued. SERVICE ROLE ONLY — it advances a counter, so a caller who '
+  'could run it could push the University''s numbering arbitrarily far forward '
+  'with nothing in any record to say why. Revoked from anon and authenticated '
+  'in 030.';
+
+
+-- ===========================================================================
+-- 3. THE TRIGGER FUNCTIONS, WHICH NOBODY CALLS DIRECTLY
+-- ===========================================================================
+
+do $$
+declare
+  f record;
+begin
+  for f in
+    select p.oid::regprocedure as sig
+      from pg_proc p
+      join pg_namespace s on s.oid = p.pronamespace
+     where s.nspname = 'public'
+       and p.prorettype = 'trigger'::regtype
+  loop
+    execute format('revoke execute on function %s from public, anon, authenticated', f.sig);
+  end loop;
+end $$;
+
+
+-- ===========================================================================
+-- 4. PERFORMING THE RULES
+-- ===========================================================================
+
+do $$
+declare
+  unpinned integer;
+  refused  boolean;
+begin
+ begin
+  -- ---- EVERY FUNCTION IS PINNED --------------------------------------
+  select count(*) into unpinned
+    from pg_proc p join pg_namespace s on s.oid = p.pronamespace
+   where s.nspname = 'public' and p.prokind = 'f'
+     and not exists (select 1 from unnest(coalesce(p.proconfig,'{}'::text[])) c
+                      where c like 'search_path=%');
+  if unpinned <> 0 then
+    raise exception '030 FAILED: % function(s) still resolve tables against the caller''s search path', unpinned;
+  end if;
+
+  -- ---- THE RESERVER IS OFF THE PUBLIC API ----------------------------
+  if has_function_privilege('anon', 'public.reserve_student_number(integer)', 'EXECUTE') then
+    raise exception '030 FAILED: anon can still advance the student number counter';
+  end if;
+  if has_function_privilege('authenticated', 'public.reserve_student_number(integer)', 'EXECUTE') then
+    raise exception '030 FAILED: a signed-in account can still advance the student number counter';
+  end if;
+  if not has_function_privilege('service_role', 'public.reserve_student_number(integer)', 'EXECUTE') then
+    raise exception '030 FAILED: the server can no longer reserve a student number, so no admission could be issued';
+  end if;
+
+  -- ---- AND auth_role() IS STILL REACHABLE ----------------------------
+  -- THE ONE THAT MUST NOT BE REVOKED. Every RLS policy in 000 and 003 calls
+  -- it, and a policy runs as the querying user. Revoking it would not harden
+  -- the database; it would stop every member of staff reading anything.
+  if not has_function_privilege('authenticated', 'public.auth_role()', 'EXECUTE') then
+    raise exception '030 FAILED: auth_role() was revoked, which breaks every row-level-security policy';
+  end if;
+
+  -- ---- THE GUARDS STILL GUARD ----------------------------------------
+  -- Pinning a search path could in principle break a function that relied on
+  -- resolving something outside `public`. Rather than assume, one of the
+  -- rewritten triggers is made to refuse: 025's lock on the state vocabulary.
+  refused := false;
+  begin
+    insert into admission_states (state, stage, applicant_label, label, sort_order)
+    values ('invented_by_030', 'closed', 'x', 'x', 998);
+  exception when others then refused := true;
+  end;
+  if not refused then
+    raise exception '030 FAILED: the state vocabulary lock stopped refusing after its search path was pinned';
+  end if;
+
+  -- And 023's trail is still append-only.
+  refused := false;
+  begin
+    insert into admission_opening_events (programme_code, action, actor_role)
+    values ('PROOF-030', 'opened', 'academic-office');
+    update admission_opening_events set action = 'closed' where programme_code = 'PROOF-030';
+  exception when others then refused := true;
+  end;
+  if not refused then
+    raise exception '030 FAILED: the admission opening trail stopped being append-only';
+  end if;
+
+  raise exception 'PROOF_ROLLBACK';
+ exception when others then
+   if sqlerrm <> 'PROOF_ROLLBACK' then raise; end if;
+ end;
+
+ raise notice '030 OK — every function pins its search path, the number reserver is the '
+              'server''s alone, auth_role() is untouched, and the guards still refuse.';
+end $$;
+
+
+-- ===========================================================================
+-- 5. VERIFY
+-- ===========================================================================
+
+-- Should return no rows. Each one would be a function resolving table names
+-- against whatever the caller set.
+select p.oid::regprocedure as function_without_a_pinned_search_path
+from pg_proc p join pg_namespace s on s.oid = p.pronamespace
+where s.nspname = 'public' and p.prokind = 'f'
+  and not exists (select 1 from unnest(coalesce(p.proconfig,'{}'::text[])) c
+                   where c like 'search_path=%');
+
+-- Who may run the two SECURITY DEFINER functions that are callable directly.
+-- reserve_student_number: service_role only. auth_role: everybody, on purpose.
+select
+  f.name,
+  has_function_privilege('anon',          f.name, 'EXECUTE') as anon_may_run,
+  has_function_privilege('authenticated', f.name, 'EXECUTE') as signed_in_may_run,
+  has_function_privilege('service_role',  f.name, 'EXECUTE') as service_role_may_run
+from (values
+  ('public.reserve_student_number(integer)'),
+  ('public.auth_role()')
+) as f(name);
 
