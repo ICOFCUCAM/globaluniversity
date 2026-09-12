@@ -216,6 +216,8 @@ export const ADMISSION_EVENTS = [
   'ACADEMIC_RETURNED',
   /** Sent back to a NAMED office with a reason, rather than merely back. */
   'RETURNED_TO_OFFICE',
+  /** A decided application put back on the desk. The old decision stands. */
+  'REOPENED_FOR_REEVALUATION',
   'ISSUANCE_STARTED',
   'ISSUANCE_FAILED',
   'ISSUANCE_RETRIED',
@@ -247,6 +249,15 @@ export type AdmissionEvent = (typeof ADMISSION_EVENTS)[number];
 // touches Finance at all: by returning to it, never by overruling it. Finance
 // is a gate, not an authority, and that cuts both ways.
 // ---------------------------------------------------------------------------
+/**
+ * The shortest re-evaluation reason worth recording.
+ *
+ * Lives here rather than in the route because a Next.js route file may export
+ * only its handlers — and because the desk has to enforce the same number
+ * before the button is pressed, so one of them would otherwise be a copy.
+ */
+export const MIN_REOPEN_REASON = 20;
+
 export const RETURN_TARGETS = {
   'admissions-office': {
     label: 'Admissions Office',
@@ -311,6 +322,11 @@ export const DECISION_CHECKS = {
     + 'issuance cannot be resumed. It has to be decided rather than retried.',
   'nothing-to-retry': 'This application is not part-way through issuance, so there is nothing to '
     + 'retry.',
+  'reopen-needs-a-reason': 'Looking at a decision again needs a written reason of at least twenty '
+    + 'characters. Without one, a decision put back on the desk is indistinguishable from one '
+    + 'somebody simply disagreed with.',
+  'not-decided': 'This application has not been decided, so there is nothing to look at again. It '
+    + 'is already on the desk.',
   'return-needs-an-office': 'A return has to name the office it goes back to. Choose Admissions, '
     + 'the Registrar or Finance — a return that names nowhere leaves the application sitting with '
     + 'nobody, which is the thing it replaced.',
@@ -339,6 +355,77 @@ export const ISSUANCE_STEPS = [
   'mark the admission issued',
   'send the welcome email',
 ] as const;
+
+// ---------------------------------------------------------------------------
+// HOW FAR AN ISSUANCE GOT, READ FROM THE RECORD
+// ---------------------------------------------------------------------------
+//
+// The University asked for the pipeline to be shown, and the reason it asked
+// is the right one: when something fails, the administrator should know WHERE
+// rather than only THAT. The trail already holds the answer — every step
+// appends to admission_audit_log, and a failure records the step it stopped on
+// in its metadata — so this is a reading of what is there, not new plumbing.
+//
+// IT READS BOTH THE TRAIL AND THE RECORD, because neither alone is complete.
+// Reserving a number emits no event, so only the record shows it happened; the
+// email's outcome is only in the trail. Using one source would leave steps
+// permanently blank that certainly ran.
+//
+// STEPS 4 AND 5 SHARE ONE SIGNAL, honestly. ACCOUNT_CREATED is appended AFTER
+// the profile row is written, so it evidences both — the route cannot reach it
+// with an account and no profile. That is why they tick together rather than
+// because the display is guessing.
+// ---------------------------------------------------------------------------
+
+export type IssuanceStepState = 'done' | 'failed' | 'pending';
+
+export interface IssuanceStep {
+  step: string;
+  state: IssuanceStepState;
+  /** What the mail server or the database actually said, where it failed. */
+  detail?: string;
+}
+
+export function issuanceProgress(
+  events: { event: string; detail?: string | null; metadata?: Record<string, unknown> | null }[],
+  app: { status?: string | null; student_number?: string | null; auth_user_id?: string | null },
+): IssuanceStep[] {
+  const seen = new Set(events.map((e) => e.event));
+  const failure = events.filter((e) => e.event === 'ISSUANCE_FAILED').slice(-1)[0];
+  const failedStep = typeof failure?.metadata?.step === 'string' ? failure.metadata.step : undefined;
+
+  const issued = app.status === 'admission_issued' || app.status === 'enrolled';
+
+  const done: Record<string, boolean> = {
+    'record the decision':
+      seen.has('ACADEMIC_APPROVED') || seen.has('ACADEMIC_CONDITIONALLY_APPROVED'),
+    'generate the admission package': seen.has('ADMISSION_LETTER_GENERATED'),
+    'reserve the student number': Boolean(app.student_number),
+    'create the account': seen.has('ACCOUNT_CREATED') || Boolean(app.auth_user_id),
+    'create the profile': seen.has('ACCOUNT_CREATED') || Boolean(app.auth_user_id),
+    'mark the admission issued': issued || seen.has('ADMISSION_PACKAGE_ISSUED'),
+    'send the welcome email': seen.has('WELCOME_EMAIL_SENT'),
+  };
+
+  return ISSUANCE_STEPS.map((step) => {
+    // THE EMAIL IS THE ONE STEP WITH ITS OWN FAILURE EVENT, because it is the
+    // one whose failure does not invalidate anything above it. The admission
+    // stands; only the telling failed.
+    if (step === 'send the welcome email' && !done[step] && seen.has('WELCOME_EMAIL_FAILED')) {
+      return {
+        step,
+        state: 'failed' as const,
+        detail: events.filter((e) => e.event === 'WELCOME_EMAIL_FAILED').slice(-1)[0]?.detail
+          ?? undefined,
+      };
+    }
+    if (done[step]) return { step, state: 'done' as const };
+    if (failedStep === step) {
+      return { step, state: 'failed' as const, detail: failure?.detail ?? undefined };
+    }
+    return { step, state: 'pending' as const };
+  });
+}
 
 /** Is this a state the Head of Academic Affairs may act on? */
 export function canDecide(state: string | null | undefined): boolean {

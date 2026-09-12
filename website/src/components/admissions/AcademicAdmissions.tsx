@@ -38,7 +38,7 @@ import { supabase } from '@/lib/supabase';
 import { courses, MODE_LABEL } from '@/content/courses';
 import {
   ACADEMIC_DECISIONS, DECISION_CHECKS, canDecide, canRetryIssuance, ISSUANCE_STEPS,
-  statesForDesk, RETURN_TARGETS,
+  statesForDesk, RETURN_TARGETS, issuanceProgress,
   type AcademicDecision, type DecisionRefusal, type ReturnTarget,
 } from '@/lib/admissionWorkflow';
 import { stages, stageOf, stageChipClass } from '@/lib/admissions';
@@ -55,18 +55,61 @@ import {
 interface Application {
   id: string;
   first_name: string | null;
+  middle_name?: string | null;
   last_name: string | null;
   email: string | null;
+  phone?: string | null;
+  date_of_birth?: string | null;
+  gender?: string | null;
+  nationality?: string | null;
   matric_no: string | null;
+  student_number?: string | null;
+  auth_user_id?: string | null;
   program: string | null;
   degree_type: string | null;
   faculty: string | null;
   campus: string | null;
+  mode?: string | null;
+  attendance?: string | null;
   status: string | null;
   intake: string | null;
+  admission_year?: string | number | null;
+  payment_status?: string | null;
+  fee_amount?: string | null;
+  fee_currency?: string | null;
+  fee_reference?: string | null;
   fee_registered_at: string | null;
   created_at: string | null;
   decided_at?: string | null;
+  decision_reason?: string | null;
+  /** The Admissions Office's recommendation, which is not a decision. */
+  academic_recommendation?: string | null;
+  returned_to?: string | null;
+  returned_reason?: string | null;
+  returned_at?: string | null;
+  reopened_reason?: string | null;
+  reopened_at?: string | null;
+  reopened_from?: string | null;
+}
+
+/** One line of the trail, as the desk reads it. */
+interface HistoryEntry {
+  id: string;
+  event: string;
+  detail: string | null;
+  actor_office: string | null;
+  actor_email: string | null;
+  metadata: Record<string, unknown> | null;
+  /** The trail's own column is `at`, not `created_at`. */
+  at: string | null;
+}
+
+interface UploadedDocument {
+  id: string;
+  file_name: string;
+  document_type: string | null;
+  verified: boolean;
+  uploaded_at: string | null;
 }
 
 // Module-level: naming it inside the component would rebuild `load` on every
@@ -78,7 +121,20 @@ interface Application {
 // instead of the row shape. It fails the build rather than at runtime, which is
 // the good outcome, but the reason is not obvious from the error.
 // eslint-disable-next-line max-len
-const COLUMNS = 'id, first_name, last_name, email, matric_no, program, degree_type, faculty, campus, status, intake, fee_registered_at, created_at, decided_at';
+const COLUMNS = 'id, first_name, middle_name, last_name, email, phone, date_of_birth, gender, nationality, matric_no, student_number, auth_user_id, program, degree_type, faculty, campus, mode, attendance, status, intake, admission_year, payment_status, fee_amount, fee_currency, fee_reference, fee_registered_at, created_at, decided_at, decision_reason, academic_recommendation, returned_to, returned_reason, returned_at, reopened_reason, reopened_at, reopened_from';
+
+/** One line of the dossier. Omitted entirely when there is nothing to say —
+ *  an official record showing "Nationality: —" invites the question of what
+ *  else is missing. */
+function Fact({ k, v }: { k: string; v: string | null | undefined }) {
+  if (!v || !String(v).trim()) return null;
+  return (
+    <div className="flex gap-2">
+      <dt className="w-32 shrink-0 text-[#8a8194]">{k}</dt>
+      <dd className="text-[#33234a] dark:text-[#e4dcf0]">{v}</dd>
+    </div>
+  );
+}
 
 /** The decision the desk is composing, before it is sent. */
 interface Draft {
@@ -104,6 +160,18 @@ export default function AcademicAdmissions({ role }: { role?: UserRole }) {
   // signed document, and none of that is undoable by pressing something else.
   const [confirming, setConfirming] = useState(false);
   const [result, setResult] = useState<{ tone: 'ok' | 'bad'; text: string } | null>(null);
+
+  // THE DOSSIER. Fetched when an application is opened rather than with the
+  // queue: a hundred rows each carrying their whole history is a great deal of
+  // data to draw a five-column table with.
+  // Re-evaluation is confirmed and needs a written reason, like an override.
+  // A decision put back on the desk without one is indistinguishable from one
+  // somebody simply disagreed with.
+  const [reopening, setReopening] = useState<Application | null>(null);
+  const [reopenReason, setReopenReason] = useState('');
+
+  const [history, setHistory] = useState<HistoryEntry[] | null>(null);
+  const [documents, setDocuments] = useState<UploadedDocument[] | null>(null);
 
   // The Superadministrator acting here is exercising another office's
   // authority, and the University asked that this be highly visible. It is
@@ -136,6 +204,43 @@ export default function AcademicAdmissions({ role }: { role?: UserRole }) {
 
   useEffect(() => { load(); }, [load]);
 
+  // ---------------------------------------------------------------------
+  // WHAT THIS DESK IS ALLOWED TO SEE, AND ONLY SEE.
+  //
+  // The complete dossier: who applied, what Finance cleared, what the
+  // Registrar verified, what the Admissions Office recommended, which
+  // documents arrived, and everything that has happened to the application.
+  //
+  // READ-ONLY, DELIBERATELY. This screen carries no control that could alter
+  // any of it. The fee is Finance's, the verification is the Registrar's, the
+  // assessment is the Admissions Office's — this desk decides on what they
+  // produced and can return it to them, which is the whole separation.
+  // ---------------------------------------------------------------------
+  useEffect(() => {
+    if (!open) { setHistory(null); setDocuments(null); return; }
+    let cancelled = false;
+    void (async () => {
+      const [trail, docs] = await Promise.all([
+        supabase
+          .from('admission_audit_log')
+          .select('id, event, detail, actor_office, actor_email, metadata, at')
+          .eq('application_id', open.id)
+          .order('at', { ascending: true }),
+        supabase
+          .from('documents')
+          .select('id, file_name, document_type, verified, uploaded_at')
+          .eq('student_id', open.id)
+          .order('uploaded_at', { ascending: true }),
+      ]);
+      if (cancelled) return;
+      // An empty array and a refused read are different things, and the panel
+      // says which: null means it could not be read, [] means there are none.
+      setHistory(trail.error ? null : ((trail.data ?? []) as HistoryEntry[]));
+      setDocuments(docs.error ? null : ((docs.data ?? []) as UploadedDocument[]));
+    })();
+    return () => { cancelled = true; };
+  }, [open]);
+
   const programmeOf = (a: Application) =>
     courses.find(
       (c) => c.title.toLowerCase() === String(a.program ?? '').toLowerCase()
@@ -147,8 +252,17 @@ export default function AcademicAdmissions({ role }: { role?: UserRole }) {
     return {
       pending: r.filter((a) => canDecide(a.status)).length,
       awaitingDocuments: r.filter((a) => a.status === 'documents_required').length,
+      reevaluating: r.filter((a) => a.reopened_at).length,
     };
   }, [rows]);
+
+  // ---------------------------------------------------------------------
+  // A REOPENED APPLICATION IS NOT A NEW ONE, and mixing them would hide the
+  // difference that matters: this one has been decided before, and the reader
+  // needs to know that before they read the file rather than after.
+  // ---------------------------------------------------------------------
+  const fresh = (rows ?? []).filter((a) => !a.reopened_at);
+  const reevaluating = (rows ?? []).filter((a) => a.reopened_at);
 
   /** Retry the issuance for a row in the queue, without opening the detail. */
   async function submitFor(a: Application) {
@@ -287,6 +401,45 @@ export default function AcademicAdmissions({ role }: { role?: UserRole }) {
   // before it is pressed rather than after.
   const returnWithoutOffice = !!draft && draft.decision === 'return' && !draft.returnTo;
 
+  async function reopen(a: Application) {
+    setBusy(true);
+    setResult(null);
+    const { data: sess } = await supabase.auth.getSession();
+    const res = await fetch('/api/admissions/reopen', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${sess.session?.access_token ?? ''}`,
+      },
+      body: JSON.stringify({ applicationId: a.id, reason: reopenReason.trim() }),
+    }).catch(() => null);
+    const json = await res?.json().catch(() => null);
+    setBusy(false);
+    if (!json?.ok) {
+      setResult({
+        tone: 'bad',
+        text: DECISION_CHECKS[json?.error as DecisionRefusal]
+          ?? json?.detail ?? 'The application was not reopened.',
+      });
+      return;
+    }
+    setReopening(null);
+    setReopenReason('');
+    setResult({
+      tone: 'ok',
+      text: json.hadBeenIssued
+        // THE PART THAT MUST NOT BE LEFT IMPLICIT. Reopening withdraws
+        // nothing: the applicant has been told they are admitted and still
+        // has been.
+        ? 'Back on the desk for re-evaluation. Nothing has been withdrawn — the letter stands, '
+          + 'the account still works, and the applicant has been told they are admitted. If the '
+          + 'new decision differs, somebody has to tell them.'
+        : 'Back on the desk for re-evaluation. The decision already taken is unchanged and stays '
+          + 'on the record.',
+    });
+    load();
+  }
+
   const overrideTooShort = isOverride && draft
     && ['approve', 'conditional'].includes(draft.decision)
     && draft.overrideReason.trim().length < 20;
@@ -329,6 +482,9 @@ export default function AcademicAdmissions({ role }: { role?: UserRole }) {
             <Figure label="Awaiting the applicant" value={counts.awaitingDocuments.toLocaleString()}
               hint="Documents requested" icon={<FileText size={16} />}
               tone={counts.awaitingDocuments === 0 ? 'muted' : 'neutral'} />
+            <Figure label="Being looked at again" value={counts.reevaluating.toLocaleString()}
+              hint="Decided before" icon={<AlertTriangle size={16} />}
+              tone={counts.reevaluating === 0 ? 'muted' : 'neutral'} />
           </>
         )}
       </div>
@@ -350,11 +506,11 @@ export default function AcademicAdmissions({ role }: { role?: UserRole }) {
           <div className="space-y-2 p-5">
             {Array.from({ length: 4 }, (_, i) => <Skeleton key={i} className="h-9 w-full" />)}
           </div>
-        ) : rows.length === 0 ? (
+        ) : fresh.length === 0 ? (
           <EmptyState
             icon={<GraduationCap size={22} />}
             title="Nothing is waiting"
-            description="An application appears here once the Admissions Office has verified it and Finance has confirmed the fee."
+            description="An application appears here once the Admissions Office has verified it and forwarded it with a recommendation."
           />
         ) : (
           <TableShell>
@@ -365,7 +521,7 @@ export default function AcademicAdmissions({ role }: { role?: UserRole }) {
               </tr>
             </THead>
             <TBody>
-              {rows.map((a) => {
+              {fresh.map((a) => {
                 const p = programmeOf(a);
                 return (
                   <tr key={a.id}>
@@ -413,6 +569,65 @@ export default function AcademicAdmissions({ role }: { role?: UserRole }) {
           </TableShell>
         )}
       </Card>
+
+      {/* ------------------------------------------------------------------
+          RE-EVALUATION. Separate from the ordinary queue on purpose: these
+          have been decided before, and the reader needs to know that before
+          they open the file rather than after. Each carries what it was
+          reopened from and why.
+          ------------------------------------------------------------------ */}
+      {reevaluating.length > 0 && (
+        <Card>
+          <CardHeader
+            title="Being looked at again"
+            subtitle="Decided before, and put back on this desk with a reason"
+          />
+          <TableShell>
+            <THead>
+              <tr>
+                <Th>Applicant</Th><Th>Programme</Th><Th>Was</Th>
+                <Th>Why it is back</Th><Th align="right">Action</Th>
+              </tr>
+            </THead>
+            <TBody>
+              {reevaluating.map((a) => (
+                <tr key={a.id}>
+                  <Td>
+                    <span className="font-medium">{[a.first_name, a.last_name].filter(Boolean).join(' ') || '—'}</span>
+                    <span className="block text-[11px] text-[#a49bb0]">{a.matric_no}</span>
+                  </Td>
+                  <Td>{a.program ?? '—'}</Td>
+                  <Td>
+                    {/* WHAT IT WAS REOPENED FROM. Reopening a rejection and
+                        reopening an issued admission are different acts — in
+                        the second the applicant has already been told. */}
+                    <span className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                      stageChipClass[stages[(a.reopened_from ?? 'unknown') as keyof typeof stages]?.tone ?? 'grey']
+                    }`}>
+                      {stages[(a.reopened_from ?? 'unknown') as keyof typeof stages]?.label ?? a.reopened_from}
+                    </span>
+                  </Td>
+                  <Td>
+                    <span className="block max-w-md leading-relaxed">{a.reopened_reason ?? '—'}</span>
+                  </Td>
+                  <Td align="right">
+                    <button
+                      onClick={() => {
+                        setOpen(a);
+                        setDraft({ decision: 'approve', reason: '', overrideReason: '' });
+                        setResult(null);
+                      }}
+                      className={`${BTN_SECONDARY} px-3 py-1.5 text-xs`}
+                    >
+                      Review again
+                    </button>
+                  </Td>
+                </tr>
+              ))}
+            </TBody>
+          </TableShell>
+        </Card>
+      )}
 
       {/* ------------------------------------------------------------------
           WHAT THIS DESK HAS DECIDED.
@@ -491,8 +706,24 @@ export default function AcademicAdmissions({ role }: { role?: UserRole }) {
                           >
                             Resend
                           </button>
+                          <button
+                            onClick={() => { setReopening(a); setReopenReason(''); }}
+                            className={`${BTN_SECONDARY} px-3 py-1.5 text-xs`}
+                          >
+                            Re-evaluate
+                          </button>
                         </div>
-                      ) : <span className="text-[11px] text-[#a49bb0]">—</span>}
+                      ) : (
+                        // A REJECTION AND A RETURN HAVE NO LETTER, but they can
+                        // still be looked at again — an appeal upheld is
+                        // exactly the case re-evaluation exists for.
+                        <button
+                          onClick={() => { setReopening(a); setReopenReason(''); }}
+                          className={`${BTN_SECONDARY} px-3 py-1.5 text-xs`}
+                        >
+                          Re-evaluate
+                        </button>
+                      )}
                     </Td>
                   </tr>
                 );
@@ -535,6 +766,58 @@ export default function AcademicAdmissions({ role }: { role?: UserRole }) {
         </Card>
       )}
 
+      {/* ------------------------------------------------------------------
+          RE-EVALUATION. The decision already taken is not edited — it stays on
+          the record and whatever is decided next sits beside it. What the
+          panel has to say out loud is what reopening does NOT do.
+          ------------------------------------------------------------------ */}
+      {reopening && (
+        <Card>
+          <CardHeader
+            title={`Look again at ${[reopening.first_name, reopening.last_name].filter(Boolean).join(' ')}`}
+            subtitle={`Currently ${stages[stageOf(reopening)].label.toLowerCase()}`}
+          />
+          <div className="space-y-3 p-5">
+            <div className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              <AlertTriangle size={16} className="mt-0.5 flex-shrink-0" />
+              <p>
+                This puts the application back on your desk. <strong>The decision already taken is
+                not altered</strong> — it stays on the record and whatever you decide next sits
+                beside it.
+                {(reopening.status === 'admission_issued' || reopening.status === 'enrolled') && (
+                  <> <strong>Nothing is withdrawn.</strong> The letter stands, the account still
+                  works, and this applicant has already been told they are admitted. If you decide
+                  differently, somebody has to tell them.</>
+                )}
+              </p>
+            </div>
+            <div>
+              <label className={LABEL} htmlFor="reopen-reason">
+                Why is it being looked at again? (required, 20 characters)
+              </label>
+              <textarea
+                id="reopen-reason"
+                rows={2}
+                value={reopenReason}
+                onChange={(e) => setReopenReason(e.target.value)}
+                className={`${INPUT} mt-1`}
+                placeholder="e.g. The prior award certificate has been reported as forged."
+              />
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => void reopen(reopening)}
+                disabled={busy || reopenReason.trim().length < 20}
+                className={BTN_PRIMARY}
+              >
+                {busy ? 'Reopening…' : 'Put it back on the desk'}
+              </button>
+              <button onClick={() => setReopening(null)} className={BTN_SECONDARY}>Cancel</button>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* The decision itself. Deliberately a separate step from the queue: an
           academic decision should not be one click away from a list. */}
       {open && draft && (
@@ -549,6 +832,156 @@ export default function AcademicAdmissions({ role }: { role?: UserRole }) {
             }
           />
           <div className="space-y-4 p-5">
+            {/* ------------------------------------------------------------
+                THE DOSSIER. Everything the upstream offices produced, and
+                nothing this desk can change. The fee is Finance's, the
+                verification is the Registrar's, the assessment is the
+                Admissions Office's; this desk decides on their work and can
+                return it to them.
+                ------------------------------------------------------------ */}
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-xl border border-[#ded6c8] p-4 dark:border-[#3d3349]">
+                <p className={LABEL}>Applicant</p>
+                <dl className="mt-2 space-y-1 text-xs">
+                  <Fact k="Application" v={open.matric_no} />
+                  <Fact k="Date of birth" v={open.date_of_birth} />
+                  <Fact k="Nationality" v={open.nationality} />
+                  <Fact k="Email" v={open.email} />
+                  <Fact k="Telephone" v={open.phone} />
+                  <Fact k="Applied" v={open.created_at ? new Date(open.created_at).toLocaleDateString('en-GB') : null} />
+                </dl>
+              </div>
+
+              <div className="rounded-xl border border-[#ded6c8] p-4 dark:border-[#3d3349]">
+                <p className={LABEL}>Programme</p>
+                <dl className="mt-2 space-y-1 text-xs">
+                  <Fact k="Programme" v={[open.degree_type, open.program].filter(Boolean).join(' — ')} />
+                  <Fact k="Faculty" v={open.faculty} />
+                  <Fact k="Delivery" v={programmeOf(open) ? MODE_LABEL[programmeOf(open)!.mode] : open.mode} />
+                  <Fact k="Attendance" v={open.attendance} />
+                  <Fact k="Campus" v={open.campus} />
+                  <Fact k="Intake" v={open.intake} />
+                </dl>
+              </div>
+
+              <div className="rounded-xl border border-[#ded6c8] p-4 dark:border-[#3d3349]">
+                <p className={LABEL}>Finance — a gate, not an authority</p>
+                <dl className="mt-2 space-y-1 text-xs">
+                  <Fact k="Fee" v={open.fee_registered_at ? 'Confirmed' : 'Not confirmed'} />
+                  <Fact k="Confirmed on" v={open.fee_registered_at ? new Date(open.fee_registered_at).toLocaleDateString('en-GB') : null} />
+                  <Fact k="Amount" v={[open.fee_amount, open.fee_currency].filter(Boolean).join(' ')} />
+                  <Fact k="Reference" v={open.fee_reference} />
+                </dl>
+                <p className="mt-2 text-[11px] leading-relaxed text-[#8a8194]">
+                  Read only. A discrepancy is returned to Finance; it is not altered here.
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-[#ded6c8] p-4 dark:border-[#3d3349]">
+                <p className={LABEL}>Verification and recommendation</p>
+                <dl className="mt-2 space-y-1 text-xs">
+                  <Fact k="Registrar's note" v={open.decision_reason} />
+                  <Fact k="Admissions Office recommends" v={open.academic_recommendation} />
+                  {open.returned_to && (
+                    <Fact k="Last returned to" v={`${open.returned_to}${open.returned_reason ? ` — ${open.returned_reason}` : ''}`} />
+                  )}
+                </dl>
+                <p className="mt-2 text-[11px] leading-relaxed text-[#8a8194]">
+                  A recommendation, not a decision. This desk is the authority.
+                </p>
+              </div>
+            </div>
+
+            {/* THE DOCUMENTS, listed rather than verified here. */}
+            <div>
+              <p className={LABEL}>Documents</p>
+              {documents === null ? (
+                <p className="mt-1 text-xs text-[#8a8194]">They could not be read.</p>
+              ) : documents.length === 0 ? (
+                <p className="mt-1 text-xs text-[#8a8194]">None uploaded with this application.</p>
+              ) : (
+                <ul className="mt-1 space-y-1 text-xs">
+                  {documents.map((d) => (
+                    <li key={d.id} className="flex items-center gap-2">
+                      <FileText size={13} className="shrink-0 text-[#8a8194]" />
+                      <span className="text-[#33234a] dark:text-[#e4dcf0]">{d.file_name}</span>
+                      {d.document_type && <span className="text-[#8a8194]">· {d.document_type}</span>}
+                      <span className={d.verified ? 'text-emerald-700' : 'text-[#8a8194]'}>
+                        {d.verified ? '· verified' : '· not verified'}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {/* ------------------------------------------------------------
+                THE ISSUANCE PIPELINE. Shown once an issuance has been
+                attempted, so that a failure says WHERE it stopped rather than
+                only that it stopped. Read from the trail and the record — a
+                reserved number emits no event, and the email's outcome is only
+                in the trail, so neither source alone is complete.
+                ------------------------------------------------------------ */}
+            {history && history.some((h) => h.event.startsWith('ISSUANCE') || h.event.startsWith('ADMISSION')) && (
+              <div>
+                <p className={LABEL}>Issuance</p>
+                <ol className="mt-2 space-y-1">
+                  {issuanceProgress(history, open).map((s) => (
+                    <li key={s.step} className="flex items-start gap-2 text-xs">
+                      <span className={`mt-[3px] inline-block h-2 w-2 shrink-0 rounded-full ${
+                        s.state === 'done' ? 'bg-emerald-500'
+                          : s.state === 'failed' ? 'bg-red-500' : 'bg-[#c9c2d2]'
+                      }`} />
+                      <span>
+                        <span className={s.state === 'pending' ? 'text-[#8a8194]' : 'text-[#33234a] dark:text-[#e4dcf0]'}>
+                          {s.step}
+                        </span>
+                        {s.detail && (
+                          <span className="mt-0.5 block leading-relaxed text-red-700 dark:text-red-300">
+                            {s.detail}
+                          </span>
+                        )}
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
+
+            {/* ------------------------------------------------------------
+                EVERYTHING THAT HAS HAPPENED, against the office that did it.
+                An audit is not a list of who touched a row; it is a record of
+                which authority moved the application, and the office is what
+                makes that legible when an account is shared.
+                ------------------------------------------------------------ */}
+            <div>
+              <p className={LABEL}>History</p>
+              {history === null ? (
+                <p className="mt-1 text-xs text-[#8a8194]">
+                  The trail could not be read. It exists from migration 024 onward.
+                </p>
+              ) : history.length === 0 ? (
+                <p className="mt-1 text-xs text-[#8a8194]">
+                  Nothing recorded. This application predates the audit trail.
+                </p>
+              ) : (
+                <ul className="mt-1 space-y-1 text-xs">
+                  {history.map((h) => (
+                    <li key={h.id} className="flex flex-wrap items-baseline gap-x-2">
+                      <span className="text-[#8a8194]">
+                        {h.at ? new Date(h.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '—'}
+                      </span>
+                      <span className="font-medium text-[#33234a] dark:text-[#e4dcf0]">
+                        {h.event.toLowerCase().replace(/_/g, ' ')}
+                      </span>
+                      {h.actor_office && <span className="text-[#8a8194]">· {h.actor_office}</span>}
+                      {h.detail && <span className="w-full leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">{h.detail}</span>}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
             <div>
               <p className={LABEL}>Academic decision</p>
               <div className="mt-2 flex flex-wrap gap-2">

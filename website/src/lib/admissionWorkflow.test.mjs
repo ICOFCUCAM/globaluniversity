@@ -56,6 +56,7 @@ const MIGRATION_FILES = [
   '026_issuance_is_not_the_decision.sql',
   '027_the_states_the_pipeline_already_wrote.sql',
   '032_forwarding_and_returning.sql',
+  '033_reevaluation.sql',
 ].map((f) => readFileSync(join(here, '../../docs/migrations/', f), 'utf8'));
 
 const migration = MIGRATION_FILES.join('\n');
@@ -232,6 +233,72 @@ console.log('\nThe delivery mode picks the right terms in the admission letter\n
   check('“On campus” still works', modeOf('On campus'), 'campus');
   check('“Campus and online” still works', modeOf('Campus and online'), 'both');
   check('and an empty mode falls back to campus', modeOf(''), 'campus');
+}
+
+console.log('\nHow far an issuance got, read from the record\n');
+
+// ---------------------------------------------------------------------------
+// The University asked for the pipeline to be shown so that a failure says
+// WHERE it stopped, not only that it stopped. These are the four shapes that
+// actually occur, and the one that matters is the third: Dorothy's.
+// ---------------------------------------------------------------------------
+{
+  const ev = (event, extra = {}) => ({ event, ...extra });
+  const state = (steps) => steps.map((s) => s.state);
+
+  // A CLEAN RUN. Every step done, nothing outstanding.
+  check('a completed issuance shows every step done',
+    state(W.issuanceProgress([
+      ev('ACADEMIC_APPROVED'), ev('ADMISSION_LETTER_GENERATED'),
+      ev('ACCOUNT_CREATED'), ev('ADMISSION_PACKAGE_ISSUED'), ev('WELCOME_EMAIL_SENT'),
+    ], { status: 'admission_issued', student_number: 'ICOF202600002', auth_user_id: 'u1' })),
+    ['done', 'done', 'done', 'done', 'done', 'done', 'done']);
+
+  // AN UNTOUCHED APPLICATION. Nothing has run; nothing is claimed.
+  check('an application not yet issued shows nothing done',
+    state(W.issuanceProgress([], { status: 'ready_for_academic_review' })),
+    ['pending', 'pending', 'pending', 'pending', 'pending', 'pending', 'pending']);
+
+  // DOROTHY'S SECOND ATTEMPT, which is why this exists. The decision was
+  // recorded and the package generated; the number reservation collided with
+  // one already issued. The display must name that step and no other.
+  {
+    const steps = W.issuanceProgress([
+      ev('ACADEMIC_APPROVED'), ev('ADMISSION_LETTER_GENERATED'),
+      ev('ISSUANCE_FAILED', {
+        detail: 'reserve the student number: duplicate key value violates unique constraint',
+        metadata: { step: 'reserve the student number' },
+      }),
+    ], { status: 'admission_processing_failed' });
+    check('a failed issuance names the step it stopped on',
+      state(steps), ['done', 'done', 'failed', 'pending', 'pending', 'pending', 'pending']);
+    check('…and carries what the database actually said',
+      /duplicate key/.test(steps[2].detail ?? ''), true);
+  }
+
+  // THE ADMISSION STANDS AND ONLY THE TELLING FAILED. The email is the one step
+  // whose failure invalidates nothing above it, so it is the one step with its
+  // own failure event.
+  {
+    const steps = W.issuanceProgress([
+      ev('ACADEMIC_APPROVED'), ev('ADMISSION_LETTER_GENERATED'), ev('ACCOUNT_CREATED'),
+      ev('ADMISSION_PACKAGE_ISSUED'),
+      ev('WELCOME_EMAIL_FAILED', { detail: 'the mail server refused the message' }),
+    ], { status: 'admission_issued', student_number: 'ICOF202600003', auth_user_id: 'u2' });
+    check('an undelivered email fails alone, with the admission intact',
+      state(steps), ['done', 'done', 'done', 'done', 'done', 'done', 'failed']);
+  }
+
+  // EVERY STEP A FAILURE CAN NAME MUST BE A STEP THE DISPLAY KNOWS. A route
+  // reporting a step spelled differently would show a pipeline where nothing
+  // failed and nothing completed.
+  {
+    const route = readFileSync(join(here, '../app/api/admissions/decision/route.ts'), 'utf8');
+    const named = [...route.matchAll(/failIssuance\('([^']+)'/g)].map((m) => m[1]);
+    check('the scan found the failure points', named.length >= 4, true);
+    check('every step a failure can name is one the pipeline displays',
+      [...new Set(named)].filter((s) => !W.ISSUANCE_STEPS.includes(s)), []);
+  }
 }
 
 console.log('\nIssuance is idempotent: a retry consumes nothing twice\n');
