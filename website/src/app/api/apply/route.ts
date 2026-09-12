@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { send, mailConfigured } from '@/lib/mailer';
+import { UNIVERSITY } from '@/lib/constants';
 import { supabase } from '@/lib/supabase';
 
 export const runtime = 'nodejs';
@@ -168,6 +169,52 @@ export async function POST(request: Request) {
       attachments,
     });
     emailed = delivery.sent;
+
+    // ---------------------------------------------------------------------
+    // CHANNEL 3 — THE APPLICANT, WHO WAS TOLD NOTHING.
+    //
+    // Until now a person applied to the University and received no
+    // acknowledgement at all. They did not know it had arrived, and — the part
+    // that matters more — they never learned the reference. Every later
+    // instruction the University gives them quotes it, and the page where they
+    // can check their own progress asks for it, so without this the reference
+    // existed only inside the institution that issued it.
+    //
+    // Sent AFTER the office copy and never allowed to fail the submission: the
+    // application is already captured by this point, and an applicant whose
+    // acknowledgement bounced is in a far better position than one whose
+    // application was refused because it bounced.
+    // ---------------------------------------------------------------------
+    const site = process.env.SITE_URL ?? 'https://iguc.net';
+    await send({
+      to: applicantEmail,
+      office: 'Office of Admissions',
+      subject: `${UNIVERSITY.name} — we have your application (${appNo})`,
+      text: [
+        `Dear ${firstname},`,
+        '',
+        'Thank you for applying to ICOF Global University. Your application has been received',
+        'and is with the Admissions Office.',
+        '',
+        `  Your reference    ${appNo}`,
+        '',
+        'PLEASE KEEP THIS REFERENCE. You will need it in any correspondence with us, and you can',
+        'use it at any time to see how far your application has got:',
+        '',
+        `  ${site}/application-status`,
+        '',
+        'You will be asked for this reference and for the email address you applied with.',
+        '',
+        'What happens next: the application fee is confirmed, your documents are verified, and',
+        'the Head of Academic Affairs takes the admission decision. We will write to you when',
+        'there is something to tell you.',
+        '',
+        `If you have a question, write to ${UNIVERSITY.admissionsEmail} quoting your reference.`,
+        '',
+        'Office of Admissions',
+        UNIVERSITY.name,
+      ].join('\n'),
+    });
   }
 
   // The application succeeds if at least one channel captured it.

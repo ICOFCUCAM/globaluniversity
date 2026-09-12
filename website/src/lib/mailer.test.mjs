@@ -127,4 +127,28 @@ console.log('\nAn explicit reply-to still wins\n');
     /replyTo:\s*applicantEmail/.test(apply), true);
 }
 
+console.log('\nThe applicant is told their application arrived, and their reference\n');
+
+// ---------------------------------------------------------------------------
+// THE GAP THIS CLOSES. A person applied to the University and received nothing
+// at all — no acknowledgement, and no reference. Every later instruction quotes
+// that reference and the status page asks for it, so it existed only inside the
+// institution that issued it, and the page built for applicants could not be
+// used by one.
+// ---------------------------------------------------------------------------
+{
+  const apply = readFileSync(join(here, '../app/api/apply/route.ts'), 'utf8');
+  check('the applicant is sent something', /to:\s*applicantEmail/.test(apply), true);
+  check('…carrying their reference', /Your reference/.test(apply), true);
+  check('…and where to check their own progress',
+    /application-status/.test(apply), true);
+
+  // AND IT MUST NOT BE ABLE TO FAIL THE SUBMISSION. The application is already
+  // captured by that point; an applicant whose acknowledgement bounced is in a
+  // far better position than one whose application was refused because it did.
+  const afterOffice = apply.slice(apply.indexOf('emailed = delivery.sent'));
+  check('the acknowledgement is sent after the application is captured',
+    /to:\s*applicantEmail/.test(afterOffice), true);
+}
+
 process.exit(failures === 0 ? 0 : 1);
