@@ -137,22 +137,28 @@ console.log('\nWhat is wrong is said before the click, and all of it at once\n')
     A.objectionsTo({ ...good, audiences: [] }, []).map((o) => o.code), ['no-audience']);
 
   // AN IMAGE WITHOUT ALT TEXT. 013 already requires it of social media; the
-  // University's own noticeboard is an odd place to require less.
+  // University's own noticeboard is an odd place to require less. 039 makes
+  // the column NOT NULL so this cannot be got round below the screen.
+  const described = [{ storage_path: 'a/b.jpg', alt_text: 'Graduands on the steps' }];
+  const undescribed = [{ storage_path: 'a/b.jpg', alt_text: '' }];
   check('an image must be described',
-    A.objectionsTo({ ...good, image_path: 'a/b.jpg' }, [], { hasImage: true })
-      .map((o) => o.code), ['image-without-alt-text']);
-  check('…and a described one passes',
-    A.objectionsTo({ ...good, image_path: 'a/b.jpg', image_alt: 'Graduands on the steps' },
-      [], { hasImage: true }), []);
+    A.objectionsTo(good, [], { media: undescribed }).map((o) => o.code),
+    ['image-without-alt-text']);
+  check('…and a described one passes', A.objectionsTo(good, [], { media: described }), []);
+  // EVERY image, not just the first. A second photograph added later is
+  // exactly the one somebody forgets to describe.
+  check('and every image, not only the first',
+    A.objectionsTo(good, [], { media: [...described, ...undescribed] }).map((o) => o.code),
+    ['image-without-alt-text']);
 
   // INSTAGRAM AND YOUTUBE REFUSE TEXT, and being told now beats discovering it
   // when a platform returns an error hours later.
   check('Instagram without an image is refused',
     A.objectionsTo(good, ['instagram']).map((o) => o.code), ['instagram-needs-an-image']);
   check('…and with one is not',
-    A.objectionsTo(good, ['instagram'], { hasImage: true }), []);
+    A.objectionsTo(good, ['instagram'], { media: described }), []);
   check('YouTube cannot carry a written announcement at all',
-    A.objectionsTo(good, ['youtube'], { hasImage: true }).map((o) => o.code),
+    A.objectionsTo(good, ['youtube'], { media: described }).map((o) => o.code),
     ['youtube-needs-video']);
   check('an unconnected account is refused before anything is sent',
     A.objectionsTo(good, ['linkedin'], { connected: { linkedin: false } }).map((o) => o.code),
@@ -261,6 +267,44 @@ console.log('\nThe capability, the route and the migration agree\n');
     /approved_by <> author_id/.test(sql), true);
   check('the history is append-only in the database',
     /announcement_events_append_only/.test(sql), true);
+}
+
+console.log('\nA destination is a publishing job, and the schema says so\n');
+
+{
+  const sql = readFileSync(
+    join(here, '../../docs/migrations/039_a_destination_is_a_publishing_job.sql'), 'utf8');
+
+  // THE COLUMNS THAT MAKE IT A JOB RATHER THAN A FLAG. Without the platform's
+  // own post id there is no way to fetch engagement, remove the right post on
+  // a retraction, or show that the publication happened at all.
+  for (const col of ['platform_post_id', 'scheduled_for', 'retry_count', 'published_text']) {
+    check(`a destination carries ${col}`,
+      new RegExp(`add column if not exists\\s+${col}`).test(sql), true);
+  }
+
+  // A DELIVERED DESTINATION SHOWS WHERE IT LANDED. "Published to LinkedIn"
+  // with nothing behind it cannot be answered when somebody asks "where?".
+  check('and cannot claim delivery with no receipt',
+    /announcement_destinations_receipt/.test(sql), true);
+
+  // THE OLD SINGLE-IMAGE COLUMNS ARE GONE, not left beside the media table.
+  // Two places for an announcement's pictures would disagree within a month.
+  check('the single-image columns are dropped, not left alongside',
+    /drop column if exists image_path/.test(sql) && /drop column if exists image_alt/.test(sql),
+    true);
+
+  // ENGAGEMENT IS A READING AT A MOMENT, not a number that overwrites itself.
+  check('a metric carries when it was true',
+    /measured_at\s+timestamptz not null/.test(sql), true);
+  check('and readings accumulate rather than replace',
+    /unique \(destination_id, metric, measured_at\)/.test(sql), true);
+
+  // AND THE MIGRATION SAYS OUT LOUD THAT NOTHING COLLECTS THEM. A dashboard
+  // showing 0 where the truth is "nobody asked" publishes a figure about the
+  // University that it made up.
+  check('the migration states that no engagement is collected yet',
+    /no engagement has been collected/.test(sql), true);
 }
 
 console.log(failures === 0 ? '\nAll announcement checks passed.' : `\n${failures} check(s) failed.`);

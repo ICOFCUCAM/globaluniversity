@@ -3,8 +3,8 @@
 //
 //   POST /api/announcements  { action, ... }
 //
-//   draft     { title, body, category, audiences[], imagePath?, imageAlt?,
-//               destinations[], publishAt? }        → compose-announcement
+//   draft     { title, body, category, audiences[], media[], destinations[],
+//               publishAt? }                        → compose-announcement
 //   edit      { id, ...the same fields }            → compose-announcement
 //   submit    { id }                                → compose-announcement
 //   decide    { id, decision: 'approve'|'reject', reason? }
@@ -70,7 +70,7 @@ const CAPABILITY: Record<string, Capability> = {
 };
 
 // eslint-disable-next-line max-len
-const COLUMNS = 'id, title, body, category, audiences, image_path, image_alt, status, author_id, approved_by, approved_at, published_by, published_at, publish_at, pinned, created_at';
+const COLUMNS = 'id, title, body, category, audiences, status, author_id, approved_by, approved_at, published_by, published_at, publish_at, publish_timezone, pinned, created_at';
 
 const bad = (error: string, status: number, detail?: string) =>
   NextResponse.json({ ok: false, error, ...(detail ? { detail } : {}) }, { status });
@@ -144,16 +144,26 @@ export async function POST(request: Request) {
     const category = String(body.category ?? 'general');
     const audiences = Array.isArray(body.audiences) ? body.audiences.map(String) : [];
     const chosen = Array.isArray(body.destinations) ? body.destinations.map(String) : [];
-    const imagePath = body.imagePath ? String(body.imagePath) : null;
-    const imageAlt = body.imageAlt ? String(body.imageAlt) : null;
+    // MEDIA IS A LIST NOW. 039 moved it off the announcement into its own
+    // table, because an announcement about a graduation has more than one
+    // photograph and two columns can hold exactly one.
+    const media = (Array.isArray(body.media) ? body.media : [])
+      .map((m, i) => {
+        const item = m as Record<string, unknown>;
+        return {
+          storage_path: String(item.storagePath ?? item.storage_path ?? ''),
+          alt_text: String(item.altText ?? item.alt_text ?? ''),
+          kind: item.kind === 'video' ? 'video' as const : 'image' as const,
+          ordinal: i,
+        };
+      })
+      .filter((m) => m.storage_path);
 
     if (!isCategory(category)) return bad('unknown-category', 400);
     if (audiences.some((a) => !isAudience(a))) return bad('unknown-audience', 400);
 
-    const draft = {
-      title, body: text, category, audiences, image_path: imagePath, image_alt: imageAlt,
-    };
-    const objections = objectionsTo(draft, chosen, { hasImage: Boolean(imagePath) });
+    const draft = { title, body: text, category, audiences };
+    const objections = objectionsTo(draft, chosen, { media });
     if (blocks(objections)) {
       return NextResponse.json({ ok: false, error: 'not-ready', objections }, { status: 400 });
     }
@@ -187,6 +197,14 @@ export async function POST(request: Request) {
         .select('id').single();
       if (error || !data) return bad(`not-saved: ${error?.message ?? 'no row'}`, 500);
       id = data.id as string;
+    }
+
+    // The media, replaced wholesale. A picture removed from the form has to
+    // actually come off the announcement, and merging would leave it there.
+    await admin.from('announcement_media').delete().eq('announcement_id', id);
+    if (media.length) {
+      await admin.from('announcement_media')
+        .insert(media.map((m) => ({ ...m, announcement_id: id })));
     }
 
     // The destinations chosen. Replaced wholesale rather than merged: a

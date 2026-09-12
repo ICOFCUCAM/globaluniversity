@@ -291,6 +291,17 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
     // on that would be vouching for the one thing the old noticeboard lacked.
     table: 'announcement_events',
   },
+  {
+    file: '039_a_destination_is_a_publishing_job.sql',
+    what: 'Turns each destination into a publishing job that keeps its own receipt: the '
+      + 'platform’s post id, its own scheduled time, a retry count and the exact text sent. '
+      + 'Gives an announcement more than one picture, each described. Creates somewhere for '
+      + 'engagement figures to live — deliberately empty, because nothing collects them yet.',
+    // The media table. Chosen over `announcement_metrics` because that one is
+    // meant to be empty, so its presence says nothing about whether the rest
+    // of the migration ran.
+    table: 'announcement_media',
+  },
 ];
 
 /** What a probe came back as. */

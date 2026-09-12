@@ -166,7 +166,18 @@ begin
       );
   end if;
 
-  if not exists (select 1 from pg_constraint where conname = 'announcements_image_described') then
+  -- ONLY WHILE THE IMAGE LIVES ON THE ANNOUNCEMENT. 039 moves it into
+  -- `announcement_media` — one announcement has more than one photograph — and
+  -- drops these two columns, taking this constraint with them. Without the
+  -- guard, running the bundle a second time tries to put a constraint back on
+  -- a column that is deliberately gone, and stops dead.
+  --
+  -- THE RULE ITSELF DOES NOT LAPSE: 039 carries it to the new table, where the
+  -- alt text column is NOT NULL.
+  if exists (select 1 from information_schema.columns
+              where table_schema = 'public' and table_name = 'announcements'
+                and column_name = 'image_path')
+     and not exists (select 1 from pg_constraint where conname = 'announcements_image_described') then
     alter table announcements add constraint announcements_image_described
       check (image_path is null or (image_alt is not null and length(btrim(image_alt)) >= 3));
   end if;
@@ -596,14 +607,25 @@ begin
   end if;
 
   -- ---- AN IMAGE IS DESCRIBED ---------------------------------------------
-  refused := false;
-  begin
-    update announcements set image_path = 'announcements/x.jpg' where id = a_id;
-  exception when others then refused := true;
-  end;
-  if not refused then
-    raise exception '038 FAILED: an image was attached with no alt text, which every network '
-                    'this is published to would carry onward';
+  --
+  -- ONLY WHILE THE IMAGE LIVES ON THE ANNOUNCEMENT. 039 moves it into
+  -- `announcement_media` and drops these columns, because one announcement has
+  -- more than one photograph — and it carries the same rule there, on a NOT
+  -- NULL column. Running the bundle a second time used to stop dead here,
+  -- proving a rule about a column that no longer existed.
+  if exists (select 1 from information_schema.columns
+              where table_schema = 'public' and table_name = 'announcements'
+                and column_name = 'image_path') then
+    refused := false;
+    begin
+      execute 'update announcements set image_path = ''announcements/x.jpg'' where id = $1'
+        using a_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '038 FAILED: an image was attached with no alt text, which every network '
+                      'this is published to would carry onward';
+    end if;
   end if;
 
   -- ---- ONE ADAPTATION PER PLATFORM ---------------------------------------

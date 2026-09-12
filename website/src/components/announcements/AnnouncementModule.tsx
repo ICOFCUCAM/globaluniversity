@@ -57,7 +57,6 @@ interface Row {
   approved_by: string | null;
   published_at: string | null;
   created_at: string;
-  image_alt: string | null;
 }
 
 interface DestRow {
@@ -71,7 +70,7 @@ interface DestRow {
 // supabase-js collapse the inferred type to GenericStringError[], and the
 // failure is silent — everything reads as an error object at runtime.
 // eslint-disable-next-line max-len
-const COLUMNS = 'id, title, body, category, audiences, status, author_id, approved_by, published_at, created_at, image_alt';
+const COLUMNS = 'id, title, body, category, audiences, status, author_id, approved_by, published_at, created_at';
 
 const TABS = [
   { key: 'all', label: 'All' },
@@ -386,13 +385,13 @@ function Compose({
   const [imagePath, setImagePath] = useState('');
   const [imageAlt, setImageAlt] = useState('');
 
-  const draft = {
-    title, body, category, audiences,
-    image_path: imagePath || null, image_alt: imageAlt || null,
-  };
+  const draft = { title, body, category, audiences };
+  const media = imagePath
+    ? [{ storage_path: imagePath, alt_text: imageAlt, kind: 'image' as const, ordinal: 0 }]
+    : [];
   // SAID BEFORE THE CLICK, not discovered when a network returns an error hours
   // later and somebody has to work out which of six destinations it was about.
-  const objections = objectionsTo(draft, destinations, { hasImage: Boolean(imagePath) });
+  const objections = objectionsTo(draft, destinations, { media });
 
   const toggle = (list: string[], v: string, set: (x: string[]) => void) =>
     set(list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
@@ -520,7 +519,7 @@ function Compose({
         <button disabled={busy || blocks(objections)} className={BTN_PRIMARY}
           onClick={() => onDone({
             action: 'draft', title, body, category, audiences, destinations,
-            imagePath: imagePath || undefined, imageAlt: imageAlt || undefined,
+            media: media.map((m) => ({ storagePath: m.storage_path, altText: m.alt_text })),
           })}>
           {busy ? <><Loader2 size={15} className="animate-spin" /> Saving…</> : 'Save as draft'}
         </button>

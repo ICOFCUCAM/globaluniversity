@@ -361,8 +361,23 @@ export interface AnnouncementLike {
   body?: string | null;
   category?: string | null;
   audiences?: string[] | null;
-  image_path?: string | null;
-  image_alt?: string | null;
+}
+
+/**
+ * A picture or a video on an announcement.
+ *
+ * ALT TEXT IS NOT OPTIONAL and the database agrees — 039 makes the column NOT
+ * NULL, exactly as 013 did for social media. A prospective student using a
+ * screen reader is exactly the reader the institution is addressing, and a
+ * graduation photograph that reaches them as "image" has excluded them from the
+ * announcement. Every platform this is published to carries the omission
+ * onward.
+ */
+export interface AnnouncementMedia {
+  storage_path: string;
+  alt_text: string;
+  kind?: 'image' | 'video';
+  ordinal?: number;
 }
 
 export function canEdit(a: AnnouncementLike): boolean {
@@ -424,7 +439,10 @@ export interface Objection {
 export function objectionsTo(
   a: AnnouncementLike,
   chosen: string[],
-  opts: { hasImage?: boolean; connected?: Partial<Record<Platform, boolean>> } = {},
+  opts: {
+    media?: AnnouncementMedia[];
+    connected?: Partial<Record<Platform, boolean>>;
+  } = {},
 ): Objection[] {
   const out: Objection[] = [];
   const title = (a.title ?? '').trim();
@@ -471,14 +489,14 @@ export function objectionsTo(
   }
 
   // AN IMAGE WITHOUT ALT TEXT IS AN IMAGE A BLIND READER CANNOT SEE, and every
-  // platform carries the omission onward. 013 already requires it of social
-  // media; requiring less of the University's own noticeboard would be an odd
-  // place to draw the line.
-  if (a.image_path && !(a.image_alt ?? '').trim()) {
+  // platform carries the omission onward. Said here so it is caught on the
+  // screen; 039 makes the column NOT NULL so it cannot be got round.
+  const media = opts.media ?? [];
+  if (media.some((m) => !(m.alt_text ?? '').trim())) {
     out.push({
       code: 'image-without-alt-text',
       blocking: true,
-      message: 'Describe the image in a sentence. Without it, a reader using a screen reader '
+      message: 'Describe every image in a sentence. Without it, a reader using a screen reader '
         + 'gets nothing at all, and every network this is published to repeats the omission.',
     });
   }
@@ -510,7 +528,7 @@ export function objectionsTo(
     // INSTAGRAM AND YOUTUBE REFUSE TEXT. Said here rather than discovered when
     // the platform returns an error hours later and somebody has to work out
     // which of six destinations the message was about.
-    if (d.platform === 'instagram' && !opts.hasImage) {
+    if (d.platform === 'instagram' && media.length === 0) {
       out.push({
         code: 'instagram-needs-an-image',
         blocking: true,
