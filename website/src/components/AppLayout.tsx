@@ -13,6 +13,7 @@ import StudentDashboard from './dashboard/StudentDashboard';
 import LecturerDashboard from './dashboard/LecturerDashboard';
 import StudentManagement from './students/StudentManagement';
 import AdmissionsDesk from './admissions/AdmissionsDesk';
+import Enrolment from '@/components/admissions/Enrolment';
 import AdmissionsOffice from './admissions/AdmissionsOffice';
 import AcademicAdmissions from './admissions/AcademicAdmissions';
 import { isEnrolledRole } from '@/lib/roles';
@@ -180,6 +181,10 @@ export default function AppLayout() {
       // than a seat at the Admissions Office's — see the file's header.
       case 'academic-admissions':
         return <AcademicAdmissions role={user?.role} />;
+      // The Registrar records what became of an issued admission. No academic
+      // decision is taken here — everything on it has already been decided.
+      case 'enrolment':
+        return <Enrolment />;
       case 'students':
         return <StudentManagement onNavigate={setCurrentView} />;
       case 'lecturers':

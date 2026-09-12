@@ -235,6 +235,14 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
     table: 'students',
     column: 'reopened_reason',
   },
+  {
+    file: '034_enrolment_and_withdrawal.sql',
+    what: 'Ends the journey — the Registrar can record that an admitted student took up the '
+      + 'place — and lets an applicant withdraw without being recorded as refused by the '
+      + 'University, which is what happened until now.',
+    table: 'students',
+    column: 'enrolled_at',
+  },
 ];
 
 /** What a probe came back as. */

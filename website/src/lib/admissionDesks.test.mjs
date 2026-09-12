@@ -221,8 +221,15 @@ check('the test’s own rule agrees with the shipped one',
 {
   // Remove the Decided panel and the widened Processed list — the two things
   // that were missing — and the states the University could not find come back.
+  // THE DESK SET AS IT STOOD WHEN THE UNIVERSITY ASKED THE QUESTION. The
+  // Decided panel did not exist, Processed looked for the two older spellings,
+  // and there was no enrolment desk at all — `enrolled` was declared and
+  // unreachable. Reconstructing it means removing everything that came after,
+  // not only the panel: leaving the enrolment desk in would keep
+  // `admission_issued` visible and the reconstruction would prove nothing.
   const before = { ...W.ADMISSION_DESKS };
   delete before['academic-decided'];
+  delete before.enrolment;
   before.processed = { ...before.processed, states: ['approved', 'declined'] };
 
   const lost = unseeable(W.ADMISSION_STATES, before, W.NOT_ON_ANY_DESK);

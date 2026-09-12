@@ -10,6 +10,7 @@
 import React from 'react';
 import type { ViewType, UserRole } from './types';
 import {
+  UserCheck,
   LayoutDashboard, Users, GraduationCap, BookOpen, ClipboardList,
   FileText, Award, Monitor, PenTool, FolderOpen, BarChart3,
   Settings, Shield, BookMarked, Wallet, Stamp, UserCog, Inbox,
@@ -91,6 +92,17 @@ export const menuGroups: MenuGroup[] = [
         label: 'Admissions approval',
         icon: <GraduationCap size={18} />,
         roles: ['superadmin', 'academic-office'],
+      },
+      // ---------------------------------------------------------------------
+      // THE FIFTH STAGE, which had no screen. `enrolled` has been in the
+      // vocabulary since 024 and nothing could produce it, so the University
+      // could say it had admitted somebody and not whether they turned up.
+      // ---------------------------------------------------------------------
+      {
+        id: 'enrolment',
+        label: 'Enrolment',
+        icon: <UserCheck size={18} />,
+        roles: ['superadmin', 'admin', 'registrar'],
       },
       { id: 'students', label: 'Students', icon: <Users size={18} />, roles: ['superadmin', 'admin', 'registrar', 'admissions-officer', 'finance', 'finance-director', 'dean'] },
     ],

@@ -227,6 +227,8 @@ export const ADMISSION_EVENTS = [
   'WELCOME_EMAIL_SENT',
   'WELCOME_EMAIL_FAILED',
   'ENROLLED',
+  /** The applicant or student stepped away. NOT a refusal by the University. */
+  'WITHDRAWN',
   /** The Superadministrator acting in another office's place. Always visible. */
   'ADMINISTRATIVE_OVERRIDE',
 ] as const;
@@ -258,6 +260,16 @@ export type AdmissionEvent = (typeof ADMISSION_EVENTS)[number];
  */
 export const MIN_REOPEN_REASON = 20;
 
+/**
+ * The shortest withdrawal reason worth recording.
+ *
+ * Shorter than a re-evaluation's, because the fact being recorded is simpler:
+ * the applicant said they no longer want the place. What matters is that
+ * SOMETHING is written down, so that a withdrawal is never confused later with
+ * a refusal by the University.
+ */
+export const MIN_WITHDRAW_REASON = 8;
+
 export const RETURN_TARGETS = {
   'admissions-office': {
     label: 'Admissions Office',
@@ -276,6 +288,39 @@ export const RETURN_TARGETS = {
 export type ReturnTarget = keyof typeof RETURN_TARGETS;
 
 /** The states the Admissions Office may forward for an academic decision. */
+// ---------------------------------------------------------------------------
+// ENROLMENT — the fifth stage, and the end of the journey.
+//
+// An issued admission was the last state a student could reach, so the
+// University could say it had admitted somebody and could not say whether they
+// had taken up the place. An admitted applicant who never enrols is a place
+// that could have gone to somebody else.
+// ---------------------------------------------------------------------------
+export const ENROLABLE_FROM: AdmissionState[] = ['admission_issued'];
+
+export function canEnrol(state: string | null | undefined): boolean {
+  return ENROLABLE_FROM.includes(state as AdmissionState);
+}
+
+// ---------------------------------------------------------------------------
+// WITHDRAWAL — which is not a refusal, and was recorded as one.
+//
+// An applicant who wrote to say they no longer wanted the place was marked
+// `declined`: refused, by the Registrar, in the University's own records,
+// having been refused by nobody. Wrong about who decided and wrong about what
+// happened.
+//
+// It can be recorded from anywhere the application is still live. Not from a
+// refusal — there is nothing left to withdraw from — and not from a withdrawal
+// already recorded.
+// ---------------------------------------------------------------------------
+export const NOT_WITHDRAWABLE: AdmissionState[] = ['rejected', 'declined', 'withdrawn', 'draft'];
+
+export function canWithdraw(state: string | null | undefined): boolean {
+  return ADMISSION_STATES.includes(state as AdmissionState)
+    && !NOT_WITHDRAWABLE.includes(state as AdmissionState);
+}
+
 export const FORWARDABLE_FROM: AdmissionState[] = [
   'registrar_approved', 'under_review', 'documents_verified', 'returned',
 ];
@@ -327,6 +372,12 @@ export const DECISION_CHECKS = {
     + 'somebody simply disagreed with.',
   'not-decided': 'This application has not been decided, so there is nothing to look at again. It '
     + 'is already on the desk.',
+  'withdrawal-needs-a-reason': 'A withdrawal needs a short note saying what happened, so that it '
+    + 'is never read later as a refusal by the University.',
+  'nothing-to-withdraw-from': 'This application is already closed, so there is nothing to '
+    + 'withdraw from.',
+  'not-issued': 'Only an issued admission can be enrolled. A student cannot take up a place the '
+    + 'University has not yet offered them.',
   'return-needs-an-office': 'A return has to name the office it goes back to. Choose Admissions, '
     + 'the Registrar or Finance — a return that names nowhere leaves the application sitting with '
     + 'nobody, which is the thing it replaced.',
@@ -556,6 +607,18 @@ export const ADMISSION_DESKS = {
     office: 'Office of Academic Affairs',
     states: ['admission_issued', 'approved', 'conditional', 'rejected', 'returned'],
   },
+  /**
+   * The Registrar: admissions that were issued, and what became of them.
+   *
+   * The fifth stage. `enrolled` is listed alongside `admission_issued` so the
+   * desk can show what it has already recorded — an offer taken up looks
+   * exactly like one still outstanding if the screen only shows the queue.
+   */
+  enrolment: {
+    label: 'Awaiting enrolment',
+    office: 'Office of the Registrar',
+    states: ['admission_issued', 'enrolled'],
+  },
   /** The Finance and Registrar desks' shared record of what is finished with. */
   processed: {
     label: 'Processed',
@@ -600,10 +663,6 @@ export const NOT_ON_ANY_DESK: Record<string, string> = {
 export const NOT_YET_REACHABLE: Record<string, string> = {
   // THE JOURNEY HAS NO END. An admitted student never becomes an enrolled one,
   // because the Registrar's enrolment step does not exist.
-  enrolled:
-    'The Registrar has no enrolment screen, so an issued admission is the last state a student '
-    + 'can reach. Nothing can record that they actually took up the place.',
-
   under_review:
     'The Admissions Office has no control that marks an application as being examined, so a '
     + 'record it is working on is indistinguishable from one nobody has opened.',
@@ -617,9 +676,6 @@ export const NOT_YET_REACHABLE: Record<string, string> = {
     'Finance works from `applicant`, which already means the fee is unconfirmed. This state '
     + 'says the same thing twice and nothing writes it.',
 
-  withdrawn:
-    'An applicant who withdraws is handled by the Registrar declining or deferring. There is no '
-    + 'control for a withdrawal the applicant themselves initiates.',
 };
 
 /** The states one desk lists. */
