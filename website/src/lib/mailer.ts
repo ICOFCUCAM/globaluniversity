@@ -28,7 +28,7 @@
 // ---------------------------------------------------------------------------
 
 import nodemailer from 'nodemailer';
-import { UNIVERSITY } from '@/lib/constants';
+import { UNIVERSITY, OFFICE_REPLY_TO } from '@/lib/constants';
 
 export interface MailAttachment {
   filename: string;
@@ -193,7 +193,19 @@ export async function send(request: MailRequest): Promise<MailResult> {
     await transporter.sendMail({
       from: `"${request.fromName ?? UNIVERSITY.name}${request.office ? ` — ${request.office}` : ''}" <${MAIL_FROM || SMTP_USER}>`,
       to: request.to,
-      replyTo: request.replyTo,
+      // ---------------------------------------------------------------------
+      // THE OFFICE'S OWN ADDRESS, WHERE IT HAS ONE.
+      //
+      // The From address is fixed by the account the mail server
+      // authenticates, so every office sent from the same place and every
+      // reply arrived in the same inbox regardless of who had written. This is
+      // the field that decides where an answer goes.
+      //
+      // An explicit replyTo still wins: the application acknowledgement sets
+      // the APPLICANT's address so the admissions inbox can reply to them
+      // directly, and an office default must not override that.
+      // ---------------------------------------------------------------------
+      replyTo: request.replyTo ?? (request.office ? OFFICE_REPLY_TO[request.office] : undefined),
       subject: request.subject,
       text: request.text,
       html: request.html ?? asReadableHtml(request.text),
