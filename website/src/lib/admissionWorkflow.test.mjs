@@ -57,6 +57,7 @@ const MIGRATION_FILES = [
   '027_the_states_the_pipeline_already_wrote.sql',
   '032_forwarding_and_returning.sql',
   '033_reevaluation.sql',
+  '034_enrolment_and_withdrawal.sql',
 ].map((f) => readFileSync(join(here, '../../docs/migrations/', f), 'utf8'));
 
 const migration = MIGRATION_FILES.join('\n');

@@ -250,6 +250,9 @@ export type ViewType =
   | 'studio'
   | 'admissions-office'
   | 'academic-admissions'
+  // The Registrar's fifth stage. `enrolled` was declared in migration 024 and
+  // unreachable until this screen existed.
+  | 'enrolment'
   | 'programme-resources'
   | 'dashboard' 
   | 'students' 
