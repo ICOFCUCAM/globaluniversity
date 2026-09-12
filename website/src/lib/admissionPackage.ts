@@ -251,7 +251,23 @@ export function admissionPackageInputFor(
     programme: [app.degree_type, app.program].filter(Boolean).join(' — ') || 'your programme',
     faculty: app.faculty || opts.programme?.faculty || UNIVERSITY.name,
     level: opts.programme?.level ?? app.degree_type ?? '',
-    campus: app.campus || 'Buea',
+    // ---------------------------------------------------------------------
+    // NEVER `|| 'Buea'`, WHICH IS WHAT THIS SAID.
+    //
+    // An application that names no campus got Buea printed on its admission
+    // letter — a place the University had not said the student would attend,
+    // on a formal document, invented by a default. For a student admitted to
+    // study online it was simply false, and it sat directly under "Mode of
+    // study: Online" contradicting it.
+    //
+    // Where the record names a campus, that is what the letter says. Where it
+    // does not and the study is online, the campus line reads Online, which is
+    // where the study takes place. Where it does not and the study involves
+    // attendance, the row is omitted entirely — `row()` drops an empty value —
+    // because a blank is honest and a guess is not.
+    // ---------------------------------------------------------------------
+    campus: app.campus
+      || (modeOf(opts.programme?.modeLabel ?? app.mode ?? '') === 'online' ? 'Online' : ''),
     // THE DELIVERY MODE THE UNIVERSITY APPROVED, from the catalogue rather than
     // from a default. It was `student.mode || 'On campus'`, so a programme
     // taught at a distance produced a letter telling the holder they were
