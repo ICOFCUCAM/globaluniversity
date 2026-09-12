@@ -1,43 +1,4 @@
 -- ===========================================================================
--- ICOF GLOBAL UNIVERSITY — MIGRATIONS 029, IN ORDER
---
--- GENERATED FILE. DO NOT EDIT.
---   Generator: scripts/build-migration-run.mjs
---   Rebuild:   node scripts/build-migration-run.mjs --out=RUN-OUTSTANDING.sql 029
---
--- ---------------------------------------------------------------------------
--- HOW TO RUN IT
---
--- Supabase SQL editor: paste the whole file and run once.
--- psql:                psql "<connection string>" -f docs/migrations/RUN-OUTSTANDING.sql
---
--- Every migration in it is idempotent and destroys nothing, so running it twice
--- is safe. It is NOT wrapped in a transaction: each file is written to run
--- statement by statement, and wrapping them would mean a failure in the last
--- one silently undid the first.
---
--- ---------------------------------------------------------------------------
--- WHAT TO EXPECT IN THE OUTPUT
---
--- Some of these raise NOTICE deliberately — they report on the state they
--- found rather than changing it silently. A notice is information, not a
--- warning. An ERROR is a real failure and stops the run.
---
--- ---------------------------------------------------------------------------
--- AFTERWARDS
---
--- Run docs/migrations/VERIFY.sql to see what landed.
--- ===========================================================================
-
--- ===========================================================================
--- ===========================================================================
---
---   029_the_coverage_view_is_for_operators_only.sql
---
--- ===========================================================================
--- ===========================================================================
-
--- ===========================================================================
 -- 029 — THE STATUS COVERAGE VIEW IS AN OPERATOR'S TOOL, NOT A PUBLIC ONE
 --
 -- Run after 028. Idempotent; destroys nothing. Safe on a live database.
@@ -169,4 +130,3 @@ select
   has_table_privilege('service_role',  'public.' || v.view_name, 'SELECT') as service_role_may_read
 from (values ('admission_status_coverage'), ('exam_sessions_mine')) as v(view_name)
 where to_regclass('public.' || v.view_name) is not null;
-

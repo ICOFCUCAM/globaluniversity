@@ -192,6 +192,17 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
     cannotSee: "select prosrc like '%greatest(student_number_counters.next_value%' as has_028 "
       + "from pg_proc where proname = 'reserve_student_number';  -- it should be true",
   },
+  {
+    file: '029_the_coverage_view_is_for_operators_only.sql',
+    what: 'Takes the status coverage view off the public API. It reads past row-level security '
+      + 'and carries no filter, so any signed-in account could read the shape of the whole '
+      + 'admissions pipeline through it.',
+    // A revoke changes no table and no column. Worse, the probe reads through
+    // the service role — which still has access on purpose — so it would come
+    // back applied whether the revoke had run or not.
+    cannotSee: "select has_table_privilege('authenticated', "
+      + "'public.admission_status_coverage', 'SELECT');  -- it should be false",
+  },
 ];
 
 /** What a probe came back as. */
