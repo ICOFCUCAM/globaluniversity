@@ -41,6 +41,8 @@ export const HIERARCHY: UserRole[] = [
   'admissions-officer',
   'library-staff',
   'student-affairs',
+  'hr-officer',
+  'hr-administrator',
   'student',
   'applicant',
 ];
@@ -477,6 +479,35 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
     'admit-student', 'reject-application', 'defer-admission', 'view-admitted-students',
   ],
 
+  // ---------------------------------------------------------------------
+  // THE TWO HR OFFICES.
+  //
+  // NEITHER CAN DRAFT, APPROVE AND ISSUE. That is the whole answer to "nobody
+  // should be able to click a button and manufacture an official appointment":
+  // the Officer prepares and generates, the Administrator issues and manages
+  // the employee record, and the APPROVAL is the Registrar's — a third person
+  // again. On top of that the database refuses an approval by whoever drafted
+  // it, whatever role they hold.
+  //
+  // 'set-remuneration' is absent from the Officer and present for neither by
+  // default. Deciding what somebody is paid is not the same act as recording
+  // that they were appointed, and an HR assistant who may do the second should
+  // not thereby do the first.
+  // ---------------------------------------------------------------------
+  'hr-officer': [
+    'draft-appointment',
+    'issue-appointment-letter',
+  ],
+
+  'hr-administrator': [
+    'draft-appointment',
+    'issue-appointment-letter',
+    // The employee record, which follows the letter and never precedes it —
+    // 042 refuses a staff row whose appointment has not been issued.
+    'create-student-record',
+    'set-remuneration',
+  ],
+
   'library-staff': ['manage-library'],
   'student-affairs': ['manage-hostel', 'manage-student-welfare'],
 
@@ -627,6 +658,8 @@ export const roleLabels: Record<UserRole, string> = {
   hod: 'Head of Department',
   'programme-coordinator': 'Programme Coordinator',
   'admissions-officer': 'Admissions Officer',
+  'hr-officer': 'HR Officer',
+  'hr-administrator': 'HR Administrator',
   'library-staff': 'Library Staff',
   'student-affairs': 'Student Affairs',
   applicant: 'Applicant',

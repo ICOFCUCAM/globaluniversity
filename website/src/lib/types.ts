@@ -33,6 +33,20 @@ export type UserRole =
   | 'admissions-officer'
   | 'library-staff'
   | 'student-affairs'
+  // ---------------------------------------------------------------------
+  // THE TWO HR OFFICES, and they exist because they hold different powers.
+  //
+  // An HR Officer prepares an appointment and generates its letter. An HR
+  // Administrator issues it and manages the employee record. Neither approves:
+  // that is the Registrar's, and the database refuses an approval by whoever
+  // drafted it regardless of anybody's role.
+  //
+  // Splitting them is the whole answer to "nobody should be able to click a
+  // button and manufacture an official appointment": there is no single role
+  // that can draft, approve and issue.
+  // ---------------------------------------------------------------------
+  | 'hr-officer'
+  | 'hr-administrator'
   | 'student'
   | 'applicant'
   // Retained: 'academic-office' is used by the timetable and course-allocation

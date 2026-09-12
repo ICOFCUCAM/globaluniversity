@@ -707,3 +707,102 @@ export function boardStatus(a: Appointment): string {
   if (a.status === 'approved' || a.status === 'letter_generated') return 'Letter ready';
   return STATE_LABELS[a.status as AppointmentState] ?? String(a.status ?? '');
 }
+
+// ---------------------------------------------------------------------------
+// 9. THE RECEIPT, AND THE TEMPLATE THAT PRODUCED THE LETTER
+// ---------------------------------------------------------------------------
+
+export interface LetterState {
+  content_hash?: string | null;
+  queued_at?: string | null;
+  delivery?: string | null;
+  attempts?: number | null;
+  delivery_detail?: string | null;
+}
+
+export interface ReceiptLine {
+  label: string;
+  done: boolean;
+  /** Set where this step failed rather than merely not having happened. */
+  failed?: boolean;
+  note?: string;
+}
+
+/**
+ * The four-line receipt: issued, archived, queued, delivered.
+ *
+ * FOUR LINES BECAUSE THEY ARE FOUR FACTS, and they come apart. A letter can be
+ * issued and not archived (the seal failed), archived and not queued (nobody
+ * pressed send), queued and not delivered (the mail server refused). One tick
+ * covering all four would be true when three of them had happened.
+ *
+ * A FAILED EMAIL IS NOT AN UNISSUED APPOINTMENT. The University appointed
+ * somebody; the mail server being unreachable is not a change of mind. The
+ * failure shows on its own line, the appointment above it still reads issued,
+ * and the letter is retried rather than reversed.
+ */
+export function receiptFor(
+  a: Appointment & { issued_at?: string | null },
+  letter: LetterState | null | undefined,
+): ReceiptLine[] {
+  const l = letter ?? {};
+  const failed = l.delivery === 'failed';
+  return [
+    { label: 'Issued', done: Boolean(a.issued_at) },
+    {
+      label: 'Document archived',
+      done: Boolean(l.content_hash),
+      note: l.content_hash ? undefined
+        : 'The letter is stored but carries no hash, so the archive cannot prove it is '
+          + 'the document that was sent.',
+    },
+    { label: 'Email queued', done: Boolean(l.queued_at) },
+    {
+      label: 'Email delivered',
+      done: l.delivery === 'sent',
+      failed,
+      note: failed
+        ? `Failed after ${l.attempts ?? 0} attempt(s): ${l.delivery_detail ?? 'no reason given'}. `
+          + 'The appointment stands — this is retried, not reversed.'
+        : undefined,
+    },
+  ];
+}
+
+export interface Template {
+  id?: string;
+  kind?: string | null;
+  version?: number | null;
+  name?: string | null;
+  status?: string | null;
+  created_by?: string | null;
+  activated_by?: string | null;
+}
+
+export const TEMPLATE_STATUSES = ['draft', 'active', 'retired'] as const;
+
+/**
+ * Whether this person may activate this template.
+ *
+ * REFUSES THE AUTHOR BY NAME. A template is the words the University says in
+ * every letter of its kind from now on, so this is the second-pair-of-eyes rule
+ * at its largest scale: it applies to everybody appointed afterwards, not to
+ * one person.
+ */
+export function canActivateTemplate(t: Template, callerId: string): boolean {
+  return t.status === 'draft' && t.created_by !== callerId;
+}
+
+/** Whether a template\'s wording may still be changed. */
+export function canEditTemplate(t: Template): boolean {
+  return t.status === 'draft';
+}
+
+/**
+ * The document types with no active template, which is the work outstanding
+ * before HR can generate that kind of letter at all.
+ */
+export function typesWithoutTemplate(templates: Template[]): DocumentType[] {
+  const active = new Set(templates.filter((t) => t.status === 'active').map((t) => t.kind));
+  return DOCUMENT_TYPES.filter((k) => !active.has(k));
+}

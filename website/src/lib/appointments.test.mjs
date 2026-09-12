@@ -473,5 +473,171 @@ console.log('\nThe letter refuses an incomplete record rather than printing a bl
     })).html.includes('Remuneration'), false);
 }
 
+console.log('\nThe receipt is four facts, and they come apart\n');
+
+{
+  // A letter can be issued and not archived (the seal failed), archived and
+  // not queued (nobody pressed send), queued and not delivered (the server
+  // refused). One tick covering all four would be true when three happened.
+  const issued = { ...complete, issued_at: '2026-09-12T09:00:00Z' };
+
+  const nothing = A.receiptFor(issued, null);
+  check('four lines', nothing.map((r) => r.label),
+    ['Issued', 'Document archived', 'Email queued', 'Email delivered']);
+  check('issued is done and nothing else is',
+    nothing.map((r) => r.done), [true, false, false, false]);
+
+  const done = A.receiptFor(issued, {
+    content_hash: 'a'.repeat(64), queued_at: '2026-09-12T09:01:00Z', delivery: 'sent',
+  });
+  check('all four when all four have happened', done.map((r) => r.done),
+    [true, true, true, true]);
+
+  // A FAILED EMAIL IS NOT AN UNISSUED APPOINTMENT. The University appointed
+  // somebody; the mail server being unreachable is not a change of mind.
+  const bounced = A.receiptFor(issued, {
+    content_hash: 'a'.repeat(64), queued_at: '2026-09-12T09:01:00Z',
+    delivery: 'failed', attempts: 3, delivery_detail: 'Connection refused',
+  });
+  check('the failure is on its own line', bounced[3].failed, true);
+  check('…and the appointment above it still reads issued', bounced[0].done, true);
+  check('…and it says it will be retried, not reversed',
+    /retried, not reversed/.test(bounced[3].note ?? ''), true);
+  check('…and says how many attempts and why',
+    /3 attempt\(s\): Connection refused/.test(bounced[3].note ?? ''), true);
+
+  // AN ARCHIVE WITH NO HASH CANNOT PROVE ITSELF, and the line says so rather
+  // than showing a tick for something that was only half done.
+  const noHash = A.receiptFor(issued, { queued_at: 'x', delivery: 'sent' });
+  check('an unhashed archive is not ticked', noHash[1].done, false);
+  check('…and explains what is missing',
+    /cannot prove it is the document that was sent/.test(noHash[1].note ?? ''), true);
+}
+
+console.log('\nNobody activates the template they wrote\n');
+
+{
+  // A template is the words the University says in every letter of its kind
+  // from now on — the second-pair-of-eyes rule at its largest scale, because
+  // it applies to everybody appointed afterwards.
+  const draft = { status: 'draft', created_by: 'alice' };
+  check('the author cannot activate it', A.canActivateTemplate(draft, 'alice'), false);
+  check('somebody else can', A.canActivateTemplate(draft, 'bob'), true);
+  check('an active one is not activated again',
+    A.canActivateTemplate({ status: 'active', created_by: 'alice' }, 'bob'), false);
+
+  // AN ACTIVE TEMPLATE'S WORDING IS FIXED. Editing the words that produced a
+  // letter somebody is holding is the same fault as editing the letter, one
+  // step removed and harder to see.
+  check('a draft can still be worded', A.canEditTemplate({ status: 'draft' }), true);
+  check('an active one cannot', A.canEditTemplate({ status: 'active' }), false);
+  check('nor can a retired one', A.canEditTemplate({ status: 'retired' }), false);
+}
+
+console.log('\nAnd the work outstanding before HR can issue each kind\n');
+
+{
+  check('with nothing set up, every kind is outstanding',
+    A.typesWithoutTemplate([]).length, 11);
+  check('an active template removes its kind',
+    A.typesWithoutTemplate([{ kind: 'promotion', status: 'active' }]).includes('promotion'),
+    false);
+  // A DRAFT IS NOT A TEMPLATE YET. Counting it would report the work as done
+  // while HR still cannot generate the letter.
+  check('a draft does not count',
+    A.typesWithoutTemplate([{ kind: 'promotion', status: 'draft' }]).includes('promotion'),
+    true);
+  check('and neither does a retired one',
+    A.typesWithoutTemplate([{ kind: 'promotion', status: 'retired' }]).includes('promotion'),
+    true);
+}
+
+console.log('\nAnd 044 holds the same rules\n');
+
+{
+  const sql = readFileSync(
+    join(here, '../../docs/migrations/044_document_templates_and_the_letters_tied_to_them.sql'),
+    'utf8');
+
+  check('nobody activates what they wrote, in the database',
+    /document_templates_second_pair_of_eyes/.test(sql), true);
+  check('one active version per kind',
+    /document_templates_one_active_idx/.test(sql), true);
+  check('an active template cannot be reworded',
+    /refuse_active_template_edit/.test(sql), true);
+
+  // THE DOROTHY RULE. Asked why a letter says what it says, the only answer
+  // without this is "the template used to be different".
+  check('a template that issued a letter cannot be deleted',
+    /template_id uuid references document_templates \(id\) on delete restrict/.test(sql), true);
+
+  // AND THE FAILURE PATH TOUCHES NOTHING IT SHOULD NOT.
+  check('no path in 044 changes an appointment status',
+    /update appointments\s+set status/.test(sql), false);
+  check('a letter that failed to send is in an outbox',
+    /appointment_letters_outbox/.test(sql), true);
+
+  for (const t of A.DOCUMENT_TYPES) {
+    check(`the template registry knows '${t}'`, sql.includes(`'${t}'`), true);
+  }
+}
+
+console.log('\nNobody can draft, approve and issue an appointment alone\n');
+
+{
+  const o = join(cache, 'rolesForAppointments.mjs');
+  execFileSync('npx', [
+    'esbuild', join(here, 'roles.ts'), '--bundle', '--format=esm', '--platform=node',
+    `--outfile=${o}`, '--log-level=error', `--alias:@=${join(here, '..')}`,
+  ]);
+  const R = await import(o);
+
+  // THE WHOLE ANSWER to "nobody should be able to click a button and
+  // manufacture an official appointment". Checked as a property of the matrix
+  // rather than asserted role by role, so a capability granted carelessly to
+  // some future role fails here rather than in production.
+  // EVERY ROLE, from the one map that must cover all of them. `HIERARCHY`
+  // deliberately omits superadmin and admin — they sit outside it — so a scan
+  // over that would have reported the separation as holding while missing the
+  // two roles most able to break it.
+  const everyRole = Object.keys(R.roleLabels);
+  check('the scan covers every role', everyRole.length > 15, true);
+
+  const canDoAll = everyRole.filter((role) =>
+    R.can(role, 'draft-appointment')
+    && R.can(role, 'authorize-appointment')
+    && R.can(role, 'issue-appointment-letter'));
+
+  // Only the two system roles, and they are the roles that by definition hold
+  // everything — the separation that protects the University there is the
+  // DATABASE refusing an approval by the drafter, which it does regardless of
+  // rank.
+  check('only the system roles hold all three', canDoAll.sort(), ['admin', 'superadmin']);
+
+  check('an HR Officer prepares and generates but cannot approve', [
+    R.can('hr-officer', 'draft-appointment'),
+    R.can('hr-officer', 'issue-appointment-letter'),
+    R.can('hr-officer', 'authorize-appointment'),
+  ], [true, true, false]);
+
+  // AND CANNOT DECIDE WHAT SOMEBODY IS PAID. Recording that somebody was
+  // appointed and deciding their salary are different acts.
+  check('…and cannot set a salary', R.can('hr-officer', 'set-remuneration'), false);
+
+  check('an HR Administrator issues and manages the record but cannot approve either', [
+    R.can('hr-administrator', 'issue-appointment-letter'),
+    R.can('hr-administrator', 'create-student-record'),
+    R.can('hr-administrator', 'authorize-appointment'),
+  ], [true, true, false]);
+
+  // A STUDENT CANNOT TOUCH ANY OF IT. The obvious case, asserted because it is
+  // the one a mistake in the matrix would quietly grant.
+  for (const cap of ['draft-appointment', 'authorize-appointment',
+    'issue-appointment-letter', 'set-remuneration']) {
+    check(`a student holds no ${cap}`, R.can('student', cap), false);
+    check(`nor does an applicant`, R.can('applicant', cap), false);
+  }
+}
+
 console.log(failures === 0 ? '\nAll appointment checks passed.' : `\n${failures} check(s) failed.`);
 process.exit(failures === 0 ? 0 : 1);

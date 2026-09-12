@@ -566,7 +566,20 @@ begin
     end if;
 
     -- …but recording that it was delivered is not editing it.
-    update appointment_letters set delivery = 'sent', attempts = 1 where id = l_id;
+    --
+    -- WRITTEN TO MATCH WHICHEVER SCHEMA IS PRESENT. 044 later requires a
+    -- delivered letter to record WHEN, and a letter with attempts to record
+    -- when they happened — so this update was refused on any second run of the
+    -- bundle, and could not name the columns unconditionally because on a
+    -- FIRST run they do not exist yet. Found by running RUN-ALL.sql twice.
+    if exists (select 1 from information_schema.columns
+                where table_schema = 'public' and table_name = 'appointment_letters'
+                  and column_name = 'delivered_at') then
+      execute 'update appointment_letters set delivery = ''sent'', attempts = 1, '
+              || 'delivered_at = now(), last_attempt_at = now() where id = $1' using l_id;
+    else
+      update appointment_letters set delivery = 'sent', attempts = 1 where id = l_id;
+    end if;
 
     -- ---- TWO LETTERS CANNOT BOTH BE THE CURRENT ONE -----------------------
     refused := false;

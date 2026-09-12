@@ -340,6 +340,14 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
     table: 'appointment_letters',
     column: 'content_hash',
   },
+  {
+    file: '044_document_templates_and_the_letters_tied_to_them.sql',
+    what: 'A template registry for the eleven HR document types, each versioned, one active at '
+      + 'a time, activated by somebody other than whoever wrote it. Every issued letter records '
+      + 'which template version produced it, and that version can then never be deleted — a '
+      + 'document issued in 2026 was produced by the wording of 2026.',
+    table: 'document_templates',
+  },
 ];
 
 /** What a probe came back as. */
