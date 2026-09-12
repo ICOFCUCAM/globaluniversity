@@ -108,6 +108,61 @@ console.log('\nThe four outcomes this desk can produce are each visible somewher
   }
 }
 
+console.log('\nEvery state a desk shows can actually be reached\n');
+
+// ---------------------------------------------------------------------------
+// THE MIRROR OF THE INVISIBILITY DEFECT.
+//
+// There, records existed and no screen asked for them. Here, a screen asks and
+// no record can ever arrive: a state the vocabulary declares, a desk lists, and
+// no code path writes. The queue is permanently empty and nothing says why.
+//
+// Six were found this way, and the worst is `ready_for_academic_review` — the
+// state the five-stage design puts on the Head of Academic Affairs' desk.
+// Nothing produces it. Applications reach that desk only through `fee_paid`
+// and `documents_required`, the older pipeline's states, which DECIDABLE_FROM
+// carries as a compatibility measure. The doorway into the final stage was
+// never built, and the desk worked anyway, so nobody noticed.
+//
+// An unreachable state is not automatically a bug — it may be a step not yet
+// built — but it must be DECLARED as one rather than sit silently.
+// ---------------------------------------------------------------------------
+{
+  const srcDir = new URL('../', import.meta.url).pathname;
+
+  // Literal writes: `status: 'x'` anywhere in the application.
+  const literals = new Set(
+    (execFileSync('grep', [
+      '-rhoE', "status: '[a-z_]+'", '--include=*.ts', '--include=*.tsx', srcDir,
+    ]).toString().match(/'[a-z_]+'/g) ?? []).map((s) => s.replace(/'/g, '')),
+  );
+
+  // AND THE ONES WRITTEN THROUGH A VARIABLE. The decision route writes
+  // `status: newStatus`, where newStatus is ACADEMIC_DECISIONS[d].becomes — so
+  // a scan for literals alone would report all four outcomes as unreachable.
+  const route = readFileSync(
+    join(srcDir, 'app/api/admissions/decision/route.ts'), 'utf8',
+  );
+  if (/status: newStatus/.test(route)) {
+    for (const d of Object.values(W.ACADEMIC_DECISIONS)) literals.add(d.becomes);
+  }
+
+  check('the scan found states being written', literals.size > 5, true);
+
+  const unreachable = W.ADMISSION_STATES.filter((s) => !literals.has(s));
+  check('every unreachable state is declared, with what is missing',
+    unreachable.filter((s) => !(s in W.NOT_YET_REACHABLE)), []);
+
+  // AND NOTHING IS LISTED THAT IS ACTUALLY REACHABLE. A stale entry here would
+  // describe a gap that has since been closed, which is its own kind of lie.
+  check('nothing is declared unreachable that code can in fact produce',
+    Object.keys(W.NOT_YET_REACHABLE).filter((s) => literals.has(s)), []);
+
+  const thin = Object.entries(W.NOT_YET_REACHABLE)
+    .filter(([, why]) => String(why).trim().length < 40).map(([s]) => s);
+  check('each one says what is missing rather than merely that it is', thin, []);
+}
+
 console.log('\nEvery state a desk shows has something to render\n');
 
 // ---------------------------------------------------------------------------

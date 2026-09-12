@@ -443,6 +443,58 @@ export const NOT_ON_ANY_DESK: Record<string, string> = {
     + 'been handed in.',
 };
 
+// ---------------------------------------------------------------------------
+// STATES THE VOCABULARY DECLARES AND NO CODE PRODUCES
+// ---------------------------------------------------------------------------
+//
+// A state on a desk that nothing ever writes is a queue that is empty for a
+// reason nobody can see. It is the mirror of the invisibility defect: there,
+// records existed and no screen asked for them; here, screens ask and no
+// record can ever arrive.
+//
+// These are written down rather than removed, because each one names a step of
+// the University's own five-stage design that has not been built yet. Removing
+// them would erase the gap; declaring them makes it countable, and
+// admissionDesks.test.mjs fails on any unreachable state that is not listed
+// here with a reason.
+// ---------------------------------------------------------------------------
+export const NOT_YET_REACHABLE: Record<string, string> = {
+  // THE MOST CONSEQUENTIAL ONE. This is the state the five-stage design puts
+  // on the Head of Academic Affairs' desk, and nothing produces it. Records
+  // reach that desk only because `fee_paid` and `documents_required` are in
+  // DECIDABLE_FROM as a compatibility measure — the older pipeline's states.
+  // The Admissions Office still admits directly through /api/admissions/admit
+  // instead of forwarding for an academic decision, so the doorway into the
+  // final stage was never built.
+  ready_for_academic_review:
+    'Nothing forwards an application for academic review. The Admissions Office still admits '
+    + 'directly through the older route, so records reach the deciding desk through the '
+    + 'compatibility states rather than through the stage that was designed for it.',
+
+  // THE JOURNEY HAS NO END. An admitted student never becomes an enrolled one,
+  // because the Registrar's enrolment step does not exist.
+  enrolled:
+    'The Registrar has no enrolment screen, so an issued admission is the last state a student '
+    + 'can reach. Nothing can record that they actually took up the place.',
+
+  under_review:
+    'The Admissions Office has no control that marks an application as being examined, so a '
+    + 'record it is working on is indistinguishable from one nobody has opened.',
+
+  documents_verified:
+    'Verification is recorded only by its absence — an application stops being '
+    + '`documents_required` — so there is no positive statement that the documents were checked '
+    + 'and accepted.',
+
+  fee_pending:
+    'Finance works from `applicant`, which already means the fee is unconfirmed. This state '
+    + 'says the same thing twice and nothing writes it.',
+
+  withdrawn:
+    'An applicant who withdraws is handled by the Registrar declining or deferring. There is no '
+    + 'control for a withdrawal the applicant themselves initiates.',
+};
+
 /** The states one desk lists. */
 export function statesForDesk(desk: AdmissionDeskKey): AdmissionState[] {
   return [...ADMISSION_DESKS[desk].states];
