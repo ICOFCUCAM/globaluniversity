@@ -166,6 +166,23 @@ export const OPERATIONAL_CAPABILITIES = [
   'sit-examination',
   'compose-social-post',
   'publish-social-post',
+  // ---------------------------------------------------------------------
+  // ANNOUNCEMENTS — the institution speaking on its own noticeboard.
+  //
+  // Three, not one, and the split is the same one 005 requires of a
+  // certificate design and 014 of a social post. The Announcements page used
+  // to check `role === 'admin' || role === 'lecturer'` inline, which meant
+  // every lecturer in the University could put a notice on the institution's
+  // board alone and instantly, with nobody named.
+  //
+  // RELEASING OUTWARD IS NOT HERE. Sending an announcement to Facebook
+  // requires 'publish-social-post' as well, on purpose: this new door must
+  // not become a way round the authority that already governs the
+  // University's outward voice.
+  // ---------------------------------------------------------------------
+  'compose-announcement',
+  'approve-announcement',
+  'publish-announcement',
   // APPROVING IS NOT PUBLISHING, and they are separate on purpose. Migration
   // 014 refuses to let an author approve their own post — the same separation
   // 005 required of certificate designs and 009 of grades. An announcement is

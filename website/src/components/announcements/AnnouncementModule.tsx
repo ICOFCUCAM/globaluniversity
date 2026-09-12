@@ -1,179 +1,531 @@
 'use client';
 
-// Announcements — university-wide and course notices.
-// Stored on the shared documents table (document_type 'announcement')
-// until a dedicated table is provisioned; payload is a data-URL JSON.
-import React, { useEffect, useState } from 'react';
-import { write } from '@/lib/write';
-import { listRecords, saveRecord, updateRecord, deleteRecord, type ModuleRecord } from '@/lib/moduleStore';
-import { useAuth } from '@/contexts/AuthContext';
-import { Megaphone, Plus, Pin, Trash2 } from 'lucide-react';
+// ---------------------------------------------------------------------------
+// COMMUNICATIONS — the University's own noticeboard, and what leaves it.
+//
+// ---------------------------------------------------------------------------
+// WHAT THIS REPLACES
+// ---------------------------------------------------------------------------
+//
+// A noticeboard with no table. A notice was a row on `documents` with its text
+// packed into a data-URL, posted by anybody whose role was `admin` or
+// `lecturer`, with no clearance, no author on the record and no history — so a
+// notice edited after publication simply became a different notice and what the
+// University had said on the Tuesday was gone.
+//
+// ---------------------------------------------------------------------------
+// THE TWO THINGS THIS SCREEN KEEPS APART
+// ---------------------------------------------------------------------------
+//
+// AUDIENCE is who the announcement is addressed to. DESTINATION is where it is
+// published. They look alike on a form and they are not the same question: a
+// notice addressed to Staff can go to the portal alone, and a notice addressed
+// to the Public and sent nowhere public is a notice nobody will ever see. The
+// form asks both, separately, in that order.
+//
+// AND THE PORTAL IS NOT A CHOICE. It is drawn ticked and disabled, because it
+// is where the announcement IS — the rest are copies sent elsewhere. A tick box
+// somebody could clear would allow an announcement published to Facebook and
+// nowhere in the University's own system, which is the arrangement this
+// replaces: the institution's canonical record living on somebody else's
+// server.
+// ---------------------------------------------------------------------------
 
-interface Notice {
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
+import { can } from '@/lib/roles';
+import { BTN_PRIMARY, BTN_SECONDARY, INPUT, LABEL, FOCUS } from '@/lib/portalTheme';
+import {
+  Megaphone, Plus, Loader2, Check, X, Send, Eye, AlertTriangle, Globe,
+} from 'lucide-react';
+import {
+  CATEGORIES, CATEGORY_LABELS, AUDIENCES, AUDIENCE_LABELS,
+  DESTINATIONS, DESTINATION_KEYS, CANONICAL_DESTINATION,
+  STATE_LABELS, describeDelivery, objectionsTo, blocks, reachesTheWorld,
+  type Category, type DestinationKey, type DeliveryState, type AnnouncementState,
+} from '@/lib/announcements';
+
+interface Row {
   id: string;
   title: string;
   body: string;
-  audience: string;
-  pinned: boolean;
-  posted: string;
+  category: string;
+  audiences: string[];
+  status: AnnouncementState;
+  author_id: string;
+  approved_by: string | null;
+  published_at: string | null;
+  created_at: string;
+  image_alt: string | null;
 }
 
-const AUDIENCES = ['All', 'Students', 'Lecturers', 'Faculty of Theology', 'Faculty of Education', 'Engineering & Technology', 'GIBMAS'];
-
-// `pinned` used to be carried in documents.verified — a column that means "the
-// Registry has confirmed this document is genuine". Borrowing it to mean
-// "pinned to the top of the noticeboard" is the kind of reuse that is fine
-// until somebody writes a query about verified documents. It now lives in the
-// record's own body.
-function decode(r: ModuleRecord<Record<string, unknown>>): Notice {
-  const body = r.body as Record<string, unknown>;
-  return {
-    id: r.id,
-    posted: r.created_at,
-    title: String(body.title ?? r.title),
-    body: String(body.body ?? ''),
-    audience: String(body.audience ?? 'All'),
-    pinned: body.pinned === true,
-  };
+interface DestRow {
+  announcement_id: string;
+  destination: DestinationKey;
+  state: DeliveryState;
+  external_url: string | null;
 }
+
+// A SINGLE STRING LITERAL. Concatenating or interpolating a column list makes
+// supabase-js collapse the inferred type to GenericStringError[], and the
+// failure is silent — everything reads as an error object at runtime.
+// eslint-disable-next-line max-len
+const COLUMNS = 'id, title, body, category, audiences, status, author_id, approved_by, published_at, created_at, image_alt';
+
+const TABS = [
+  { key: 'all', label: 'All' },
+  { key: 'draft', label: 'Drafts' },
+  // NOT IN THE ORIGINAL SKETCH, AND IT IS THE ONE THAT MATTERS. Without a tab
+  // for what is waiting on somebody, a clearance is something you have to
+  // remember to go and look for — and a notice that nobody clears is a notice
+  // that never goes out, silently.
+  { key: 'submitted', label: 'Awaiting clearance' },
+  { key: 'scheduled', label: 'Scheduled' },
+  { key: 'published', label: 'Published' },
+] as const;
+
+type TabKey = (typeof TABS)[number]['key'];
 
 export default function AnnouncementModule() {
   const { user } = useAuth();
-  const isStaff = user?.role === 'admin' || user?.role === 'lecturer';
-  const [notices, setNotices] = useState<Notice[]>([]);
-  const [showNew, setShowNew] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [form, setForm] = useState({ title: '', body: '', audience: 'All' });
+  const mayCompose = can(user?.role, 'compose-announcement');
+  const mayClear = can(user?.role, 'approve-announcement');
+  const mayPublish = can(user?.role, 'publish-announcement');
+  const mayRelease = mayPublish && can(user?.role, 'publish-social-post');
 
-  async function load() {
-    const list = (await listRecords('announcements', 'announcement')).map(decode);
-    list.sort((a, b) => Number(b.pinned) - Number(a.pinned));
-    setNotices(list);
-  }
-  useEffect(() => {
-    load();
+  const [rows, setRows] = useState<Row[] | null>(null);
+  const [dests, setDests] = useState<DestRow[]>([]);
+  const [tab, setTab] = useState<TabKey>('all');
+  const [composing, setComposing] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState<{ tone: 'ok' | 'bad'; text: string } | null>(null);
+  const [open, setOpen] = useState<Row | null>(null);
+  const [reason, setReason] = useState('');
+
+  const load = useCallback(async () => {
+    const [{ data: a }, { data: d }] = await Promise.all([
+      supabase.from('announcements').select(COLUMNS)
+        .order('created_at', { ascending: false }).limit(200),
+      supabase.from('announcement_destinations')
+        .select('announcement_id, destination, state, external_url'),
+    ]);
+    setRows((a ?? []) as unknown as Row[]);
+    setDests((d ?? []) as unknown as DestRow[]);
   }, []);
 
-  async function post(e: React.FormEvent) {
-    e.preventDefault();
+  useEffect(() => { void load(); }, [load]);
+
+  async function act(payload: Record<string, unknown>) {
     setBusy(true);
-    const ok = await write(saveRecord({
-      module: 'announcements',
-      kind: 'announcement',
-      title: `${form.audience} · ${form.title}`,
-      body: { ...form, pinned: false },
-    }), 'post the announcement');
+    setNotice(null);
+    const { data: sess } = await supabase.auth.getSession();
+    const res = await fetch('/api/announcements', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${sess.session?.access_token ?? ''}`,
+      },
+      body: JSON.stringify(payload),
+    }).catch(() => null);
+    const json = await res?.json().catch(() => null);
     setBusy(false);
-    if (!ok) return;
-    setShowNew(false);
-    setForm({ title: '', body: '', audience: 'All' });
-    load();
+
+    if (!json?.ok) {
+      // THE SERVER'S OWN SENTENCE. It knows why far better than this component
+      // could guess, and "something went wrong" teaches nobody anything.
+      setNotice({
+        tone: 'bad',
+        text: json?.detail
+          ?? json?.objections?.map((o: { message: string }) => o.message).join(' ')
+          ?? json?.error ?? 'Nothing was recorded.',
+      });
+      return null;
+    }
+    setNotice({ tone: 'ok', text: json.detail ?? 'Done.' });
+    setReason('');
+    await load();
+    return json;
   }
 
-  const input =
-    'w-full px-3 py-2 bg-gray-50 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35';
+  const visible = useMemo(() => {
+    const list = rows ?? [];
+    if (tab === 'all') return list;
+    return list.filter((r) => r.status === tab);
+  }, [rows, tab]);
+
+  const destsFor = useCallback(
+    (id: string) => dests.filter((d) => d.announcement_id === id),
+    [dests],
+  );
+
+  if (composing) {
+    return (
+      <Compose
+        onCancel={() => setComposing(false)}
+        onDone={async (payload) => {
+          const r = await act(payload);
+          if (r) setComposing(false);
+        }}
+        busy={busy}
+        notice={notice}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="font-heading text-xl font-bold text-[#422e59] dark:text-[#e4dcf0]">Announcements</h2>
-          <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">
-            {isStaff ? 'Publish notices to the university community' : 'Notices from the university and your faculty'}
+          <h1 className="font-heading text-2xl font-bold text-[#422e59] dark:text-[#e9e2f2]">
+            Communications
+          </h1>
+          <p className="mt-1 max-w-2xl text-sm text-[#6b6076] dark:text-[#9c93ad]">
+            Publish the University’s announcements from one place. The portal is the record;
+            the networks are copies of it.
           </p>
         </div>
-        {isStaff && (
-          <button
-            onClick={() => setShowNew(true)}
-            className="flex items-center gap-2 rounded-xl bg-[#422e59] px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-purple-900/20 transition-colors hover:bg-[#322244]"
-          >
-            <Plus size={16} /> New Announcement
+        {mayCompose && (
+          <button onClick={() => { setComposing(true); setNotice(null); }} className={BTN_PRIMARY}>
+            <Plus size={15} /> New announcement
           </button>
         )}
+      </header>
+
+      {notice && (
+        <p className={`rounded-xl px-4 py-3 text-sm ${notice.tone === 'ok'
+          ? 'bg-emerald-50 text-emerald-900' : 'bg-red-50 text-red-900'}`}>
+          {notice.text}
+        </p>
+      )}
+
+      <div className="flex flex-wrap gap-1 border-b border-[#e8e2f0] dark:border-[#332b3d]">
+        {TABS.map((t) => {
+          const n = t.key === 'all'
+            ? (rows ?? []).length
+            : (rows ?? []).filter((r) => r.status === t.key).length;
+          return (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`-mb-px border-b-2 px-4 py-2.5 text-sm font-medium transition ${FOCUS} ${
+                tab === t.key
+                  ? 'border-[#422e59] text-[#422e59] dark:border-[#c9b6e6] dark:text-[#c9b6e6]'
+                  : 'border-transparent text-[#6b6076] hover:text-[#422e59]'
+              }`}
+            >
+              {t.label}
+              <span className="ml-2 text-xs opacity-60">{n}</span>
+            </button>
+          );
+        })}
       </div>
 
-      <div className="space-y-4">
-        {notices.length === 0 && (
-          <p className="rounded-2xl border-2 border-dashed border-[#ece7f4] bg-white p-10 text-center text-sm text-[#a49bb0] dark:text-[#7b7289]">
-            No announcements yet.
+      {rows === null && <p className="text-sm text-[#6b6076]">Loading…</p>}
+
+      {rows !== null && visible.length === 0 && (
+        <div className="rounded-2xl border border-dashed border-[#ded6c8] p-10 text-center
+                        dark:border-[#3d3349]">
+          <Megaphone size={22} className="mx-auto mb-3 text-[#a49bb0]" />
+          <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">
+            {tab === 'all'
+              ? 'Nothing has been announced yet.'
+              : `Nothing is ${TABS.find((t) => t.key === tab)?.label.toLowerCase()}.`}
           </p>
-        )}
-        {notices.map((n) => (
+        </div>
+      )}
+
+      <div className="space-y-4">
+        {visible.map((r) => (
           <article
-            key={n.id}
-            className={`rounded-2xl border bg-white p-6 shadow-sm ${
-              n.pinned ? 'border-[#e9c14a]' : 'border-[#ece7de] dark:border-[#2e2637]'
-            }`}
+            key={r.id}
+            className="rounded-2xl border border-[#e8e2f0] bg-white p-5 dark:border-[#332b3d]
+                       dark:bg-[#1c1823]"
           >
-            <div className="flex items-start gap-4">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f6f4fa] text-[#422e59]">
-                <Megaphone size={18} />
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="font-semibold text-[#33234a] dark:text-[#e4dcf0]">{n.title}</h3>
-                  {n.pinned && (
-                    <span className="rounded-full bg-[#f7dc79] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#422e59]">
-                      Pinned
-                    </span>
-                  )}
-                  <span className="rounded-full bg-[#f6f4fa] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#422e59]">
-                    {n.audience}
-                  </span>
-                </div>
-                <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">{n.body}</p>
-                <p className="mt-3 text-xs text-[#a49bb0] dark:text-[#7b7289]">
-                  Posted {new Date(n.posted).toLocaleDateString('en-GB', { dateStyle: 'medium' })}
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="font-heading text-base font-bold text-[#422e59] dark:text-[#e9e2f2]">
+                  {r.title}
+                </p>
+                <p className="mt-1 text-xs text-[#6b6076] dark:text-[#9c93ad]">
+                  {CATEGORY_LABELS[r.category as Category] ?? r.category}
+                  {' · '}
+                  {r.audiences?.map((a) => AUDIENCE_LABELS[a as keyof typeof AUDIENCE_LABELS] ?? a).join(', ')}
+                  {r.published_at
+                    ? ` · Published ${new Date(r.published_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`
+                    : ` · Started ${new Date(r.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`}
                 </p>
               </div>
-              {isStaff && (
-                <div className="flex shrink-0 gap-2">
-                  <button
-                    aria-label={n.pinned ? 'Unpin' : 'Pin'}
-                    onClick={async () => {
-                      await write(updateRecord(n.id, {
-                        body: { title: n.title, body: n.body, audience: n.audience, pinned: !n.pinned },
-                      }), n.pinned ? 'unpin the announcement' : 'pin the announcement');
-                      load();
-                    }}
-                    className={`rounded-lg p-2 ${n.pinned ? 'bg-[#f7dc79] text-[#422e59]' : 'bg-gray-100 text-[#6b6076] dark:text-[#9c93ad]'}`}
-                  >
-                    <Pin size={14} />
+              <span className="shrink-0 rounded-full bg-[#f2eee6] px-3 py-1 text-xs font-medium
+                               text-[#4a4155] dark:bg-[#2a2333] dark:text-[#c8c1d4]">
+                {STATE_LABELS[r.status] ?? r.status}
+              </span>
+            </div>
+
+            {/* WHERE IT ACTUALLY REACHED, per destination. One flag saying
+                "published" would be true when one network accepted it and five
+                refused, and the person who has to fix it needs to know which. */}
+            <div className="mt-4 flex flex-wrap gap-2">
+              {destsFor(r.id).map((d) => (
+                <span
+                  key={d.destination}
+                  title={DESTINATIONS[d.destination]?.note}
+                  className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs ${
+                    d.state === 'delivered' ? 'bg-emerald-50 text-emerald-800'
+                      : d.state === 'failed' ? 'bg-red-50 text-red-800'
+                        : d.state === 'retracted' ? 'bg-gray-100 text-gray-600 line-through'
+                          : 'bg-[#f2eee6] text-[#6b6076] dark:bg-[#2a2333] dark:text-[#9c93ad]'}`}
+                >
+                  {d.state === 'delivered' && <Check size={12} />}
+                  {d.state === 'failed' && <X size={12} />}
+                  {DESTINATIONS[d.destination]?.label ?? d.destination}
+                </span>
+              ))}
+            </div>
+            <p className="mt-2 text-xs text-[#6b6076] dark:text-[#9c93ad]">
+              {describeDelivery(destsFor(r.id).map((d) => d.state))}
+            </p>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button onClick={() => setOpen(open?.id === r.id ? null : r)} className={BTN_SECONDARY}>
+                <Eye size={14} /> {open?.id === r.id ? 'Hide' : 'View'}
+              </button>
+
+              {r.status === 'draft' && mayCompose && r.author_id === user?.id && (
+                <button disabled={busy} onClick={() => void act({ action: 'submit', id: r.id })}
+                  className={BTN_SECONDARY}>
+                  <Send size={14} /> Send for clearance
+                </button>
+              )}
+
+              {r.status === 'submitted' && mayClear && (
+                r.author_id === user?.id ? (
+                  // SAID RATHER THAN HIDDEN. A button that simply is not there
+                  // leaves somebody wondering why; this explains the rule.
+                  <p className="flex items-center gap-2 rounded-lg bg-[#faf6ee] px-3 py-2 text-xs
+                                text-[#6b5a2f] dark:bg-[#241f2c] dark:text-[#c3b48f]">
+                    <AlertTriangle size={13} />
+                    You wrote this, so somebody else has to clear it.
+                  </p>
+                ) : (
+                  <>
+                    <button disabled={busy}
+                      onClick={() => void act({ action: 'decide', id: r.id, decision: 'approve' })}
+                      className={BTN_PRIMARY}>
+                      <Check size={14} /> Clear it
+                    </button>
+                    <input value={reason} onChange={(e) => setReason(e.target.value)}
+                      placeholder="Why it is not cleared" className={`${INPUT} w-64 text-xs`} />
+                    <button disabled={busy || reason.trim().length < 12}
+                      onClick={() => void act({ action: 'decide', id: r.id, decision: 'reject', reason })}
+                      className={BTN_SECONDARY}>
+                      <X size={14} /> Return it
+                    </button>
+                  </>
+                )
+              )}
+
+              {(r.status === 'approved' || r.status === 'scheduled') && mayPublish && (
+                <button disabled={busy} onClick={() => void act({ action: 'publish', id: r.id })}
+                  className={BTN_PRIMARY}>
+                  <Megaphone size={14} /> Publish
+                </button>
+              )}
+
+              {r.status === 'published' && mayRelease
+                && destsFor(r.id).some((d) => d.state === 'pending') && (
+                <button disabled={busy} onClick={() => void act({ action: 'release', id: r.id })}
+                  className={BTN_PRIMARY}>
+                  <Globe size={14} /> Send to the networks
+                </button>
+              )}
+
+              {r.status === 'published' && mayPublish && (
+                <>
+                  <input value={reason} onChange={(e) => setReason(e.target.value)}
+                    placeholder="Why it is coming down" className={`${INPUT} w-64 text-xs`} />
+                  <button disabled={busy || reason.trim().length < 12}
+                    onClick={() => void act({ action: 'retract', id: r.id, reason })}
+                    className={BTN_SECONDARY}>
+                    Retract
                   </button>
-                  <button
-                    aria-label="Delete announcement"
-                    onClick={async () => {
-                      await write(deleteRecord(n.id), 'remove the announcement');
-                      load();
-                    }}
-                    className="rounded-lg bg-red-50 p-2 text-red-600"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
+                </>
               )}
             </div>
+
+            {open?.id === r.id && (
+              <p className="mt-4 whitespace-pre-wrap border-t border-[#f0ece4] pt-4 text-sm
+                            leading-relaxed text-[#4a4155] dark:border-[#2a2333] dark:text-[#c8c1d4]">
+                {r.body}
+              </p>
+            )}
           </article>
         ))}
       </div>
+    </div>
+  );
+}
 
-      {showNew && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowNew(false)}>
-          <form onSubmit={post} onClick={(e) => e.stopPropagation()} className="w-full max-w-md space-y-3 rounded-2xl bg-white p-6">
-            <h3 className="font-heading text-lg font-bold text-[#422e59] dark:text-[#e4dcf0]">New Announcement</h3>
-            <input required placeholder="Title" className={input} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-            <textarea required rows={5} placeholder="Message" className={input} value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} />
-            <select className={input} value={form.audience} onChange={(e) => setForm({ ...form, audience: e.target.value })}>
-              {AUDIENCES.map((a) => (
-                <option key={a}>{a}</option>
-              ))}
-            </select>
-            <button disabled={busy} className="w-full rounded-xl bg-[#422e59] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#322244] disabled:opacity-60">
-              {busy ? 'Publishing…' : 'Publish Announcement'}
-            </button>
-          </form>
-        </div>
+// ---------------------------------------------------------------------------
+// THE CREATION SCREEN
+// ---------------------------------------------------------------------------
+
+function Compose({
+  onCancel, onDone, busy, notice,
+}: {
+  onCancel: () => void;
+  onDone: (payload: Record<string, unknown>) => void;
+  busy: boolean;
+  notice: { tone: 'ok' | 'bad'; text: string } | null;
+}) {
+  const [title, setTitle] = useState('');
+  const [body, setBody] = useState('');
+  const [category, setCategory] = useState<Category>('general');
+  const [audiences, setAudiences] = useState<string[]>(['students']);
+  const [destinations, setDestinations] = useState<string[]>([CANONICAL_DESTINATION]);
+  const [imagePath, setImagePath] = useState('');
+  const [imageAlt, setImageAlt] = useState('');
+
+  const draft = {
+    title, body, category, audiences,
+    image_path: imagePath || null, image_alt: imageAlt || null,
+  };
+  // SAID BEFORE THE CLICK, not discovered when a network returns an error hours
+  // later and somebody has to work out which of six destinations it was about.
+  const objections = objectionsTo(draft, destinations, { hasImage: Boolean(imagePath) });
+
+  const toggle = (list: string[], v: string, set: (x: string[]) => void) =>
+    set(list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
+
+  return (
+    <div className="max-w-3xl space-y-6">
+      <header>
+        <h1 className="font-heading text-2xl font-bold text-[#422e59] dark:text-[#e9e2f2]">
+          Create announcement
+        </h1>
+        <p className="mt-1 text-sm text-[#6b6076] dark:text-[#9c93ad]">
+          It is saved as a draft. Somebody other than you clears it before it is published.
+        </p>
+      </header>
+
+      {notice && (
+        <p className={`rounded-xl px-4 py-3 text-sm ${notice.tone === 'ok'
+          ? 'bg-emerald-50 text-emerald-900' : 'bg-red-50 text-red-900'}`}>{notice.text}</p>
       )}
+
+      <div className="space-y-1.5">
+        <label htmlFor="a-title" className={LABEL}>Title</label>
+        <input id="a-title" value={title} onChange={(e) => setTitle(e.target.value)}
+          className={INPUT} placeholder="e.g. 2026/2027 admissions are open" />
+      </div>
+
+      <div className="space-y-1.5">
+        <label htmlFor="a-body" className={LABEL}>Announcement</label>
+        <textarea id="a-body" value={body} onChange={(e) => setBody(e.target.value)}
+          rows={8} className={INPUT}
+          placeholder="Say what changed, for whom, and from when." />
+      </div>
+
+      <div className="space-y-1.5">
+        <label htmlFor="a-img" className={LABEL}>Featured image</label>
+        <input id="a-img" value={imagePath} onChange={(e) => setImagePath(e.target.value)}
+          className={INPUT} placeholder="Storage path of an uploaded image" />
+        {imagePath && (
+          <div className="space-y-1.5 pt-2">
+            <label htmlFor="a-alt" className={LABEL}>Describe the image</label>
+            <input id="a-alt" value={imageAlt} onChange={(e) => setImageAlt(e.target.value)}
+              className={INPUT} placeholder="e.g. Graduands on the steps of the main hall" />
+            {/* REQUIRED, NOT OPTIONAL, and the reason is said out loud. Every
+                network this is published to carries the omission onward. */}
+            <p className="text-xs text-[#6b6076] dark:text-[#9c93ad]">
+              Without this, a reader using a screen reader gets nothing at all — and every
+              network this is published to repeats the omission.
+            </p>
+          </div>
+        )}
+      </div>
+
+      <fieldset className="space-y-2">
+        <legend className={LABEL}>Category</legend>
+        <div className="flex flex-wrap gap-2">
+          {CATEGORIES.map((c) => (
+            <button key={c} type="button" onClick={() => setCategory(c)}
+              className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition ${FOCUS} ${
+                category === c
+                  ? 'border-[#422e59] bg-[#422e59] text-white'
+                  : 'border-[#d9cfe4] text-[#422e59] hover:bg-[#f5f0fa] dark:border-[#3d3349] dark:text-[#c9b6e6]'
+              }`}>
+              {CATEGORY_LABELS[c]}
+            </button>
+          ))}
+        </div>
+      </fieldset>
+
+      <fieldset className="space-y-2">
+        <legend className={LABEL}>Audience — who this is addressed to</legend>
+        <div className="flex flex-wrap gap-3">
+          {AUDIENCES.map((a) => (
+            <label key={a} className="inline-flex items-center gap-2 text-sm text-[#4a4155]
+                                      dark:text-[#c8c1d4]">
+              <input type="checkbox" checked={audiences.includes(a)}
+                onChange={() => toggle(audiences, a, setAudiences)} />
+              {AUDIENCE_LABELS[a]}
+            </label>
+          ))}
+        </div>
+        {reachesTheWorld(audiences) && (
+          <p className="flex items-start gap-2 rounded-lg bg-[#faf6ee] px-3 py-2 text-xs
+                        text-[#6b5a2f] dark:bg-[#241f2c] dark:text-[#c3b48f]">
+            <AlertTriangle size={13} className="mt-0.5 shrink-0" />
+            Addressed to the public — anybody at all, including people who have never applied.
+            Read it once more as a stranger would.
+          </p>
+        )}
+      </fieldset>
+
+      <fieldset className="space-y-2">
+        <legend className={LABEL}>Publish to — where it is sent</legend>
+        <div className="space-y-2">
+          {DESTINATION_KEYS.map((k) => {
+            const d = DESTINATIONS[k];
+            const fixed = k === CANONICAL_DESTINATION;
+            return (
+              <label key={k} className="flex items-start gap-2 text-sm text-[#4a4155]
+                                        dark:text-[#c8c1d4]">
+                <input type="checkbox" className="mt-1"
+                  checked={fixed || destinations.includes(k)}
+                  disabled={fixed}
+                  onChange={() => toggle(destinations, k, setDestinations)} />
+                <span>
+                  {d.label}
+                  {fixed && <span className="ml-2 text-xs opacity-60">always</span>}
+                  <span className="block text-xs text-[#6b6076] dark:text-[#9c93ad]">{d.note}</span>
+                </span>
+              </label>
+            );
+          })}
+        </div>
+      </fieldset>
+
+      {objections.length > 0 && (
+        <ul className="space-y-2 rounded-xl bg-[#faf6ee] p-4 text-xs text-[#6b5a2f]
+                       dark:bg-[#241f2c] dark:text-[#c3b48f]">
+          {objections.map((o) => (
+            <li key={o.code}>{o.blocking ? '' : 'Worth a second look: '}{o.message}</li>
+          ))}
+        </ul>
+      )}
+
+      <div className="flex flex-wrap gap-3">
+        <button disabled={busy || blocks(objections)} className={BTN_PRIMARY}
+          onClick={() => onDone({
+            action: 'draft', title, body, category, audiences, destinations,
+            imagePath: imagePath || undefined, imageAlt: imageAlt || undefined,
+          })}>
+          {busy ? <><Loader2 size={15} className="animate-spin" /> Saving…</> : 'Save as draft'}
+        </button>
+        <button onClick={onCancel} className={BTN_SECONDARY}>Cancel</button>
+      </div>
     </div>
   );
 }

@@ -113,8 +113,16 @@ console.log('\nAnd the events the route can emit are the events the log accepts\
 // EVERY `check (event in (...))` in the corpus, not the first one. 026 widens
 // the constraint with an ALTER rather than restating the CREATE TABLE, so a
 // pattern that stopped at the first block was reading the superseded list.
-const inCheck = [...migration.matchAll(/check \(event in \(([\s\S]*?)\)\)/g)]
-  .flatMap((block) => [...block[1].matchAll(/'([A-Z_]+)'/g)].map((m) => m[1]));
+// SCOPED TO THE ADMISSION TRAIL. 038 gives announcements their own event
+// vocabulary, in their own `check (event in (...))`, and an unscoped scan read
+// DRAFTED and RELEASED_EXTERNALLY as events the admission module had failed to
+// declare. Two trails, two vocabularies, both correct — the scan simply has to
+// say which one it is asking about. Found the same day the scan stopped
+// reading a hand-typed list of migrations, and for the same reason.
+const inCheck = [
+  // The CREATE TABLE in 024, and every later ALTER that replaces it.
+  ...[...migration.matchAll(/admission_audit_log[\s\S]{0,400}?check \(event in \(([\s\S]*?)\)\)/g)],
+].flatMap((block) => [...block[1].matchAll(/'([A-Z_]+)'/g)].map((m) => m[1]));
 
 check('every event the module declares is accepted by the constraint',
   W.ADMISSION_EVENTS.filter((e) => !inCheck.includes(e)), []);

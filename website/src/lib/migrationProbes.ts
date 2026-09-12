@@ -280,6 +280,17 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
     // reporting "applied" on that would be vouching for a split that never ran.
     table: 'student_status_split',
   },
+  {
+    file: '038_announcements_are_the_institution_speaking.sql',
+    what: 'Makes an announcement an institutional record rather than a row on the documents '
+      + 'table: an author, a clearance by somebody else, a publication that names who did it, '
+      + 'an append-only history, one row per destination, and a platform-by-platform '
+      + 'adaptation of the same words.',
+    // The history. Chosen over `announcements` itself because the table can
+    // exist with no trail attached, and a Readiness panel reporting "applied"
+    // on that would be vouching for the one thing the old noticeboard lacked.
+    table: 'announcement_events',
+  },
 ];
 
 /** What a probe came back as. */
