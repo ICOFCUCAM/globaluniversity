@@ -50,6 +50,30 @@ const EVERYONE: UserRole[] = [
   'finance-director', 'finance', 'admissions-officer', 'dean', 'hod',
   'programme-coordinator', 'academic-office', 'lecturer', 'library-staff',
   'student-affairs', 'student',
+  // ---------------------------------------------------------------------
+  // AND IT HAPPENED AGAIN, TO SIX MORE ROLES.
+  //
+  // The paragraph above was written when this list held four roles. It then
+  // held sixteen, and the six below were still missing — so the fault it
+  // describes was live the whole time for the two HR offices and all four
+  // examination offices.
+  //
+  // AN INVIGILATOR SIGNED IN AND SAW ONE MENU ITEM. Not one screen too few:
+  // one item, "Examiner console", and nothing else. No Dashboard. No
+  // Announcements. No Settings — on a system that emails them a temporary
+  // password and tells them to change it immediately, they could not reach
+  // the screen that changes it.
+  //
+  // Found by counting menu entries per role rather than by reading this file,
+  // which is how it survived being written about directly above.
+  //
+  // 'applicant' IS STILL ABSENT, and that one is deliberate: AppLayout turns
+  // an applicant away from this portal entirely and sends them to the
+  // Admissions Portal, so giving them a menu would be giving them a door into
+  // a building they are told not to enter.
+  // ---------------------------------------------------------------------
+  'hr-officer', 'hr-administrator',
+  'exam-officer', 'examiner', 'invigilator', 'moderator',
 ];
 
 /** Everyone whose work is teaching, studying or running a programme. */

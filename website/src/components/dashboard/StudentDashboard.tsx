@@ -314,12 +314,16 @@ export default function StudentDashboard({ onNavigate }: Props) {
             <Panel
               title="Fees"
               icon={<Wallet size={15} />}
-              onOpen={() => onNavigate('documents')}
-              openLabel="My documents"
+              // WAS 'documents' — the STAFF document manager — and said fees
+              // were not in this portal, which stopped being true when 075
+              // gave the University a fee schedule. Two stale facts in one
+              // card, both found by checking which screens no menu offers.
+              onOpen={() => onNavigate('my-finance')}
+              openLabel="Fees & payments"
             >
               <Quiet>
-                Your fee statement is not in this portal yet. The Finance Office holds the
-                University&apos;s record of what is owed and what has been paid.
+                What the University has charged you and what it has recorded receiving. A balance
+                appears once fees have been raised against your record.
               </Quiet>
             </Panel>
           </div>
@@ -397,7 +401,11 @@ export default function StudentDashboard({ onNavigate }: Props) {
             value={String(journey?.credits_earned ?? 0)}
             note={journey?.credits_required ? `of ${journey.credits_required}` : undefined}
             icon={<GraduationCap size={16} />}
-            onClick={() => onNavigate('academic-records')}
+            // 'my-graduation' AND NOT 'academic-records'. This tile kept the id
+            // it had before the student web was rebuilt, and that id opens the
+            // Registry's register of five hundred students with a search box
+            // over it. Found by counting which screens no menu offers.
+            onClick={() => onNavigate('my-graduation')}
           />
           <Tile
             label="Cumulative GPA"
@@ -405,7 +413,11 @@ export default function StudentDashboard({ onNavigate }: Props) {
               ? '—' : Number(journey.cgpa).toFixed(2)}
             note="Final"
             icon={<BarChart3 size={16} />}
-            onClick={() => onNavigate('transcript')}
+            // 'my-transcript' AND NOT 'transcript'. The same fault, and the
+            // worse of the two: 'transcript' opens the screen that ISSUES a
+            // transcript from a student's record. A graduate pressing their
+            // own CGPA tile was being handed the Registry's issuing tool.
+            onClick={() => onNavigate('my-transcript')}
           />
         </div>
       )}

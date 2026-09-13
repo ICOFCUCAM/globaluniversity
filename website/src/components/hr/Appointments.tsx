@@ -220,12 +220,27 @@ export default function Appointments() {
     return (
       <NewAppointment
         maySetPay={maySeePay}
+        maySoleAuthority={maySoleAuthority}
         busy={busy}
         notice={notice}
         onCancel={() => setCreating(false)}
-        onSave={async (payload) => {
+        onSave={async (payload, alsoApprove) => {
           const r = await act({ action: 'draft', ...payload });
-          if (r) setCreating(false);
+          if (!r) return;
+          // ---------------------------------------------------------------
+          // TWO CALLS, AND THE ORDER MATTERS IF THE SECOND FAILS.
+          //
+          // The appointment is WRITTEN first and approved second. If the
+          // approval is refused — a rule this screen does not know about, a
+          // dropped connection — the record still exists as a draft and the
+          // row's own "Approve on my own authority" button is waiting on it.
+          // Nothing the officer typed is lost, which is the whole reason the
+          // draft is not held back until the approval succeeds.
+          // ---------------------------------------------------------------
+          if (alsoApprove && r.id) {
+            await act({ action: 'decide', id: r.id, decision: 'approve' });
+          }
+          setCreating(false);
         }}
       />
     );
@@ -551,13 +566,20 @@ export default function Appointments() {
 // ---------------------------------------------------------------------------
 
 function NewAppointment({
-  maySetPay, busy, notice, onCancel, onSave,
+  maySetPay, maySoleAuthority, busy, notice, onCancel, onSave,
 }: {
   maySetPay: boolean;
+  /**
+   * Whether this officer may approve what they have just written.
+   *
+   * The Vice-Chancellor, the Chancellor and the two system accounts. It
+   * decides whether the SECOND button below is drawn — see the note there.
+   */
+  maySoleAuthority: boolean;
   busy: boolean;
   notice: { tone: 'ok' | 'bad'; text: string } | null;
   onCancel: () => void;
-  onSave: (payload: Record<string, unknown>) => void;
+  onSave: (payload: Record<string, unknown>, alsoApprove: boolean) => void;
 }) {
   const [f, setF] = useState({
     fullName: '', email: '', phone: '', postalAddress: '',
@@ -989,6 +1011,27 @@ function NewAppointment({
         </ul>
       )}
 
+      {/* ------------------------------------------------------------------
+          TWO WAYS TO FINISH, AND THE UNIVERSITY ASKED FOR THE SECOND BY NAME.
+
+          "How come the VC cannot complete an appointment from draft to
+          finished without others" — then "it should have a different button
+          beside draft and submit", and "that extra button should be on
+          superadmin too".
+
+          The first button saves a draft, which then waits for a second
+          officer. That is right for HR and wrong for the appointing
+          authority: the Vice-Chancellor approving their own appointment is
+          not a breach of the separation, it IS the authority.
+
+          So the second button does the whole thing in one press — writes the
+          record and approves it — and it appears only for the offices that
+          hold that authority. Everybody else sees one button, as before.
+
+          THE CONTROL IS UNCHANGED. 055's constraint still refuses any
+          self-approval that is not permanently marked as one, and the record
+          will show that a single office did both.
+          ------------------------------------------------------------------ */}
       <div className="flex flex-wrap gap-3">
         <button disabled={busy || blocked(missing)} className={BTN_PRIMARY}
           onClick={() => onSave({
@@ -996,11 +1039,32 @@ function NewAppointment({
             // ONLY THE ONES WITH A FIGURE. An empty row somebody added and
             // then thought better of is not an allowance of zero.
             allowances: allowances.filter((a) => Number(a.amount ?? 0) > 0),
-          })}>
+          }, false)}>
           {busy ? <><Loader2 size={15} className="animate-spin" /> Saving…</> : 'Save as draft'}
         </button>
+
+        {maySoleAuthority && (
+          <button disabled={busy || blocked(missing)} className={BTN_PRIMARY}
+            onClick={() => onSave({
+              ...f,
+              allowances: allowances.filter((a) => Number(a.amount ?? 0) > 0),
+            }, true)}>
+            {busy
+              ? <><Loader2 size={15} className="animate-spin" /> Recording…</>
+              : <><Check size={15} /> Save and approve on my own authority</>}
+          </button>
+        )}
+
         <button onClick={onCancel} className={BTN_SECONDARY}>Cancel</button>
       </div>
+
+      {maySoleAuthority && (
+        <p className="text-xs text-[#6b6076] dark:text-[#9c93ad]">
+          <strong>Save as draft</strong> leaves this waiting for a second officer to approve.
+          <strong> Save and approve</strong> finishes it now — yours to do without anybody else,
+          and the record will show permanently that one office both wrote and approved it.
+        </p>
+      )}
     </div>
   );
 }
