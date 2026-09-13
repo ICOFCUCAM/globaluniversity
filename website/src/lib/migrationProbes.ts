@@ -507,6 +507,19 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
       + 'says how to fill it.',
     table: 'programme_versions',
   },
+  {
+    file: '058_the_vice_chancellor_approves_a_curriculum.sql',
+    what: 'Curriculum approval becomes possible at all. Since 057 no curriculum could be '
+      + 'approved by anybody \u2014 including the Superadministrator \u2014 because the '
+      + 'University had not said who approves one. It has now: the Vice-Chancellor. A version '
+      + 'still moves through department and faculty review; this is the signature that gates '
+      + 'approval, and no other office stands in for it.',
+    // A SEEDED ROW, not a table or a column. 057 created the table this fills,
+    // so its presence would report 058 as run on a database that has only had
+    // 057 \u2014 and the whole point of 058 is that the row is there.
+    cannotSee: "select subject, office from academic_approval_requirements "
+      + "where subject = 'curriculum';  -- it should list vice-chancellor",
+  },
 ];
 
 /** What a probe came back as. */

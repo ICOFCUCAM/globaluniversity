@@ -41,7 +41,7 @@
 // ---------------------------------------------------------------------------
 
 import { execFileSync } from 'node:child_process';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 let failures = 0;
@@ -72,6 +72,7 @@ function load(file, name) {
 const catalogue = await load('src/content/programmeCatalogue.ts', 'dur-catalogue');
 const curricula = await load('src/content/programmeCourses.ts', 'dur-curricula');
 const facts = await load('src/content/institutionalFacts.ts', 'dur-facts');
+const credit = await load('src/content/creditFramework.ts', 'dur-credit');
 
 // Spelled out, because the published sentences are prose and not digits.
 const WORD = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven'];
@@ -134,6 +135,62 @@ console.log('\nAnd the published sentence says the same number\n');
     check('…and it does not say four either', /\b(four|4)\b/i.test(row.duration), false);
     console.log(`      published: ${JSON.stringify(row.duration)}`);
   }
+}
+
+// ---------------------------------------------------------------------------
+// AND THE DOCTORATE IS TWO YEARS.
+//
+// A standing University ruling, restated explicitly: "Doctorate is two years."
+//
+// This one had drifted further than the Bachelor's and in more places. The
+// site published "Three or more academic years of supervised research" across
+// programmeCatalogue.ts, institutionalFacts.ts and creditFramework.ts, and the
+// visitor-facing programme finder put the Doctorate in a band labelled "Three
+// years or more" — so somebody filtering by how long they had was shown the
+// wrong award.
+//
+// NO CURRICULUM TO MEASURE AGAINST. The three doctorates are examined by
+// thesis and carry no credit-rated course list, so unlike the Bachelor's there
+// is nothing to count. What is checked instead is that every published
+// sentence agrees with the ruling and that none of them reaches past two — a
+// range is the failure mode this whole file exists for.
+// ---------------------------------------------------------------------------
+
+console.log('\nThe Doctorate is two years, wherever it is published\n');
+
+{
+  const reachesPastTwo = /\b(three|3|four|4|five|5|or more)\b/i;
+
+  const level = catalogue.durationFor
+    ? catalogue.durationFor('Doctorate')
+    : catalogue.ALL_PROGRAMMES.find((p) => p.award === 'Doctorate')?.duration ?? '';
+  check('the catalogue publishes two years for a Doctorate',
+    /\b(two|2)\b/i.test(level), true);
+  check('…and does not reach past two', reachesPastTwo.test(level), false);
+  console.log(`      catalogue:          ${JSON.stringify(level)}`);
+
+  const ladder = (facts.PATHWAY ?? []).find((a) => /doctor/i.test(a.award));
+  check('institutionalFacts’ award ladder has a Doctorate row', !!ladder, true);
+  if (ladder) {
+    check('…and it does not reach past two', reachesPastTwo.test(ladder.duration), false);
+    console.log(`      institutionalFacts: ${JSON.stringify(ladder.duration)}`);
+  }
+
+  const framework = (credit.AWARD_LADDER ?? [])
+    .find((a) => /doctor/i.test(a.award ?? a.level ?? a.title ?? ''));
+  check('the credit framework has a Doctorate row', !!framework, true);
+  if (framework) {
+    check('…and it does not reach past two', reachesPastTwo.test(framework.duration ?? ''), false);
+    console.log(`      creditFramework:    ${JSON.stringify(framework.duration)}`);
+  }
+
+  // THE ONE A READER ACTUALLY USES. The finder's bands are how a visitor
+  // chooses; a Doctorate filed under "three years or more" is the ruling
+  // contradicted at the point of decision.
+  const finder = readFileSync(join(root, 'src/components/home/ProgrammeFinder.tsx'), 'utf8');
+  const longBand = /\{[^}]*id:\s*'long'[^}]*\}/.exec(finder)?.[0] ?? '';
+  check('the programme finder does not file a Doctorate under three years or more',
+    /Doctorate/.test(longBand), false);
 }
 
 process.exit(failures === 0 ? 0 : 1);

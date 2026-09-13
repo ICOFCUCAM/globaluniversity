@@ -260,7 +260,7 @@ export const PATHWAY = [
   },
   {
     award: 'Doctorate',
-    duration: 'Three years or more',
+    duration: 'Two years',
     note: 'Supervised original research, examined on a thesis defended before a panel.',
     href: '/degrees/doctoral',
   },

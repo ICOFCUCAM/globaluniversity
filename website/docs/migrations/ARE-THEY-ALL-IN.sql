@@ -140,6 +140,12 @@ select * from (
   select '057' as migration, '057_the_academic_structure.sql' as file,
          case when to_regclass('public.programme_versions') is not null then 'YES' else 'NO' end as landed,
          'programme_versions' as what_it_creates
+  union all
+  select '058' as migration, '058_the_vice_chancellor_approves_a_curriculum.sql' as file,
+         case when to_regclass('public.academic_approval_requirements') is null then 'NO'
+                 when exists (select 1 from academic_approval_requirements where subject = 'curriculum') then 'YES'
+                 else 'NO' end as landed,
+         'rows:academic_approval_requirements:subject = ''curriculum''' as what_it_creates
 ) as landed_report
  order by migration;
 

@@ -630,6 +630,21 @@ begin
     insert into auth.users (id, email) values
       (officer, '057-registrar@example.test'), (dean_id, '057-dean@example.test');
 
+    -- ---------------------------------------------------------------------
+    -- THE PROOF SETS ITS OWN STARTING POINT.
+    --
+    -- The first assertion below is that with NO approving body recorded, the
+    -- refusal explains how to record one. 058 seeds exactly such a body, so on
+    -- a database that has had 058 this proof used to get a different refusal
+    -- and fail — RUN-ALL was clean on its first pass from empty and red on its
+    -- second.
+    --
+    -- This is the same collision 045 had with 055, and the same fix: a proof
+    -- must not assume the state a later migration deliberately changes. The
+    -- whole block rolls back, so anything 058 seeded is restored when it does.
+    -- ---------------------------------------------------------------------
+    delete from academic_approval_requirements where subject = 'curriculum';
+
     insert into schools (code, name) values ('proof-school', 'A Proof School of Study')
       returning id into sch;
     -- `faculty` is NOT NULL on the existing table — the text column section 2

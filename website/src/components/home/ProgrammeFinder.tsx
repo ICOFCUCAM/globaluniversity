@@ -63,8 +63,11 @@ const INTERESTS: { id: string; label: string; icon: string; keys: string[] }[] =
 /** How long the visitor has. Maps onto the award levels, not onto a promise. */
 const COMMITMENTS: { id: string; label: string; note: string; awards: AwardLevel[] }[] = [
   { id: 'short', label: 'Under a year', note: 'A focused qualification', awards: ['Certificate'] },
-  { id: 'medium', label: 'One to two years', note: 'Career-ready, or a step up', awards: ['Diploma', "Master's", 'Postgraduate Diploma'] },
-  { id: 'long', label: 'Three years or more', note: 'A full degree', awards: ["Bachelor's", 'Doctorate'] },
+  { id: 'medium', label: 'One to two years', note: 'Career-ready, or a step up', awards: ['Diploma', "Master's", 'Postgraduate Diploma', 'Doctorate'] },
+  // THE BANDS FOLLOW THE RULINGS. A Bachelor's is three years and a Doctorate
+  // is two, so "three years or more" described the Bachelor's alone and put
+  // the Doctorate in the wrong band on the visitor's own filter.
+  { id: 'long', label: 'Three years', note: 'The full undergraduate degree', awards: ["Bachelor's"] },
 ];
 
 const MODES = ['Online', 'On campus', 'Blended'];

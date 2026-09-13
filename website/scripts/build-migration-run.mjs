@@ -196,6 +196,9 @@ const MARKERS = {
   // 057 creates six tables; programme_versions is the one nothing else could
   // have made, and the one every later academic feature hangs from.
   '057': 'programme_versions',
+  // 058 CREATES NOTHING. It seeds one row into 057's requirements table, so
+  // the marker is the row itself.
+  '058': "rows:academic_approval_requirements:subject = 'curriculum'",
 };
 
 /** The SQL that answers "is this one here?", for each of the three forms. */

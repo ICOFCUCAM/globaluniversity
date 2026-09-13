@@ -511,7 +511,7 @@ export const LEVEL_COPY: Record<AwardLevel, LevelCopy> = {
   },
   Doctorate: {
     lead: 'Doctoral research programmes',
-    body: 'A doctorate at ICOF Global University is a supervised research degree: three or more years of original work, examined on a thesis defended before a panel. It is the university’s highest award.',
+    body: 'A doctorate at ICOF Global University is a supervised research degree: two years of original work, examined on a thesis defended before a panel. It is the university’s highest award.',
     progression: 'A doctorate is the terminal award. What follows is not a further degree but academic appointment, supervision of others, and publication.',
     careers: 'Doctoral graduates teach, supervise research, lead institutions and publish in their fields.',
   },
@@ -653,7 +653,7 @@ const LEVEL_DURATION: Record<string, string> = {
   Diploma: DIPLOMA_DURATION,
   Bachelor: 'Three academic years',
   Master: 'One to two academic years',
-  Doctorate: 'Three or more academic years of supervised research',
+  Doctorate: 'Two academic years of supervised research',
 };
 
 const FACULTY_ID: Record<string, string> = {

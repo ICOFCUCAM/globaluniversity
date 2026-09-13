@@ -139,7 +139,7 @@ export const AWARD_LADDER: AwardLevel[] = [
     // thesis is not conventionally credit-rated, so an absent figure here is
     // the normal state and not a gap.
     ects: null,
-    duration: 'Three years or more',
+    duration: 'Two years',
     purpose: 'Supervised original research, examined on a defended thesis.',
     source: 'No credit value stated; doctorates are examined by thesis.',
   },

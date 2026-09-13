@@ -161,6 +161,11 @@ console.log('\nAnd what it cannot see, it says so about\n');
       // probe mechanism looks for tables and columns; a relaxed constraint is
       // neither, and 045 had already added the column it turns on.
       '055_the_office_that_needs_no_second_signature.sql',
+      // 058 SEEDS ONE ROW into a table 057 created. The probe mechanism looks
+      // for tables and columns and can see neither the presence of a seeded row
+      // nor its absence — so it names the query to run by hand rather than
+      // reporting the requirement as recorded because the table exists.
+      '058_the_vice_chancellor_approves_a_curriculum.sql',
     ]);
   check('…and carries the check to run by hand',
     blind.every((p) => /select|pg_constraint/i.test(p.cannotSee)), true);
