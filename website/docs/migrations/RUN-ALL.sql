@@ -21243,6 +21243,39 @@ create table if not exists programmes (
   created_at   timestamptz not null default now()
 );
 
+-- ---------------------------------------------------------------------------
+-- AND THE PATTERN IS REPLACED ON A DATABASE THAT ALREADY HAS THE TABLE.
+--
+-- `create table if not exists` does exactly nothing when the table is there —
+-- including nothing to its CHECK constraints. So widening the code pattern in
+-- the block above reached a fresh database and NOT the University's, which had
+-- already run the earlier version of this file. The proof then inserted the
+-- new lowercase code against the old uppercase constraint and stopped the
+-- whole bundle:
+--
+--     ERROR: 23514: new row for relation "programmes" violates check
+--            constraint "programmes_code_check"
+--     DETAIL: Failing row contains (…, proof-bachelor-of-study, …)
+--
+-- MY TESTING COULD NOT HAVE FOUND THIS. Every run was from an empty database,
+-- where `create table` does apply the new constraint. The upgrade path — an
+-- older version of this same file, then this one — is the path the University
+-- is actually on, and it was the one path never exercised.
+--
+-- 056 already had to do this for `profiles_role_valid`. Any constraint that
+-- changes after a table has shipped needs its own drop-and-add; editing the
+-- create block is a change that only ever reaches new installations.
+-- ---------------------------------------------------------------------------
+
+do $$
+begin
+  if exists (select 1 from pg_constraint where conname = 'programmes_code_check') then
+    alter table programmes drop constraint programmes_code_check;
+  end if;
+  alter table programmes add constraint programmes_code_check
+    check (code ~ '^[a-z][a-z0-9-]{1,63}$');
+end $$;
+
 comment on table programmes is
   'A programme''s identity: its code, its award and where it stands. Everything that can be '
   'revised — name, school, duration, credits, curriculum — belongs to programme_versions, so a '
