@@ -107,7 +107,22 @@ export default function SettingsPage() {
     // are a personal setting and belong nowhere else — not on the Command
     // Centre, which is about publishing, and certainly not on a screen any
     // colleague can reach.
-    ...(can(user?.role, 'connect-own-social')
+    // ---------------------------------------------------------------------
+    // EITHER CAPABILITY OPENS IT, and it used to be only the first.
+    //
+    // Two different things live behind this tab. 'connect-own-social' is an
+    // administrator linking THEIR OWN account. 'connect-university-social' is
+    // the Superadministrator connecting the INSTITUTION's — done once, so that
+    // every administrator can publish through the University's pages without
+    // anybody holding its credentials. 013 keeps them apart in the database
+    // with `scope`, and the second has `owner_id` null because it belongs to
+    // nobody.
+    //
+    // Gated on the first alone, a holder of only the second would have found
+    // no tab at all. The Superadministrator holds both so nothing was visibly
+    // wrong — which is exactly the kind of condition that stays wrong.
+    // ---------------------------------------------------------------------
+    ...(can(user?.role, 'connect-own-social') || can(user?.role, 'connect-university-social')
       ? [{ id: 'social', label: 'Connected social accounts', icon: <Share2 size={16} /> }]
       : []),
     { id: 'grading', label: 'Grading Scale', icon: <Database size={16} /> },

@@ -321,19 +321,42 @@ export function signatureBlock(s: Signature): string {
  * are. `CREDENTIAL_SECRET` can be absent in a deployment nobody has finished
  * configuring, and a letter held up by a missing environment variable is worse
  * than one that goes out saying plainly what it carries.
+ *
+ * ---------------------------------------------------------------------------
+ * AND "NO SEAL" IS `sealed === false`, NOT `seal === null`
+ * ---------------------------------------------------------------------------
+ *
+ * FOUND BY PRINTING ONE. This branched on whether a seal OBJECT was present,
+ * and `sealDocument` returns an object either way — with `sealed: false` and
+ * `code: ''` when the signing secret is missing. So a letter generated on an
+ * unconfigured deployment printed
+ *
+ *     Verification code:
+ *     Check this document at www.iguc.net/verify
+ *
+ * with nothing after the colon: exactly the document this comment says must
+ * never exist, produced by the function the comment is attached to. The
+ * admission letter and the identity card both had it right — they test
+ * `seal.sealed` — and this newer shared press did not.
  */
 export async function sealPanel(
   seal: DocumentSeal | null, printedReference: string, version: number,
 ): Promise<string> {
+  const verifiable = seal !== null && seal.sealed && seal.code !== '';
+
   let qr = '';
-  if (seal) {
-    try { qr = await verificationQrSvg(seal.verifyUrl, 88); } catch { qr = ''; }
+  if (verifiable) {
+    // THE SHORT FORM, as every other caller uses. It is the same string as the
+    // long one for a letter that is not on a register — but the day letters go
+    // on one, this becomes the scannable address without a second edit here.
+    try { qr = await verificationQrSvg(seal!.shortVerifyUrl, 88); } catch { qr = ''; }
   }
+
   return `<div class="seal">
   ${qr}
   <div>
-    ${seal
-      ? `<p><strong>Verification code:</strong> ${escape(seal.code)}</p>
+    ${verifiable
+      ? `<p><strong>Verification code:</strong> ${escape(seal!.code)}</p>
          <p>Check this document at ${escape(UNIVERSITY.website)}/verify</p>`
       : `<p class="none">This copy carries no verification seal. The University's signing
          secret was not configured when it was generated.</p>`}

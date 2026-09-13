@@ -35,7 +35,11 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { can } from '@/lib/roles';
-import { BTN_PRIMARY, BTN_SECONDARY, INPUT, LABEL, FOCUS } from '@/lib/portalTheme';
+import { BTN_PRIMARY, BTN_SECONDARY, BTN_GHOST, INPUT, LABEL, FOCUS } from '@/lib/portalTheme';
+import { ImagePlus } from 'lucide-react';
+import {
+  prepareFeaturedImage, describeImage, isDrawable, ACCEPTED,
+} from '@/lib/featuredImage';
 import {
   Megaphone, Plus, Loader2, Check, X, Send, Eye, AlertTriangle, Globe, Siren,
 } from 'lucide-react';
@@ -451,6 +455,8 @@ function Compose({
   const [destinations, setDestinations] = useState<string[]>([CANONICAL_DESTINATION]);
   const [imagePath, setImagePath] = useState('');
   const [imageAlt, setImageAlt] = useState('');
+  const [imageBusy, setImageBusy] = useState(false);
+  const [imageError, setImageError] = useState<string | null>(null);
   const [variants, setVariants] = useState<Variant[]>([]);
 
   const draft = { title, body, category, audiences };
@@ -493,10 +499,87 @@ function Compose({
           placeholder="Say what changed, for whom, and from when." />
       </div>
 
+      {/* ------------------------------------------------------------------
+          CHOOSING A PICTURE FROM THIS MACHINE, which was not possible.
+
+          This was a text box asking for "the storage path of an uploaded
+          image" — and nothing in this application uploads to a storage bucket.
+          There is no bucket. So the only way to put a picture on an
+          announcement was to host it somewhere else and paste the link, and
+          the field gave no hint of that.
+
+          The browser now downsizes the chosen file to 1200px and stores it
+          with the announcement, the way StudentPhoto has stored a student's
+          photograph since it was written. A canvas redraw also discards the
+          EXIF — the camera, the timestamp and very often the GPS coordinates
+          of where a phone photograph was taken, all of which would otherwise
+          be published to a noticeboard.
+
+          A LINK STILL WORKS. Announcements made before this exist with links
+          in the field, and pasting one is still legitimate — it is simply no
+          longer the only option, and the page says which of the two is stored.
+          ------------------------------------------------------------------ */}
       <div className="space-y-1.5">
         <label htmlFor="a-img" className={LABEL}>Featured image</label>
-        <input id="a-img" value={imagePath} onChange={(e) => setImagePath(e.target.value)}
-          className={INPUT} placeholder="Storage path of an uploaded image" />
+
+        <div className="flex flex-wrap items-center gap-2">
+          <label className={`${BTN_SECONDARY} cursor-pointer`}>
+            <ImagePlus size={15} /> {imagePath ? 'Choose another' : 'Choose a picture'}
+            <input
+              type="file"
+              accept={ACCEPTED}
+              className="hidden"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                e.target.value = '';
+                if (!file) return;
+                setImageBusy(true);
+                setImageError(null);
+                try {
+                  const prepared = await prepareFeaturedImage(file);
+                  setImagePath(prepared.dataUri);
+                } catch (err) {
+                  // THE REASON, NOT "UPLOAD FAILED". Every rejection from
+                  // prepareFeaturedImage carries a sentence that says what to
+                  // do about it.
+                  setImageError(err instanceof Error ? err.message : String(err));
+                } finally {
+                  setImageBusy(false);
+                }
+              }}
+            />
+          </label>
+          {imageBusy && <span className="text-xs text-[#6b6076]">Preparing…</span>}
+          {imagePath && (
+            <button type="button" className={BTN_GHOST}
+              onClick={() => { setImagePath(''); setImageAlt(''); setImageError(null); }}>
+              Remove
+            </button>
+          )}
+        </div>
+
+        {/* THE LINK, STILL ACCEPTED. Kept as a second, quieter route rather
+            than removed: it is how every announcement made before today
+            carries its picture. */}
+        <input id="a-img" value={imagePath.startsWith('data:') ? '' : imagePath}
+          onChange={(e) => setImagePath(e.target.value)}
+          disabled={imagePath.startsWith('data:')}
+          className={INPUT}
+          placeholder="…or paste a link to a picture hosted elsewhere" />
+
+        <p className="text-xs text-[#6b6076] dark:text-[#9c93ad]">
+          {describeImage(imagePath)}
+        </p>
+        {imageError && (
+          <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-900">{imageError}</p>
+        )}
+
+        {imagePath && isDrawable(imagePath) && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={imagePath} alt={imageAlt || 'Preview of the featured image'}
+            className="mt-2 max-h-48 rounded-lg border border-[#e8e2f0] object-cover" />
+        )}
+
         {imagePath && (
           <div className="space-y-1.5 pt-2">
             <label htmlFor="a-alt" className={LABEL}>Describe the image</label>
