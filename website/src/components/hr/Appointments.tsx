@@ -34,7 +34,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { can } from '@/lib/roles';
 import { BTN_PRIMARY, BTN_SECONDARY, BTN_GHOST, INPUT, LABEL, FOCUS } from '@/lib/portalTheme';
 import {
-  Plus, Loader2, Check, X, AlertTriangle, Users, FileText, Send, Eye, Trash2,
+  Plus, Loader2, Check, X, AlertTriangle, Users, FileText, Send, Eye, Trash2, Wand2,
 } from 'lucide-react';
 import {
   EMPLOYMENT_TYPES, EMPLOYMENT_LABELS, CURRENCIES, SALARY_PERIODS, PERIOD_LABELS,
@@ -45,6 +45,7 @@ import {
   type Appointment, type AppointmentState, type Allowance,
 } from '@/lib/appointments';
 import { FAMILY_LABELS, type PositionFamily } from '@/lib/positions';
+import { UNIVERSITY } from '@/lib/constants';
 
 /**
  * A post from the register, for the picker.
@@ -473,6 +474,42 @@ function NewAppointment({
     })();
   }, []);
 
+  /**
+   * The first day of next month, as a date input wants it.
+   *
+   * AN APPOINTMENT RARELY STARTS TODAY. It starts at the beginning of a month,
+   * and the one after this is the earliest that is not already half over.
+   */
+  const firstOfNextMonth = () => {
+    const d = new Date();
+    const next = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+    return next.toISOString().slice(0, 10);
+  };
+
+  /**
+   * Fill the ordinary terms, leaving the person alone.
+   *
+   * ONLY WHAT IS EMPTY. Pressing this after typing half the form must not
+   * discard the half that was typed — a convenience that overwrites work is
+   * one nobody presses twice.
+   */
+  function fillFromSample() {
+    const start = firstOfNextMonth();
+    setF((prev) => ({
+      ...prev,
+      workingHours: prev.workingHours || '40 hours per week',
+      // THE UNIVERSITY'S OWN PUBLISHED ADDRESS, not an invented campus name.
+      placeOfDuty: prev.placeOfDuty || UNIVERSITY.address,
+      probationMonths: prev.probationMonths || '6',
+      startDate: prev.startDate || start,
+      effectiveDate: prev.effectiveDate || start,
+      // THE OFFICE THE UNIVERSITY HAS RULED MAKES APPOINTMENTS.
+      appointingAuthority: prev.appointingAuthority || 'The Vice-Chancellor',
+      authorityDecidedOn: prev.authorityDecidedOn || new Date().toISOString().slice(0, 10),
+      reportsToName: prev.reportsToName || 'The Vice-Chancellor',
+    }));
+  }
+
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setF({ ...f, [k]: e.target.value });
 
@@ -537,6 +574,38 @@ function NewAppointment({
           Saved as a draft. Somebody other than you approves it, and only then is a letter
           generated — nobody is told anything by this screen.
         </p>
+
+        {/* ----------------------------------------------------------------
+            START FROM A WORKING DRAFT.
+
+            The University asked why an appointment cannot be made as quickly
+            as the specimens were rendered. The answer was that the specimens
+            carried a complete record and this form starts empty — fourteen
+            fields, most of them the same for every appointment the University
+            makes, typed again each time.
+
+            SO IT FILLS THE TERMS AND NOT THE PERSON. The name, the email and
+            the address are the only things on this form that are genuinely
+            particular to one appointment, and a button that filled those would
+            be a button that produces a letter addressed to nobody. Everything
+            else — hours, place of duty, probation, the appointing authority,
+            a start date at the beginning of next month — is a sensible default
+            the officer then corrects.
+
+            NOTHING HERE IS INVENTED. The place of duty is the University's own
+            published address; the appointing authority is the office the
+            University has ruled makes appointments. Every value is editable
+            and the record is a draft nobody has approved.
+            ---------------------------------------------------------------- */}
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <button type="button" className={BTN_GHOST} onClick={fillFromSample}>
+            <Wand2 size={14} /> Start from a working draft
+          </button>
+          <span className="text-xs text-[#6b6076] dark:text-[#9c93ad]">
+            Fills the ordinary terms — hours, place of duty, probation, dates, authority — and
+            leaves the person to you. Change anything.
+          </span>
+        </div>
       </header>
 
       {notice && (
