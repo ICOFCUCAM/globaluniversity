@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import PortalMasthead, {
   MASTHEAD_BTN_PRIMARY, MASTHEAD_BTN_SECONDARY,
 } from '@/components/portal/PortalMasthead';
-import { SampleDataNotice } from '@/components/ui/portal';
+import { EmptyState } from '@/components/ui/portal';
+import { supabase } from '@/lib/supabase';
 import { CARD } from '@/lib/portalTheme';
 import {
   BookOpen, Users, ClipboardList, Upload, Video,
@@ -18,11 +19,82 @@ interface LecturerDashboardProps {
 export default function LecturerDashboard({ onNavigate }: LecturerDashboardProps) {
   const { user } = useAuth();
 
-  const assignedCourses = [
-    { code: 'CSC 301', title: 'Artificial Intelligence', students: 85, resultsSubmitted: true, level: 300 },
-    { code: 'CSC 401', title: 'Final Year Project I', students: 42, resultsSubmitted: false, level: 400 },
-    { code: 'CSC 311', title: 'Machine Learning', students: 67, resultsSubmitted: false, level: 300 },
-  ];
+  // -------------------------------------------------------------------------
+  // COUNTED FOR THIS LECTURER, NOT INVENTED FOR ANY LECTURER.
+  //
+  // This screen carried three Computer Science courses — Artificial
+  // Intelligence, Final Year Project I, Machine Learning — with 85, 42 and 67
+  // students, a timetable placing them in "Hall A" and "Lab 3", and a
+  // performance panel reporting 92%, 85% and 95% pass rates. Every figure was a
+  // literal in this file. The University teaches none of those courses.
+  //
+  // The note left here previously said the fix was "to count them, as the
+  // administrator's, Registrar's and Finance dashboards now do". This is that.
+  //
+  // A lecturer is found through `lecturers.auth_user_id`; their courses through
+  // `courses.lecturer_id`. Somebody signed in as a lecturer with no lecturer
+  // record sees nothing and is told why — which is the true answer, and was
+  // previously three courses belonging to nobody.
+  // -------------------------------------------------------------------------
+  interface AssignedCourse {
+    id: string;
+    code: string;
+    title: string;
+    level: number | null;
+    students: number;
+    resultsSubmitted: boolean;
+  }
+
+  const [assignedCourses, setAssignedCourses] = useState<AssignedCourse[] | null>(null);
+  const [noLecturerRecord, setNoLecturerRecord] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      const uid = auth?.user?.id;
+      if (!uid) { setAssignedCourses([]); return; }
+
+      const { data: lecturer } = await supabase
+        .from('lecturers').select('id').eq('auth_user_id', uid).maybeSingle();
+      if (!lecturer) { setNoLecturerRecord(true); setAssignedCourses([]); return; }
+
+      const { data: courses } = await supabase
+        .from('courses')
+        .select('id, code, title, level')
+        .eq('lecturer_id', lecturer.id)
+        .order('code');
+
+      const rows: AssignedCourse[] = [];
+      for (const course of courses ?? []) {
+        // `head: true` returns the count without the rows.
+        const { count: students } = await supabase
+          .from('enrollments')
+          .select('id', { count: 'exact', head: true })
+          .eq('course_id', course.id)
+          .eq('status', 'registered');
+        const { count: pending } = await supabase
+          .from('results')
+          .select('id', { count: 'exact', head: true })
+          .eq('course_id', course.id)
+          .in('status', ['draft', 'submitted']);
+        rows.push({
+          id: course.id as string,
+          code: course.code as string,
+          title: course.title as string,
+          level: (course.level as number | null) ?? null,
+          students: students ?? 0,
+          // SUBMITTED MEANS NOTHING IS WAITING. A course with no results at all
+          // is not "submitted" — it has nothing to submit — so this is false
+          // until there is at least one result and none of them is outstanding.
+          resultsSubmitted: (students ?? 0) > 0 && (pending ?? 0) === 0,
+        });
+      }
+      setAssignedCourses(rows);
+    })();
+  }, []);
+
+  const totalStudents = (assignedCourses ?? []).reduce((t, c) => t + c.students, 0);
+  const resultsPending = (assignedCourses ?? []).filter((c) => !c.resultsSubmitted).length;
 
   return (
     <div className="space-y-6">
@@ -57,21 +129,20 @@ export default function LecturerDashboard({ onNavigate }: LecturerDashboardProps
           administrator's, Registrar's and Finance dashboards now do. Until
           that is done, a lecturer must not be able to mistake this screen for
           their own record. */}
-      <SampleDataNotice what="figures and courses" />
-
-      {/* Stats */}
+      {/* Stats — every tile a count, and `—` where there is nothing to count. */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: 'Assigned Courses', value: 3, icon: <BookOpen size={20} /> },
-          { label: 'Total Students', value: 194, icon: <Users size={20} /> },
-          { label: 'Results Pending', value: 2, icon: <ClipboardList size={20} /> },
-          { label: 'Materials Uploaded', value: 24, icon: <Upload size={20} /> },
+          { label: 'Assigned Courses', value: assignedCourses?.length ?? null, icon: <BookOpen size={20} /> },
+          { label: 'Students Registered', value: assignedCourses === null ? null : totalStudents, icon: <Users size={20} /> },
+          { label: 'Courses With Results Outstanding', value: assignedCourses === null ? null : resultsPending, icon: <ClipboardList size={20} /> },
         ].map((stat, i) => (
           <div key={i} className={`${CARD} p-4`}>
             <div className="w-fit rounded-xl bg-[#faf6ee] p-2.5 text-[#c5a55a] ring-1 ring-[#ece0c4] dark:bg-[#241f2c] dark:ring-[#3d3349]">
               {stat.icon}
             </div>
-            <p className="mt-3 font-heading text-2xl font-bold tabular-nums text-[#33234a] dark:text-[#e4dcf0]">{stat.value}</p>
+            <p className="mt-3 font-heading text-2xl font-bold tabular-nums text-[#33234a] dark:text-[#e4dcf0]">
+              {stat.value === null ? '—' : stat.value}
+            </p>
             <p className="text-xs text-[#6b6076] dark:text-[#9c93ad]">{stat.label}</p>
           </div>
         ))}
@@ -85,16 +156,29 @@ export default function LecturerDashboard({ onNavigate }: LecturerDashboardProps
             View All <ArrowRight size={12} />
           </button>
         </div>
+        {/* AN EMPTY LIST SAYS WHICH EMPTY IT IS. "No courses assigned" and
+            "you have no lecturer record" are different problems with different
+            people to ask, and this screen used to show neither because it
+            always had three. */}
+        {assignedCourses !== null && assignedCourses.length === 0 && (
+          <EmptyState
+            icon={<BookOpen size={20} />}
+            title={noLecturerRecord ? 'No lecturer record for this account' : 'No courses assigned yet'}
+            description={noLecturerRecord
+              ? 'This account is signed in as a lecturer but is not linked to a lecturer record, so it has no courses. Human Resources links the two when an appointment is activated.'
+              : 'Courses are assigned to a lecturer in Course Management. Nothing has been assigned to you yet.'}
+          />
+        )}
         <div className="divide-y divide-[#f0ece4] dark:divide-[#2a2333]">
-          {assignedCourses.map((course, i) => (
+          {(assignedCourses ?? []).map((course, i) => (
             <div key={i} className="px-5 py-4 flex items-center justify-between transition-colors hover:bg-[#faf8f4] dark:hover:bg-[#241f2c]">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center font-bold text-xs">
-                  {course.code.split(' ')[1]}
+                  {course.code.split(' ')[1] ?? course.code.slice(0, 3)}
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-[#33234a] dark:text-[#e4dcf0]">{course.code} - {course.title}</p>
-                  <p className="text-xs text-[#a49bb0] dark:text-[#7b7289]">{course.students} students · Level {course.level}</p>
+                  <p className="text-xs text-[#a49bb0] dark:text-[#7b7289]">{course.students} student{course.students === 1 ? '' : 's'}{course.level ? ` · Level ${course.level}` : ''}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -116,57 +200,24 @@ export default function LecturerDashboard({ onNavigate }: LecturerDashboardProps
         </div>
       </div>
 
-      {/* Schedule */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] p-5">
-          <h3 className="font-semibold text-[#33234a] dark:text-[#e4dcf0] mb-3">Today&apos;s Schedule</h3>
-          <div className="space-y-3">
-            {[
-              { time: '9:00 AM', course: 'CSC 301', type: 'Lecture', room: 'Hall A' },
-              { time: '11:00 AM', course: 'CSC 401', type: 'Supervision', room: 'Office' },
-              { time: '2:00 PM', course: 'CSC 311', type: 'Lab Session', room: 'Lab 3' },
-            ].map((item, i) => (
-              <div key={i} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <div className="text-center min-w-[60px]">
-                  <p className="text-xs font-bold text-blue-600">{item.time}</p>
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-[#4a4155] dark:text-[#c8c1d4]">{item.course} - {item.type}</p>
-                  <p className="text-xs text-[#a49bb0] dark:text-[#7b7289]">{item.room}</p>
-                </div>
-                <button className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors">
-                  <Video size={14} />
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* ---------------------------------------------------------------
+          TODAY'S SCHEDULE AND PERFORMANCE OVERVIEW ARE GONE.
 
-        <div className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] p-5">
-          <h3 className="font-semibold text-[#33234a] dark:text-[#e4dcf0] mb-3">Performance Overview</h3>
-          <div className="space-y-3">
-            {assignedCourses.map((course, i) => {
-              const avgScore = [72, 65, 78][i];
-              const passRate = [92, 85, 95][i];
-              return (
-                <div key={i} className="p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm font-medium text-[#4a4155] dark:text-[#c8c1d4]">{course.code}</p>
-                    <span className="text-xs text-[#a49bb0] dark:text-[#7b7289]">Avg: {avgScore}%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-gradient-to-r from-emerald-500 to-emerald-400 h-2 rounded-full transition-all duration-500"
-                      style={{ width: `${passRate}%` }}
-                    />
-                  </div>
-                  <p className="text-[10px] text-[#a49bb0] dark:text-[#7b7289] mt-1">{passRate}% pass rate</p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
+          The schedule was three fixed rows — 9:00 CSC 301 in Hall A, 11:00
+          CSC 401 in the office, 14:00 CSC 311 in Lab 3 — and the performance
+          panel reported average marks of 72/65/78 and pass rates of 92/85/95
+          from two literal arrays indexed by position.
+
+          Neither can be counted yet. A timetable slot in this system is a JSON
+          blob in `module_records` with the lecturer as free text, so nothing
+          can ask "what am I teaching today"; a pass rate needs approved
+          results, and none have been entered.
+
+          They are removed rather than left with a banner. A lecturer reading
+          "92% pass rate" beside their own name does not read the small print
+          above it, and a figure nobody measured is the one thing a dashboard
+          must never print.
+          --------------------------------------------------------------- */}
     </div>
   );
 }

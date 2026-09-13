@@ -1,22 +1,43 @@
-import { SampleDataNotice } from '@/components/ui/portal';
+import { EmptyState } from '@/components/ui/portal';
 import React, { useEffect, useState } from 'react';
 import { write } from '@/lib/write';
 import { listRecords, saveRecord } from '@/lib/moduleStore';
-import { lmsMaterials } from '@/lib/sampleData';
 import {
-  FileText, Video, Upload, Download, Play, Search,
+  FileText, Video, Upload, Play, Search,
   FolderOpen, Clock, Users, ExternalLink, Plus, X,
-  BookOpen, BarChart3, CheckCircle2
+  BarChart3
 } from 'lucide-react';
 
 export default function LMSModule() {
   const [activeTab, setActiveTab] = useState<'materials' | 'classes' | 'progress'>('materials');
   const [searchQuery, setSearchQuery] = useState('');
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [uploadForm, setUploadForm] = useState({ title: '', courseCode: '', type: 'pdf', file: null as File | null });
+  const [uploadForm, setUploadForm] = useState({ title: '', courseCode: '', type: 'pdf', url: '' });
 
-  const filteredMaterials = lmsMaterials.filter(
-    (m) => m.title.toLowerCase().includes(searchQuery.toLowerCase()) || m.courseCode.toLowerCase().includes(searchQuery.toLowerCase())
+  // -------------------------------------------------------------------------
+  // MATERIALS ARE READ, NOT INVENTED.
+  //
+  // This list was six hardcoded rows: "Introduction to AI - Lecture 1",
+  // "SQL Tutorial Complete Guide", "React Framework Masterclass", against
+  // course codes CSC 301, CSC 202, CSC 212. The University teaches theology,
+  // ministry, education, engineering and business — not one of those courses
+  // exists, and the screen carried a banner admitting the rows were samples.
+  //
+  // A portal that labels its own content as illustrative has told the person
+  // using it not to trust the screen. It now reads the same store the live
+  // classes on this page already write to, and shows nothing when there is
+  // nothing.
+  // -------------------------------------------------------------------------
+  const [materials, setMaterials] = useState<any[] | null>(null);
+
+  async function loadMaterials() {
+    const rows = await listRecords('lms', 'material');
+    setMaterials(rows.map((r) => ({ id: r.id, ...(r.body as Record<string, unknown>) })));
+  }
+
+  const filteredMaterials = (materials ?? []).filter(
+    (m: any) => String(m.title ?? '').toLowerCase().includes(searchQuery.toLowerCase())
+      || String(m.courseCode ?? '').toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const [liveClasses, setLiveClasses] = useState<any[]>([]);
@@ -34,6 +55,7 @@ export default function LMSModule() {
 
   useEffect(() => {
     loadClasses();
+    loadMaterials();
   }, []);
 
   async function scheduleClass(e: React.FormEvent) {
@@ -49,23 +71,43 @@ export default function LMSModule() {
     loadClasses();
   }
 
-  const courseProgress = [
-    { code: 'CSC 301', title: 'Artificial Intelligence', progress: 78, materials: 12, completed: 9 },
-    { code: 'CSC 311', title: 'Machine Learning', progress: 65, materials: 10, completed: 6 },
-    { code: 'CSC 202', title: 'Database Management', progress: 92, materials: 15, completed: 14 },
-    { code: 'CSC 212', title: 'Web Technologies', progress: 85, materials: 8, completed: 7 },
-    { code: 'CSC 303', title: 'Information Security', progress: 45, materials: 11, completed: 5 },
-  ];
-
-  function handleUpload(e: React.FormEvent) {
+  // -------------------------------------------------------------------------
+  // THIS USED TO THROW THE FILE AWAY.
+  //
+  // The whole body was `setShowUploadModal(false)` and a form reset. A lecturer
+  // filled the form, pressed Upload, watched the dialog close, and nothing was
+  // written anywhere — the most convincing failure a screen can have, because
+  // it looks exactly like success.
+  //
+  // The drop zone was not even a file input. It was a styled <div>, so no file
+  // was ever selected to discard.
+  //
+  // WHAT IT DOES INSTEAD, AND WHAT IT DELIBERATELY DOES NOT CLAIM. There is no
+  // storage bucket wired to this application, so it cannot accept a file and it
+  // does not pretend to. It records a REFERENCE — the title, the course, the
+  // kind and where the material lives — which is exactly what the live classes
+  // on this same screen already store, and which survives a reload.
+  // -------------------------------------------------------------------------
+  async function handleUpload(e: React.FormEvent) {
     e.preventDefault();
+    if (!(await write(saveRecord({
+      module: 'lms',
+      kind: 'material',
+      title: `${uploadForm.courseCode} · ${uploadForm.title}`,
+      body: {
+        courseCode: uploadForm.courseCode,
+        title: uploadForm.title,
+        type: uploadForm.type,
+        url: uploadForm.url,
+      },
+    }), 'add the material'))) return;
     setShowUploadModal(false);
-    setUploadForm({ title: '', courseCode: '', type: 'pdf', file: null });
+    setUploadForm({ title: '', courseCode: '', type: 'pdf', url: '' });
+    loadMaterials();
   }
 
   return (
     <div className="space-y-6">
-      <SampleDataNotice what="sample course material" />
       <div className="flex items-center justify-between">
         <div>
           <h2 className="font-heading text-xl font-bold text-[#422e59] dark:text-[#e4dcf0]">Learning Management System</h2>
@@ -73,7 +115,7 @@ export default function LMSModule() {
         </div>
         <button onClick={() => setShowUploadModal(true)}
           className="flex items-center gap-2 px-4 py-2.5 bg-[#422e59] text-white rounded-xl text-sm font-medium hover:bg-[#322244] transition-colors shadow-lg shadow-purple-900/20">
-          <Upload size={16} /> Upload Material
+          <Upload size={16} /> Add Material
         </button>
       </div>
 
@@ -101,6 +143,13 @@ export default function LMSModule() {
             <input type="text" placeholder="Search materials..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full max-w-md pl-9 pr-4 py-2 bg-white rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35" />
           </div>
+          {materials !== null && materials.length === 0 && (
+            <EmptyState
+              icon={<FolderOpen size={22} />}
+              title="No course materials yet"
+              description="Material is attached to a course by its lecturer. Use “Add Material” to record lecture notes, a reading or a recording."
+            />
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredMaterials.map((material) => (
               <div key={material.id} className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] p-4 hover:shadow-lg transition-all duration-300 group">
@@ -111,15 +160,22 @@ export default function LMSModule() {
                   <span className="text-[10px] font-medium text-[#a49bb0] dark:text-[#7b7289] bg-gray-50 px-2 py-0.5 rounded-full">{material.courseCode}</span>
                 </div>
                 <h4 className="text-sm font-semibold text-[#33234a] dark:text-[#e4dcf0] mt-3 group-hover:text-blue-600 transition-colors">{material.title}</h4>
-                <div className="flex items-center justify-between mt-3 text-xs text-[#a49bb0] dark:text-[#7b7289]">
-                  <span>{material.size}</span>
-                  <span>{material.downloads} downloads</span>
-                </div>
+                {/* NO SIZE, NO DOWNLOAD COUNT. Both were invented fields on the
+                    sample rows — "2.4 MB", "145 downloads" — and neither is
+                    measured anywhere. A figure nobody counts is worse beside
+                    real records than absent, because it reads as counted. */}
                 <div className="flex gap-2 mt-3">
-                  <button className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg text-xs font-medium hover:bg-blue-100 transition-colors">
-                    {material.type === 'video' ? <Play size={12} /> : <Download size={12} />}
-                    {material.type === 'video' ? 'Watch' : 'Download'}
-                  </button>
+                  {material.url ? (
+                    <a href={String(material.url)} target="_blank" rel="noopener noreferrer"
+                      className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg text-xs font-medium hover:bg-blue-100 transition-colors">
+                      {material.type === 'video' ? <Play size={12} /> : <ExternalLink size={12} />}
+                      {material.type === 'video' ? 'Watch' : 'Open'}
+                    </a>
+                  ) : (
+                    <span className="flex-1 px-3 py-2 text-center text-xs text-[#a49bb0] dark:text-[#7b7289]">
+                      No link recorded
+                    </span>
+                  )}
                 </div>
               </div>
             ))}
@@ -210,31 +266,25 @@ export default function LMSModule() {
       )}
 
       {/* Progress Tab */}
+      {/* ---------------------------------------------------------------
+          PROGRESS IS NOT ASSERTED.
+
+          This tab printed five progress bars — Artificial Intelligence 78%,
+          Machine Learning 65%, Database Management 92% — as a hardcoded array.
+          Nothing measured any of it, the courses do not exist, and a filled
+          progress bar is about as confident as an interface gets.
+
+          Real progress needs two things this system does not yet have: course
+          material attached to a course, and a record of a student completing a
+          piece of it. Until both exist, this says so.
+          --------------------------------------------------------------- */}
       {activeTab === 'progress' && (
         <div className="space-y-4">
-          {courseProgress.map((course) => (
-            <div key={course.code} className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] p-5">
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <h4 className="text-sm font-semibold text-[#33234a] dark:text-[#e4dcf0]">{course.code} - {course.title}</h4>
-                  <p className="text-xs text-[#a49bb0] dark:text-[#7b7289]">{course.completed}/{course.materials} materials completed</p>
-                </div>
-                <span className={`text-lg font-bold ${course.progress >= 80 ? 'text-emerald-600' : course.progress >= 50 ? 'text-blue-600' : 'text-amber-600'}`}>
-                  {course.progress}%
-                </span>
-              </div>
-              <div className="w-full rounded-full bg-[#f2eee6] dark:bg-[#2a2333] h-2.5">
-                <div
-                  className={`h-2.5 rounded-full transition-all duration-700 ${
-                    course.progress >= 80 ? 'bg-gradient-to-r from-emerald-500 to-emerald-400' :
-                    course.progress >= 50 ? 'bg-gradient-to-r from-blue-500 to-blue-400' :
-                    'bg-gradient-to-r from-amber-500 to-amber-400'
-                  }`}
-                  style={{ width: `${course.progress}%` }}
-                />
-              </div>
-            </div>
-          ))}
+          <EmptyState
+            icon={<BarChart3 size={22} />}
+            title="Progress is not being tracked yet"
+            description="Progress is measured from material attached to a course and a record of each student working through it. Neither is recorded yet, so there is nothing to report — rather than a figure nobody measured."
+          />
         </div>
       )}
 
@@ -243,14 +293,14 @@ export default function LMSModule() {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowUploadModal(false)}>
           <div className="bg-white rounded-2xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
             <div className="px-6 py-4 border-b border-[#f0ece4] dark:border-[#2a2333] flex items-center justify-between">
-              <h3 className="font-heading text-lg font-bold text-[#422e59] dark:text-[#e4dcf0]">Upload Material</h3>
+              <h3 className="font-heading text-lg font-bold text-[#422e59] dark:text-[#e4dcf0]">Add Material</h3>
               <button onClick={() => setShowUploadModal(false)} className="p-1 rounded-lg hover:bg-[#f2eee6] dark:hover:bg-[#2a2333]"><X size={18} /></button>
             </div>
             <form onSubmit={handleUpload} className="p-6 space-y-4">
               <div>
                 <label className="block text-xs font-medium text-[#6b6076] dark:text-[#9c93ad] mb-1">Course Code</label>
                 <input value={uploadForm.courseCode} onChange={(e) => setUploadForm({ ...uploadForm, courseCode: e.target.value })}
-                  placeholder="e.g. CSC 301" className="w-full px-3 py-2 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35" />
+                  placeholder="e.g. BIS 220" className="w-full px-3 py-2 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-[#6b6076] dark:text-[#9c93ad] mb-1">Title</label>
@@ -265,19 +315,26 @@ export default function LMSModule() {
                   <option value="video">Video</option>
                 </select>
               </div>
+              {/* A LINK, NOT A DROP ZONE THAT NEVER TOOK A FILE.
+                  What stood here promised "PDF, MP4, DOCX up to 500MB" and was
+                  a <div> — not an <input type="file"> — inside a form whose
+                  submit handler discarded everything anyway. No storage is
+                  wired to this application, so the honest thing is to record
+                  where the material actually lives. */}
               <div>
-                <label className="block text-xs font-medium text-[#6b6076] dark:text-[#9c93ad] mb-1">File</label>
-                <div className="border-2 border-dashed border-[#ded6c8] dark:border-[#3d3349] rounded-xl p-6 text-center hover:border-blue-400 transition-colors cursor-pointer">
-                  <Upload size={24} className="mx-auto text-[#a49bb0] dark:text-[#7b7289] mb-2" />
-                  <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">Click to upload or drag and drop</p>
-                  <p className="text-xs text-[#a49bb0] dark:text-[#7b7289] mt-1">PDF, MP4, DOCX up to 500MB</p>
-                </div>
+                <label className="block text-xs font-medium text-[#6b6076] dark:text-[#9c93ad] mb-1">Where it lives</label>
+                <input value={uploadForm.url} onChange={(e) => setUploadForm({ ...uploadForm, url: e.target.value })}
+                  placeholder="https://…  link to the document or recording"
+                  className="w-full px-3 py-2 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35" />
+                <p className="text-xs text-[#a49bb0] dark:text-[#7b7289] mt-1">
+                  The University does not host files here yet. This records the material and where to find it.
+                </p>
               </div>
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => setShowUploadModal(false)}
                   className="flex-1 px-4 py-2.5 border border-[#ded6c8] dark:border-[#3d3349] rounded-xl text-sm font-medium text-[#6b6076] dark:text-[#9c93ad] hover:bg-[#faf8f4] dark:hover:bg-[#241f2c]">Cancel</button>
                 <button type="submit"
-                  className="flex-1 px-4 py-2.5 bg-[#422e59] text-white rounded-xl text-sm font-medium hover:bg-[#322244]">Upload</button>
+                  className="flex-1 px-4 py-2.5 bg-[#422e59] text-white rounded-xl text-sm font-medium hover:bg-[#322244]">Add</button>
               </div>
             </form>
           </div>

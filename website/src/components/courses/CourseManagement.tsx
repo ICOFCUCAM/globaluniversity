@@ -135,7 +135,7 @@ export default function CourseManagement() {
           <EmptyState
             icon={<BookOpen size={20} />}
             title="No courses in the catalogue yet"
-            description="Courses added here appear in registration, the timetable and the transcript. Codes follow the university's own scheme — BTH101, EDU204 — not the template's CSC numbering."
+            description="Courses added here appear in registration, the timetable and the transcript. Codes follow the university's own scheme — BIS 220, OT 300 — and are kept in the course-code registry."
           />
         </Card>
       ) : (
@@ -183,7 +183,7 @@ export default function CourseManagement() {
                 <div>
                   <label className="block text-xs font-medium text-[#6b6076] dark:text-[#9c93ad] mb-1">Course Code *</label>
                   <input required value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })}
-                    placeholder="e.g. BTH101" className="w-full px-3 py-2 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35" />
+                    placeholder="e.g. BIS 220" className="w-full px-3 py-2 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#422e59]/35" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-[#6b6076] dark:text-[#9c93ad] mb-1">Credit Units *</label>

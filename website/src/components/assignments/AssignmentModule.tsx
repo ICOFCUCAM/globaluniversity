@@ -233,7 +233,7 @@ export default function AssignmentModule() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowNew(false)}>
           <form onSubmit={createBrief} onClick={(e) => e.stopPropagation()} className="w-full max-w-md space-y-3 rounded-2xl bg-white p-6">
             <h3 className="font-heading text-lg font-bold text-[#422e59] dark:text-[#e4dcf0]">New Assignment</h3>
-            <input required placeholder="Course code (e.g. THE201)" className={input} value={brief.course} onChange={(e) => setBrief({ ...brief, course: e.target.value })} />
+            <input required placeholder="Course code (e.g. BIS 220)" className={input} value={brief.course} onChange={(e) => setBrief({ ...brief, course: e.target.value })} />
             <input required placeholder="Title" className={input} value={brief.title} onChange={(e) => setBrief({ ...brief, title: e.target.value })} />
             <input required type="date" className={input} value={brief.due} onChange={(e) => setBrief({ ...brief, due: e.target.value })} />
             <textarea rows={3} placeholder="Instructions" className={input} value={brief.instructions} onChange={(e) => setBrief({ ...brief, instructions: e.target.value })} />
