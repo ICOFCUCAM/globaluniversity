@@ -193,6 +193,9 @@ const MARKERS = {
   // probeable — a restricted row comes back absent, not refused — so the
   // marker is the table, which nothing before this migration creates.
   '056': 'capability_grants',
+  // 057 creates six tables; programme_versions is the one nothing else could
+  // have made, and the one every later academic feature hangs from.
+  '057': 'programme_versions',
 };
 
 /** The SQL that answers "is this one here?", for each of the three forms. */

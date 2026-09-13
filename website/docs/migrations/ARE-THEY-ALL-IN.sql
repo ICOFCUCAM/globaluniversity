@@ -136,6 +136,10 @@ select * from (
   select '056' as migration, '056_what_an_office_may_not_even_see.sql' as file,
          case when to_regclass('public.capability_grants') is not null then 'YES' else 'NO' end as landed,
          'capability_grants' as what_it_creates
+  union all
+  select '057' as migration, '057_the_academic_structure.sql' as file,
+         case when to_regclass('public.programme_versions') is not null then 'YES' else 'NO' end as landed,
+         'programme_versions' as what_it_creates
 ) as landed_report
  order by migration;
 

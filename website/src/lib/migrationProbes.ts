@@ -495,6 +495,18 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
     // it, so it is the honest marker.
     table: 'capability_grants',
   },
+  {
+    file: '057_the_academic_structure.sql',
+    what: 'The University\u2019s academic structure becomes data: schools, departments, '
+      + 'programmes, the VERSION of a programme somebody was admitted under, and the curriculum '
+      + 'that version carries \u2014 instead of TypeScript constants compiled into the website. '
+      + 'Nothing is seeded; the tables arrive empty because which of the forty-one programmes '
+      + 'are current, and on what version, is a decision rather than a default. '
+      + 'AND NO CURRICULUM CAN BE APPROVED until the University records which offices must sign '
+      + 'one \u2014 academic_approval_requirements arrives empty on purpose, and the refusal '
+      + 'says how to fill it.',
+    table: 'programme_versions',
+  },
 ];
 
 /** What a probe came back as. */
