@@ -110,6 +110,33 @@ export const menuGroups: MenuGroup[] = [
   {
     title: 'Academic',
     items: [
+      // ---------------------------------------------------------------
+      // THE STRUCTURE FIRST, THEN THE UTILITIES.
+      //
+      // The University's objection to this section was that it was "organized
+      // around isolated utilities — Courses, Course Registration, Timetable,
+      // LMS — rather than around the University's actual academic structure."
+      //
+      // These two are that structure. Programmes is the register of what the
+      // University offers; the Curriculum Builder is what fills one. They are
+      // first in the group because everything below them hangs off them: a
+      // course is taught as part of a programme, a registration is against a
+      // curriculum, a timetable schedules a cohort reading one.
+      // ---------------------------------------------------------------
+      {
+        id: 'programmes-register',
+        label: 'Programmes',
+        icon: <GraduationCap size={18} />,
+        roles: ['superadmin', 'admin', 'chancellor', 'vice-chancellor', 'registrar',
+          'dean', 'hod', 'programme-coordinator', 'academic-office'],
+      },
+      {
+        id: 'curriculum-builder',
+        label: 'Curriculum builder',
+        icon: <BookMarked size={18} />,
+        roles: ['superadmin', 'admin', 'registrar', 'dean', 'hod',
+          'programme-coordinator', 'academic-office'],
+      },
       { id: 'programme-resources', label: 'Programme resources', icon: <BookMarked size={18} />, roles: ACADEMIC },
       { id: 'courses', label: 'Courses', icon: <BookOpen size={18} />, roles: ACADEMIC },
       // REGISTRATION IS NOT COURSE MANAGEMENT. 'Courses' is the catalogue —

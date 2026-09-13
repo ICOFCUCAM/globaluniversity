@@ -142,6 +142,9 @@ const READ_ONLY_BY_DESIGN = {
     + 'each filtering `enrollments` for themselves.',
   position_profiles_unapproved: 'A view.',
   admission_status_coverage: 'A view.',
+  curriculum_progress: 'A view over programme_versions and curriculum_entries. It is what the '
+    + 'Curriculum Builder reads on every edit: programme_in_force joins only PUBLISHED versions, '
+    + 'and a builder works on a draft.',
   academic_term_now: 'A view over `academic_term_on(current_date)`, which reads the academic '
     + 'calendar. Nothing writes it because nothing writes a date — it answers "which term is it" '
     + 'so that no screen has to reach for new Date().getFullYear() and be wrong every January.',
@@ -155,6 +158,11 @@ const READ_ONLY_BY_DESIGN = {
   institutional_settings: 'Seeded by 050. One row, one setting, changed rarely and '
     + 'deliberately.',
   admission_states: 'Seeded by 025.',
+  academic_approval_requirements: 'Seeded by 058: the Vice-Chancellor approves a curriculum. Held '
+    + 'as DATA rather than in a trigger so the University can tighten its own governance chain '
+    + 'with an INSERT — adding the Head of Department and the Dean needs no deployment. Nothing '
+    + 'in the application writes it because who signs a curriculum is a constitutional question, '
+    + 'not a screen.',
   awards: 'Seeded.',
   grading_scale: 'Seeded and published.',
 };

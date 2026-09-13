@@ -22,6 +22,8 @@ import { UNIVERSITY } from '@/lib/constants';
 import LecturerManagement from './lecturers/LecturerManagement';
 import CourseRegistration from '@/components/courses/CourseRegistration';
 import CourseManagement from './courses/CourseManagement';
+import ProgrammeRegister from './academic/ProgrammeRegister';
+import CurriculumBuilder from './academic/CurriculumBuilder';
 import ResultProcessing from './results/ResultProcessing';
 import GradeBook from './results/GradeBook';
 import ResultsApproval from './results/ResultsApproval';
@@ -64,6 +66,16 @@ export default function AppLayout() {
   // specification is explicit that no application forms live in this system.
   const { isAuthenticated, user } = useAuth();
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
+  // -------------------------------------------------------------------------
+  // WHICH CURRICULUM THE BUILDER IS ON.
+  //
+  // Held here rather than in the builder because the register opens it: a
+  // Superadministrator picks a programme from the list and the builder appears
+  // on that one. Opening the builder from the sidebar with nothing chosen
+  // shows the register instead, which is the only sensible thing it can do —
+  // a builder with no programme is a blank screen with a title.
+  // -------------------------------------------------------------------------
+  const [curriculumVersion, setCurriculumVersion] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   // Separate from `collapsed`, which is the desktop rail width. On a phone the
   // rail is not narrow — it is absent, and slides over the content when opened.
@@ -213,6 +225,25 @@ export default function AppLayout() {
         return <CertificateGenerator />;
       case 'my-credentials':
         return <MyCredentials />;
+      case 'programmes-register':
+        return (
+          <ProgrammeRegister
+            onOpen={(id) => { setCurriculumVersion(id); setCurrentView('curriculum-builder'); }}
+          />
+        );
+      case 'curriculum-builder':
+        return curriculumVersion
+          ? (
+            <CurriculumBuilder
+              versionId={curriculumVersion}
+              onBack={() => { setCurriculumVersion(null); setCurrentView('programmes-register'); }}
+            />
+          )
+          : (
+            <ProgrammeRegister
+              onOpen={(id) => { setCurriculumVersion(id); setCurrentView('curriculum-builder'); }}
+            />
+          );
       case 'lms':
         return <LMSModule />;
       case 'exams':

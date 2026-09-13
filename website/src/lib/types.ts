@@ -296,6 +296,10 @@ export type ViewType =
   | 'certificate'
   | 'my-credentials'
   | 'lms' 
+  // The academic register, and the builder that fills it. Both read the
+  // structure 057 made data — until then there was no list to show.
+  | 'programmes-register'
+  | 'curriculum-builder'
   | 'exams'
   | 'documents'
   | 'analytics'
