@@ -579,6 +579,18 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
       + 'number is what a student walks to.',
     table: 'course_offerings',
   },
+  {
+    file: '064_the_rooms_to_start_from.sql',
+    what: 'Seventeen rooms \u2014 nine at Buea, five at Douala, three online \u2014 every one '
+      + 'marked PROVISIONAL, because the University asked for room numbers to be given and then '
+      + 'edited. The codes are made up; the campuses are not. None claims a capacity, because a '
+      + 'wrong one puts students in a corridor. Editing a room clears the placeholder label, so '
+      + 'nobody has to remember to confirm it. Until this ran, no class could be placed anywhere '
+      + 'and a room double-booking could not be detected, because no class was in a room.',
+    // The column is the marker: `provisional` is what 064 adds and 063 did not.
+    table: 'rooms',
+    column: 'provisional',
+  },
 ];
 
 /** What a probe came back as. */

@@ -27,6 +27,7 @@ import CurriculumBuilder from './academic/CurriculumBuilder';
 import CourseOfferings from './academic/CourseOfferings';
 import TimetableGrid from './academic/TimetableGrid';
 import AcademicOverview from './academic/AcademicOverview';
+import Rooms from './academic/Rooms';
 import ResultProcessing from './results/ResultProcessing';
 import GradeBook from './results/GradeBook';
 import ResultsApproval from './results/ResultsApproval';
@@ -278,6 +279,8 @@ export default function AppLayout() {
         return <TimetableModule />;
       case 'course-offerings':
         return <CourseOfferings />;
+      case 'rooms':
+        return <Rooms />;
       case 'academic-overview':
         return <AcademicOverview onNavigate={setCurrentView} />;
       case 'forum':

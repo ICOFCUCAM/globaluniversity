@@ -170,6 +170,15 @@ select * from (
   select '063' as migration, '063_the_offering_and_the_class.sql' as file,
          case when to_regclass('public.course_offerings') is not null then 'YES' else 'NO' end as landed,
          'course_offerings' as what_it_creates
+  union all
+  select '064' as migration, '064_the_rooms_to_start_from.sql' as file,
+         case when exists (
+                   select 1 from information_schema.columns
+                    where table_schema = 'public'
+                      and table_name = 'rooms'
+                      and column_name = 'provisional')
+                 then 'YES' else 'NO' end as landed,
+         'rooms.provisional' as what_it_creates
 ) as landed_report
  order by migration;
 

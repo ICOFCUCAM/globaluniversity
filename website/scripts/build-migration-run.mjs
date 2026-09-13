@@ -205,6 +205,10 @@ const MARKERS = {
   '061': 'rows:programme_versions:true',
   '062': 'curriculum_progress',
   '063': 'course_offerings',
+  // 064 CREATES NO TABLE — it adds a column to 063's `rooms` and fills it.
+  // `provisional` is the marker: nothing before it had a way to say that a
+  // room arrived in a seed rather than from the University.
+  '064': 'rooms.provisional',
 };
 
 /** The SQL that answers "is this one here?", for each of the three forms. */

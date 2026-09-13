@@ -15,7 +15,7 @@ import {
   FileText, Award, Monitor, PenTool, FolderOpen, BarChart3,
   Settings, Shield, BookMarked, Wallet, Stamp, UserCog, Inbox,
   ClipboardCheck, Share2, BadgeCheck, Video, Eye, CalendarClock, TrendingUp,
-  CalendarDays,
+  CalendarDays, MapPin,
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -124,6 +124,7 @@ export const menuGroups: MenuGroup[] = [
       // course is taught as part of a programme, a registration is against a
       // curriculum, a timetable schedules a cohort reading one.
       // ---------------------------------------------------------------
+      //
       // THE CONTROL CENTRE FIRST. The University asked for "an Academic
       // Overview that acts as a control centre" — and a control centre below
       // the things it controls is a report nobody opens.
@@ -161,6 +162,17 @@ export const menuGroups: MenuGroup[] = [
         id: 'course-offerings',
         label: 'Course offerings',
         icon: <CalendarClock size={18} />,
+        roles: ['superadmin', 'admin', 'registrar', 'dean', 'hod',
+          'programme-coordinator', 'academic-office'],
+      },
+      // AND THE ROOMS THOSE CLASSES MEET IN. Below offerings because that is
+      // the order the work happens in — a room is looked up while scheduling a
+      // class, not visited for its own sake. 064 seeds seventeen of them and
+      // marks every one a placeholder until somebody edits it.
+      {
+        id: 'rooms',
+        label: 'Rooms',
+        icon: <MapPin size={18} />,
         roles: ['superadmin', 'admin', 'registrar', 'dean', 'hod',
           'programme-coordinator', 'academic-office'],
       },

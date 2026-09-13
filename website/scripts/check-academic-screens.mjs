@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Do the four new academic screens actually draw?
+// Do the new academic screens actually draw?
 //
 //   node scripts/check-academic-screens.mjs [url]
 //
@@ -33,6 +33,7 @@ const pass = (m) => console.log(`  ok    ${m}`);
 const SCREENS = [
   { view: 'academic-overview', nav: 'Academic overview', heading: 'Academic overview' },
   { view: 'course-offerings', nav: 'Course offerings', heading: 'Course offerings' },
+  { view: 'rooms', nav: 'Rooms', heading: 'Rooms' },
   { view: 'timetable', nav: 'Timetable', heading: 'Timetable' },
   { view: 'course-registration', nav: 'Course registration', heading: 'Course registration' },
 ];
@@ -115,7 +116,7 @@ for (const s of SCREENS) {
 
   // AND IT SAYS SOMETHING. A blank page with no skeleton has also "settled".
   const body = await page.locator('body').innerText().catch(() => '');
-  const saidSomething = /could not be read|Nothing is offered|Nothing is timetabled|Nothing needs attention|No academic years recorded|did not answer within|no courses in the catalogue|Choose a student|not linked to a student record|needs attention/i
+  const saidSomething = /could not be read|Nothing is offered|Nothing is timetabled|Nothing needs attention|No academic years recorded|did not answer within|no courses in the catalogue|Choose a student|not linked to a student record|needs attention|No rooms are recorded|placeholder/i
     .test(body);
   if (saidSomething) pass('and it tells the reader what it found, or that it could not look');
   else fail('it settled into saying nothing at all');
@@ -129,11 +130,11 @@ console.log('');
 if (errors.length > 0) {
   for (const e of errors.slice(0, 6)) fail(`uncaught in the page: ${e.slice(0, 200)}`);
 } else {
-  pass('no uncaught error in any of the four');
+  pass('no uncaught error in any of them');
 }
 
 await browser.close();
 console.log(failures === 0
-  ? '\nAll four academic screens draw and settle.\n'
+  ? '\nEvery new academic screen draws and settles.\n'
   : `\n${failures} failed.\n`);
 process.exit(failures === 0 ? 0 : 1);

@@ -315,6 +315,9 @@ export type ViewType =
   // ---------------------------------------------------------------------
   | 'course-offerings'
   | 'academic-overview'
+  // WHERE THE UNIVERSITY TEACHES. A class can only be checked for a room
+  // clash if it is in a room, and until 064 there were no rooms at all.
+  | 'rooms'
   // ATTENDANCE, SEPARATED FROM THE TIMETABLE. They were one screen because the
   // timetable kept its own invented slots; now that a class is a row every
   // other screen can read, marking who attended one is its own job.

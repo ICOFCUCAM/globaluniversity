@@ -11,7 +11,10 @@
 //               dayOfWeek, startsAt, endsAt, capacity }  add a class
 //   reschedule{ sectionId, ...the slot }
 //   unschedule{ sectionId }
-//   room      { code, name, campus, kind, capacity }     record a room
+//   room        { code, name, campus, kind, capacity }   record a room
+//   room-set    { roomId, ...the same fields }            correct one
+//   room-retire { roomId }                                take it out of use
+//   room-restore{ roomId }                                bring it back
 //
 // ---------------------------------------------------------------------------
 // WHY THE CLASH IS REPORTED AND NOT REFUSED
@@ -45,7 +48,11 @@ const bad = (error: string, status: number, detail?: string) =>
 const CAPABILITY: Capability = 'manage-courses' as Capability;
 const MODES = ['Campus', 'Online', 'Online / Campus'];
 const STATUSES = ['planned', 'open', 'closed', 'cancelled'];
-const ACTIONS = ['offer', 'set', 'status', 'schedule', 'reschedule', 'unschedule', 'room'];
+const ROOM_KINDS = ['room', 'lecture-hall', 'laboratory', 'studio', 'online'];
+const ACTIONS = [
+  'offer', 'set', 'status', 'schedule', 'reschedule', 'unschedule',
+  'room', 'room-set', 'room-retire', 'room-restore',
+];
 
 /** The clashes a scheduling change caused or left behind, for the screen to show. */
 async function clashesFor(
@@ -90,21 +97,86 @@ export async function POST(request: Request) {
   }
 
   // =========================================================================
-  // ROOM
+  // ROOMS — recorded, corrected, retired, brought back
   // =========================================================================
-  if (action === 'room') {
-    const code = String(body.code ?? '').trim();
-    if (!code) return bad('no-code', 400, 'A room needs the code people call it by.');
-    const capacity = body.capacity == null ? null : Number(body.capacity);
-    if (capacity !== null && (!Number.isInteger(capacity) || capacity <= 0)) {
-      return bad('bad-capacity', 400, 'A capacity is a whole number above zero, or left blank.');
+  //
+  // 064 seeds seventeen rooms and marks every one PROVISIONAL, because the
+  // University asked for room numbers to be given and then edited. A seeded
+  // room is a placeholder wearing a plausible code, and the one thing that
+  // must not happen is for it to be mistaken for a surveyed fact.
+  //
+  // SO AN EDIT CLEARS THE FLAG, AUTOMATICALLY. A room somebody has opened,
+  // looked at and corrected is no longer a placeholder — and nobody has to
+  // remember to tick a box saying so. That is the whole mechanism; there is no
+  // separate "confirm this room" action to forget.
+  //
+  // A ROOM IS RETIRED, NEVER DELETED. `class_sections.room_id` is ON DELETE
+  // SET NULL, so deleting a room silently empties the room column of every
+  // class ever taught in it — including last year's, which is a record of
+  // where an examination was actually held. `active = false` takes it out of
+  // every picker and leaves the history intact.
+  if (action === 'room' || action === 'room-set') {
+    const code = body.code === undefined ? null : String(body.code).trim();
+    if (action === 'room' && !code) {
+      return bad('no-code', 400, 'A room needs the code people call it by.');
     }
+    if (code !== null && code.length === 0) {
+      return bad('no-code', 400, 'A room cannot be renamed to nothing — a class needs somewhere '
+        + 'to be, and a blank code on a timetable tells a student nothing.');
+    }
+
+    let capacity: number | null | undefined;
+    if (body.capacity !== undefined) {
+      capacity = body.capacity === null || body.capacity === '' ? null : Number(body.capacity);
+      if (capacity !== null && (!Number.isInteger(capacity) || capacity <= 0)) {
+        // BLANK IS NOT ZERO, here as everywhere. A room with no recorded
+        // capacity holds an unknown number of people; one with a capacity of
+        // zero holds nobody, and is not a room.
+        return bad('bad-capacity', 400,
+          'A capacity is a whole number above zero. Leave it blank if nobody has measured the '
+          + 'room — blank means "not recorded", not "holds nobody".');
+      }
+    }
+
+    const kind = body.kind === undefined ? undefined : String(body.kind);
+    if (kind !== undefined && !ROOM_KINDS.includes(kind)) {
+      return bad('bad-kind', 400, `A room is one of: ${ROOM_KINDS.join(', ')}.`);
+    }
+
+    const fields: Record<string, unknown> = {};
+    if (code !== null) fields.code = code;
+    if (body.name !== undefined) fields.name = body.name ? String(body.name) : null;
+    if (body.campus !== undefined) fields.campus = body.campus ? String(body.campus) : null;
+    if (kind !== undefined) fields.kind = kind;
+    if (capacity !== undefined) fields.capacity = capacity;
+
+    if (action === 'room-set') {
+      const id = String(body.roomId ?? '');
+      if (!id) return bad('no-room', 400);
+      if (Object.keys(fields).length === 0) {
+        return bad('nothing-to-change', 400, 'Nothing was changed.');
+      }
+      // THE EDIT IS WHAT CONFIRMS IT. See the note above.
+      fields.provisional = false;
+      const { error } = await admin.from('rooms').update(fields).eq('id', id);
+      if (error) {
+        return bad('room-failed', 409, /duplicate|unique/i.test(error.message)
+          ? `Another room already has the code ${code}. Two rooms with one code means a `
+            + 'timetable cannot say which one a class is in.'
+          : error.message);
+      }
+      await audit(admin, {
+        action: 'room-corrected', entityType: 'room', entityId: id,
+        performedBy: caller.id, details: fields,
+      });
+      return NextResponse.json({ ok: true });
+    }
+
     const { data, error } = await admin.from('rooms').insert({
-      code,
-      name: body.name ? String(body.name) : null,
-      campus: body.campus ? String(body.campus) : null,
-      kind: body.kind ? String(body.kind) : 'room',
-      capacity,
+      kind: 'room',
+      ...fields,
+      // A room somebody typed in is not provisional. Only a seeded one is.
+      provisional: false,
     }).select('id').single();
     if (error) {
       return bad('room-failed', 409, /duplicate|unique/i.test(error.message)
@@ -116,6 +188,40 @@ export async function POST(request: Request) {
       performedBy: caller.id, details: { code },
     });
     return NextResponse.json({ ok: true, id: data.id });
+  }
+
+  if (action === 'room-retire' || action === 'room-restore') {
+    const id = String(body.roomId ?? '');
+    if (!id) return bad('no-room', 400);
+    const retiring = action === 'room-retire';
+
+    // RETIRING A ROOM THAT CLASSES ARE STILL IN IS NOT REFUSED — a building
+    // closes mid-term and the classes have to move — but it is REPORTED, with
+    // the count, because a room quietly leaving the picker while eleven
+    // classes still meet in it is how a timetable rots.
+    let stillUsed = 0;
+    if (retiring) {
+      const { count } = await admin
+        .from('class_sections')
+        .select('id', { count: 'exact', head: true })
+        .eq('room_id', id);
+      stillUsed = count ?? 0;
+    }
+
+    const { error } = await admin.from('rooms').update({ active: !retiring }).eq('id', id);
+    if (error) return bad('room-failed', 500, error.message);
+    await audit(admin, {
+      action: retiring ? 'room-retired' : 'room-restored', entityType: 'room', entityId: id,
+      performedBy: caller.id,
+    });
+    return NextResponse.json({
+      ok: true,
+      ...(stillUsed > 0 ? {
+        warning: `${stillUsed} class${stillUsed === 1 ? '' : 'es'} still meet${stillUsed === 1 ? 's' : ''} `
+          + 'in this room. It is out of the picker now, but those classes have not moved — they '
+          + 'still say they are in here.',
+      } : {}),
+    });
   }
 
   // =========================================================================

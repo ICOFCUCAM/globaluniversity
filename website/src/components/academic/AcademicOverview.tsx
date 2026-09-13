@@ -58,7 +58,7 @@ const CLASH = 'kind, section_id, clashes_with, detail';
 const YEAR = 'id, label, starts_in, status';
 const ENROLMENT = 'id, offering_id, status, academic_year, semester';
 const RESULT = 'enrollment_id, status';
-const ROOM = 'id, code, active';
+const ROOM = 'id, code, active, provisional';
 
 interface Progress {
   version_id: string; programme_id: string; code: string; award_level: string;
@@ -104,6 +104,8 @@ export default function AcademicOverview({
   const [sectionsNoDay, setSectionsNoDay] = useState(0);
   const [sectionsNoRoom, setSectionsNoRoom] = useState(0);
   const [roomCount, setRoomCount] = useState(0);
+  // Rooms that arrived in 064's seed and nobody has looked at yet.
+  const [placeholderRooms, setPlaceholderRooms] = useState(0);
   const [awaitingResults, setAwaitingResults] = useState<number | null>(null);
   const [pendingApprovals, setPendingApprovals] = useState(0);
 
@@ -215,7 +217,9 @@ export default function AcademicOverview({
       setClashCount((clashRows ?? []).length);
       setSectionsNoDay(sections.filter((s) => s.day_of_week === null).length);
       setSectionsNoRoom(sections.filter((s) => s.room_id === null).length);
-      setRoomCount((rms.data ?? []).length);
+      const roomRows = (rms.data ?? []) as unknown as { provisional: boolean }[];
+      setRoomCount(roomRows.length);
+      setPlaceholderRooms(roomRows.filter((r) => r.provisional).length);
       setAwaitingResults(outstanding);
       setPendingApprovals(waiting ?? 0);
     } catch (e) {
@@ -303,13 +307,39 @@ export default function AcademicOverview({
         tone: 'info',
         count: 0,
         headline: 'No rooms are recorded',
-        detail: 'Until the University states its rooms and their capacities, a class can be '
-          + 'scheduled but not placed — and a room double-booking cannot be detected, because '
-          + 'no class is in a room.',
-        goTo: 'course-offerings',
-        goLabel: 'Record a room',
+        detail: 'Until rooms exist, a class can be scheduled but not placed — and a room '
+          + 'double-booking cannot be detected, because no class is in a room. Migration 064 '
+          + 'seeds seventeen to start from.',
+        goTo: 'rooms',
+        goLabel: 'Open rooms',
       });
-    } else if (sectionsNoRoom > 0) {
+    }
+
+    // ---- THE PLACEHOLDER ROOMS --------------------------------------------
+    //
+    // 064 made up these room codes because the University asked for room
+    // numbers to be given. They are on campuses it states, but the numbers are
+    // not real — and a made-up room code is exactly the kind of thing that
+    // stops looking made-up after a fortnight. So it is said here, on the
+    // control centre, every time somebody opens it, until they are checked.
+    //
+    // IT CLEARS ITSELF: editing a room clears its flag, and the alert stops
+    // appearing when the last one is gone.
+    if (placeholderRooms > 0) {
+      out.push({
+        key: 'placeholder-rooms',
+        tone: 'info',
+        count: placeholderRooms,
+        headline: `${placeholderRooms} room${placeholderRooms === 1 ? ' is a placeholder' : 's are placeholders'}`,
+        detail: 'The codes were made up so classes could be given somewhere to be, and none of '
+          + 'them claims a capacity. Editing a room is what marks it as checked — a student '
+          + 'should not be sent to a door nobody has confirmed exists.',
+        goTo: 'rooms',
+        goLabel: 'Check the rooms',
+      });
+    }
+
+    if (roomCount > 0 && sectionsNoRoom > 0) {
       out.push({
         key: 'no-room',
         tone: 'info',
@@ -417,7 +447,7 @@ export default function AcademicOverview({
 
     return out;
   }, [roll, progress, clashCount, sectionsNoDay, sectionsNoRoom, roomCount,
-    pendingApprovals, awaitingResults]);
+    placeholderRooms, pendingApprovals, awaitingResults]);
 
   if (failed) {
     return (
