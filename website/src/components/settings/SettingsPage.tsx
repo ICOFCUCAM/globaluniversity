@@ -5,10 +5,11 @@ import { roleLabels, can } from '@/lib/roles';
 import AdmissionOpenings from './AdmissionOpenings';
 import ConfigurationPanel from '@/components/system/ConfigurationPanel';
 import ConnectedAccounts from '@/components/social/ConnectedAccounts';
+import SignatureSpecimen from './SignatureSpecimen';
 import { GRADING_SCALE, CLASSIFICATION_BANDS, MAX_GRADE_POINT } from '@/lib/grading';
 import { UNIVERSITY } from '@/lib/constants';
 import {
-  User, Shield, Bell, Palette, Database, Save, CheckCircle2, DoorOpen, Share2, Settings2,} from 'lucide-react';
+  User, Shield, Bell, Palette, Database, Save, CheckCircle2, DoorOpen, Share2, Settings2, PenLine,} from 'lucide-react';
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -107,8 +108,30 @@ export default function SettingsPage() {
     // are a personal setting and belong nowhere else — not on the Command
     // Centre, which is about publishing, and certainly not on a screen any
     // colleague can reach.
-    ...(can(user?.role, 'connect-own-social')
+    // ---------------------------------------------------------------------
+    // EITHER CAPABILITY OPENS IT, and it used to be only the first.
+    //
+    // Two different things live behind this tab. 'connect-own-social' is an
+    // administrator linking THEIR OWN account. 'connect-university-social' is
+    // the Superadministrator connecting the INSTITUTION's — done once, so that
+    // every administrator can publish through the University's pages without
+    // anybody holding its credentials. 013 keeps them apart in the database
+    // with `scope`, and the second has `owner_id` null because it belongs to
+    // nobody.
+    //
+    // Gated on the first alone, a holder of only the second would have found
+    // no tab at all. The Superadministrator holds both so nothing was visibly
+    // wrong — which is exactly the kind of condition that stays wrong.
+    // ---------------------------------------------------------------------
+    ...(can(user?.role, 'connect-own-social') || can(user?.role, 'connect-university-social')
       ? [{ id: 'social', label: 'Connected social accounts', icon: <Share2 size={16} /> }]
+      : []),
+    // MY SIGNATURE. Offered to whoever may issue a letter, because it is
+    // their own signature and nobody else's business. 049 built the table, both
+    // letter routes read it, and until now nothing could put one in — so the
+    // reading code ran against a table that could only be empty.
+    ...(can(user?.role, 'issue-appointment-letter') || can(user?.role, 'issue-correspondence')
+      ? [{ id: 'signature', label: 'My signature', icon: <PenLine size={16} /> }]
       : []),
     { id: 'grading', label: 'Grading Scale', icon: <Database size={16} /> },
     // WHAT THIS DEPLOYMENT IS ACTUALLY CONFIGURED TO DO. Almost every variable
@@ -196,6 +219,13 @@ export default function SettingsPage() {
           {activeTab === 'openings' && <AdmissionOpenings />}
 
           {activeTab === 'configuration' && <ConfigurationPanel />}
+
+          {activeTab === 'signature' && (
+            <SignatureSpecimen
+              defaultName={user?.name ?? undefined}
+              defaultRole={user?.role ? roleLabels[user.role] : undefined}
+            />
+          )}
 
           {activeTab === 'social' && (
             <div className="space-y-4">

@@ -67,7 +67,16 @@ console.log('\nA letter cannot be issued without the things a letter is\n');
 
   // THE FOUR THAT ARE NOT OPTIONAL. Each is a thing that, missing, makes the
   // document not an appointment letter.
-  for (const key of ['full_name', 'position_title', 'start_date', 'place_of_duty', 'terms']) {
+  // `terms` LEFT THIS LIST WHEN THE LETTER GREW ITS OWN.
+  //
+  // It was required because the letter had no terms except the ones an officer
+  // typed into that box: if it was empty, the document said nothing about
+  // conduct, nothing about notice, nothing about what the appointment was
+  // subject to. The letter now states all of that itself, from the register for
+  // the office. Keeping the box mandatory would make every officer retype, in
+  // free text, terms the letter already carries — and free text beside standard
+  // terms is how one letter comes to hold two versions of one obligation.
+  for (const key of ['full_name', 'position_title', 'start_date', 'place_of_duty']) {
     const m = A.missingFrom({ ...complete, [key]: null });
     check(`${key} is required`, m.map((x) => x.key), [key]);
     check(`…and it blocks`, A.blocked(m), true);
@@ -641,11 +650,21 @@ console.log('\nNobody can draft, approve and issue an appointment alone\n');
     && R.can(role, 'authorize-appointment')
     && R.can(role, 'issue-appointment-letter'));
 
-  // Only the two system roles, and they are the roles that by definition hold
-  // everything — the separation that protects the University there is the
-  // DATABASE refusing an approval by the drafter, which it does regardless of
-  // rank.
-  check('only the system roles hold all three', canDoAll.sort(), ['admin', 'superadmin']);
+  // THE TWO SYSTEM ROLES AND THE VICE-CHANCELLOR, and no fourth.
+  //
+  // The Vice-Chancellor joined this list by the University's ruling — "make
+  // their role now the same on what we have been building" — and it is not the
+  // relaxation it looks like. Holding all three capabilities is permission to
+  // BEGIN an appointment and permission to FINISH one; it is not permission to
+  // do both to the same appointment. That is refused underneath, by 041, which
+  // will not let an approval be recorded by whoever drafted the row whatever
+  // rank they hold, and 045, whose sole-authority route is the one marked
+  // exception and records the self-authorisation as such.
+  //
+  // Asserted over the whole matrix so a FOURTH role granted all three fails
+  // here rather than in production.
+  check('only the system roles and the Vice-Chancellor hold all three',
+    canDoAll.sort(), ['admin', 'superadmin', 'vice-chancellor']);
 
   // HR PREPARES, VERIFIES AND SUBMITS — AND DOES NOT ISSUE. The University's
   // ruling: the appointing authority is the Vice-Chancellor. An HR office that
@@ -656,17 +675,36 @@ console.log('\nNobody can draft, approve and issue an appointment alone\n');
     R.can('hr-officer', 'issue-appointment-letter'),
   ], [true, false, false]);
 
-  // AND THE VICE-CHANCELLOR HOLDS BOTH HALVES OF THE AUTHORITY, and no part of
-  // the preparation. Not a contradiction of the rule that a Vice Chancellor
-  // may not admit a student: staff and students are different, and appointing
-  // the staff is what the office is for.
-  check('the Vice-Chancellor authorises and issues', [
-    R.can('vice-chancellor', 'authorize-appointment'),
-    R.can('vice-chancellor', 'issue-appointment-letter'),
-  ], [true, true]);
-  check('…and does not draft or set pay', [
+  // AND THE VICE-CHANCELLOR CAN START ONE AS WELL AS FINISH IT. Not a
+  // contradiction of the rule that a Vice Chancellor may not admit a student:
+  // staff and students are different, and appointing the staff is what the
+  // office is for.
+  //
+  // WHY THIS CHANGED. The office held only the second half — authorise and
+  // issue — which made scenario B, the Vice-Chancellor appointing somebody
+  // directly, impossible: there was no way to create the row that the
+  // authorisation would act on. An appointing authority that can only
+  // countersign what HR hands it is not the appointing authority.
+  check('the Vice-Chancellor drafts, sets pay, authorises and issues', [
     R.can('vice-chancellor', 'draft-appointment'),
     R.can('vice-chancellor', 'set-remuneration'),
+    R.can('vice-chancellor', 'authorize-appointment'),
+    R.can('vice-chancellor', 'issue-appointment-letter'),
+  ], [true, true, true, true]);
+
+  // AND STILL DOES NOT HOLD THESE TWO, which is where "the same as the
+  // Superadministrator" deliberately stops.
+  //
+  //   prepare-correspondence — 045 refuses authorisation by the person who
+  //   prepared the letter. Granting it would let a Vice-Chancellor lock
+  //   themselves out of signing their own correspondence by touching it as a
+  //   preparer first.
+  //
+  //   create-student-record — admissions is a separate line of authority and
+  //   the University has already ruled on it.
+  check('…and is neither a preparer of letters nor an admissions officer', [
+    R.can('vice-chancellor', 'prepare-correspondence'),
+    R.can('vice-chancellor', 'create-student-record'),
   ], [false, false]);
 
   // EXACTLY ONE OFFICE ISSUES. Asserted over the whole matrix, so a future

@@ -28,6 +28,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { authedPost } from '@/lib/authedFetch';
 import { can } from '@/lib/roles';
 import type { UserRole } from '@/lib/types';
 import { PLATFORM_PROFILES, type Platform } from '@/lib/social';
@@ -127,7 +128,39 @@ export default function ConnectedAccounts({ role }: { role?: UserRole }) {
     void load();
   }
 
-  if (!mayConnectOwn) {
+  // -------------------------------------------------------------------------
+  // BEGINNING A CONNECTION.
+  //
+  // TWO STEPS, AND THE FIRST ONE IS WHY THIS EXISTS. Asking for the address is
+  // a fetch, because it has to carry the signed-in administrator's token — a
+  // plain `window.location.href` to the route carried none, and every click on
+  // one of these buttons ended in a blank tab reading `{"error":"no-token"}`.
+  //
+  // Going to the provider is still a full page navigation. It has to be: the
+  // consent screen is where the administrator is told what they are granting,
+  // and it cannot be shown inside an XHR.
+  // -------------------------------------------------------------------------
+  async function beginConnection(platform: Platform, scope: 'university' | 'personal') {
+    setBusy(`${scope}:${platform}`);
+    setMessage(null);
+
+    const out = await authedPost('/api/social/oauth/start', { platform, scope });
+
+    if (!out.ok || typeof out.url !== 'string') {
+      setBusy(null);
+      setMessage({
+        tone: 'bad',
+        text: (out.detail as string | undefined)
+          ?? `${PLATFORM_PROFILES[platform].name} could not be reached: ${out.error ?? 'no reply'}.`,
+      });
+      return;
+    }
+    // BUSY LEFT SET ON PURPOSE. The navigation is about to replace this page;
+    // clearing it would flash the button back to life on the way out.
+    window.location.href = out.url;
+  }
+
+  if (!mayConnectOwn && !mayConnectUniversity) {
     return (
       <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">
         Publishing on behalf of the University is limited to administrators, so there is nothing
@@ -173,6 +206,11 @@ export default function ConnectedAccounts({ role }: { role?: UserRole }) {
         ) : university.length === 0 ? (
           <p className="mt-3 text-sm text-[#6b6076] dark:text-[#9c93ad]">
             No University account is connected yet.
+            {mayConnectUniversity
+              ? ' Connect each network once below, and every administrator can publish'
+                + ' through it from then on.'
+              : ' Until the Superadministrator connects one, an announcement can only go out'
+                + ' under an administrator’s own account.'}
           </p>
         ) : (
           <ul className="mt-3 space-y-2">
@@ -187,10 +225,30 @@ export default function ConnectedAccounts({ role }: { role?: UserRole }) {
             ))}
           </ul>
         )}
+
+        {/* CONNECT, ONCE, FOR THE WHOLE INSTITUTION.
+            THIS IS THE BUTTON THAT WAS MISSING. The section above has always
+            described accounts "connected once by the Superadministrator" and
+            the route has always accepted `scope=university` — but nothing on
+            this screen ever asked for that scope, so there was no way to
+            connect an institutional account at all. Every button was
+            `scope=personal`, under "My accounts".
+            A NETWORK ALREADY CONNECTED IS NOT OFFERED AGAIN. Connecting the
+            University's LinkedIn twice is not a thing anybody means to do. */}
+        {mayConnectUniversity && !loading && (
+          <ConnectButtons
+            requirements={requirements.filter(
+              (r) => !university.some((a) => a.platform === r.platform && a.status !== 'revoked'),
+            )}
+            scope="university"
+            busy={busy}
+            onConnect={(p) => void beginConnection(p, 'university')}
+          />
+        )}
       </section>
 
       {/* ------------------------------------------------------------------ */}
-      <section>
+      <section className={mayConnectOwn ? undefined : 'hidden'}>
         <h3 className="flex items-center gap-2 text-sm font-semibold text-[#422e59] dark:text-[#e4dcf0]">
           <User size={15} /> My accounts
         </h3>
@@ -220,32 +278,14 @@ export default function ConnectedAccounts({ role }: { role?: UserRole }) {
           </ul>
         )}
 
-        {/* CONNECT. One button per platform, and a platform this deployment
-            cannot reach says so rather than failing after the click. */}
-        <div className="mt-4 flex flex-wrap gap-2">
-          {requirements.map((r) => (
-            <button
-              key={r.platform}
-              type="button"
-              disabled={busy === r.platform}
-              // A FULL PAGE NAVIGATION, not a fetch. The provider's consent
-              // screen is a page the administrator has to see and read — it is
-              // where they are told what they are granting — and it cannot be
-              // shown inside an XHR.
-              onClick={() => { window.location.href = `/api/social/oauth/start?platform=${r.platform}&scope=personal`; }}
-              title={r.configured ? undefined : `${r.app} Missing: ${r.missing.join(', ')}`}
-              className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium ${
-                r.configured
-                  ? 'border-[#c5a55a]/60 text-[#422e59] dark:text-[#c5a55a]'
-                  : 'border-[#ece7de] text-[#9c93ad] dark:border-[#2e2637]'
-              }`}
-            >
-              {busy === r.platform ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
-              {PLATFORM_PROFILES[r.platform].name}
-              {!r.configured && <span className="ml-1 opacity-60">· not set up</span>}
-            </button>
-          ))}
-        </div>
+        {!loading && (
+          <ConnectButtons
+            requirements={requirements}
+            scope="personal"
+            busy={busy}
+            onConnect={(p) => void beginConnection(p, 'personal')}
+          />
+        )}
       </section>
 
       {/* ------------------------------------------------------------------ */}
@@ -277,6 +317,52 @@ export default function ConnectedAccounts({ role }: { role?: UserRole }) {
           <p className="mt-3 text-xs text-[#9c93ad]">Full instructions: docs/SOCIAL-CONNECTIONS.md</p>
         </section>
       )}
+    </div>
+  );
+}
+
+/**
+ * One button per network, for one scope.
+ *
+ * A NETWORK THIS DEPLOYMENT CANNOT REACH IS NOT CLICKABLE. It used to be: the
+ * button drew itself greyed, said "· not set up", and then navigated anyway —
+ * so the answer to "why is this greyed out?" was a tab full of JSON. Now it
+ * refuses in place and the title says which environment variables are missing.
+ */
+function ConnectButtons({
+  requirements, scope, busy, onConnect,
+}: {
+  requirements: Requirement[];
+  scope: 'university' | 'personal';
+  busy: string | null;
+  onConnect: (platform: Platform) => void;
+}) {
+  if (requirements.length === 0) return null;
+  return (
+    <div className="mt-4 flex flex-wrap gap-2">
+      {requirements.map((r) => {
+        const working = busy === `${scope}:${r.platform}`;
+        return (
+          <button
+            key={r.platform}
+            type="button"
+            disabled={!r.configured || busy !== null}
+            onClick={() => onConnect(r.platform)}
+            title={r.configured
+              ? `Connect ${PLATFORM_PROFILES[r.platform].name}${scope === 'university' ? ' as the University' : ''}`
+              : `${r.app} Not yet registered — missing: ${r.missing.join(', ')}`}
+            className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium disabled:cursor-not-allowed ${
+              r.configured
+                ? 'border-[#c5a55a]/60 text-[#422e59] disabled:opacity-40 dark:text-[#c5a55a]'
+                : 'border-[#ece7de] text-[#9c93ad] dark:border-[#2e2637]'
+            }`}
+          >
+            {working ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
+            {PLATFORM_PROFILES[r.platform].name}
+            {!r.configured && <span className="ml-1 opacity-60">· not set up</span>}
+          </button>
+        );
+      })}
     </div>
   );
 }

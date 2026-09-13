@@ -439,6 +439,32 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
     cannotSee: "select count(*) as drafts from document_templates where status = 'draft';"
       + '  -- it should be 31 on a database where nobody has activated any yet',
   },
+  {
+    file: '053_where_an_office_stands.sql',
+    what: 'Where each office stands, so the appointment letter can say different things to '
+      + 'different posts. A Dean, a Lecturer, the Registrar and the Director of Academic '
+      + 'Affairs stop receiving the same generic executive letter. Also records the '
+      + 'University’s ruling that the Director of Academic Affairs ranks immediately below the '
+      + 'Vice-Chancellor — on that post alone, so no other letter can claim it.',
+    // THE COLUMN IS THE MARKER. `positions` is 048's, and the three columns
+    // this file adds sit on it; `standing` is the one no earlier migration
+    // created.
+    table: 'positions',
+    column: 'standing',
+  },
+  {
+    file: '054_course_registration.sql',
+    what: 'Course registration. A student can be put on a course at all — the act nothing in '
+      + 'this system could perform, though the results pipeline, the GPA engine and the '
+      + 'graduation audit have all read `enrollments` since migration 001. A registration now '
+      + 'records who made it and whether the student did it themselves; a drop is a state with '
+      + 'a date and a reason rather than a deletion; and `course_roll` is the live roll, so a '
+      + 'student who dropped a course does not appear on its mark sheet.',
+    // THE VIEW IS THE MARKER. `enrollments` is 001's, and the columns this
+    // file adds sit on it — but `course_roll` is a relation no earlier
+    // migration created, which is the cheaper and less error-prone probe.
+    table: 'course_roll',
+  },
 ];
 
 /** What a probe came back as. */

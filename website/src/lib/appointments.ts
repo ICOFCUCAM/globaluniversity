@@ -422,6 +422,14 @@ export interface Appointment {
 
   position_title?: string | null;
   unit_name?: string | null;
+  /**
+   * The faculty or school, where the post belongs to one.
+   *
+   * ADDED BY 050 and used by the dashboard's filters since; it was missing
+   * from this interface, so the letter could not print a row the database had
+   * been carrying all along.
+   */
+  faculty?: string | null;
   employment_type?: string | null;
 
   start_date?: string | null;
@@ -501,9 +509,28 @@ export const LETTER_FIELDS: LetterField[] = [
   { key: 'place_of_duty', label: 'Place of duty', required: true,
     note: 'The University is not only online. Somebody appointed without being '
       + 'told where to turn up has not been told the main thing.' },
-  { key: 'terms', label: 'Terms and conditions', required: true,
-    note: 'What the appointment is subject to. A letter with no terms is an '
-      + 'offer the University cannot later rely on.' },
+  // ---------------------------------------------------------------------
+  // NO LONGER BLOCKING, AND THE REASON IS THAT THE LETTER CHANGED.
+  //
+  // This was required, and the note read: "A letter with no terms is an offer
+  // the University cannot later rely on." That was true of the letter as it
+  // then was — a table, and whatever an officer had typed into this box. If
+  // the box was empty the document said nothing about conduct, nothing about
+  // notice, nothing about what the appointment was subject to.
+  //
+  // The letter now states all of that itself, from the register for the office
+  // and from the conditions of service it cites by name. Keeping the box
+  // mandatory would make every officer retype, in free text, terms the
+  // document already carries — and free text beside standard terms is how two
+  // versions of the same obligation end up in one letter.
+  //
+  // So it stays, as the place to put what is particular to THIS appointment,
+  // and the letter prints it under "Further Terms" when there is something in
+  // it. Empty is now a legitimate answer rather than an incomplete record.
+  // ---------------------------------------------------------------------
+  { key: 'terms', label: 'Further terms particular to this appointment', required: false,
+    note: 'The standard terms are in the letter already. This is for anything '
+      + 'that applies to this appointment and not to others.' },
   { key: 'postal_address', label: 'Address', required: false,
     note: 'Printed where held, for a letter that will also be posted.' },
 ];

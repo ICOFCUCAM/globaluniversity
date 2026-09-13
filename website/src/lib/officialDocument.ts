@@ -38,6 +38,10 @@
 
 import { UNIVERSITY } from './constants';
 import { verificationQrSvg, type DocumentSeal } from './documentSecurity';
+// EMBEDDED, NOT LINKED. See crest.ts: a letterhead that fetches its own crest
+// over the network is a letterhead that renders as a broken image in every mail
+// client that blocks remote content, which is most of them.
+import { CREST_DATA_URI } from './crest';
 
 // ---------------------------------------------------------------------------
 // 1. THE PAGE, AS ONE SET OF NUMBERS
@@ -119,6 +123,15 @@ export function documentStyles(): string {
   p, .terms, .letterbody { orphans: 3; widows: 3; }
   .head { display: flex; gap: 14px; align-items: center;
           border-bottom: 2px solid #422e59; padding-bottom: 10px; }
+  /* THE UNIVERSITY'S CREST, ON ITS OWN LETTERS AT LAST.
+     The admission letter has carried it since the day somebody noticed it was
+     being loaded over the network and rendering as a broken image in every
+     email client that blocks remote content. The appointment letter and the
+     official correspondence — the two most formal documents this University
+     issues — were still going out under a line of text, because this shared
+     letterhead was written later and nobody carried the crest across.
+     Drawn at 52pt from a 156px source, so a printer has pixels to work with. */
+  .crest { width: 52pt; height: 52pt; flex: 0 0 auto; object-fit: contain; }
   .head h1 { font-size: 15pt; margin: 0; letter-spacing: .04em; color: #422e59; }
   .head p { margin: 2px 0 0; font-size: 8.5pt; color: #5c5366; }
   /* NO text-transform. It was uppercase, and the page-count test read the
@@ -244,6 +257,7 @@ export function documentStyles(): string {
  */
 export function letterhead(office?: string | null): string {
   return `<div class="head">
+  <img class="crest" src="${CREST_DATA_URI}" alt="">
   <div>
     <h1>${escape(UNIVERSITY.name)}</h1>
     <p>${escape(UNIVERSITY.address)}</p>
@@ -292,7 +306,13 @@ export function signatureBlock(s: Signature): string {
   ${s.byAuthorityOf
     ? `<p class="byauthority">BY AUTHORITY OF ${escape(s.byAuthorityOf.toUpperCase())}</p>`
     : ''}
-  <p>${escape(s.closing ?? 'Yours sincerely,')}</p>
+  ${
+  // AN EMPTY CLOSING PRINTS NOTHING, rather than an empty paragraph. Not every
+  // sealed document this University issues is a letter: a job description
+  // carries the same signature block and "Yours sincerely," at the foot of a
+  // schedule of duties is a document that has been made out of a template
+  // without being read.
+  s.closing === '' ? '' : `<p>${escape(s.closing ?? 'Yours sincerely,')}</p>`}
   ${s.image && s.image.startsWith('data:image/')
     // THE RULE IS DRAWN EITHER WAY. A reproduced signature sits ON it, not
     // instead of it: a document with an image and no line looks like a picture
@@ -321,19 +341,73 @@ export function signatureBlock(s: Signature): string {
  * are. `CREDENTIAL_SECRET` can be absent in a deployment nobody has finished
  * configuring, and a letter held up by a missing environment variable is worse
  * than one that goes out saying plainly what it carries.
+ *
+ * ---------------------------------------------------------------------------
+ * AND "NO SEAL" IS `sealed === false`, NOT `seal === null`
+ * ---------------------------------------------------------------------------
+ *
+ * FOUND BY PRINTING ONE. This branched on whether a seal OBJECT was present,
+ * and `sealDocument` returns an object either way — with `sealed: false` and
+ * `code: ''` when the signing secret is missing. So a letter generated on an
+ * unconfigured deployment printed
+ *
+ *     Verification code:
+ *     Check this document at www.iguc.net/verify
+ *
+ * with nothing after the colon: exactly the document this comment says must
+ * never exist, produced by the function the comment is attached to. The
+ * admission letter and the identity card both had it right — they test
+ * `seal.sealed` — and this newer shared press did not.
  */
 export async function sealPanel(
   seal: DocumentSeal | null, printedReference: string, version: number,
+  /**
+   * The site, when this document is on a register the public can query.
+   *
+   * ---------------------------------------------------------------------
+   * THE QR COULD NOT BE SCANNED, AND THIS IS THE FIX
+   * ---------------------------------------------------------------------
+   *
+   * MEASURED: the signed payload is 376 characters, which encodes as a
+   * 77-module symbol. Printed at 23.3mm that is 0.30mm a module, against a
+   * practical floor of about 0.5mm for a phone camera reading off paper. So
+   * every letter told its reader to scan a code that would not scan — and a
+   * verification story that fails at the last inch is worse than none, because
+   * the reader did what they were asked and got nothing.
+   *
+   * `/verify?ref=IGUC/HR/APT/2026/0006` is about 40 characters: a 37-module
+   * symbol, 0.63mm a module, comfortably scannable at the same printed size.
+   *
+   * NOTHING IS LOST BY DROPPING THE PAYLOAD. It was a copy of the facts
+   * supplied by whoever presented the document; the reference resolves against
+   * the University's own register instead. That is the stronger check. The
+   * signature stays printed as the seal code for a reader with no camera.
+   *
+   * OMITTED FOR A DOCUMENT NOT ON A REGISTER — a job description, say. A short
+   * URL that resolves to "no document with this reference" would make a
+   * genuine document scan as a forgery, which is exactly the mistake the
+   * credential short-form made once before.
+   */
+  registerSiteUrl?: string | null,
 ): Promise<string> {
+  const verifiable = seal !== null && seal.sealed && seal.code !== '';
+
   let qr = '';
-  if (seal) {
-    try { qr = await verificationQrSvg(seal.verifyUrl, 88); } catch { qr = ''; }
+  if (verifiable) {
+    const target = registerSiteUrl
+      ? `${registerSiteUrl.replace(/\/$/, '')}/verify?ref=${encodeURIComponent(printedReference)}`
+      // THE SHORT FORM, as every other caller uses. Identical to the long one
+      // for a document that is on no register — which is the honest answer
+      // there, because there is nothing to look it up by.
+      : seal!.shortVerifyUrl;
+    try { qr = await verificationQrSvg(target, 88); } catch { qr = ''; }
   }
+
   return `<div class="seal">
   ${qr}
   <div>
-    ${seal
-      ? `<p><strong>Verification code:</strong> ${escape(seal.code)}</p>
+    ${verifiable
+      ? `<p><strong>Verification code:</strong> ${escape(seal!.code)}</p>
          <p>Check this document at ${escape(UNIVERSITY.website)}/verify</p>`
       : `<p class="none">This copy carries no verification seal. The University's signing
          secret was not configured when it was generated.</p>`}

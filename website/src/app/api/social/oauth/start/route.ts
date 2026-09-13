@@ -1,7 +1,40 @@
 // ---------------------------------------------------------------------------
 // BEGINNING A CONNECTION.
 //
-// GET ?platform=…&scope=university|personal  -> 302 to the provider
+// POST { platform, scope }  -> { ok: true, url } — the address to send the
+//                              administrator to. The SCREEN then navigates.
+//
+// ---------------------------------------------------------------------------
+// WHY THIS IS NOT A LINK, AND WAS, AND COULD NOT WORK
+// ---------------------------------------------------------------------------
+//
+// This route used to answer GET and redirect. The Settings screen started a
+// connection with `window.location.href = '…/oauth/start?platform=facebook'`,
+// with a comment explaining that the provider's consent screen is a page the
+// administrator has to read and cannot be shown inside an XHR.
+//
+// That reasoning is right. The implementation could never have worked: a
+// top-level browser navigation carries no `Authorization` header, `guard()`
+// reads nothing else, and so the only thing the Vice-Chancellor ever saw on
+// clicking "Facebook" was a blank tab reading
+//
+//     {"ok":false,"error":"no-token"}
+//
+// which names a missing token and looks like a broken database.
+//
+// SO THE TWO HALVES ARE SEPARATED. Minting the authorize URL needs to know who
+// is asking, so it happens over a fetch that can carry the token. Going to the
+// provider does not need to know anything, so it happens as the full-page
+// navigation it has to be — to the provider's own address, which is the page
+// the original comment was protecting.
+//
+// It also means every refusal below — no application registered, no signing
+// key, no redirect address — arrives back in the screen as a sentence, instead
+// of as JSON in a tab the administrator has to press Back out of.
+//
+// ---------------------------------------------------------------------------
+// THE SCOPE IS NOT A QUERY PARAMETER ON THE WAY BACK
+// ---------------------------------------------------------------------------
 //
 // The scope decides which capability is required and, later, who owns the row.
 // It travels inside the SIGNED state rather than as a query parameter on the
@@ -18,10 +51,34 @@ import { secretStoreReady, SECRET_STORE_MISSING } from '@/lib/secretStore';
 
 export const runtime = 'nodejs';
 
-export async function GET(request: Request) {
+/**
+ * Opened directly in a browser.
+ *
+ * ANSWERED, RATHER THAN LEFT TO REFUSE. An address that used to be navigated
+ * to is an address that sits in browser histories and in this file's own git
+ * history, and somebody will open it. `no-token` is a true answer and a
+ * useless one; this says what to do instead.
+ */
+export async function GET() {
+  return NextResponse.json({
+    ok: false,
+    error: 'not-a-page',
+    detail:
+      'A social connection is started from Settings → Connected accounts, not by opening this '
+      + 'address. Opening it directly cannot prove who you are, so there is nothing this page '
+      + 'could safely do.',
+  }, { status: 405 });
+}
+
+export async function POST(request: Request) {
   const url = new URL(request.url);
-  const platform = url.searchParams.get('platform') as Platform | null;
-  const scope = url.searchParams.get('scope') === 'university' ? 'university' : 'personal';
+
+  let body: Record<string, unknown> = {};
+  try { body = await request.json(); } catch { /* both fields fall back below */ }
+
+  const platform = (body.platform ?? url.searchParams.get('platform')) as Platform | null;
+  const scope = (body.scope ?? url.searchParams.get('scope')) === 'university'
+    ? 'university' : 'personal';
 
   const g = await guard(
     request,
@@ -38,7 +95,11 @@ export async function GET(request: Request) {
   }
 
   if (!platform || !PLATFORMS.includes(platform)) {
-    return NextResponse.json({ ok: false, error: 'bad-platform' }, { status: 400 });
+    return NextResponse.json({
+      ok: false,
+      error: 'bad-platform',
+      detail: `That is not a network this system publishes to. They are: ${PLATFORMS.join(', ')}.`,
+    }, { status: 400 });
   }
 
   // REFUSED BEFORE THE USER LEAVES THE SITE. Sending somebody through a
@@ -54,7 +115,10 @@ export async function GET(request: Request) {
     return NextResponse.json({
       ok: false,
       error: 'not-configured',
-      detail: `${platform} has no application registered on this deployment. See docs/SOCIAL-CONNECTIONS.md.`,
+      detail:
+        `The University has no ${platform} application registered on this deployment, so there `
+        + 'is no consent screen to send you to. Registering one is the Superadministrator’s step '
+        + 'and is written down in docs/SOCIAL-CONNECTIONS.md.',
     }, { status: 503 });
   }
 
@@ -78,5 +142,14 @@ export async function GET(request: Request) {
     issuedAt: Date.now(),
   });
 
-  return NextResponse.redirect(authorizeUrl(app, state));
+  // THE ADDRESS, NOT A REDIRECT. The screen navigates to it, so the consent
+  // page is a real page in the administrator's own browser — and the state
+  // above was minted knowing who asked, which is the whole reason this is a
+  // POST.
+  return NextResponse.json({
+    ok: true,
+    url: authorizeUrl(app, state),
+    platform,
+    scope,
+  });
 }

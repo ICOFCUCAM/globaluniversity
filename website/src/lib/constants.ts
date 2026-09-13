@@ -25,9 +25,21 @@ export const UNIVERSITY = {
   // checking a graduate's paperwork against the university's own site will
   // find and hold against the document.
   registrar: 'Dr Divine Lyonga',
-  // Signs every admission letter. The office is Head of Academic Affairs; the
-  // holder is named here so the letter is signed by a person rather than by
-  // whichever account happened to press the button.
+  // Signs every admission letter. The holder is named here so the letter is
+  // signed by a person rather than by whichever account happened to press the
+  // button.
+  //
+  // ONE OFFICE UNDER THREE NAMES, RESOLVED. This system called it "Head of
+  // Academic Affairs", the published About page called it "Academic Director
+  // General", and migration 048 seeded the post as "Director of Academic
+  // Affairs". One person, one office, three spellings — and the admission
+  // letter's signature line disagreed with the University's own website about
+  // what the person signing it was called.
+  //
+  // The University ruled on 13 September 2026: the office is the DIRECTOR OF
+  // ACADEMIC AFFAIRS, and the other two names are gone. `academicAffairsOffice`
+  // below is the single place it is spelt, because it had been typed out three
+  // separate times inside the admission letter alone.
   //
   // The post-nominals are affixed to the name because the letter is the
   // university's formal attestation of an academic decision, and the standing
@@ -40,12 +52,46 @@ export const UNIVERSITY = {
   // so the signature line stays one line under the rule.
   headOfAcademicAffairs: 'Prof Aaron Ndenka',
   headOfAcademicAffairsPostNominals: 'Ph.D. (Fin.), Ph.D. (Syst. Theol.)',
+  /** What the office is called, wherever it is printed. */
+  academicAffairsOffice: 'Director of Academic Affairs',
   admissionsEmail: 'admissions@iguc.net',
-  // The Head of Academic Affairs' office, created by the University on
+  // The Director of Academic Affairs' office, created by the University on
   // 12 September 2026. The admission letter is signed by this office, so an
   // admitted student replying to ask about their decision should reach it
   // rather than the inbox that handles applications.
   academicAffairsEmail: 'academicoffice@iguc.net',
+
+  // ---------------------------------------------------------------------
+  // WHERE THE OFFICE SITS, WHICH IS A FACT AND NOT A COMPLIMENT.
+  //
+  // STATED BY THE UNIVERSITY on 13 September 2026: the Director of Academic
+  // Affairs is a senior executive office, positioned immediately below the
+  // Vice-Chancellor in the University's executive structure, and is the
+  // second-ranking officer after the Vice-Chancellor.
+  //
+  // WHY IT IS HERE AND NOT IN THE LETTER'S PROSE. A letter that calls its
+  // recipient the second-ranking officer of the University is making a
+  // constitutional claim. If that sentence lives in a template, then every
+  // future template that copies it repeats the claim for whatever post it is
+  // pointed at — and a Lecturer's letter quietly says the same thing. As a
+  // recorded fact about ONE post it can be printed only where it is true.
+  //
+  // NOT A GRANT OF POWER. Precedence says where the office stands, not what it
+  // may do. What the office may authorise, may recommend, and must escalate is
+  // in its job description and nowhere else — 048 keeps those three apart for
+  // exactly this reason, and the letter references the document rather than
+  // restating it.
+  // ---------------------------------------------------------------------
+  // TWO FORMS, BECAUSE A LETTER USES BOTH. The first is a value in a table
+  // cell and has to read as a rank; the second is a sentence in a paragraph
+  // and has to read as English. Deriving one from the other by lowercasing
+  // produced "The office of Director of Academic Affairs is second-ranking
+  // officer after the Vice-Chancellor", which is neither.
+  academicAffairsPrecedence:
+    'Second-ranking officer after the Vice-Chancellor',
+  academicAffairsStanding:
+    'a senior executive office of the University, ranking immediately below the '
+    + 'Vice-Chancellor in the University’s executive structure',
 
   // ---------------------------------------------------------------------
   // THE VICE-CHANCELLOR'S OFFICE.

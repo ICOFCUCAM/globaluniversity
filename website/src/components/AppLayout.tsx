@@ -20,6 +20,7 @@ import { isEnrolledRole } from '@/lib/roles';
 import { labelForView } from '@/lib/portalNav';
 import { UNIVERSITY } from '@/lib/constants';
 import LecturerManagement from './lecturers/LecturerManagement';
+import CourseRegistration from '@/components/courses/CourseRegistration';
 import CourseManagement from './courses/CourseManagement';
 import ResultProcessing from './results/ResultProcessing';
 import GradeBook from './results/GradeBook';
@@ -198,6 +199,8 @@ export default function AppLayout() {
         return <LecturerManagement onNavigate={setCurrentView} />;
       case 'courses':
         return <CourseManagement />;
+      case 'course-registration':
+        return <CourseRegistration />;
       case 'results':
         return <ResultProcessing />;
       case 'gradebook':

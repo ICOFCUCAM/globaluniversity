@@ -40,6 +40,7 @@ import type { UserRole } from '@/lib/types';
 import {
   isEmploymentType, missingFrom, blocked, canEdit, canSubmit, canAuthorize,
   canRequestAmendment, canClose, MIN_AMENDMENT_REASON, MIN_CLOSURE_REASON, MIN_RETURN_REASON,
+  DEFAULT_CURRENCY, DEFAULT_PERIOD,
   type AppointmentEvent,
 } from '@/lib/appointments';
 
@@ -85,6 +86,22 @@ function fieldsFrom(body: Record<string, unknown>) {
     appointing_authority: text('appointingAuthority'),
     authority_decided_on: text('authorityDecidedOn'),
     terms: text('terms'),
+    faculty: text('faculty'),
+    // ---------------------------------------------------------------------
+    // THE POST FROM THE REGISTER, AND IT WAS NEVER BEING SET.
+    //
+    // Every appointment was created with a free-text position title and no
+    // `position_id`. The consequences were all downstream and all invisible
+    // from here: the letter could not find the post, so it could not find its
+    // family, so every letter of every kind fell to the plainest register; no
+    // job description was ever attached, so the letter's own Attachment 1 was
+    // never produced; and the standing the University recorded for an office
+    // could never be printed.
+    //
+    // A whole system of wording that changes with the office, reachable by
+    // nothing, because one column was never written.
+    // ---------------------------------------------------------------------
+    position_id: text('positionId'),
   };
 }
 
@@ -179,6 +196,54 @@ export async function POST(request: Request) {
         .select('id').single();
       if (error || !data) return bad(`not-saved: ${error?.message ?? 'no row'}`, 500);
       id = data.id as string;
+    }
+
+    // ---------------------------------------------------------------------
+    // THE ALLOWANCES, WHICH NOTHING COULD CREATE.
+    //
+    // 047 gave allowances a table of their own — each with its own amount,
+    // currency and period, deliberately never summed into the salary. The
+    // letter reads them and prints a line for each. Nothing in the entire
+    // application ever wrote one, so every letter the University could issue
+    // showed a basic salary and nothing else, and a housing allowance agreed
+    // in a meeting had no way into the record.
+    //
+    // REPLACED WHOLESALE, not merged. The screen sends the full set it is
+    // showing; anything removed there is removed here. Merging would make a
+    // deleted allowance impossible to delete without a second action, and an
+    // allowance nobody can remove is one that is still being paid.
+    //
+    // THE SAME AUTHORITY AS THE SALARY. An allowance is money, and somebody
+    // who may not set pay may not set pay by another name.
+    if (maySetPay && Array.isArray(body.allowances)) {
+      await admin.from('appointment_allowances').delete().eq('appointment_id', id);
+
+      const rows = (body.allowances as Record<string, unknown>[])
+        .filter((r) => r && r.kind && Number(r.amount) > 0)
+        .map((r) => ({
+          appointment_id: id,
+          kind: String(r.kind),
+          amount: Number(r.amount),
+          currency: String(r.currency ?? DEFAULT_CURRENCY),
+          period: String(r.period ?? DEFAULT_PERIOD),
+          note: r.note ? String(r.note) : null,
+        }));
+
+      if (rows.length > 0) {
+        const { error } = await admin.from('appointment_allowances').insert(rows);
+        // NOT FATAL TO THE SAVE. The appointment itself is already written; a
+        // refused allowance row should tell the officer which one, not discard
+        // the record they just typed.
+        if (error) {
+          return NextResponse.json({
+            ok: true,
+            id,
+            missing: missingFrom((await load(id)) ?? {}),
+            allowancesNotSaved: true,
+            detail: `The appointment was saved. The allowances were not: ${error.message}`,
+          });
+        }
+      }
     }
 
     const saved = await load(id);

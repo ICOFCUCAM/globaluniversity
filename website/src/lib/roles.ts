@@ -479,6 +479,21 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // office and naming two would make "who appoints here" a question.
   chancellor: ['view-executive-dashboard', 'view-all-faculties', 'view-institutional-finance', 'view-admitted-students', 'monitor-progress',
     'compose-correspondence', 'authorize-correspondence', 'issue-correspondence'],
+    // ---------------------------------------------------------------------
+    // TWO THAT THE SUPERADMINISTRATOR HOLDS AND THIS OFFICE DELIBERATELY
+    // DOES NOT, because giving them would do harm rather than nothing:
+    //
+    // 'prepare-correspondence' is "somebody asked me to draft this for them".
+    // 045 refuses whoever is recorded as `prepared_by` to authorise the same
+    // letter — so a Vice-Chancellor who ever appeared as the preparer of
+    // their own letter would be locked out of authorising it. The capability
+    // would take away the one thing this office most needs.
+    //
+    // 'create-student-record' is the Registrar's and HR's act. The University
+    // has already ruled that a Vice-Chancellor who can personally admit a
+    // student has no separation of duties left; the same reasoning holds for
+    // creating the record that follows.
+    // ---------------------------------------------------------------------
   // ---------------------------------------------------------------------
   // THE VICE-CHANCELLOR IS THE UNIVERSITY'S APPOINTING AUTHORITY.
   //
@@ -493,13 +508,61 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // different offices rather than in two desks of the same one.
   // ---------------------------------------------------------------------
   'vice-chancellor': ['view-executive-dashboard', 'view-all-faculties', 'view-institutional-finance', 'view-admitted-students', 'monitor-progress', 'department-reports', 'approve-credential-design',
+    // ---------------------------------------------------------------------
+    // THE VICE-CHANCELLOR CAN DO THEIR OWN WORK.
+    //
+    // This role held `authorize-appointment` and `issue-appointment-letter`
+    // and NOT `draft-appointment` — so the University's own Scenario B, "the
+    // VC creates an appointment directly", was impossible: the Draft & submit
+    // screen shows its New appointment button only to a drafter, and the VC
+    // was not one. They could approve and issue an appointment that they had
+    // no way to start.
+    //
+    // `set-remuneration` for the same reason. A VC drafting an appointment
+    // personally could not state what the post pays, which is not a
+    // separation of duties — it is half a form.
+    //
+    // 041 still refuses an approval by whoever drafted it, EVEN FOR THE VC.
+    // Drafting and approving remain two people; 045's sole-authority route is
+    // how one office does both, marked and permanently visible.
+    'draft-appointment', 'set-remuneration',
     'authorize-appointment', 'issue-appointment-letter',
+    // ---------------------------------------------------------------------
+    // AND THE UNIVERSITY'S VOICE.
+    //
+    // Announcements sat in the Vice-Chancellor's sidebar and they could do
+    // nothing on the page. The institution speaking is the VC's business if it
+    // is anybody's.
+    //
+    // Composing AND approving is not a hole: 038 refuses an approval by the
+    // author in the database, so the VC can write one and somebody else
+    // clears it, exactly as for everyone else who holds both.
+    'compose-announcement', 'approve-announcement', 'publish-announcement',
+    // Publishing an emergency with no second pair of eyes. Restricted by 040
+    // to the emergency category and to a stated reason that stays on the
+    // record — an institutional authority's act, which is what this office is.
+    'override-announcement-clearance',
     // THE WHOLE CORRESPONDENCE CHAIN, IN ONE OFFICE. Not an oversight and not
     // a convenience: the University's ruling is that the Vice-Chancellor
     // starts and finishes their own letter, with no artificial loop through
     // HR. See src/lib/correspondence.ts for where that line is drawn and why
     // it does not extend to appointments.
     'compose-correspondence', 'authorize-correspondence', 'issue-correspondence'],
+    // ---------------------------------------------------------------------
+    // TWO THAT THE SUPERADMINISTRATOR HOLDS AND THIS OFFICE DELIBERATELY
+    // DOES NOT, because giving them would do harm rather than nothing:
+    //
+    // 'prepare-correspondence' is "somebody asked me to draft this for them".
+    // 045 refuses whoever is recorded as `prepared_by` to authorise the same
+    // letter — so a Vice-Chancellor who ever appeared as the preparer of
+    // their own letter would be locked out of authorising it. The capability
+    // would take away the one thing this office most needs.
+    //
+    // 'create-student-record' is the Registrar's and HR's act. The University
+    // has already ruled that a Vice-Chancellor who can personally admit a
+    // student has no separation of duties left; the same reasoning holds for
+    // creating the record that follows.
+    // ---------------------------------------------------------------------
 
   // Directs Finance. Still cannot admit.
   'finance-director': ['verify-payment', 'approve-refund', 'generate-invoice', 'manage-student-accounts', 'view-institutional-finance'],

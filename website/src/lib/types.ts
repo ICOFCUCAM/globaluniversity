@@ -286,6 +286,11 @@ export type ViewType =
   | 'students' 
   | 'lecturers' 
   | 'courses' 
+  // COURSE REGISTRATION. `enrollments` has been read by the results pipeline,
+  // the GPA engine and the graduation audit since migration 001 and written by
+  // nothing — because this screen did not exist.
+  | 'course-registration'
+
   | 'results' 
   | 'transcript' 
   | 'certificate'

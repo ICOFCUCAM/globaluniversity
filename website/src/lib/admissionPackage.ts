@@ -11,7 +11,7 @@
 //
 //   PAGE 1 is the admission letter, and nothing else. The letterhead, the
 //   reference, the student's particulars, the offer, and the signature of the
-//   Head of Academic Affairs at the foot of that same page.
+//   Director of Academic Affairs at the foot of that same page.
 //
 //   PAGES 2 ONWARD are annexes to it, lettered A, B, C…, each starting on a
 //   fresh page: the conditions, the terms of study, the fees, the regulations,
@@ -970,7 +970,7 @@ export async function admissionPackageHtml(input: AdmissionPackageInput): Promis
           <div class="name">${esc(input.headOfAdmissions)}${
             input.postNominals ? `, ${esc(input.postNominals)}` : ''
           }</div>
-          <div class="office">Head of Academic Affairs</div>
+          <div class="office">${esc(UNIVERSITY.academicAffairsOffice)}</div>
           <div class="office">${esc(UNIVERSITY.name)}</div>
         </div>
       </div>
@@ -1068,7 +1068,7 @@ Please sign in and change your password immediately. Your password is personal t
 must not be shared with anyone, including university staff.
 ` : ''}
 Your full admission package is attached. Page 1 is the admission letter itself, signed by the
-Head of Academic Affairs and carrying your particulars and a document seal; the annexes that
+${UNIVERSITY.academicAffairsOffice} and carrying your particulars and a document seal; the annexes that
 follow set out the conditions of your offer, the terms of study, the fee arrangements, and the
 academic regulations you are accepting by registering. Please read it before you register.
 
@@ -1086,7 +1086,7 @@ study — reply to this email before you register and we will correct it.
 We look forward to welcoming you.
 
 ${input.headOfAdmissions}${input.postNominals ? `, ${input.postNominals}` : ''}
-Head of Academic Affairs
+${UNIVERSITY.academicAffairsOffice}
 ${UNIVERSITY.name} — ${UNIVERSITY.descriptor}
 ${UNIVERSITY.headquarters}`;
 }

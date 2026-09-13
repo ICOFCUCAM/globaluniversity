@@ -1,9 +1,9 @@
 -- ===========================================================================
--- ICOF GLOBAL UNIVERSITY — MIGRATIONS 036, 037, 038, 039, 040, 041, 042, 043, 044, 045, 046, 047, 048, 049, 050, 051, 052, IN ORDER
+-- ICOF GLOBAL UNIVERSITY — MIGRATIONS 036, 037, 038, 039, 040, 041, 042, 043, 044, 045, 046, 047, 048, 049, 050, 051, 052, 053, 054, IN ORDER
 --
 -- GENERATED FILE. DO NOT EDIT.
 --   Generator: scripts/build-migration-run.mjs
---   Rebuild:   node scripts/build-migration-run.mjs --out=RUN-OUTSTANDING.sql 036 037 038 039 040 041 042 043 044 045 046 047 048 049 050 051 052
+--   Rebuild:   node scripts/build-migration-run.mjs --out=RUN-OUTSTANDING.sql 036 037 038 039 040 041 042 043 044 045 046 047 048 049 050 051 052 053 054
 --
 -- ---------------------------------------------------------------------------
 -- HOW TO RUN IT
@@ -8433,6 +8433,485 @@ select k.kind,
 
 
 -- ===========================================================================
+-- ===========================================================================
+--
+--   053_where_an_office_stands.sql
+--
+-- ===========================================================================
+-- ===========================================================================
+
+-- ===========================================================================
+-- 053 — WHERE AN OFFICE STANDS, AND THE OFFICE THAT WAS CALLED THREE THINGS
+-- ===========================================================================
+--
+-- WHAT CHANGES FOR THE UNIVERSITY THE MOMENT THIS RUNS
+--
+-- 1. THE APPOINTMENT LETTER STARTS SAYING DIFFERENT THINGS TO DIFFERENT
+--    OFFICES. It already did in the code; this is the data that feeds it. A
+--    post's `family` selects the register of wording — a Dean's letter, a
+--    Lecturer's and the Director of Academic Affairs' stop being the same
+--    generic executive letter with a different job title in it.
+--
+-- 2. THE DIRECTOR OF ACADEMIC AFFAIRS IS RECORDED AS RANKING IMMEDIATELY BELOW
+--    THE VICE-CHANCELLOR. The University stated this on 13 September 2026. It
+--    is stored on the post, and it is the ONLY post that carries it — so the
+--    sentence can be printed where it is true and nowhere else.
+--
+--    A LETTER THAT CLAIMS A RANK IS MAKING A CONSTITUTIONAL CLAIM. If that
+--    sentence lived in a template, every future template copying it would
+--    repeat the claim for whatever post it was pointed at, and a Lecturer's
+--    letter would quietly say the same thing. As a column on one row it cannot.
+--
+-- 3. NOTHING IS GRANTED. `precedence` and `standing` say where an office sits.
+--    They say nothing about what it may authorise, may recommend or must
+--    escalate — those three are in the job description, which 048 versions and
+--    approves separately, and this migration does not touch them.
+--
+-- ---------------------------------------------------------------------------
+-- AND IT DOES NOT RENAME ANYTHING
+-- ---------------------------------------------------------------------------
+--
+-- The University has ruled that the office called "Head of Academic Affairs" in
+-- this system and "Academic Director General" on the published About page is
+-- the DIRECTOR OF ACADEMIC AFFAIRS. 048 already seeded the post under that
+-- name, so there is no row here to rename — the disagreement was in the
+-- application's own constants and in the website's content, and both are fixed
+-- in the same change as this file. It is recorded here because somebody reading
+-- the migrations in five years will want to know when the three names became
+-- one.
+-- ===========================================================================
+
+-- ---------------------------------------------------------------------------
+-- 1. WHERE AN OFFICE STANDS
+-- ---------------------------------------------------------------------------
+
+alter table positions
+  add column if not exists executive_level text,
+  -- The rank, as it is printed in a table cell: "Second-ranking officer after
+  -- the Vice-Chancellor".
+  add column if not exists precedence      text,
+  -- The same standing, as a sentence in a paragraph. TWO COLUMNS ON PURPOSE:
+  -- lowercasing the first to make the second produced "The office of Director
+  -- of Academic Affairs is second-ranking officer after the Vice-Chancellor",
+  -- which is neither a rank nor English.
+  add column if not exists standing        text;
+
+comment on column positions.executive_level is
+  'The management band the office sits in, where the University has recorded one. Printed in '
+  'the appointment letter''s details table. Never derived.';
+
+comment on column positions.precedence is
+  'Where the office ranks, as a table-cell value. Printed ONLY for posts that carry it, so a '
+  'letter cannot claim a standing the University has not stated for that post.';
+
+comment on column positions.standing is
+  'The same fact as a sentence, for the letter''s opening paragraphs. Says where the office '
+  'sits and NOT what it may do — authority is in the job description and nowhere else.';
+
+-- NOT A FREE-TEXT INVITATION. A standing is a considered statement about the
+-- University's structure, and a one-word value in it is a typo rather than a
+-- ruling.
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'positions_standing_is_a_statement') then
+    alter table positions add constraint positions_standing_is_a_statement
+      check (standing is null or length(btrim(standing)) >= 20);
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'positions_precedence_is_a_rank') then
+    alter table positions add constraint positions_precedence_is_a_rank
+      check (precedence is null or length(btrim(precedence)) >= 8);
+  end if;
+end $$;
+
+-- ---------------------------------------------------------------------------
+-- 2. THE ONE POST THE UNIVERSITY HAS RANKED
+-- ---------------------------------------------------------------------------
+--
+-- WRITTEN ONLY WHERE IT IS STILL EMPTY. If the University has since edited
+-- either field, this must not put its own wording back on a re-run — a
+-- migration that overwrites a considered change is a migration nobody can run
+-- twice.
+
+update positions
+   set executive_level = coalesce(executive_level, 'Senior Executive Management'),
+       precedence      = coalesce(precedence, 'Second-ranking officer after the Vice-Chancellor'),
+       standing        = coalesce(standing,
+                                  'a senior executive office of the University, ranking '
+                                  'immediately below the Vice-Chancellor in the University''s '
+                                  'executive structure')
+ where job_code = 'ACA-DAA';
+
+-- ---------------------------------------------------------------------------
+-- 3. PROVE IT
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  ranked  int;
+  daa     record;
+  refused boolean;
+begin
+  -- ---- ONE POST CARRIES A RANK, AND ONLY ONE ------------------------------
+  select count(*) into ranked from positions where precedence is not null;
+  if ranked <> 1 then
+    raise exception '053 FAILED: % posts carry a precedence, expected exactly 1', ranked;
+  end if;
+
+  select job_code, precedence, standing, executive_level, family
+    into daa from positions where job_code = 'ACA-DAA';
+
+  if daa is null then
+    raise exception '053 FAILED: ACA-DAA is not in the register — run 048 first';
+  end if;
+  if daa.precedence is null or daa.standing is null then
+    raise exception '053 FAILED: the Director of Academic Affairs carries no standing';
+  end if;
+  if daa.family <> 'academic-administration' then
+    raise exception '053 FAILED: ACA-DAA is in family %, so it would take the wrong register',
+                    daa.family;
+  end if;
+
+  -- ---- EVERY POST HAS A FAMILY, because the family picks the wording ------
+  -- A post with none falls to the plainest register rather than the grandest,
+  -- which is safe — but a post with no family at all is a post nobody
+  -- classified, and the letter it produces is nobody's decision.
+  if exists (select 1 from positions where family is null or btrim(family) = '') then
+    raise exception '053 FAILED: some posts have no family, so their letters have no register';
+  end if;
+
+  -- ---- AND THE GUARDS REFUSE ---------------------------------------------
+  begin
+    refused := false;
+    begin
+      update positions set standing = 'senior' where job_code = 'ACA-DAA';
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '053 FAILED: a one-word standing was accepted as a statement of structure';
+    end if;
+
+    refused := false;
+    begin
+      update positions set precedence = 'top' where job_code = 'ACA-DAA';
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '053 FAILED: a three-letter precedence was accepted as a rank';
+    end if;
+
+    raise exception 'PROOF_ROLLBACK';
+  exception
+    when others then
+      if sqlerrm <> 'PROOF_ROLLBACK' then raise; end if;
+  end;
+
+  raise notice '053 OK: every post carries a family, so every appointment letter has a register '
+               'of wording appropriate to the office';
+  raise notice '053 OK: the Director of Academic Affairs ranks immediately below the '
+               'Vice-Chancellor, and is the only post that carries a standing';
+  raise notice '053 OK: a standing too short to be a statement is refused';
+end $$;
+
+
+-- ===========================================================================
+-- 4. VERIFY — READ THIS OUTPUT
+-- ===========================================================================
+
+-- ---------------------------------------------------------------------------
+-- WHICH REGISTER EACH KIND OF OFFICE WILL TAKE, and which posts the University
+-- has ranked. Every family below should have posts in it; only ACA-DAA should
+-- show a precedence.
+-- ---------------------------------------------------------------------------
+select family,
+       count(*)                                        as posts,
+       count(*) filter (where precedence is not null)  as ranked,
+       string_agg(job_code, ', ' order by job_code)
+         filter (where precedence is not null)         as which
+  from positions
+ group by family
+ order by family;
+
+
+-- ===========================================================================
+-- ===========================================================================
+--
+--   054_course_registration.sql
+--
+-- ===========================================================================
+-- ===========================================================================
+
+-- ===========================================================================
+-- 054 — COURSE REGISTRATION: THE ACT NOBODY COULD PERFORM
+-- ===========================================================================
+--
+-- WHAT CHANGES FOR THE UNIVERSITY THE MOMENT THIS RUNS
+--
+-- A STUDENT CAN BE REGISTERED FOR A COURSE. Until now nothing in this system
+-- could do it. `enrollments` has existed since 001; the results pipeline reads
+-- it to build a mark sheet, the GPA engine reads it to weight a transcript,
+-- and the graduation audit reads it to decide whether somebody may be awarded
+-- a degree. Every one of them reads a table that no screen and no route has
+-- ever written a row into.
+--
+-- It was found by counting reads against writes per table — the same sweep
+-- that found the signature specimens and the allowances — and it is the
+-- largest of the three, because the three things it feeds are marks,
+-- transcripts and graduation.
+--
+-- ---------------------------------------------------------------------------
+-- WHAT THIS FILE ADDS, AND WHY EACH PIECE
+-- ---------------------------------------------------------------------------
+--
+-- 1. A CLOSED VOCABULARY FOR `status`. It was `text not null default
+--    'registered'` with no constraint, so any word at all could be written and
+--    every reader would have to guess which words it might find. The three
+--    below are the ones a registration can be in.
+--
+-- 2. WHO REGISTERED THIS STUDENT, AND HOW. A registration is a commitment: it
+--    puts somebody on a mark sheet and it puts a course on their transcript.
+--    One with no actor is one nobody can be asked about. `registered_via`
+--    separates a student registering themselves from the Registry doing it for
+--    them, because those two are answerable in different directions.
+--
+-- 3. THE DROP, AS A STATE AND NOT A DELETION. Deleting the row would take the
+--    student off the mark sheet and leave no trace that they were ever on it —
+--    and a student who sat an assessment and then vanished from the register
+--    is the shape of a real dispute.
+--
+-- 4. THE LIVE ROLL AS A VIEW. The mark sheet must not list somebody who
+--    dropped the course. The screens read every enrolment row today, so
+--    introducing a dropped state without this view would put dropped students
+--    in front of an examiner.
+--
+-- ---------------------------------------------------------------------------
+-- WHAT THIS FILE DOES NOT DO
+-- ---------------------------------------------------------------------------
+--
+-- ENFORCE PREREQUISITES IN SQL. The rule is published in
+-- src/lib/prerequisites.ts, tested, and it reports EVERY failing condition at
+-- once with a sentence per reason naming the course — because a check that
+-- returns on the first failure makes a student re-submit to discover the
+-- second. A trigger can refuse; it cannot explain. The route applies the rule
+-- and the database holds the shape of the record.
+--
+-- That is a deliberate asymmetry and it is worth stating plainly: this is the
+-- one guard in the system that is NOT belt-and-braces in SQL.
+-- ===========================================================================
+
+-- ---------------------------------------------------------------------------
+-- 1. THE SHAPE OF A REGISTRATION
+-- ---------------------------------------------------------------------------
+
+alter table enrollments
+  add column if not exists registered_by   uuid references auth.users (id) on delete set null,
+  -- 'self' when the student registered, 'registry' when an officer did it for
+  -- them. Not derivable from registered_by: an officer who is also a student
+  -- would be indistinguishable.
+  add column if not exists registered_via  text,
+  add column if not exists dropped_at      timestamptz,
+  add column if not exists dropped_by      uuid references auth.users (id) on delete set null,
+  add column if not exists drop_reason     text;
+
+comment on column enrollments.registered_by is
+  'Who put this student on this course. A registration puts somebody on a mark sheet and a '
+  'course on their transcript; one with no actor is one nobody can be asked about.';
+
+comment on column enrollments.registered_via is
+  'self | registry. Separates a student registering themselves from the Registry doing it for '
+  'them — the two are answerable in different directions.';
+
+do $$
+begin
+  -- ---- THE STATUS VOCABULARY, CLOSED ------------------------------------
+  -- NOT VALID, deliberately. A database with existing enrolments carrying some
+  -- other word must not fail to migrate; the constraint governs every row
+  -- written from now on, and the verify query at the foot names anything that
+  -- would not pass.
+  if not exists (select 1 from pg_constraint where conname = 'enrollments_status_is_known') then
+    alter table enrollments add constraint enrollments_status_is_known
+      check (status in ('registered', 'dropped', 'completed')) not valid;
+  end if;
+
+  -- ---- A DROPPED REGISTRATION SAYS WHEN AND WHY -------------------------
+  -- A drop with no date is one nobody can place in a term, and a drop with no
+  -- reason is one nobody can answer for at an appeal.
+  if not exists (select 1 from pg_constraint where conname = 'enrollments_drop_is_complete') then
+    alter table enrollments add constraint enrollments_drop_is_complete
+      check (
+        status <> 'dropped'
+        or (dropped_at is not null and drop_reason is not null
+            and length(btrim(drop_reason)) >= 8)
+      ) not valid;
+  end if;
+
+  -- ---- AND A LIVE ONE CARRIES NO DROP -----------------------------------
+  -- The pair that actually catches a bug: re-registering a dropped course by
+  -- setting the status back and forgetting to clear the drop leaves a row that
+  -- is registered AND dropped, which every reader will interpret differently.
+  if not exists (select 1 from pg_constraint where conname = 'enrollments_live_is_not_dropped') then
+    alter table enrollments add constraint enrollments_live_is_not_dropped
+      check (status = 'dropped' or dropped_at is null) not valid;
+  end if;
+
+  if not exists (select 1 from pg_constraint where conname = 'enrollments_via_is_known') then
+    alter table enrollments add constraint enrollments_via_is_known
+      check (registered_via is null or registered_via in ('self', 'registry')) not valid;
+  end if;
+end $$;
+
+-- ---------------------------------------------------------------------------
+-- 2. THE LIVE ROLL
+-- ---------------------------------------------------------------------------
+--
+-- WHO IS ACTUALLY TAKING THIS COURSE. The mark sheet, the GPA engine and the
+-- graduation audit all ask this question and all of them asked it by reading
+-- every row in `enrollments`, which was correct only while nothing could be
+-- dropped.
+--
+-- A VIEW RATHER THAN A FILTER IN EACH SCREEN, because there are three screens
+-- and they would drift — and the one that drifts is the one that puts a
+-- student who dropped the course in front of an examiner.
+
+drop view if exists course_roll;
+
+create view course_roll
+with (security_invoker = true) as
+select e.id                as enrollment_id,
+       e.student_id,
+       e.course_id,
+       e.academic_year,
+       e.semester,
+       e.status,
+       e.enrolled_at,
+       e.registered_via
+  from enrollments e
+ where e.status in ('registered', 'completed');
+
+comment on view course_roll is
+  'Who is actually taking a course: registered and completed, never dropped. The mark sheet, '
+  'the GPA engine and the graduation audit all read this rather than filtering for themselves.';
+
+grant select on course_roll to authenticated, service_role;
+
+-- ---------------------------------------------------------------------------
+-- 3. PROVE IT
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  s_id    uuid;
+  c_id    uuid;
+  e_id    uuid;
+  refused boolean;
+begin
+  begin
+    -- A student and a course to register, made here and rolled back.
+    insert into students (first_name, last_name, matric_no)
+      values ('Proof', 'Student', 'PROOF-054-' || substr(gen_random_uuid()::text, 1, 8))
+      returning id into s_id;
+
+    insert into courses (code, title, credit_unit)
+      values ('ZZZ054-' || substr(gen_random_uuid()::text, 1, 6), 'A Proof Course', 3)
+      returning id into c_id;
+
+    -- ---- A REGISTRATION IS ACCEPTED ---------------------------------------
+    insert into enrollments (student_id, course_id, academic_year, semester,
+                             status, registered_by, registered_via)
+      values (s_id, c_id, 2026, 1, 'registered', null, 'self')
+      returning id into e_id;
+
+    if not exists (select 1 from course_roll where enrollment_id = e_id) then
+      raise exception '054 FAILED: a registered student is not on the roll';
+    end if;
+
+    -- ---- A WORD NOBODY DEFINED IS REFUSED ---------------------------------
+    refused := false;
+    begin
+      update enrollments set status = 'maybe' where id = e_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '054 FAILED: an undefined status was accepted';
+    end if;
+
+    -- ---- A DROP WITH NO REASON IS REFUSED ---------------------------------
+    refused := false;
+    begin
+      update enrollments set status = 'dropped', dropped_at = now() where id = e_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '054 FAILED: a course was dropped with no reason recorded';
+    end if;
+
+    -- ---- A PROPER DROP IS ACCEPTED, AND LEAVES THE ROLL -------------------
+    update enrollments
+       set status = 'dropped', dropped_at = now(),
+           drop_reason = 'Withdrew from the module within the change period'
+     where id = e_id;
+
+    if exists (select 1 from course_roll where enrollment_id = e_id) then
+      raise exception '054 FAILED: a dropped student is still on the mark sheet';
+    end if;
+
+    -- ---- AND A ROW CANNOT BE BOTH -----------------------------------------
+    -- The one that catches the real bug: re-registering by setting the status
+    -- back and forgetting to clear the drop.
+    refused := false;
+    begin
+      update enrollments set status = 'registered' where id = e_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '054 FAILED: a row is registered and dropped at the same time';
+    end if;
+
+    -- Clearing the drop as well is what re-registration must do, and it works.
+    update enrollments
+       set status = 'registered', dropped_at = null, dropped_by = null, drop_reason = null
+     where id = e_id;
+    if not exists (select 1 from course_roll where enrollment_id = e_id) then
+      raise exception '054 FAILED: a re-registered student is not back on the roll';
+    end if;
+
+    raise exception 'PROOF_ROLLBACK';
+  exception
+    when others then
+      if sqlerrm <> 'PROOF_ROLLBACK' then raise; end if;
+  end;
+
+  raise notice '054 OK: a student can be registered for a course, and the registration records '
+               'who did it and whether the student did it themselves';
+  raise notice '054 OK: a drop is a state with a date and a reason, not a deletion — and a '
+               'dropped student leaves the mark sheet';
+  raise notice '054 OK: a row cannot be registered and dropped at the same time';
+end $$;
+
+
+-- ===========================================================================
+-- 4. VERIFY — READ THIS OUTPUT
+-- ===========================================================================
+
+-- ---------------------------------------------------------------------------
+-- WHAT IS ON THE REGISTER NOW, AND WHETHER ANY EXISTING ROW WOULD FAIL THE NEW
+-- RULES. The constraints were added NOT VALID so that a database with older
+-- rows still migrates; this is where you find out whether there are any.
+--
+-- `unknown_status` should be 0. If it is not, those rows carry a word nothing
+-- defines, and every reader of the table is guessing what it means.
+-- ---------------------------------------------------------------------------
+select count(*)                                                  as enrolments,
+       count(*) filter (where status = 'registered')              as registered,
+       count(*) filter (where status = 'dropped')                 as dropped,
+       count(*) filter (where status = 'completed')               as completed,
+       count(*) filter (where status not in
+                        ('registered', 'dropped', 'completed'))   as unknown_status,
+       count(*) filter (where registered_by is null
+                          and status <> 'dropped')                as no_actor_recorded
+  from enrollments;
+
+
+-- ===========================================================================
 -- DID IT LAND?  — READ THIS TABLE
 -- ===========================================================================
 --
@@ -8444,28 +8923,89 @@ select k.kind,
 -- editor does not show. This table is the same answer in a form it does.
 -- ===========================================================================
 
-select m.migration,
-       m.file,
-       case when to_regclass('public.' || m.marker) is not null then 'YES' else 'NO' end
-         as landed,
-       m.marker as what_it_creates
-  from (values
-    ('036', '036_the_steps_nothing_could_write.sql', 'admission_audit_log'),
-    ('037', '037_a_student_is_not_an_application.sql', 'students'),
-    ('038', '038_announcements_are_the_institution_speaking.sql', 'announcements'),
-    ('039', '039_a_destination_is_a_publishing_job.sql', 'announcement_media'),
-    ('040', '040_emergency_publishing_and_erasure.sql', 'announcement_tombstones'),
-    ('041', '041_appointments_and_the_letters_that_issue_from_them.sql', 'appointments'),
-    ('042', '042_the_appointment_lifecycle_and_the_staff_record.sql', 'appointment_events'),
-    ('043', '043_working_hours_and_the_appointing_authority.sql', 'appointment_letters_unverifiable'),
-    ('044', '044_document_templates_and_the_letters_tied_to_them.sql', 'document_templates'),
-    ('045', '045_official_correspondence_and_who_initiated_it.sql', 'correspondence'),
-    ('046', '046_the_correspondence_history_and_the_delegated_draft.sql', 'correspondence_events'),
-    ('047', '047_the_money_the_actors_and_the_two_axes.sql', 'appointment_allowances'),
-    ('048', '048_the_job_descriptions_and_what_they_inherit.sql', 'positions'),
-    ('049', '049_verification_signatures_and_the_written_letter.sql', 'signature_specimens'),
-    ('050', '050_acceptance_the_activation_rule_and_the_full_audit.sql', 'appointment_acceptances'),
-    ('051', '051_templates_for_every_document_the_university_issues.sql', 'document_template_coverage')
-  ) as m (migration, file, marker)
- order by m.migration;
+select * from (
+  select '036' as migration, '036_the_steps_nothing_could_write.sql' as file,
+         case when to_regclass('public.admission_audit_log') is not null then 'YES' else 'NO' end as landed,
+         'admission_audit_log' as what_it_creates
+  union all
+  select '037' as migration, '037_a_student_is_not_an_application.sql' as file,
+         case when to_regclass('public.students') is not null then 'YES' else 'NO' end as landed,
+         'students' as what_it_creates
+  union all
+  select '038' as migration, '038_announcements_are_the_institution_speaking.sql' as file,
+         case when to_regclass('public.announcements') is not null then 'YES' else 'NO' end as landed,
+         'announcements' as what_it_creates
+  union all
+  select '039' as migration, '039_a_destination_is_a_publishing_job.sql' as file,
+         case when to_regclass('public.announcement_media') is not null then 'YES' else 'NO' end as landed,
+         'announcement_media' as what_it_creates
+  union all
+  select '040' as migration, '040_emergency_publishing_and_erasure.sql' as file,
+         case when to_regclass('public.announcement_tombstones') is not null then 'YES' else 'NO' end as landed,
+         'announcement_tombstones' as what_it_creates
+  union all
+  select '041' as migration, '041_appointments_and_the_letters_that_issue_from_them.sql' as file,
+         case when to_regclass('public.appointments') is not null then 'YES' else 'NO' end as landed,
+         'appointments' as what_it_creates
+  union all
+  select '042' as migration, '042_the_appointment_lifecycle_and_the_staff_record.sql' as file,
+         case when to_regclass('public.appointment_events') is not null then 'YES' else 'NO' end as landed,
+         'appointment_events' as what_it_creates
+  union all
+  select '043' as migration, '043_working_hours_and_the_appointing_authority.sql' as file,
+         case when to_regclass('public.appointment_letters_unverifiable') is not null then 'YES' else 'NO' end as landed,
+         'appointment_letters_unverifiable' as what_it_creates
+  union all
+  select '044' as migration, '044_document_templates_and_the_letters_tied_to_them.sql' as file,
+         case when to_regclass('public.document_templates') is not null then 'YES' else 'NO' end as landed,
+         'document_templates' as what_it_creates
+  union all
+  select '045' as migration, '045_official_correspondence_and_who_initiated_it.sql' as file,
+         case when to_regclass('public.correspondence') is not null then 'YES' else 'NO' end as landed,
+         'correspondence' as what_it_creates
+  union all
+  select '046' as migration, '046_the_correspondence_history_and_the_delegated_draft.sql' as file,
+         case when to_regclass('public.correspondence_events') is not null then 'YES' else 'NO' end as landed,
+         'correspondence_events' as what_it_creates
+  union all
+  select '047' as migration, '047_the_money_the_actors_and_the_two_axes.sql' as file,
+         case when to_regclass('public.appointment_allowances') is not null then 'YES' else 'NO' end as landed,
+         'appointment_allowances' as what_it_creates
+  union all
+  select '048' as migration, '048_the_job_descriptions_and_what_they_inherit.sql' as file,
+         case when to_regclass('public.positions') is not null then 'YES' else 'NO' end as landed,
+         'positions' as what_it_creates
+  union all
+  select '049' as migration, '049_verification_signatures_and_the_written_letter.sql' as file,
+         case when to_regclass('public.signature_specimens') is not null then 'YES' else 'NO' end as landed,
+         'signature_specimens' as what_it_creates
+  union all
+  select '050' as migration, '050_acceptance_the_activation_rule_and_the_full_audit.sql' as file,
+         case when to_regclass('public.appointment_acceptances') is not null then 'YES' else 'NO' end as landed,
+         'appointment_acceptances' as what_it_creates
+  union all
+  select '051' as migration, '051_templates_for_every_document_the_university_issues.sql' as file,
+         case when to_regclass('public.document_template_coverage') is not null then 'YES' else 'NO' end as landed,
+         'document_template_coverage' as what_it_creates
+  union all
+  select '052' as migration, '052_a_first_draft_of_every_document.sql' as file,
+         case when to_regclass('public.document_templates') is null then 'NO'
+                 when exists (select 1 from document_templates where created_by is null) then 'YES'
+                 else 'NO' end as landed,
+         'rows:document_templates:created_by is null' as what_it_creates
+  union all
+  select '053' as migration, '053_where_an_office_stands.sql' as file,
+         case when exists (
+                   select 1 from information_schema.columns
+                    where table_schema = 'public'
+                      and table_name = 'positions'
+                      and column_name = 'standing')
+                 then 'YES' else 'NO' end as landed,
+         'positions.standing' as what_it_creates
+  union all
+  select '054' as migration, '054_course_registration.sql' as file,
+         case when to_regclass('public.course_roll') is not null then 'YES' else 'NO' end as landed,
+         'course_roll' as what_it_creates
+) as landed_report
+ order by migration;
 

@@ -51,6 +51,71 @@ import {
   missingFrom, blocked, allowanceLine,
   type Appointment, type EmploymentType, type AppointmentAction, type Allowance,
 } from './appointments';
+// THE WORDING THAT CHANGES WITH THE OFFICE. A Dean's letter, a Lecturer's and
+// the Director of Academic Affairs' are the same document with different things
+// to say, and what differs is a register rather than a branch.
+import { registerFor, conductFor } from './appointmentRegisters';
+
+/**
+ * The job-description sections whose clauses are printed in the letter.
+ *
+ * DUTIES, AND NOT AUTHORITY. `may-authorize`, `may-recommend` and
+ * `must-obtain-approval` are deliberately absent: they are what the post may
+ * commit the University to, they live in the job description, and a letter that
+ * restated them would give the University two documents that can disagree about
+ * what somebody was entitled to decide.
+ */
+const DUTY_SECTIONS = [
+  'key-responsibilities', 'institutional', 'academic', 'administrative',
+  'financial', 'people-management', 'student', 'research', 'ict', 'compliance',
+];
+
+/**
+ * A name that starts a sentence in the record, used inside one here.
+ *
+ * "You shall report directly to The Vice-Chancellor" is what the letter said
+ * before this existed, because the record holds "The Vice-Chancellor" — a
+ * correct value for a table cell and wrong in the middle of a sentence. Only
+ * the leading article is touched; a name that begins with a real capital keeps
+ * it, so "Reports to Prof Meyembi" is not mangled into "prof Meyembi".
+ */
+const midSentence = (s: string) => s.replace(/^The\s/, 'the ');
+
+/**
+ * The four documents of an appointment, and where each is produced.
+ *
+ * WRITTEN DOWN BECAUSE A LETTER THAT NAMES AN ATTACHMENT IS A PROMISE. The
+ * letter listed a job description as Attachment 1 for months while nothing in
+ * this system could produce one — the data existed, the screen existed, the
+ * document did not. `jobDescriptionDocument.ts` is that document now.
+ */
+export const PACKAGE_DOCUMENTS = [
+  { what: 'The appointment letter', producedBy: 'appointmentLetter.ts' },
+  { what: 'The job description and terms of reference', producedBy: 'jobDescriptionDocument.ts' },
+  { what: 'The conditions of service', producedBy: 'a document template (051), cited by version' },
+  { what: 'The acceptance of appointment', producedBy: '/accept, recorded by 050' },
+] as const;
+
+/**
+ * What the numbered letter needs on top of the shared press.
+ *
+ * SMALL ON PURPOSE. Everything structural — the page, the rule under the
+ * letterhead, the table, the signature block — is `documentStyles()`, so a
+ * change to the University's documents reaches this letter without being
+ * reapplied here. These are the four things a numbered multi-page letter needs
+ * and the other documents do not.
+ */
+const LETTER_STYLES = `
+  h3 { font: bold 10.5pt/1.3 Georgia, 'Times New Roman', serif; color: #3b2a52;
+       margin: 16px 0 6px; text-transform: none; letter-spacing: 0;
+       break-after: avoid; page-break-after: avoid; }
+  .subject { font-weight: bold; margin-top: 14px; }
+  .addr { white-space: pre-line; margin-top: 0; }
+  ul { margin: 4px 0 8px; padding-left: 20px; }
+  li { margin-bottom: 3px; }
+  .attachments { margin-top: 14px; font-size: 9pt; color: #6b6076;
+                 break-inside: avoid; page-break-inside: avoid; }
+`;
 
 export interface LetterInput {
   appointment: Appointment & { id?: string };
@@ -92,9 +157,76 @@ export interface LetterInput {
    * record with its own version and its own approval, and inlining it would
    * make the letter say something the JD could later contradict.
    */
-  jobDescription?: { code?: string | null; title?: string | null; version?: number | null } | null;
+  jobDescription?: {
+    code?: string | null;
+    title?: string | null;
+    version?: number | null;
+    /**
+     * The job description's own duty clauses, printed under "Principal Areas
+     * of Responsibility".
+     *
+     * DUTIES ONLY, AND THE OMISSION IS THE POINT. `may-authorize`,
+     * `may-recommend` and `must-obtain-approval` are NOT printed here, however
+     * available they are. They are the three sections that say what the holder
+     * may commit the University to, and reprinting them in a letter would mean
+     * the University had stated a grant of authority in two documents that can
+     * later disagree. The letter names the job description; the job
+     * description says what the office may do.
+     */
+    clauses?: { section: string; ordinal: number; body: string }[] | null;
+  } | null;
   /** Where the conditions of service are set out. */
   termsReference?: string | null;
+
+  // -------------------------------------------------------------------------
+  // WHAT KIND OF LETTER THIS IS
+  // -------------------------------------------------------------------------
+
+  /**
+   * The family of the post, which selects the register of wording.
+   *
+   * ABSENT MEANS THE PLAINEST LETTER, not the grandest. See
+   * `appointmentRegisters.registerFor`.
+   */
+  family?: string | null;
+
+  /**
+   * Where the office stands, printed only when the University has said so.
+   *
+   * NEVER DERIVED. There is no rule in this system that computes precedence
+   * from a reporting line — "reports to the Vice-Chancellor" is true of
+   * several offices and makes none of them the second-ranking officer. It is
+   * printed when, and only when, a value reaches this field from the record.
+   */
+  precedence?: string | null;
+
+  /** The band the office sits in, where the University has recorded one. */
+  executiveLevel?: string | null;
+
+  /**
+   * The same standing, as a sentence rather than as a rank.
+   *
+   * SEPARATE FROM `precedence` ON PURPOSE. "Second-ranking officer after the
+   * Vice-Chancellor" belongs in a table cell; a paragraph needs "a senior
+   * executive office of the University, ranking immediately below the
+   * Vice-Chancellor". Lowercasing the first to make the second produced a
+   * sentence with no article in it.
+   */
+  standing?: string | null;
+
+  /** Notice periods, printed in the termination section when recorded. */
+  noticeMonths?: number | null;
+  probationNoticeMonths?: number | null;
+
+  /**
+   * Benefits that are neither the salary nor a numbered allowance.
+   *
+   * OMITTED WHEN ABSENT, never printed as "None". The University's own draft
+   * has "[DETAILS / NONE]" here; "None" is a statement about the terms, and
+   * the University should make it deliberately rather than have a template
+   * make it by default.
+   */
+  otherBenefits?: string | null;
 }
 
 export interface GeneratedLetter {
@@ -170,12 +302,23 @@ export async function appointmentLetterHtml(input: LetterInput): Promise<Generat
   const pay = remunerationLine(a);
   const probation = probationEnds(a);
 
+  // THE REGISTER FOR THIS KIND OF OFFICE. Everything below that varies by post
+  // comes from here; nothing below invents wording of its own.
+  const reg = registerFor(input.family);
+  const title = a.position_title ?? '';
+  const reportsTo = midSentence(a.reports_to_name ?? 'the officer named above');
+
   // EVERY ROW COMES OUT OF THE RECORD. A row whose value is absent is omitted
   // rather than printed empty — a blank beside "Probation" reads as "none",
   // which is a claim the University has not made.
   const rows: [string, string | null][] = [
-    ['Position', a.position_title ?? null],
-    ['Department or faculty', a.unit_name ?? null],
+    ['Appointee', a.full_name ?? null],
+    ['Position', title || null],
+    // THE TWO STANDING ROWS, PRINTED ONLY WHEN RECORDED. Neither is derived.
+    ['Executive level', input.executiveLevel ?? null],
+    ['Institutional rank', input.precedence ?? null],
+    ['Office', a.unit_name ?? null],
+    ['Faculty or school', a.faculty ?? null],
     ['Employment type',
       EMPLOYMENT_LABELS[a.employment_type as EmploymentType] ?? a.employment_type ?? null],
     ['Date of commencement', longDate(a.start_date) || null],
@@ -185,8 +328,7 @@ export async function appointmentLetterHtml(input: LetterInput): Promise<Generat
     ['Probation', a.probation_months
       ? `${a.probation_months} months, to ${longDate(probation)}` : null],
     ['Place of duty', a.place_of_duty ?? null],
-    ['Reporting officer', a.reports_to_name ?? null],
-    ['Remuneration', pay],
+    ['Reports directly to', a.reports_to_name ?? null],
   ];
 
   // ---------------------------------------------------------------------
@@ -200,15 +342,165 @@ export async function appointmentLetterHtml(input: LetterInput): Promise<Generat
   // An appointment with none prints nothing at all — not "Allowances: none",
   // which is a claim about the terms rather than an absence of one.
   // ---------------------------------------------------------------------
+  const payRows: [string, string | null][] = [['Basic remuneration', pay]];
   for (const al of input.allowances ?? []) {
     const line = allowanceLine(al);
-    if (line) rows.push([' ', line]);
+    if (line) payRows.push([' ', line]);
   }
 
   const authority = a.appointing_authority
-    ? `<p class="auth">This appointment is made on the authority of ${escape(a.appointing_authority)}`
+    ? `<p class="auth">This appointment is made on the authority of ${
+      escape(midSentence(a.appointing_authority))}`
       + `${a.authority_decided_on ? `, ${escape(longDate(a.authority_decided_on))}` : ''}.</p>`
     : '';
+
+  // ---------------------------------------------------------------------
+  // THE SECTIONS, NUMBERED IN THE ORDER THEY SURVIVE.
+  //
+  // NUMBERED AFTER FILTERING, never before. A letter that runs 1, 2, 4, 5
+  // because section 3 had nothing to print is a letter whose reader goes
+  // looking for the missing one — and in a document somebody may later cite by
+  // paragraph number, a gap is worse than a renumbering.
+  // ---------------------------------------------------------------------
+  const sections: { heading: string; html: string }[] = [];
+  const add = (heading: string, html: string | null) => {
+    if (html && html.trim()) sections.push({ heading, html });
+  };
+
+  const paras = (list: string[]) =>
+    list.map((p) => `<p>${escape(p)}</p>`).join('\n');
+
+  add('Appointment Details', `<table>
+${rows.filter(([, v]) => v).map(([k, v]) =>
+    `  <tr><th>${escape(k)}</th><td>${escape(v)}</td></tr>`).join('\n')}
+</table>`);
+
+  if (reg.status) add(reg.status.heading, paras(reg.status.paragraphs));
+
+  // ---- The duties, from the job description and from nowhere else ---------
+  const dutyClauses = (input.jobDescription?.clauses ?? [])
+    .filter((c) => DUTY_SECTIONS.includes(c.section))
+    .sort((x, y) =>
+      DUTY_SECTIONS.indexOf(x.section) - DUTY_SECTIONS.indexOf(y.section)
+      || x.ordinal - y.ordinal);
+
+  if (dutyClauses.length > 0) {
+    add(reg.responsibilitiesHeading, `<p>${escape(reg.responsibilitiesLead(title))}</p>
+<ul>
+${dutyClauses.map((c) => `  <li>${escape(c.body)}</li>`).join('\n')}
+</ul>${input.jobDescription?.code ? `
+<p>The detailed scope of authority, duties, reporting relationships and performance
+expectations is set out in the Job Description and Terms of Reference for ${escape(title)},
+which accompanies this letter and forms an integral part of your appointment.</p>` : ''}`);
+  }
+
+  add(reg.accountability.heading, paras(reg.accountability.paragraphs(reportsTo)));
+
+  // ---- Remuneration -------------------------------------------------------
+  // PRINTED ONLY WHEN THERE IS ONE. An honorary or unpaid appointment carries
+  // no salary at all, and a section headed "Remuneration and Benefits" with
+  // nothing under it reads as an omission rather than as the terms.
+  if (pay) {
+    add('Remuneration and Benefits', `<p>Your remuneration shall be provided in accordance with
+the terms approved for this appointment.</p>
+<table>
+${payRows.filter(([, v]) => v).map(([k, v]) =>
+      `  <tr><th>${escape(k)}</th><td>${escape(v)}</td></tr>`).join('\n')}${input.otherBenefits
+  ? `\n  <tr><th>Other approved benefits</th><td>${escape(input.otherBenefits)}</td></tr>` : ''}
+</table>
+<p>The amounts stated above are those formally approved by the University for this
+appointment.</p>`);
+  }
+
+  add('Professional Conduct', `<p>In accepting this appointment, you are expected to uphold the
+values, integrity and reputation of ${escape(UNIVERSITY.name)}. You shall:</p>
+<ul>
+${conductFor(reg).map((c) => `  <li>${escape(c)}</li>`).join('\n')}
+</ul>`);
+
+  add('Conditions of Appointment', `<p>This appointment is subject to the University’s
+applicable Conditions of Service, policies, regulations and governing instruments as amended
+from time to time in accordance with the University’s established procedures.</p>
+<p>The appointment is also subject, where applicable, to verification of academic
+qualifications, professional credentials, references and other information supplied in
+connection with the appointment.</p>
+<p>Any probationary period, performance review, renewal or confirmation shall be governed by
+the applicable terms of the appointment.</p>${input.termsReference
+  ? `\n<p>The Conditions of Service referred to above are those set out in ${
+    escape(input.termsReference)}.</p>` : ''}`);
+
+  add('Performance and Review', `<p>Your performance shall be reviewed in accordance with the
+University’s applicable performance-management arrangements.</p>
+<p>The University may periodically review the responsibilities, objectives and performance
+expectations of the office in accordance with institutional requirements.</p>
+<p>Any substantial amendment to the terms of your appointment shall be formally
+documented.</p>`);
+
+  add('Confidentiality and Conflict of Interest', `<p>You shall maintain the confidentiality of
+information obtained through your office and shall not disclose confidential University
+information except where authorized or required by law or University policy.</p>
+<p>You shall promptly disclose any actual, potential or perceived conflict of interest arising
+in connection with your official responsibilities and shall comply with the University’s
+applicable conflict-of-interest requirements.</p>`);
+
+  // ---- Termination --------------------------------------------------------
+  // THE NOTICE PERIOD IS PRINTED ONLY IF IT IS RECORDED. A letter that states
+  // "three months" because three months is usual would be the University
+  // stating a term of the contract it had not agreed.
+  add('Termination', `<p>Your appointment may be terminated in accordance with the University’s
+applicable Conditions of Service and the terms governing your appointment.</p>${
+  input.noticeMonths
+    ? `\n<p>Where a specific contractual notice period applies, the notice period for this
+appointment is ${escape(String(input.noticeMonths))} month${
+      input.noticeMonths === 1 ? '' : 's'}.${
+      input.probationNoticeMonths
+        ? ` During any probationary period, the notice period is ${
+          escape(String(input.probationNoticeMonths))} month${
+          input.probationNoticeMonths === 1 ? '' : 's'}.` : ''}</p>` : ''}
+<p>The applicable Conditions of Service shall govern matters relating to resignation,
+termination, disciplinary action and other cessation of appointment.</p>`);
+
+  if (input.jobDescription?.code) {
+    // REFERENCED BY CODE AND VERSION. "See the attached job description" is
+    // useless in five years; "ACA-DAA, version 1" names the document the
+    // University can still produce.
+    add('Job Description and Terms of Reference',
+      `<p>Your appointment is accompanied by a Job Description and Terms of Reference for
+${escape(input.jobDescription.title ?? input.jobDescription.code)} (${
+  escape(input.jobDescription.code)}${
+  input.jobDescription.version ? `, version ${input.jobDescription.version}` : ''}).</p>
+<p>That document sets out the detailed:</p>
+<ul>
+  <li>purpose of the position;</li>
+  <li>duties and responsibilities;</li>
+${reg.carriesDelegatedAuthority ? '  <li>delegated authority;</li>\n' : ''}\
+  <li>reporting relationships;</li>
+  <li>qualifications and experience;</li>
+  <li>competencies;</li>
+  <li>performance expectations; and</li>
+  <li>accountability requirements.</li>
+</ul>
+<p>The Job Description and Terms of Reference forms part of the official appointment
+record.</p>`);
+  }
+
+  // ---------------------------------------------------------------------
+  // THE ATTACHMENTS, LISTED ONLY IF THEY EXIST.
+  //
+  // A letter that lists three attachments and travels with one is a letter
+  // whose recipient believes two documents were withheld. Each line here is
+  // conditional on the thing it names actually being part of this appointment.
+  // ---------------------------------------------------------------------
+  const attachments = [
+    input.jobDescription?.code
+      ? `Job description and terms of reference — ${
+        input.jobDescription.title ?? input.jobDescription.code} (${input.jobDescription.code}${
+        input.jobDescription.version ? `, version ${input.jobDescription.version}` : ''})`
+      : null,
+    input.termsReference ? `Conditions of service — ${input.termsReference}` : null,
+    // ALWAYS PRESENT, because the letter above tells the appointee to use it.
+    `Acceptance of appointment — ${UNIVERSITY.website}/accept`,
+  ].filter((t): t is string => Boolean(t));
 
   return {
     reference: input.reference,
@@ -217,9 +509,9 @@ export async function appointmentLetterHtml(input: LetterInput): Promise<Generat
     html: `<!doctype html>
 <meta charset="utf-8">
 <title>Appointment Letter ${escape(printedReference(input.reference))}</title>
-<style>${documentStyles()}</style>
+<style>${documentStyles()}${LETTER_STYLES}</style>
 
-${letterhead()}
+${letterhead('Office of the Vice-Chancellor')}
 
 <h2>Appointment Letter</h2>
 
@@ -230,58 +522,71 @@ ${letterhead()}
 </div>
 
 <p>${escape(a.full_name)}</p>
-${a.postal_address ? `<p>${escape(a.postal_address)}</p>` : ''}
+${a.postal_address ? `<p class="addr">${escape(a.postal_address)}</p>` : ''}
+
+<p class="subject">Re: ${escape(reg.subject(title))}</p>
 
 <p>Dear ${escape(a.full_name)},</p>
 
-<p>We are pleased to formally appoint you as <strong>${escape(a.position_title)}</strong>${
-  a.unit_name ? ` in the ${escape(a.unit_name)}` : ''} of ${escape(UNIVERSITY.name)},
-on the terms set out below.</p>
+<p>${escape(reg.opening(title, UNIVERSITY.name))}${
+  a.effective_date ? ` This appointment takes effect from ${escape(longDate(a.effective_date))}.` : ''}</p>
 
-<table>
-${rows.filter(([, v]) => v).map(([k, v]) =>
-  `  <tr><th>${escape(k)}</th><td>${escape(v)}</td></tr>`).join('\n')}
-</table>
+<p>This appointment is made under the authority of the Vice-Chancellor and in accordance with
+the governing instruments, policies, regulations and applicable conditions of service of
+${escape(UNIVERSITY.name)}.</p>
+${input.standing ? `
+<p>${escape(`The office of ${title} is ${input.standing}. You shall serve as the principal `
+  + `officer responsible for the functions of that office, under the authority and direction of `
+  + `${reportsTo}.`)}</p>` : ''}
 
-${a.terms ? `<p class="terms">${escape(a.terms)}</p>` : ''}
+${sections.map((s, i) => `<h3>${i + 1}. ${escape(s.heading)}</h3>\n${s.html}`).join('\n\n')}
 
-${input.jobDescription || input.termsReference ? `<p class="attached">${[
-  // REFERENCED BY CODE AND VERSION. "See the attached job description" is
-  // useless in five years; "IGUC/ACS-LEC, version 2" names the document the
-  // University can still produce.
-  input.jobDescription?.code
-    ? `The duties of the post are set out in the job description for ${
-      escape(input.jobDescription.title ?? input.jobDescription.code)} (${
-      escape(input.jobDescription.code)}${
-      input.jobDescription.version ? `, version ${input.jobDescription.version}` : ''
-    }), which accompanies this letter and forms part of it.`
-    : '',
-  input.termsReference
-    ? `The conditions of service referred to above are those set out in ${
-      escape(input.termsReference)}.`
-    : '',
-].filter(Boolean).join(' ')}</p>` : ''}
+${a.terms ? `<h3>${sections.length + 1}. Further Terms</h3>\n<p class="terms">${escape(a.terms)}</p>` : ''}
 
 ${authority}
 
+<h3>${sections.length + (a.terms ? 2 : 1)}. Acceptance of Appointment</h3>
+<p>Please confirm your acceptance of this appointment. Your acceptance should clearly identify
+the appointment reference:</p>
+<p class="subject">${escape(printedReference(input.reference))}</p>
+<p>You may complete the acceptance electronically at ${escape(UNIVERSITY.website)}/accept using
+that reference and the verification code printed below, or in writing to the University. The
+completed acceptance is retained as part of your official University personnel and appointment
+record.</p>
+
 <div class="closing">
-<p>Please confirm your acceptance of this appointment. You may do so at
-${escape(UNIVERSITY.website)}/accept using the reference and the verification code printed
-below, or in writing to the University. This letter may be verified independently using the
-same reference and code.</p>
+<h3>${sections.length + (a.terms ? 3 : 2)}. Final Statement</h3>
+${paras(reg.closing(title, UNIVERSITY.name))}
+<p>Please accept our congratulations on your appointment and our best wishes as you assume the
+responsibilities of the office.</p>
 
 ${signatureBlock({
   // THE AUTHORITY IS STATED ON THE PAGE, not inferred from whose name is at the
   // foot. A reader of this letter in five years needs to know it was made by the
   // office that may make it, and a signature alone does not say so.
-  byAuthorityOf: 'the Vice-Chancellor',
+  //
+  // EXCEPT WHEN THE AUTHORITY IS THE SIGNATORY. This was hard-coded, and the
+  // Vice-Chancellor's own appointment letters came out reading "BY AUTHORITY OF
+  // THE VICE-CHANCELLOR" above the Vice-Chancellor's signature — "by authority
+  // of myself", which is not a statement of authority and makes the real ones
+  // read as a formula. signatureBlock's own doc comment had said so since it
+  // was written; nothing was passing it anything but the constant.
+  byAuthorityOf: /vice[-\s]?chancellor/i.test(input.signatoryRole)
+    ? null : 'the Vice-Chancellor',
   name: input.signatoryName,
   role: input.signatoryRole,
   image: input.signatureImage,
   authorizedOn: input.authorizedOn,
 })}
 
-${await sealPanel(seal, printedReference(input.reference), input.version)}
+${await sealPanel(seal, printedReference(input.reference), input.version, input.siteUrl)}
+
+${attachments.length > 0 ? `<div class="attachments">
+  <p><strong>Attachments</strong></p>
+  <ol>
+${attachments.map((t) => `    <li>${escape(t)}</li>`).join('\n')}
+  </ol>
+</div>` : ''}
 </div>
 ${runningFooter(printedReference(input.reference), DOCUMENT_FAMILIES.appointment.label)}
 `,

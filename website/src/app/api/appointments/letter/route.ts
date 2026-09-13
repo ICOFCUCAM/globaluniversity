@@ -212,22 +212,67 @@ export async function POST(request: Request) {
       .maybeSingle();
     const tpl = template as Row | null;
 
-    // THE JOB DESCRIPTION IS REFERENCED, NOT REPRINTED. It is its own record
-    // with its own version and its own approval; inlining it would let the
-    // letter say something the JD could later contradict.
-    let jobDescription: { code?: string; title?: string; version?: number } | null = null;
+    // THE JOB DESCRIPTION IS REFERENCED, AND ITS DUTIES ARE PRINTED.
+    //
+    // It remains its own record with its own version and its own approval. What
+    // changed is that the letter now prints the DUTY clauses under "Principal
+    // Areas of Responsibility" — the University asked for a letter that says
+    // what the post actually does rather than one generic paragraph for every
+    // office.
+    //
+    // THE THREE AUTHORITY SECTIONS ARE NOT PASSED ON. `appointmentLetter.ts`
+    // filters them out as well, so this is two locks on the same door: the
+    // letter must never restate `may-authorize`, `may-recommend` or
+    // `must-obtain-approval`, because the University would then have stated a
+    // grant of authority in two documents that can drift apart.
+    //
+    // THE FAMILY COMES FROM THE POST, and it selects the register of wording —
+    // a Dean's letter, a Lecturer's and the Director of Academic Affairs' are
+    // the same document with different things to say.
+    let jobDescription: {
+      code?: string; title?: string; version?: number;
+      clauses?: { section: string; ordinal: number; body: string }[];
+    } | null = null;
+    let family: string | null = null;
+    let precedence: string | null = null;
+    let standing: string | null = null;
+    let executiveLevel: string | null = null;
+
     if (appointment.position_id) {
       const { data: post } = await admin.from('positions')
-        .select('job_code, title').eq('id', appointment.position_id as string).maybeSingle();
+        .select('job_code, title, family, precedence, standing, executive_level')
+        .eq('id', appointment.position_id as string).maybeSingle();
       const { data: profile } = await admin.from('position_profiles')
-        .select('version').eq('position_id', appointment.position_id as string)
+        .select('id, version').eq('position_id', appointment.position_id as string)
         .eq('status', 'active').maybeSingle();
       const po = post as Row | null;
+      const pr = profile as Row | null;
+
       if (po) {
+        family = (po.family as string | null) ?? null;
+        // PRINTED ONLY IF THE UNIVERSITY HAS RECORDED IT. Nothing here derives
+        // a rank from a reporting line.
+        precedence = (po.precedence as string | null) ?? null;
+        standing = (po.standing as string | null) ?? null;
+        executiveLevel = (po.executive_level as string | null) ?? null;
+
+        let clauses: { section: string; ordinal: number; body: string }[] | undefined;
+        if (pr?.id) {
+          // THE RESOLVED DOCUMENT, not the post's own rows. 048's
+          // `position_job_description` view applies the inheritance rule: the
+          // family's clause stands unless this post restated that section.
+          const { data: rows } = await admin.from('position_job_description')
+            .select('section, ordinal, body')
+            .eq('position_id', appointment.position_id as string)
+            .order('ordinal');
+          clauses = (rows ?? []) as { section: string; ordinal: number; body: string }[];
+        }
+
         jobDescription = {
           code: po.job_code as string,
           title: po.title as string,
-          ...(profile ? { version: (profile as Row).version as number } : {}),
+          ...(pr ? { version: pr.version as number } : {}),
+          ...(clauses && clauses.length > 0 ? { clauses } : {}),
         };
       }
     }
@@ -253,6 +298,10 @@ export async function POST(request: Request) {
         authorizedOn: (appointment.authorized_at as string | null)?.slice(0, 10) ?? null,
         allowances: (allowanceRows ?? []) as Allowance[],
         jobDescription,
+        family,
+        precedence,
+        standing,
+        executiveLevel,
         // NAMED BY VERSION WHERE THERE IS ONE, and honest where there is not.
         // "In force from time to time" is what a letter says when the
         // University cannot tell you which version it means.

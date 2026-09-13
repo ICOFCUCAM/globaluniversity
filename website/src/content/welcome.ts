@@ -45,7 +45,7 @@ export const viceChancellor = {
   role: 'Vice Chancellor',
   image: '/images/wp/vc-meyembi.png',
   email: 'vc@iguc.net',
-  note: 'The Vice Chancellor leads the academic administration of the university, supported by the Academic Director General, the Registrar and the Directors of our schools.',
+  note: 'The Vice Chancellor leads the academic administration of the university, supported by the Director of Academic Affairs, the Registrar and the Directors of our schools.',
 };
 
 // Recovered biography of the Chancellor, as published on the About page.
