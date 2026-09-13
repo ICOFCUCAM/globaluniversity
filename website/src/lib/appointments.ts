@@ -1275,3 +1275,106 @@ export function typesWithoutTemplate(templates: Template[]): DocumentType[] {
   const active = new Set(templates.filter((t) => t.status === 'active').map((t) => t.kind));
   return DOCUMENT_TYPES.filter((k) => !active.has(k));
 }
+
+// ---------------------------------------------------------------------------
+// THE THREE PAY COLUMNS, WHICH TRAVEL TOGETHER OR NOT AT ALL.
+//
+// ---------------------------------------------------------------------------
+// THE BUG THIS IS EXTRACTED FROM
+// ---------------------------------------------------------------------------
+//
+// 047's constraint is all three or none — `appointments_salary_is_complete` —
+// and the route used to map them INDEPENDENTLY:
+//
+//   salary_amount:   body.salaryAmount ? Number(...) : null,
+//   salary_currency: body.salaryCurrency ? String(...) : null,
+//   salary_period:   body.salaryPeriod  ? String(...) : null,
+//
+// The form's currency and period are dropdowns, so they always hold something.
+// An appointment with the salary box deliberately left empty — which the
+// University's own ruling permits — therefore arrived as amount NULL, currency
+// 'USD', period 'month', and the database refused the entire save:
+//
+//   not-saved: new row for relation "appointments" violates check constraint
+//              "appointments_salary_is_complete"
+//
+// The University could not save an appointment at all while doing exactly what
+// they are entitled to do.
+//
+// IT LIVES HERE, NOT IN THE ROUTE, SO IT CAN BE TESTED. The route is a Next.js
+// module that pulls in the service-role client and cannot be imported by a test
+// file; a rule that cannot be exercised is a rule that breaks again.
+// `src/lib/appointmentPay.test.mjs` runs it, including the exact case above.
+// ---------------------------------------------------------------------------
+
+export interface PayColumns {
+  salary_amount: number | null;
+  salary_currency: string | null;
+  salary_period: string | null;
+}
+
+export type PayResult =
+  | { ok: true; pay: PayColumns }
+  | { ok: false; error: string; detail: string };
+
+/**
+ * Work the three pay columns out of a request body.
+ *
+ * NO FIGURE MEANS NO CURRENCY AND NO PERIOD, whatever the dropdowns were
+ * showing. A FIGURE WITHOUT THEM IS REFUSED IN WORDS rather than given a
+ * default — a number with no currency beside it is the thing that reaches a
+ * letter as "2000" and is read as dollars by one officer and francs by the
+ * next.
+ */
+export function payColumns(body: {
+  salaryAmount?: unknown; salaryCurrency?: unknown; salaryPeriod?: unknown;
+}): PayResult {
+  const raw = body.salaryAmount;
+  const amount = raw === undefined || raw === null || raw === '' ? null : Number(raw);
+  const currency = body.salaryCurrency ? String(body.salaryCurrency) : null;
+  const period = body.salaryPeriod ? String(body.salaryPeriod) : null;
+
+  if (amount !== null && (!Number.isFinite(amount) || amount <= 0)) {
+    return {
+      ok: false,
+      error: 'bad-salary',
+      detail: 'A salary is a positive number, or the box is left empty. It is not zero — '
+        + '"paid nothing" and "pay not yet decided" are different statements.',
+    };
+  }
+
+  if (amount !== null && (!currency || !period)) {
+    return {
+      ok: false,
+      error: 'salary-needs-a-currency',
+      detail: 'Say the currency and the period as well. A figure on its own reaches the letter '
+        + 'as "2000" and is read as dollars by one officer and francs by the next.',
+    };
+  }
+
+  if (amount !== null && !(CURRENCIES as readonly string[]).includes(currency as string)) {
+    return {
+      ok: false,
+      error: 'unknown-currency',
+      detail: `The University records pay in ${CURRENCIES.join(', ')}.`,
+    };
+  }
+
+  if (amount !== null && !(SALARY_PERIODS as readonly string[]).includes(period as string)) {
+    return {
+      ok: false,
+      error: 'unknown-period',
+      detail: `A salary is per ${SALARY_PERIODS.join(', per ')}.`,
+    };
+  }
+
+  return {
+    ok: true,
+    pay: {
+      salary_amount: amount,
+      // NULLED TOGETHER, so the row satisfies "all three or none".
+      salary_currency: amount === null ? null : currency,
+      salary_period: amount === null ? null : period,
+    },
+  };
+}

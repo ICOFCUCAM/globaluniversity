@@ -42,6 +42,7 @@ import {
   canAuthorizeAlone, soleAuthorityOffice,
   canRequestAmendment, canClose, MIN_AMENDMENT_REASON, MIN_CLOSURE_REASON, MIN_RETURN_REASON,
   DEFAULT_CURRENCY, DEFAULT_PERIOD,
+  payColumns,
   type AppointmentEvent,
 } from '@/lib/appointments';
 
@@ -167,12 +168,34 @@ export async function POST(request: Request) {
     // was not — refusing the whole save would teach them to ask somebody else
     // to type the entire record.
     const maySetPay = can(caller.role as UserRole, 'set-remuneration' as Capability);
-    const pay = maySetPay ? {
-      salary_amount: body.salaryAmount == null || body.salaryAmount === ''
-        ? null : Number(body.salaryAmount),
-      salary_currency: body.salaryCurrency ? String(body.salaryCurrency) : null,
-      salary_period: body.salaryPeriod ? String(body.salaryPeriod) : null,
-    } : {};
+
+    // -----------------------------------------------------------------------
+    // THE THREE PAY COLUMNS TRAVEL TOGETHER OR NOT AT ALL.
+    //
+    // 047's constraint is all three or none — `appointments_salary_is_complete`
+    // — and this route used to map them INDEPENDENTLY. The form's currency and
+    // period are dropdowns that always hold something, so an appointment with
+    // the salary box deliberately left empty arrived as amount NULL, currency
+    // 'USD', period 'month', and the database refused the whole save:
+    //
+    //   not-saved: new row for relation "appointments" violates check
+    //              constraint "appointments_salary_is_complete"
+    //
+    // The University was doing exactly what they are entitled to do — their
+    // own ruling is that the salary box may be left empty — and could not save
+    // an appointment at all.
+    //
+    // THE CURRENCY IS NOT GUESSED WHEN THERE IS A FIGURE. A number with no
+    // currency beside it is the thing that reaches a letter as "2000" and is
+    // read as dollars by one officer and francs by the next, so that case is
+    // refused in words rather than filled in with a default.
+    // -----------------------------------------------------------------------
+    let pay: Record<string, unknown> = {};
+    if (maySetPay) {
+      const worked = payColumns(body);
+      if (!worked.ok) return bad(worked.error, 400, worked.detail);
+      pay = worked.pay as unknown as Record<string, unknown>;
+    }
 
     let id: string;
     let previous: Record<string, unknown> | null = null;
