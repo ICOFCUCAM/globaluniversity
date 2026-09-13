@@ -1,308 +1,423 @@
 // ---------------------------------------------------------------------------
-// BUILD THE CURRICULUM SEED.
+// MOVE THE CURRICULA THE UNIVERSITY HAS ALREADY WRITTEN INTO ROWS.
 //
 //   node scripts/build-curriculum-seed.mjs
-//   -> docs/migrations/011_school_of_ministry_curriculum.sql
+//   -> docs/migrations/062_the_curricula_already_written.sql
 //
 // ===========================================================================
-// WHY THE SQL IS GENERATED AND NOT WRITTEN
+// WHAT MOVES, AND WHAT DOES NOT
 // ===========================================================================
 //
-// The Bachelor of Ministry is published at /bachelor-of-ministry from
-// src/content/bachelorOfMinistry.ts: thirty-four courses with codes, ECTS
-// values and a prerequisite chain. The learning system needs the same
-// thirty-four courses as rows, or it cannot enrol anybody on the degree the
-// website advertises.
+// Three curricula exist in src/content/. Two are complete and move; one cannot
+// and is reported instead.
 //
-// Hand-writing that INSERT is the third copy of the same list, and this
-// repository has already shipped the bug that produces: the ministry awards
-// moved faculty in one catalogue and not the other, and the homepage said
-// "4 programmes" while the prospectus said six. Nothing failed. Both numbers
-// were counted correctly from a catalogue that was wrong.
+//   Bachelor of Theology   36 courses · 3 years · 6 semesters · 180 credits
+//   Bachelor of Ministry   34 courses · 3 years · 6 semesters · 180 credits
+//   Diploma of Theology    15 courses · 1 year  · 2 semesters · NO CREDITS
 //
-// A course list is worse than a count, because the drift is invisible for
-// years and then surfaces on a transcript. So the migration is an ARTEFACT of
-// the curriculum. Change a course on the site, re-run this, and the database
-// follows. The generated file is committed — a deploy must never depend on
-// node being available — and the header of the SQL says where it came from so
-// nobody edits the output instead of the source.
+// THE DIPLOMA MOVES TOO, ON THE UNIVERSITY'S INSTRUCTION: "affix edited credit
+// value to the diploma and move." It had been held back for two reasons and
+// both are now answered — but how they were answered matters, so both are
+// written down here rather than buried in the SQL.
+//
+//   ITS COURSES CARRY NO CREDIT VALUE, and `courses.credit_unit` is NOT NULL
+//   and defaults to 3 — so letting the default stand would have written 3
+//   against every one and produced a curriculum of 45 credits against a
+//   programme the University has ruled at 120. A number nobody stated,
+//   arriving through a column default, is the worst kind of invention: it
+//   looks like data.
+//
+//   SO THE CREDIT IS DERIVED, NOT GUESSED. The University has ruled the award
+//   at 120 credits and written 15 courses into it. 120 / 15 is 8 exactly, and
+//   the curriculum then adds up to precisely what the programme claims rather
+//   than near it. The even division is the assumption — that these fifteen
+//   carry equal weight — and it is the only distribution that is not arbitrary.
+//   A file with an exact remainder is the only one this generator will do it
+//   for; anything else is held back.
+//
+//   AND ITS NAME MATCHES NO PROGRAMME EXACTLY. The curriculum says "Diploma OF
+//   Theology"; the catalogue publishes "Diploma IN Theology". They are the same
+//   award and the University has now said to move it, so the match is made —
+//   declared in BY_NAME below rather than done by fuzzy matching, so that the
+//   one place it happens is visible.
 //
 // ===========================================================================
-// WHAT THE SCHEMA GAINS, AND WHY
+// WHAT IS NOT DECIDED HERE
 // ===========================================================================
 //
-// `courses` in 001_full_schema.sql has code, title, credit_unit, level,
-// semester, year and is_elective. It has nowhere to put three things this
-// curriculum states:
+// EVERY ENTRY IS CORE, because neither source marks anything elective. That is
+// what the curricula say, not a judgement about what they should say.
 //
-//   prerequisites   The B.Min. is the first programme on this site with a
-//                   prerequisite chain. Published on the page, unenforceable
-//                   by the registry, is the worst of both: the university has
-//                   announced a rule it cannot apply, and the first student to
-//                   register for MIN 201 without MIN 101 finds out at
-//                   graduation.
-//
-//   co_requisites   FIN 201 names ADM 201 and both sit in Semester 4; COM 302
-//                   names MIS 301 and both sit in Semester 5. The School's
-//                   recommended resolution is to treat them as co-requisites —
-//                   taken alongside rather than before. The column exists so
-//                   that ruling can be recorded when it is made. It is EMPTY
-//                   until then: the schema is ready for the decision, and does
-//                   not pre-empt it.
-//
-//   credit_system   credit_unit is an integer with no unit attached. Five ECTS
-//                   and five credit hours are not the same quantity, and this
-//                   university teaches programmes accounted both ways — see
-//                   the Bachelor of Theology, which is specified twice in two
-//                   incompatible systems. A number without its unit is the one
-//                   thing a credential evaluator will not accept.
+// NOTHING IS APPROVED. The entries attach to the DRAFT version 061 created, and
+// a draft is where they stay until the Vice-Chancellor approves it. 057 freezes
+// a curriculum on approval, so this seeding could not have run afterwards.
 // ---------------------------------------------------------------------------
 
-import { writeFileSync, mkdirSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..');
+const cache = join(root, 'node_modules/.cache/icof');
+mkdirSync(cache, { recursive: true });
 
-// The curriculum is TypeScript, so it is bundled rather than imported. Same
-// mechanism the tests use, and for the same reason: there is one source and
-// everything else reads it.
-const cacheDir = join(root, 'node_modules/.cache/icof');
-mkdirSync(cacheDir, { recursive: true });
-const bundle = join(cacheDir, 'bmin-seed.mjs');
-execFileSync('npx', [
-  'esbuild', join(root, 'src/content/bachelorOfMinistry.ts'),
-  '--bundle', '--format=esm', '--platform=node', `--outfile=${bundle}`,
-  '--log-level=error', `--alias:@=${join(root, 'src')}`,
-], { stdio: 'inherit' });
-
-const B = await import(bundle);
-
-/** Single-quote a SQL string literal, or emit NULL. */
-const q = (s) => (s === undefined || s === null ? 'null' : `'${String(s).replace(/'/g, "''")}'`);
-/** A Postgres text[] literal. */
-const arr = (xs) => (xs.length ? `array[${xs.map(q).join(', ')}]` : "'{}'::text[]");
-
-const DEPT = { code: 'SOM', name: 'School of Ministry', faculty: 'School of Ministry' };
-const PROGRAMME = 'bachelor-of-ministry';
-
-const rows = [];
-B.bminSemesters.forEach((s, i) => {
-  // year 1 covers semesters 1-2, year 2 covers 3-4, year 3 covers 5-6. The
-  // level is the course code's own hundred, read from the code rather than
-  // guessed from the semester: RES 301 is taught in Semester 5 and is a
-  // 300-level course, and MIN 306 is 300-level in Semester 6.
-  const year = Math.floor(i / 2) + 1;
-  const semester = (i % 2) + 1;
-  for (const c of s.courses) {
-    const level = Number(c.code.split(' ')[1][0]) * 100;
-    rows.push({
-      code: c.code,
-      title: c.title,
-      credit_unit: c.ects,
-      level,
-      semester,
-      year,
-      description: c.description ?? null,
-      prerequisites: c.requires,
-      // 'all' or 'any'. Without it "BIB 101 or BIB 102" and "MIN 101, BIB 103"
-      // are the same two-element array, and a registry reading the column has
-      // no way to tell a disjunction from a conjunction.
-      requires_mode: c.requiresMode ?? 'all',
-      // Threshold prerequisites ("At least 60 ECTS completed") are not course
-      // codes and are kept as the sentence the framework wrote, in its own
-      // column, rather than being crushed into the array.
-      requires_ects: c.requiresEcts ?? null,
-      prerequisite_text: c.prerequisite,
-    });
-  }
-});
-
-const total = rows.reduce((n, r) => n + r.credit_unit, 0);
-if (total !== B.bminTotalEcts) {
-  console.error(`Refusing to write: seed totals ${total} ECTS, curriculum totals ${B.bminTotalEcts}.`);
-  process.exit(1);
+function load(file, name) {
+  const out = join(cache, `${name}.mjs`);
+  execFileSync('npx', [
+    'esbuild', join(root, file), '--bundle', '--format=esm', '--platform=node',
+    `--outfile=${out}`, '--log-level=error', `--alias:@=${join(root, 'src')}`,
+  ]);
+  return import(out);
 }
 
-const values = rows.map((r) =>
-  `  (${q(r.code)}, ${q(r.title)}, ${r.credit_unit}, ${r.level}, ${r.semester}, ${r.year}, `
-  + `${q(r.description)}, ${arr(r.prerequisites)}, ${q(r.requires_mode)}, `
-  + `${r.requires_ects ?? 'null'}, ${q(r.prerequisite_text)})`,
-).join(',\n');
+const courses = await load('src/content/programmeCourses.ts', 'curr-courses');
+const catalogue = await load('src/content/programmeCatalogue.ts', 'curr-catalogue');
 
-const sql = `-- ===========================================================================
--- ICOF GLOBAL UNIVERSITY — THE SCHOOL OF MINISTRY CURRICULUM
---
--- Run after 010_writes_the_ui_makes.sql. Idempotent; destroys nothing.
---
--- GENERATED FILE. DO NOT EDIT.
---
---   Source:    src/content/bachelorOfMinistry.ts
---   Generator: scripts/build-curriculum-seed.mjs
---
--- Edit the curriculum and re-run the generator. An edit made here is lost the
--- next time somebody does, and worse, it makes the database disagree with the
--- page the university publishes.
---
--- ---------------------------------------------------------------------------
--- WHAT THIS DOES
---
--- 1. Gives \`courses\` three columns it does not have: the prerequisite chain,
---    a co-requisite list, and the unit its credit value is counted in.
--- 2. Registers the School of Ministry as a department.
--- 3. Loads the ${rows.length} courses of the Bachelor of Ministry — ${total} ECTS across
---    ${B.bminSemesters.length} semesters — with their codes, credit values, levels and
---    prerequisites.
---
--- ---------------------------------------------------------------------------
--- WHY THE PREREQUISITE COLUMN MATTERS MORE THAN IT LOOKS
---
--- The Bachelor of Ministry is the first programme this university publishes
--- with a prerequisite chain. Until now \`courses\` had nowhere to record one, so
--- the rule existed on the website and nowhere else. A rule announced and not
--- enforced is worse than no rule: the student who registers for MIN 201
--- without MIN 101 discovers it at graduation, when the remedy is a year.
---
--- The array holds course CODES, not ids, deliberately. A prerequisite is a
--- statement about the curriculum, and it must survive a course being deleted
--- and re-created — which is exactly what happens when a catalogue is reloaded.
--- A foreign key would either block that reload or cascade the rule away.
---
--- ---------------------------------------------------------------------------
--- CO-REQUISITES ARE EMPTY, AND THAT IS THE POINT
---
--- Two prerequisites in the published framework cannot be satisfied as written:
--- FIN 201 requires ADM 201 and both are in Semester 4; COM 302 requires
--- MIS 301 and both are in Semester 5. The School's recommended resolution is
--- to redesignate both as co-requisites.
---
--- That is an academic decision for the University and it has not been taken.
--- So the column exists, ready, and holds nothing. The schema does not pre-empt
--- a ruling, and when the ruling comes it is a data change and not a migration.
--- ===========================================================================
+const q = (v) => (v === null || v === undefined ? 'null' : `'${String(v).replace(/'/g, "''")}'`);
 
--- 1 ------------------------------------------------------------------------
--- The three columns the curriculum needs. \`if not exists\` throughout, so this
--- can be run against a database that has already had it.
+// THE CREDIT SYSTEM each curriculum counts in. `courses.credit_system` accepts
+// 'ECTS' or 'credit_hour'; the B.Th. file says "credit hours" in prose.
+const SYSTEM = {
+  'Bachelor of Theology': 'credit_hour',
+  'Bachelor of Ministry': 'ECTS',
+  'Diploma of Theology': 'credit_hour',
+};
 
-alter table courses add column if not exists prerequisites  text[] not null default '{}'::text[];
-alter table courses add column if not exists co_requisites  text[] not null default '{}'::text[];
--- 'all' — every course in \`prerequisites\`. 'any' — one of them suffices.
--- Without this column "BIB 101 or BIB 102" and "MIN 101, BIB 103" are the same
--- two-element array. A registry reading it as 'all' refuses a student who has
--- met BIB 103's requirement; reading it as 'any' admits one who has met neither
--- of MIN 201's. 'all' is the default because a comma means conjunction, and
--- because an over-strict rule is caught at the registration desk while an
--- over-lax one is caught by an examiner at graduation.
-alter table courses add column if not exists requires_mode  text not null default 'all';
-alter table courses add column if not exists requires_ects  integer;
-alter table courses add column if not exists prerequisite_text text;
+// WHERE A CURRICULUM'S NAME IS NOT THE CATALOGUE'S. One entry, stated rather
+// than inferred: a generator that matched programme names loosely would
+// silently attach a curriculum to the wrong award the first time two titles
+// resembled each other.
+const BY_NAME = {
+  'Diploma of Theology': 'diploma-in-theology',
+};
 
--- A credit value with no unit is not a credit value. This university teaches
--- programmes accounted in ECTS and programmes accounted in US-style credit
--- hours, and five of one is not five of the other. Existing rows are left as
--- 'credit_hour', which is what the seeded catalogue was.
-alter table courses add column if not exists credit_system text not null default 'credit_hour';
+const moving = [];
+const held = [];
 
-do $$
-begin
-  if not exists (select 1 from pg_constraint where conname = 'courses_credit_system_check') then
-    alter table courses add constraint courses_credit_system_check
-      check (credit_system in ('ECTS', 'credit_hour'));
-  end if;
-end $$;
+for (const name of courses.programmesWithCourses()) {
+  const { courses: list } = courses.coursesForProgramme(name);
+  const programme = BY_NAME[name]
+    ? catalogue.ALL_PROGRAMMES.find((p) => p.slug === BY_NAME[name])
+    : catalogue.ALL_PROGRAMMES.find((p) => p.title === name);
+  const missingCredit = list.filter((c) => !c.credits);
 
--- Which published programme a course belongs to, matching the slug on the
--- website. Without it the registry can list courses but cannot answer "what
--- does this student still owe", which is the question graduation turns on.
-alter table courses add column if not exists programme_slug text;
+  if (!programme) {
+    held.push({ name, list, noProgramme: true, missingCredit: missingCredit.length });
+    continue;
+  }
 
-create index if not exists courses_programme_slug_idx on courses (programme_slug);
+  // ---------------------------------------------------------------------
+  // THE CREDIT, WHERE THE UNIVERSITY WROTE COURSES AND NOT VALUES.
+  //
+  // Only from the programme's own PUBLISHED total, and only when it divides
+  // exactly. 120 over 15 courses is 8; 120 over 16 would be 7.5, and a
+  // rounded 8 would make the curriculum add to 128 against a programme
+  // claiming 120 — a discrepancy nobody would notice until a student was
+  // eight credits short of graduating.
+  // ---------------------------------------------------------------------
+  let derived = null;
+  if (missingCredit.length === list.length && programme.credits) {
+    const each = programme.credits / list.length;
+    if (Number.isInteger(each)) derived = each;
+  }
 
--- 2 ------------------------------------------------------------------------
--- The School of Ministry as a department. It is a school on the website and a
--- department in this schema; the two names are joined here rather than by a
--- convention somebody has to remember.
+  if (missingCredit.length > 0 && derived === null) {
+    held.push({ name, list, noProgramme: false, missingCredit: missingCredit.length,
+      published: programme.credits ?? null });
+    continue;
+  }
 
-insert into departments (name, code, faculty)
-values (${q(DEPT.name)}, ${q(DEPT.code)}, ${q(DEPT.faculty)})
-on conflict (code) do update set name = excluded.name, faculty = excluded.faculty;
+  const priced = list.map((c) => ({ ...c, credits: c.credits ?? derived }));
+  moving.push({
+    name,
+    slug: programme.slug,
+    list: priced,
+    derived,
+    published: programme.credits ?? null,
+    system: SYSTEM[name] ?? 'credit_hour',
+    credits: priced.reduce((t, c) => t + c.credits, 0),
+    years: new Set(priced.map((c) => c.year)).size,
+    semesters: new Set(priced.map((c) => `${c.year}.${c.semester}`)).size,
+  });
+}
 
--- 3 ------------------------------------------------------------------------
--- The ${rows.length} courses.
---
--- \`on conflict (code) do update\` rather than insert-or-skip: re-running after
--- a curriculum change must UPDATE the row, or the generator would be able to
--- create a course and never able to correct one. Every generated column is
--- refreshed; lecturer_id is not touched, because who teaches a course is the
--- registry's business and not the curriculum's.
+const lines = [];
+const w = (s = '') => lines.push(s);
 
-with seeded (code, title, credit_unit, level, semester, year, description,
-             prerequisites, requires_mode, requires_ects, prerequisite_text) as (
-  values
-${values}
-)
-insert into courses (
-  code, title, credit_unit, credit_system, department_id, level, semester, year,
-  description, is_elective, prerequisites, requires_mode, requires_ects,
-  prerequisite_text, programme_slug
-)
-select
-  s.code, s.title, s.credit_unit, 'ECTS',
-  (select id from departments where code = ${q(DEPT.code)}),
-  s.level, s.semester, s.year, s.description,
-  -- Every course in the published plan is required. The fourteen
-  -- specialization tracks are not seeded at all: the framework describes them
-  -- as provision the School intends to offer, and there is no elective slot in
-  -- the six-semester plan to take one in. Seeding a course a student cannot
-  -- enrol in would put it on a transcript-shaped table with no way to earn it.
-  false,
-  s.prerequisites, s.requires_mode, s.requires_ects, s.prerequisite_text,
-  ${q(PROGRAMME)}
-from seeded s
-on conflict (code) do update set
-  title             = excluded.title,
-  credit_unit       = excluded.credit_unit,
-  credit_system     = excluded.credit_system,
-  department_id     = excluded.department_id,
-  level             = excluded.level,
-  semester          = excluded.semester,
-  year              = excluded.year,
-  description       = excluded.description,
-  prerequisites     = excluded.prerequisites,
-  requires_mode     = excluded.requires_mode,
-  requires_ects     = excluded.requires_ects,
-  prerequisite_text = excluded.prerequisite_text,
-  programme_slug    = excluded.programme_slug;
+w('-- ===========================================================================');
+w('-- 062 — THE CURRICULA THE UNIVERSITY HAS ALREADY WRITTEN');
+w('-- ===========================================================================');
+w('--');
+w('-- GENERATED FILE. DO NOT EDIT.');
+w('--   Generator: scripts/build-curriculum-seed.mjs');
+w('--   Source:    src/content/programmeCourses.ts');
+w('--');
+w('-- WHAT CHANGES FOR THE UNIVERSITY THE MOMENT THIS RUNS');
+w('--');
+w(`-- ${moving.length} PROGRAMMES GET A REAL CURRICULUM — course by course, placed in the`);
+w('-- year and semester the University wrote them into:');
+w('--');
+for (const m of moving) {
+  w(`--   ${m.name.padEnd(24)} ${String(m.list.length).padStart(2)} courses · `
+    + `${m.years} years · ${m.semesters} semesters · ${m.credits} credits`
+    + (m.derived ? `  (credit DERIVED: ${m.published} / ${m.list.length} = ${m.derived} each)` : ''));
+}
+w('--');
+w('-- 061 built the shelf. This is the first thing on it, and it is the first');
+w('-- curriculum in this system that can be counted rather than read.');
+w('--');
+w('-- THE ENTRIES ATTACH TO A DRAFT VERSION and stay there. A curriculum becomes');
+w('-- the University\'s when the Vice-Chancellor approves it (058); 057 freezes it');
+w('-- at that moment, so this seeding could not have run afterwards.');
+w('--');
+if (held.length > 0) {
+  w('-- ---------------------------------------------------------------------------');
+  w('-- AND ONE IS HELD BACK. See the report at the foot of this file.');
+  w('-- ---------------------------------------------------------------------------');
+  w('--');
+}
+w('-- ===========================================================================');
+w();
 
--- 4 ------------------------------------------------------------------------
--- Proof, at migration time, that the load is the degree.
---
--- A seed that silently loads thirty-three of thirty-four courses leaves a
--- programme that cannot be completed and a database that looks fine. This
--- raises instead.
+// ---------------------------------------------------------------------------
+w('-- ===========================================================================');
+w('-- 1. THE COURSES THEMSELVES');
+w('-- ===========================================================================');
+w('--');
+w('-- Most of these are not rows yet. `courses.credit_unit` is NOT NULL and');
+w('-- defaults to 3, so every insert below states the credit explicitly — a');
+w('-- default silently standing in for a value nobody wrote is how a curriculum');
+w('-- ends up adding to the wrong number.');
+w();
+const seen = new Set();
+for (const m of moving) {
+  w(`-- ${m.name}`);
+  if (m.derived) {
+    w(`-- EVERY CREDIT BELOW IS ${m.derived}, AND NOT ONE OF THEM WAS WRITTEN BY THE`);
+    w(`-- UNIVERSITY. The award is ruled at ${m.published} credits and ${m.list.length} courses`);
+    w(`-- are named for it; ${m.published} / ${m.list.length} is ${m.derived} exactly. The`);
+    w('-- assumption is that these carry equal weight. Where they do not, edit the');
+    w('-- entry credits in the Curriculum Builder — the total is checked against the');
+    w("-- programme's own figure on every change, so an uneven split still has to");
+    w(`-- add to ${m.published}.`);
+  }
+  for (const c of m.list) {
+    if (seen.has(c.code)) continue;
+    seen.add(c.code);
+    w('insert into courses (code, title, credit_unit, credit_system)');
+    w(`values (${q(c.code)}, ${q(c.title)}, ${c.credits}, ${q(m.system)})`);
+    w('on conflict (code) do nothing;');
+  }
+  w();
+}
 
-do $$
-declare
-  n integer;
-  ects integer;
-begin
-  select count(*), sum(credit_unit) into n, ects
-    from courses where programme_slug = ${q(PROGRAMME)};
-  if n <> ${rows.length} then
-    raise exception 'Expected ${rows.length} Bachelor of Ministry courses, found %', n;
-  end if;
-  if ects <> ${total} then
-    raise exception 'Expected ${total} ECTS across the Bachelor of Ministry, found %', ects;
-  end if;
-end $$;
-`;
+// ---------------------------------------------------------------------------
+w();
+w('-- ===========================================================================');
+w('-- 2. AND WHERE EACH ONE SITS');
+w('-- ===========================================================================');
+w('--');
+w('-- Year, semester and requirement belong HERE and not on the course — the');
+w('-- same course may sit differently in another programme, which is the whole');
+w('-- reason 057 put them on the entry.');
+w('--');
+w('-- Every entry is `core`: neither curriculum marks anything elective, and');
+w('-- inventing an elective would change what a student must pass.');
+w();
+w('do $$');
+w('declare');
+w('  v_id uuid;');
+w('  c_id uuid;');
+w('begin');
+for (const m of moving) {
+  w(`  -- ---- ${m.name} ----`);
+  w('  select v.id into v_id from programme_versions v');
+  w('    join programmes p on p.id = v.programme_id');
+  w(`   where p.code = ${q(m.slug)} order by v.effective_from desc limit 1;`);
+  w('  if v_id is null then');
+  w(`    raise exception 'No version of ${m.slug} exists. 061 creates one; run it first.'`);
+  w("      using errcode = 'no_data_found';");
+  w('  end if;');
+  w();
+  for (const c of m.list) {
+    w(`  select id into c_id from courses where code = ${q(c.code)};`);
+    w('  insert into curriculum_entries');
+    w('    (programme_version_id, course_id, year, semester, requirement, credits)');
+    w(`  values (v_id, c_id, ${c.year}, ${c.semester}, 'core', ${c.credits})`);
+    w('  on conflict (programme_version_id, course_id) do nothing;');
+  }
+  w();
+}
+w('end $$;');
+w();
 
-const out = join(root, 'docs/migrations/011_school_of_ministry_curriculum.sql');
-writeFileSync(out, sql);
-console.log(
-  `011_school_of_ministry_curriculum.sql  ${rows.length} courses / ${total} ECTS, `
-  + `${(sql.length / 1024).toFixed(1)}KB`,
-);
+// ---------------------------------------------------------------------------
+w();
+w('-- ===========================================================================');
+w('-- 3. WHAT A CURRICULUM ADDS UP TO, DRAFT OR NOT');
+w('-- ===========================================================================');
+w('--');
+w('-- `programme_in_force` answers "what is this programme" and joins only the');
+w('-- PUBLISHED version — right for a prospectus, useless for the Curriculum');
+w('-- Builder, which works on a DRAFT and needs its running total on every edit.');
+w('--');
+w('-- A draft is the only time the total matters. Once a version is published it');
+w('-- is frozen and its arithmetic cannot change; while it is a draft the gap');
+w('-- between what the courses add to and what the programme claims IS the work');
+w('-- remaining, and it is what the Academic Dashboard means by');
+w('-- "programme/curriculum issues".');
+w();
+w('create or replace view curriculum_progress');
+w('with (security_invoker = true) as');
+w('select v.id                as version_id,');
+w('       v.programme_id,');
+w('       p.code,');
+w('       p.award_level,');
+w('       v.version_label,');
+w('       v.status,');
+w('       v.duration_years,');
+w('       v.semesters_per_year,');
+w('       v.total_credits,');
+w('       (select count(*) from curriculum_entries e');
+w('         where e.programme_version_id = v.id)            as courses_in_curriculum,');
+w('       (select coalesce(sum(coalesce(e.credits, c.credit_unit)), 0)');
+w('          from curriculum_entries e join courses c on c.id = e.course_id');
+w('         where e.programme_version_id = v.id)            as credits_in_curriculum,');
+w('       -- THE GAP, SIGNED. Negative is short, positive is over, zero is done.');
+w('       (select coalesce(sum(coalesce(e.credits, c.credit_unit)), 0)');
+w('          from curriculum_entries e join courses c on c.id = e.course_id');
+w('         where e.programme_version_id = v.id) - coalesce(v.total_credits, 0)');
+w('                                                        as credits_against_claim,');
+w('       -- AND WHETHER EVERY TERM THE PROGRAMME RUNS HAS ANYTHING IN IT. A');
+w('       -- curriculum can add to exactly 180 and still have an empty semester.');
+w('       (select count(distinct (e.year, e.semester)) from curriculum_entries e');
+w('         where e.programme_version_id = v.id)            as terms_with_courses,');
+w('       v.duration_years * v.semesters_per_year           as terms_expected');
+w('  from programme_versions v');
+w('  join programmes p on p.id = v.programme_id;');
+w();
+w('comment on view curriculum_progress is');
+w("  'Every programme version, published or draft, with what its curriculum actually adds up to '");
+w("  'against what the programme claims. `programme_in_force` shows only published versions; the '");
+w("  'Curriculum Builder works on drafts, which is the only time the total can still change.';");
+w();
+w();
+w('-- ===========================================================================');
+w('-- 4. PROVE IT');
+w('-- ===========================================================================');
+w();
+w('do $$');
+w('declare n integer; total integer;');
+w('begin');
+for (const m of moving) {
+  w(`  -- ${m.name}: ${m.list.length} courses, ${m.credits} credits`);
+  w('  select count(*), coalesce(sum(e.credits), 0) into n, total');
+  w('    from curriculum_entries e');
+  w('    join programme_versions v on v.id = e.programme_version_id');
+  w('    join programmes p on p.id = v.programme_id');
+  w(`   where p.code = ${q(m.slug)};`);
+  w(`  if n <> ${m.list.length} then`);
+  w(`    raise exception '062 FAILED: ${m.slug} has % entries, expected ${m.list.length}', n;`);
+  w('  end if;');
+  w(`  if total <> ${m.credits} then`);
+  w(`    raise exception '062 FAILED: ${m.slug} adds up to %, not ${m.credits}', total;`);
+  w('  end if;');
+  w();
+}
+w('  -- THE CURRICULUM MATCHES WHAT THE PROGRAMME CLAIMS. This is the check the');
+w('  -- Curriculum Builder will make on every edit, made once here: a version');
+w('  -- claiming 180 credits whose courses add to 174 is a curriculum nobody can');
+w('  -- graduate from, and it would be found by a student rather than by this.');
+w('  --');
+w('  -- READ FROM `curriculum_progress`, NOT `programme_in_force`. This check was');
+w('  -- written against the latter and PASSED WITHOUT TESTING ANYTHING: that view');
+w('  -- joins only PUBLISHED versions, every version here is a draft, so it');
+w('  -- returned no rows and the count was 0. A proof that cannot see the thing');
+w('  -- it is checking always passes. Section 5 adds the view that can.');
+w('  select count(*) into n from curriculum_progress');
+w('   where courses_in_curriculum > 0');
+w('     and total_credits is not null');
+w('     and credits_in_curriculum <> total_credits;');
+w('  if n > 0 then');
+w("    raise exception '062 FAILED: % curricula do not add up to what their programme "
+  + "claims', n;");
+w('  end if;');
+w();
+w('  -- AND IT SAW THEM. The assertion above is only worth having if the view');
+w('  -- returned the curricula this file just seeded.');
+w('  select count(*) into n from curriculum_progress where courses_in_curriculum > 0;');
+w(`  if n <> ${moving.length} then`);
+w(`    raise exception '062 FAILED: the totals view sees % curricula, not the ${moving.length} `
+  + `just seeded', n;`);
+w('  end if;');
+w();
+w('  -- AND NOTHING WAS APPROVED ON THE WAY IN.');
+w("  select count(*) into n from programme_versions where status <> 'draft';");
+w('  if n > 0 then');
+w("    raise exception '062 FAILED: % versions are no longer drafts', n;");
+w('  end if;');
+w();
+w(`  raise notice '062 OK: ${moving.length} curricula moved into rows, course by course, each `
+  + `adding up to exactly what its programme claims';`);
+w("  raise notice '062 OK: every entry is core, every version is still a draft, and nothing "
+  + "was approved on the way in';");
+w('end $$;');
+w();
+
+// ---------------------------------------------------------------------------
+w();
+w('-- ===========================================================================');
+w('-- 5. VERIFY — READ THIS OUTPUT');
+w('-- ===========================================================================');
+w();
+w('-- ---------------------------------------------------------------------------');
+w('-- WHAT EACH PROGRAMME NOW HAS. `credits_in_curriculum` against');
+w('-- `total_credits` is the Curriculum Builder\'s running total: equal means the');
+w('-- curriculum is complete, 0 means the shelf is still empty.');
+w('-- ---------------------------------------------------------------------------');
+w('select code, award_level, status, duration_years as yrs,');
+w('       courses_in_curriculum as courses, credits_in_curriculum as credits,');
+w('       total_credits as claims, credits_against_claim as gap,');
+w("       terms_with_courses || ' of ' || terms_expected as terms_filled");
+w('  from curriculum_progress');
+w(' order by courses_in_curriculum desc, code');
+w(' limit 10;');
+w();
+if (held.length > 0) {
+  w('-- ---------------------------------------------------------------------------');
+  w('-- HELD BACK, AND WHY.');
+  w('--');
+  for (const h of held) {
+    w(`--   ${h.name} — ${h.list.length} courses`);
+    if (h.missingCredit > 0) {
+      w(`--     ${h.missingCredit} of them carry no credit value, and none exists as a row in`);
+      w('--     `courses` already. credit_unit is NOT NULL and defaults to 3, so seeding');
+      w(`--     them would write 3 against every one — a curriculum of ${h.list.length * 3}`);
+      w('--     credits against a programme the University has ruled at 120.');
+    }
+    if (h.noProgramme) {
+      w('--     AND the name matches no programme in the catalogue: the curriculum says');
+      w('--     "Diploma OF Theology", the catalogue publishes "Diploma IN Theology".');
+      w('--     Almost certainly the same award, and almost certainly is not a basis for');
+      w('--     attaching a curriculum to a programme.');
+    }
+    w('--');
+    w('--     The fifteen, each needing a credit value:');
+    for (const c of h.list) {
+      w(`--       ${c.code.padEnd(10)} ${c.title}`);
+    }
+    w('--');
+  }
+  w('-- ---------------------------------------------------------------------------');
+  w('select count(*) as curricula_seeded from (');
+  w('  select distinct programme_version_id from curriculum_entries) as seeded;');
+  w();
+}
+
+writeFileSync(join(root, 'docs/migrations/062_the_curricula_already_written.sql'),
+  lines.join('\n'));
+console.log('docs/migrations/062_the_curricula_already_written.sql');
+for (const m of moving) console.log(`  moving  ${m.name}: ${m.list.length} courses, ${m.credits} credits`);
+for (const h of held) console.log(`  HELD    ${h.name}: ${h.list.length} courses`);

@@ -355,15 +355,23 @@ begin
     raise exception '060 FAILED: % programmes are not drafts — the seed opened something for admission', n;
   end if;
 
-  -- NO CURRICULUM WAS INVENTED BY THIS FILE. Deliberately scoped to what
-  -- THIS migration created: 061 seeds a version per programme from the
-  -- durations the University has since ruled, so a blanket "no versions
-  -- exist" would be a proof that passes only until the next migration runs —
-  -- which is how 045 collided with 055.
-  select count(*) into n from curriculum_entries;
-  if n > 0 then
-    raise exception '060 FAILED: % curriculum entries exist — a curriculum was invented', n;
-  end if;
+  -- ---------------------------------------------------------------------
+  -- NO ASSERTION ABOUT WHAT DOES NOT EXIST YET.
+  --
+  -- This checked twice, and was wrong twice. First it asserted that no
+  -- programme VERSION existed — true until 061 seeded one for every
+  -- programme. Rescoped to curriculum ENTRIES, it was true until 062 moved
+  -- three curricula in. Each time the bundle was clean on its first pass
+  -- from empty and red on its second.
+  --
+  -- The mistake is the shape, not the table. A migration cannot prove
+  -- anything by counting rows it did not create: every later migration is
+  -- free to create them, and a proof that depends on the future being empty
+  -- is a proof with an expiry date. 045 collided with 055 the same way.
+  --
+  -- What 060 is answerable for is above: the schools and programmes IT
+  -- seeded, and that not one of them is open. That is the whole of its job.
+  -- ---------------------------------------------------------------------
 
   raise notice '060 OK: 5 schools and 41 programmes are in the register, every one a draft';
   raise notice '060 OK: no curriculum and no duration was seeded — the University has published a range, not a length, for 0 of them';

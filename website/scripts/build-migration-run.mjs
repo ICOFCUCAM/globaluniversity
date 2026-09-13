@@ -203,6 +203,7 @@ const MARKERS = {
   // 060 CREATES NOTHING — it fills 057's register. The marker is the rows.
   '060': 'rows:programmes:true',
   '061': 'rows:programme_versions:true',
+  '062': 'curriculum_progress',
 };
 
 /** The SQL that answers "is this one here?", for each of the three forms. */

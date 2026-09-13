@@ -555,6 +555,18 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
     cannotSee: 'select count(*) from programme_versions;  -- it should be at least 41, '
       + 'every one a draft',
   },
+  {
+    file: '062_the_curricula_already_written.sql',
+    what: 'The three curricula the University has already written move into rows, course by '
+      + 'course, in the year and semester it placed them: Bachelor of Theology 36 courses / 180 '
+      + 'credits, Bachelor of Ministry 34 / 180, Diploma in Theology 15 / 120. Each adds up to '
+      + 'exactly what its programme claims, and every term of every one has courses in it. The '
+      + 'Diploma\u2019s courses carried no credit value, so it is DERIVED from the ruled total '
+      + '\u2014 120 over 15 courses is 8 exactly. All three are drafts until the '
+      + 'Vice-Chancellor approves them.',
+    // The view is the marker: it is what 062 creates that nothing before it did.
+    table: 'curriculum_progress',
+  },
 ];
 
 /** What a probe came back as. */

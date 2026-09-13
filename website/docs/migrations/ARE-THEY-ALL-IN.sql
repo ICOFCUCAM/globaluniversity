@@ -162,6 +162,10 @@ select * from (
                  when exists (select 1 from programme_versions where true) then 'YES'
                  else 'NO' end as landed,
          'rows:programme_versions:true' as what_it_creates
+  union all
+  select '062' as migration, '062_the_curricula_already_written.sql' as file,
+         case when to_regclass('public.curriculum_progress') is not null then 'YES' else 'NO' end as landed,
+         'curriculum_progress' as what_it_creates
 ) as landed_report
  order by migration;
 
