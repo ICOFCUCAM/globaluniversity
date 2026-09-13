@@ -157,6 +157,10 @@ console.log('\nAnd what it cannot see, it says so about\n');
       // by hand, rather than reporting the drafts as present because the table
       // is.
       '052_a_first_draft_of_every_document.sql',
+      // 055 changes what two CHECK constraints PERMIT and adds a trigger. The
+      // probe mechanism looks for tables and columns; a relaxed constraint is
+      // neither, and 045 had already added the column it turns on.
+      '055_the_office_that_needs_no_second_signature.sql',
     ]);
   check('…and carries the check to run by hand',
     blind.every((p) => /select|pg_constraint/i.test(p.cannotSee)), true);

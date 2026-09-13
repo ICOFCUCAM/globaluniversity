@@ -465,6 +465,18 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
     // migration created, which is the cheaper and less error-prone probe.
     table: 'course_roll',
   },
+  {
+    file: '055_the_office_that_needs_no_second_signature.sql',
+    what: 'The Vice-Chancellor, the Chancellor and a system account may draft an appointment and '
+      + 'approve it themselves. Everybody else is still refused — and a self-approval that is '
+      + 'not marked as made on sole authority is refused for everybody, so no appointment can be '
+      + 'made by one person quietly. The mark cannot be removed once set.',
+    // NOT A TABLE AND NOT A COLUMN — 045 added the column, 055 changes what the
+    // constraints permit and adds the trigger that makes the mark permanent.
+    cannotSee: "select pg_get_constraintdef(oid) from pg_constraint "
+      + "where conname = 'appointments_second_pair_of_eyes';"
+      + '  -- it should end with "OR made_on_sole_authority"',
+  },
 ];
 
 /** What a probe came back as. */

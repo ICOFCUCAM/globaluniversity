@@ -732,6 +732,67 @@ console.log('\nNobody can draft, approve and issue an appointment alone\n');
   }
 }
 
+// ---------------------------------------------------------------------------
+console.log('\nThe office that needs no second signature\n');
+
+// ---------------------------------------------------------------------------
+// THE UNIVERSITY'S RULING: "a VC needs no one to approve its letter, even the
+// superadmin."
+//
+// 045 built `made_on_sole_authority` for this and 041 refused every
+// self-approval outright, so the route existed and could never be taken. 055
+// opens it — for four roles and no others — and this is where that list is
+// held, because a fifth appearing quietly is the whole separation gone.
+// ---------------------------------------------------------------------------
+{
+  const drafted = { status: 'submitted', drafted_by: 'vc-1' };
+
+  // THE ORDINARY RULE IS UNTOUCHED, and asserted first so a change to it
+  // fails here rather than being discovered by an HR officer approving their
+  // own appointment.
+  check('the drafter still cannot approve by the ordinary route',
+    A.canAuthorize(drafted, 'vc-1'), false);
+  check('somebody else still can', A.canAuthorize(drafted, 'someone-else'), true);
+
+  // AND THE EXCEPTION, ROLE BY ROLE.
+  check('the Vice-Chancellor may approve what they wrote',
+    A.canAuthorizeAlone(drafted, 'vc-1', 'vice-chancellor'), true);
+  check('so may the Chancellor',
+    A.canAuthorizeAlone(drafted, 'vc-1', 'chancellor'), true);
+  check('so may the Superadministrator, whom the University named',
+    A.canAuthorizeAlone(drafted, 'vc-1', 'superadmin'), true);
+
+  // THE ONES THAT MUST STILL BE REFUSED. Each named, because "everybody else"
+  // is not a list anybody can check.
+  for (const role of ['hr-officer', 'hr-administrator', 'registrar', 'dean', 'lecturer', 'student']) {
+    check(`${role} may not approve their own`,
+      A.canAuthorizeAlone(drafted, 'vc-1', role), false);
+  }
+
+  // AND IT IS ONLY THE DRAFTER'S OWN. A Vice-Chancellor approving somebody
+  // else's draft is the ordinary route, not this one — the mark must not be
+  // set on an appointment two people handled.
+  check('it does not fire for an appointment somebody else drafted',
+    A.canAuthorizeAlone(drafted, 'another-vc', 'vice-chancellor'), false);
+
+  // NOR ON A ROW THAT IS NOT AWAITING APPROVAL.
+  check('nor on a draft that was never submitted',
+    A.canAuthorizeAlone({ status: 'draft', drafted_by: 'vc-1' }, 'vc-1', 'vice-chancellor'), false);
+  check('nor on one already approved',
+    A.canAuthorizeAlone({ status: 'approved', drafted_by: 'vc-1' }, 'vc-1', 'vice-chancellor'),
+    false);
+
+  // THE OFFICE RECORDED AGAINST IT. 055 refuses the flag from any office not
+  // on its list, so a wrong value here is a refused approval rather than a
+  // quiet one.
+  check('the Vice-Chancellor is recorded as their own office',
+    A.soleAuthorityOffice('vice-chancellor'), 'vice-chancellor');
+  check('a system account is recorded as `system`, not borrowed from an office',
+    [A.soleAuthorityOffice('superadmin'), A.soleAuthorityOffice('admin')], ['system', 'system']);
+  check('and an office with no claim to it gets nothing',
+    A.soleAuthorityOffice('hr-officer'), null);
+}
+
 console.log('\nThe authority reviews; it does not rewrite\n');
 
 {

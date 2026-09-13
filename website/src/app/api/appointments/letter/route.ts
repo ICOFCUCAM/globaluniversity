@@ -61,6 +61,20 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const CAPABILITY: Record<string, Capability> = {
+  // ---------------------------------------------------------------------
+  // PREVIEW IS NOT GENERATE, AND THE DIFFERENCE IS PERMANENT.
+  //
+  // `generate` allocates a reference from the University's register and
+  // writes a letter row. It is a step in the workflow, not a look at one —
+  // and it was the only way to see a letter, so the Vice-Chancellor could
+  // not read a document before approving it without first committing a
+  // reference number to it.
+  //
+  // `preview` renders the same letter from the same record and persists
+  // NOTHING: no reference, no row, no event, no seal. It works from a draft,
+  // which is the whole point — the reading happens before the deciding.
+  // ---------------------------------------------------------------------
+  preview: 'draft-appointment' as Capability,
   generate: 'draft-appointment' as Capability,
   issue: 'issue-appointment-letter' as Capability,
   email: 'issue-appointment-letter' as Capability,
@@ -160,9 +174,22 @@ export async function POST(request: Request) {
    * letters for one appointment and no answer to which was sent — and this is
    * the call a user makes twice when the first response was slow.
    */
+  /**
+   * Produce the letter, and — unless this is a preview — archive it.
+   *
+   * ONE FUNCTION FOR BOTH, and that is the point. Everything between reading
+   * the record and rendering the page is enrichment: the allowances, the job
+   * description's duty clauses, the post's family and standing, the conditions
+   * of service by version, the specimen signature. A preview that assembled
+   * that separately would be a second implementation, and the first thing to
+   * drift would be the one the Vice-Chancellor reads before approving.
+   *
+   * So a preview takes the same path and stops before the insert.
+   */
   const generateInto = async (
     appointment: Row, version: number, reason: string | null,
-  ): Promise<{ letter: Row } | { error: NextResponse }> => {
+    preview = false,
+  ): Promise<{ letter: Row } | { html: string } | { error: NextResponse }> => {
     const outstanding = missingFrom(appointment);
     if (blocked(outstanding)) {
       return {
@@ -175,7 +202,10 @@ export async function POST(request: Request) {
     }
 
     const year = new Date().getUTCFullYear();
-    const reference = await nextReference(year);
+    // NO NUMBER IS TAKEN FROM THE REGISTER FOR A LOOK. A reference allocated
+    // to a letter that may never exist is a gap in the University's sequence
+    // that nobody can later account for.
+    const reference = preview ? `APT-${year}-0000` : await nextReference(year);
     if (!reference) return { error: bad('no-reference', 500) };
 
     const issuedOn = new Date().toISOString().slice(0, 10);
@@ -291,6 +321,7 @@ export async function POST(request: Request) {
         reference,
         issuedOn,
         version,
+        isDraft: preview,
         signatoryName: String(body.signatoryName ?? sig?.owner_name ?? caller.email ?? ''),
         signatoryRole: String(body.signatoryRole ?? sig?.owner_role ?? 'Registrar'),
         siteUrl,
@@ -313,6 +344,10 @@ export async function POST(request: Request) {
     } catch (e) {
       return { error: bad('not-generated', 409, e instanceof Error ? e.message : String(e)) };
     }
+
+    // THE PREVIEW ENDS HERE. Nothing is written: no letter row, no reference
+    // consumed, no event, no seal — the document itself says it is a draft.
+    if (preview) return { html: generated.html };
 
     const { data, error } = await admin.from('appointment_letters').insert({
       appointment_id: appointment.id as string,
@@ -476,6 +511,41 @@ export async function POST(request: Request) {
   // =========================================================================
   // GENERATE
   // =========================================================================
+  // =========================================================================
+  // PREVIEW — the letter as it will read, committing nothing
+  // =========================================================================
+  if (action === 'preview') {
+    const appointment = await loadAppointment(body.id);
+    if (!appointment) return bad('appointment-not-found', 404);
+
+    // AN INCOMPLETE RECORD STILL PREVIEWS — with what is missing named. This
+    // is the one place where refusing would be wrong: somebody filling a form
+    // in wants to see what they have so far, and "complete it first, then you
+    // may look" is the rule that sends people back to a word processor.
+    const outstanding = missingFrom(appointment as never);
+    if (blocked(outstanding)) {
+      return NextResponse.json({
+        ok: false, error: 'not-complete', missing: outstanding,
+        detail: 'The letter cannot be drawn yet: '
+          + outstanding.filter((m) => m.blocking).map((m) => m.label).join(', ')
+          + '. Nothing on it is typed by hand, so an incomplete record is an incomplete letter.',
+      }, { status: 409 });
+    }
+
+    const built = await generateInto(appointment, 1, null, true);
+    if ('error' in built) return built.error;
+    if (!('html' in built)) return bad('not-previewed', 500);
+
+    return NextResponse.json({
+      ok: true,
+      preview: true,
+      html: built.html,
+      warnings: outstanding.filter((m) => !m.blocking),
+      detail: 'A draft, and it says so on its face. Nothing has been recorded and no reference '
+        + 'has been allocated.',
+    });
+  }
+
   if (action === 'generate') {
     const appointment = await loadAppointment(body.id);
     if (!appointment) return bad('appointment-not-found', 404);
@@ -505,6 +575,10 @@ export async function POST(request: Request) {
 
     const made = await generateInto(appointment, 1, null);
     if ('error' in made) return made.error;
+    // NARROWED, NOT ASSUMED. `generateInto` returns a rendered page for a
+    // preview and an archived row otherwise; a caller that wants the row must
+    // say so, and the type refuses to let it forget.
+    if (!('letter' in made)) return bad('not-archived', 500);
 
     return NextResponse.json({
       ok: true,
@@ -641,6 +715,8 @@ export async function POST(request: Request) {
         .eq('id', current.id as string);
       return made.error;
     }
+    // NARROWED, as in `generate`. An amendment archives a real letter.
+    if (!('letter' in made)) return bad('not-archived', 500);
 
     // Now the old letter can name the one that replaced it.
     await admin.from('appointment_letters')

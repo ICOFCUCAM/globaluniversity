@@ -41,6 +41,7 @@ import {
   ALLOWANCE_KINDS, allowanceLine,
   DEFAULT_CURRENCY, DEFAULT_PERIOD,
   boardStatus, missingFrom, blocked, remunerationLine, probationEnds,
+  SOLE_AUTHORITY_ROLES,
   STATE_LABELS,
   type Appointment, type AppointmentState, type Allowance,
 } from '@/lib/appointments';
@@ -89,6 +90,11 @@ export default function Appointments() {
   // showing it.
   const maySeePay = can(user?.role, 'set-remuneration');
   const mayIssue = can(user?.role, 'issue-appointment-letter');
+  // THE OFFICES THAT MAY APPROVE WHAT THEY WROTE. The list lives in the
+  // library beside the rule the route applies, so the screen cannot offer the
+  // button to somebody the route will refuse.
+  const maySoleAuthority = (SOLE_AUTHORITY_ROLES as readonly string[])
+    .includes(String(user?.role));
 
   const [rows, setRows] = useState<Row[] | null>(null);
   const [creating, setCreating] = useState(false);
@@ -149,7 +155,7 @@ export default function Appointments() {
   async function preview(id: string) {
     setBusy(true);
     setNotice(null);
-    const out = await authedPost('/api/appointments/letter', { action: 'generate', id });
+    const out = await authedPost('/api/appointments/letter', { action: 'preview', id });
     setBusy(false);
 
     if (!out.ok || typeof out.html !== 'string') {
@@ -331,6 +337,27 @@ export default function Appointments() {
               )}
 
               <div className="mt-4 flex flex-wrap gap-2">
+                {/* ------------------------------------------------------
+                    READ IT BEFORE DECIDING ANYTHING.
+
+                    Preview was offered only on APPROVED appointments, and it
+                    called `generate` — which allocates a reference from the
+                    University's register and writes a letter row. So the only
+                    way to see a letter was to commit a number to it, and the
+                    Vice-Chancellor could not read a document before approving
+                    it. The University asked for exactly this.
+
+                    `preview` renders the same letter from the same record,
+                    persists nothing, and the page says across the top that it
+                    is a draft carrying no reference and no seal.
+                    ------------------------------------------------------ */}
+                {mayDraft && !blocked(missing) && (
+                  <button disabled={busy} className={BTN_GHOST}
+                    onClick={() => void preview(a.id)}>
+                    <Eye size={14} /> Preview the letter
+                  </button>
+                )}
+
                 {a.status === 'draft' && mayDraft && !blocked(missing) && (
                   <button disabled={busy} className={BTN_SECONDARY}
                     onClick={() => void act({ action: 'submit', id: a.id })}>
@@ -340,14 +367,40 @@ export default function Appointments() {
 
                 {a.status === 'submitted' && mayApprove && (
                   a.drafted_by === user?.id ? (
-                    // SAID RATHER THAN HIDDEN. A button that is simply absent
-                    // leaves somebody wondering why.
-                    <p className="flex items-center gap-2 rounded-lg bg-[#faf6ee] px-3 py-2
-                                  text-xs text-[#6b5a2f] dark:bg-[#241f2c] dark:text-[#c3b48f]">
-                      <AlertTriangle size={13} />
-                      You drafted this, so somebody else has to approve it. An appointment letter
-                      commits the University to paying somebody.
-                    </p>
+                    // ---------------------------------------------------
+                    // THE OFFICE THAT NEEDS NO SECOND SIGNATURE.
+                    //
+                    // The University's ruling: "a VC needs no one to approve
+                    // its letter, even the superadmin." The appointing
+                    // authority approving its own decision is not a breach of
+                    // the separation — it IS the authority.
+                    //
+                    // EVERYBODY ELSE STILL SEES THE REFUSAL, said rather than
+                    // hidden, because a button that is simply absent leaves
+                    // somebody wondering why.
+                    // ---------------------------------------------------
+                    maySoleAuthority ? (
+                      <div className="space-y-2">
+                        <button disabled={busy} className={BTN_PRIMARY}
+                          onClick={() => void act({
+                            action: 'decide', id: a.id, decision: 'approve',
+                            ...(reason.trim() ? { reason: reason.trim() } : {}),
+                          })}>
+                          <Check size={14} /> Approve on my own authority
+                        </button>
+                        <p className="text-xs text-[#6b6076] dark:text-[#9c93ad]">
+                          You drafted this. Approving it yourself is yours to do, and the record
+                          will show permanently that one office did both.
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="flex items-center gap-2 rounded-lg bg-[#faf6ee] px-3 py-2
+                                    text-xs text-[#6b5a2f] dark:bg-[#241f2c] dark:text-[#c3b48f]">
+                        <AlertTriangle size={13} />
+                        You drafted this, so somebody else has to approve it. An appointment letter
+                        commits the University to paying somebody.
+                      </p>
+                    )
                   ) : (
                     <>
                       <button disabled={busy} className={BTN_PRIMARY}
@@ -380,26 +433,11 @@ export default function Appointments() {
                     An appointment system whose central document cannot be
                     produced is a list of intentions.
                     ------------------------------------------------------ */}
-                {a.status === 'approved' && (
-                  <>
-                    {/* PREVIEW FIRST, AND ANYBODY WHO MAY DRAFT MAY PREVIEW.
-                        Generating is not issuing — the route keeps them apart
-                        under two capabilities — and somebody about to commit
-                        the University should be able to read the document
-                        before they do. */}
-                    {mayDraft && (
-                      <button disabled={busy} className={BTN_GHOST}
-                        onClick={() => void preview(a.id)}>
-                        <Eye size={14} /> Preview the letter
-                      </button>
-                    )}
-                    {mayIssue && (
-                      <button disabled={busy} className={BTN_PRIMARY}
-                        onClick={() => void letter('issue', a.id)}>
-                        <FileText size={14} /> Issue the letter
-                      </button>
-                    )}
-                  </>
+                {a.status === 'approved' && mayIssue && (
+                  <button disabled={busy} className={BTN_PRIMARY}
+                    onClick={() => void letter('issue', a.id)}>
+                    <FileText size={14} /> Issue the letter
+                  </button>
                 )}
 
                 {/* SENDING IS ITS OWN ACT. 042 archives the letter before it

@@ -425,6 +425,21 @@ begin
     end if;
 
     -- ---- AND THE VICE-CHANCELLOR MUST SAY WHY -----------------------------
+    --
+    -- ONLY WHILE THAT IS STILL THE RULE. 055 removed the demand for a written
+    -- reason: the University ruled that approving one's own appointment is the
+    -- Vice-Chancellor's ordinary authority rather than an exception, and an
+    -- explanation demanded every time a thing is done normally is a box
+    -- somebody types a full stop into.
+    --
+    -- This proof asserted the old behaviour unconditionally, so on a SECOND run
+    -- of RUN-ALL — where 055 has already relaxed it — 045 failed against a
+    -- database that was perfectly correct. Running it twice is what found it.
+    -- The assertion still runs on a database that has not had 055, which is the
+    -- only place it means anything.
+    if position('sole_authority_reason' in
+                coalesce((select pg_get_constraintdef(oid) from pg_constraint
+                           where conname = 'appointments_sole_authority_explained'), '')) > 0 then
     refused := false;
     begin
       update appointments set made_on_sole_authority = true where id = a_id;
@@ -433,6 +448,7 @@ begin
     if not refused then
       raise exception '045 FAILED: an appointment was made on sole authority with no account '
                       'of why nobody else saw it';
+    end if;
     end if;
 
     update appointments
@@ -445,14 +461,32 @@ begin
     -- Sole authority records that one office made the appointment end to end.
     -- It does NOT let the person who drafted it approve it, which is a
     -- different claim and would make the mark meaningless.
-    refused := false;
-    begin
-      update appointments set authorized_by = other, authorized_at = now() where id = a_id;
-    exception when others then refused := true;
-    end;
-    if not refused then
-      raise exception '045 FAILED: the drafter approved an appointment because sole authority '
-                      'was ticked. The two rules are not the same rule.';
+    --
+    -- ---------------------------------------------------------------------
+    -- UNTIL 055, WHICH IS WHEN IT BECAME EXACTLY THAT CLAIM.
+    --
+    -- This file assumed sole authority meant the Vice-Chancellor DIRECTED an
+    -- appointment somebody else typed. The University meant something simpler:
+    -- the Vice-Chancellor writes it and approves it, one person, start to
+    -- finish. 055 changed 041's constraint to permit that when — and only
+    -- when — the mark is set.
+    --
+    -- So this assertion is true of a database without 055 and false of one
+    -- with it, and running RUN-ALL twice is what found that. It runs where it
+    -- still means something.
+    -- ---------------------------------------------------------------------
+    if position('made_on_sole_authority' in
+                coalesce((select pg_get_constraintdef(oid) from pg_constraint
+                           where conname = 'appointments_second_pair_of_eyes'), '')) = 0 then
+      refused := false;
+      begin
+        update appointments set authorized_by = other, authorized_at = now() where id = a_id;
+      exception when others then refused := true;
+      end;
+      if not refused then
+        raise exception '045 FAILED: the drafter approved an appointment because sole authority '
+                        'was ticked. The two rules are not the same rule.';
+      end if;
     end if;
 
     raise exception 'PROOF_ROLLBACK';

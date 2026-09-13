@@ -115,6 +115,11 @@ const LETTER_STYLES = `
   li { margin-bottom: 3px; }
   .attachments { margin-top: 14px; font-size: 9pt; color: #6b6076;
                  break-inside: avoid; page-break-inside: avoid; }
+  /* UNMISTAKABLE ON PAPER AS WELL AS ON SCREEN. A preview that prints as an
+     ordinary letter is a preview somebody will hand to an appointee. */
+  .draftmark { border: 2px solid #a07c12; background: #fdf6e3; color: #6b5410;
+               padding: 8px 11px; margin: 10px 0 4px; font-size: 9.5pt;
+               line-height: 1.45; break-inside: avoid; page-break-inside: avoid; }
 `;
 
 export interface LetterInput {
@@ -214,6 +219,27 @@ export interface LetterInput {
    */
   standing?: string | null;
 
+  /**
+   * A preview of a letter that has not been approved, and must look like one.
+   *
+   * ---------------------------------------------------------------------------
+   * WHY A DRAFT MUST NOT LOOK LIKE A LETTER
+   * ---------------------------------------------------------------------------
+   *
+   * The Vice-Chancellor asked to see the letter before approving it, which is
+   * plainly right — nobody should approve a document they have not read. But
+   * the document produced from an unapproved record is not the letter: nothing
+   * has been authorised, no reference has been allocated, and if it escapes the
+   * screen it is an appointment the University never made, on University
+   * letterhead.
+   *
+   * So a preview says so across the top, carries no seal and no verification
+   * code, and prints a reference of zeros. The same rule the job description
+   * document follows, for the same reason: a draft that looks like the document
+   * in force is how somebody is held to terms nobody approved.
+   */
+  isDraft?: boolean;
+
   /** Notice periods, printed in the termination section when recorded. */
   noticeMonths?: number | null;
   probationNoticeMonths?: number | null;
@@ -290,6 +316,10 @@ export async function appointmentLetterHtml(input: LetterInput): Promise<Generat
 
   let seal: DocumentSeal | null = null;
   try {
+    // A PREVIEW IS NEVER SEALED. The seal is the University's assertion that it
+    // issued this document; an unapproved draft carrying one would verify as
+    // genuine against a decision nobody took.
+    if (input.isDraft) throw new Error('a draft carries no seal');
     seal = sealAppointment(a, input.reference, input.issuedOn, input.siteUrl);
   } catch {
     // UNSEALED RATHER THAN UNISSUED. CREDENTIAL_SECRET may be absent in a
@@ -512,6 +542,13 @@ record.</p>`);
 <style>${documentStyles()}${LETTER_STYLES}</style>
 
 ${letterhead('Office of the Vice-Chancellor')}
+${input.isDraft ? `
+<div class="draftmark">
+  <strong>Draft — not approved and not issued.</strong>
+  This is how the letter will read. It carries no reference and no seal, nobody has authorised
+  it, and it is not a letter of appointment. Approve the appointment and issue it, and the
+  document produced then is the one that counts.
+</div>` : ''}
 
 <h2>Appointment Letter</h2>
 

@@ -183,10 +183,27 @@ const MARKERS = {
   // the better marker: a relation either exists or it does not, with no
   // information_schema lookup to get wrong.
   '054': 'course_roll',
+  // 055 CREATES NOTHING AT ALL. It changes what two CHECK constraints permit
+  // and adds a trigger — so neither a relation nor a column nor a seeded row
+  // can answer for it, and without a fourth form it would simply be absent
+  // from this report, which is how 052 and 053 were missed.
+  '055': "def:appointments_second_pair_of_eyes:made_on_sole_authority",
 };
 
 /** The SQL that answers "is this one here?", for each of the three forms. */
 function landedTest(marker) {
+  // A CONSTRAINT'S OWN DEFINITION, for a migration that only changes what is
+  // permitted. `pg_get_constraintdef` renders the CHECK as text, so asking
+  // whether the new clause is in it is asking the database what rule it is
+  // actually enforcing — not what some log says was run.
+  if (marker.startsWith('def:')) {
+    const [, name, needle] = marker.split(':');
+    return `case when exists (
+                   select 1 from pg_constraint
+                    where conname = '${name}'
+                      and position('${needle}' in pg_get_constraintdef(oid)) > 0)
+                 then 'YES' else 'NO' end`;
+  }
   if (marker.startsWith('rows:')) {
     const [, table, predicate] = marker.split(':');
     return `case when to_regclass('public.${table}') is null then 'NO'

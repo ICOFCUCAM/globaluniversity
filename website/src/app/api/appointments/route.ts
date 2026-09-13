@@ -39,6 +39,7 @@ import { can, type Capability } from '@/lib/roles';
 import type { UserRole } from '@/lib/types';
 import {
   isEmploymentType, missingFrom, blocked, canEdit, canSubmit, canAuthorize,
+  canAuthorizeAlone, soleAuthorityOffice,
   canRequestAmendment, canClose, MIN_AMENDMENT_REASON, MIN_CLOSURE_REASON, MIN_RETURN_REASON,
   DEFAULT_CURRENCY, DEFAULT_PERIOD,
   type AppointmentEvent,
@@ -56,7 +57,7 @@ const CAPABILITY: Record<string, Capability> = {
 };
 
 // eslint-disable-next-line max-len
-const COLUMNS = 'id, full_name, email, phone, postal_address, position_title, unit_name, employment_type, start_date, end_date, effective_date, probation_months, place_of_duty, reports_to_name, working_hours, appointing_authority, authority_decided_on, terms, salary_amount, salary_currency, salary_period, status, drafted_by, authorized_by, authorized_at, issued_at';
+const COLUMNS = 'id, full_name, email, phone, postal_address, position_title, unit_name, employment_type, start_date, end_date, effective_date, probation_months, place_of_duty, reports_to_name, working_hours, appointing_authority, authority_decided_on, terms, salary_amount, salary_currency, salary_period, status, drafted_by, authorized_by, authorized_at, issued_at, initiated_by_office, made_on_sole_authority';
 
 const bad = (error: string, status: number, detail?: string) =>
   NextResponse.json({ ok: false, error, ...(detail ? { detail } : {}) }, { status });
@@ -299,13 +300,28 @@ export async function POST(request: Request) {
     const decision = String(body.decision ?? '');
     if (decision !== 'approve' && decision !== 'return') return bad('unknown-decision', 400);
 
-    if (!canAuthorize(row, caller.id)) {
+    // -----------------------------------------------------------------
+    // TWO WAYS TO APPROVE, AND THE SECOND IS MARKED.
+    //
+    // The ordinary rule: somebody other than the drafter. The exception, on
+    // the University's ruling — "a VC needs no one to approve its letter, even
+    // the superadmin" — the appointing authority may approve what they wrote.
+    //
+    // 045 built the route and 041 bricked it up; 055 opened it and refuses a
+    // self-approval that is NOT marked, so there can be no appointment in the
+    // table that one person made alone without saying so.
+    // -----------------------------------------------------------------
+    const alone = canAuthorizeAlone(row, caller.id, caller.role as string);
+
+    if (!canAuthorize(row, caller.id) && !alone) {
       return bad(
         row.drafted_by === caller.id ? 'cannot-approve-your-own' : 'not-awaiting-approval',
         409,
         row.drafted_by === caller.id
           ? 'You drafted this appointment, so you cannot be the second pair of eyes on it. An '
-            + 'appointment letter commits the University to paying somebody.'
+            + 'appointment letter commits the University to paying somebody. Only the '
+            + 'Vice-Chancellor, the Chancellor and a system account may approve one they wrote '
+            + 'themselves, and it is recorded when they do.'
           : `This appointment is ${String(row.status).replace(/_/g, ' ')}, not awaiting approval.`,
       );
     }
@@ -324,15 +340,32 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true, status: 'draft' });
     }
 
+    const office = soleAuthorityOffice(caller.role as string);
     const { error } = await admin.from('appointments').update({
-      status: 'approved', authorized_by: caller.id, authorized_at: new Date().toISOString(),
+      status: 'approved',
+      authorized_by: caller.id,
+      authorized_at: new Date().toISOString(),
+      // THE MARK, AND THE OFFICE THAT CLAIMED IT. 055 refuses the flag from any
+      // office that does not hold the authority, and refuses it being taken off
+      // once set — so this is written here and never again.
+      ...(alone ? {
+        made_on_sole_authority: true,
+        initiated_by_office: (row.initiated_by_office as string | null) ?? office,
+        ...(body.reason ? { sole_authority_reason: String(body.reason).trim() } : {}),
+      } : {}),
     }).eq('id', row.id as string);
     if (error) return bad(`not-approved: ${error.message}`, 500);
-    await record(row.id as string, 'AUTHORIZED', row.status as string, 'approved');
+    await record(row.id as string, 'AUTHORIZED', row.status as string, 'approved',
+      alone ? 'Approved by the officer who drafted it, on their own authority.' : null);
     return NextResponse.json({
       ok: true,
       status: 'approved',
-      detail: 'Approved. The letter has not been generated and nobody has been told — those '
+      soleAuthority: alone,
+      detail: alone
+        ? 'Approved on your own authority. The record shows you drafted and approved it, and '
+          + 'that mark is permanent. The letter has not been generated and nobody has been told '
+          + '— those are separate steps.'
+        : 'Approved. The letter has not been generated and nobody has been told — those '
         + 'are separate steps, deliberately.',
     });
   }

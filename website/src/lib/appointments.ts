@@ -645,6 +645,61 @@ export function canAuthorize(a: Appointment, callerId: string): boolean {
     && a.drafted_by !== callerId;
 }
 
+/**
+ * The offices that may approve an appointment they drafted themselves.
+ *
+ * ---------------------------------------------------------------------------
+ * THE UNIVERSITY'S RULING, AND WHY IT IS NOT A WEAKENING
+ * ---------------------------------------------------------------------------
+ *
+ * "A VC needs no one to approve its letter, even the superadmin."
+ *
+ * The appointing authority IS the Vice-Chancellor. Requiring a second person
+ * to countersign the appointing authority's own decision is not a separation
+ * of duties — it is asking the office to get permission to do the thing the
+ * office exists for. 045 built the route for it and 041 bricked it up; 055
+ * opens it.
+ *
+ * EVERYBODY ELSE IS STILL REFUSED. An HR officer, a registrar, an
+ * administrator drafting and approving their own appointment is refused
+ * exactly as before, in the database and here. This list is the whole of the
+ * exception.
+ *
+ * THE CHANCELLOR IS ON IT because 045 put them there. `admin` and `superadmin`
+ * are system accounts rather than offices, and the University named the
+ * Superadministrator explicitly.
+ */
+export const SOLE_AUTHORITY_ROLES = [
+  'vice-chancellor', 'chancellor', 'superadmin', 'admin',
+] as const;
+
+/** The office recorded against a sole-authority approval, per role. */
+export function soleAuthorityOffice(role: string | null | undefined): string | null {
+  if (role === 'vice-chancellor') return 'vice-chancellor';
+  if (role === 'chancellor') return 'chancellor';
+  // NOT AN OFFICE OF THE UNIVERSITY, and recorded as what it is rather than
+  // borrowed from an office that did not act. 055 added `system` to the
+  // vocabulary for exactly this.
+  if (role === 'superadmin' || role === 'admin') return 'system';
+  return null;
+}
+
+/**
+ * Whether this caller may approve an appointment they drafted.
+ *
+ * SEPARATE FROM `canAuthorize` ON PURPOSE. The ordinary rule is the one that
+ * should be read first and applied by default; this is the marked exception,
+ * and a screen that cannot tell them apart is a screen that will eventually
+ * offer the exception as though it were ordinary.
+ */
+export function canAuthorizeAlone(
+  a: Appointment, callerId: string, role: string | null | undefined,
+): boolean {
+  return (a.status === 'submitted' || a.status === 'amendment_requested')
+    && a.drafted_by === callerId
+    && (SOLE_AUTHORITY_ROLES as readonly string[]).includes(String(role));
+}
+
 /** A letter is generated from an authorised appointment, never a draft. */
 export function canGenerateLetter(a: Appointment): boolean {
   return (a.status === 'approved' || a.status === 'letter_generated' || a.status === 'issued')
