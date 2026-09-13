@@ -24,6 +24,9 @@ import CourseRegistration from '@/components/courses/CourseRegistration';
 import CourseManagement from './courses/CourseManagement';
 import ProgrammeRegister from './academic/ProgrammeRegister';
 import CurriculumBuilder from './academic/CurriculumBuilder';
+import CourseOfferings from './academic/CourseOfferings';
+import TimetableGrid from './academic/TimetableGrid';
+import AcademicOverview from './academic/AcademicOverview';
 import ResultProcessing from './results/ResultProcessing';
 import GradeBook from './results/GradeBook';
 import ResultsApproval from './results/ResultsApproval';
@@ -264,8 +267,19 @@ export default function AppLayout() {
         return <DocumentTemplates />;
       case 'job-descriptions':
         return <JobDescriptions />;
+      // THE TIMETABLE IS THE CLASSES THAT EXIST. The old module kept its own
+      // slots — a day, an hour and the course typed in as free text — which
+      // matched no course, no lecturer and no room, so no conflict between two
+      // of them could ever be detected. Its attendance half is still real
+      // work, and keeps its own entry.
       case 'timetable':
+        return <TimetableGrid />;
+      case 'attendance':
         return <TimetableModule />;
+      case 'course-offerings':
+        return <CourseOfferings />;
+      case 'academic-overview':
+        return <AcademicOverview onNavigate={setCurrentView} />;
       case 'forum':
         return <ForumModule />;
       case 'fees':

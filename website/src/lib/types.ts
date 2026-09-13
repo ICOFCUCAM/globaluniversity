@@ -300,6 +300,25 @@ export type ViewType =
   // structure 057 made data — until then there was no list to show.
   | 'programmes-register'
   | 'curriculum-builder'
+  // ---------------------------------------------------------------------
+  // THE TERM, AS AGAINST THE CATALOGUE.
+  //
+  // The University drew the line itself: a COURSE is what the catalogue
+  // describes, an OFFERING is that course running in a named term with a
+  // named lecturer and a ceiling, and a CLASS meets at an hour in a room.
+  // 'courses' is the first; this is the second and third, and it is where a
+  // term is actually set up.
+  //
+  // 'academic-overview' is the control centre over both — the four questions
+  // the University asked for by name: courses with no lecturer, programmes
+  // with incomplete curricula, missing results, pending approvals.
+  // ---------------------------------------------------------------------
+  | 'course-offerings'
+  | 'academic-overview'
+  // ATTENDANCE, SEPARATED FROM THE TIMETABLE. They were one screen because the
+  // timetable kept its own invented slots; now that a class is a row every
+  // other screen can read, marking who attended one is its own job.
+  | 'attendance'
   | 'exams'
   | 'documents'
   | 'analytics'

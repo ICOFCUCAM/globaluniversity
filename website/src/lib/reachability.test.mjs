@@ -148,6 +148,15 @@ const READ_ONLY_BY_DESIGN = {
   academic_term_now: 'A view over `academic_term_on(current_date)`, which reads the academic '
     + 'calendar. Nothing writes it because nothing writes a date — it answers "which term is it" '
     + 'so that no screen has to reach for new Date().getFullYear() and be wrong every January.',
+  course_offering_roll: 'A view over course_offerings, class_sections and enrollments: every '
+    + 'offering with its lecturer, its classes and how full it is. `places_left` is computed '
+    + 'there rather than by each screen, because null — no ceiling — is not zero, and a screen '
+    + 'that reads it as zero closes a course nobody limited. /api/academic/offerings writes the '
+    + 'tables underneath it.',
+  timetable_clashes: 'A view: room, lecturer and student-cohort conflicts. Computed once in SQL '
+    + 'rather than by each screen, because two classes where one ends exactly as the other '
+    + 'begins do NOT clash — `<` and `>` rather than `<=` and `>=` — and that is the boundary '
+    + 'every hand-written overlap check gets wrong.',
   capability_grants_in_force: 'A view over `capability_grants`, which /api/admin/capability-grant '
     + 'writes. It exists so that "still in force" — not revoked AND not expired — is decided in '
     + 'one place: a caller checking only `revoked_at is null` would honour a grant that ran out '
@@ -205,6 +214,23 @@ const KNOWN_MISSING = {
   // behaviour that stops a list like this becoming a graveyard of things
   // somebody once decided not to fix.
   // ---------------------------------------------------------------------
+
+  // NOT "SEEDED AND THEREFORE FINE", and the difference is worth being exact
+  // about. 059 seeds 2015 to 2035 from the rule the University gave — 15
+  // August to 14 August, Semester 1 to 1 January, Semester 2 from the 2nd —
+  // so the ROWS need no screen for another nine years.
+  //
+  // The STATUS does. Exactly one year is 'current', and three screens now
+  // open on it: Course offerings, the Timetable and the Academic overview.
+  // When 2026/2027 ends, something has to mark it closed and mark the next
+  // one current, and today that something is an operator with SQL. Nothing in
+  // the portal can roll the year over.
+  //
+  // Listed here rather than above because a year that never rolls is not a
+  // design decision. It is a screen nobody has built yet.
+  academic_years: 'Seeded 2015–2035 by 059, but nothing can roll the year over: marking one '
+    + 'year current and the previous one closed is an act with no screen, and three screens now '
+    + 'open on whichever year is current.',
 };
 
 const readNeverWritten = [...tablesRead]

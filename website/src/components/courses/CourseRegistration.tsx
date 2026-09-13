@@ -35,6 +35,27 @@
 // records which of the two it was — those are answerable in different
 // directions. The route enforces it; this screen only offers the student
 // picker to the people who may use it.
+//
+// ---------------------------------------------------------------------------
+// AND IT REGISTERS AGAINST AN OFFERING, NOT AGAINST A COURSE
+// ---------------------------------------------------------------------------
+//
+// The University drew the distinction: a COURSE is what the catalogue
+// describes; an OFFERING is that course running in a named term with a named
+// lecturer and a ceiling; a CLASS meets at an hour in a room.
+//
+// Until 063 this screen registered against the idea of a course. It could not
+// say who teaches it, when it meets, or whether there was a place left — and
+// a course with twenty seats took two hundred registrations without a murmur.
+//
+// Now each course carries what it is this term: the lecturer, the hours, and
+// how many places remain. FIVE NEW ANSWERS that had nowhere to live before —
+// not offered this term, not open yet, closed, cancelled, full — and each of
+// them sits beside the course, in a sentence, before anything is chosen.
+//
+// A TERM NOBODY HAS SET UP YET does not close the door. Where a term has no
+// offerings at all the whole catalogue is shown, and the screen says why the
+// lecturer and the hours are missing rather than leaving the reader to guess.
 // ---------------------------------------------------------------------------
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -42,9 +63,14 @@ import { supabase } from '@/lib/supabase';
 import { authedPost } from '@/lib/authedFetch';
 import { useAuth } from '@/contexts/AuthContext';
 import { can } from '@/lib/roles';
+import { within } from '@/components/academic/ProgrammeRegister';
+// ONE DEFINITION OF WHAT AN OFFERING IS, shared with the route that sends it.
+// A second copy here would drift the first time a field was added, and the
+// screen would silently stop reading something the route was still sending.
+import type { OfferedClass, OfferingFacts } from '@/lib/courseOffering';
 import { BTN_PRIMARY, BTN_GHOST, INPUT, LABEL, FOCUS } from '@/lib/portalTheme';
 import {
-  Loader2, Check, AlertTriangle, BookOpen, X, Search,
+  Loader2, Check, AlertTriangle, BookOpen, X, Search, Clock, User, Info,
 } from 'lucide-react';
 
 interface Offered {
@@ -55,10 +81,28 @@ interface Offered {
   semester: number | null;
   year: number | null;
   eligible: boolean;
+  // ELIGIBILITY AND AVAILABILITY ARE TWO DIFFERENT QUESTIONS. A student
+  // refused because a class is full has met every academic condition, and
+  // telling them "you are not eligible" sends them to the wrong office.
+  meetsPrerequisites: boolean;
+  unavailable: string | null;
+  offering: OfferingFacts | null;
   reasons: string[];
   missing: string[];
   alreadyRegistered: boolean;
   enrollmentId: string | null;
+}
+
+const DAYS = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const hhmm = (t: string | null) => (t ? t.slice(0, 5) : '');
+
+/** 'Monday 09:00–11:00', or the plain truth that it meets at no stated hour. */
+function whenIsIt(classes: OfferedClass[]): string {
+  const timed = classes.filter((c) => c.dayOfWeek !== null);
+  if (timed.length === 0) return 'No hours set';
+  return timed
+    .map((c) => `${DAYS[c.dayOfWeek as number]} ${hhmm(c.startsAt)}–${hhmm(c.endsAt)}`)
+    .join(' · ');
 }
 
 interface Student {
@@ -115,18 +159,46 @@ export default function CourseRegistration() {
   const [semester, setSemester] = useState('');
   const [term, setTerm] = useState<TermNow | null>(null);
   const [noCalendar, setNoCalendar] = useState(false);
+  const [calendarFailed, setCalendarFailed] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
-        .from('academic_term_now')
-        .select('year_label, starts_in, term_sequence, term_name')
-        .maybeSingle();
-      if (!data) { setNoCalendar(true); return; }
-      const t = data as unknown as TermNow;
-      setTerm(t);
-      setYear(String(t.starts_in));
-      setSemester(String(t.term_sequence));
+      // A DEADLINE ON THE READ, and not as a sandbox workaround.
+      //
+      // Without one this drew 'Reading the calendar…' indefinitely — found by
+      // rendering it, not by reading it. supabase-js reports an error when the
+      // server answers badly and simply NEVER SETTLES when nothing answers at
+      // all, so a paused project, a dropped network or a DNS failure all end
+      // here as a sentence that is true for a second and a lie for an hour.
+      try {
+        const { data, error } = await within(
+          supabase
+            .from('academic_term_now')
+            .select('year_label, starts_in, term_sequence, term_name')
+            .maybeSingle(),
+        );
+        // THE ERROR WAS BEING DISCARDED, and that is the whole of this bug.
+        //
+        // Destructuring `{ data }` alone makes a FAILED READ and an EMPTY
+        // CALENDAR indistinguishable: both arrive as data === null. Rendered
+        // against a database it could not reach, this screen said "Today falls
+        // in no academic year the calendar covers" — a confident statement
+        // about the University's calendar, made by a screen that had not
+        // managed to look at it.
+        if (error) { setCalendarFailed(error.message); return; }
+        if (!data) { setNoCalendar(true); return; }
+        const t = data as unknown as TermNow;
+        setTerm(t);
+        setYear(String(t.starts_in));
+        setSemester(String(t.term_sequence));
+      } catch (e) {
+        // NOT THE SAME FACT AS AN EMPTY CALENDAR, and not reported as though
+        // it were. "Today falls in no academic year" is a finding about the
+        // University; "the calendar could not be read" is a finding about the
+        // database, and sending somebody to fix the first when it is the
+        // second wastes their afternoon.
+        setCalendarFailed(e instanceof Error ? e.message : 'The calendar could not be read.');
+      }
     })();
   }, []);
 
@@ -134,6 +206,10 @@ export default function CourseRegistration() {
   const [passed, setPassed] = useState<string[]>([]);
   const [credits, setCredits] = useState(0);
   const [chosen, setChosen] = useState<Set<string>>(new Set());
+  // WHICH CLASS, where an offering has more than one. Keyed by course.
+  const [sections, setSections] = useState<Record<string, string>>({});
+  // Whether this term has been set up at all — see the file header.
+  const [offeringsConfigured, setOfferingsConfigured] = useState(true);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<{ kind: 'ok' | 'bad'; text: string } | null>(null);
   const [dropping, setDropping] = useState<string | null>(null);
@@ -153,9 +229,15 @@ export default function CourseRegistration() {
   const loadOffer = useCallback(async () => {
     setBusy(true);
     setNote(null);
+    // THE TERM GOES WITH THE QUESTION. Without it the route has no term in
+    // which to look for offerings and can only answer from the catalogue —
+    // which is how this screen used to ask, and why it could never say who
+    // teaches a course or whether there was a place left on it.
     const out = await authedPost('/api/enrolment', {
       action: 'offer',
       ...(studentId ? { studentId } : {}),
+      ...(year ? { academicYear: Number(year) } : {}),
+      ...(semester ? { semester: Number(semester) } : {}),
     });
     setBusy(false);
 
@@ -170,14 +252,17 @@ export default function CourseRegistration() {
     setOffered((out.courses ?? []) as Offered[]);
     setPassed((out.passed ?? []) as string[]);
     setCredits(Number(out.creditsEarned ?? 0));
+    setOfferingsConfigured(out.offeringsConfigured !== false);
     setChosen(new Set());
-  }, [studentId]);
+    setSections({});
+  }, [studentId, year, semester]);
 
   useEffect(() => {
     // A STUDENT NEEDS NO PICKER. The route finds their own record from their
-    // sign-in, so the screen can ask immediately.
-    if (!isRegistry) void loadOffer();
-  }, [isRegistry, loadOffer]);
+    // sign-in, so the screen can ask immediately — but not before the calendar
+    // has answered, or the question is asked about no term at all.
+    if (!isRegistry && year && semester) void loadOffer();
+  }, [isRegistry, loadOffer, year, semester]);
 
   const visible = useMemo(() => {
     const q = query.trim().toUpperCase();
@@ -201,6 +286,10 @@ export default function CourseRegistration() {
       courseIds: Array.from(chosen),
       academicYear: Number(year),
       semester: Number(semester),
+      // WHICH CLASS, where the student chose one. An offering with exactly one
+      // class needs no choice and the route picks it rather than leaving the
+      // link half made.
+      sections,
     });
     setBusy(false);
 
@@ -310,6 +399,13 @@ export default function CourseRegistration() {
                 Filed under academic year {term.starts_in}
               </p>
             </div>
+          ) : calendarFailed ? (
+            <p className="rounded-lg border border-dashed border-amber-300 bg-amber-50 px-3 py-2
+                          text-xs text-amber-800 dark:border-amber-800/60 dark:bg-amber-950/30
+                          dark:text-amber-200">
+              The academic calendar could not be read, so a registration cannot be dated.
+              {' '}{calendarFailed}
+            </p>
           ) : noCalendar ? (
             <p className="rounded-lg border border-dashed border-amber-300 bg-amber-50 px-3 py-2
                           text-xs text-amber-800 dark:border-amber-800/60 dark:bg-amber-950/30
@@ -323,8 +419,11 @@ export default function CourseRegistration() {
         </div>
         <div className="space-y-1.5">
           <label htmlFor="cr-sem" className={LABEL}>Semester</label>
-          <select id="cr-sem" value={semester} onChange={(e) => setSemester(e.target.value)}
-            className={INPUT}>
+          {/* CHANGING THE SEMESTER DISCARDS THE ANSWER, because what is on
+              offer belongs to a term: the lecturer, the hours and the places
+              left are all different in the other one. */}
+          <select id="cr-sem" value={semester} className={INPUT}
+            onChange={(e) => { setSemester(e.target.value); setOffered(null); }}>
             <option value="1">First</option>
             <option value="2">Second</option>
           </select>
@@ -349,6 +448,27 @@ export default function CourseRegistration() {
             {passed.length} course{passed.length === 1 ? '' : 's'} passed · {credits} credits
             earned{passed.length > 0 ? ` · ${passed.join(', ')}` : ''}
           </p>
+
+          {/* -------------------------------------------------------------
+              A TERM NOBODY HAS SET UP YET.
+
+              Not an error and not silence. The whole catalogue is shown so
+              registration still works, and the reason the lecturer and the
+              hours are blank is stated rather than left to be guessed at.
+              ------------------------------------------------------------- */}
+          {!offeringsConfigured && (
+            <p className="flex items-start gap-2 rounded-xl border border-[#ded6c8] bg-[#faf8f4]
+                          p-3 text-xs text-[#6b6076] dark:border-[#3d3349] dark:bg-[#241f2c]
+                          dark:text-[#9c93ad]">
+              <Info size={14} className="mt-0.5 shrink-0" />
+              <span>
+                No course has been offered in {term ? `${term.year_label} — ${term.term_name}` : 'this term'} yet,
+                so the whole catalogue is shown. Nothing here has a lecturer, an hour or a place
+                limit until the term is set up on the Course offerings screen — and a registration
+                made now records the course but not the class.
+              </span>
+            </p>
+          )}
 
           <div className="flex flex-wrap items-center gap-3">
             <div className="relative flex-1 min-w-[14rem]">
@@ -406,12 +526,80 @@ export default function CourseRegistration() {
                         {c.year ? ` · year ${c.year}` : ''}
                         {c.semester ? ` · semester ${c.semester}` : ''}
                       </span>
-                      {/* THE REASON, BESIDE THE COURSE. One sentence per
-                          reason, naming what is missing. */}
-                      {!c.eligible && c.reasons.length > 0 && (
-                        <span className="mt-1 block text-xs text-[#a07c12]">
-                          {c.reasons.join(' ')}
+
+                      {/* --------------------------------------------------
+                          WHAT THIS COURSE IS THIS TERM.
+
+                          The lecturer, the hours and the places left — none of
+                          which a catalogue can answer, because none of them is
+                          a property of the course. They belong to the
+                          offering, and this is the first time this screen has
+                          had one to read.
+                          -------------------------------------------------- */}
+                      {c.offering && (
+                        <span className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1
+                                         text-xs text-[#6b6076] dark:text-[#9c93ad]">
+                          <span className="flex items-center gap-1">
+                            <User size={11} />
+                            {c.offering.lecturer ?? 'No lecturer assigned'}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Clock size={11} />
+                            {whenIsIt(c.offering.classes)}
+                          </span>
+                          <span>{c.offering.deliveryMode}</span>
+                          {c.offering.campus && <span>{c.offering.campus}</span>}
+                          <span className={
+                            c.offering.placesLeft !== null && c.offering.placesLeft <= 3
+                              ? 'font-medium text-[#a07c12]' : ''
+                          }>
+                            {/* NULL IS NOT ZERO. An offering with no ceiling
+                                has no places left to count. */}
+                            {c.offering.maxEnrolment === null
+                              ? `${c.offering.registered} registered · no limit`
+                              : `${c.offering.placesLeft} of ${c.offering.maxEnrolment} places left`}
+                          </span>
                         </span>
+                      )}
+
+                      {/* THE REASON, BESIDE THE COURSE. One sentence per
+                          reason, naming what is missing. A course refused
+                          because the class is full is called out separately
+                          from one refused on prerequisites — they send the
+                          student to two different offices. */}
+                      {!c.meetsPrerequisites && c.missing.length >= 0
+                        && c.reasons.filter((r) => r !== c.unavailable).length > 0 && (
+                        <span className="mt-1 block text-xs text-[#a07c12]">
+                          {c.reasons.filter((r) => r !== c.unavailable).join(' ')}
+                        </span>
+                      )}
+                      {c.unavailable && (
+                        <span className="mt-1 block text-xs font-medium text-[#a07c12]">
+                          {c.unavailable}
+                        </span>
+                      )}
+
+                      {/* A CHOICE OF CLASS, only where there is one to make.
+                          An offering with a single class needs no picker and
+                          the route attaches it without being asked. */}
+                      {c.offering && c.offering.classes.length > 1
+                        && c.eligible && !c.alreadyRegistered && (
+                        <select
+                          value={sections[c.id] ?? ''}
+                          aria-label={`Class for ${c.code}`}
+                          onChange={(e) => setSections({ ...sections, [c.id]: e.target.value })}
+                          className={`${INPUT} mt-2 text-xs`}
+                        >
+                          <option value="">Any class</option>
+                          {c.offering.classes.map((s) => (
+                            <option key={s.id} value={s.id}>
+                              Class {s.code}
+                              {s.dayOfWeek
+                                ? ` — ${DAYS[s.dayOfWeek]} ${hhmm(s.startsAt)}–${hhmm(s.endsAt)}`
+                                : ''}
+                            </option>
+                          ))}
+                        </select>
                       )}
                     </span>
                   </label>

@@ -15,6 +15,7 @@ import {
   FileText, Award, Monitor, PenTool, FolderOpen, BarChart3,
   Settings, Shield, BookMarked, Wallet, Stamp, UserCog, Inbox,
   ClipboardCheck, Share2, BadgeCheck, Video, Eye, CalendarClock, TrendingUp,
+  CalendarDays,
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -123,6 +124,16 @@ export const menuGroups: MenuGroup[] = [
       // course is taught as part of a programme, a registration is against a
       // curriculum, a timetable schedules a cohort reading one.
       // ---------------------------------------------------------------
+      // THE CONTROL CENTRE FIRST. The University asked for "an Academic
+      // Overview that acts as a control centre" — and a control centre below
+      // the things it controls is a report nobody opens.
+      {
+        id: 'academic-overview',
+        label: 'Academic overview',
+        icon: <LayoutDashboard size={18} />,
+        roles: ['superadmin', 'admin', 'chancellor', 'vice-chancellor', 'registrar',
+          'dean', 'hod', 'programme-coordinator', 'academic-office'],
+      },
       {
         id: 'programmes-register',
         label: 'Programmes',
@@ -139,6 +150,20 @@ export const menuGroups: MenuGroup[] = [
       },
       { id: 'programme-resources', label: 'Programme resources', icon: <BookMarked size={18} />, roles: ACADEMIC },
       { id: 'courses', label: 'Courses', icon: <BookOpen size={18} />, roles: ACADEMIC },
+      // COURSES IS THE CATALOGUE. THIS IS THE TERM.
+      //
+      // Two entries because they are two things, which is the distinction the
+      // University drew: "separate Course from Course Offering from Class from
+      // Student Registration." What BIS 220 is does not change between years;
+      // who teaches it, when it meets and how many places it has change every
+      // year, and none of them could be recorded at all before 063.
+      {
+        id: 'course-offerings',
+        label: 'Course offerings',
+        icon: <CalendarClock size={18} />,
+        roles: ['superadmin', 'admin', 'registrar', 'dean', 'hod',
+          'programme-coordinator', 'academic-office'],
+      },
       // REGISTRATION IS NOT COURSE MANAGEMENT. 'Courses' is the catalogue —
       // what the University teaches. This is who is taking what, which is the
       // act that fills `enrollments` and therefore the mark sheet, the
@@ -154,7 +179,17 @@ export const menuGroups: MenuGroup[] = [
         icon: <ClipboardList size={18} />,
         roles: ['student', 'superadmin', 'admin', 'registrar', 'hod', 'programme-coordinator'],
       },
-      { id: 'timetable', label: 'Timetable', icon: <ClipboardList size={18} />, roles: ACADEMIC },
+      // THE TIMETABLE IS NOW THE CLASSES THAT EXIST, not a list of slots typed
+      // in beside them. Attendance keeps its own entry: it was only ever part
+      // of this screen because this screen invented the slots it marked
+      // against, and those slots matched no course, no lecturer and no room.
+      { id: 'timetable', label: 'Timetable', icon: <CalendarDays size={18} />, roles: ACADEMIC },
+      {
+        id: 'attendance',
+        label: 'Attendance',
+        icon: <UserCheck size={18} />,
+        roles: ['superadmin', 'admin', 'lecturer', 'registrar', 'academic-office'],
+      },
       { id: 'lms', label: 'Learning (LMS)', icon: <Monitor size={18} />, roles: ALL },
     ],
   },

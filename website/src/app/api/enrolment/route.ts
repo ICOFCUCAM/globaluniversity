@@ -3,9 +3,37 @@
 //
 //   POST /api/enrolment  { action, ... }
 //
-//   register { studentId, courseIds[], academicYear, semester }
+//   register { studentId, courseIds[], academicYear, semester, sections{} }
 //   drop     { enrollmentId, reason }
 //   offer    { studentId, academicYear, semester }  what they may take, and why not
+//
+// ---------------------------------------------------------------------------
+// A REGISTRATION IS AGAINST AN OFFERING, NOT AGAINST A COURSE
+// ---------------------------------------------------------------------------
+//
+// The University drew the distinction itself: a COURSE is what the catalogue
+// describes, an OFFERING is that course running in a named term, a CLASS is a
+// group inside it meeting at an hour in a room, and a REGISTRATION is a
+// student attached to one of those.
+//
+// Until 063 there was only the first and the last, so "register for BIS 220"
+// meant registering for the idea of the course. There was no lecturer to teach
+// it, no hour to attend, and no ceiling — a course with twenty seats could take
+// two hundred registrations and nothing anywhere would notice.
+//
+// So this route now asks a second question after eligibility: IS IT ON OFFER?
+// Five answers that had nowhere to live before: not offered this term, not open
+// yet, closed, cancelled, and full.
+//
+// ---------------------------------------------------------------------------
+// AND IF NOTHING HAS BEEN SET UP, IT DOES NOT BLOCK THE DOOR
+// ---------------------------------------------------------------------------
+//
+// 063 seeded no offerings, on purpose — which term runs which course is the
+// University's to say, not a migration's to invent. A term with no offerings
+// at all therefore falls back to the whole catalogue, and says so
+// (`offeringsConfigured: false`) so the screen can tell the reader WHY the
+// lecturer column is empty rather than leaving them to guess.
 //
 // ---------------------------------------------------------------------------
 // THE ACT NOTHING COULD PERFORM
@@ -47,6 +75,11 @@ import { supabaseUrl as SUPABASE_URL } from '@/lib/supabase';
 import { can, type Capability } from '@/lib/roles';
 import type { UserRole } from '@/lib/types';
 import { checkEligibility, type CourseRequirement } from '@/lib/prerequisites';
+// THE RULE LIVES IN A LIBRARY BECAUSE A ROUTE FILE CANNOT EXPORT ONE. Next.js
+// rejects any export from a route beyond its handlers and runtime flags, so a
+// rule written here could never be imported by a test — and a rule nobody has
+// watched refuse anything is a rule nobody has tested.
+import { whyNot, sectionFor, type OfferingFacts } from '@/lib/courseOffering';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -62,6 +95,10 @@ const MIN_DROP_REASON = 8;
 // GenericStringError[], silently and with no error at the call site.
 // eslint-disable-next-line max-len
 const COURSE = 'id, code, title, credit_unit, prerequisites, requires_mode, requires_ects, semester, year';
+const OFFERING = 'id, course_id, status, delivery_mode, campus, max_enrolment, lecturer_id';
+// eslint-disable-next-line max-len
+const ROLL = 'offering_id, course_code, lecturer, registered, places_left, max_enrolment, starts_in, term_sequence';
+const SECTION = 'id, offering_id, code, day_of_week, starts_at, ends_at';
 
 // EVERY ACTION NEEDS `register-courses`, and the difference between a student
 // and the Registry is WHOSE record may be touched, checked below. Splitting it
@@ -141,6 +178,74 @@ export async function POST(request: Request) {
     const { data: courseRows } = await admin.from('courses').select(COURSE).order('code');
     const courses = (courseRows ?? []) as unknown as Row[];
 
+    // ---- WHAT IS ACTUALLY ON OFFER THIS TERM ------------------------------
+    //
+    // Read flat and joined here rather than through one embedded select. The
+    // two reads are small and the join is a Map; an embedded select that
+    // resolves the wrong foreign key returns rows with a null child and no
+    // error, which is the failure nobody sees.
+    //
+    // THE TERM IS OPTIONAL, because `offer` is also asked with no term at all
+    // by a screen that has not chosen one yet. Without one there are no
+    // offerings to find and the catalogue answer stands.
+    const termYear = Number(body.academicYear ?? 0) || null;
+    const termSeq = Number(body.semester ?? 0) || null;
+
+    const offerings = new Map<string, OfferingFacts>();
+    if (termYear && termSeq) {
+      const { data: yearRow } = await admin.from('academic_years')
+        .select('id, label').eq('starts_in', termYear).maybeSingle();
+      const yearId = ((yearRow as Row | null)?.id as string | null) ?? null;
+
+      if (yearId) {
+        const [{ data: offRows }, { data: rollRows }] = await Promise.all([
+          admin.from('course_offerings').select(OFFERING)
+            .eq('academic_year_id', yearId).eq('term_sequence', termSeq),
+          admin.from('course_offering_roll').select(ROLL)
+            .eq('starts_in', termYear).eq('term_sequence', termSeq),
+        ]);
+
+        const roll = new Map(
+          ((rollRows ?? []) as Row[]).map((r) => [String(r.offering_id), r]),
+        );
+        // The classes, so a student can be told WHEN as well as WHETHER.
+        const offIds = ((offRows ?? []) as Row[]).map((o) => String(o.id));
+        const { data: sectionRows } = offIds.length === 0
+          ? { data: [] as Row[] }
+          : await admin.from('class_sections').select(SECTION).in('offering_id', offIds);
+
+        for (const o of (offRows ?? []) as Row[]) {
+          const r = roll.get(String(o.id));
+          offerings.set(String(o.course_id), {
+            offeringId: String(o.id),
+            status: String(o.status),
+            deliveryMode: String(o.delivery_mode ?? ''),
+            campus: (o.campus as string | null) ?? null,
+            lecturer: (r?.lecturer as string | null) ?? null,
+            maxEnrolment: (o.max_enrolment as number | null) ?? null,
+            registered: Number(r?.registered ?? 0),
+            // NULL IS NOT ZERO. An offering with no ceiling has no places left
+            // to count, and a screen reading that as zero closes a course
+            // nobody limited.
+            placesLeft: r?.places_left == null ? null : Number(r.places_left),
+            classes: ((sectionRows ?? []) as Row[])
+              .filter((s) => String(s.offering_id) === String(o.id))
+              .map((s) => ({
+                id: String(s.id),
+                code: String(s.code),
+                dayOfWeek: s.day_of_week == null ? null : Number(s.day_of_week),
+                startsAt: (s.starts_at as string | null) ?? null,
+                endsAt: (s.ends_at as string | null) ?? null,
+              })),
+          });
+        }
+      }
+    }
+
+    // A TERM NOBODY HAS SET UP YET is not a term in which everything is
+    // refused. See the header.
+    const offeringsConfigured = offerings.size > 0;
+
     // ---- WHAT THE STUDENT HAS ACTUALLY PASSED ----------------------------
     //
     // APPROVED RESULTS ONLY. A mark that has been entered but not approved is
@@ -198,6 +303,14 @@ export async function POST(request: Request) {
         passed, creditsEarned, registeringFor,
       });
       const on = enrolled.get(String(c.id));
+
+      // ELIGIBILITY AND AVAILABILITY ARE TWO DIFFERENT QUESTIONS, and both
+      // answers are kept. A student refused because a class is full has met
+      // every academic condition, and telling them "you are not eligible"
+      // sends them to the wrong office.
+      const offering = offerings.get(String(c.id));
+      const unavailable = whyNot(offering, offeringsConfigured);
+
       return {
         id: c.id,
         code: c.code,
@@ -205,9 +318,12 @@ export async function POST(request: Request) {
         creditUnit: c.credit_unit,
         semester: c.semester,
         year: c.year,
-        eligible: verdict.eligible,
-        reasons: verdict.reasons,
+        eligible: verdict.eligible && unavailable === null,
+        meetsPrerequisites: verdict.eligible,
+        reasons: unavailable ? [...verdict.reasons, unavailable] : verdict.reasons,
         missing: verdict.missing,
+        unavailable,
+        offering: offering ?? null,
         alreadyRegistered: Boolean(on),
         enrollmentId: on?.enrollment_id ?? null,
       };
@@ -215,7 +331,7 @@ export async function POST(request: Request) {
 
     if (action === 'offer') {
       return NextResponse.json({
-        ok: true, studentId, passed, creditsEarned, courses: verdicts,
+        ok: true, studentId, passed, creditsEarned, offeringsConfigured, courses: verdicts,
       });
     }
 
@@ -224,8 +340,8 @@ export async function POST(request: Request) {
     // =======================================================================
     if (wanted.length === 0) return bad('nothing-chosen', 400, 'Choose at least one course.');
 
-    const year = Number(body.academicYear ?? 0) || null;
-    const semester = Number(body.semester ?? 0) || null;
+    const year = termYear;
+    const semester = termSeq;
     if (!year || !semester) {
       return bad('no-term', 400,
         'A registration belongs to a term. Without the year and the semester it cannot be '
@@ -262,20 +378,38 @@ export async function POST(request: Request) {
     // THE DROP FIELDS ARE CLEARED IN THE SAME STATEMENT. 054 refuses a row
     // that is registered and dropped at once, which is precisely the mistake
     // an upsert that only set the status would make.
+    //
+    // AND THE OFFERING IS RECORDED WITH THE REGISTRATION. That is the link
+    // 063 added and nothing wrote: without it a registration names a course
+    // but not the class, so no mark sheet can be produced from a lecturer's
+    // own list and no room can be sized from its roll.
+    //
+    // `sections` is optional. A student may choose a class where the offering
+    // has more than one; where it has exactly one, this picks it for them
+    // rather than leaving the link half made.
+    const askedSections = (body.sections ?? {}) as Record<string, unknown>;
+
     const now = new Date().toISOString();
-    const rows = chosen.map((c) => ({
-      student_id: studentId,
-      course_id: c.id as string,
-      academic_year: year,
-      semester,
-      status: 'registered',
-      enrolled_at: now,
-      registered_by: caller.id,
-      registered_via: isRegistry ? 'registry' : 'self',
-      dropped_at: null,
-      dropped_by: null,
-      drop_reason: null,
-    }));
+    const rows = chosen.map((c) => {
+      const o = offerings.get(String(c.id));
+      const asked = askedSections[String(c.id)] ? String(askedSections[String(c.id)]) : null;
+      const section = sectionFor(o, asked);
+      return {
+        student_id: studentId,
+        course_id: c.id as string,
+        academic_year: year,
+        semester,
+        status: 'registered',
+        enrolled_at: now,
+        registered_by: caller.id,
+        registered_via: isRegistry ? 'registry' : 'self',
+        offering_id: o?.offeringId ?? null,
+        section_id: section,
+        dropped_at: null,
+        dropped_by: null,
+        drop_reason: null,
+      };
+    });
 
     const { error } = await admin.from('enrollments')
       .upsert(rows, { onConflict: 'student_id,course_id,academic_year,semester' });
