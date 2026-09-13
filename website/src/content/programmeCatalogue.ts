@@ -493,7 +493,7 @@ export const LEVEL_COPY: Record<AwardLevel, LevelCopy> = {
   },
   "Bachelor's": {
     lead: 'Undergraduate degree programmes',
-    body: 'A bachelor’s degree is the university’s full undergraduate award: three to four years of study taken to depth, ending in a substantial piece of independent work and qualifying its holder for graduate study.',
+    body: 'A bachelor’s degree is the university’s full undergraduate award: three years of study taken to depth, ending in a substantial piece of independent work and qualifying its holder for graduate study.',
     progression: 'A bachelor’s degree is the gateway to graduate study. Holders may proceed to a postgraduate diploma or directly to a master’s programme, subject to faculty regulations.',
     careers: 'Graduates hold professional and leadership positions across these sectors, and many continue into master’s study.',
   },
@@ -626,10 +626,32 @@ const LEVEL_CREDITS: Partial<Record<AwardLevel, number>> = {
  * enforced on rows that exist, not on rows nobody has written yet.
  */
 
+/**
+ * THE BACHELOR'S IS THREE YEARS, AND THIS SAID "THREE TO FOUR".
+ *
+ * The University has ruled it twice — once as a standing rule, and again
+ * explicitly: "bachelor of theology is 3years. work everything toward that.
+ * even the transcript is three years."
+ *
+ * Everything the University has actually BUILT already agreed. The Bachelor of
+ * Theology curriculum runs years 1–3, six semesters, 36 courses, 180 credits.
+ * `bachelorOfTheologyCreditCurriculum.duration` reads "Three years".
+ * `bachelorOfMinistryCurriculum.duration` reads "3 years · 6 semesters". The
+ * specimen transcript prints three years and six semesters.
+ *
+ * Only the published marketing copy said four — here and in
+ * institutionalFacts.ts — so a prospective student read one number on the
+ * website and a graduate held a transcript showing another. That is the worst
+ * place for this kind of drift, because the transcript is the document somebody
+ * else verifies.
+ *
+ * `programmeDurationYears.test.mjs` now measures the published string against
+ * the curriculum that is actually built, so the two cannot separate again.
+ */
 const LEVEL_DURATION: Record<string, string> = {
   Certificate: 'Up to one academic year',
   Diploma: DIPLOMA_DURATION,
-  Bachelor: 'Three to four academic years',
+  Bachelor: 'Three academic years',
   Master: 'One to two academic years',
   Doctorate: 'Three or more academic years of supervised research',
 };

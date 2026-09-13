@@ -55,22 +55,39 @@ begin
   -- with 23502. This file leaned on a default that only the local test stub
   -- had, which is the same defect 055 shipped with and the University hit in
   -- the SQL editor. The stub no longer has it, which is what surfaced this.
-  someone  := gen_random_uuid();
-  vc       := gen_random_uuid();
-  reviewer := gen_random_uuid();
-  insert into auth.users (id, email) values (someone,  'scenario-drafter@example.test');
-  insert into auth.users (id, email) values (vc,       'scenario-vc@example.test');
-  insert into auth.users (id, email) values (reviewer, 'scenario-reviewer@example.test');
-
-  -- ASSERTED RATHER THAN ASSUMED. If these three were ever to collapse into
-  -- fewer — a future change to how they are made — the scenarios must stop
-  -- rather than silently test a weaker arrangement.
-  if someone is null or vc is null or reviewer is null
-     or someone = vc or someone = reviewer or vc = reviewer then
-    raise exception 'SCENARIO SETUP FAILED: the three actors are not three distinct accounts';
-  end if;
-
+  -- ---------------------------------------------------------------------
+  -- INSIDE THE SAVEPOINT, AND THIS FILE RAN ONCE PER DATABASE UNTIL IT WAS.
+  --
+  -- The rollback at the foot of this file is an EXCEPTION out of the block
+  -- that opens below, so it undoes only what that block did. These three
+  -- accounts were created ABOVE it and were therefore committed — and
+  -- auth.users.email is unique, so the second run of the scenarios against the
+  -- same database died on
+  --
+  --     duplicate key value violates unique constraint "users_email_key"
+  --
+  -- which reads like a broken test rather than a fixture left behind. Every
+  -- scratch database hid it by being new.
+  --
+  -- The comment four lines up already claimed "the whole block rolls back, so
+  -- these three exist for the length of the proof and no longer". Now it is
+  -- true.
+  -- ---------------------------------------------------------------------
   begin
+    someone  := gen_random_uuid();
+    vc       := gen_random_uuid();
+    reviewer := gen_random_uuid();
+    insert into auth.users (id, email) values (someone,  'scenario-drafter@example.test');
+    insert into auth.users (id, email) values (vc,       'scenario-vc@example.test');
+    insert into auth.users (id, email) values (reviewer, 'scenario-reviewer@example.test');
+
+    -- ASSERTED RATHER THAN ASSUMED. If these three were ever to collapse into
+    -- fewer — a future change to how they are made — the scenarios must stop
+    -- rather than silently test a weaker arrangement.
+    if someone is null or vc is null or reviewer is null
+       or someone = vc or someone = reviewer or vc = reviewer then
+      raise exception 'SCENARIO SETUP FAILED: the three actors are not three distinct accounts';
+    end if;
     -- =====================================================================
     -- SCENARIO A — HR creates, submits, the VC approves, issues, archives
     -- =====================================================================

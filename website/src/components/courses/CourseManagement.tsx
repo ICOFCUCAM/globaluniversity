@@ -6,6 +6,24 @@ import {
   Search, Plus, Filter, BookOpen, Clock, Users, X, ChevronDown
 } from 'lucide-react';
 
+/**
+ * What the header says, counted from the rows on screen.
+ *
+ * Says "no courses yet" for an empty table rather than a confident count of
+ * nothing, and names the span it actually finds — so a catalogue that runs to
+ * three years says three, and one that runs to one says one.
+ */
+function courseSpan(courses: Course[]): string {
+  if (courses.length === 0) return 'No courses in the catalogue yet';
+  // Array.from rather than spreading the Set: this project's tsconfig targets
+  // below es2015, where spreading a Set needs --downlevelIteration.
+  const years = Array.from(new Set(courses.map((c) => c.year).filter(Boolean)));
+  const n = courses.length;
+  const subject = `${n} course${n === 1 ? '' : 's'}`;
+  if (years.length === 0) return `${subject}, none placed in a year of study`;
+  return `${subject} across ${years.length} year${years.length === 1 ? '' : 's'} of study`;
+}
+
 export default function CourseManagement() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,7 +83,18 @@ export default function CourseManagement() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="font-heading text-xl font-bold text-[#422e59] dark:text-[#e4dcf0]">Course Management</h2>
-          <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">{courses.length} courses across 4 years</p>
+          {/* -----------------------------------------------------------
+              COUNTED, NOT ASSERTED. This read "courses across 4 years" as a
+              literal, on a screen listing courses whose `year` column the
+              component was already holding. It was wrong twice over: the
+              University's Bachelor's is THREE years, and the number had
+              nothing to do with the rows on screen anyway — it would have
+              said 4 for an empty table.
+
+              A figure printed beside real data that is not derived from it is
+              worse than no figure, because it is read as a count.
+              ----------------------------------------------------------- */}
+          <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">{courseSpan(courses)}</p>
         </div>
         <button onClick={() => setShowAddModal(true)}
           className="flex items-center gap-2 px-4 py-2.5 bg-[#422e59] text-white rounded-xl text-sm font-medium hover:bg-[#322244] transition-colors shadow-lg shadow-purple-900/20">

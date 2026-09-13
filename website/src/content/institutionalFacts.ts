@@ -248,7 +248,7 @@ export const PATHWAY = [
   },
   {
     award: 'Bachelor’s',
-    duration: 'Three to four years',
+    duration: 'Three years',
     note: 'The full undergraduate degree, and the gateway to graduate study.',
     href: '/degrees/bachelors-degrees',
   },
