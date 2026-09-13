@@ -281,6 +281,7 @@ export type ViewType =
   | 'appointments-board'
   | 'correspondence'
   | 'document-templates'
+  | 'job-descriptions'
   | 'dashboard' 
   | 'students' 
   | 'lecturers' 

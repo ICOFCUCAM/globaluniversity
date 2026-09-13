@@ -39,6 +39,7 @@ import AppointmentDashboard from './hr/AppointmentDashboard';
 import Appointments from './hr/Appointments';
 import CorrespondenceCenter from './correspondence/CorrespondenceCenter';
 import DocumentTemplates from './admin/DocumentTemplates';
+import JobDescriptions from './admin/JobDescriptions';
 import TimetableModule from './timetable/TimetableModule';
 import ForumModule from './forum/ForumModule';
 import FeeModule from './fees/FeeModule';
@@ -227,6 +228,8 @@ export default function AppLayout() {
         return <CorrespondenceCenter />;
       case 'document-templates':
         return <DocumentTemplates />;
+      case 'job-descriptions':
+        return <JobDescriptions />;
       case 'timetable':
         return <TimetableModule />;
       case 'forum':

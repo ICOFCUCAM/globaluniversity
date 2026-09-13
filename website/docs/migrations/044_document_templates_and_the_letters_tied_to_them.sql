@@ -247,8 +247,14 @@ begin
   end if;
 
   begin
+    -- VERSION 9001, NOT 1. 052 seeds a first draft of every document kind at
+    -- version 1, so a proof claiming version 1 of 'promotion' collided with it
+    -- on the SECOND run of RUN-ALL — clean on the first, a duplicate-key error
+    -- on the next. The same high-number idiom the appointment proofs use for
+    -- their references, and for the same reason: a proof must not compete for
+    -- a value the University's own data occupies.
     insert into document_templates (kind, version, name, body, created_by)
-    values ('promotion', 1, 'Promotion Letter',
+    values ('promotion', 9001, 'Promotion Letter',
             'Dear {{full_name}}, we are pleased to promote you to {{position_title}}.',
             someone)
     returning id into t_id;
@@ -293,13 +299,13 @@ begin
     -- Two would mean the generator had to choose, and whichever it chose would
     -- be wrong half the time — silently, because both are real templates.
     insert into document_templates (kind, version, name, body, created_by)
-    values ('promotion', 2, 'Promotion Letter',
+    values ('promotion', 9002, 'Promotion Letter',
             'Dear {{full_name}}, the University is pleased to promote you.', someone);
     refused := false;
     begin
       update document_templates set status = 'active', activated_by = other,
                                     activated_at = now()
-       where kind = 'promotion' and version = 2;
+       where kind = 'promotion' and version = 9002;
     exception when others then refused := true;
     end;
     if not refused then

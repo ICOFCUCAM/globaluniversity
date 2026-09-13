@@ -33,6 +33,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { can } from '@/lib/roles';
 import { supabase } from '@/lib/supabase';
+import { authedPost } from '@/lib/authedFetch';
 import { BTN_PRIMARY, BTN_SECONDARY, INPUT, LABEL, FOCUS } from '@/lib/portalTheme';
 import { AlertTriangle, Check, FileText, Loader2, Plus } from 'lucide-react';
 import {
@@ -99,13 +100,7 @@ export default function DocumentTemplates() {
     setBusy(label);
     setNote(null);
     try {
-      const r = await fetch('/api/admin/document-template', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(payload),
-      });
-      const j = await r.json();
+      const j = await authedPost('/api/admin/document-template', payload);
       if (!j.ok) {
         setNote({ kind: 'bad', text: j.detail ?? j.error ?? 'That was refused.' });
         return false;

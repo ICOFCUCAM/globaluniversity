@@ -131,6 +131,12 @@ console.log('\nAnd what it cannot see, it says so about\n');
       // 036 widens the audit trail's event vocabulary. Nothing readable
       // changes, which is exactly the case this list exists for.
       '036_the_steps_nothing_could_write.sql',
+      // 052 seeds ROWS into a table 051 already created. The probe mechanism
+      // looks for tables and columns and can see neither the presence of a
+      // seeded row nor its absence — so it says so, and names the count to run
+      // by hand, rather than reporting the drafts as present because the table
+      // is.
+      '052_a_first_draft_of_every_document.sql',
     ]);
   check('…and carries the check to run by hand',
     blind.every((p) => /select|pg_constraint/i.test(p.cannotSee)), true);
