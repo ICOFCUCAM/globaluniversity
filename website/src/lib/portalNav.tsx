@@ -15,7 +15,7 @@ import {
   FileText, Award, Monitor, PenTool, FolderOpen, BarChart3,
   Settings, Shield, BookMarked, Wallet, Stamp, UserCog, Inbox,
   ClipboardCheck, Share2, BadgeCheck, Video, Eye, CalendarClock, TrendingUp,
-  CalendarDays, MapPin,
+  CalendarDays, MapPin, Building2,
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -132,6 +132,17 @@ export const menuGroups: MenuGroup[] = [
         id: 'academic-overview',
         label: 'Academic overview',
         icon: <LayoutDashboard size={18} />,
+        roles: ['superadmin', 'admin', 'chancellor', 'vice-chancellor', 'registrar',
+          'dean', 'hod', 'programme-coordinator', 'academic-office'],
+      },
+      // THE TREE, TOP DOWN. Schools and departments come before programmes
+      // because a programme belongs to a department and a department to a
+      // school — and a navigation that lists the leaves above the branches is
+      // the same fault the University raised about this section.
+      {
+        id: 'academic-structure',
+        label: 'Schools & departments',
+        icon: <Building2 size={18} />,
         roles: ['superadmin', 'admin', 'chancellor', 'vice-chancellor', 'registrar',
           'dean', 'hod', 'programme-coordinator', 'academic-office'],
       },

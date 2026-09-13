@@ -327,6 +327,11 @@ export type ViewType =
   // what is LEFT, which needs 057's curriculum, 057's programme_version_id on
   // the student, and 067's views over the two.
   | 'academic-records'
+  // THE TOP OF THE TREE. `schools` was seeded by 060 and written by nothing;
+  // `departments` has existed since 001 with no way to create one. So the
+  // portal showed forty-one programmes and not the five schools they hang
+  // from — the University's original objection, one level up.
+  | 'academic-structure'
   // ATTENDANCE, SEPARATED FROM THE TIMETABLE. They were one screen because the
   // timetable kept its own invented slots; now that a class is a row every
   // other screen can read, marking who attended one is its own job.

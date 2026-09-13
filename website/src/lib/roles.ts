@@ -148,6 +148,20 @@ export const OPERATIONAL_CAPABILITIES = [
   // RECORD, so it sits with the Registry.
   // ---------------------------------------------------------------------
   'manage-academic-calendar',
+  // ---------------------------------------------------------------------
+  // THE TOP OF THE TREE: schools, faculties and departments.
+  //
+  // The University's own ordering — University, then School or Faculty, then
+  // Department, then Study Programme — makes this the most structural act in
+  // the academic domain. Creating a Faculty is closer to a constitutional
+  // change than to running a term, and `manage-courses` is held by every
+  // programme coordinator.
+  //
+  // A department is where a lecturer, a course and a programme all hang from.
+  // Archiving one is not a tidy-up; it is a statement about what the
+  // University teaches.
+  // ---------------------------------------------------------------------
+  'manage-academic-structure',
   // The social pipeline. COMPOSING and PUBLISHING are operational — this is
   // the university talking about itself, which is an administrator's job.
   // ---------------------------------------------------------------------
@@ -693,6 +707,8 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
     // The year boundary is a fact about the academic record, and the academic
     // record is the Registry's. See the capability's own note.
     'manage-academic-calendar',
+    // And the shape of the tree the record hangs from.
+    'manage-academic-structure',
   ],
 
   // The Head of Academic Affairs approves admissions and SIGNS the admission
@@ -718,9 +734,23 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
     'issue-credential',
     'forward-credential',
     'set-admission-openings',
-    // The year boundary is a fact about the academic record, and the academic
-    // record is the Registry's. See the capability's own note.
-    'manage-academic-calendar',
+    // THE ACADEMIC CALENDAR IS DELIBERATELY NOT HERE.
+    //
+    // It landed on this office once, by accident: a find-and-replace matched
+    // the last three lines of the Registrar's list, which this office's list
+    // ends with too, and granted `manage-academic-calendar` to both. Nothing
+    // failed, nothing was logged, and the commit message said the capability
+    // was the Registry's alone. That is the exact shape of the accidental
+    // privilege grant this file exists to make visible.
+    //
+    // The reasoning stands as written: the year boundary is a fact about the
+    // academic RECORD, and the record is the Registry's. This office decides
+    // admissions and shapes the curriculum; it does not declare which year the
+    // University is in.
+    //
+    // It does hold `manage-academic-structure` below, because the shape of the
+    // academic tree IS its work.
+    'manage-academic-structure',
   ],
 
   // Approves moderated marks on behalf of the faculty. Third of four.
