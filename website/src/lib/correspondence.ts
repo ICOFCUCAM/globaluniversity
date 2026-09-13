@@ -160,6 +160,14 @@ export interface Correspondence {
   /** A postal address, because a letter to a ministry is often posted. */
   recipient_address?: string | null;
   /**
+   * A number the letter can be handed to WhatsApp for.
+   *
+   * WITH A COUNTRY CODE OR IT REACHES NOBODY, and unvalidated here for the
+   * reason 079 gives: the University writes abroad, and a pattern fitted to
+   * one country would refuse correct numbers from every other.
+   */
+  recipient_phone?: string | null;
+  /**
    * 'plain' or 'html'.
    *
    * HTML is what the rich-text editor produced, sanitised against a closed

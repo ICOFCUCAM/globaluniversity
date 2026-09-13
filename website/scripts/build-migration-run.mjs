@@ -250,6 +250,11 @@ const MARKERS = {
   // post-holder does, not what the University and the post-holder owe each
   // other.
   '078': 'appointment_condition_sets',
+  // The column an official letter needs before it can go anywhere by WhatsApp.
+  // Not the event word: a CHECK constraint's text is what `def:` reads, and
+  // both vocabularies are rewritten wholesale, so a column is the cleaner
+  // thing to point at.
+  '079': 'correspondence.recipient_phone',
 };
 
 /** The SQL that answers "is this one here?", for each of the three forms. */

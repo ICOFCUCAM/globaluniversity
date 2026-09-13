@@ -762,6 +762,17 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
       + 'left empty rather than invented.',
     table: 'appointment_condition_sets',
   },
+  {
+    file: '079_sending_a_document_by_whatsapp.sql',
+    what: 'A LETTER CAN BE SENT BY WHATSAPP, AND THE SYSTEM RECORDS THAT IT WAS. Both event '
+      + 'vocabularies gain ‘WHATSAPP_HANDED_OVER’, and an official letter can carry '
+      + 'a phone number to send to. What is recorded is what is known: WHO handed the letter '
+      + 'to WhatsApp, WHEN, and to WHICH number — never that it was delivered, because '
+      + 'the officer’s own WhatsApp does the sending and this system cannot see whether '
+      + 'they pressed send. `delivery` is deliberately untouched.',
+    table: 'correspondence',
+    column: 'recipient_phone',
+  },
 ];
 
 /** What a probe came back as. */

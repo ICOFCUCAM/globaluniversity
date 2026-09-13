@@ -56,6 +56,9 @@ import {
   MIN_AMENDMENT_REASON, type AppointmentEvent, type AppointmentAction, type Allowance,
 } from '@/lib/appointments';
 import type { Capability } from '@/lib/roles';
+import {
+  whatsappNumber, whyNotWhatsApp, whatsappUrl, appointmentMessage,
+} from '@/lib/whatsapp';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -78,13 +81,18 @@ const CAPABILITY: Record<string, Capability> = {
   generate: 'draft-appointment' as Capability,
   issue: 'issue-appointment-letter' as Capability,
   email: 'issue-appointment-letter' as Capability,
+  // SENDING IT BY WHATSAPP IS SENDING IT. Same authority as the email: the
+  // office that may put a letter of appointment in front of somebody decides
+  // how it travels, and a lower bar for one route than the other would mean
+  // the route somebody used was decided by which permission they held.
+  whatsapp: 'issue-appointment-letter' as Capability,
   amend: 'issue-appointment-letter' as Capability,
 };
 
 // A SINGLE STRING LITERAL. Concatenation collapses the supabase-js row type to
 // GenericStringError[], silently and with no error at the call site.
 // eslint-disable-next-line max-len
-const APPOINTMENT = 'id, full_name, email, postal_address, position_title, unit_name, faculty, employment_type, appointment_action, start_date, end_date, effective_date, probation_months, place_of_duty, reports_to_name, working_hours, appointing_authority, authority_decided_on, terms, salary_amount, salary_currency, salary_period, status, drafted_by, authorized_by, authorized_at, issued_at, position_id, terms_template_id';
+const APPOINTMENT = 'id, full_name, email, phone, postal_address, position_title, unit_name, faculty, employment_type, appointment_action, start_date, end_date, effective_date, probation_months, place_of_duty, reports_to_name, working_hours, appointing_authority, authority_decided_on, terms, salary_amount, salary_currency, salary_period, status, drafted_by, authorized_by, authorized_at, issued_at, position_id, terms_template_id';
 // eslint-disable-next-line max-len
 const LETTER = 'id, appointment_id, reference, version, issued_on, html, content_hash, sealed, seal_code, to_email, delivery, delivery_detail, attempts, superseded_at, signatory_name, signatory_role';
 
@@ -668,6 +676,71 @@ export async function POST(request: Request) {
       delivery: result.sent ? 'sent' : 'failed',
       attempts: Number(letter.attempts ?? 0) + 1,
       ...(result.sent ? {} : { detail: result.detail ?? result.reason }),
+    });
+  }
+
+  // =========================================================================
+  // WHATSAPP — hand the letter to the officer's own WhatsApp, and say so
+  // =========================================================================
+  //
+  // THIS ROUTE DOES NOT SEND ANYTHING. It works out the number, composes the
+  // message, records that the officer did this, and hands back the address
+  // that opens WhatsApp. The officer's own WhatsApp does the sending.
+  //
+  // WHICH IS WHY `delivery` IS NOT TOUCHED. Whether they then press send, send
+  // it to the right person, or close the window, this system cannot see. 079
+  // sets out the argument: a record asserting a delivery nobody observed is
+  // evidence against the University that was never true. What is recorded is
+  // what is known — who did this, when, and to which number.
+  if (action === 'whatsapp') {
+    const appointment = await loadAppointment(body.id);
+    if (!appointment) return bad('appointment-not-found', 404);
+    if (!appointment.issued_at) {
+      return bad('not-issued', 409,
+        'This appointment has not been issued, so there is no letter to send. Issue it first.');
+    }
+    const letter = await currentLetter(appointment.id as string);
+    if (!letter) return bad('no-letter', 409);
+
+    // THE NUMBER ON THE APPOINTMENT, or one the officer typed for this send.
+    // Typed wins, because a number corrected in the moment is more current
+    // than one recorded when the appointment was drafted.
+    const raw = String(body.phone ?? '').trim() || String(appointment.phone ?? '');
+    const number = whatsappNumber(raw);
+    if (!number) {
+      return bad('no-whatsapp-number', 400, whyNotWhatsApp(raw)
+        ?? 'There is no number on this appointment that WhatsApp could reach.');
+    }
+
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? `https://${UNIVERSITY.website}`;
+    const acceptUrl = letter.seal_code
+      ? `${siteUrl}/accept?reference=${encodeURIComponent(String(letter.reference))}`
+        + `&code=${encodeURIComponent(String(letter.seal_code))}`
+      : null;
+
+    const message = appointmentMessage({
+      name: String(appointment.full_name),
+      positionTitle: String(appointment.position_title),
+      unitName: (appointment.unit_name as string | null) ?? null,
+      reference: printedReference(letter.reference as string),
+      university: UNIVERSITY.name,
+      website: UNIVERSITY.website,
+      acceptUrl,
+    });
+
+    await record(appointment.id as string, 'WHATSAPP_HANDED_OVER', null, null,
+      `Handed to WhatsApp for +${number}`,
+      { reference: letter.reference, number });
+
+    return NextResponse.json({
+      ok: true,
+      url: whatsappUrl(number, message),
+      number,
+      detail: `WhatsApp will open with the message ready for +${number}. It carries the `
+        + 'reference and the verification address, not the letter itself — a forwarded file '
+        + 'proves nothing, and a reference checked on the University’s own site proves '
+        + 'everything. The record shows you handed it over; it does not claim it was '
+        + 'delivered, because nothing here can see that.',
     });
   }
 

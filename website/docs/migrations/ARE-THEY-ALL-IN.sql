@@ -248,6 +248,15 @@ select * from (
   select '078' as migration, '078_the_conditions_every_post_is_appointed_on.sql' as file,
          case when to_regclass('public.appointment_condition_sets') is not null then 'YES' else 'NO' end as landed,
          'appointment_condition_sets' as what_it_creates
+  union all
+  select '079' as migration, '079_sending_a_document_by_whatsapp.sql' as file,
+         case when exists (
+                   select 1 from information_schema.columns
+                    where table_schema = 'public'
+                      and table_name = 'correspondence'
+                      and column_name = 'recipient_phone')
+                 then 'YES' else 'NO' end as landed,
+         'correspondence.recipient_phone' as what_it_creates
 ) as landed_report
  order by migration;
 

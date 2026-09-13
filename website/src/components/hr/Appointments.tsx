@@ -35,6 +35,7 @@ import { can } from '@/lib/roles';
 import { BTN_PRIMARY, BTN_SECONDARY, BTN_GHOST, INPUT, LABEL, FOCUS } from '@/lib/portalTheme';
 import {
   Plus, Loader2, Check, X, AlertTriangle, Users, FileText, Send, Eye, Trash2, Wand2,
+  MessageCircle,
 } from 'lucide-react';
 import {
   EMPLOYMENT_TYPES, EMPLOYMENT_LABELS, CURRENCIES, SALARY_PERIODS, PERIOD_LABELS,
@@ -144,11 +145,31 @@ export default function Appointments() {
   // capability. Folding them together would have hidden the fact that nothing
   // was calling the letter route at all — which is exactly what happened.
   // -------------------------------------------------------------------------
-  async function letter(action: 'issue' | 'email', id: string) {
+  async function letter(action: 'issue' | 'email' | 'whatsapp', id: string) {
     setBusy(true);
     setNotice(null);
+
+    // OPENED BEFORE THE AWAIT, AND ONLY FOR WHATSAPP. A browser blocks
+    // `window.open` that is not the direct consequence of a click, and the
+    // await in the next line is exactly what breaks that chain — so the tab is
+    // claimed here, while the click is still the reason it is happening, and
+    // pointed at the address once the route hands one back.
+    //
+    // A popup blocker that refuses even this is handled below: the address is
+    // put in the notice so the officer can open it themselves.
+    const tab = action === 'whatsapp' ? window.open('', '_blank') : null;
+
     const out = await authedPost('/api/appointments/letter', { action, id });
     setBusy(false);
+
+    if (!out.ok) {
+      tab?.close();
+    }
+
+    if (action === 'whatsapp' && out.ok && typeof out.url === 'string') {
+      if (tab) tab.location.href = out.url;
+      else window.open(out.url, '_blank', 'noopener');
+    }
 
     if (!out.ok) {
       setNotice({
@@ -557,6 +578,25 @@ export default function Appointments() {
                   <button disabled={busy} className={BTN_SECONDARY}
                     onClick={() => void letter('email', a.id)}>
                     <Send size={14} /> {a.issued_at ? 'Send it again' : 'Email it to the appointee'}
+                  </button>
+                )}
+
+                {/* AND BY WHATSAPP, WHICH IS HOW A LETTER ACTUALLY REACHES
+                    SOMEBODY HERE. The University asked for it beside the
+                    other ways of sending.
+
+                    IT OPENS WHATSAPP; IT DOES NOT SEND. The message carries
+                    the reference and the verification address, not the
+                    letter — a forwarded file proves nothing about who issued
+                    it, and a reference checked on the University's own site
+                    proves everything. The record says the letter was handed
+                    over and by whom, and never that it was delivered,
+                    because nothing here can see that. */}
+                {a.status === 'issued' && mayIssue && (
+                  <button disabled={busy} className={BTN_SECONDARY}
+                    title="Opens WhatsApp with the message ready. It does not send it for you."
+                    onClick={() => void letter('whatsapp', a.id)}>
+                    <MessageCircle size={14} /> Send by WhatsApp
                   </button>
                 )}
 

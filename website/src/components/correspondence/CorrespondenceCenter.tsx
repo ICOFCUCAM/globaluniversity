@@ -34,7 +34,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { authedFetch, authedPost } from '@/lib/authedFetch';
 import { can } from '@/lib/roles';
 import { BTN_PRIMARY, BTN_SECONDARY, INPUT, LABEL, FOCUS } from '@/lib/portalTheme';
-import { Plus, Loader2, Send, Clock, Save, UserPlus, AlertTriangle, Eye } from 'lucide-react';
+import {
+  Plus, Loader2, Send, Clock, Save, UserPlus, AlertTriangle, Eye, MessageCircle, Wand2,
+} from 'lucide-react';
+import { draftFor, unfilledPrompts } from '@/lib/correspondenceDrafts';
 import { UNIVERSITY } from '@/lib/constants';
 import {
   LETTER_KINDS, KIND_LABELS, OFFICES, OFFICE_LABELS, STATE_LABELS,
@@ -116,6 +119,26 @@ export default function CorrespondenceCenter() {
     }
   };
 
+  /**
+   * Hand an issued letter to the officer's own WhatsApp.
+   *
+   * THE TAB IS CLAIMED BEFORE THE AWAIT. A browser blocks `window.open` that
+   * is not the direct consequence of a click, and awaiting the route is
+   * exactly what breaks that chain — so the tab is opened while the click is
+   * still the reason it is happening, and pointed at the address afterwards.
+   */
+  const sendByWhatsApp = async (id: string) => {
+    const tab = window.open('', '_blank');
+    const j = await post({ action: 'whatsapp', id }, 'whatsapp');
+    if (j && typeof j.url === 'string') {
+      if (tab) tab.location.href = j.url;
+      else window.open(j.url, '_blank', 'noopener');
+      return;
+    }
+    // The route refused, and `post` has already put the reason on the screen.
+    tab?.close();
+  };
+
   const save = async () => {
     const payload = {
       action: editingId ? 'edit' : 'draft',
@@ -128,6 +151,7 @@ export default function CorrespondenceCenter() {
       recipientOrg: draft.recipient_org,
       recipientEmail: draft.recipient_email,
       recipientAddress: draft.recipient_address,
+      recipientPhone: draft.recipient_phone,
     };
     const j = await post(payload, 'save');
     if (j && typeof j.id === 'string') setEditingId(j.id);
@@ -261,6 +285,17 @@ export default function CorrespondenceCenter() {
                 onChange={(e) => setDraft({ ...draft, recipient_email: e.target.value })}
               />
             </div>
+            {/* THE NUMBER THE LETTER CAN GO TO ON WHATSAPP. With the country
+                code, because `wa.me` reaches nobody without one and a number
+                that looks right locally is the commonest way this fails. */}
+            <div>
+              <label className={LABEL} htmlFor="c-phone">Phone (with country code)</label>
+              <input
+                id="c-phone" type="tel" className={INPUT} placeholder="e.g. 237 6XX XXX XXX"
+                value={String(draft.recipient_phone ?? '')}
+                onChange={(e) => setDraft({ ...draft, recipient_phone: e.target.value })}
+              />
+            </div>
           </div>
 
           <div>
@@ -272,7 +307,42 @@ export default function CorrespondenceCenter() {
           </div>
 
           <div>
-            <label className={LABEL} htmlFor="c-body">The letter</label>
+            <div className="flex flex-wrap items-end justify-between gap-2">
+              <label className={LABEL} htmlFor="c-body">The letter</label>
+
+              {/* ----------------------------------------------------------
+                  START FROM THE STANDARD WORDING.
+
+                  Seventeen kinds of letter and an empty box, and the officer
+                  wrote every one from nothing. The University made this point
+                  about appointment letters — "must I write the letter when
+                  there could be one in the system?" — and it is the same
+                  point here.
+
+                  IT FILLS A SKELETON, NOT A LETTER. What arrives is the shape
+                  the University's letters of that kind take, with every
+                  particular left as a bracketed prompt, so it is visibly
+                  unfinished and cannot be sent as it stands without somebody
+                  noticing.
+
+                  AND IT NEVER OVERWRITES. A convenience that discards what
+                  somebody has typed is one nobody presses twice.
+                  ---------------------------------------------------------- */}
+              {draftFor(String(draft.kind)) && (
+                <button
+                  type="button"
+                  className="flex items-center gap-1 text-xs text-[#422e59] hover:underline
+                             dark:text-[#c9b6e6]"
+                  onClick={() => setDraft((prev) => (String(prev.body ?? '').trim()
+                    ? prev
+                    : { ...prev, body: draftFor(String(prev.kind)) ?? '' }))}
+                >
+                  <Wand2 size={12} /> Start from the standard{' '}
+                  {KIND_LABELS[draft.kind as LetterKind]?.toLowerCase() ?? 'letter'} wording
+                </button>
+              )}
+            </div>
+
             <textarea
               id="c-body" className={`${INPUT} min-h-[240px] font-serif`}
               value={String(draft.body ?? '')}
@@ -282,6 +352,25 @@ export default function CorrespondenceCenter() {
               The letterhead, reference number, date, signature block and verification code are
               added by the system. Write only the letter.
             </p>
+
+            {/* THE BRACKETS ARE ONLY SAFE IF LEAVING ONE IN IS HARD. A warning
+                and not a refusal: a letter may legitimately contain a bracket,
+                and a rule that refused one would be wrong at exactly the moment
+                it was inconvenient to argue with. */}
+            {unfilledPrompts(String(draft.body ?? '')).length > 0 && (
+              <p className="mt-1 flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2
+                            text-xs text-amber-900 dark:bg-amber-500/10 dark:text-amber-200">
+                <AlertTriangle size={13} className="mt-px shrink-0" />
+                <span>
+                  {unfilledPrompts(String(draft.body ?? '')).length} prompt
+                  {unfilledPrompts(String(draft.body ?? '')).length === 1 ? '' : 's'} from the
+                  standard wording {unfilledPrompts(String(draft.body ?? '')).length === 1
+                    ? 'has' : 'have'} not been filled in
+                  yet: {unfilledPrompts(String(draft.body ?? '')).slice(0, 4).join(' ')}
+                  {unfilledPrompts(String(draft.body ?? '')).length > 4 ? ' …' : ''}
+                </span>
+              </p>
+            )}
           </div>
 
           {/* THE OBJECTIONS, SEPARATED INTO THE ONES THAT STOP IT AND THE ONES
@@ -528,6 +617,29 @@ export default function CorrespondenceCenter() {
                       onClick={() => void post({ action: 'issue', id: r.id }, 'issue')}
                     >
                       Issue
+                    </button>
+                  )}
+
+                  {/* AND SEND IT BY WHATSAPP, which the University asked for
+                      beside the other ways of sending.
+
+                      ONLY ONCE IT IS ISSUED. A letter the Vice-Chancellor has
+                      not signed is not one the University sends, whatever the
+                      route.
+
+                      IT OPENS WHATSAPP; IT DOES NOT SEND. And the message
+                      carries the subject, the reference and where to verify
+                      it — never the letter's text, which would put the
+                      University's correspondence into a chat history it does
+                      not control. */}
+                  {r.status === 'issued' && mayIssue && (
+                    <button
+                      type="button" className={`${BTN_SECONDARY} ${FOCUS}`}
+                      disabled={busy !== null}
+                      title="Opens WhatsApp with the message ready. It does not send it for you."
+                      onClick={() => void sendByWhatsApp(r.id)}
+                    >
+                      <MessageCircle size={14} /> WhatsApp
                     </button>
                   )}
                 </div>

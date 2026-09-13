@@ -46,6 +46,9 @@ import { sanitiseLetterHtml, letterPlainText } from '@/lib/letterMarkup';
 import { send, mailConfigured } from '@/lib/mailer';
 import { UNIVERSITY, OFFICE_REPLY_TO } from '@/lib/constants';
 import { OFFICE_LABELS } from '@/lib/correspondence';
+import {
+  whatsappNumber, whyNotWhatsApp, whatsappUrl, correspondenceMessage,
+} from '@/lib/whatsapp';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -60,13 +63,17 @@ const CAPABILITY: Record<string, Capability> = {
   return: 'authorize-correspondence' as Capability,
   withdraw: 'authorize-correspondence' as Capability,
   issue: 'issue-correspondence' as Capability,
+  // SENDING IT BY WHATSAPP IS SENDING IT. Same authority as issuing: the
+  // office that may put the University's letter in front of a ministry
+  // decides how it travels.
+  whatsapp: 'issue-correspondence' as Capability,
 };
 
 // A SINGLE STRING LITERAL, not a joined array. supabase-js infers the row type
 // from this text, and anything it cannot read at compile time collapses the
 // result to GenericStringError[] — silently, with no error at the call site.
 // eslint-disable-next-line max-len
-const COLUMNS = 'id, kind, originating_office, subject, body, body_format, recipient_name, recipient_org, recipient_email, recipient_address, status, initiated_by, prepared_by, authorized_by, authorized_at, scheduled_for, issued_at, preparation_brief, preparation_requested_by, withdrawn_reason';
+const COLUMNS = 'id, kind, originating_office, subject, body, body_format, recipient_name, recipient_org, recipient_email, recipient_address, recipient_phone, status, initiated_by, prepared_by, authorized_by, authorized_at, scheduled_for, issued_at, preparation_brief, preparation_requested_by, withdrawn_reason';
 
 const bad = (error: string, status: number, detail?: string) =>
   NextResponse.json({ ok: false, error, ...(detail ? { detail } : {}) }, { status });
@@ -103,6 +110,10 @@ function fieldsFrom(body: Record<string, unknown>) {
     recipient_org: text('recipientOrg'),
     recipient_email: text('recipientEmail'),
     recipient_address: text('recipientAddress'),
+    // 079. A number to hand the letter to WhatsApp with — not validated here
+    // or in the database, because the University writes abroad and a pattern
+    // fitted to one country would refuse correct numbers from every other.
+    recipient_phone: text('recipientPhone'),
   };
 }
 
@@ -618,6 +629,69 @@ export async function POST(request: Request) {
     if (error) return bad(`not-withdrawn: ${error.message}`, 500);
     await record(row.id as string, 'WITHDRAWN', row.status as string, 'withdrawn', reason);
     return NextResponse.json({ ok: true, status: 'withdrawn' });
+  }
+
+  // =========================================================================
+  // WHATSAPP — hand an issued letter to the officer's own WhatsApp
+  // =========================================================================
+  //
+  // THIS SENDS NOTHING. It works out the number, composes a message, records
+  // that the officer did this, and hands back the address that opens WhatsApp.
+  //
+  // AND THE MESSAGE DOES NOT CARRY THE LETTER. A letter to a ministry may be
+  // confidential and is in any case the University speaking formally; pasting
+  // its text into a WhatsApp message would put the University's correspondence
+  // into a chat history it does not control. The message says a letter has
+  // been issued, gives its subject and reference, and says where to read it.
+  if (action === 'whatsapp') {
+    const row = await load(body.id);
+    if (!row) return bad('letter-not-found', 404);
+    if (row.status !== 'issued') {
+      return bad('not-issued', 409,
+        'This letter has not been issued, so there is nothing to send. Issue it first — the '
+        + 'University does not send letters it has not signed.');
+    }
+
+    const { data: letter } = await admin.from('correspondence_letters')
+      .select('reference').eq('correspondence_id', row.id as string)
+      .is('superseded_at', null).order('version', { ascending: false }).limit(1).maybeSingle();
+    const reference = (letter as Row | null)?.reference;
+    if (!reference) {
+      return bad('no-letter', 409,
+        'This letter has no archived version, so it has no reference to quote.');
+    }
+
+    // Typed wins over the recorded number: one corrected in the moment is
+    // more current than one entered when the letter was drafted.
+    const raw = String(body.phone ?? '').trim() || String(row.recipient_phone ?? '');
+    const number = whatsappNumber(raw);
+    if (!number) {
+      return bad('no-whatsapp-number', 400, whyNotWhatsApp(raw)
+        ?? 'There is no number on this letter that WhatsApp could reach.');
+    }
+
+    const message = correspondenceMessage({
+      name: String(row.recipient_name ?? 'Sir or Madam'),
+      subject: String(row.subject ?? ''),
+      reference: String(reference),
+      office: OFFICE_LABELS[row.originating_office as keyof typeof OFFICE_LABELS]
+        ?? String(row.originating_office),
+      university: UNIVERSITY.name,
+      website: UNIVERSITY.website,
+    });
+
+    await record(row.id as string, 'WHATSAPP_HANDED_OVER', null, null,
+      `Handed to WhatsApp for +${number}`, { reference, number });
+
+    return NextResponse.json({
+      ok: true,
+      url: whatsappUrl(number, message),
+      number,
+      detail: `WhatsApp will open with the message ready for +${number}. It carries the `
+        + 'subject, the reference and the verification address — not the letter itself, which '
+        + 'stays where the University controls it. The record shows you handed it over; it '
+        + 'does not claim it was delivered, because nothing here can see that.',
+    });
   }
 
   return bad('unknown-action', 400);
