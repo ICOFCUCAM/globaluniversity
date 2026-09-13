@@ -35,6 +35,7 @@
 // ---------------------------------------------------------------------------
 
 import { NextResponse } from 'next/server';
+import { studentStatusOf } from '@/lib/studentStatus';
 import { guard, audit } from '@/lib/adminAuth';
 import {
   newCredentialId, contentHash, sealAward, awardFields, AWARD_FORMAT, verificationQrSvg,
@@ -178,7 +179,9 @@ export async function POST(request: Request) {
     // query did not select one of them, so every derived transcript printed a
     // dash where the University's own record had an answer.
     .select('id, student_number, matric_no, first_name, middle_name, last_name, program, status, '
-      + 'date_of_birth, place_of_birth, gender, nationality, address, '
+      // 037 split what became of a STUDENT out of the admission column. Not
+      // selecting it would print "In progress" on a graduate's transcript.
+      + 'student_status, date_of_birth, place_of_birth, gender, nationality, address, '
       + 'campus, mode_of_study, specialization, admitted_on, completed_on, academic_standing, '
       + 'admission_year, expected_graduation')
     .eq('id', body.studentId)
@@ -317,8 +320,12 @@ export async function POST(request: Request) {
       admitted_on: student.admitted_on ?? null,
       completed_on: student.completed_on ?? null,
       academic_standing: student.academic_standing ?? null,
-      degree_status: student.status === 'graduated' ? 'Completed'
-        : student.status === 'withdrawn' ? 'Withdrawn' : 'In progress',
+      // FROM THE STUDENT COLUMN. `withdrawn` used to mean either an applicant
+      // who declined or a student who left, and a transcript printing
+      // "Withdrawn" for the first would be describing somebody who was never
+      // here. 037 put the two in different columns.
+      degree_status: studentStatusOf(student) === 'graduated' ? 'Completed'
+        : studentStatusOf(student) === 'withdrawn' ? 'Withdrawn' : 'In progress',
       cgpa: transcript.cgpa,
       credits_attempted: transcript.totalCredits,
       credits_earned: earned,

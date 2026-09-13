@@ -119,7 +119,7 @@ export default function LecturerDashboard({ onNavigate }: LecturerDashboardProps
       {/* Schedule */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="rounded-xl border border-[#ece7de] bg-white dark:border-[#2e2637] dark:bg-[#1f1a27] p-5">
-          <h3 className="font-semibold text-[#33234a] dark:text-[#e4dcf0] mb-3">Today's Schedule</h3>
+          <h3 className="font-semibold text-[#33234a] dark:text-[#e4dcf0] mb-3">Today&apos;s Schedule</h3>
           <div className="space-y-3">
             {[
               { time: '9:00 AM', course: 'CSC 301', type: 'Lecture', room: 'Hall A' },

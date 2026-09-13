@@ -147,6 +147,19 @@ console.log('\nEvery state a desk shows can actually be reached\n');
     for (const d of Object.values(W.ACADEMIC_DECISIONS)) literals.add(d.becomes);
   }
 
+  // THE SAME TRICK, FOR THE VERIFICATION STEPS. /api/admissions/verification
+  // writes `status: step.to`, where the step comes out of VERIFICATION_STEPS —
+  // so the three states it exists to make reachable would read as unreachable
+  // to a scan for literals, and this test would go on reporting a gap that had
+  // just been closed. Conditional on the route actually doing it, so deleting
+  // the route brings the gap back rather than leaving the test vouching for it.
+  const verification = readFileSync(
+    join(srcDir, 'app/api/admissions/verification/route.ts'), 'utf8',
+  );
+  if (/status: step\.to/.test(verification)) {
+    for (const v of Object.values(W.VERIFICATION_STEPS)) literals.add(v.to);
+  }
+
   check('the scan found states being written', literals.size > 5, true);
 
   const unreachable = W.ADMISSION_STATES.filter((s) => !literals.has(s));

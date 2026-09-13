@@ -1,0 +1,721 @@
+// ---------------------------------------------------------------------------
+// AN APPOINTMENT IS A RECORD; THE LETTER IS GENERATED FROM IT.
+//
+// Run with:  node src/lib/appointments.test.mjs
+//
+// ---------------------------------------------------------------------------
+// WHAT THIS GUARDS
+// ---------------------------------------------------------------------------
+//
+// The University had nowhere to record that it had appointed somebody, so every
+// appointment letter was typed by hand from facts that existed only in the
+// letter. The letter WAS the record — which is why the system could not say who
+// reports to whom, or whose probation ends this month.
+//
+// The rules that replace that are worth what they refuse. This calls each one.
+// ---------------------------------------------------------------------------
+
+import { execFileSync } from 'node:child_process';
+import { mkdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+let failures = 0;
+function check(label, actual, expected) {
+  const ok = JSON.stringify(actual) === JSON.stringify(expected);
+  if (!ok) {
+    failures++;
+    console.error(`FAIL  ${label}\n      expected ${JSON.stringify(expected)}\n      actual   ${JSON.stringify(actual)}`);
+  } else {
+    console.log(`ok    ${label}`);
+  }
+}
+
+const here = new URL('.', import.meta.url).pathname;
+const cache = join(here, '../../node_modules/.cache/icof');
+mkdirSync(cache, { recursive: true });
+const out = join(cache, 'appointments.mjs');
+execFileSync('npx', [
+  'esbuild', join(here, 'appointments.ts'), '--bundle', '--format=esm', '--platform=node',
+  `--outfile=${out}`, '--log-level=error', `--alias:@=${join(here, '..')}`,
+]);
+const A = await import(out);
+
+/** A complete appointment, from which each case removes one thing. */
+const complete = {
+  full_name: 'A Specimen Appointee',
+  position_title: 'Lecturer in Theology',
+  unit_name: 'Faculty of Theology',
+  effective_date: '2026-10-01',
+  postal_address: 'PO Box 1, Buea',
+  employment_type: 'permanent',
+  start_date: '2026-10-01',
+  place_of_duty: 'Buea campus',
+  terms: 'Subject to the University’s conditions of service.',
+  reports_to_name: 'The Head of Academic Affairs',
+  probation_months: 6,
+  salary_amount: 450000,
+  salary_currency: 'FCFA',
+  salary_period: 'month',
+  status: 'draft',
+  drafted_by: 'alice',
+};
+
+console.log('\nA letter cannot be issued without the things a letter is\n');
+
+{
+  check('a complete record has nothing outstanding', A.missingFrom(complete), []);
+
+  // THE FOUR THAT ARE NOT OPTIONAL. Each is a thing that, missing, makes the
+  // document not an appointment letter.
+  for (const key of ['full_name', 'position_title', 'start_date', 'place_of_duty', 'terms']) {
+    const m = A.missingFrom({ ...complete, [key]: null });
+    check(`${key} is required`, m.map((x) => x.key), [key]);
+    check(`…and it blocks`, A.blocked(m), true);
+  }
+
+  // PLACE OF DUTY IS REQUIRED ON PURPOSE. The University is not only online,
+  // and somebody appointed without being told where to turn up has not been
+  // told the main thing.
+  check('place of duty says why it matters',
+    A.missingFrom({ ...complete, place_of_duty: null })[0].message.includes('not only online'),
+    true);
+}
+
+console.log('\nAnd the things that are legitimately absent do not block\n');
+
+{
+  for (const key of ['unit_name', 'effective_date', 'postal_address', 'reports_to_name']) {
+    const m = A.missingFrom({ ...complete, [key]: null });
+    check(`${key} is noted but does not block`, A.blocked(m), false);
+    check(`…and it is still listed`, m.some((x) => x.key === key), true);
+  }
+
+  // NOTED RATHER THAN SILENT. A blank line under "Probation" on a page reads
+  // as "none", which is a claim — so the screen says it is missing and
+  // somebody decides.
+  const noProbation = A.missingFrom({ ...complete, probation_months: null });
+  check('probation is noted when absent',
+    noProbation.some((x) => x.key === 'probation_months'), true);
+  check('…and does not stop the letter', A.blocked(noProbation), false);
+}
+
+console.log('\nA fixed term has a term\n');
+
+{
+  // Otherwise it is a permanent appointment wearing the wrong label, and
+  // nobody finds out until somebody asks when it ends.
+  const fixed = { ...complete, employment_type: 'fixed-term' };
+  const m = A.missingFrom(fixed);
+  check('a fixed term with no end date is refused', m.map((x) => x.key), ['end_date']);
+  check('…and it blocks', A.blocked(m), true);
+  check('with an end date it passes',
+    A.missingFrom({ ...fixed, end_date: '2029-09-30' }), []);
+
+  // Only fixed-term. A permanent appointment with no end date is a permanent
+  // appointment.
+  for (const t of ['permanent', 'part-time', 'visiting', 'honorary', 'secondment']) {
+    check(`${t} needs no end date`,
+      A.missingFrom({ ...complete, employment_type: t, salary_amount: 1, salary_currency: 'FCFA', salary_period: 'month' })
+        .some((x) => x.key === 'end_date'), false);
+  }
+}
+
+console.log('\nA salary is a figure, a currency and a period, or it is none of them\n');
+
+{
+  // "450,000" with no currency and no period is not something anybody can rely
+  // on, and each half looks complete on its own — which is how the omission
+  // reaches a signature.
+  const half = A.missingFrom({ ...complete, salary_currency: null, salary_period: null });
+  check('a bare number is refused', half.map((x) => x.key), ['salary']);
+  check('…and it blocks', A.blocked(half), true);
+  check('a figure with no period is refused too',
+    A.blocked(A.missingFrom({ ...complete, salary_period: null })), true);
+
+  // NO SALARY AT ALL IS A WARNING, NOT A REFUSAL. Right for an honorary post
+  // and a serious omission for any other, and the system cannot tell which.
+  const unpaid = { ...complete, salary_amount: null, salary_currency: null, salary_period: null };
+  const paidPost = A.missingFrom(unpaid);
+  check('a paid post with no salary is flagged', paidPost.map((x) => x.key), ['salary']);
+  check('…but does not block', A.blocked(paidPost), false);
+
+  // An honorary appointment is not even flagged: it is expected to be unpaid.
+  check('an honorary post with no salary is not flagged at all',
+    A.missingFrom({ ...unpaid, employment_type: 'honorary' }), []);
+}
+
+console.log('\nThe drafter does not authorise their own appointment\n');
+
+{
+  // An appointment letter commits the University to paying somebody. This is
+  // the largest version of the rule 005, 009, 014 and 038 all carry.
+  const submitted = { ...complete, status: 'submitted' };
+  check('the drafter cannot', A.canAuthorize(submitted, 'alice'), false);
+  check('somebody else can', A.canAuthorize(submitted, 'bob'), true);
+  // IDENTITY, NOT RANK. A Superadministrator who drafted it is still its
+  // drafter; the function takes an id and no role, deliberately.
+  check('the rule is about identity, not rank', A.canAuthorize.length, 2);
+  check('a draft is not awaiting anybody', A.canAuthorize(complete, 'bob'), false);
+}
+
+console.log('\nA letter is generated from an authorised record, never a draft\n');
+
+{
+  check('a draft produces no letter', A.canGenerateLetter(complete), false);
+  check('an approved one does',
+    A.canGenerateLetter({ ...complete, status: 'approved' }), true);
+  // AND STILL NOT IF SOMETHING IS MISSING. Authority does not conjure a start
+  // date.
+  check('but not if a required field is missing',
+    A.canGenerateLetter({ ...complete, status: 'authorized', start_date: null }), false);
+  check('a submitted record is not enough either',
+    A.canGenerateLetter({ ...complete, status: 'submitted' }), false);
+}
+
+console.log('\nThe reference is something somebody can file and quote\n');
+
+{
+  check('it reads as a reference', A.letterReference(2026, 1), 'APT-2026-0001');
+  check('and pads so they sort', A.letterReference(2026, 42), 'APT-2026-0042');
+  check('it reads back', A.parseReference('APT-2026-0042'), { year: 2026, sequence: 42 });
+  // NO SLASHES. A reference with them cannot go in a URL path without
+  // escaping, and a verification link is exactly where this ends up.
+  check('and it survives a URL untouched',
+    A.letterReference(2026, 42), encodeURIComponent(A.letterReference(2026, 42)));
+  check('and refuses something that is not one', A.parseReference('some-uuid-thing'), null);
+  // A reference that encoded the time of day would tell a recipient how long
+  // the University took, which is nobody's business.
+  check('it carries no timestamp', /^APT-\d{4}-\d{4}$/.test(A.letterReference(2026, 7)), true);
+}
+
+console.log('\nWhat the letter prints for money, and for probation\n');
+
+{
+  check('a salary prints with its currency and period',
+    A.remunerationLine(complete), 'FCFA 450,000 per month');
+  // NULL RATHER THAN AN EMPTY STRING. A caller has to decide what to print
+  // rather than being handed something that quietly becomes a blank line under
+  // "Remuneration".
+  check('no salary returns nothing to print',
+    A.remunerationLine({ ...complete, salary_amount: null }), null);
+  check('and a half-recorded one prints nothing rather than a bare number',
+    A.remunerationLine({ ...complete, salary_currency: null }), null);
+
+  // THE QUESTION THE RECORD EXISTS TO ANSWER. It could not be asked at all
+  // before, because the answer was in a word processor file.
+  check('probation ends six months after the start',
+    A.probationEnds(complete), '2027-04-01');
+  check('and none means none', A.probationEnds({ ...complete, probation_months: null }), null);
+}
+
+console.log('\nThe database holds the same rules, not only this file\n');
+
+{
+  const sql = readFileSync(
+    join(here, '../../docs/migrations/041_appointments_and_the_letters_that_issue_from_them.sql'),
+    'utf8');
+
+  check('the drafter cannot authorise, in the database',
+    /authorized_by <> drafted_by/.test(sql), true);
+  check('a fixed term has a term, in the database',
+    /appointments_fixed_term_ends/.test(sql), true);
+  check('a salary is complete or absent, in the database',
+    /appointments_salary_is_complete/.test(sql), true);
+
+  // A LETTER IS AN OUTPUT. Editing a generated document is how a letter comes
+  // to say something the register does not, with a signature on the wrong one.
+  check('an issued letter cannot be rewritten',
+    /refuse_letter_edit/.test(sql), true);
+  check('and two letters cannot both be current',
+    /appointment_letters_one_current_idx/.test(sql), true);
+
+  // THE SALARY IS NOT ORDINARY INSTITUTIONAL INFORMATION.
+  check('there is a view without the pay',
+    /create or replace view appointments_without_pay/.test(sql), true);
+  const view = /create or replace view appointments_without_pay([\s\S]*?)from appointments;/
+    .exec(sql)?.[1] ?? '';
+  check('…and it genuinely leaves the pay out',
+    /salary_amount|salary_currency|salary_period/.test(view.replace(/salary_amount is not null/, '')),
+    false);
+  check('…while still saying that a salary exists', /is_paid/.test(view), true);
+
+  // The vocabulary the code uses is the vocabulary the column accepts.
+  for (const t of A.EMPLOYMENT_TYPES) {
+    check(`the database knows '${t}'`, sql.includes(`'${t}'`), true);
+  }
+}
+
+console.log('\nFour facts where there used to be one\n');
+
+{
+  // `issued` was carrying: the letter exists, the letter was sent, they said
+  // yes, they are in post. One state cannot tell a Head of Department whether
+  // anybody is coming.
+  for (const st of ['letter_generated', 'issued', 'accepted', 'active']) {
+    check(`${st} is its own state`, A.APPOINTMENT_STATES.includes(st), true);
+  }
+  // EIGHT SINCE 047, not seven. `under_review` is the office's own check
+  // before the file reaches the Vice-Chancellor — the one state the
+  // University's proposed lifecycle had that this one did not. Everything else
+  // it named already existed under another name.
+  check('and the ordinary path is a chain of eight',
+    A.LIFECYCLE, ['draft', 'under_review', 'submitted', 'approved', 'letter_generated',
+      'issued', 'accepted', 'active']);
+
+  // AND THE VC'S OWN PATH IS SHORTER, LEGITIMATELY. There is no office to
+  // review a file the Vice-Chancellor wrote, and inserting one would be the
+  // artificial HR loop the University asked not to have. It still passes
+  // through `approved`, because an appointment commits money.
+  check('a VC-originated appointment skips the office review',
+    A.LIFECYCLE_VC_ORIGINATED.includes('under_review'), false);
+  check('…but not the approval', A.LIFECYCLE_VC_ORIGINATED.includes('approved'), true);
+  // THE CLOSURES ARE NOT ON IT. Drawing them in a line would suggest every
+  // appointment passes through being declined.
+  check('the closures are not steps along it',
+    A.LIFECYCLE.some((s) => ['declined', 'withdrawn', 'ended'].includes(s)), false);
+}
+
+console.log('\nAn amendment goes back through approval, and not to whoever asked\n');
+
+{
+  for (const st of ['issued', 'accepted', 'active']) {
+    check(`an ${st} appointment can be amended`,
+      A.canRequestAmendment({ status: st }), true);
+  }
+  check('a draft has nothing to amend', A.canRequestAmendment({ status: 'draft' }), false);
+
+  // A revised letter that one person requested and approved alone is the
+  // original rule with an extra step in front of it.
+  const amending = { ...complete, status: 'amendment_requested', drafted_by: 'alice' };
+  check('the drafter cannot approve the amendment', A.canAuthorize(amending, 'alice'), false);
+  check('somebody else can', A.canAuthorize(amending, 'bob'), true);
+}
+
+console.log('\nNobody is made staff before the letter was issued\n');
+
+{
+  // THE DOOR 042 CLOSES. A staff record created first is a person the system
+  // says works here on nobody's authority.
+  check('an approved appointment does not make somebody staff',
+    A.canActivateStaff({ status: 'approved', issued_at: null }), false);
+  check('nor does a generated letter nobody has sent',
+    A.canActivateStaff({ status: 'letter_generated', issued_at: null }), false);
+  check('an issued one does', A.canActivateStaff({ status: 'issued', issued_at: '2026-10-01' }), true);
+  check('and so does an active one',
+    A.canActivateStaff({ status: 'active', issued_at: '2026-10-01' }), true);
+  // A status without the date is the shape of somebody editing the column
+  // directly, and it is refused on both halves.
+  check('a status with no issuance date is not enough',
+    A.canActivateStaff({ status: 'issued', issued_at: null }), false);
+}
+
+console.log('\nThe letter history reads the way a file is read\n');
+
+{
+  const lines = A.letterHistory([
+    { reference: 'APT-2026-0042', version: 3, kind: 'reissued', issued_on: '2026-09-25' },
+    { reference: 'APT-2026-0042', version: 1, kind: 'issued', issued_on: '2026-09-12' },
+    { reference: 'APT-2026-0042', version: 2, kind: 'amended', issued_on: '2026-09-20',
+      supersedes_reason: 'The start date moved' },
+  ]);
+  check('oldest first, whatever order they arrive in', lines, [
+    'Version 1 — Issued 12 Sep 2026',
+    'Version 2 — Amended 20 Sep 2026 — The start date moved',
+    'Version 3 — Re-issued 25 Sep 2026',
+  ]);
+  // AMENDED AND RE-ISSUED ARE NOT THE SAME THING. The first is a changed
+  // appointment; the second is the same one sent again because the first
+  // bounced. A history calling both "revised" hides the only difference.
+  check('and the two kinds are distinguishable',
+    A.LETTER_KIND_LABELS.amended !== A.LETTER_KIND_LABELS.reissued, true);
+}
+
+console.log('\nWhat a reader of the document is told\n');
+
+{
+  const current = { superseded_at: null };
+  check('a current letter is valid',
+    A.verificationStatus(current, { status: 'active' }), 'Valid');
+  // A SUPERSEDED LETTER IS NOT INVALID, and saying so would be wrong in a way
+  // that costs somebody a visa. It was genuine and it has been replaced.
+  check('a replaced one is superseded, not invalid',
+    A.verificationStatus({ superseded_at: '2026-09-20' }, { status: 'active' }), 'Superseded');
+  check('a withdrawn appointment is not in force',
+    A.verificationStatus(current, { status: 'withdrawn' }), 'Not in force');
+  check('and one that ran its course says so',
+    A.verificationStatus(current, { status: 'ended' }), 'Ended');
+}
+
+console.log('\nAnd the migrations hold the same lifecycle\n');
+
+{
+  // BOTH FILES, because the vocabulary is not all in one. 042 declared eleven
+  // states and 047 restated the constraint to add `under_review`; reading only
+  // 042 reported the newest state as unknown to the database when it is in the
+  // constraint currently in force. A test that reads one of two files is
+  // asserting where a rule was written rather than whether it holds.
+  const sql = [
+    '042_the_appointment_lifecycle_and_the_staff_record.sql',
+    '047_the_money_the_actors_and_the_two_axes.sql',
+    '050_acceptance_the_activation_rule_and_the_full_audit.sql',
+  ].map((f) => readFileSync(join(here, '../../docs/migrations/', f), 'utf8')).join('\n');
+
+  // EVERY EVENT THE CODE KNOWS, KNOWN TO THE DATABASE TOO. This list was
+  // thirteen in TypeScript while the constraint accepted twenty-one: a route
+  // could write LETTER_VIEWED and the database would take it, but no screen
+  // could offer it because nothing in the code knew it existed.
+  for (const ev of A.APPOINTMENT_EVENTS) {
+    check(`the database accepts the event '${ev}'`, sql.includes(`'${ev}'`), true);
+  }
+
+  for (const st of A.APPOINTMENT_STATES) {
+    check(`the database knows '${st}'`, sql.includes(`'${st}'`), true);
+  }
+  check('nobody is accepted or active before a letter was issued',
+    /appointments_issued_before_accepted/.test(sql), true);
+  check('a staff record cannot precede issuance',
+    /staff_follows_an_issued_appointment/.test(sql), true);
+  check('the reference shape is enforced',
+    /\^APT-\[0-9\]\{4\}-\[0-9\]\{4,\}\$/.test(sql), true);
+  // MATCHED ON THE VIEW, NOT ON "create or replace". It was the latter, and
+  // both 042 and 049 now DROP the view before creating it — because `create or
+  // replace view` cannot remove a column, and 049 widens this one. The
+  // assertion was about the view existing, so it now asks that.
+  check('and the public verification view exists',
+    /create view appointment_letter_verification/.test(sql), true);
+  check('…and it is dropped before it is created, so a re-run can narrow it',
+    /drop view if exists appointment_letter_verification/.test(sql), true);
+}
+
+console.log('\nHR issues eleven kinds of letter, not one\n');
+
+{
+  check('all eleven are named', A.DOCUMENT_TYPES.length, 11);
+  for (const t of A.DOCUMENT_TYPES) {
+    check(`${t} has a label a person would recognise`,
+      (A.DOCUMENT_TYPE_LABELS[t] ?? '').length > 3, true);
+  }
+
+  // AN INITIAL APPOINTMENT IS THE ONE THE ORDINARY FIELDS WERE WRITTEN FOR.
+  check('an initial appointment needs nothing extra',
+    A.missingForType('initial-appointment', {}), []);
+
+  // EVERYTHING ELSE IS A DOCUMENT ABOUT A CHANGE, and one that does not say
+  // what changed is not one.
+  check('a promotion must state the previous position',
+    A.missingForType('promotion', {}).map((m) => m.key), ['previous_position']);
+  check('…and is satisfied when it does',
+    A.missingForType('promotion', { previous_position: 'Lecturer' }), []);
+  check('a transfer must state where from',
+    A.missingForType('transfer', {}).map((m) => m.key), ['previous_unit']);
+  check('a renewal states both ends of the term',
+    A.missingForType('contract-renewal', {}).map((m) => m.key),
+    ['previous_end_date', 'end_date']);
+  check('a termination states the last day and why',
+    A.missingForType('termination', {}).map((m) => m.key), ['end_date', 'closed_reason']);
+
+  // A TYPE NOBODY DECLARED IS REFUSED, rather than falling through as an
+  // initial appointment — which would print "we are pleased to appoint you" on
+  // a termination.
+  const unknown = A.missingForType('some-letter-somebody-invented', {});
+  check('an unknown type is refused', unknown.map((m) => m.key), ['document_type']);
+  check('…and it blocks', A.blocked(unknown), true);
+}
+
+console.log('\nThe reference is filed one way and printed another\n');
+
+{
+  // THE UNIVERSITY WROTE BOTH. The letter body reads IGUC/HR/APT/2026/0042 and
+  // the archive key is APT-2026-0042, because a reference with slashes cannot
+  // go in a URL path and the verification link is where it ends up. One fact,
+  // stored once, rendered two ways — so neither can drift.
+  check('the stored form is URL-safe', A.letterReference(2026, 42), 'APT-2026-0042');
+  check('the printed form is the filing convention',
+    A.printedReference('APT-2026-0042'), 'IGUC/HR/APT/2026/0042');
+  check('and the printed form is derived, not stored separately',
+    A.printedReference(A.letterReference(2026, 7)), 'IGUC/HR/APT/2026/0007');
+  check('something that is not a reference passes through unchanged',
+    A.printedReference('not-a-reference'), 'not-a-reference');
+}
+
+console.log('\nThe letter refuses an incomplete record rather than printing a blank\n');
+
+{
+  const L = await (async () => {
+    const o = join(cache, 'appointmentLetter.mjs');
+    execFileSync('npx', [
+      'esbuild', join(here, 'appointmentLetter.ts'), '--bundle', '--format=esm',
+      '--platform=node', `--outfile=${o}`, '--log-level=error',
+      `--alias:@=${join(here, '..')}`, '--external:qrcode',
+    ]);
+    return import(o);
+  })();
+
+  // SPELLED OUT RATHER THAN LOCALISED, for the same reason as the history:
+  // toLocaleDateString gives "Sept" on one ICU build and "Sep" on the next, so
+  // a document generated on the server and previewed in a browser could
+  // disagree about its own date.
+  check('a date prints in full', L.longDate('2026-09-12'), '12 September 2026');
+  check('and nothing prints as nothing', L.longDate(null), '');
+
+  const args = {
+    reference: 'APT-2026-0042', issuedOn: '2026-09-12', version: 1,
+    signatoryName: 'The Registrar', signatoryRole: 'Registrar',
+    siteUrl: 'https://example.test',
+  };
+
+  // A LETTER WITH AN EMPTY LINE WHERE THE START DATE SHOULD BE looks finished,
+  // gets signed, and the omission is discovered by the appointee.
+  let refused = false;
+  try {
+    await L.appointmentLetterHtml({ ...args, appointment: { ...complete, start_date: null } });
+  } catch (e) {
+    refused = /not complete/.test(String(e.message));
+  }
+  check('an incomplete record produces no letter', refused, true);
+
+  const out = await L.appointmentLetterHtml({ ...args, appointment: complete });
+  check('the printed reference is on the page',
+    out.html.includes('IGUC/HR/APT/2026/0042'), true);
+  check('and so is the name, the position and the date', [
+    out.html.includes('A Specimen Appointee'),
+    out.html.includes('Lecturer in Theology'),
+    out.html.includes('12 September 2026'),
+  ], [true, true, true]);
+
+  // EVERY ROW COMES OUT OF THE RECORD. Nothing is typed at the moment of
+  // generating, which is the whole point.
+  check('the working hours row appears when recorded',
+    (await L.appointmentLetterHtml({
+      ...args, appointment: { ...complete, working_hours: '40 hours per week' },
+    })).html.includes('40 hours per week'), true);
+  // A BLANK BESIDE "PROBATION" READS AS "NONE", which is a claim the
+  // University has not made. The row is omitted instead.
+  check('a row with nothing in it is omitted rather than left empty',
+    (await L.appointmentLetterHtml({
+      ...args, appointment: { ...complete, probation_months: null },
+    })).html.includes('Probation'), false);
+
+  // THE SALARY IS PRINTED WITH ITS CURRENCY AND PERIOD OR NOT AT ALL.
+  check('the remuneration prints in full', out.html.includes('FCFA 450,000 per month'), true);
+  check('and an unpaid post has no remuneration row',
+    (await L.appointmentLetterHtml({
+      ...args,
+      appointment: { ...complete, employment_type: 'honorary',
+        salary_amount: null, salary_currency: null, salary_period: null },
+    })).html.includes('Remuneration'), false);
+}
+
+console.log('\nThe receipt is four facts, and they come apart\n');
+
+{
+  // A letter can be issued and not archived (the seal failed), archived and
+  // not queued (nobody pressed send), queued and not delivered (the server
+  // refused). One tick covering all four would be true when three happened.
+  const issued = { ...complete, issued_at: '2026-09-12T09:00:00Z' };
+
+  const nothing = A.receiptFor(issued, null);
+  check('four lines', nothing.map((r) => r.label),
+    ['Issued', 'Document archived', 'Email queued', 'Email delivered']);
+  check('issued is done and nothing else is',
+    nothing.map((r) => r.done), [true, false, false, false]);
+
+  const done = A.receiptFor(issued, {
+    content_hash: 'a'.repeat(64), queued_at: '2026-09-12T09:01:00Z', delivery: 'sent',
+  });
+  check('all four when all four have happened', done.map((r) => r.done),
+    [true, true, true, true]);
+
+  // A FAILED EMAIL IS NOT AN UNISSUED APPOINTMENT. The University appointed
+  // somebody; the mail server being unreachable is not a change of mind.
+  const bounced = A.receiptFor(issued, {
+    content_hash: 'a'.repeat(64), queued_at: '2026-09-12T09:01:00Z',
+    delivery: 'failed', attempts: 3, delivery_detail: 'Connection refused',
+  });
+  check('the failure is on its own line', bounced[3].failed, true);
+  check('…and the appointment above it still reads issued', bounced[0].done, true);
+  check('…and it says it will be retried, not reversed',
+    /retried, not reversed/.test(bounced[3].note ?? ''), true);
+  check('…and says how many attempts and why',
+    /3 attempt\(s\): Connection refused/.test(bounced[3].note ?? ''), true);
+
+  // AN ARCHIVE WITH NO HASH CANNOT PROVE ITSELF, and the line says so rather
+  // than showing a tick for something that was only half done.
+  const noHash = A.receiptFor(issued, { queued_at: 'x', delivery: 'sent' });
+  check('an unhashed archive is not ticked', noHash[1].done, false);
+  check('…and explains what is missing',
+    /cannot prove it is the document that was sent/.test(noHash[1].note ?? ''), true);
+}
+
+console.log('\nNobody activates the template they wrote\n');
+
+{
+  // A template is the words the University says in every letter of its kind
+  // from now on — the second-pair-of-eyes rule at its largest scale, because
+  // it applies to everybody appointed afterwards.
+  const draft = { status: 'draft', created_by: 'alice' };
+  check('the author cannot activate it', A.canActivateTemplate(draft, 'alice'), false);
+  check('somebody else can', A.canActivateTemplate(draft, 'bob'), true);
+  check('an active one is not activated again',
+    A.canActivateTemplate({ status: 'active', created_by: 'alice' }, 'bob'), false);
+
+  // AN ACTIVE TEMPLATE'S WORDING IS FIXED. Editing the words that produced a
+  // letter somebody is holding is the same fault as editing the letter, one
+  // step removed and harder to see.
+  check('a draft can still be worded', A.canEditTemplate({ status: 'draft' }), true);
+  check('an active one cannot', A.canEditTemplate({ status: 'active' }), false);
+  check('nor can a retired one', A.canEditTemplate({ status: 'retired' }), false);
+}
+
+console.log('\nAnd the work outstanding before HR can issue each kind\n');
+
+{
+  check('with nothing set up, every kind is outstanding',
+    A.typesWithoutTemplate([]).length, 11);
+  check('an active template removes its kind',
+    A.typesWithoutTemplate([{ kind: 'promotion', status: 'active' }]).includes('promotion'),
+    false);
+  // A DRAFT IS NOT A TEMPLATE YET. Counting it would report the work as done
+  // while HR still cannot generate the letter.
+  check('a draft does not count',
+    A.typesWithoutTemplate([{ kind: 'promotion', status: 'draft' }]).includes('promotion'),
+    true);
+  check('and neither does a retired one',
+    A.typesWithoutTemplate([{ kind: 'promotion', status: 'retired' }]).includes('promotion'),
+    true);
+}
+
+console.log('\nAnd 044 holds the same rules\n');
+
+{
+  const sql = readFileSync(
+    join(here, '../../docs/migrations/044_document_templates_and_the_letters_tied_to_them.sql'),
+    'utf8');
+
+  check('nobody activates what they wrote, in the database',
+    /document_templates_second_pair_of_eyes/.test(sql), true);
+  check('one active version per kind',
+    /document_templates_one_active_idx/.test(sql), true);
+  check('an active template cannot be reworded',
+    /refuse_active_template_edit/.test(sql), true);
+
+  // THE DOROTHY RULE. Asked why a letter says what it says, the only answer
+  // without this is "the template used to be different".
+  check('a template that issued a letter cannot be deleted',
+    /template_id uuid references document_templates \(id\) on delete restrict/.test(sql), true);
+
+  // AND THE FAILURE PATH TOUCHES NOTHING IT SHOULD NOT.
+  check('no path in 044 changes an appointment status',
+    /update appointments\s+set status/.test(sql), false);
+  check('a letter that failed to send is in an outbox',
+    /appointment_letters_outbox/.test(sql), true);
+
+  for (const t of A.DOCUMENT_TYPES) {
+    check(`the template registry knows '${t}'`, sql.includes(`'${t}'`), true);
+  }
+}
+
+console.log('\nNobody can draft, approve and issue an appointment alone\n');
+
+{
+  const o = join(cache, 'rolesForAppointments.mjs');
+  execFileSync('npx', [
+    'esbuild', join(here, 'roles.ts'), '--bundle', '--format=esm', '--platform=node',
+    `--outfile=${o}`, '--log-level=error', `--alias:@=${join(here, '..')}`,
+  ]);
+  const R = await import(o);
+
+  // THE WHOLE ANSWER to "nobody should be able to click a button and
+  // manufacture an official appointment". Checked as a property of the matrix
+  // rather than asserted role by role, so a capability granted carelessly to
+  // some future role fails here rather than in production.
+  // EVERY ROLE, from the one map that must cover all of them. `HIERARCHY`
+  // deliberately omits superadmin and admin — they sit outside it — so a scan
+  // over that would have reported the separation as holding while missing the
+  // two roles most able to break it.
+  const everyRole = Object.keys(R.roleLabels);
+  check('the scan covers every role', everyRole.length > 15, true);
+
+  const canDoAll = everyRole.filter((role) =>
+    R.can(role, 'draft-appointment')
+    && R.can(role, 'authorize-appointment')
+    && R.can(role, 'issue-appointment-letter'));
+
+  // Only the two system roles, and they are the roles that by definition hold
+  // everything — the separation that protects the University there is the
+  // DATABASE refusing an approval by the drafter, which it does regardless of
+  // rank.
+  check('only the system roles hold all three', canDoAll.sort(), ['admin', 'superadmin']);
+
+  // HR PREPARES, VERIFIES AND SUBMITS — AND DOES NOT ISSUE. The University's
+  // ruling: the appointing authority is the Vice-Chancellor. An HR office that
+  // could issue would be an office that could appoint.
+  check('an HR Officer prepares but neither approves nor issues', [
+    R.can('hr-officer', 'draft-appointment'),
+    R.can('hr-officer', 'authorize-appointment'),
+    R.can('hr-officer', 'issue-appointment-letter'),
+  ], [true, false, false]);
+
+  // AND THE VICE-CHANCELLOR HOLDS BOTH HALVES OF THE AUTHORITY, and no part of
+  // the preparation. Not a contradiction of the rule that a Vice Chancellor
+  // may not admit a student: staff and students are different, and appointing
+  // the staff is what the office is for.
+  check('the Vice-Chancellor authorises and issues', [
+    R.can('vice-chancellor', 'authorize-appointment'),
+    R.can('vice-chancellor', 'issue-appointment-letter'),
+  ], [true, true]);
+  check('…and does not draft or set pay', [
+    R.can('vice-chancellor', 'draft-appointment'),
+    R.can('vice-chancellor', 'set-remuneration'),
+  ], [false, false]);
+
+  // EXACTLY ONE OFFICE ISSUES. Asserted over the whole matrix, so a future
+  // grant made carelessly fails here.
+  const issuers = everyRole.filter((r) => R.can(r, 'issue-appointment-letter'));
+  check('only the Vice-Chancellor and the system roles can issue',
+    issuers.sort(), ['admin', 'superadmin', 'vice-chancellor']);
+
+  // AND CANNOT DECIDE WHAT SOMEBODY IS PAID. Recording that somebody was
+  // appointed and deciding their salary are different acts.
+  check('…and cannot set a salary', R.can('hr-officer', 'set-remuneration'), false);
+
+  check('an HR Administrator manages the record but neither approves nor issues', [
+    R.can('hr-administrator', 'create-student-record'),
+    R.can('hr-administrator', 'authorize-appointment'),
+    R.can('hr-administrator', 'issue-appointment-letter'),
+  ], [true, false, false]);
+
+  // A STUDENT CANNOT TOUCH ANY OF IT. The obvious case, asserted because it is
+  // the one a mistake in the matrix would quietly grant.
+  for (const cap of ['draft-appointment', 'authorize-appointment',
+    'issue-appointment-letter', 'set-remuneration']) {
+    check(`a student holds no ${cap}`, R.can('student', cap), false);
+    check(`nor does an applicant`, R.can('applicant', cap), false);
+  }
+}
+
+console.log('\nThe authority reviews; it does not rewrite\n');
+
+{
+  // THE SAFEGUARD THE UNIVERSITY NAMED. If the salary, position or dates are
+  // wrong, the appointment goes back to HR for correction — the Vice-Chancellor
+  // does not edit HR's submission. Otherwise the trail reads "HR prepared, VC
+  // approved" about a record the VC changed, and nobody can say who wrote what.
+  check('a submitted appointment cannot be edited by anybody',
+    A.canEdit({ status: 'submitted' }), false);
+  check('nor can an approved one', A.canEdit({ status: 'approved' }), false);
+  check('only a draft can', A.canEdit({ status: 'draft' }), true);
+
+  // AND RETURNING IT IS THE WAY BACK. The route requires a reason, so the
+  // correction is described rather than guessed at.
+  const route = readFileSync(join(here, '../app/api/appointments/route.ts'), 'utf8');
+  check('returning to HR is an action the route offers',
+    /decision !== 'approve' && decision !== 'return'/.test(route), true);
+  check('…and it requires a reason',
+    /return-needs-a-reason/.test(route), true);
+  check('…and the editable check is the one that stops a rewrite',
+    /canEdit\(previous\)/.test(route), true);
+}
+
+console.log(failures === 0 ? '\nAll appointment checks passed.' : `\n${failures} check(s) failed.`);
+process.exit(failures === 0 ? 0 : 1);

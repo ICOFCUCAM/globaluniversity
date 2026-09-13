@@ -8,6 +8,7 @@
 // Every student is scored and flagged so intervention happens early.
 import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { isOnRoll } from '@/lib/studentStatus';
 import { listByKind } from '@/lib/moduleStore';
 import { AlertTriangle, TrendingUp, Users, Wallet } from 'lucide-react';
 
@@ -69,7 +70,11 @@ export default function InsightsModule() {
 
   const signals: Signal[] = useMemo(() => {
     return students
-      .filter((s) => s.status === 'active')
+      // ON THE ROLL: active or suspended. A suspended student is still the
+      // University's student — that is the difference between a suspension and
+      // an expulsion — and dropping them from the signals is how somebody who
+      // most needs attention stops appearing on the screen built to find them.
+      .filter((s) => isOnRoll(s))
       .map((s) => {
         const mine = attendance.filter((a) => a.matric === s.matric_no.toUpperCase());
         const attendanceRate = mine.length

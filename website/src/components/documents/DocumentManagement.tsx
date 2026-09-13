@@ -126,6 +126,12 @@ export default function DocumentManagement() {
                 <td className="px-5 py-3">
                   <div className="flex items-center gap-3">
                     <div className={`p-2 rounded-lg ${doc.type === 'image' ? 'bg-purple-50 text-purple-500' : 'bg-blue-50 text-blue-500'}`}>
+                      {/* eslint-disable-next-line jsx-a11y/alt-text --
+                          `Image` here is the lucide-react ICON, not an <img>.
+                          The rule matches on the component's name and cannot
+                          tell the difference; an alt prop would be a prop the
+                          icon does not take. Marked so this is not
+                          re-investigated every time lint runs. */}
                       {doc.type === 'image' ? <Image size={16} /> : <FileText size={16} />}
                     </div>
                     <span className="text-sm font-medium text-[#4a4155] dark:text-[#c8c1d4]">{doc.name}</span>

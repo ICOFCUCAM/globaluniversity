@@ -21,6 +21,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { calculateGPA, PASS_MARK } from './grading';
+import { gradeScaleVersion } from '@/content/regulations';
 
 /** A result joined to the credit it carries and the term it was taken in. */
 export interface Mark {
@@ -43,6 +44,17 @@ export interface GpaRow {
   credits_earned: number;
   basis: 'approved' | 'provisional';
   computed_by: string | null;
+  /**
+   * Which version of the University grading scale produced these figures.
+   *
+   * WHY IT IS WRITTEN ON EVERY ROW. The University has published a version 2 —
+   * the American scale — and ruled that it applies to past transcripts as well
+   * as future ones. The moment a second scale exists, a bare 3.14 means nothing
+   * on its own: it is a Second Class Upper under one scale and would be a
+   * different figure under the other. Until now nothing recorded which, so the
+   * only way to tell was to know when the row was written.
+   */
+  scale_version: number;
 }
 
 /**
@@ -111,6 +123,10 @@ export function computeForStudent(marks: Mark[], computedBy: string | null): Gpa
       // may not rest on one.
       basis: term.list.every((m) => m.status === 'approved') ? 'approved' : 'provisional',
       computed_by: computedBy,
+      // Read from the regulations, not typed here. A constant in this file
+      // would be a second statement of which scale is in force, and the two
+      // would disagree the next time the University publishes one.
+      scale_version: gradeScaleVersion,
     });
   }
 

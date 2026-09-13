@@ -243,6 +243,189 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
     table: 'students',
     column: 'enrolled_at',
   },
+  {
+    file: '035_the_american_scale_and_the_new_credit_values.sql',
+    what: 'Puts the American grading scale in force and applies it to transcripts already '
+      + 'issued — every grade point and every average is restated, with a record of what each '
+      + 'one was before. Sets the Bachelor of Theology credit values: the eight two-part '
+      + 'courses at 3 and the thesis at 20.',
+    // The record of the restatement, which no earlier migration creates. Chosen
+    // over the scale_version columns because it is the thing that would be
+    // missing if the migration half-ran: the columns can exist with nothing
+    // restated into them, and a Readiness panel reporting "applied" on that
+    // would be vouching for a recompute that never happened.
+    table: 'grading_scale_restatements',
+  },
+  {
+    file: '036_the_steps_nothing_could_write.sql',
+    what: 'Makes three states the University declared in 024 reachable for the first time: an '
+      + 'application the Admissions Office has opened, a fee that has been asked for, and '
+      + 'documents that were positively checked rather than merely no longer outstanding.',
+    // A widened CHECK constraint adds no table and no column. Named here with
+    // the query to run rather than left out: a Readiness panel that says "all
+    // clear" about something it never looked at is worse than one that admits
+    // the gap.
+    cannotSee: "select pg_get_constraintdef(oid) like '%ADMISSION_OPENED%' as has_036 "
+      + "from pg_constraint where conname = 'admission_audit_log_event_check';"
+      + '  -- it should be true',
+  },
+  {
+    file: '037_a_student_is_not_an_application.sql',
+    what: 'Splits `students.status` into the admission state and what became of the student. '
+      + 'Two vocabularies shared one column and two words appeared in both, so an applicant who '
+      + 'declined a place and a student who left in their second year were the same value — and '
+      + 'conferring a degree overwrote the record of the enrolment it rested on.',
+    // The record of what the split moved. Chosen over the column itself
+    // because the column can exist with nothing migrated into it, and a panel
+    // reporting "applied" on that would be vouching for a split that never ran.
+    table: 'student_status_split',
+  },
+  {
+    file: '038_announcements_are_the_institution_speaking.sql',
+    what: 'Makes an announcement an institutional record rather than a row on the documents '
+      + 'table: an author, a clearance by somebody else, a publication that names who did it, '
+      + 'an append-only history, one row per destination, and a platform-by-platform '
+      + 'adaptation of the same words.',
+    // The history. Chosen over `announcements` itself because the table can
+    // exist with no trail attached, and a Readiness panel reporting "applied"
+    // on that would be vouching for the one thing the old noticeboard lacked.
+    table: 'announcement_events',
+  },
+  {
+    file: '039_a_destination_is_a_publishing_job.sql',
+    what: 'Turns each destination into a publishing job that keeps its own receipt: the '
+      + 'platform’s post id, its own scheduled time, a retry count and the exact text sent. '
+      + 'Gives an announcement more than one picture, each described. Creates somewhere for '
+      + 'engagement figures to live — deliberately empty, because nothing collects them yet.',
+    // The media table. Chosen over `announcement_metrics` because that one is
+    // meant to be empty, so its presence says nothing about whether the rest
+    // of the migration ran.
+    table: 'announcement_media',
+  },
+  {
+    file: '040_emergency_publishing_and_erasure.sql',
+    what: 'Lets one person publish an emergency notice without a second pair of eyes — only an '
+      + 'emergency, only with a stated reason, and the record says so permanently. And lets the '
+      + 'Superadministrator erase an announcement, which 038 made impossible: the text is '
+      + 'destroyed and a tombstone records that it existed, who removed it and where it had '
+      + 'already reached.',
+    table: 'announcement_tombstones',
+  },
+  {
+    file: '041_appointments_and_the_letters_that_issue_from_them.sql',
+    what: 'Gives the University somewhere to record that it has appointed somebody — position, '
+      + 'employment type, start date, probation, place of duty, reporting officer and pay — and '
+      + 'makes the appointment letter an output generated from that record, versioned and '
+      + 'sealed, rather than the place the facts live.',
+    table: 'appointments',
+  },
+  {
+    file: '042_the_appointment_lifecycle_and_the_staff_record.sql',
+    what: 'Gives an appointment the full lifecycle — approved, letter generated, issued, '
+      + 'accepted, active — and the amendment path for when something changes after issuance. '
+      + 'Closes the door that mattered: a staff record can no longer be created from an '
+      + 'appointment that was never issued.',
+    // THE DOOR IT CLOSES, rather than a column on `appointments`. A staff row
+    // that names the appointment behind it is the whole point of 042, and it
+    // is the thing whose absence means the guard is not there.
+    table: 'lecturers',
+    column: 'appointment_id',
+  },
+  {
+    file: '043_working_hours_and_the_appointing_authority.sql',
+    what: 'Two fields the letter has to state and the record did not carry — working hours, and '
+      + 'the body that made the appointment, which is not the officer who approved it here. '
+      + 'And a hash over the archived letter, so “this is the document we sent” can be proved '
+      + 'rather than rested on a trigger having worked.',
+    table: 'appointment_letters',
+    column: 'content_hash',
+  },
+  {
+    file: '044_document_templates_and_the_letters_tied_to_them.sql',
+    what: 'A template registry for the eleven HR document types, each versioned, one active at '
+      + 'a time, activated by somebody other than whoever wrote it. Every issued letter records '
+      + 'which template version produced it, and that version can then never be deleted — a '
+      + 'document issued in 2026 was produced by the wording of 2026.',
+    table: 'document_templates',
+  },
+  {
+    file: '045_official_correspondence_and_who_initiated_it.sql',
+    what: 'A register of the University’s own official letters — invitations, commendations, '
+      + 'correspondence with a ministry, directives — which did not exist at all. Records who '
+      + 'INITIATED separately from who authorised, so an appointment proposed by HR and one '
+      + 'started by the Vice-Chancellor are finally distinguishable, and makes an appointment '
+      + 'made on one office’s sole authority visible and permanent rather than quiet.',
+    table: 'correspondence',
+  },
+  {
+    file: '046_the_correspondence_history_and_the_delegated_draft.sql',
+    what: 'The history 045 left out — official correspondence was the only institutional act in '
+      + 'this system with no append-only record of who did what to it. Also makes “prepare this '
+      + 'letter” a real act: the Vice-Chancellor can hand a letter to an administrator with a '
+      + 'brief, before the letter exists, and the authority does not move with the typing. And '
+      + 'references are now allocated by the register rather than counted by the application, '
+      + 'so two officers issuing in the same second are not handed the same one.',
+    // THE HISTORY IS THE MARKER, because it is the thing whose absence means
+    // the register cannot say what happened — not a column on `correspondence`,
+    // which 045 already created.
+    table: 'correspondence_events',
+  },
+  {
+    file: '047_the_money_the_actors_and_the_two_axes.sql',
+    what: 'The University’s appointments are priced in dollars from here on, and an '
+      + 'appointment can carry allowances — housing, transport, responsibility — each '
+      + 'with its own amount and period, none assumed. The record also names five people '
+      + 'instead of three: who reviewed it and who issued it were previously guessed at. And '
+      + 'it closes a door: nothing reaches `issued` without both an approval and an archived '
+      + 'letter behind it.',
+    // THE ALLOWANCES ARE THE MARKER. `reviewed_by` is a column on a table 041
+    // already created; this is a table that did not exist before.
+    table: 'appointment_allowances',
+  },
+  {
+    file: '048_the_job_descriptions_and_what_they_inherit.sql',
+    what: 'A register of the University’s forty-six posts, and a job description for each, '
+      + 'inherited from one of eight family profiles so the confidentiality clause is written '
+      + 'once rather than forty-six times. EVERYTHING IT SEEDS IS A DRAFT: the wording is a '
+      + 'first draft for the University to read, nobody may activate what they wrote, and an '
+      + 'unapproved job description cannot be attached to an appointment.',
+    table: 'positions',
+  },
+  {
+    file: '049_verification_signatures_and_the_written_letter.sql',
+    what: 'A stranger holding a letter from the Vice-Chancellor can now check it — 045 built '
+      + 'the register and gave it nothing to answer with. The public view names no recipient '
+      + 'and no subject, because a warning letter is correspondence. A reproduced signature '
+      + 'becomes an explicit controlled feature: off until somebody other than its owner '
+      + 'switches it on with a stated authority, and every letter records how it was signed. '
+      + 'And the Vice-Chancellor can write a letter rather than type one.',
+    // The signature store is the marker: the verification view could be
+    // confused with 042's, and `body_format` is a column on a table 045 made.
+    table: 'signature_specimens',
+  },
+  {
+    file: '050_acceptance_the_activation_rule_and_the_full_audit.sql',
+    what: 'Acceptance stops being a timestamp. An acceptance now names WHO answered and WHICH '
+      + 'VERSION of which letter they were answering — the fact a dispute turns on when an '
+      + 'amended letter follows. A superseded letter can no longer be accepted. WHEN SOMEBODY '
+      + 'BECOMES STAFF is now a setting the University controls rather than an assumption in '
+      + 'the code, seeded to “accepted”. And the audit trail can record all fifteen '
+      + 'actions the University listed; six of them had no event to be recorded as.',
+    table: 'appointment_acceptances',
+  },
+  {
+    file: '051_templates_for_every_document_the_university_issues.sql',
+    what: 'Official correspondence gets versioned templates, and every issued letter records '
+      + 'which version produced it — 044 built that rule for eleven HR documents and the '
+      + 'Vice-Chancellor’s letters had none. The other three documents of an appointment '
+      + 'package (job description, conditions of service, acceptance form) become templates '
+      + 'too. And an appointment now records WHICH VERSION of the conditions of service '
+      + 'applies to it: "in force from time to time" is true and unusable to somebody in a '
+      + 'dispute.',
+    // The view is the marker: document_templates is 044's and the new columns
+    // sit on tables that already existed.
+    table: 'document_template_coverage',
+  },
 ];
 
 /** What a probe came back as. */

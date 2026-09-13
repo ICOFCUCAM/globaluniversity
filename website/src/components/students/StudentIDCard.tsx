@@ -177,6 +177,40 @@ export function IdentityCard({ card, seal }: { card: IssuedCard; seal: CardSeal 
   );
 }
 
+// ---------------------------------------------------------------------------
+// THE ROUTE'S ERROR CODES, IN WORDS.
+//
+// `not-permitted:create-student-record` was printed to the screen exactly like
+// that. It is a perfectly good thing for a log to say and a useless thing to
+// show a person: it names an internal capability, does not say who DOES hold
+// it, and reads as a fault rather than as a rule working correctly.
+//
+// Anything unrecognised falls through as itself rather than becoming "something
+// went wrong" — an unhelpful code is still better than a message that hides it.
+// ---------------------------------------------------------------------------
+function explainCardError(code: string | undefined): string {
+  if (!code) return 'The card could not be issued.';
+  if (code.startsWith('not-permitted')) {
+    return 'A student card is issued by the office that keeps the register. The Registrar, '
+      + 'the Administrator and the Superadministrator may print one; your role may not. '
+      + 'Nothing is wrong with this record.';
+  }
+  if (code === 'caller-suspended') {
+    return 'This account is suspended, so it cannot issue documents.';
+  }
+  if (code === 'no-token' || code === 'invalid-token') {
+    return 'Your session has expired. Sign in again to print a card.';
+  }
+  if (code === 'student-not-found') {
+    return 'This record could not be read. It may have been deleted while this was open.';
+  }
+  if (code === 'service-role-key-missing') {
+    return 'The server is missing the key it needs to issue documents. This is a deployment '
+      + 'setting, not a problem with the record — tell whoever administers the site.';
+  }
+  return code;
+}
+
 export default function StudentIDCard({
   student,
   onClose,
@@ -207,7 +241,7 @@ export default function StudentIDCard({
       if (!live) return;
       if (res?.ok) setIssued({ card: res.card, seal: res.seal });
       else if (res?.refusals) setRefusals(res.refusals);
-      else setProblem(res?.error ?? 'The card could not be issued.');
+      else setProblem(explainCardError(res?.error));
     })();
     return () => {
       live = false;
@@ -225,7 +259,17 @@ export default function StudentIDCard({
         {/* --- Not issued ------------------------------------------------ */}
         {(refusals || problem) && (
           <div className="mx-auto max-w-md rounded-2xl border border-amber-300 bg-amber-50 p-7 print:hidden">
-            <p className="font-heading text-lg font-bold text-amber-900">No card can be issued yet</p>
+            {/* -----------------------------------------------------------------
+                TWO DIFFERENT ANSWERS, AND THEY USED TO SHARE A HEADING.
+                "No card can be issued yet" is right when the RECORD is not
+                ready, and wrong when the person asking is not allowed — a
+                Finance Administrator read it as something missing from the
+                student and went looking through the record for it. The refusal
+                was about them.
+                ----------------------------------------------------------- */}
+            <p className="font-heading text-lg font-bold text-amber-900">
+              {refusals ? 'No card can be issued yet' : 'This is not yours to issue'}
+            </p>
             <ul className="mt-4 space-y-3 text-sm leading-relaxed text-amber-900/90">
               {refusals?.map((r) => (
                 <li key={r.code}>

@@ -63,6 +63,24 @@ const demoUsers: Record<UserRole, AuthUser> = {
   // The four examination offices. Named after what they DO rather than given
   // invented people's names, because a demo account that looks like a member of
   // staff eventually gets mistaken for one.
+  // The two HR offices. Named after what they DO, for the same reason as the
+  // examination offices below: a demo account that looks like a member of
+  // staff eventually gets mistaken for one — and in HR it would be mistaken
+  // for somebody the University employs.
+  'hr-officer': {
+    id: 'demo-hr-officer',
+    name: 'Demo HR Officer',
+    email: 'hr@iguc.net',
+    role: 'hr-officer',
+    avatar: '',
+  },
+  'hr-administrator': {
+    id: 'demo-hr-administrator',
+    name: 'Demo HR Administrator',
+    email: 'hr@iguc.net',
+    role: 'hr-administrator',
+    avatar: '',
+  },
   'exam-officer': {
     id: 'demo-exam-officer',
     name: 'Demo Examination Officer',

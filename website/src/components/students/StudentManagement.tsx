@@ -26,6 +26,8 @@ import StudentIDCard from './StudentIDCard';
 import BulkImport from './BulkImport';
 import StudentPhoto from './StudentPhoto';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
+import { can } from '@/lib/roles';
 import type { Student, ViewType } from '@/lib/types';
 
 import { statusMeta, toUniversal } from '@/lib/status';
@@ -47,6 +49,12 @@ const STATUS_FILTERS = [
 ];
 
 export default function StudentManagement({ onNavigate }: { onNavigate?: (v: ViewType) => void } = {}) {
+  const { user } = useAuth();
+  // The same capability /api/identity/card requires. Read from the role matrix
+  // rather than restated, so granting it to another office grants the button
+  // too and the two cannot drift apart.
+  const mayIssueCards = can(user?.role, 'create-student-record');
+
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
@@ -364,9 +372,20 @@ export default function StudentManagement({ onNavigate }: { onNavigate?: (v: Vie
               <Detail label="Status">{statusMeta(toUniversal(selected.status)).label}</Detail>
             </dl>
             <div className="flex gap-3 p-6 pt-4">
-              <button onClick={() => setIdCardStudent(selected)} className={`${BTN_SECONDARY} flex-1`}>
-                <IdCard size={15} /> ID card
-              </button>
+              {/* ---------------------------------------------------------------
+                  NOT DRAWN FOR A ROLE THAT MAY NOT PRESS IT.
+                  This button was offered to everybody, and Finance pressing it
+                  got the server's own refusal code in a dialog — a rule working
+                  correctly, presented as a fault. The card route has always
+                  required the Registrar's capability; the screen simply never
+                  asked. The server still checks: hiding a control is courtesy,
+                  and /api/identity/card reads the role out of the database.
+                  --------------------------------------------------------- */}
+              {mayIssueCards && (
+                <button onClick={() => setIdCardStudent(selected)} className={`${BTN_SECONDARY} flex-1`}>
+                  <IdCard size={15} /> ID card
+                </button>
+              )}
               <button onClick={() => setSelected(null)} className={`${BTN_SECONDARY} flex-1`}>
                 Close
               </button>

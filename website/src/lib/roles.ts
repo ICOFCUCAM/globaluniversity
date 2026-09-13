@@ -41,6 +41,8 @@ export const HIERARCHY: UserRole[] = [
   'admissions-officer',
   'library-staff',
   'student-affairs',
+  'hr-officer',
+  'hr-administrator',
   'student',
   'applicant',
 ];
@@ -166,6 +168,65 @@ export const OPERATIONAL_CAPABILITIES = [
   'sit-examination',
   'compose-social-post',
   'publish-social-post',
+  // ---------------------------------------------------------------------
+  // ANNOUNCEMENTS — the institution speaking on its own noticeboard.
+  //
+  // Three, not one, and the split is the same one 005 requires of a
+  // certificate design and 014 of a social post. The Announcements page used
+  // to check `role === 'admin' || role === 'lecturer'` inline, which meant
+  // every lecturer in the University could put a notice on the institution's
+  // board alone and instantly, with nobody named.
+  //
+  // RELEASING OUTWARD IS NOT HERE. Sending an announcement to Facebook
+  // requires 'publish-social-post' as well, on purpose: this new door must
+  // not become a way round the authority that already governs the
+  // University's outward voice.
+  // ---------------------------------------------------------------------
+  // ---------------------------------------------------------------------
+  // APPOINTMENTS. Drafting an appointment and authorising one are two
+  // capabilities because they must be two people: an appointment letter
+  // commits the University to paying somebody, and 041 refuses an
+  // authorisation by the drafter in the database as well as here.
+  //
+  // 'set-remuneration' is separate again. Who holds which post is ordinary
+  // institutional information and what they are paid is not, and an HR
+  // assistant who can record an appointment should not thereby be able to
+  // decide a salary.
+  // ---------------------------------------------------------------------
+  'draft-appointment',
+  'authorize-appointment',
+  'issue-appointment-letter',
+  'set-remuneration',
+  // ---------------------------------------------------------------------
+  // OFFICIAL CORRESPONDENCE — and here the separation is deliberately NOT
+  // the same shape.
+  //
+  // An appointment commits the University's MONEY, so 041 refuses an
+  // authorisation by the drafter and 'draft-appointment' and
+  // 'authorize-appointment' must land on two people. A letter commits the
+  // University's WORDS, and a letter to a ministry IS the Vice-Chancellor
+  // speaking. An office that holds all three of these may take a letter from
+  // blank page to issued alone, which is the point of them.
+  //
+  // 'prepare-correspondence' is the one that is held WITHOUT the others: an
+  // administrator asked to draft. They write it and hand it back, and the
+  // database refuses them to authorise what they prepared even if somebody
+  // later grants them the capability by mistake.
+  // ---------------------------------------------------------------------
+  'compose-correspondence',
+  'prepare-correspondence',
+  'authorize-correspondence',
+  'issue-correspondence',
+  'compose-announcement',
+  'approve-announcement',
+  'publish-announcement',
+  // PUBLISHING AN EMERGENCY WITHOUT A SECOND PAIR OF EYES. Its own capability
+  // rather than a corner of 'publish-announcement', because an override
+  // anybody who can publish may also reach for is not an emergency procedure —
+  // it is the fast way to publish, and within a month it is the only way
+  // anybody publishes. The database restricts it to the `emergency` category
+  // and requires a stated reason; this restricts who may reach for it at all.
+  'override-announcement-clearance',
   // APPROVING IS NOT PUBLISHING, and they are separate on purpose. Migration
   // 014 refuses to let an author approve their own post — the same separation
   // 005 required of certificate designs and 009 of grades. An announcement is
@@ -293,6 +354,21 @@ export const OPERATIONAL_CAPABILITIES = [
  * makes the Superadministrator a distinct office rather than a longer title.
  */
 export const SYSTEM_CAPABILITIES = [
+  // ---------------------------------------------------------------------
+  // ERASING AN ANNOUNCEMENT. The Superadministrator alone, and it is a SYSTEM
+  // capability rather than an operational one for the reason this list exists:
+  // an Administrator runs the University, and destroying a record of something
+  // the University said is not running it.
+  //
+  // 038 made deletion impossible outright and the University has ruled that at
+  // least one person must be able to. A notice posted to the wrong audience,
+  // or naming somebody who has asked to be removed, is a real thing that has
+  // to be able to go. What it leaves behind is a tombstone — the text is
+  // destroyed, the fact that it existed is not — because a registry that can
+  // make a notice vanish without trace cannot answer "did you ever publish
+  // that?", and the answer "no" would be unverifiable even when true.
+  // ---------------------------------------------------------------------
+  'erase-announcement',
   // Who exists, and who may act
   'assign-roles',
   'create-staff-account',
@@ -397,8 +473,33 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // 'admit-student' and 'verify-payment' are deliberately absent from both: an
   // institution where the Vice Chancellor can personally admit a student has
   // no separation of duties left to speak of, whatever its org chart says.
-  chancellor: ['view-executive-dashboard', 'view-all-faculties', 'view-institutional-finance', 'view-admitted-students', 'monitor-progress'],
-  'vice-chancellor': ['view-executive-dashboard', 'view-all-faculties', 'view-institutional-finance', 'view-admitted-students', 'monitor-progress', 'department-reports', 'approve-credential-design'],
+  // The Chancellor holds the correspondence chain for the same reason the
+  // Vice-Chancellor does — it is their own office's letter — and holds none of
+  // the appointment capabilities, because the appointing authority is one
+  // office and naming two would make "who appoints here" a question.
+  chancellor: ['view-executive-dashboard', 'view-all-faculties', 'view-institutional-finance', 'view-admitted-students', 'monitor-progress',
+    'compose-correspondence', 'authorize-correspondence', 'issue-correspondence'],
+  // ---------------------------------------------------------------------
+  // THE VICE-CHANCELLOR IS THE UNIVERSITY'S APPOINTING AUTHORITY.
+  //
+  // Staff, not students — and the distinction is the reason this is not a
+  // contradiction of the note above. A Vice Chancellor who can personally
+  // admit a student has no separation of duties left; a Vice Chancellor who
+  // appoints the staff is the institution's governance working as stated.
+  //
+  // AUTHORISING AND ISSUING TOGETHER, and HR holds neither. HR prepares,
+  // verifies and submits; the VC approves and issues. That is a cleaner split
+  // than a separate HR approval layer, because it puts the two halves in
+  // different offices rather than in two desks of the same one.
+  // ---------------------------------------------------------------------
+  'vice-chancellor': ['view-executive-dashboard', 'view-all-faculties', 'view-institutional-finance', 'view-admitted-students', 'monitor-progress', 'department-reports', 'approve-credential-design',
+    'authorize-appointment', 'issue-appointment-letter',
+    // THE WHOLE CORRESPONDENCE CHAIN, IN ONE OFFICE. Not an oversight and not
+    // a convenience: the University's ruling is that the Vice-Chancellor
+    // starts and finishes their own letter, with no artificial loop through
+    // HR. See src/lib/correspondence.ts for where that line is drawn and why
+    // it does not extend to appointments.
+    'compose-correspondence', 'authorize-correspondence', 'issue-correspondence'],
 
   // Directs Finance. Still cannot admit.
   'finance-director': ['verify-payment', 'approve-refund', 'generate-invoice', 'manage-student-accounts', 'view-institutional-finance'],
@@ -421,6 +522,42 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   'admissions-officer': [
     'process-applications', 'request-documents', 'track-application',
     'admit-student', 'reject-application', 'defer-admission', 'view-admitted-students',
+  ],
+
+  // ---------------------------------------------------------------------
+  // THE TWO HR OFFICES.
+  //
+  // NEITHER CAN DRAFT, APPROVE AND ISSUE. That is the whole answer to "nobody
+  // should be able to click a button and manufacture an official appointment":
+  // the Officer prepares and generates, the Administrator issues and manages
+  // the employee record, and the APPROVAL is the Registrar's — a third person
+  // again. On top of that the database refuses an approval by whoever drafted
+  // it, whatever role they hold.
+  //
+  // 'set-remuneration' is absent from the Officer and present for neither by
+  // default. Deciding what somebody is paid is not the same act as recording
+  // that they were appointed, and an HR assistant who may do the second should
+  // not thereby do the first.
+  // ---------------------------------------------------------------------
+  // HR PREPARES, VERIFIES AND SUBMITS. It does not issue, and that is the
+  // University's ruling rather than a design preference: the appointing
+  // authority is the Vice-Chancellor, so 'issue-appointment-letter' is absent
+  // from both HR roles and present on exactly one office.
+  'hr-officer': [
+    'draft-appointment',
+  ],
+
+  'hr-administrator': [
+    'draft-appointment',
+    // ASKED TO DRAFT, NOT TO DECIDE. This is the capability that exists to be
+    // held on its own: HR can write a letter the Vice-Chancellor requested and
+    // hand it back, and 045 refuses them to authorise what they prepared.
+    'prepare-correspondence',
+    // The employee record, which follows the letter and never precedes it —
+    // 042 refuses a staff row whose appointment has not been issued. HR
+    // creates it AFTER the VC has issued; it cannot create it before.
+    'create-student-record',
+    'set-remuneration',
   ],
 
   'library-staff': ['manage-library'],
@@ -573,6 +710,8 @@ export const roleLabels: Record<UserRole, string> = {
   hod: 'Head of Department',
   'programme-coordinator': 'Programme Coordinator',
   'admissions-officer': 'Admissions Officer',
+  'hr-officer': 'HR Officer',
+  'hr-administrator': 'HR Administrator',
   'library-staff': 'Library Staff',
   'student-affairs': 'Student Affairs',
   applicant: 'Applicant',

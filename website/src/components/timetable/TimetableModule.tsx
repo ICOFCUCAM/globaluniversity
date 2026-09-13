@@ -8,6 +8,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { write } from '@/lib/write';
 import { listRecords, saveRecord, deleteRecord } from '@/lib/moduleStore';
 import { useAuth } from '@/contexts/AuthContext';
+import { can } from '@/lib/roles';
 import { CalendarDays, Plus, UserCheck, Trash2 } from 'lucide-react';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -33,7 +34,23 @@ interface Attendance {
 
 export default function TimetableModule() {
   const { user } = useAuth();
-  const isStaff = user?.role === 'admin' || user?.role === 'lecturer';
+  // ---------------------------------------------------------------------
+  // ASKED OF THE MATRIX, NOT OF THE ROLE.
+  //
+  // This read `role === 'admin' || role === 'lecturer'` — the same inline test
+  // the Announcements page carried until it was found to let every lecturer in
+  // the University put a notice out alone. The fault is not the two roles
+  // named; it is that the answer lived in a component, so adding a role meant
+  // editing screens, and the screen and the server could come to answer the
+  // same question differently.
+  //
+  // 'build-timetable' and 'take-attendance' are the capabilities for
+  // building the timetable and marking attendance. TODAY THIS CHANGES NOTHING: exactly
+  // admin and lecturer hold them, which is who the inline test admitted. That
+  // is the point — a refactor of an authorisation check that alters who gets
+  // in is not a refactor.
+  // ---------------------------------------------------------------------
+  const isStaff = can(user?.role, 'build-timetable') || can(user?.role, 'take-attendance');
   const [slots, setSlots] = useState<Slot[]>([]);
   const [records, setRecords] = useState<Attendance[]>([]);
   const [showNew, setShowNew] = useState(false);

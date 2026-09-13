@@ -137,7 +137,11 @@ export default function OfficeDashboard({ onNavigate }: { onNavigate?: (v: ViewT
         return build ? build(base) : base;
       };
       const [enrolled, admitted, lecturers, courses, departments, resultsDraft, open] = await Promise.all([
-        head('students', (q) => q.in('status', ['approved', 'conditional', 'enrolled', 'active'])),
+        // ONE QUESTION, ONE COLUMN. This listed four values — two admission
+        // outcomes, an enrolment and a student word — and called the total
+        // "enrolled". An applicant holding an offer is not enrolled; that is
+        // what the offer is. 037 gave the question a column to be asked of.
+        head('students', (q) => q.not('student_status', 'is', null)),
         head('students', (q) => q.eq('status', 'approved')),
         head('lecturers'),
         head('courses'),

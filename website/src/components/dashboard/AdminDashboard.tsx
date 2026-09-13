@@ -83,7 +83,10 @@ export default function AdminDashboard({ onNavigate }: { onNavigate?: (v: ViewTy
         students, applicants, awaitingRegistrar, awaitingFinance,
         lecturers, courses, departments, pendingResults, recentRows,
       ] = await Promise.all([
-        count('students', (q: any) => q.in('status', ['approved', 'conditional', 'enrolled', 'active'])),
+        // See the note on the same count in OfficeDashboard. A student is
+        // somebody the Registrar has enrolled, and `student_status` is where
+        // that is now recorded.
+        count('students', (q: any) => q.not('student_status', 'is', null)),
         count('students', (q: any) => q.eq('status', 'applicant')),
         count('students', (q: any) => q.in('status', ['fee_paid', 'documents_required'])),
         count('students', (q: any) => q.eq('status', 'applicant').eq('payment_status', 'pending')),

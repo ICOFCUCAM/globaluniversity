@@ -116,7 +116,13 @@ export default function BulkImport({ onClose, onDone }: { onClose: () => void; o
         program: rec.program ?? null,
         degree_type: rec.degree_type ?? null,
         admission_year: Number(rec.admission_year) || new Date().getFullYear(),
-        status: rec.status || 'active',
+        // AN IMPORTED STUDENT IS BOTH THINGS. A bulk import is the Registrar
+        // entering people who are already here, so the admission state is
+        // `enrolled` — settled history — and what became of them is the student
+        // status. Writing 'active' into `status` alone is what put a student
+        // word in the admission column in the first place.
+        status: 'enrolled',
+        student_status: rec.status || 'active',
       };
       const { error } = await supabase.from('students').insert(payload);
       if (error) failed++;

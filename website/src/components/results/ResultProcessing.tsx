@@ -52,6 +52,22 @@ export default function ResultProcessing() {
    * for what. If nobody has registered, the correct answer is an empty roll and
    * a screen that says so, not a list of everybody.
    */
+  // ---------------------------------------------------------------------
+  // DECLARED ABOVE THE EFFECT THAT READS THEM, and they were not.
+  //
+  // `scheme` sat two hundred lines below while the effect used
+  // `scheme.components` to build the mark sheet. That RAN — the effect body
+  // executes after render, by which time the const is initialised — but the
+  // dependency array is evaluated DURING render, so the moment `scheme` was
+  // added to it (correctly: the effect genuinely depends on it) TypeScript
+  // reported a temporal dead zone.
+  //
+  // The omission was a real staleness, not a lint nicety: a course at a
+  // different level could be loaded against the previous level's components.
+  // ---------------------------------------------------------------------
+  const selectedCourseData = courses.find((c) => c.id === selectedCourse);
+  const scheme = schemeForLevel(selectedCourseData?.level);
+
   useEffect(() => {
     if (!selectedCourse) { setResults([]); return; }
     let live = true;
@@ -102,7 +118,15 @@ export default function ResultProcessing() {
       setSaved(false);
     })();
     return () => { live = false; };
-  }, [selectedCourse]);
+    // `scheme` IS SAFE TO DEPEND ON, and that is why it is here rather than
+    // suppressed. schemeForLevel returns one of three MODULE-LEVEL constants,
+    // so the reference changes only when the course's level does — no new
+    // object per render, and therefore no re-fetch loop.
+    //
+    // Omitting it was a real staleness: the effect read scheme.components to
+    // build the mark sheet, so a course at a different level could have been
+    // loaded against the previous level's components.
+  }, [selectedCourse, scheme]);
 
   function updateScore(index: number, key: string, value: number | null) {
     setResults((prev) => {
@@ -212,10 +236,8 @@ export default function ResultProcessing() {
     // their marks were saved without a trace when in fact the trace exists.
   }
 
-  const selectedCourseData = courses.find((c) => c.id === selectedCourse);
   // Which of the university's three published schemes this course is marked
   // under, chosen by its level. Undergraduate, master's, or thesis.
-  const scheme = schemeForLevel(selectedCourseData?.level);
   const classAvg = results.filter((r) => r.totalScore > 0).length > 0
     ? (results.filter((r) => r.totalScore > 0).reduce((s, r) => s + r.totalScore, 0) / results.filter((r) => r.totalScore > 0).length).toFixed(1)
     : '0';

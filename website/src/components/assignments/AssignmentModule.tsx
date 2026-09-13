@@ -15,6 +15,7 @@ import React, { useEffect, useState } from 'react';
 import { write } from '@/lib/write';
 import { listRecords, saveRecord, updateRecord, type ModuleRecord } from '@/lib/moduleStore';
 import { useAuth } from '@/contexts/AuthContext';
+import { can } from '@/lib/roles';
 import { ClipboardList, Plus, Download, CheckCircle2, Clock } from 'lucide-react';
 
 /** A brief or a submission, flattened for the markup below. */
@@ -54,7 +55,23 @@ const toDataUrl = (file: File) =>
 
 export default function AssignmentModule() {
   const { user } = useAuth();
-  const isStaff = user?.role === 'admin' || user?.role === 'lecturer';
+  // ---------------------------------------------------------------------
+  // ASKED OF THE MATRIX, NOT OF THE ROLE.
+  //
+  // This read `role === 'admin' || role === 'lecturer'` — the same inline test
+  // the Announcements page carried until it was found to let every lecturer in
+  // the University put a notice out alone. The fault is not the two roles
+  // named; it is that the answer lived in a component, so adding a role meant
+  // editing screens, and the screen and the server could come to answer the
+  // same question differently.
+  //
+  // 'manage-courses' and 'upload-grades' are the capabilities for
+  // setting course work and marking it. TODAY THIS CHANGES NOTHING: exactly
+  // admin and lecturer hold them, which is who the inline test admitted. That
+  // is the point — a refactor of an authorisation check that alters who gets
+  // in is not a refactor.
+  // ---------------------------------------------------------------------
+  const isStaff = can(user?.role, 'manage-courses') || can(user?.role, 'upload-grades');
   const [briefs, setBriefs] = useState<Doc[]>([]);
   const [subs, setSubs] = useState<Doc[]>([]);
   const [showNew, setShowNew] = useState(false);

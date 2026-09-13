@@ -77,8 +77,13 @@ export default function CertificateGenerator({ embedded }: { embedded?: boolean 
       const [{ data: rows }, { data: aw }] = await Promise.all([
         supabase
           .from('students')
-          .select('id, student_number, matric_no, first_name, middle_name, last_name, program, degree_type, status, award_id, admission_conditions')
-          .in('status', ['graduated', 'active'])
+          .select('id, student_number, matric_no, first_name, middle_name, last_name, program, degree_type, status, student_status, award_id, admission_conditions')
+          // THE CANDIDATES ARE STUDENTS, WHICH IS NOT AN ADMISSION STATE. This
+          // read `status in ('graduated','active')` — two student words in the
+          // admission column — and 037 moved both out of it. `enrolled` is the
+          // admission state every student holds; who among them has graduated is
+          // `student_status`, which the list below reads.
+          .eq('status', 'enrolled')
           .order('last_name'),
         supabase
           .from('awards')

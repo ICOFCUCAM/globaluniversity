@@ -85,8 +85,27 @@ export interface ProgrammeSchedule {
   creditsUnstated?: boolean;
 }
 
-/** Five ECTS a course, as the Bachelor of Theology is published. */
-const BTH_CREDITS = 5;
+/**
+ * NO LONGER A CONSTANT. This was `const BTH_CREDITS = 5`, applied to all
+ * thirty-six courses, because the programme was published at a flat five. The
+ * University has since set the eight two-part courses at 3, the thesis at 20
+ * and the gateway course at 6, so a constant here would have put 5 against a
+ * 20-credit thesis on a transcript — the exact retyping error this file exists
+ * to prevent, only worse, because it would look deliberate.
+ *
+ * The value comes from the curriculum, and a course with none is refused below
+ * rather than defaulted: a silent 0 or a silent 5 on a sealed document is not
+ * something a registrar can be expected to catch.
+ */
+function bthCredits(code: string, ects: number | undefined): number {
+  if (typeof ects !== 'number') {
+    throw new Error(
+      `${code} carries no credit value in bthCurriculum. A transcript row cannot be built `
+      + 'without one; add it there rather than defaulting it here.',
+    );
+  }
+  return ects;
+}
 
 function bth(): ProgrammeSchedule {
   const courses: ProgrammeCourse[] = [];
@@ -101,16 +120,23 @@ function bth(): ProgrammeSchedule {
       // transcript and must read BIS 250 here too.
       const { code, source, matchedTo } = facultyCode(c.title, c.code);
       courses.push({
-        code, codeSource: source, matchedTo, title: c.title, credits: BTH_CREDITS, year, semester,
+        code,
+        codeSource: source,
+        matchedTo,
+        title: c.title,
+        credits: bthCredits(c.code, c.ects),
+        year,
+        semester,
       });
     }
   });
   return {
     programme: 'Bachelor of Theology',
     courses,
-    source: 'The published Bachelor of Theology structure — 36 courses, six semesters, 5 ECTS '
-      + 'each, 180 in total. Codes are the faculty’s registry codes where the University has '
-      + 'published one for the subject.',
+    source: 'The published Bachelor of Theology structure — 36 courses, six semesters of 30 '
+      + 'ECTS, 180 in total. Courses taught in two numbered parts carry 3 and the thesis 20, on '
+      + 'the University’s ruling. Codes are the faculty’s registry codes where the University '
+      + 'has published one for the subject.',
   };
 }
 

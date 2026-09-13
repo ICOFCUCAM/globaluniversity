@@ -32,6 +32,7 @@
 
 import { NextResponse } from 'next/server';
 import { guard } from '@/lib/adminAuth';
+import { studentStatusOf, mayHoldAStudentCard } from '@/lib/studentStatus';
 import { sealCard, verificationQrSvg, newCredentialId, contentHash } from '@/lib/documentSecurity';
 import { UNIVERSITY } from '@/lib/constants';
 
@@ -47,11 +48,11 @@ export const runtime = 'nodejs';
  */
 const CAPABILITY = 'create-student-record' as const;
 
-/** The statuses that are not yet — or no longer — a registered student. */
-const NOT_ENROLLED = new Set([
-  'applicant', 'fee_paid', 'registrar_approved', 'documents_required',
-  'rejected', 'deferred', 'withdrawn', 'suspended',
-]);
+// WHO MAY HOLD A CARD: `mayHoldAStudentCard`, in src/lib/studentStatus.ts.
+//
+// It is there rather than here so that a test can call it. It was a denylist of
+// eight statuses in this file, it let thirteen through, and it could only be
+// checked by reading it — which is how it stayed wrong.
 
 const SITE = process.env.SITE_URL ?? `https://${UNIVERSITY.website.replace(/^www\./, '')}`;
 
@@ -72,7 +73,7 @@ export async function POST(request: Request) {
 
   const { data: student, error } = await admin
     .from('students')
-    .select('id, matric_no, student_number, first_name, middle_name, last_name, date_of_birth, program, degree_type, status, photo_url')
+    .select('id, matric_no, student_number, first_name, middle_name, last_name, date_of_birth, program, degree_type, status, student_status, photo_url')
     .eq('id', body.studentId)
     .maybeSingle();
 
@@ -87,13 +88,17 @@ export async function POST(request: Request) {
   // time — a registrar fixing a record should be told everything that is
   // missing, not sent back for the second thing after fixing the first.
   const refusals: { code: string; message: string }[] = [];
-  if (NOT_ENROLLED.has(String(student.status ?? '').toLowerCase())) {
+  if (!mayHoldAStudentCard(student)) {
+    const became = studentStatusOf(student);
     refusals.push({
       code: 'not-enrolled',
-      message:
-        `This record stands at "${student.status}". A student card is issued on registration, ` +
-        'after the Admissions Office has admitted the applicant — a card issued before that says ' +
-        'the university has accepted someone it has not.',
+      message: student.status !== 'enrolled'
+        ? `This record stands at "${student.status}" and has not been enrolled. A student card `
+          + 'is issued on registration, by the Registrar — a card issued before that says the '
+          + 'University has a student it does not yet have.'
+        : `This student is recorded as ${became ?? 'no longer active'}. A card is issued to a `
+          + 'student on the roll; issuing one now would put a current identity document in the '
+          + 'hands of somebody the University no longer teaches.',
     });
   }
   if (!student.photo_url) {

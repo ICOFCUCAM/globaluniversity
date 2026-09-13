@@ -31,6 +31,7 @@ import { admissionsQueue, forwardForAcademicReview } from '@/lib/admissions';
 import { can } from '@/lib/roles';
 import { statusMeta, toUniversal } from '@/lib/status';
 import DeleteApplicationPanel, { MIN_REASON } from './DeleteApplicationPanel';
+import VerificationSteps from './VerificationSteps';
 import type { Student } from '@/lib/types';
 import {
   Card, CardHeader, PageHeader, EmptyState, SkeletonRows, Detail,
@@ -353,6 +354,21 @@ export default function AdmissionsOffice() {
                     </button>
                   </div>
                 </div>
+
+                {/* ---------------------------------------------------------------
+                    THE STEPS BEFORE THE FORWARD.
+                    Opening an application and recording its documents as
+                    verified are this office's own acts, and until now neither
+                    left a mark — a file being worked on looked exactly like one
+                    nobody had touched. Drawn from the same registry the server
+                    checks, so a button is never offered where it would be
+                    refused.
+                    --------------------------------------------------------- */}
+                <VerificationSteps
+                  application={{ id: selected.id, status: selected.status ?? null }}
+                  desk="admissions-office"
+                  onDone={(m) => { setResult({ ok: true, text: m }); void load(); }}
+                />
 
                 {/* Said before the click, not after. */}
                 <div className="flex items-start gap-2 rounded-lg border border-[#e8dcc0] bg-[#faf6ee] px-4 py-3 text-xs leading-relaxed text-[#6b5a2f] dark:border-[#3d3349] dark:bg-[#241f2c] dark:text-[#c3b48f]">

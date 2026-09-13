@@ -1,9 +1,9 @@
 -- ===========================================================================
--- ICOF GLOBAL UNIVERSITY — MIGRATIONS 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013, 014, 015, 016, 017, 018, 019, 020, 021, 022, 023, 024, 025, 026, 027, 028, 029, 030, 031, 032, 033, 034, IN ORDER
+-- ICOF GLOBAL UNIVERSITY — MIGRATIONS 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013, 014, 015, 016, 017, 018, 019, 020, 021, 022, 023, 024, 025, 026, 027, 028, 029, 030, 031, 032, 033, 034, 035, 036, 037, 038, 039, 040, 041, 042, 043, 044, 045, 046, 047, 048, 049, 050, 051, IN ORDER
 --
 -- GENERATED FILE. DO NOT EDIT.
 --   Generator: scripts/build-migration-run.mjs
---   Rebuild:   node scripts/build-migration-run.mjs --out=RUN-ALL.sql 001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020 021 022 023 024 025 026 027 028 029 030 031 032 033 034
+--   Rebuild:   node scripts/build-migration-run.mjs --out=RUN-ALL.sql 001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020 021 022 023 024 025 026 027 028 029 030 031 032 033 034 035 036 037 038 039 040 041 042 043 044 045 046 047 048 049 050 051
 --
 -- ---------------------------------------------------------------------------
 -- HOW TO RUN IT
@@ -193,6 +193,39 @@ create table if not exists audit_logs (
   performed_by  uuid,
   details       jsonb,
   ip_address    text,
+  created_at    timestamptz not null default now()
+);
+
+-- ---------------------------------------------------------------------------
+-- PAYMENTS — ADDED HERE BECAUSE RUN-ALL.sql HAS NEVER WORKED WITHOUT IT.
+--
+-- This table existed only in 000_complete.sql, which is 001 and 002 merged.
+-- The bundle builder refuses to list 000 alongside 001 and 002 — rightly, it
+-- would run the same DDL twice — so every RUN-ALL.sql ever built has gone
+-- 001, 002, 003 … and then reached 010, which writes a row-level security
+-- policy on `payments`, and stopped dead with "relation payments does not
+-- exist".
+--
+-- Nobody noticed because nobody has built this University from nothing since
+-- the bundle was introduced; every real database grew from 000. But RUN-ALL is
+-- precisely the file somebody reaches for when they do, and it is the one that
+-- could not do it. Proven by running it against an empty database: it failed at
+-- the same line before this change and passes after.
+--
+-- The definition is 000's, unchanged.
+-- ---------------------------------------------------------------------------
+create table if not exists payments (
+  id            uuid primary key default gen_random_uuid(),
+  student_id    uuid references students (id) on delete set null,
+  reference     text not null unique,
+  amount        numeric(14,2) not null check (amount > 0),
+  currency      text not null check (currency in ('FCFA','USD','EUR','GBP','NGN')),
+  purpose       text not null,
+  method        text,
+  -- Who took the money. Finance verifies payments; nobody else may.
+  received_by   uuid references auth.users (id) on delete set null,
+  received_at   timestamptz not null default now(),
+  note          text,
   created_at    timestamptz not null default now()
 );
 
@@ -6978,6 +7011,7 @@ where not exists (select 1 from grading_scales where name = 'University grading 
 do $$
 declare
   scale_id uuid;
+  active_id uuid;
   refused boolean;
 begin
   -- ---- A published scale cannot be edited --------------------------------
@@ -6994,8 +7028,24 @@ begin
   end if;
 
   -- …but activating and deactivating it still work.
-  update grading_scales set is_active = false where id = scale_id;
-  update grading_scales set is_active = true  where id = scale_id;
+  --
+  -- ON WHICHEVER SCALE IS CURRENTLY ACTIVE, NOT ON VERSION 1. This proof used
+  -- to name version 1 and switch it off and back on, which was correct for
+  -- exactly as long as version 1 was the only scale the University had. 035
+  -- published version 2 and deactivated version 1 — and re-running this file
+  -- after that turned version 1 back on while version 2 was still on, which the
+  -- unique index over the active global scale refuses. So a bundle that had
+  -- been run once could not be run twice, and the failure pointed at 020 rather
+  -- than at the assumption inside it.
+  --
+  -- Found by running RUN-ALL.sql a second time. A migration is not idempotent
+  -- because it says so.
+  select id into active_id from grading_scales
+   where name = 'University grading scale' and is_active and award_kind is null;
+  if active_id is null then active_id := scale_id; end if;
+
+  update grading_scales set is_active = false where id = active_id;
+  update grading_scales set is_active = true  where id = active_id;
 
   -- ---- Two active global scales are impossible ---------------------------
   refused := false;
@@ -7951,7 +8001,26 @@ create table if not exists admission_states (
   sort_order  integer not null
 );
 
-insert into admission_states (state, stage, applicant_label, sort_order) values
+-- ---------------------------------------------------------------------------
+-- SEEDED ONLY WHILE THIS IS STILL 024'S TABLE.
+--
+-- Running the bundle a second time used to stop dead here, twice over. 025 puts
+-- a trigger on this table that refuses an INSERT — a new admission state is a
+-- code change, not a row — and it fires before ON CONFLICT is considered. And
+-- 025 adds a NOT NULL `label` column, which this statement, written before that
+-- column existed, does not supply.
+--
+-- Neither is a fault in 025. This seed simply belongs to the moment before it:
+-- once 025 has run, the vocabulary is 025's, 026's and 027's, they maintain
+-- every one of these rows including their labels, and there is nothing here
+-- left to do. So the guard is the presence of 025's column, and this becomes a
+-- no-op the moment the table has moved on.
+--
+-- Found by running RUN-ALL.sql a second time. A migration is not idempotent
+-- because it says so.
+-- ---------------------------------------------------------------------------
+insert into admission_states (state, stage, applicant_label, sort_order)
+select * from (values
   ('draft',                    'application',  'Application started',        10),
   ('applicant',                'application',  'Application received',       20),
   ('under_review',             'verification', 'Application received',       30),
@@ -7967,6 +8036,13 @@ insert into admission_states (state, stage, applicant_label, sort_order) values
   ('admission_issued',         'issuance',     'Admission letter available',130),
   ('enrolled',                 'enrolment',    'Ready for enrolment',       140),
   ('withdrawn',                'closed',       'Withdrawn',                 150)
+) as v(state, stage, applicant_label, sort_order)
+where not exists (
+  select 1 from information_schema.columns
+   where table_schema = 'public'
+     and table_name = 'admission_states'
+     and column_name = 'label'
+)
 on conflict (state) do update
   set stage = excluded.stage,
       applicant_label = excluded.applicant_label,
@@ -8932,6 +9008,21 @@ begin
   end if;
 
   -- ---- THE VIEW SEES A STATUS NOBODY DECLARED --------------------------
+  -- ---------------------------------------------------------------------
+  -- THE CONSTRAINT 037 ADDS HAS TO COME OFF FOR THIS ONE INSERT.
+  --
+  -- This proof writes a status nobody declared, deliberately, to watch the
+  -- coverage view report it. 037 later gave `students.status` its first CHECK
+  -- constraint — so on any rerun of the bundle after 037 has run, the proof
+  -- that the view can SEE a stray status was refused by the rule that stops
+  -- one being WRITTEN. Two correct rules, colliding.
+  --
+  -- The drop is inside the same block as the PROOF_ROLLBACK, and Postgres rolls
+  -- DDL back with everything else, so the constraint is restored the instant
+  -- this block ends. Found by running RUN-ALL.sql a second time.
+  -- ---------------------------------------------------------------------
+  alter table students drop constraint if exists students_status_check;
+
   insert into students (first_name, last_name, matric_no, email, status)
   values ('Proof', '027', 'PROOF-027', 'proof-027@iguc.net', 'a_state_nobody_declared')
   returning id into app;
@@ -10331,4 +10422,8621 @@ select
 from students s
 where s.status in ('admission_issued', 'enrolled')
 order by s.decided_at desc nulls last;
+
+
+-- ===========================================================================
+-- ===========================================================================
+--
+--   035_the_american_scale_and_the_new_credit_values.sql
+--
+-- ===========================================================================
+-- ===========================================================================
+
+-- ===========================================================================
+-- 035 — THE AMERICAN GRADING SCALE, APPLIED TO EVERYTHING ALREADY ISSUED,
+--       AND THE CREDIT VALUES THAT GO WITH IT.
+-- ===========================================================================
+--
+-- ---------------------------------------------------------------------------
+-- WHAT CHANGES THE MOMENT THIS RUNS. READ THIS PART.
+-- ---------------------------------------------------------------------------
+--
+-- 1. EVERY GRADE POINT AND EVERY AVERAGE THE UNIVERSITY HOLDS IS RESTATED.
+--    Not only new ones. The University has ruled that version 2 applies to past
+--    transcripts too, so this re-derives `results.grade` and
+--    `results.grade_point` from the marks already recorded, and recomputes every
+--    row of `semester_gpas` from them. A graduate's CGPA will go UP. On the
+--    36-module Bachelor of Theology record the University asked about, 3.14
+--    becomes 3.43.
+--
+-- 2. NOBODY'S CLASSIFICATION IS INFLATED BY IT, because the classification
+--    boundaries move with the scale. First Class still means an A- average; an
+--    A- is simply worth 3.70 now instead of 3.33. A student who was Second Class
+--    Upper yesterday is Second Class Upper today. That is the intent, and
+--    section 8 proves it rather than asserting it.
+--
+-- 3. NOBODY WHO FAILED NOW PASSES. The American scale usually runs D- to 60 and
+--    passes there. This one does not: the pass mark stays at 65 and there is no
+--    D-. Moving it would have awarded credit the University never awarded, on
+--    documents it has already sealed. The University asked for the points to be
+--    less harsh. It did not ask to change who passed.
+--
+-- 4. EVERY FIGURE NOW SAYS WHICH SCALE PRODUCED IT. `semester_gpas` and
+--    `results` gain `scale_version`. Until now nothing recorded it, so a 3.14 on
+--    an issued transcript and a 3.43 on the screen were two unexplained numbers
+--    rather than one number under two scales.
+--
+-- 5. WHAT MOVED IS WRITTEN DOWN. `grading_scale_restatements` keeps the before
+--    and after of every figure this migration changes, with the student, the
+--    term and both scale versions. A retroactive change nobody can audit is not
+--    a correction; it is a rewrite.
+--
+-- 6. THE BACHELOR OF THEOLOGY CREDIT VALUES CHANGE. The eight courses taught in
+--    two numbered parts drop to 3, the thesis rises to 20, and the course that
+--    opens the degree carries 6. Six semesters of 30, 180 in the award, as
+--    before. These are set on `courses` by registry code.
+--
+-- ---------------------------------------------------------------------------
+-- WHAT THIS DOES NOT DO
+-- ---------------------------------------------------------------------------
+--
+-- It does not touch `credentials_issued`. A transcript or certificate already
+-- printed, signed and handed to a graduate states a figure computed under
+-- version 1, and that document is what it is. Section 9 REPORTS which issued
+-- credentials now disagree with the recomputed record so the University can
+-- decide what to do about each one. Reissuing somebody's degree certificate is
+-- not a decision a migration gets to take.
+-- ===========================================================================
+
+
+-- ===========================================================================
+-- 1. VERSION 2 OF THE SCALE, PUBLISHED
+-- ===========================================================================
+--
+-- Version 1 is deactivated rather than edited or deleted. `grading_scales` has
+-- a unique index over the active global scale, so the order matters: the old
+-- one steps down before the new one steps up, or the insert collides.
+--
+-- 020 built the refusal that makes this the only way in: a published scale
+-- cannot have its bands changed, only its active flag. So version 1 stays on
+-- the record, exactly as it was, and anybody looking at an old transcript can
+-- still see the scale it was computed under.
+
+update grading_scales
+   set is_active = false
+ where name = 'University grading scale'
+   and version = 1
+   and is_active;
+
+insert into grading_scales (name, version, award_kind, pass_mark, max_point, bands,
+                            is_active, published_at)
+select 'University grading scale', 2, null, 65, 4.00,
+  '[{"grade":"A",  "points":4.00,"min":93,"max":100,"descriptor":"Excellent"},
+    {"grade":"A-", "points":3.70,"min":90,"max":92, "descriptor":"Very Good"},
+    {"grade":"B+", "points":3.30,"min":87,"max":89, "descriptor":"Good"},
+    {"grade":"B",  "points":3.00,"min":83,"max":86, "descriptor":"Above Average"},
+    {"grade":"B-", "points":2.70,"min":80,"max":82, "descriptor":"Average"},
+    {"grade":"C+", "points":2.30,"min":77,"max":79, "descriptor":"Satisfactory"},
+    {"grade":"C",  "points":2.00,"min":73,"max":76, "descriptor":"Satisfactory"},
+    {"grade":"C-", "points":1.70,"min":70,"max":72, "descriptor":"Below Satisfactory"},
+    {"grade":"D+", "points":1.30,"min":67,"max":69, "descriptor":"Pass"},
+    {"grade":"D",  "points":1.00,"min":65,"max":66, "descriptor":"Pass"},
+    {"grade":"F",  "points":0.00,"min":0, "max":64, "descriptor":"Fail"}]'::jsonb,
+  true, now()
+where not exists (
+  select 1 from grading_scales where name = 'University grading scale' and version = 2
+);
+
+-- Running this a second time must not leave version 1 active again, and must
+-- not leave both active. The insert above is skipped on a rerun, so activation
+-- is asserted separately.
+update grading_scales
+   set is_active = true
+ where name = 'University grading scale' and version = 2 and not is_active;
+
+
+-- ===========================================================================
+-- 2. ONE PLACE THAT TURNS A MARK INTO A GRADE
+-- ===========================================================================
+--
+-- The application derives a grade from `regulations.ts`; the database had no
+-- opinion at all, and simply stored whatever it was handed. That is how a
+-- result row can carry a grade from one scale and a grade point from another
+-- and nothing anywhere notices.
+--
+-- This reads the active scale out of the table, so there is one scale in the
+-- system and it is the published one. Change the scale, and every later
+-- computation follows without a deployment.
+
+create or replace function grade_under_active_scale(score numeric)
+returns table (grade text, points numeric)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select b->>'grade', (b->>'points')::numeric
+    from grading_scales s
+    cross join lateral jsonb_array_elements(s.bands) as b
+   where s.is_active
+     and s.award_kind is null
+     and score >= (b->>'min')::numeric
+     and score <= (b->>'max')::numeric
+   limit 1;
+$$;
+
+-- 030's rule: a function is callable by whoever needs it and nobody else. This
+-- one only reads a published scale, so any signed-in account may ask it what a
+-- mark is worth — that is the same information the Student Handbook prints.
+revoke all on function grade_under_active_scale(numeric) from public;
+grant execute on function grade_under_active_scale(numeric) to authenticated, service_role;
+
+
+-- ===========================================================================
+-- 3. EVERY FIGURE SAYS WHICH SCALE PRODUCED IT
+-- ===========================================================================
+--
+-- THE GAP THIS CLOSES, AND IT IS THE ONE THAT MADE VERSION 2 DANGEROUS.
+-- `semester_gpas` stored a GPA, a CGPA, credits and a basis. It did not store
+-- the scale. So the day a second scale exists, every figure in the table
+-- becomes ambiguous — and a registrar asked "is this 3.14 old or new?" has
+-- nothing to read. The column is filled in below for every existing row.
+
+alter table semester_gpas add column if not exists scale_version integer;
+alter table results       add column if not exists scale_version integer;
+
+comment on column semester_gpas.scale_version is
+  'Which version of the University grading scale this average was computed under. '
+  'NULL means it predates the column and has not been restated.';
+comment on column results.scale_version is
+  'Which version of the University grading scale this grade point came from.';
+
+
+-- ===========================================================================
+-- 4. WHAT THE RESTATEMENT MOVED
+-- ===========================================================================
+--
+-- A retroactive change to a graduate's record is exactly the kind of thing an
+-- accreditation reviewer asks about, and "the software recomputed it" is not an
+-- answer. This is the answer: one row per figure that changed, with what it was,
+-- what it became, and which scales those were.
+--
+-- APPEND-ONLY BY CONSTRUCTION. There is no update policy and no delete policy
+-- on it at all, so the record of a restatement cannot be tidied away by the
+-- people the restatement was about.
+
+create table if not exists grading_scale_restatements (
+  id             uuid primary key default gen_random_uuid(),
+
+  -- 'result' — one mark's grade and grade point.
+  -- 'gpa'    — one student's average for one term.
+  kind           text not null check (kind in ('result', 'gpa')),
+
+  student_id     uuid references students (id) on delete cascade,
+  result_id      uuid,
+  academic_year  integer,
+  semester       integer,
+
+  from_version   integer,
+  to_version     integer not null,
+
+  -- Free-shaped because a result restatement and a GPA restatement do not carry
+  -- the same figures, and two half-empty column sets would be worse than one
+  -- honest jsonb.
+  before         jsonb not null,
+  after          jsonb not null,
+
+  restated_at    timestamptz not null default now()
+);
+
+create index if not exists grading_scale_restatements_student_idx
+  on grading_scale_restatements (student_id);
+
+alter table grading_scale_restatements enable row level security;
+
+drop policy if exists grading_scale_restatements_read on grading_scale_restatements;
+create policy grading_scale_restatements_read on grading_scale_restatements
+  for select using (auth_role() in ('superadmin', 'admin', 'registrar'));
+
+-- No insert policy. The recompute runs as the service role, which is the only
+-- identity that should be writing these, and a browser that could write one
+-- could fabricate a restatement that never happened.
+
+
+-- ===========================================================================
+-- 5. THE BACHELOR OF THEOLOGY CREDIT VALUES
+-- ===========================================================================
+--
+-- Set by registry code, which is unique on `courses` and is what the University
+-- ruled a course is called. A code names a SUBJECT, not a slot in one
+-- programme, so this is deliberately not scoped to the Bachelor of Theology:
+-- Bible Doctrine I is worth 3 wherever it is taught.
+--
+-- Courses the University has not created rows for are simply not updated. The
+-- verify at the foot reports how many of the thirty-six were found, so a
+-- registry that is missing half the degree says so rather than looking settled.
+
+do $$
+declare
+  wanted constant jsonb :=
+    '{"BIS 210":6,
+      "BIS 220":3, "BIS 230":3, "BIS 250":3, "BIS 260":3,
+      "RM 540":3,  "RM 550":3,  "STT 400":3, "STT 420":3,
+      "RM 560":20,
+      "MW 300":5,  "OTH 300":5, "CH 200":5,  "LC 110":5,  "OT 300":5,
+      "MDS 720":5, "CH 300":5,  "MDS 660":5, "CED 160":5, "BIS 330":5,
+      "BIS 320":5, "BL 340":5,  "STT 410":5, "MDS 650":5, "BIS 270":5,
+      "BIS 280":5, "MDS 670":5, "MDS 730":5, "BIS 350":5, "CDS 100":5,
+      "MW 350":5,  "MDS 820":5, "BIS 340":5, "MDS 760":5, "STT 430":5,
+      "STT 450":5}'::jsonb;
+  changed integer;
+begin
+  update courses c
+     set credit_unit = (wanted->>c.code)::integer
+   where wanted ? c.code
+     and c.credit_unit is distinct from (wanted->>c.code)::integer;
+  get diagnostics changed = row_count;
+  raise notice '035: % course credit value(s) updated', changed;
+end $$;
+
+
+-- ===========================================================================
+-- 6. RESTATING EVERY MARK
+-- ===========================================================================
+--
+-- Only rows that actually change are written to the restatement record, so a
+-- second run of this migration records nothing — which is the test of whether
+-- it is idempotent, not a claim that it is.
+--
+-- A result with no total_score is left alone. There is nothing to re-derive
+-- from, and inventing a grade for a mark nobody entered is the worst thing this
+-- migration could do.
+
+do $$
+declare
+  restated integer;
+begin
+  with recomputed as (
+    select r.id,
+           r.student_id,
+           r.grade                  as old_grade,
+           r.grade_point            as old_points,
+           g.grade                  as new_grade,
+           g.points                 as new_points
+      from results r
+      cross join lateral grade_under_active_scale(r.total_score) g
+     where r.total_score is not null
+  ),
+  moved as (
+    select * from recomputed
+     where old_grade is distinct from new_grade
+        or old_points is distinct from new_points
+  ),
+  logged as (
+    insert into grading_scale_restatements
+      (kind, student_id, result_id, from_version, to_version, before, after)
+    select 'result', m.student_id, m.id, 1, 2,
+           jsonb_build_object('grade', m.old_grade, 'grade_point', m.old_points),
+           jsonb_build_object('grade', m.new_grade, 'grade_point', m.new_points)
+      from moved m
+    returning 1
+  )
+  update results r
+     set grade = m.new_grade,
+         grade_point = m.new_points,
+         scale_version = 2
+    from moved m
+   where r.id = m.id;
+
+  get diagnostics restated = row_count;
+  raise notice '035: % result(s) restated under version 2', restated;
+end $$;
+
+-- Marks whose grade did not move still belong to version 2 now — an A is an A
+-- on both scales at 4.00. Without this they would read as unrestated forever.
+update results
+   set scale_version = 2
+ where total_score is not null and scale_version is distinct from 2;
+
+
+-- ===========================================================================
+-- 7. RECOMPUTING EVERY AVERAGE
+-- ===========================================================================
+--
+-- THE CUMULATIVE FIGURE IS NOT AN AVERAGE OF THE SEMESTER AVERAGES. Quality
+-- points over credits, cumulatively, from the beginning — the same definition
+-- `src/lib/gpa.ts` computes, deliberately, because two definitions of a CGPA is
+-- how an institution ends up with two CGPAs.
+--
+-- THE TERM COMES FROM THE ENROLMENT. A result carries a mark, not a calendar,
+-- and the same course is taught to different cohorts in different years.
+-- Results with no enrolment have no term and are counted as unplaceable by the
+-- verify rather than being quietly dropped into somebody's first semester.
+
+do $$
+declare
+  moved integer;
+begin
+  with marks as (
+    select r.student_id,
+           e.academic_year,
+           e.semester,
+           coalesce(r.grade_point, 0)                        as gp,
+           coalesce(c.credit_unit, 0)                        as cu,
+           (r.total_score >= 65)                             as passed,
+           (r.status = 'approved')                           as approved
+      from results r
+      join enrollments e on e.id = r.enrollment_id
+      join courses c     on c.id = r.course_id
+     where e.academic_year is not null
+       and e.semester is not null
+       and r.total_score is not null
+  ),
+  per_term as (
+    select student_id, academic_year, semester,
+           sum(gp * cu)                                      as qp,
+           sum(cu)                                           as attempted,
+           sum(case when passed then cu else 0 end)          as earned,
+           bool_and(approved)                                as all_approved
+      from marks
+     group by student_id, academic_year, semester
+  ),
+  running as (
+    select p.*,
+           sum(qp)        over w                             as cum_qp,
+           sum(attempted) over w                             as cum_cu
+      from per_term p
+      window w as (partition by student_id
+                   order by academic_year, semester
+                   rows between unbounded preceding and current row)
+  ),
+  computed as (
+    select student_id, academic_year, semester,
+           case when attempted = 0 then 0
+                else round(qp / attempted, 2) end            as gpa,
+           case when cum_cu = 0 then 0
+                else round(cum_qp / cum_cu, 2) end           as cgpa,
+           attempted, earned,
+           case when all_approved then 'approved' else 'provisional' end as basis
+      from running
+  ),
+  logged as (
+    insert into grading_scale_restatements
+      (kind, student_id, academic_year, semester, from_version, to_version, before, after)
+    select 'gpa', c.student_id, c.academic_year, c.semester,
+           g.scale_version, 2,
+           jsonb_build_object('gpa', g.gpa, 'cgpa', g.cgpa,
+                              'credits_attempted', g.credits_attempted),
+           jsonb_build_object('gpa', c.gpa, 'cgpa', c.cgpa,
+                              'credits_attempted', c.attempted)
+      from computed c
+      join semester_gpas g
+        on g.student_id = c.student_id
+       and g.academic_year = c.academic_year
+       and g.semester = c.semester
+     where g.gpa is distinct from c.gpa
+        or g.cgpa is distinct from c.cgpa
+        or g.credits_attempted is distinct from c.attempted
+    returning 1
+  )
+  insert into semester_gpas
+    (student_id, academic_year, semester, gpa, cgpa,
+     credits_attempted, credits_earned, basis, scale_version, computed_at)
+  select student_id, academic_year, semester, gpa, cgpa,
+         attempted, earned, basis, 2, now()
+    from computed
+  on conflict (student_id, academic_year, semester) do update
+    set gpa = excluded.gpa,
+        cgpa = excluded.cgpa,
+        credits_attempted = excluded.credits_attempted,
+        credits_earned = excluded.credits_earned,
+        basis = excluded.basis,
+        scale_version = 2,
+        computed_at = now();
+
+  get diagnostics moved = row_count;
+  -- WRITTEN, NOT CHANGED. This is an upsert, so on a second run it still
+  -- reports every row — the count that matters for idempotence is the
+  -- restatement count above, which goes to zero.
+  raise notice '035: % semester average(s) written under version 2', moved;
+end $$;
+
+
+-- ===========================================================================
+-- 8. PERFORMING THE RULES
+-- ===========================================================================
+--
+-- Each of these does the thing that must be refused, or asserts the thing that
+-- must hold, and rolls back. A rule nobody has watched refuse anything is a
+-- rule nobody has tested.
+
+do $$
+declare
+  refused boolean;
+  g record;
+  n integer;
+begin
+  -- ---- The scale in force is version 2, and it is the only one ------------
+  select count(*) into n from grading_scales
+   where is_active and award_kind is null;
+  if n <> 1 then
+    raise exception '035 FAILED: % active global grading scales, expected exactly 1', n;
+  end if;
+
+  select version into n from grading_scales where is_active and award_kind is null;
+  if n <> 2 then
+    raise exception '035 FAILED: the active global scale is version %, expected 2', n;
+  end if;
+
+  -- ---- Version 1 is still on the record -----------------------------------
+  if not exists (select 1 from grading_scales
+                  where name = 'University grading scale' and version = 1) then
+    raise exception '035 FAILED: version 1 has gone. A figure on an issued transcript '
+                    'was computed under it and must remain explicable.';
+  end if;
+
+  -- ---- Version 2 still cannot be edited -----------------------------------
+  refused := false;
+  begin
+    update grading_scales set pass_mark = 60
+     where name = 'University grading scale' and version = 2;
+  exception when others then refused := true;
+  end;
+  if not refused then
+    raise exception '035 FAILED: the newly published scale could be edited in place';
+  end if;
+
+  -- ---- The bands do what the University said ------------------------------
+  select * into g from grade_under_active_scale(93);
+  if g.grade <> 'A' or g.points <> 4.00 then
+    raise exception '035 FAILED: 93%% is % at %, expected A at 4.00', g.grade, g.points;
+  end if;
+  select * into g from grade_under_active_scale(90);
+  if g.grade <> 'A-' or g.points <> 3.70 then
+    raise exception '035 FAILED: 90%% is % at %, expected A- at 3.70', g.grade, g.points;
+  end if;
+  select * into g from grade_under_active_scale(83);
+  if g.grade <> 'B' or g.points <> 3.00 then
+    raise exception '035 FAILED: 83%% is % at %, expected B at 3.00', g.grade, g.points;
+  end if;
+
+  -- ---- NOBODY WHO FAILED NOW PASSES ---------------------------------------
+  -- The single most consequential thing this migration could get wrong.
+  select * into g from grade_under_active_scale(64);
+  if g.grade <> 'F' then
+    raise exception '035 FAILED: 64%% is now a %. The pass mark was not supposed to move.',
+      g.grade;
+  end if;
+  select * into g from grade_under_active_scale(60);
+  if g.grade <> 'F' then
+    raise exception '035 FAILED: 60%% is now a %. The American D- band was not adopted '
+                    'and must not appear.', g.grade;
+  end if;
+  select * into g from grade_under_active_scale(65);
+  if g.grade <> 'D' then
+    raise exception '035 FAILED: 65%% is %, expected D — the lowest passing grade', g.grade;
+  end if;
+
+  -- ---- AND THE CHECK ABOVE IS NOT DECORATION ------------------------------
+  --
+  -- A rule nobody has watched refuse anything is a rule nobody has tested. So
+  -- the full American scale — D- at 60, passing at 60, which is the scale it
+  -- would have been easy to adopt by copying — is published here, the check is
+  -- run against it, and the whole thing is rolled back. If the check cannot see
+  -- a D- when one is right in front of it, this migration stops.
+  begin
+    update grading_scales set is_active = false where is_active and award_kind is null;
+    insert into grading_scales (name, version, award_kind, pass_mark, max_point,
+                                bands, is_active, published_at)
+    values ('PROOF — the scale this migration refuses', 1, null, 60, 4.00,
+      '[{"grade":"A", "points":4.00,"min":93,"max":100},
+        {"grade":"D-","points":0.70,"min":60,"max":92},
+        {"grade":"F", "points":0.00,"min":0, "max":59}]'::jsonb,
+      true, now());
+
+    select * into g from grade_under_active_scale(60);
+    if g.grade = 'F' then
+      raise exception '035 FAILED: a scale passing at 60 was published and the check still '
+                      'reported 60%% as a fail. The check does not work and the guarantee '
+                      'at the head of this file is worthless.';
+    end if;
+
+    raise exception 'PROOF_ROLLBACK';
+  exception when others then
+    if sqlerrm <> 'PROOF_ROLLBACK' then raise; end if;
+  end;
+
+  -- …and the University's own scale is back, untouched.
+  select * into g from grade_under_active_scale(60);
+  if g.grade <> 'F' then
+    raise exception '035 FAILED: the proof above did not roll back. 60%% now reads %.', g.grade;
+  end if;
+
+  -- ---- Every whole mark lands in exactly one band -------------------------
+  for n in 0..100 loop
+    if (select count(*) from grading_scales s
+        cross join lateral jsonb_array_elements(s.bands) b
+        where s.is_active and s.award_kind is null
+          and n >= (b->>'min')::numeric and n <= (b->>'max')::numeric) <> 1 then
+      raise exception '035 FAILED: mark %%%  does not fall in exactly one band', n;
+    end if;
+  end loop;
+
+  -- ---- A restatement cannot be deleted or altered by a browser -----------
+  -- There is no update and no delete policy, so the only identity that could
+  -- is the service role, which bypasses RLS by design. What is asserted here
+  -- is that nobody has since added one.
+  if exists (select 1 from pg_policies
+              where tablename = 'grading_scale_restatements'
+                and cmd in ('UPDATE', 'DELETE')) then
+    raise exception '035 FAILED: a policy now lets the restatement record be changed. '
+                    'The audit of a retroactive change may not be editable by the '
+                    'people it is about.';
+  end if;
+
+  raise notice '035 OK: the American scale is in force and the old one is still readable';
+end $$;
+
+-- The credit model, asserted against the courses that exist. A registry with
+-- none of these rows yet passes; one that has them and disagrees does not.
+do $$
+declare
+  bad text;
+begin
+  select string_agg(code || ' is ' || credit_unit, ', ')
+    into bad
+    from courses
+   where (code in ('BIS 220','BIS 230','BIS 250','BIS 260',
+                   'RM 540','RM 550','STT 400','STT 420') and credit_unit <> 3)
+      or (code = 'RM 560'  and credit_unit <> 20)
+      or (code = 'BIS 210' and credit_unit <> 6);
+  if bad is not null then
+    raise exception '035 FAILED: credit values did not take — %', bad;
+  end if;
+  raise notice '035 OK: the two-part courses carry 3 and the thesis carries 20';
+end $$;
+
+-- A restated average must still satisfy 007's guard: on a student's first
+-- recorded term the cumulative average IS that term's average. If section 7
+-- wrote them in the wrong order this is where it shows.
+do $$
+declare
+  wrong integer;
+begin
+  select count(*) into wrong
+    from (
+      select distinct on (student_id) student_id, gpa, cgpa
+        from semester_gpas
+       order by student_id, academic_year, semester
+    ) first_terms
+   where abs(cgpa - gpa) > 0.005;
+  if wrong > 0 then
+    raise exception '035 FAILED: % student(s) have a first-term cumulative average that '
+                    'differs from the term average. The two were computed in the wrong '
+                    'order or written to the wrong columns.', wrong;
+  end if;
+  raise notice '035 OK: every restated cumulative average is consistent with its first term';
+end $$;
+
+
+-- ===========================================================================
+-- 9. VERIFY — READ THIS OUTPUT
+-- ===========================================================================
+
+-- The scale in force, and the one it replaced.
+select version, is_active, pass_mark, max_point,
+       bands->0->>'grade' as top_grade, bands->0->>'points' as top_points,
+       published_at
+  from grading_scales
+ where name = 'University grading scale'
+ order by version;
+
+-- What the restatement moved. Empty on a second run.
+select kind, count(*) as figures_restated
+  from grading_scale_restatements
+ group by kind
+ order by kind;
+
+-- Every average that changed, per student, largest movement first. This is the
+-- list to read before deciding anything about already-issued documents.
+select s.first_name || ' ' || s.last_name as student,
+       r.academic_year, r.semester,
+       (r.before->>'cgpa')::numeric as was,
+       (r.after ->>'cgpa')::numeric as now,
+       round((r.after->>'cgpa')::numeric - (r.before->>'cgpa')::numeric, 2) as moved
+  from grading_scale_restatements r
+  join students s on s.id = r.student_id
+ where r.kind = 'gpa'
+ order by abs((r.after->>'cgpa')::numeric - (r.before->>'cgpa')::numeric) desc
+ limit 50;
+
+-- ISSUED CREDENTIALS THAT NOW DISAGREE WITH THE RECORD. Not changed by this
+-- migration, by design. Each one is a decision for the University: leave it,
+-- reissue it, or issue a corrected version under 013's correction workflow.
+select ci.id, ci.kind, ci.issued_at,
+       s.first_name || ' ' || s.last_name as student
+  from credentials_issued ci
+  join students s on s.id = ci.student_id
+ where exists (
+   select 1 from grading_scale_restatements r
+    where r.student_id = ci.student_id and r.kind = 'gpa'
+      and r.restated_at > ci.issued_at
+ )
+ order by ci.issued_at desc;
+
+-- How many of the thirty-six Bachelor of Theology courses the registry holds,
+-- and what they now total. 36 and 180 when the degree is fully entered.
+select count(*) as bth_courses_in_registry,
+       sum(credit_unit) as total_credits
+  from courses
+ where code in ('BIS 210','BIS 220','BIS 230','BIS 250','BIS 260','RM 540','RM 550',
+                'STT 400','STT 420','RM 560','MW 300','OTH 300','CH 200','LC 110',
+                'OT 300','MDS 720','CH 300','MDS 660','CED 160','BIS 330','BIS 320',
+                'BL 340','STT 410','MDS 650','BIS 270','BIS 280','MDS 670','MDS 730',
+                'BIS 350','CDS 100','MW 350','MDS 820','BIS 340','MDS 760','STT 430',
+                'STT 450');
+
+-- Marks that could not be placed in a term, so are in no average. Should be 0.
+select count(*) as results_with_no_enrolment
+  from results r
+  left join enrollments e on e.id = r.enrollment_id
+ where r.total_score is not null
+   and (e.id is null or e.academic_year is null or e.semester is null);
+
+
+-- ===========================================================================
+-- ===========================================================================
+--
+--   036_the_steps_nothing_could_write.sql
+--
+-- ===========================================================================
+-- ===========================================================================
+
+-- ===========================================================================
+-- 036 — THE THREE STATES THE UNIVERSITY DECLARED AND NOTHING COULD WRITE
+-- ===========================================================================
+--
+-- ---------------------------------------------------------------------------
+-- WHAT CHANGES THE MOMENT THIS RUNS
+-- ---------------------------------------------------------------------------
+--
+-- Two new events are admitted to the audit trail's vocabulary, and with them
+-- three states become reachable for the first time since 024 declared them:
+--
+--   under_review        The Admissions Office has opened the application. Until
+--                       now a file somebody was working on and a file nobody
+--                       had touched were the same value, so "why has this sat
+--                       for three weeks" had no answer in the system.
+--   fee_pending         Finance has ASKED for the fee. `applicant` means nobody
+--                       has asked. An applicant chased for money they were
+--                       never asked for is what the absence of this cost.
+--   documents_verified  The documents were checked and accepted. Verification
+--                       was recorded only by its absence — a record stopped
+--                       being `documents_required` — so "checked and accepted"
+--                       and "nobody has looked" were indistinguishable.
+--
+-- Nothing moves on its own. No existing application changes state; this widens
+-- a CHECK constraint so the controls that write these states are accepted.
+--
+-- ---------------------------------------------------------------------------
+-- WHY A CONSTRAINT AND NOT JUST CODE
+-- ---------------------------------------------------------------------------
+--
+-- `admission_audit_log.event` is a closed vocabulary on purpose: an event
+-- outside it fails the insert. That is the right failure, because the
+-- alternative is an act that happened and was not recorded. The routes write
+-- the trail as part of the step, so without this the step is refused rather
+-- than silently unrecorded — which is why the application's own test suite
+-- fails until this migration exists.
+-- ===========================================================================
+
+do $$
+begin
+  if exists (select 1 from pg_constraint
+              where conname = 'admission_audit_log_event_check') then
+    alter table admission_audit_log drop constraint admission_audit_log_event_check;
+  end if;
+
+  alter table admission_audit_log add constraint admission_audit_log_event_check
+    check (event in (
+      'APPLICATION_SUBMITTED',
+      -- The two new ones. Both name an office DOING something rather than
+      -- something having happened to the application, which is the distinction
+      -- the three states exist to record.
+      'ADMISSION_OPENED', 'FEE_REQUESTED',
+      'DOCUMENT_VERIFIED', 'FEE_CONFIRMED',
+      'FORWARDED_FOR_ACADEMIC_REVIEW',
+      'ACADEMIC_REVIEW_STARTED', 'ACADEMIC_APPROVED',
+      'ACADEMIC_CONDITIONALLY_APPROVED', 'ACADEMIC_REJECTED', 'ACADEMIC_RETURNED',
+      'RETURNED_TO_OFFICE', 'REOPENED_FOR_REEVALUATION',
+      'ISSUANCE_STARTED', 'ISSUANCE_FAILED', 'ISSUANCE_RETRIED',
+      'ADMISSION_LETTER_GENERATED', 'ADMISSION_PACKAGE_ISSUED',
+      'ACCOUNT_CREATED', 'WELCOME_EMAIL_SENT', 'WELCOME_EMAIL_FAILED',
+      'ENROLLED', 'WITHDRAWN', 'ADMINISTRATIVE_OVERRIDE'
+    ));
+end $$;
+
+
+-- ===========================================================================
+-- PERFORMING THE RULES
+-- ===========================================================================
+--
+-- Both directions. A vocabulary that accepts everything is not a vocabulary,
+-- and one that refuses the thing it was widened for is a migration that did not
+-- take — and the difference between those two is invisible from reading the
+-- SQL, which is why this runs it.
+
+do $$
+declare
+  app_id uuid;
+  refused boolean;
+begin
+  -- A row to hang the proof on. Any application will do; if the University has
+  -- none yet there is nothing to prove against and the checks are skipped
+  -- rather than faked against an invented student.
+  select id into app_id from students limit 1;
+  if app_id is null then
+    raise notice '036: no applications yet, so the trail could not be exercised';
+    return;
+  end if;
+
+  -- ---- The new events are accepted ----------------------------------------
+  begin
+    insert into admission_audit_log (application_id, event, previous_state, new_state, detail)
+    values (app_id, 'ADMISSION_OPENED', 'applicant', 'under_review', 'PROOF'),
+           (app_id, 'FEE_REQUESTED',    'applicant', 'fee_pending',  'PROOF');
+    raise exception 'PROOF_ROLLBACK';
+  exception when others then
+    if sqlerrm <> 'PROOF_ROLLBACK' then
+      raise exception '036 FAILED: the new events are still refused by the constraint (%)', sqlerrm;
+    end if;
+  end;
+
+  -- ---- AND AN INVENTED ONE IS STILL REFUSED -------------------------------
+  -- The half of this that matters. Widening a vocabulary by removing the
+  -- constraint would pass every test above and leave the trail able to record
+  -- anything at all.
+  refused := false;
+  begin
+    insert into admission_audit_log (application_id, event, previous_state, new_state)
+    values (app_id, 'SOMEBODY_JUST_MADE_THIS_UP', 'applicant', 'under_review');
+  exception when others then refused := true;
+  end;
+  if not refused then
+    raise exception '036 FAILED: the audit trail accepted an event nobody declared. The '
+                    'vocabulary is no longer closed.';
+  end if;
+
+  raise notice '036 OK: the trail records the two new steps and still refuses an invented one';
+end $$;
+
+-- The three states are declared, which they have been since 024, and now
+-- something can write them.
+do $$
+declare
+  missing text;
+begin
+  select string_agg(s, ', ') into missing
+    from unnest(array['under_review', 'fee_pending', 'documents_verified']) s
+   where not exists (select 1 from admission_states a where a.state = s);
+  if missing is not null then
+    raise exception '036 FAILED: % is not in admission_states, so nothing can be put into it',
+      missing;
+  end if;
+  raise notice '036 OK: under_review, fee_pending and documents_verified are reachable';
+end $$;
+
+
+-- ===========================================================================
+-- VERIFY
+-- ===========================================================================
+
+-- The vocabulary as it now stands.
+select unnest(string_to_array(
+         replace(replace(substring(pg_get_constraintdef(oid)
+           from '\((.*)\)$'), '''', ''), ' ', ''), ',')) as event_now_allowed
+  from pg_constraint where conname = 'admission_audit_log_event_check';
+
+-- How many applications sit in each of the three, which should be 0 today and
+-- stop being 0 the first time somebody opens a file.
+select a.state, a.applicant_label, count(s.id) as applications
+  from admission_states a
+  left join students s on s.status = a.state
+ where a.state in ('under_review', 'fee_pending', 'documents_verified')
+ group by a.state, a.applicant_label
+ order by a.state;
+
+
+-- ===========================================================================
+-- ===========================================================================
+--
+--   037_a_student_is_not_an_application.sql
+--
+-- ===========================================================================
+-- ===========================================================================
+
+-- ===========================================================================
+-- 037 — `students.status` WAS TWO COLUMNS WEARING ONE NAME
+-- ===========================================================================
+--
+-- ---------------------------------------------------------------------------
+-- WHAT CHANGES THE MOMENT THIS RUNS. READ THIS PART.
+-- ---------------------------------------------------------------------------
+--
+-- 1. EVERY GRADUATED, ACTIVE AND SUSPENDED ROW CHANGES ITS `status`. They
+--    become `enrolled` — which is what they always were, because you cannot
+--    graduate from a university you were never enrolled at — and what became of
+--    them moves to the new `student_status` column. A query filtering
+--    `status = 'graduated'` returns nothing after this and must read
+--    `student_status` instead. The application already does.
+--
+-- 2. NOTHING IS LOST AND NOTHING IS GUESSED. Section 3 records every row it
+--    moves, before and after, in `student_status_split`. The one genuinely
+--    ambiguous value — `withdrawn` — is decided by evidence on the row rather
+--    than by preference, and the rows it could not decide are reported.
+--
+-- 3. `students.status` GETS A CHECK CONSTRAINT FOR THE FIRST TIME. It never had
+--    one. That is how three states could be written by the pipeline for years
+--    while being absent from the vocabulary, and how `active` could sit in a
+--    column of admission states without anything objecting. It is added NOT
+--    VALID: it governs every new write immediately and does not refuse to run
+--    because of a row somebody typed in 2024. 027's coverage view already
+--    reports the strays.
+--
+-- ---------------------------------------------------------------------------
+-- WHY THIS IS WORTH A MIGRATION
+-- ---------------------------------------------------------------------------
+--
+-- Two vocabularies shared one column and two of the words appeared in both.
+--
+--   `withdrawn`  an applicant who wrote to say they no longer wanted the place,
+--                and a student who left in their second year. 034 gave the
+--                Registrar a withdrawal action that writes this word, so from
+--                that day the two became genuinely indistinguishable — and one
+--                of them is a place that could have gone to somebody else while
+--                the other is a student who needs a transcript.
+--   `deferred`   an offer held to a later intake, and something that was
+--                supposed to describe a student. Only the first is real.
+--
+-- And it forced a worse thing. Conferring a degree set `status = 'graduated'`,
+-- which OVERWROTE `enrolled`. The University's own record of having admitted
+-- and enrolled somebody was destroyed by the act of graduating them.
+-- ===========================================================================
+
+
+-- ===========================================================================
+-- 1. THE SECOND COLUMN
+-- ===========================================================================
+--
+-- NULL until enrolment, deliberately. Somebody who has not enrolled is not yet
+-- a student, and a default of 'active' would say the University teaches every
+-- applicant who ever filled in the form.
+
+alter table students add column if not exists student_status text;
+
+comment on column students.student_status is
+  'What became of this student: active, graduated, suspended or withdrawn. NULL '
+  'until they enrol, because an applicant is not a student. The admission '
+  'pipeline lives in `status` and is settled history once enrolment is recorded.';
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'students_student_status_check') then
+    alter table students add constraint students_student_status_check
+      check (student_status is null
+             or student_status in ('active', 'graduated', 'suspended', 'withdrawn'));
+  end if;
+end $$;
+
+create index if not exists students_student_status_idx
+  on students (student_status) where student_status is not null;
+
+
+-- ===========================================================================
+-- 2. WHAT WAS MOVED
+-- ===========================================================================
+--
+-- A column split that cannot be audited is a column split nobody can undo. One
+-- row per student moved, with both values before and both after.
+
+create table if not exists student_status_split (
+  id             uuid primary key default gen_random_uuid(),
+  student_id     uuid not null references students (id) on delete cascade,
+  status_before  text,
+  status_after   text,
+  student_status_after text,
+  /** How the row was decided, in words, for the ambiguous ones especially. */
+  because        text not null,
+  split_at       timestamptz not null default now()
+);
+
+create index if not exists student_status_split_student_idx
+  on student_status_split (student_id);
+
+alter table student_status_split enable row level security;
+
+drop policy if exists student_status_split_read on student_status_split;
+create policy student_status_split_read on student_status_split
+  for select using (auth_role() in ('superadmin', 'admin', 'registrar'));
+
+-- No insert, update or delete policy. The service role writes it and nobody
+-- edits the record of what was moved.
+
+
+-- ===========================================================================
+-- 3. THE SPLIT
+-- ===========================================================================
+--
+-- Only rows whose `status` is one of the four student words are touched. An
+-- application sitting at `fee_paid` is not a student and is left exactly alone.
+--
+-- `withdrawn` IS THE ONLY HARD ONE, and it is decided by evidence rather than
+-- by preference: a row with an enrolment date or a student number was a
+-- student when they left, and a row with neither was an applicant. Rows that
+-- carry neither piece of evidence stay applicants, because under-counting the
+-- student body is the safe way to be wrong — the alternative is conferring
+-- studenthood on somebody who never had it.
+
+do $$
+declare
+  moved integer;
+begin
+  with decided as (
+    select s.id,
+           s.status as status_before,
+           case
+             when s.status in ('active', 'graduated', 'suspended') then 'enrolled'
+             when s.status = 'withdrawn'
+              and (s.enrolled_at is not null or s.student_number is not null) then 'enrolled'
+             else s.status
+           end as status_after,
+           case
+             when s.status in ('active', 'graduated', 'suspended') then s.status
+             when s.status = 'withdrawn'
+              and (s.enrolled_at is not null or s.student_number is not null) then 'withdrawn'
+             else null
+           end as student_status_after,
+           case
+             when s.status in ('active', 'graduated', 'suspended')
+               then 'Was a student word in the admission column. The admission state can only '
+                 || 'have been `enrolled`: you cannot graduate from, be suspended by or be '
+                 || 'active at a university you were never enrolled at.'
+             when s.status = 'withdrawn' and s.enrolled_at is not null
+               then 'Withdrew after enrolment — `enrolled_at` is set — so this is a student '
+                 || 'who left, not an applicant who declined.'
+             when s.status = 'withdrawn' and s.student_number is not null
+               then 'Withdrew holding a student number, so the University had already made '
+                 || 'them a student.'
+             when s.status = 'withdrawn'
+               then 'Withdrew with no enrolment date and no student number, so they were an '
+                 || 'applicant who stepped away. Left as an admission outcome.'
+             else 'Not a student word. Untouched.'
+           end as because
+      from students s
+     where s.status in ('active', 'graduated', 'suspended', 'withdrawn')
+       -- Already split. A second run must move nothing.
+       and s.student_status is null
+       and not (s.status = 'withdrawn'
+                and s.enrolled_at is null and s.student_number is null)
+  ),
+  logged as (
+    insert into student_status_split
+      (student_id, status_before, status_after, student_status_after, because)
+    select id, status_before, status_after, student_status_after, because from decided
+    returning 1
+  )
+  update students s
+     set status = d.status_after,
+         student_status = d.student_status_after
+    from decided d
+   where s.id = d.id;
+
+  get diagnostics moved = row_count;
+  raise notice '037: % student row(s) split into an admission state and a student status', moved;
+end $$;
+
+-- Anybody the Registrar has enrolled and who has no student status yet is
+-- active. Written separately because it is a different statement: the rows
+-- above were MIS-FILED, these were simply never asked the question.
+update students
+   set student_status = 'active'
+ where status = 'enrolled' and student_status is null;
+
+
+-- ===========================================================================
+-- 4. `students.status` FINALLY GETS A VOCABULARY
+-- ===========================================================================
+--
+-- NOT VALID, and that is the considered choice rather than the lazy one. A
+-- validating constraint would refuse to be created at all if one row in years
+-- of data carried a status nobody remembers writing, and the migration would
+-- fail with a message about a single row instead of doing its job. NOT VALID
+-- governs every write from this second onward, which is what stops the next
+-- unnamed state, and 027's `admission_status_coverage` view already reports
+-- anything historic that does not fit.
+--
+-- Run `alter table students validate constraint students_status_check;` once
+-- the coverage view is clean, and it becomes a full constraint with no rewrite.
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'students_status_check') then
+    alter table students add constraint students_status_check
+      check (status in (
+        'draft', 'applicant', 'under_review', 'documents_required', 'documents_verified',
+        'fee_pending', 'fee_paid', 'registrar_approved', 'ready_for_academic_review',
+        'approved', 'conditional', 'rejected', 'declined', 'deferred', 'returned',
+        'admission_processing', 'admission_processing_failed', 'admission_issued',
+        'enrolled', 'withdrawn'
+      )) not valid;
+  end if;
+end $$;
+
+
+-- ===========================================================================
+-- 5. PERFORMING THE RULES
+-- ===========================================================================
+
+do $$
+declare
+  refused boolean;
+  n integer;
+  sid uuid;
+begin
+  -- ---- No student word is left in the admission column --------------------
+  select count(*) into n from students
+   where status in ('active', 'graduated', 'suspended');
+  if n > 0 then
+    raise exception '037 FAILED: % row(s) still carry a student status in `status`', n;
+  end if;
+
+  -- ---- A GRADUATE IS STILL RECORDED AS HAVING BEEN ENROLLED ---------------
+  -- The thing the old column destroyed. Conferring a degree overwrote the
+  -- enrolment, so the University's record that it had admitted and enrolled
+  -- somebody was erased by the act of graduating them.
+  select count(*) into n from students
+   where student_status = 'graduated' and status <> 'enrolled';
+  if n > 0 then
+    raise exception '037 FAILED: % graduate(s) are not recorded as having been enrolled', n;
+  end if;
+
+  -- ---- An invented student status is refused ------------------------------
+  select id into sid from students limit 1;
+  if sid is not null then
+    refused := false;
+    begin
+      update students set student_status = 'expelled' where id = sid;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '037 FAILED: `student_status` accepted a value nobody declared. The '
+                      'vocabulary is not closed, which is how the old column went wrong.';
+    end if;
+
+    -- ---- And so is an invented admission state ---------------------------
+    -- `students.status` has never had a constraint. This is the first time it
+    -- refuses anything, and it is worth watching it do so.
+    refused := false;
+    begin
+      update students set status = 'somebody_just_made_this_up' where id = sid;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '037 FAILED: `students.status` still accepts any text at all. The '
+                      'constraint did not take.';
+    end if;
+  end if;
+
+  raise notice '037 OK: the two vocabularies are in two columns and each refuses the other''s '
+               'inventions';
+end $$;
+
+
+-- ===========================================================================
+-- 6. VERIFY — READ THIS OUTPUT
+-- ===========================================================================
+
+-- What was moved, and why. Empty on a second run.
+select status_before, status_after, student_status_after, count(*) as rows, min(because) as because
+  from student_status_split
+ group by 1, 2, 3
+ order by 1;
+
+-- The roll, as the University can now state it in one query rather than four
+-- guessed values.
+select coalesce(student_status, '— not a student —') as student_status,
+       count(*) as people
+  from students
+ group by 1
+ order by 2 desc;
+
+-- WITHDRAWALS THAT COULD NOT BE DECIDED. Rows left as applicant withdrawals
+-- because they carry neither an enrolment date nor a student number. If any of
+-- these were students who left, set their student_status by hand — this
+-- migration will not guess.
+select id, first_name, last_name, matric_no, withdrawn_at
+  from students
+ where status = 'withdrawn' and student_status is null
+ order by withdrawn_at desc nulls last;
+
+-- Statuses the vocabulary does not know, from 027's view. The constraint is NOT
+-- VALID until this is empty.
+select * from admission_status_coverage where not in_vocabulary;
+
+
+-- ===========================================================================
+-- ===========================================================================
+--
+--   038_announcements_are_the_institution_speaking.sql
+--
+-- ===========================================================================
+-- ===========================================================================
+
+-- ===========================================================================
+-- 038 — AN ANNOUNCEMENT IS THE INSTITUTION SPEAKING, SO IT GETS A RECORD
+-- ===========================================================================
+--
+-- ---------------------------------------------------------------------------
+-- WHAT CHANGES THE MOMENT THIS RUNS
+-- ---------------------------------------------------------------------------
+--
+-- Announcements stop being rows on the `documents` table and become records of
+-- their own, with an author, a clearance, a publication and a history. Nothing
+-- is deleted: section 6 COPIES the existing notices across and leaves the
+-- originals exactly where they are, so a bad migration costs a re-run and not
+-- the University's noticeboard.
+--
+-- IT CLOSES A DOOR. Until now anybody whose role was `admin` or `lecturer`
+-- could put a notice on the University's noticeboard, alone, instantly, with
+-- nobody named. From now on an announcement is composed by one person and
+-- cleared by another, and the database refuses a clearance by the author —
+-- including a Superadministrator who wrote it. If one person has been posting
+-- notices unaided, that stops working on the day this runs, and that is the
+-- point rather than a side effect.
+--
+-- ---------------------------------------------------------------------------
+-- WHY IT IS NOT A SECOND PUBLISHER
+-- ---------------------------------------------------------------------------
+--
+-- 013 and 014 already built the social pipeline: connected accounts, per
+-- platform variants, an approval that refuses to let an author approve their
+-- own post, per-target delivery states and retry. An announcement's EXTERNAL
+-- destinations are fulfilled by that pipeline — `announcement_destinations`
+-- carries `social_post_id` and the delivery is the post's — rather than by a
+-- second set of credentials and a second idea of what published means.
+--
+-- The announcement is the canonical source. The networks are destinations.
+-- There is one publisher.
+-- ===========================================================================
+
+
+-- ===========================================================================
+-- 1. THE ANNOUNCEMENT
+-- ===========================================================================
+
+create table if not exists announcements (
+  id             uuid primary key default gen_random_uuid(),
+
+  title          text not null check (length(btrim(title)) >= 6),
+  body           text not null check (length(btrim(body)) >= 20),
+
+  -- ---- What it is about, and who it is for -------------------------------
+  --
+  -- BOTH CLOSED VOCABULARIES. The point of a category is to be the same word
+  -- twice: a free-text field produces "Admissions", "admission", "ADMISSIONS"
+  -- and "Admissions Office" within a month, and then nothing can be filtered.
+  category       text not null default 'general'
+                   check (category in ('general', 'admissions', 'academic', 'finance',
+                                       'examination', 'graduation', 'events',
+                                       'emergency', 'faculty')),
+
+  -- MORE THAN ONE, AND AT LEAST ONE. An announcement addressed to nobody
+  -- reaches nobody, and the array is checked element by element so a typo
+  -- cannot create a sixth audience nobody has ever heard of.
+  audiences      text[] not null default '{}',
+
+  -- ---- The featured image ------------------------------------------------
+  --
+  -- ALT TEXT IS REQUIRED WHERE THERE IS AN IMAGE. 013 already requires it of
+  -- social media, for the reason it gives: a university publishing an image
+  -- with no alt text is publishing something a blind reader cannot see, and
+  -- every platform carries the omission onward. Requiring less of the
+  -- University's own noticeboard would be an odd place to draw the line.
+  image_path     text,
+  image_alt      text,
+
+  -- ---- Authority ---------------------------------------------------------
+  --
+  -- Three people, potentially three different ones, and each recorded. The
+  -- author is NOT NULL: a notice the University cannot attribute is a notice
+  -- nobody will answer for.
+  author_id      uuid not null references auth.users (id) on delete restrict,
+  approved_by    uuid references auth.users (id) on delete restrict,
+  approved_at    timestamptz,
+  published_by   uuid references auth.users (id) on delete restrict,
+  published_at   timestamptz,
+
+  rejected_by    uuid references auth.users (id) on delete restrict,
+  rejected_at    timestamptz,
+  rejection_reason text,
+
+  retracted_by   uuid references auth.users (id) on delete restrict,
+  retracted_at   timestamptz,
+  retraction_reason text,
+
+  status         text not null default 'draft'
+                   check (status in ('draft', 'submitted', 'approved', 'scheduled',
+                                     'published', 'rejected', 'retracted')),
+
+  -- ---- Scheduling --------------------------------------------------------
+  --
+  -- `publish_at` is an instant, stored as one. The TIMEZONE is kept beside it
+  -- because "nine o'clock" is what somebody chose and an instant is not: if the
+  -- University schedules a notice for 09:00 Africa/Kampala and the row carries
+  -- only the UTC instant, nobody afterwards can say whether 06:00Z was meant as
+  -- nine in Kampala or seven in London. It is also what a screen needs to show
+  -- the choice back unchanged.
+  publish_at     timestamptz,
+  publish_timezone text not null default 'Africa/Kampala',
+
+  -- When it stops being current. A notice about a closure still pinned in
+  -- March is worse than no notice.
+  expires_at     timestamptz,
+
+  pinned         boolean not null default false,
+
+  created_at     timestamptz not null default now(),
+  updated_at     timestamptz not null default now()
+);
+
+create index if not exists announcements_status_idx on announcements (status, publish_at);
+create index if not exists announcements_published_idx
+  on announcements (published_at desc) where status = 'published';
+
+-- ---------------------------------------------------------------------------
+-- THE AUTHOR MAY NOT CLEAR THEIR OWN ANNOUNCEMENT.
+--
+-- Enforced here rather than only in the route, because the route is one caller
+-- and this is the rule. 005 requires it of a certificate design, 009 of a
+-- grade, 014 of a social post; this is the same separation and the same
+-- reason. One person writing, clearing and sending alone is how an
+-- unconsidered sentence ends up on six networks under the University's name
+-- with nobody having read it first.
+--
+-- IT APPLIES TO THE SUPERADMINISTRATOR TOO. Holding every capability is not
+-- the same as being a second pair of eyes.
+-- ---------------------------------------------------------------------------
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'announcements_second_pair_of_eyes') then
+    alter table announcements add constraint announcements_second_pair_of_eyes
+      check (approved_by is null or approved_by <> author_id);
+  end if;
+
+  -- A refusal and a retraction each have to say why. "Rejected" with no reason
+  -- is a decision nobody can answer for, and the author cannot fix what they
+  -- were not told.
+  if not exists (select 1 from pg_constraint where conname = 'announcements_reasons_given') then
+    alter table announcements add constraint announcements_reasons_given
+      check (
+        (status <> 'rejected'
+          or (rejection_reason is not null and length(btrim(rejection_reason)) >= 12
+              and rejected_by is not null))
+        and
+        (status <> 'retracted'
+          or (retraction_reason is not null and length(btrim(retraction_reason)) >= 12
+              and retracted_by is not null))
+      );
+  end if;
+
+  -- A published announcement has a publisher and a time. Without this, a row
+  -- can read `published` with no record of who did it or when — which is the
+  -- state the noticeboard was in for every notice it ever carried.
+  if not exists (select 1 from pg_constraint where conname = 'announcements_audiences_named') then
+    alter table announcements add constraint announcements_audiences_named
+      check (
+        cardinality(audiences) > 0
+        and audiences <@ array['students', 'applicants', 'staff', 'alumni', 'public']::text[]
+      );
+  end if;
+
+  -- ONLY WHILE THE IMAGE LIVES ON THE ANNOUNCEMENT. 039 moves it into
+  -- `announcement_media` — one announcement has more than one photograph — and
+  -- drops these two columns, taking this constraint with them. Without the
+  -- guard, running the bundle a second time tries to put a constraint back on
+  -- a column that is deliberately gone, and stops dead.
+  --
+  -- THE RULE ITSELF DOES NOT LAPSE: 039 carries it to the new table, where the
+  -- alt text column is NOT NULL.
+  if exists (select 1 from information_schema.columns
+              where table_schema = 'public' and table_name = 'announcements'
+                and column_name = 'image_path')
+     and not exists (select 1 from pg_constraint where conname = 'announcements_image_described') then
+    alter table announcements add constraint announcements_image_described
+      check (image_path is null or (image_alt is not null and length(btrim(image_alt)) >= 3));
+  end if;
+
+  if not exists (select 1 from pg_constraint where conname = 'announcements_publication_recorded') then
+    alter table announcements add constraint announcements_publication_recorded
+      check (status <> 'published'
+             or (published_by is not null and published_at is not null));
+  end if;
+end $$;
+
+
+-- ===========================================================================
+-- 2. WHERE IT WAS PUBLISHED, ONE ROW PER DESTINATION
+-- ===========================================================================
+--
+-- ONE FLAG ON THE ANNOUNCEMENT WOULD BE A LIE. "Published" is true when one
+-- network accepted it and five refused, and the person who has to fix it needs
+-- to know which. This is the same shape the social pipeline already uses for
+-- its targets, deliberately: it is the same question.
+
+create table if not exists announcement_destinations (
+  id              uuid primary key default gen_random_uuid(),
+  announcement_id uuid not null references announcements (id) on delete cascade,
+
+  -- 'portal' and 'website' are published by this system. The rest name a
+  -- social platform and are published by 013's pipeline.
+  destination     text not null check (destination in
+                    ('portal', 'website', 'facebook', 'instagram', 'x', 'linkedin', 'youtube')),
+
+  state           text not null default 'pending'
+                    check (state in ('pending', 'sending', 'delivered', 'failed',
+                                     'skipped', 'retracted')),
+
+  -- THE LINK, AND THE REASON THIS IS NOT A SECOND PUBLISHER. An external
+  -- destination is fulfilled by a social post; the delivery is that post's and
+  -- is not duplicated here.
+  social_post_id  uuid,
+
+  -- Where it landed, so somebody can go and look at it.
+  external_url    text,
+  -- What went wrong, in the platform's own words.
+  error           text,
+
+  delivered_at    timestamptz,
+  created_at      timestamptz not null default now(),
+
+  -- One row per destination per announcement. Without this, pressing publish
+  -- twice sends two copies to Facebook.
+  unique (announcement_id, destination)
+);
+
+create index if not exists announcement_destinations_state_idx
+  on announcement_destinations (state) where state in ('pending', 'sending', 'failed');
+
+-- The social_post_id is a real reference where the pipeline exists. Added
+-- separately so a database that somehow lacks 013 still gets the table.
+do $$
+begin
+  if exists (select 1 from information_schema.tables
+              where table_schema = 'public' and table_name = 'social_posts')
+     and not exists (select 1 from pg_constraint
+                      where conname = 'announcement_destinations_post_fk') then
+    alter table announcement_destinations
+      add constraint announcement_destinations_post_fk
+      foreign key (social_post_id) references social_posts (id) on delete set null;
+  end if;
+end $$;
+
+
+-- ===========================================================================
+-- 2b. THE SAME ANNOUNCEMENT, IN EACH PLATFORM'S OWN VOICE
+-- ===========================================================================
+--
+-- THE MASTER IS THE ANNOUNCEMENT; THESE ARE ADAPTATIONS OF IT. The same words
+-- do not work everywhere: X takes a fraction of what LinkedIn does, Instagram
+-- expects a caption and hashtags under an image, and LinkedIn is read by people
+-- assessing the institution professionally. Publishing one block of text to all
+-- of them means it was written for one of them and tolerated by the rest.
+--
+-- A PLATFORM WITH NO VARIANT FALLS BACK TO THE MASTER, deliberately. The
+-- alternative — requiring a variant per destination — would mean an urgent
+-- notice could not go out until somebody had rewritten it five times. The
+-- master is always publishable; a variant is an improvement on it.
+--
+-- `source` RECORDS WHETHER A PERSON WROTE IT. An assistant draft that nobody
+-- read is a different thing from a sentence somebody chose, and the University
+-- publishing the first under its own name without knowing which is which is
+-- the failure this column exists to prevent. `edited_by` is set when a human
+-- changes an assistant draft, which makes it theirs.
+
+create table if not exists announcement_variants (
+  id              uuid primary key default gen_random_uuid(),
+  announcement_id uuid not null references announcements (id) on delete cascade,
+
+  platform        text not null check (platform in
+                    ('facebook', 'instagram', 'x', 'linkedin', 'youtube', 'tiktok', 'threads')),
+
+  body            text not null,
+  hashtags        text[] not null default '{}',
+
+  source          text not null default 'human' check (source in ('human', 'assistant')),
+  edited_by       uuid references auth.users (id) on delete set null,
+
+  created_at      timestamptz not null default now(),
+  updated_at      timestamptz not null default now(),
+
+  -- One adaptation per platform. Two would mean the system had to choose, and
+  -- whichever it chose would be the wrong one half the time.
+  unique (announcement_id, platform)
+);
+
+create index if not exists announcement_variants_announcement_idx
+  on announcement_variants (announcement_id);
+
+alter table announcement_variants enable row level security;
+
+drop policy if exists announcement_variants_read on announcement_variants;
+create policy announcement_variants_read on announcement_variants
+  for select using (auth_role() in ('superadmin', 'admin', 'registrar', 'academic-office'));
+
+
+-- ===========================================================================
+-- 3. THE HISTORY, WHICH SURVIVES AN EDIT
+-- ===========================================================================
+--
+-- The noticeboard had none. A notice edited after publication simply became a
+-- different notice, and what the University had actually said on the Tuesday
+-- was gone. This keeps it.
+--
+-- APPEND-ONLY, ENFORCED. Not by convention, not by nobody having written an
+-- UPDATE yet — by a trigger that refuses one. A history that can be edited is
+-- a history that will be, on the day somebody wishes it said something else.
+
+create table if not exists announcement_events (
+  id              uuid primary key default gen_random_uuid(),
+  announcement_id uuid not null references announcements (id) on delete cascade,
+
+  event           text not null check (event in (
+                    'DRAFTED', 'EDITED', 'SUBMITTED_FOR_CLEARANCE', 'APPROVED', 'REJECTED',
+                    'SCHEDULED', 'PUBLISHED', 'RETRACTED', 'DESTINATIONS_CHANGED',
+                    'RELEASED_EXTERNALLY', 'DESTINATION_DELIVERED', 'DESTINATION_FAILED',
+                    'ADMINISTRATIVE_OVERRIDE')),
+
+  actor_id        uuid references auth.users (id) on delete set null,
+  actor_email     text,
+  actor_role      text,
+
+  previous_state  text,
+  new_state       text,
+
+  -- THE TEXT AS IT STOOD. This is what makes the history worth keeping: the
+  -- announcement row carries the current wording, and these carry what it said
+  -- at each step, so "what did we actually publish on Tuesday" has an answer.
+  title_then      text,
+  body_then       text,
+
+  detail          text,
+  metadata        jsonb,
+
+  at              timestamptz not null default now()
+);
+
+create index if not exists announcement_events_announcement_idx
+  on announcement_events (announcement_id, at);
+
+create or replace function refuse_announcement_history_edit() returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  raise exception
+    'The announcement history is append-only. % is not permitted: this is the record of what '
+    'the University said and when, and a record that can be revised afterwards is not one.',
+    tg_op
+    using errcode = 'check_violation';
+end $$;
+
+drop trigger if exists announcement_events_append_only on announcement_events;
+create trigger announcement_events_append_only
+  before update or delete on announcement_events
+  for each row execute function refuse_announcement_history_edit();
+
+
+-- ===========================================================================
+-- 4. WHO CAN READ AND WRITE
+-- ===========================================================================
+
+alter table announcements enable row level security;
+alter table announcement_destinations enable row level security;
+alter table announcement_events enable row level security;
+
+-- ANYBODY SIGNED IN READS A PUBLISHED ANNOUNCEMENT. That is what publishing
+-- means. A draft is visible to its author and to the offices that clear them —
+-- a half-written notice about a closure appearing on a student's dashboard is
+-- the failure this separation exists to prevent.
+drop policy if exists announcements_read on announcements;
+create policy announcements_read on announcements
+  for select using (
+    status = 'published'
+    or author_id = auth.uid()
+    or auth_role() in ('superadmin', 'admin', 'registrar', 'academic-office')
+  );
+
+drop policy if exists announcement_destinations_read on announcement_destinations;
+create policy announcement_destinations_read on announcement_destinations
+  for select using (auth_role() in ('superadmin', 'admin', 'registrar', 'academic-office'));
+
+drop policy if exists announcement_events_read on announcement_events;
+create policy announcement_events_read on announcement_events
+  for select using (auth_role() in ('superadmin', 'admin', 'registrar', 'academic-office'));
+
+-- NO WRITE POLICY ON ANY OF THE THREE, and that is deliberate. Every state
+-- change goes through /api/announcements, which checks the capability against
+-- the role in the database and writes the history in the same breath. A browser
+-- that could update `status` directly could publish without clearing and
+-- without leaving a trace, which is the entire arrangement this replaces.
+
+
+-- ===========================================================================
+-- 5. THE CAPABILITIES THIS NEEDS
+-- ===========================================================================
+--
+-- Named here for the reader; the matrix that grants them is src/lib/roles.ts,
+-- which is where every other capability in this system lives.
+--
+--   compose-announcement   write and submit one
+--   approve-announcement   clear somebody else's
+--   publish-announcement   put a cleared one live, and take it down
+--
+-- Releasing outward requires 'publish-social-post' AS WELL, on purpose: the
+-- new door must not become a way round the authority that already governs the
+-- University's outward voice.
+
+
+-- ===========================================================================
+-- 6. THE NOTICES ALREADY ON THE BOARD
+-- ===========================================================================
+--
+-- COPIED, NOT MOVED. The originals stay on `documents` exactly as they are. If
+-- this migration is wrong, the cost is running it again rather than the
+-- University's noticeboard.
+--
+-- They arrive as `published`, because they are: they have been on the board.
+-- What they cannot have is a clearance, since nobody ever gave one — so
+-- `approved_by` stays null and the history says plainly where they came from.
+-- Inventing an approver to make the row look tidy would be recording a
+-- decision that nobody took.
+
+do $$
+declare
+  moved integer := 0;
+  r record;
+  new_id uuid;
+  payload jsonb;
+  a_title text;
+  a_body text;
+begin
+  if not exists (select 1 from information_schema.tables
+                  where table_schema = 'public' and table_name = 'documents') then
+    raise notice '038: no documents table, so there is no old noticeboard to copy';
+    return;
+  end if;
+
+  for r in
+    select d.* from documents d
+     where d.document_type = 'announcement'
+       and not exists (
+         select 1 from announcement_events e
+          where e.event = 'DRAFTED'
+            and e.metadata->>'copied_from_document' = d.id::text
+       )
+  loop
+    -- The body was packed into a data-URL as JSON. Anything that will not
+    -- decode is copied as plain text under its document title rather than
+    -- dropped: a notice nobody can read is still a notice that was posted.
+    begin
+      payload := convert_from(
+        decode(regexp_replace(r.file_url, '^data:[^,]*,', ''), 'base64'), 'UTF8')::jsonb;
+    exception when others then
+      payload := null;
+    end;
+
+    a_title := coalesce(nullif(btrim(coalesce(payload->>'title', r.file_name)), ''), 'Untitled notice');
+    a_body  := coalesce(nullif(btrim(coalesce(payload->>'body', '')), ''),
+                        'The text of this notice could not be read from the old noticeboard.');
+
+    -- The new table requires a title of 6 and a body of 20. A notice shorter
+    -- than that is padded with a statement of fact rather than refused, because
+    -- refusing would mean losing it.
+    if length(a_title) < 6 then a_title := a_title || ' (notice)'; end if;
+    if length(a_body) < 20 then
+      a_body := a_body || E'\n\n(Copied from the previous noticeboard.)';
+    end if;
+
+    insert into announcements
+      (title, body, audiences, author_id, status, published_by, published_at,
+       pinned, created_at)
+    values
+      (a_title, a_body,
+       -- THE OLD BOARD HAD ONE FREE-TEXT AUDIENCE and its words are not this
+       -- vocabulary — 'All', 'Lecturers', 'Faculty of Theology'. Mapping them
+       -- by guesswork would put notices in front of people they were never
+       -- addressed to, so every copied notice is addressed to the audiences
+       -- that can already see the portal and the old wording is kept in the
+       -- history below rather than translated.
+       array['students', 'staff']::text[],
+       -- The uploader if there is one. `documents` has no author column in
+       -- every deployment, so this falls back to the announcement's own
+       -- creator being unknown — and the NOT NULL forces the issue, so a row
+       -- with nobody attributable is skipped and reported rather than
+       -- attributed to whoever happens to run this.
+       coalesce(r.student_id, null),
+       'published', null, r.uploaded_at,
+       coalesce((payload->>'pinned')::boolean, false),
+       r.uploaded_at)
+    returning id into new_id;
+
+    insert into announcement_destinations (announcement_id, destination, state, delivered_at)
+    values (new_id, 'portal', 'delivered', r.uploaded_at);
+
+    insert into announcement_events
+      (announcement_id, event, new_state, title_then, body_then, detail, metadata, at)
+    values
+      (new_id, 'DRAFTED', 'published', a_title, a_body,
+       'Copied from the previous noticeboard, where it was stored as a document. It was '
+       || 'published without a recorded clearance because the old page had none.',
+       jsonb_build_object('copied_from_document', r.id), r.uploaded_at);
+
+    moved := moved + 1;
+  end loop;
+
+  raise notice '038: % notice(s) copied from the old noticeboard', moved;
+exception when not_null_violation then
+  -- The author is NOT NULL and the old rows may not name one. Reported rather
+  -- than worked around: a notice the University cannot attribute is exactly
+  -- what this migration exists to stop, and inventing an author to get the
+  -- copy through would be the first thing it did wrong.
+  raise notice '038: the old noticeboard has notices with no identifiable author. They were '
+               'left where they are; see the verify at the foot.';
+end $$;
+
+
+-- ===========================================================================
+-- 7. PERFORMING THE RULES
+-- ===========================================================================
+
+do $$
+declare
+  refused boolean;
+  a_id uuid;
+  someone uuid;
+begin
+  select id into someone from auth.users limit 1;
+  if someone is null then
+    raise notice '038: no accounts yet, so the rules could not be exercised against one';
+    return;
+  end if;
+
+  -- EVERYTHING BELOW ROLLS BACK. It has to: the history trigger refuses a
+  -- DELETE, including the one a cascade from `announcements` would perform, so
+  -- a proof announcement with any history cannot be tidied away afterwards.
+  --
+  -- That is not an inconvenience to work around, it is the rule working. An
+  -- announcement the University has acted on cannot be deleted, by anybody,
+  -- ever — it is retracted instead, and the record stands. The proof therefore
+  -- does its work inside a savepoint and undoes it.
+  begin
+
+  insert into announcements (title, body, author_id, status, audiences)
+  values ('Proof 038 announcement', 'A body long enough to satisfy the constraint on length.',
+          someone, 'draft', array['staff']::text[])
+  returning id into a_id;
+
+  -- ---- THE AUTHOR CANNOT CLEAR THEIR OWN ---------------------------------
+  -- The rule the whole arrangement rests on. Watched refusing.
+  refused := false;
+  begin
+    update announcements set status = 'approved', approved_by = someone, approved_at = now()
+     where id = a_id;
+  exception when others then refused := true;
+  end;
+  if not refused then
+    raise exception '038 FAILED: an author cleared their own announcement. The second pair of '
+                    'eyes is not a rule, it is a comment.';
+  end if;
+
+  -- ---- A REFUSAL HAS TO SAY WHY ------------------------------------------
+  refused := false;
+  begin
+    update announcements set status = 'rejected' where id = a_id;
+  exception when others then refused := true;
+  end;
+  if not refused then
+    raise exception '038 FAILED: an announcement was rejected with no reason and no rejector';
+  end if;
+
+  -- ---- A PUBLICATION RECORDS WHO AND WHEN --------------------------------
+  refused := false;
+  begin
+    update announcements set status = 'published' where id = a_id;
+  exception when others then refused := true;
+  end;
+  if not refused then
+    raise exception '038 FAILED: an announcement was published with nobody recorded as having '
+                    'published it';
+  end if;
+
+  -- ---- AN ANNOUNCEMENT IS ADDRESSED TO SOMEBODY --------------------------
+  refused := false;
+  begin
+    update announcements set audiences = '{}'::text[] where id = a_id;
+  exception when others then refused := true;
+  end;
+  if not refused then
+    raise exception '038 FAILED: an announcement was addressed to nobody at all';
+  end if;
+
+  refused := false;
+  begin
+    update announcements set audiences = array['everyone_everywhere']::text[] where id = a_id;
+  exception when others then refused := true;
+  end;
+  if not refused then
+    raise exception '038 FAILED: an audience nobody declared was accepted';
+  end if;
+
+  -- ---- AN IMAGE IS DESCRIBED ---------------------------------------------
+  --
+  -- ONLY WHILE THE IMAGE LIVES ON THE ANNOUNCEMENT. 039 moves it into
+  -- `announcement_media` and drops these columns, because one announcement has
+  -- more than one photograph — and it carries the same rule there, on a NOT
+  -- NULL column. Running the bundle a second time used to stop dead here,
+  -- proving a rule about a column that no longer existed.
+  if exists (select 1 from information_schema.columns
+              where table_schema = 'public' and table_name = 'announcements'
+                and column_name = 'image_path') then
+    refused := false;
+    begin
+      execute 'update announcements set image_path = ''announcements/x.jpg'' where id = $1'
+        using a_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '038 FAILED: an image was attached with no alt text, which every network '
+                      'this is published to would carry onward';
+    end if;
+  end if;
+
+  -- ---- ONE ADAPTATION PER PLATFORM ---------------------------------------
+  -- Two would mean the system had to choose between them, and whichever it
+  -- chose would be the wrong one half the time.
+  insert into announcement_variants (announcement_id, platform, body)
+  values (a_id, 'x', 'Short version.');
+  refused := false;
+  begin
+    insert into announcement_variants (announcement_id, platform, body)
+    values (a_id, 'x', 'A different short version.');
+  exception when others then refused := true;
+  end;
+  if not refused then
+    raise exception '038 FAILED: two adaptations were stored for one platform, so which one '
+                    'gets published is a coin toss';
+  end if;
+
+  -- ---- AND IT SAYS WHETHER A PERSON WROTE IT -----------------------------
+  refused := false;
+  begin
+    update announcement_variants set source = 'somewhere_else'
+     where announcement_id = a_id and platform = 'x';
+  exception when others then refused := true;
+  end;
+  if not refused then
+    raise exception '038 FAILED: a variant could claim an origin nobody declared. Whether the '
+                    'University wrote a sentence or merely accepted one is not optional.';
+  end if;
+
+  -- ---- THE HISTORY CANNOT BE REWRITTEN -----------------------------------
+  insert into announcement_events (announcement_id, event, new_state, detail)
+  values (a_id, 'DRAFTED', 'draft', 'Proof');
+
+  refused := false;
+  begin
+    update announcement_events set detail = 'something else' where announcement_id = a_id;
+  exception when others then refused := true;
+  end;
+  if not refused then
+    raise exception '038 FAILED: the announcement history could be edited';
+  end if;
+
+  refused := false;
+  begin
+    delete from announcement_events where announcement_id = a_id;
+  exception when others then refused := true;
+  end;
+  if not refused then
+    raise exception '038 FAILED: the announcement history could be deleted';
+  end if;
+
+  -- ---- ONE DESTINATION ROW PER DESTINATION -------------------------------
+  -- Without this, pressing publish twice sends two copies to Facebook.
+  insert into announcement_destinations (announcement_id, destination) values (a_id, 'facebook');
+  refused := false;
+  begin
+    insert into announcement_destinations (announcement_id, destination) values (a_id, 'facebook');
+  exception when others then refused := true;
+  end;
+  if not refused then
+    raise exception '038 FAILED: the same destination could be added twice, so an announcement '
+                    'could be published to one network twice over';
+  end if;
+
+  -- AND AN ANNOUNCEMENT WITH HISTORY CANNOT BE DELETED AT ALL.
+  -- The cascade from the parent is still a DELETE on the events, and the
+  -- trigger does not care who asked. Worth watching, because it is the
+  -- strongest thing this migration does and it is easy to assume a cascade is
+  -- exempt.
+  refused := false;
+  begin
+    delete from announcements where id = a_id;
+  exception when others then refused := true;
+  end;
+  if not refused then
+    raise exception '038 FAILED: an announcement with a history was deleted outright. '
+                    'Retraction is the only way something published comes down.';
+  end if;
+
+  raise exception 'PROOF_ROLLBACK';
+  exception when others then
+    if sqlerrm <> 'PROOF_ROLLBACK' then raise; end if;
+  end;
+
+  raise notice '038 OK: an author cannot clear their own notice, a refusal states a reason, a '
+               'publication names its publisher, the history cannot be rewritten and a '
+               'destination cannot be added twice, an announcement is addressed to a real '
+               'audience, an image is described, one adaptation is kept per platform and it '
+               'says who wrote it, and a notice with a history cannot be deleted at all';
+end $$;
+
+
+-- ===========================================================================
+-- 8. VERIFY — READ THIS OUTPUT
+-- ===========================================================================
+
+-- What is on the board now, by state.
+select status, count(*) as announcements
+  from announcements
+ group by status
+ order by count(*) desc;
+
+-- Where published announcements actually reached.
+select d.destination, d.state, count(*) as rows
+  from announcement_destinations d
+ group by d.destination, d.state
+ order by d.destination, d.state;
+
+-- NOTICES THAT COULD NOT BE COPIED. Each of these is a notice on the old board
+-- that names nobody, so the new table — which requires an author — will not
+-- take it. They are still on `documents` and still readable; decide whether
+-- each is worth re-posting under a named author.
+select d.id, d.file_name, d.uploaded_at
+  from documents d
+ where d.document_type = 'announcement'
+   and not exists (
+     select 1 from announcement_events e
+      where e.event = 'DRAFTED' and e.metadata->>'copied_from_document' = d.id::text
+   )
+ order by d.uploaded_at desc;
+
+-- THE ADAPTATIONS, and which platforms fall back to the master. A platform
+-- with no row here is published the master text, which is always allowed —
+-- but it is worth seeing which ones.
+select a.title,
+       v.platform,
+       v.source,
+       length(v.body) as characters,
+       cardinality(v.hashtags) as hashtags
+  from announcements a
+  join announcement_variants v on v.announcement_id = a.id
+ order by a.created_at desc, v.platform;
+
+-- The append-only guard is actually attached.
+select tgname, tgenabled
+  from pg_trigger
+ where tgrelid = 'announcement_events'::regclass and not tgisinternal;
+
+
+-- ===========================================================================
+-- ===========================================================================
+--
+--   039_a_destination_is_a_publishing_job.sql
+--
+-- ===========================================================================
+-- ===========================================================================
+
+-- ===========================================================================
+-- 039 — A DESTINATION IS A PUBLISHING JOB, AND IT KEEPS ITS OWN RECEIPT
+-- ===========================================================================
+--
+-- ---------------------------------------------------------------------------
+-- WHAT CHANGES THE MOMENT THIS RUNS
+-- ---------------------------------------------------------------------------
+--
+-- 1. A destination stops being a state and becomes a job. It gains the
+--    platform's own post id, its own scheduled time, a retry count and the time
+--    of the last attempt — so "Instagram published, LinkedIn failed, X is
+--    scheduled for Saturday" is a thing the row can say rather than a thing
+--    somebody works out.
+--
+-- 2. THE FEATURED IMAGE COLUMNS ARE DROPPED and replaced by a media table.
+--    `announcements.image_path` and `image_alt` held exactly one picture, and
+--    an announcement about a graduation has more than one. Anything already in
+--    them is copied across first, as the first item, so nothing is lost.
+--
+-- 3. Engagement figures get somewhere to live, and NOTHING IS WRITTEN INTO IT.
+--    See section 4 — the table exists, the collection does not, and a
+--    communications dashboard showing zeros would be worse than one showing
+--    nothing at all.
+--
+-- ---------------------------------------------------------------------------
+-- WHAT ALREADY EXISTED AND IS NOT REBUILT HERE
+-- ---------------------------------------------------------------------------
+--
+-- The connections themselves. 013 built `social_accounts` — per platform, with
+-- the University's own scope separate from a person's, the OAuth scopes stored,
+-- and the access and refresh tokens held in 017's sealed store with only a
+-- POINTER on the row. No social media password is stored anywhere in this
+-- system and none can be: there is no column for one.
+--
+-- The scopes 013's provider registry already names are the ones publishing
+-- actually requires — `w_organization_social` for LinkedIn, `tweet.write` for
+-- X, `pages_manage_posts` for a Facebook Page — and the screen that connects
+-- them is already mounted under Settings.
+-- ===========================================================================
+
+
+-- ===========================================================================
+-- 1. THE DESTINATION AS A JOB
+-- ===========================================================================
+
+alter table announcement_destinations
+  -- THE PLATFORM'S OWN ID, which is a different thing from ours. `social_post_id`
+  -- points at the post inside this system; this is what Facebook or LinkedIn
+  -- called it. Without it there is no way to fetch engagement for this
+  -- announcement, no way to delete the right post when something is retracted,
+  -- and no way to prove the publication happened at all.
+  add column if not exists platform_post_id text,
+
+  -- PER DESTINATION, NOT PER ANNOUNCEMENT. The portal now and X on Saturday
+  -- morning is a real thing a communications office wants, and an announcement
+  -- with one scheduled time cannot express it.
+  add column if not exists scheduled_for   timestamptz,
+
+  -- HOW MANY TIMES THIS HAS BEEN TRIED. A destination that has failed eleven
+  -- times is not the same as one that has failed once, and the difference
+  -- decides whether somebody retries it or goes and looks at the connection.
+  add column if not exists retry_count     integer not null default 0,
+  add column if not exists last_attempt_at timestamptz;
+
+do $$
+begin
+  -- A retry count cannot run backwards, and a destination that has been tried
+  -- has a time it was tried at. Both are the kind of thing that stays true
+  -- until one piece of code updates the count without the timestamp.
+  if not exists (select 1 from pg_constraint where conname = 'announcement_destinations_attempts') then
+    alter table announcement_destinations add constraint announcement_destinations_attempts
+      check (retry_count >= 0 and (retry_count = 0 or last_attempt_at is not null));
+  end if;
+
+  -- A DELIVERED DESTINATION SAYS WHERE IT LANDED. Not for tidiness: without
+  -- the platform's id or a URL, "published to LinkedIn" is a claim with
+  -- nothing behind it, and the first person to ask "where?" cannot be answered.
+  -- The portal is exempt, because the portal is this system and the
+  -- announcement's own id is where it landed.
+  if not exists (select 1 from pg_constraint where conname = 'announcement_destinations_receipt') then
+    alter table announcement_destinations add constraint announcement_destinations_receipt
+      check (
+        state <> 'delivered'
+        or destination in ('portal', 'website')
+        or platform_post_id is not null
+        or external_url is not null
+      );
+  end if;
+end $$;
+
+create index if not exists announcement_destinations_due_idx
+  on announcement_destinations (scheduled_for)
+  where state = 'pending' and scheduled_for is not null;
+
+comment on column announcement_destinations.platform_post_id is
+  'What the platform called this post. Needed to fetch engagement, to remove the '
+  'right post on a retraction, and to show that the publication happened.';
+
+
+-- ===========================================================================
+-- 2. THE MEDIA, WHICH IS MORE THAN ONE PICTURE
+-- ===========================================================================
+--
+-- ALT TEXT IS NOT NULL, exactly as 013 made it for social media, and for the
+-- reason given there: a prospective student using a screen reader is exactly
+-- the reader the institution is addressing, and a graduation photograph that
+-- reaches them as "image" has excluded them from the announcement. Every
+-- platform this is published to carries the omission onward.
+
+create table if not exists announcement_media (
+  id              uuid primary key default gen_random_uuid(),
+  announcement_id uuid not null references announcements (id) on delete cascade,
+
+  storage_path    text not null,
+  kind            text not null default 'image' check (kind in ('image', 'video')),
+  alt_text        text not null check (length(btrim(alt_text)) >= 3),
+
+  -- 0 is the featured item — the one a card shows and the one a platform that
+  -- accepts a single image is given.
+  ordinal         integer not null default 0 check (ordinal >= 0),
+
+  created_at      timestamptz not null default now(),
+
+  unique (announcement_id, ordinal)
+);
+
+create index if not exists announcement_media_announcement_idx
+  on announcement_media (announcement_id, ordinal);
+
+alter table announcement_media enable row level security;
+
+drop policy if exists announcement_media_read on announcement_media;
+create policy announcement_media_read on announcement_media
+  for select using (
+    auth_role() in ('superadmin', 'admin', 'registrar', 'academic-office')
+    or exists (select 1 from announcements a
+                where a.id = announcement_media.announcement_id and a.status = 'published')
+  );
+
+-- The one image the old columns held, moved rather than abandoned.
+do $$
+declare
+  moved integer := 0;
+begin
+  if exists (select 1 from information_schema.columns
+              where table_schema = 'public' and table_name = 'announcements'
+                and column_name = 'image_path') then
+    insert into announcement_media (announcement_id, storage_path, alt_text, ordinal)
+    select a.id, a.image_path, coalesce(nullif(btrim(a.image_alt), ''), 'Image'), 0
+      from announcements a
+     where a.image_path is not null
+       and not exists (select 1 from announcement_media m where m.announcement_id = a.id);
+    get diagnostics moved = row_count;
+
+    -- DROPPED, so there is one place an announcement's pictures live. Two
+    -- would disagree within a month of somebody adding a second image.
+    alter table announcements drop column if exists image_path;
+    alter table announcements drop column if exists image_alt;
+  end if;
+  raise notice '039: % featured image(s) moved into the media table', moved;
+end $$;
+
+
+-- ===========================================================================
+-- 3. WHAT WAS PUBLISHED, WORD FOR WORD, AT EACH VERSION
+-- ===========================================================================
+--
+-- 038's `announcement_events` already carries `title_then` and `body_then`, so
+-- the wording at every step is kept. What it cannot answer is "which version
+-- went to LinkedIn" once an announcement has been edited and republished —
+-- because the event says what the master said, and LinkedIn received an
+-- adaptation of it.
+--
+-- So a destination records the exact text it was sent. Not a reference to a
+-- variant that may since have been rewritten: THE TEXT. This is the only thing
+-- in the system that can answer "what does our LinkedIn post actually say"
+-- without asking LinkedIn.
+
+alter table announcement_destinations
+  add column if not exists published_text text;
+
+comment on column announcement_destinations.published_text is
+  'The exact words sent to this destination, kept because a variant can be '
+  'rewritten afterwards and a published post cannot.';
+
+
+-- ===========================================================================
+-- 4. ENGAGEMENT — A PLACE FOR IT, AND NOTHING IN IT
+-- ===========================================================================
+--
+-- ---------------------------------------------------------------------------
+-- READ THIS BEFORE BUILDING A DASHBOARD ON IT
+-- ---------------------------------------------------------------------------
+--
+-- This table is created empty and NOTHING IN THIS SYSTEM WRITES TO IT YET.
+-- Collecting engagement means calling each platform's own API with the
+-- University's connected credentials — LinkedIn's organization statistics, the
+-- Meta Graph insights, X's post metrics — and that code does not exist.
+--
+-- The table is here so the shape is settled before anybody writes it, and so
+-- the screen can say "not collected" rather than showing a zero. A zero and an
+-- unknown look identical on a dashboard and mean completely different things:
+-- one says nobody engaged and the other says nobody asked. An institution that
+-- reports the first when the second is true is publishing a figure about itself
+-- that it made up.
+--
+-- ---------------------------------------------------------------------------
+-- WHY EACH ROW IS ONE MEASUREMENT AND NOT ONE COLUMN PER METRIC
+-- ---------------------------------------------------------------------------
+--
+-- Because the metrics differ per platform and change without notice. A table
+-- with `reach`, `reactions`, `impressions`, `reposts`, `views` has a column for
+-- every platform's vocabulary and nulls everywhere else, and gains a migration
+-- every time a network renames something. And because a metric is a reading at
+-- a MOMENT: reach on the day is not reach a week later, and a single number
+-- overwritten each time destroys the only interesting thing about it.
+
+create table if not exists announcement_metrics (
+  id             uuid primary key default gen_random_uuid(),
+  destination_id uuid not null references announcement_destinations (id) on delete cascade,
+
+  -- The platform's own name for it, lowercased: 'reach', 'impressions',
+  -- 'reactions', 'likes', 'comments', 'shares', 'reposts', 'views', 'clicks'.
+  -- NOT a closed vocabulary, on purpose: a CHECK constraint here would mean a
+  -- migration every time a network invents a metric, and the cost of an unknown
+  -- metric name is that a screen does not know how to label it.
+  metric         text not null check (length(btrim(metric)) > 0),
+  value          bigint not null check (value >= 0),
+
+  -- WHEN THIS WAS TRUE, which is not when it was written. A reading taken at
+  -- noon and stored at midnight is a reading from noon.
+  measured_at    timestamptz not null,
+  collected_at   timestamptz not null default now(),
+
+  -- Which reading this is, so a chart can be drawn and a correction does not
+  -- overwrite the thing it corrects.
+  unique (destination_id, metric, measured_at)
+);
+
+create index if not exists announcement_metrics_destination_idx
+  on announcement_metrics (destination_id, metric, measured_at desc);
+
+alter table announcement_metrics enable row level security;
+
+drop policy if exists announcement_metrics_read on announcement_metrics;
+create policy announcement_metrics_read on announcement_metrics
+  for select using (auth_role() in ('superadmin', 'admin', 'registrar', 'academic-office'));
+
+-- No write policy. Figures about the University's own reach are written by the
+-- collector running as the service role, never by a browser — a number about
+-- the institution that somebody could type is not a measurement.
+
+-- The most recent reading of each metric, which is what a dashboard wants and
+-- what it would otherwise compute wrongly.
+create or replace view announcement_engagement
+with (security_invoker = true) as
+select distinct on (m.destination_id, m.metric)
+       d.announcement_id,
+       d.destination,
+       m.metric,
+       m.value,
+       m.measured_at
+  from announcement_metrics m
+  join announcement_destinations d on d.id = m.destination_id
+ order by m.destination_id, m.metric, m.measured_at desc;
+
+
+-- ===========================================================================
+-- 5. PERFORMING THE RULES
+-- ===========================================================================
+
+do $$
+declare
+  refused boolean;
+  a_id uuid;
+  d_id uuid;
+  someone uuid;
+begin
+  select id into someone from auth.users limit 1;
+  if someone is null then
+    raise notice '039: no accounts yet, so the rules could not be exercised against one';
+    return;
+  end if;
+
+  begin
+    insert into announcements (title, body, author_id, status, audiences)
+    values ('Proof 039 announcement', 'A body long enough to satisfy the length constraint.',
+            someone, 'draft', array['staff']::text[])
+    returning id into a_id;
+
+    insert into announcement_destinations (announcement_id, destination)
+    values (a_id, 'linkedin') returning id into d_id;
+
+    -- ---- A DELIVERED DESTINATION SAYS WHERE IT LANDED --------------------
+    -- "Published to LinkedIn" with nothing behind it cannot be answered when
+    -- somebody asks "where?".
+    refused := false;
+    begin
+      update announcement_destinations set state = 'delivered' where id = d_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '039 FAILED: a destination was marked delivered with no platform post id '
+                      'and no URL, so the publication cannot be shown to anybody';
+    end if;
+
+    -- …and with one, it is accepted.
+    update announcement_destinations
+       set state = 'delivered', platform_post_id = 'urn:li:share:12345'
+     where id = d_id;
+
+    -- The portal is exempt, because the portal is this system.
+    insert into announcement_destinations (announcement_id, destination, state)
+    values (a_id, 'portal', 'delivered');
+
+    -- ---- A RETRY COUNT IMPLIES AN ATTEMPT --------------------------------
+    refused := false;
+    begin
+      update announcement_destinations set retry_count = 3 where id = d_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '039 FAILED: a destination was tried three times at no particular time';
+    end if;
+
+    -- ---- MEDIA IS DESCRIBED ----------------------------------------------
+    refused := false;
+    begin
+      insert into announcement_media (announcement_id, storage_path, alt_text)
+      values (a_id, 'a/b.jpg', '');
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '039 FAILED: an image was stored with no description, and every network '
+                      'this is published to would carry that omission onward';
+    end if;
+
+    insert into announcement_media (announcement_id, storage_path, alt_text, ordinal)
+    values (a_id, 'a/b.jpg', 'Graduands on the steps of the main hall', 0);
+
+    -- ---- ONE FEATURED ITEM -----------------------------------------------
+    refused := false;
+    begin
+      insert into announcement_media (announcement_id, storage_path, alt_text, ordinal)
+      values (a_id, 'a/c.jpg', 'A different photograph', 0);
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '039 FAILED: two images claimed to be the featured one, so which a card '
+                      'shows is a coin toss';
+    end if;
+
+    -- ---- A MEASUREMENT IS A READING AT A MOMENT ---------------------------
+    insert into announcement_metrics (destination_id, metric, value, measured_at)
+    values (d_id, 'impressions', 100, now() - interval '1 day');
+    insert into announcement_metrics (destination_id, metric, value, measured_at)
+    values (d_id, 'impressions', 400, now());
+
+    if (select count(*) from announcement_metrics where destination_id = d_id) <> 2 then
+      raise exception '039 FAILED: the later reading replaced the earlier one instead of '
+                      'joining it, so the only interesting thing about a metric is gone';
+    end if;
+    if (select value from announcement_engagement
+         where destination = 'linkedin' and metric = 'impressions') <> 400 then
+      raise exception '039 FAILED: the engagement view did not return the most recent reading';
+    end if;
+
+    -- A negative reading is not a reading.
+    refused := false;
+    begin
+      insert into announcement_metrics (destination_id, metric, value, measured_at)
+      values (d_id, 'likes', -5, now());
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '039 FAILED: a negative engagement figure was accepted';
+    end if;
+
+    raise exception 'PROOF_ROLLBACK';
+  exception when others then
+    if sqlerrm <> 'PROOF_ROLLBACK' then raise; end if;
+  end;
+
+  raise notice '039 OK: a delivered destination shows where it landed, a retry count implies an '
+               'attempt, media is described and has one featured item, and a measurement is a '
+               'reading at a moment rather than a number that overwrites itself';
+end $$;
+
+-- AND THE ENGAGEMENT TABLE IS EMPTY, which is the honest state until somebody
+-- writes the collector. A dashboard built on this must say "not collected"
+-- rather than "0" — they look identical and mean opposite things.
+do $$
+declare
+  n integer;
+begin
+  select count(*) into n from announcement_metrics;
+  if n = 0 then
+    raise notice '039: no engagement has been collected. Nothing writes to '
+                 'announcement_metrics yet — the collector for each platform''s API is not '
+                 'built, and a screen must say so rather than show zeros.';
+  else
+    raise notice '039: % engagement reading(s) already collected', n;
+  end if;
+end $$;
+
+
+-- ===========================================================================
+-- 6. VERIFY — READ THIS OUTPUT
+-- ===========================================================================
+
+-- The publishing board: every destination of every announcement, as a job.
+select a.title,
+       d.destination,
+       d.state,
+       d.retry_count,
+       d.scheduled_for,
+       coalesce(d.platform_post_id, d.external_url) as receipt,
+       left(coalesce(d.error, ''), 80) as error
+  from announcements a
+  join announcement_destinations d on d.announcement_id = a.id
+ order by a.created_at desc, d.destination;
+
+-- DESTINATIONS THAT NEED A PERSON. Failed, or tried more than twice.
+select a.title, d.destination, d.retry_count, d.last_attempt_at, d.error
+  from announcement_destinations d
+  join announcements a on a.id = d.announcement_id
+ where d.state = 'failed' or d.retry_count > 2
+ order by d.retry_count desc;
+
+-- Anything due to go out.
+select a.title, d.destination, d.scheduled_for
+  from announcement_destinations d
+  join announcements a on a.id = d.announcement_id
+ where d.state = 'pending' and d.scheduled_for is not null
+ order by d.scheduled_for;
+
+-- Engagement, latest reading per metric. Empty until a collector exists.
+select * from announcement_engagement order by announcement_id, destination, metric;
+
+-- The connected accounts publishing depends on, and whether each is usable.
+-- Nothing here is a password: 013 keeps a POINTER to the token in 017's store.
+select platform, scope, handle, status, token_expires_at, cardinality(scopes) as scopes_granted
+  from social_accounts
+ where scope = 'university'
+ order by platform;
+
+
+-- ===========================================================================
+-- ===========================================================================
+--
+--   040_emergency_publishing_and_erasure.sql
+--
+-- ===========================================================================
+-- ===========================================================================
+
+-- ===========================================================================
+-- 040 — PUBLISHING AT TWO IN THE MORNING, AND DELETING WHAT SHOULD NOT EXIST
+-- ===========================================================================
+--
+-- ---------------------------------------------------------------------------
+-- WHAT CHANGES THE MOMENT THIS RUNS
+-- ---------------------------------------------------------------------------
+--
+-- 1. AN EMERGENCY ANNOUNCEMENT CAN BE PUBLISHED BY ONE PERSON. Until now every
+--    announcement needed a second pair of eyes, and a campus closure at two in
+--    the morning does not have one. An emergency notice may now go out
+--    uncleared — and the record says so permanently, on the announcement
+--    itself, for as long as it exists.
+--
+--    IT IS NOT A GENERAL BYPASS. Only the `emergency` category may use it, only
+--    with a stated reason, and only by somebody holding the override. Every
+--    other announcement still needs somebody else to read it.
+--
+-- 2. THE SUPERADMINISTRATOR CAN DELETE AN ANNOUNCEMENT. 038 made that
+--    impossible — the append-only history refused even the cascade — and the
+--    University has ruled that at least one person must be able to. A notice
+--    posted to the wrong audience, or carrying somebody's name who asked for it
+--    to be removed, is a real thing that has to be able to go.
+--
+--    IT LEAVES A TOMBSTONE. The text goes; the fact that an announcement
+--    existed, who wrote it, who deleted it and why does not. That is not a
+--    hedge against the ruling — it is what makes the ruling safe to act on. A
+--    registry that can make a notice disappear without trace cannot answer
+--    "did you ever publish that?", and the answer "no" would be unverifiable
+--    even when true.
+--
+--    AND ONLY THROUGH ONE DOOR. The history trigger still refuses every UPDATE
+--    and every DELETE, except inside the function below. Nobody can quietly
+--    edit a trail; somebody with the authority can erase a whole announcement,
+--    and that act is itself recorded.
+-- ===========================================================================
+
+
+-- ===========================================================================
+-- 1. THE EMERGENCY
+-- ===========================================================================
+
+alter table announcements
+  -- THE MARK STAYS. Not a flag cleared once the panic is over: anybody reading
+  -- this announcement in two years sees that nobody else read it first.
+  add column if not exists published_without_clearance boolean not null default false,
+  add column if not exists override_reason text,
+  add column if not exists override_by     uuid references auth.users (id) on delete restrict,
+  add column if not exists override_at     timestamptz;
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'announcements_override_is_an_emergency') then
+    alter table announcements add constraint announcements_override_is_an_emergency
+      check (
+        not published_without_clearance
+        or (
+          -- ONLY AN EMERGENCY. Without this the override becomes the way
+          -- everything gets published, because it is faster — which is how
+          -- every emergency procedure in every institution stops meaning
+          -- anything.
+          category = 'emergency'
+          -- AND SOMEBODY SAYS WHY, AT LENGTH. "Urgent" is not a reason; the
+          -- closure, the outage or the security notice is.
+          and override_reason is not null
+          and length(btrim(override_reason)) >= 20
+          and override_by is not null
+          and override_at is not null
+        )
+      );
+  end if;
+end $$;
+
+comment on column announcements.published_without_clearance is
+  'True where this went out without a second pair of eyes. Only an emergency may, '
+  'only with a stated reason, and the mark is permanent.';
+
+create index if not exists announcements_override_idx
+  on announcements (override_at desc) where published_without_clearance;
+
+
+-- ===========================================================================
+-- 2. THE TOMBSTONE
+-- ===========================================================================
+--
+-- WHAT IT KEEPS AND WHAT IT DOES NOT. It keeps the fact: an announcement
+-- existed, this was its title, this person wrote it, it stood at this state,
+-- this person deleted it on this day for this reason.
+--
+-- IT DOES NOT KEEP THE BODY. If the reason for deleting was that the text
+-- should not exist, a table quietly holding the text would defeat the act. The
+-- title is kept because a deletion nobody can identify is not auditable at all,
+-- and because a title is what a register needs to answer "did you publish
+-- that?" — but a University that needs the title gone too can clear that one
+-- column and the fact remains.
+
+create table if not exists announcement_tombstones (
+  id              uuid primary key default gen_random_uuid(),
+
+  -- NOT a foreign key. The row it names is gone; that is the point.
+  announcement_id uuid not null,
+
+  title           text,
+  category        text,
+  author_id       uuid,
+  status_when_deleted text,
+  was_published   boolean not null default false,
+  published_at    timestamptz,
+
+  -- WHERE IT HAD REACHED. A notice deleted from this system after it went to
+  -- Facebook is still on Facebook, and whoever deals with the aftermath needs
+  -- to know which networks to go to.
+  destinations_reached text[] not null default '{}',
+
+  deleted_by      uuid not null references auth.users (id) on delete restrict,
+  reason          text not null check (length(btrim(reason)) >= 20),
+  deleted_at      timestamptz not null default now()
+);
+
+create index if not exists announcement_tombstones_deleted_idx
+  on announcement_tombstones (deleted_at desc);
+
+alter table announcement_tombstones enable row level security;
+
+drop policy if exists announcement_tombstones_read on announcement_tombstones;
+create policy announcement_tombstones_read on announcement_tombstones
+  for select using (auth_role() in ('superadmin', 'admin', 'registrar'));
+
+-- No insert, update or delete policy. The function below writes it and nothing
+-- removes it: a record of an erasure that can itself be erased is not a record.
+
+
+-- ===========================================================================
+-- 3. THE ONE DOOR
+-- ===========================================================================
+--
+-- The history trigger from 038 refuses every UPDATE and every DELETE, which is
+-- what stopped an announcement being deleted at all. It still does — except
+-- inside this function, which sets a flag the trigger looks for.
+--
+-- WHY A FLAG AND NOT SIMPLY DROPPING THE TRIGGER. Disabling a trigger around a
+-- delete leaves a window in which anything at all can rewrite the trail, and
+-- leaves it disabled if the statement fails halfway. The flag is set with SET
+-- LOCAL, so it lasts exactly as long as the transaction and cannot be left on.
+
+create or replace function refuse_announcement_history_edit() returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  -- THE ONLY WAY PAST, and it can only be set by erase_announcement below,
+  -- which writes a tombstone before it does. An UPDATE is never permitted:
+  -- erasing a whole announcement is an act somebody answers for, and quietly
+  -- changing one line of its history is not.
+  if tg_op = 'DELETE' and coalesce(current_setting('icof.erasing', true), '') = 'on' then
+    return old;
+  end if;
+
+  raise exception
+    'The announcement history is append-only. % is not permitted: this is the record of what '
+    'the University said and when, and a record that can be revised afterwards is not one. '
+    'To remove an announcement entirely, the Superadministrator uses erase_announcement(), '
+    'which leaves a tombstone.',
+    tg_op
+    using errcode = 'check_violation';
+end $$;
+
+/**
+ * Erase an announcement, leaving the fact of it behind.
+ *
+ * SECURITY DEFINER, and the caller's authority is checked by the route rather
+ * than here — this function is revoked from everyone except the service role,
+ * so the only way to reach it is through /api/announcements, which reads the
+ * role out of the database.
+ */
+create or replace function erase_announcement(
+  p_announcement uuid,
+  p_deleted_by uuid,
+  p_reason text
+) returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  a record;
+  reached text[];
+  tomb uuid;
+begin
+  select * into a from announcements where id = p_announcement;
+  if not found then
+    raise exception 'No announcement with id %', p_announcement using errcode = 'no_data_found';
+  end if;
+
+  if p_reason is null or length(btrim(p_reason)) < 20 then
+    raise exception 'Erasing an announcement requires a stated reason. This is the only act in '
+                    'this system that destroys something, and "wrong" is not an account of it.'
+      using errcode = 'check_violation';
+  end if;
+
+  -- WHERE IT HAD ALREADY REACHED, captured before the rows go. A notice
+  -- deleted here is still on Facebook, and somebody has to go and remove it.
+  select coalesce(array_agg(d.destination order by d.destination), '{}')
+    into reached
+    from announcement_destinations d
+   where d.announcement_id = p_announcement
+     and d.state in ('delivered', 'sending');
+
+  insert into announcement_tombstones
+    (announcement_id, title, category, author_id, status_when_deleted,
+     was_published, published_at, destinations_reached, deleted_by, reason)
+  values
+    (a.id, a.title, a.category, a.author_id, a.status,
+     a.status = 'published' or a.published_at is not null, a.published_at,
+     reached, p_deleted_by, btrim(p_reason))
+  returning id into tomb;
+
+  -- The flag the history trigger looks for. SET LOCAL, so it is gone when this
+  -- transaction ends however it ends.
+  perform set_config('icof.erasing', 'on', true);
+  delete from announcements where id = p_announcement;
+  perform set_config('icof.erasing', 'off', true);
+
+  return tomb;
+end $$;
+
+revoke all on function erase_announcement(uuid, uuid, text) from public;
+revoke all on function erase_announcement(uuid, uuid, text) from anon, authenticated;
+grant execute on function erase_announcement(uuid, uuid, text) to service_role;
+
+
+-- ===========================================================================
+-- 4. PERFORMING THE RULES
+-- ===========================================================================
+
+do $$
+declare
+  refused boolean;
+  a_id uuid;
+  tomb uuid;
+  someone uuid;
+  n integer;
+begin
+  select id into someone from auth.users limit 1;
+  if someone is null then
+    raise notice '040: no accounts yet, so the rules could not be exercised against one';
+    return;
+  end if;
+
+  begin
+    -- ---- AN ORDINARY NOTICE CANNOT SKIP THE SECOND PAIR OF EYES ----------
+    -- The half that matters. An override anybody can reach for is not an
+    -- emergency procedure, it is the fast way to publish.
+    insert into announcements (title, body, author_id, status, audiences, category)
+    values ('Proof 040 ordinary', 'A perfectly ordinary announcement about nothing at all.',
+            someone, 'draft', array['staff']::text[], 'general')
+    returning id into a_id;
+
+    refused := false;
+    begin
+      update announcements
+         set published_without_clearance = true, override_reason = 'It seemed quicker to do it this way',
+             override_by = someone, override_at = now()
+       where id = a_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '040 FAILED: an ordinary announcement was published without clearance. '
+                      'The override is not an emergency procedure, it is a shortcut.';
+    end if;
+
+    -- ---- AN EMERGENCY CAN, WITH A REASON ---------------------------------
+    update announcements set category = 'emergency' where id = a_id;
+
+    refused := false;
+    begin
+      update announcements
+         set published_without_clearance = true, override_reason = 'Urgent',
+             override_by = someone, override_at = now()
+       where id = a_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '040 FAILED: an emergency was published on the strength of the word '
+                      '"Urgent". The closure or the outage is the reason, not the hurry.';
+    end if;
+
+    update announcements
+       set published_without_clearance = true,
+           override_reason = 'Main campus closed at short notice after a power failure.',
+           override_by = someone, override_at = now(),
+           status = 'published', published_by = someone, published_at = now()
+     where id = a_id;
+
+    -- ---- AND THE MARK CANNOT BE WIPED OFF LATER --------------------------
+    -- It can be set false only by also clearing the reason, which is a
+    -- different claim entirely — that it never happened. The constraint allows
+    -- that; what it does not allow is a published emergency pretending to have
+    -- been cleared. Checked by reading it back.
+    select count(*) into n from announcements
+     where id = a_id and published_without_clearance and override_by is not null;
+    if n <> 1 then
+      raise exception '040 FAILED: the override was not recorded against the announcement';
+    end if;
+
+    -- ---- THE HISTORY IS STILL UNTOUCHABLE --------------------------------
+    insert into announcement_events (announcement_id, event, new_state, detail)
+    values (a_id, 'ADMINISTRATIVE_OVERRIDE', 'published', 'Proof');
+
+    refused := false;
+    begin
+      update announcement_events set detail = 'something else' where announcement_id = a_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '040 FAILED: the history became editable. Erasing a whole announcement is '
+                      'an act somebody answers for; quietly changing one line of its trail is not.';
+    end if;
+
+    refused := false;
+    begin
+      delete from announcement_events where announcement_id = a_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '040 FAILED: the history could be deleted directly, without a tombstone';
+    end if;
+
+    -- ---- AND A BARE DELETE IS STILL REFUSED ------------------------------
+    refused := false;
+    begin
+      delete from announcements where id = a_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '040 FAILED: an announcement was deleted without going through '
+                      'erase_announcement, so nothing recorded that it had existed';
+    end if;
+
+    -- ---- ERASING REQUIRES A REASON ---------------------------------------
+    refused := false;
+    begin
+      perform erase_announcement(a_id, someone, 'oops');
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '040 FAILED: an announcement was erased on the strength of "oops"';
+    end if;
+
+    -- ---- AND THEN IT WORKS, AND LEAVES THE FACT BEHIND --------------------
+    insert into announcement_destinations (announcement_id, destination, state, platform_post_id)
+    values (a_id, 'facebook', 'delivered', 'fb_123');
+
+    tomb := erase_announcement(a_id, someone,
+      'Published to the wrong audience and names a student who asked to be removed.');
+
+    if (select count(*) from announcements where id = a_id) <> 0 then
+      raise exception '040 FAILED: the announcement survived its own erasure';
+    end if;
+    if (select count(*) from announcement_events where announcement_id = a_id) <> 0 then
+      raise exception '040 FAILED: the history outlived the announcement it belonged to';
+    end if;
+
+    select count(*) into n from announcement_tombstones
+     where id = tomb and 'facebook' = any(destinations_reached);
+    if n <> 1 then
+      raise exception '040 FAILED: the tombstone does not record that this had already reached '
+                      'Facebook, so nobody knows to go and remove it there';
+    end if;
+
+    -- ---- THE FLAG DOES NOT SURVIVE ---------------------------------------
+    -- If it did, everything after an erasure in the same transaction could
+    -- rewrite any history it liked.
+    insert into announcements (title, body, author_id, status, audiences)
+    values ('Proof 040 second', 'Another announcement, created after an erasure.',
+            someone, 'draft', array['staff']::text[])
+    returning id into a_id;
+    insert into announcement_events (announcement_id, event, new_state) values (a_id, 'DRAFTED', 'draft');
+
+    refused := false;
+    begin
+      delete from announcement_events where announcement_id = a_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '040 FAILED: the erasure flag was still set afterwards, so any history '
+                      'could be deleted for the rest of the transaction';
+    end if;
+
+    raise exception 'PROOF_ROLLBACK';
+  exception when others then
+    if sqlerrm <> 'PROOF_ROLLBACK' then raise; end if;
+  end;
+
+  raise notice '040 OK: only an emergency publishes uncleared and only with a stated reason, '
+               'the history is still untouchable, a bare delete is still refused, erasing '
+               'requires a reason and leaves a tombstone naming where it had already reached, '
+               'and the erasure flag does not outlive the erasure';
+end $$;
+
+
+-- ===========================================================================
+-- 5. VERIFY — READ THIS OUTPUT
+-- ===========================================================================
+
+-- EVERY ANNOUNCEMENT THAT WENT OUT WITHOUT A SECOND PAIR OF EYES. This list
+-- should be short and every line on it should be a real emergency. If it grows,
+-- the override has become the way things get published.
+select a.title, a.category, a.override_at, a.override_reason,
+       a.published_at
+  from announcements a
+ where a.published_without_clearance
+ order by a.override_at desc;
+
+-- What has been erased, by whom, and why.
+select t.title, t.category, t.status_when_deleted, t.was_published,
+       t.destinations_reached, t.deleted_at, t.reason
+  from announcement_tombstones t
+ order by t.deleted_at desc;
+
+-- ERASED NOTICES THAT ARE STILL ON A NETWORK. Deleting here does not reach
+-- into Facebook. Each of these needs somebody to go and remove it there.
+select t.title, t.destinations_reached, t.deleted_at
+  from announcement_tombstones t
+ where cardinality(t.destinations_reached) > 0
+ order by t.deleted_at desc;
+
+-- The one door, and who may go through it. Only the service role should
+-- appear; the route checks the Superadministrator before calling it.
+select p.proname,
+       coalesce(array_to_string(p.proacl::text[], ', '), 'owner only') as grants
+  from pg_proc p
+  join pg_namespace n on n.oid = p.pronamespace
+ where n.nspname = 'public' and p.proname = 'erase_announcement';
+
+
+-- ===========================================================================
+-- ===========================================================================
+--
+--   041_appointments_and_the_letters_that_issue_from_them.sql
+--
+-- ===========================================================================
+-- ===========================================================================
+
+-- ===========================================================================
+-- 041 — AN APPOINTMENT IS A RECORD; THE LETTER IS GENERATED FROM IT
+-- ===========================================================================
+--
+-- ---------------------------------------------------------------------------
+-- WHAT CHANGES THE MOMENT THIS RUNS
+-- ---------------------------------------------------------------------------
+--
+-- The University gets somewhere to record that it has appointed somebody. It
+-- had nowhere. `lecturers` holds a name, a department and a specialisation —
+-- who teaches what — and `profiles` holds an account. Neither records a
+-- POSITION, a start date, an employment type, a probation period, a place of
+-- duty, a reporting officer or a salary, which means every appointment letter
+-- this University has ever sent was typed by hand into a word processor from
+-- facts that lived only in the letter.
+--
+-- That is the fault. Not that the letters were manual — that the RECORD was the
+-- letter. Ask the system today who reports to whom, whose probation ends this
+-- month, or what somebody was actually appointed as, and it cannot answer,
+-- because the answer is in a .docx on somebody's laptop.
+--
+-- ---------------------------------------------------------------------------
+-- SO THE LETTER BECOMES AN OUTPUT, NOT A SOURCE
+-- ---------------------------------------------------------------------------
+--
+--   appointments            the facts, structured, one row per appointment
+--   appointment_letters     what was generated from them, versioned and sealed
+--   appointment_events      who did what to it, append-only
+--
+-- A letter is regenerated from the record, never edited. Editing a generated
+-- document is how a letter comes to say something the register does not, and
+-- then the University has two answers to the same question with a signature on
+-- the wrong one.
+--
+-- ---------------------------------------------------------------------------
+-- THE SAME SEPARATION AS EVERYTHING ELSE
+-- ---------------------------------------------------------------------------
+--
+-- Drafted by one person, AUTHORISED by another, then issued. 005 requires it of
+-- a certificate design, 009 of a grade, 014 of a social post, 038 of an
+-- announcement. An appointment letter commits the University to paying
+-- somebody; one person drafting, authorising and sending it alone is a larger
+-- version of the thing every one of those rules exists to prevent.
+--
+-- ---------------------------------------------------------------------------
+-- AND THE SALARY IS NOT VISIBLE TO EVERYONE WHO CAN SEE THE APPOINTMENT
+-- ---------------------------------------------------------------------------
+--
+-- Section 5 puts remuneration behind its own view and its own roles. Who holds
+-- which post is ordinary institutional information; what they are paid is not,
+-- and a single RLS policy over the whole row would have made the second as
+-- visible as the first to every administrator in the University.
+-- ===========================================================================
+
+
+-- ===========================================================================
+-- 1. THE APPOINTMENT
+-- ===========================================================================
+
+create table if not exists appointments (
+  id             uuid primary key default gen_random_uuid(),
+
+  -- ---- Who ---------------------------------------------------------------
+  --
+  -- The account where there is one, and the name always. An appointment is
+  -- often made before the person has a login, and a record that cannot exist
+  -- until IT has created an account is a record that gets kept in a
+  -- spreadsheet until then.
+  person_id      uuid references auth.users (id) on delete restrict,
+  lecturer_id    uuid references lecturers (id) on delete set null,
+
+  full_name      text not null check (length(btrim(full_name)) >= 3),
+  email          text,
+  phone          text,
+  postal_address text,
+
+  -- ---- What ---------------------------------------------------------------
+  position_title text not null check (length(btrim(position_title)) >= 3),
+  department_id  uuid references departments (id) on delete set null,
+  -- The faculty or unit as written on the letter, for a unit that is not a
+  -- department row. Kept beside the id rather than instead of it: the id is
+  -- what a report joins on and the text is what the letter prints.
+  unit_name      text,
+
+  -- A CLOSED VOCABULARY. "Employment type" written free-hand produces
+  -- "Full time", "full-time", "FT" and "Permanent (full time)" inside a year,
+  -- and then nothing can be counted.
+  employment_type text not null
+                    check (employment_type in
+                      ('permanent', 'fixed-term', 'part-time', 'visiting',
+                       'adjunct', 'honorary', 'secondment', 'probationary')),
+
+  -- ---- When ---------------------------------------------------------------
+  start_date     date not null,
+  -- Null where the appointment is open-ended. A fixed-term appointment with no
+  -- end date is the constraint below refusing to let that happen silently.
+  end_date       date,
+  -- The date the appointment takes effect, where it differs from the start
+  -- date — a promotion effective from the first of the month, taken up later.
+  effective_date date,
+
+  probation_months integer check (probation_months is null or probation_months between 0 and 36),
+
+  -- ---- Where and to whom --------------------------------------------------
+  place_of_duty  text,
+  -- The person the appointee reports to. A uuid where they are on the system
+  -- and a name always, for the same reason as the appointee.
+  reports_to_id  uuid references auth.users (id) on delete set null,
+  reports_to_name text,
+
+  -- ---- Terms --------------------------------------------------------------
+  --
+  -- REMUNERATION IS OPTIONAL, because an honorary appointment has none and a
+  -- record that demands a number would have somebody type a zero — which reads
+  -- as "paid nothing" rather than "not a paid post".
+  salary_amount  numeric(14,2) check (salary_amount is null or salary_amount >= 0),
+  salary_currency text check (salary_currency is null or
+                     salary_currency in ('FCFA', 'USD', 'EUR', 'GBP', 'NGN')),
+  salary_period  text check (salary_period is null or
+                     salary_period in ('hour', 'month', 'year', 'session')),
+
+  terms          text,
+
+  -- ---- The workflow -------------------------------------------------------
+  status         text not null default 'draft'
+                   check (status in ('draft', 'submitted', 'authorized', 'issued',
+                                     'declined', 'withdrawn', 'ended')),
+
+  drafted_by     uuid references auth.users (id) on delete restrict,
+  authorized_by  uuid references auth.users (id) on delete restrict,
+  authorized_at  timestamptz,
+  issued_at      timestamptz,
+
+  -- Why an appointment was withdrawn before it was taken up, or why it ended.
+  closed_reason  text,
+  closed_at      timestamptz,
+
+  created_at     timestamptz not null default now(),
+  updated_at     timestamptz not null default now()
+);
+
+create index if not exists appointments_status_idx on appointments (status, start_date);
+create index if not exists appointments_person_idx on appointments (person_id);
+create index if not exists appointments_probation_idx
+  on appointments (start_date) where probation_months is not null;
+
+do $$
+begin
+  -- THE AUTHORISER IS NOT THE DRAFTER. An appointment letter commits the
+  -- University to paying somebody. One person drafting, authorising and
+  -- sending it alone is the larger version of everything 005, 009, 014 and 038
+  -- exist to prevent.
+  if not exists (select 1 from pg_constraint where conname = 'appointments_second_pair_of_eyes') then
+    alter table appointments add constraint appointments_second_pair_of_eyes
+      check (authorized_by is null or drafted_by is null or authorized_by <> drafted_by);
+  end if;
+
+  -- A FIXED TERM HAS A TERM. Without this, 'fixed-term' with no end date is a
+  -- permanent appointment wearing the wrong label, and nobody finds out until
+  -- somebody asks when it ends.
+  if not exists (select 1 from pg_constraint where conname = 'appointments_fixed_term_ends') then
+    alter table appointments add constraint appointments_fixed_term_ends
+      check (employment_type <> 'fixed-term' or end_date is not null);
+  end if;
+
+  -- AND IT ENDS AFTER IT STARTS.
+  if not exists (select 1 from pg_constraint where conname = 'appointments_dates_run_forward') then
+    alter table appointments add constraint appointments_dates_run_forward
+      check (end_date is null or end_date > start_date);
+  end if;
+
+  -- A SALARY IS A NUMBER, A CURRENCY AND A PERIOD, or it is none of them.
+  -- "450,000" on a letter with no currency and no period is not a figure
+  -- anybody can rely on, and it is the kind of omission that reaches a
+  -- signature because each half looks complete on its own.
+  if not exists (select 1 from pg_constraint where conname = 'appointments_salary_is_complete') then
+    alter table appointments add constraint appointments_salary_is_complete
+      check (
+        (salary_amount is null and salary_currency is null and salary_period is null)
+        or (salary_amount is not null and salary_currency is not null
+            and salary_period is not null)
+      );
+  end if;
+
+  -- AN AUTHORISED APPOINTMENT NAMES ITS AUTHORISER AND THE MOMENT.
+  if not exists (select 1 from pg_constraint where conname = 'appointments_authority_recorded') then
+    alter table appointments add constraint appointments_authority_recorded
+      check (status not in ('authorized', 'issued')
+             or (authorized_by is not null and authorized_at is not null));
+  end if;
+
+  -- Closing an appointment says why, like every other closure in this system.
+  if not exists (select 1 from pg_constraint where conname = 'appointments_closure_explained') then
+    alter table appointments add constraint appointments_closure_explained
+      check (status not in ('declined', 'withdrawn', 'ended')
+             or (closed_reason is not null and length(btrim(closed_reason)) >= 10));
+  end if;
+end $$;
+
+
+-- ===========================================================================
+-- 2. THE LETTERS GENERATED FROM IT
+-- ===========================================================================
+--
+-- VERSIONED, NOT OVERWRITTEN. A letter is regenerated when the appointment
+-- changes — a corrected start date, a revised salary — and the superseded one
+-- stays. Somebody holds a copy of it; if the University cannot produce what it
+-- actually sent, the copy in their hand is the only version of that fact.
+--
+-- 031 built exactly this for admission letters and this follows it, including
+-- the two things it learned: the HTML AS SENT is stored rather than
+-- regenerated on demand, and a letter that failed to send is in an outbox
+-- rather than gone.
+
+create table if not exists appointment_letters (
+  id             uuid primary key default gen_random_uuid(),
+  appointment_id uuid not null references appointments (id) on delete cascade,
+
+  -- THE REFERENCE ON THE PAGE. What somebody quotes on the telephone, and what
+  -- a filing system is built on. Unique across the University, not per
+  -- appointment: two letters with one reference is the failure a reference
+  -- exists to prevent.
+  reference      text not null unique,
+
+  version        integer not null default 1 check (version >= 1),
+
+  -- The date the letter bears, which is what its seal was computed over.
+  issued_on      date not null,
+
+  /** Whether it went out with a seal. False when CREDENTIAL_SECRET was absent. */
+  sealed         boolean not null default false,
+  /** The verification code printed on the page, spoken over a telephone. */
+  seal_code      text,
+
+  -- The document itself, as the appointee received it.
+  html           text not null,
+
+  -- WHO SIGNED IT. Not the person who pressed the button — the office whose
+  -- name and signature appear on the page, which is a different thing and is
+  -- the one a recipient relies on.
+  signatory_name text,
+  signatory_role text,
+
+  to_email       text,
+  delivery       text not null default 'pending'
+                   check (delivery in ('pending', 'sent', 'failed')),
+  delivery_detail text,
+  attempts       integer not null default 0,
+
+  -- Set when a later version replaces this one. The row stays.
+  superseded_at  timestamptz,
+  superseded_by  uuid references appointment_letters (id) on delete set null,
+
+  created_by     uuid references auth.users (id) on delete set null,
+  created_at     timestamptz not null default now(),
+  updated_at     timestamptz not null default now(),
+
+  unique (appointment_id, version)
+);
+
+create index if not exists appointment_letters_appointment_idx
+  on appointment_letters (appointment_id, version desc);
+create index if not exists appointment_letters_current_idx
+  on appointment_letters (appointment_id) where superseded_at is null;
+
+-- ONE CURRENT LETTER PER APPOINTMENT. Two letters both claiming to be the one
+-- in force is the state a version number exists to make impossible.
+create unique index if not exists appointment_letters_one_current_idx
+  on appointment_letters (appointment_id) where superseded_at is null;
+
+-- A LETTER IS NEVER EDITED. It is superseded by a new version generated from
+-- the record. Editing a generated document is how a letter comes to say
+-- something the register does not, and then the University has two answers to
+-- the same question with a signature on the wrong one.
+create or replace function refuse_letter_edit() returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  -- Delivery is not the letter. Recording that it sent, failed, or was
+  -- superseded changes what happened TO the document, not what it says.
+  if new.html = old.html
+     and new.reference = old.reference
+     and new.version = old.version
+     and new.issued_on = old.issued_on
+     and new.seal_code is not distinct from old.seal_code
+     and new.signatory_name is not distinct from old.signatory_name then
+    return new;
+  end if;
+  raise exception
+    'An appointment letter cannot be edited. Correct the appointment and generate a new '
+    'version: somebody is holding the document as it was sent, and a letter that says one '
+    'thing on their copy and another in the register is worse than no register.'
+    using errcode = 'check_violation';
+end $$;
+
+drop trigger if exists appointment_letters_no_edit on appointment_letters;
+create trigger appointment_letters_no_edit
+  before update on appointment_letters
+  for each row execute function refuse_letter_edit();
+
+
+-- ===========================================================================
+-- 3. THE HISTORY
+-- ===========================================================================
+
+create table if not exists appointment_events (
+  id             uuid primary key default gen_random_uuid(),
+  appointment_id uuid not null references appointments (id) on delete cascade,
+
+  event          text not null check (event in (
+                   'DRAFTED', 'EDITED', 'SUBMITTED_FOR_AUTHORITY', 'AUTHORIZED', 'RETURNED',
+                   'LETTER_GENERATED', 'LETTER_ISSUED', 'LETTER_DELIVERY_FAILED',
+                   'LETTER_SUPERSEDED', 'DECLINED', 'WITHDRAWN', 'ENDED',
+                   'ADMINISTRATIVE_OVERRIDE')),
+
+  actor_id       uuid references auth.users (id) on delete set null,
+  actor_email    text,
+  actor_role     text,
+
+  previous_state text,
+  new_state      text,
+  detail         text,
+  metadata       jsonb,
+
+  at             timestamptz not null default now()
+);
+
+create index if not exists appointment_events_appointment_idx
+  on appointment_events (appointment_id, at);
+
+create or replace function refuse_appointment_history_edit() returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  raise exception
+    'The appointment history is append-only. % is not permitted: this is the record of who '
+    'the University appointed and on whose authority.', tg_op
+    using errcode = 'check_violation';
+end $$;
+
+drop trigger if exists appointment_events_append_only on appointment_events;
+create trigger appointment_events_append_only
+  before update or delete on appointment_events
+  for each row execute function refuse_appointment_history_edit();
+
+
+-- ===========================================================================
+-- 4. WHO CAN READ WHAT
+-- ===========================================================================
+
+alter table appointments enable row level security;
+alter table appointment_letters enable row level security;
+alter table appointment_events enable row level security;
+
+-- THE APPOINTEE READS THEIR OWN. Somebody should not have to write to Human
+-- Resources to find out what they were appointed as.
+drop policy if exists appointments_read on appointments;
+create policy appointments_read on appointments
+  for select using (
+    person_id = auth.uid()
+    or auth_role() in ('superadmin', 'admin', 'registrar')
+  );
+
+drop policy if exists appointment_letters_read on appointment_letters;
+create policy appointment_letters_read on appointment_letters
+  for select using (
+    auth_role() in ('superadmin', 'admin', 'registrar')
+    or exists (select 1 from appointments a
+                where a.id = appointment_letters.appointment_id and a.person_id = auth.uid())
+  );
+
+drop policy if exists appointment_events_read on appointment_events;
+create policy appointment_events_read on appointment_events
+  for select using (auth_role() in ('superadmin', 'admin', 'registrar'));
+
+-- No write policy on any of the three. Every change goes through
+-- /api/appointments, which checks the capability against the role in the
+-- database and writes the history in the same breath.
+
+
+-- ===========================================================================
+-- 5. THE SALARY IS NOT ORDINARY INSTITUTIONAL INFORMATION
+-- ===========================================================================
+--
+-- WHO HOLDS WHICH POST IS. What they are paid is not, and one policy over the
+-- whole row makes the second as visible as the first to every administrator in
+-- the University — which is how a salary ends up known to people who had no
+-- business knowing it and no idea they were being shown it.
+--
+-- So the view below is what most screens read. It carries the appointment
+-- without the money. The columns themselves stay restricted to the roles that
+-- actually set pay.
+
+create or replace view appointments_without_pay
+with (security_invoker = true) as
+select id, person_id, lecturer_id, full_name, email, phone,
+       position_title, department_id, unit_name, employment_type,
+       start_date, end_date, effective_date, probation_months,
+       place_of_duty, reports_to_id, reports_to_name,
+       -- SAID, NOT SHOWN. A screen needs to know a figure exists — to print
+       -- "salary as set out in your letter" rather than nothing — without
+       -- being told what it is.
+       (salary_amount is not null) as is_paid,
+       status, drafted_by, authorized_by, authorized_at, issued_at,
+       created_at, updated_at
+  from appointments;
+
+comment on view appointments_without_pay is
+  'Every appointment without the remuneration. What somebody holds is ordinary '
+  'institutional information; what they are paid is not, and a single policy over '
+  'the table would make the second as visible as the first.';
+
+
+-- ===========================================================================
+-- 6. PERFORMING THE RULES
+-- ===========================================================================
+
+do $$
+declare
+  refused boolean;
+  a_id uuid;
+  l_id uuid;
+  someone uuid;
+  other uuid;
+  later_version_sql text;
+begin
+  -- ---------------------------------------------------------------------
+  -- THE INSERT FOR A VERSION AFTER THE FIRST, BUILT TO MATCH THE SCHEMA.
+  --
+  -- 042 adds `supersedes_reason` and requires it on any version above 1 — a
+  -- revised letter has to say why somebody is holding a second one. On a FIRST
+  -- run of the bundle that column does not exist yet, because 041 runs before
+  -- 042; on a SECOND run it does, and the constraint refuses an insert without
+  -- it. Naming the column unconditionally fails the first case, omitting it
+  -- fails the second.
+  --
+  -- Found by running RUN-ALL.sql twice, which is the only way either half of
+  -- this shows up.
+  -- ---------------------------------------------------------------------
+  if exists (select 1 from information_schema.columns
+              where table_schema = 'public' and table_name = 'appointment_letters'
+                and column_name = 'supersedes_reason') then
+    later_version_sql :=
+      'insert into appointment_letters (appointment_id, reference, version, issued_on, html, '
+      || 'supersedes_reason) values ($1, $2, $3, current_date, ''<p>A later letter.</p>'', '
+      || '''The start date was corrected.'')';
+  else
+    later_version_sql :=
+      'insert into appointment_letters (appointment_id, reference, version, issued_on, html) '
+      || 'values ($1, $2, $3, current_date, ''<p>A later letter.</p>'')';
+  end if;
+
+  select id into someone from auth.users limit 1;
+  if someone is null then
+    raise notice '041: no accounts yet, so the rules could not be exercised against one';
+    return;
+  end if;
+  select id into other from auth.users where id <> someone limit 1;
+
+  begin
+    insert into appointments
+      (full_name, position_title, employment_type, start_date, drafted_by, status)
+    values ('A Specimen Appointee', 'Lecturer in Theology', 'permanent',
+            date '2026-10-01', someone, 'draft')
+    returning id into a_id;
+
+    -- ---- THE DRAFTER CANNOT AUTHORISE THEIR OWN --------------------------
+    -- An appointment letter commits the University to paying somebody.
+    refused := false;
+    begin
+      update appointments set status = 'authorized', authorized_by = someone,
+                              authorized_at = now() where id = a_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '041 FAILED: the person who drafted an appointment authorised it. The '
+                      'second pair of eyes is not a rule, it is a comment.';
+    end if;
+
+    -- ---- A FIXED TERM HAS A TERM -----------------------------------------
+    -- Otherwise it is a permanent appointment wearing the wrong label, and
+    -- nobody finds out until somebody asks when it ends.
+    refused := false;
+    begin
+      update appointments set employment_type = 'fixed-term' where id = a_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '041 FAILED: a fixed-term appointment was recorded with no end date';
+    end if;
+
+    -- ---- AND IT ENDS AFTER IT STARTS -------------------------------------
+    refused := false;
+    begin
+      update appointments set end_date = date '2025-01-01' where id = a_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '041 FAILED: an appointment ended before it began';
+    end if;
+
+    -- ---- A SALARY IS A NUMBER, A CURRENCY AND A PERIOD --------------------
+    -- "450,000" with no currency and no period is not a figure anybody can
+    -- rely on, and each half looks complete on its own, which is how the
+    -- omission reaches a signature.
+    --
+    -- THE TRIGGER 047 ADDS IS STOOD DOWN FOR THIS ONE CHECK. It fills in
+    -- dollars and a monthly period when an amount arrives with neither, which
+    -- is the University's ruling and is exactly what makes this constraint
+    -- stop firing on a database that has had 047. Running the two in order
+    -- therefore reported "041 FAILED" on the SECOND pass and not the first —
+    -- the constraint had not gone anywhere, but nothing could reach it.
+    --
+    -- Disabled inside the rolled-back block, so it is disabled for the length
+    -- of this proof and for nothing else.
+    if exists (select 1 from pg_trigger
+                where tgname = 'appointments_money_is_in_dollars'
+                  and tgrelid = 'appointments'::regclass) then
+      alter table appointments disable trigger appointments_money_is_in_dollars;
+    end if;
+
+    refused := false;
+    begin
+      update appointments set salary_amount = 450000 where id = a_id;
+    exception when others then refused := true;
+    end;
+
+    if exists (select 1 from pg_trigger
+                where tgname = 'appointments_money_is_in_dollars'
+                  and tgrelid = 'appointments'::regclass) then
+      alter table appointments enable trigger appointments_money_is_in_dollars;
+    end if;
+    if not refused then
+      raise exception '041 FAILED: a salary was recorded with no currency and no period';
+    end if;
+
+    update appointments
+       set salary_amount = 450000, salary_currency = 'FCFA', salary_period = 'month'
+     where id = a_id;
+
+    -- ---- AND IT IS NOT IN THE ORDINARY VIEW ------------------------------
+    if exists (
+      select 1 from information_schema.columns
+       where table_schema = 'public' and table_name = 'appointments_without_pay'
+         and column_name in ('salary_amount', 'salary_currency', 'salary_period')
+    ) then
+      raise exception '041 FAILED: the pay-free view carries the pay. Who holds which post is '
+                      'ordinary information; what they are paid is not.';
+    end if;
+    if not (select is_paid from appointments_without_pay where id = a_id) then
+      raise exception '041 FAILED: the view cannot even say that a salary exists, so a letter '
+                      'cannot say "as set out above" without being shown the figure';
+    end if;
+
+    -- ---- A CLOSURE SAYS WHY ----------------------------------------------
+    refused := false;
+    begin
+      update appointments set status = 'withdrawn' where id = a_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '041 FAILED: an appointment was withdrawn with no reason recorded';
+    end if;
+
+    -- ---- A LETTER CANNOT BE EDITED ---------------------------------------
+    --
+    -- The references below are APT-YYYY-NNNN. 041 shipped with IGUC/HR/2026/…
+    -- and 042 later constrained the shape, so on any second run of the bundle
+    -- this proof was refused by a rule added after it. Found by running
+    -- RUN-ALL.sql twice; the shape 042 requires is used from the start.
+    insert into appointment_letters
+      (appointment_id, reference, issued_on, html, created_by)
+    values (a_id, 'APT-2026-9001', current_date, '<p>The letter as sent.</p>', someone)
+    returning id into l_id;
+
+    refused := false;
+    begin
+      update appointment_letters set html = '<p>Something else entirely.</p>' where id = l_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '041 FAILED: an issued letter was rewritten. Somebody is holding the '
+                      'document as it was sent.';
+    end if;
+
+    -- …but recording that it was delivered is not editing it.
+    --
+    -- WRITTEN TO MATCH WHICHEVER SCHEMA IS PRESENT. 044 later requires a
+    -- delivered letter to record WHEN, and a letter with attempts to record
+    -- when they happened — so this update was refused on any second run of the
+    -- bundle, and could not name the columns unconditionally because on a
+    -- FIRST run they do not exist yet. Found by running RUN-ALL.sql twice.
+    if exists (select 1 from information_schema.columns
+                where table_schema = 'public' and table_name = 'appointment_letters'
+                  and column_name = 'delivered_at') then
+      execute 'update appointment_letters set delivery = ''sent'', attempts = 1, '
+              || 'delivered_at = now(), last_attempt_at = now() where id = $1' using l_id;
+    else
+      update appointment_letters set delivery = 'sent', attempts = 1 where id = l_id;
+    end if;
+
+    -- ---- TWO LETTERS CANNOT BOTH BE THE CURRENT ONE -----------------------
+    refused := false;
+    begin
+      execute later_version_sql using a_id, 'APT-2026-9002', 2;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '041 FAILED: two letters both claim to be the one in force';
+    end if;
+
+    -- Superseding the first makes room for the second, which is the point of
+    -- a version rather than an edit.
+    update appointment_letters set superseded_at = now() where id = l_id;
+    execute later_version_sql using a_id, 'APT-2026-9002', 2;
+
+    -- ---- A REFERENCE IS UNIQUE ACROSS THE UNIVERSITY ----------------------
+    refused := false;
+    begin
+      execute later_version_sql using a_id, 'APT-2026-9002', 3;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '041 FAILED: two letters carry one reference, which is the single thing '
+                      'a reference exists to prevent';
+    end if;
+
+    -- ---- THE HISTORY IS APPEND-ONLY ---------------------------------------
+    insert into appointment_events (appointment_id, event, new_state) values (a_id, 'DRAFTED', 'draft');
+    refused := false;
+    begin
+      update appointment_events set detail = 'something else' where appointment_id = a_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '041 FAILED: the appointment history could be rewritten';
+    end if;
+
+    raise exception 'PROOF_ROLLBACK';
+  exception when others then
+    if sqlerrm <> 'PROOF_ROLLBACK' then raise; end if;
+  end;
+
+  raise notice '041 OK: a drafter cannot authorise their own appointment, a fixed term has a '
+               'term, dates run forward, a salary is a figure with a currency and a period and '
+               'is absent from the ordinary view, a closure states a reason, an issued letter '
+               'cannot be edited or duplicated, a reference is unique, and the history is '
+               'append-only';
+end $$;
+
+
+-- ===========================================================================
+-- 7. VERIFY — READ THIS OUTPUT
+-- ===========================================================================
+
+-- Every appointment, without the pay.
+select full_name, position_title, employment_type, start_date, end_date,
+       status, is_paid
+  from appointments_without_pay
+ order by start_date desc;
+
+-- PROBATIONS ENDING IN THE NEXT SIXTY DAYS. The question the University could
+-- not ask at all before today, because the answer was in a word processor file.
+select full_name, position_title, start_date,
+       (start_date + (probation_months || ' months')::interval)::date as probation_ends
+  from appointments
+ where probation_months is not null
+   and status = 'issued'
+   and (start_date + (probation_months || ' months')::interval)::date
+       between current_date and current_date + 60
+ order by 4;
+
+-- FIXED TERMS ENDING IN THE NEXT NINETY DAYS.
+select full_name, position_title, end_date
+  from appointments
+ where end_date is not null and status = 'issued'
+   and end_date between current_date and current_date + 90
+ order by end_date;
+
+-- The letters, current version first, and which were superseded.
+select a.full_name, l.reference, l.version, l.issued_on, l.sealed, l.delivery,
+       (l.superseded_at is null) as is_current
+  from appointment_letters l
+  join appointments a on a.id = l.appointment_id
+ order by a.full_name, l.version desc;
+
+-- LETTERS THAT DID NOT REACH ANYBODY. Generated, sealed, and sitting in the
+-- outbox. Each is somebody who has not been told they were appointed.
+select a.full_name, a.email, l.reference, l.attempts, l.delivery_detail
+  from appointment_letters l
+  join appointments a on a.id = l.appointment_id
+ where l.delivery = 'failed' and l.superseded_at is null
+ order by l.created_at desc;
+
+
+-- ===========================================================================
+-- ===========================================================================
+--
+--   042_the_appointment_lifecycle_and_the_staff_record.sql
+--
+-- ===========================================================================
+-- ===========================================================================
+
+-- ===========================================================================
+-- 042 — THE FULL APPOINTMENT LIFECYCLE, AND THE STAFF RECORD IT CREATES
+-- ===========================================================================
+--
+-- ---------------------------------------------------------------------------
+-- WHAT CHANGES THE MOMENT THIS RUNS
+-- ---------------------------------------------------------------------------
+--
+-- 1. THE LIFECYCLE GETS THE STEPS IT WAS MISSING. 041 stopped at `issued`,
+--    which conflated four different facts: the letter exists, the letter was
+--    sent, the appointee said yes, and the person is actually in post. They
+--    come apart constantly — a letter generated and never sent, a letter sent
+--    and never answered, an acceptance for a post that starts in three months
+--    — and a single state cannot tell a Head of Department whether anybody is
+--    coming.
+--
+-- 2. AN ISSUED APPOINTMENT CAN BE AMENDED, ON THE RECORD. Salaries are
+--    corrected and start dates move. Until now the only options were to edit
+--    the record under a letter already in somebody's hands, or to withdraw the
+--    whole appointment. Neither is what happened.
+--
+-- 3. THE STAFF RECORD CANNOT BE CREATED BEFORE THE LETTER IS ISSUED. This is
+--    the door this migration closes and it is the point of the whole exercise:
+--    the system may not represent somebody as a member of staff until the
+--    University has actually appointed them. `lecturers` rows could be created
+--    by anybody at any time, for anybody, with no appointment behind them.
+--
+--    Existing staff are NOT affected — a row created before this ran stays
+--    exactly as it is. What is refused is a NEW staff row that claims an
+--    appointment which has not reached issuance.
+-- ===========================================================================
+
+
+-- ===========================================================================
+-- 1. THE LIFECYCLE
+-- ===========================================================================
+--
+--   draft → submitted → approved → letter_generated → issued → accepted → active
+--
+-- and, when something changes after issuance:
+--
+--   issued/accepted/active → amendment_requested → approved → letter_generated
+--                          → issued  (as a new version; the old letter stays)
+--
+-- WHY `approved` AND NOT `authorized`. 041 called it authorized and the
+-- University calls it approved. The word on the screen and the word in the
+-- column being different is how a question gets asked twice and answered
+-- differently, so the column moves. The old value is carried across below.
+
+do $$
+declare
+  con text;
+begin
+  select conname into con from pg_constraint
+   where conrelid = 'appointments'::regclass and contype = 'c'
+     and pg_get_constraintdef(oid) like '%status%' and pg_get_constraintdef(oid) like '%draft%'
+   limit 1;
+  if con is not null then
+    execute format('alter table appointments drop constraint %I', con);
+  end if;
+
+  -- The rows 041 wrote, renamed before the new constraint refuses them.
+  update appointments set status = 'approved' where status = 'authorized';
+
+  alter table appointments add constraint appointments_status_check
+    check (status in (
+      'draft',
+      'submitted',           -- awaiting approval
+      'approved',            -- approved by somebody other than the drafter
+      'letter_generated',    -- the document exists; nobody has been sent it
+      'issued',              -- the letter has gone to the appointee
+      'accepted',            -- the appointee has said yes
+      'active',              -- in post
+      'amendment_requested', -- something changed after issuance
+      'declined',            -- the appointee said no
+      'withdrawn',           -- the University withdrew it
+      'ended'                -- ran its course, or was ended
+    ));
+end $$;
+
+alter table appointments
+  -- WHEN, NOT WHETHER. Each of these is a fact with a date, and a boolean
+  -- would answer "did they accept?" while losing "when?", which is the half
+  -- that matters when a start date is disputed.
+  add column if not exists letter_generated_at timestamptz,
+  add column if not exists accepted_at       timestamptz,
+  add column if not exists declined_at       timestamptz,
+  add column if not exists activated_at      timestamptz,
+
+  -- ---- The amendment path -------------------------------------------------
+  add column if not exists amendment_reason     text,
+  add column if not exists amendment_requested_at timestamptz,
+  add column if not exists amendment_requested_by uuid references auth.users (id) on delete set null,
+  -- HOW MANY TIMES THIS APPOINTMENT HAS BEEN AMENDED. Not decoration: an
+  -- appointment amended four times is a different conversation from one
+  -- amended once, and the letters alone do not say it because a version can
+  -- also be a correction of a typographical error.
+  add column if not exists amendments integer not null default 0,
+
+  -- ---- The staff record ---------------------------------------------------
+  add column if not exists staff_record_id   uuid references lecturers (id) on delete set null,
+  add column if not exists staff_activated_at timestamptz;
+
+do $$
+begin
+  -- AN AMENDMENT SAYS WHAT CHANGED. "Amended" with no reason is a revised
+  -- letter in somebody's hands and no account of why they were sent a second
+  -- one.
+  if not exists (select 1 from pg_constraint where conname = 'appointments_amendment_explained') then
+    alter table appointments add constraint appointments_amendment_explained
+      check (status <> 'amendment_requested'
+             or (amendment_reason is not null
+                 and length(btrim(amendment_reason)) >= 12
+                 and amendment_requested_by is not null));
+  end if;
+
+  -- ACCEPTANCE, ACTIVATION AND ISSUANCE EACH RECORD THEIR MOMENT.
+  if not exists (select 1 from pg_constraint where conname = 'appointments_moments_recorded') then
+    alter table appointments add constraint appointments_moments_recorded
+      check (
+        (status <> 'accepted' or accepted_at is not null)
+        and (status <> 'active' or activated_at is not null)
+        and (status <> 'declined' or declined_at is not null)
+      );
+  end if;
+
+  -- ---------------------------------------------------------------------
+  -- NOBODY IS IN POST BEFORE THEY WERE APPOINTED.
+  --
+  -- The ordering constraint that makes the whole workflow mean something: a
+  -- record cannot reach `accepted` or `active` without the letter having been
+  -- issued first. Without it, an administrator can set somebody active
+  -- directly and the approval, the letter and the acceptance become optional
+  -- decoration on a path nobody has to walk.
+  -- ---------------------------------------------------------------------
+  if not exists (select 1 from pg_constraint where conname = 'appointments_issued_before_accepted') then
+    alter table appointments add constraint appointments_issued_before_accepted
+      check (status not in ('accepted', 'active') or issued_at is not null);
+  end if;
+
+  -- A STAFF RECORD IS THE CONSEQUENCE OF AN APPOINTMENT, never its cause.
+  if not exists (select 1 from pg_constraint where conname = 'appointments_staff_follows_issuance') then
+    alter table appointments add constraint appointments_staff_follows_issuance
+      check (staff_record_id is null or issued_at is not null);
+  end if;
+end $$;
+
+create index if not exists appointments_awaiting_idx
+  on appointments (status) where status in ('submitted', 'amendment_requested');
+create index if not exists appointments_active_idx
+  on appointments (start_date) where status = 'active';
+
+
+-- ===========================================================================
+-- 2. THE REFERENCE THE UNIVERSITY ASKED FOR
+-- ===========================================================================
+--
+-- APT-2026-0042. 041 used IGUC/HR/2026/0001, and slashes in a reference are a
+-- small ongoing nuisance: they cannot go in a URL path without escaping, and a
+-- verification link is exactly where this will end up.
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'appointment_letters_reference_shape') then
+    alter table appointment_letters add constraint appointment_letters_reference_shape
+      check (reference ~ '^APT-[0-9]{4}-[0-9]{4,}$');
+  end if;
+end $$;
+
+-- WHY A LETTER EXISTS, in its own words: issued, amended, or re-issued. The
+-- University asked for a history that reads
+--
+--   Version 1 — Issued 12 Sept 2026
+--   Version 2 — Amended 20 Sept 2026
+--   Version 3 — Re-issued 25 Sept 2026
+--
+-- and "amended" and "re-issued" are not the same thing: the first is a changed
+-- appointment, the second is the same appointment sent again.
+alter table appointment_letters
+  add column if not exists kind text not null default 'issued',
+  add column if not exists supersedes_reason text;
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'appointment_letters_kind_check') then
+    alter table appointment_letters add constraint appointment_letters_kind_check
+      check (kind in ('issued', 'amended', 'reissued'));
+  end if;
+
+  -- A LETTER AFTER THE FIRST SAYS WHY THERE IS ANOTHER ONE. Somebody is
+  -- holding version 1 and has just received version 2; the register has to be
+  -- able to say what changed.
+  if not exists (select 1 from pg_constraint where conname = 'appointment_letters_later_versions_explained') then
+    alter table appointment_letters add constraint appointment_letters_later_versions_explained
+      check (version = 1 or (supersedes_reason is not null
+                             and length(btrim(supersedes_reason)) >= 10));
+  end if;
+end $$;
+
+
+-- ===========================================================================
+-- 3. WHAT THE QR CODE RESOLVES TO
+-- ===========================================================================
+--
+-- A READER OF THE DOCUMENT IS NOT A USER OF THE SYSTEM. Somebody checking an
+-- appointment letter is a bank, an embassy or another university, and they get
+-- exactly what the University is willing to say publicly about a document
+-- somebody has handed them: that it is genuine, whose it is, what post, and
+-- when it was issued.
+--
+-- WHAT IT DOES NOT CARRY: the salary, the terms, the address, the reporting
+-- officer. A verification page that answered "what is this person paid" to
+-- anybody holding a photograph of their letter would be a data breach with a
+-- QR code on it.
+
+-- ---------------------------------------------------------------------------
+-- DROPPED FIRST, NOT REPLACED.
+--
+-- `create or replace view` can add a column and cannot remove one. 049 widens
+-- this view with `signature_mode`, so on a SECOND run of RUN-ALL this statement
+-- tried to replace the wider view with the narrower one and Postgres refused:
+-- "cannot drop columns from view". The first pass was clean and the second was
+-- not, which is precisely what running it twice is for.
+-- ---------------------------------------------------------------------------
+drop view if exists appointment_letter_verification;
+
+create view appointment_letter_verification
+with (security_invoker = false) as
+select l.reference,
+       'Appointment Letter'::text            as document,
+       a.full_name                            as holder,
+       a.position_title                       as position,
+       coalesce(a.unit_name, '')              as unit,
+       l.issued_on                            as issued,
+       l.version,
+       case
+         -- A SUPERSEDED LETTER IS NOT INVALID, and saying so would be wrong in
+         -- a way that costs somebody a visa. It was genuine and it has been
+         -- replaced; the reader is told which version is current.
+         when l.superseded_at is not null then 'Superseded'
+         when a.status in ('withdrawn', 'declined') then 'Not in force'
+         when a.status = 'ended' then 'Ended'
+         else 'Valid'
+       end                                    as status,
+       (select max(v.version) from appointment_letters v
+         where v.appointment_id = l.appointment_id) as current_version
+  from appointment_letters l
+  join appointments a on a.id = l.appointment_id;
+
+comment on view appointment_letter_verification is
+  'What the QR code on an appointment letter resolves to. Carries no salary, no '
+  'terms and no contact details: a reader of the document is a bank or an embassy, '
+  'not a user of the system.';
+
+grant select on appointment_letter_verification to anon, authenticated, service_role;
+
+
+-- ===========================================================================
+-- 4. THE STAFF RECORD FOLLOWS THE APPOINTMENT
+-- ===========================================================================
+--
+-- ---------------------------------------------------------------------------
+-- THE DOOR THIS CLOSES
+-- ---------------------------------------------------------------------------
+--
+-- A `lecturers` row could be created by anybody, for anybody, at any time, with
+-- no appointment behind it. So the system could represent somebody as a member
+-- of staff — with a department, a portal account and a place in the timetable —
+-- whom the University had never appointed.
+--
+-- From now on a staff record created FROM an appointment requires that
+-- appointment to have reached issuance. Rows that already exist are untouched,
+-- and a row created with no appointment at all is still permitted, because the
+-- University has staff who predate this system and refusing them would make it
+-- unusable on the first day.
+--
+-- WHAT IS REFUSED is the specific dangerous thing: claiming an appointment that
+-- has not been issued.
+
+alter table lecturers
+  add column if not exists appointment_id uuid references appointments (id) on delete set null;
+
+create unique index if not exists lecturers_appointment_idx
+  on lecturers (appointment_id) where appointment_id is not null;
+
+create or replace function staff_follows_an_issued_appointment() returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  a record;
+begin
+  if new.appointment_id is null then
+    return new;
+  end if;
+
+  select status, issued_at, full_name into a from appointments where id = new.appointment_id;
+  if not found then
+    raise exception 'No appointment with id %', new.appointment_id using errcode = 'foreign_key_violation';
+  end if;
+
+  if a.issued_at is null then
+    raise exception
+      'This appointment has not been issued, so % cannot be made a member of staff from it. '
+      'The University appoints somebody, sends them the letter, and the staff record follows — '
+      'a staff record created first is a person the system says works here on nobody''s '
+      'authority.', coalesce(a.full_name, 'this person')
+      using errcode = 'check_violation';
+  end if;
+
+  return new;
+end $$;
+
+drop trigger if exists lecturers_follow_appointments on lecturers;
+create trigger lecturers_follow_appointments
+  before insert or update of appointment_id on lecturers
+  for each row execute function staff_follows_an_issued_appointment();
+
+
+-- ===========================================================================
+-- 5. PERFORMING THE RULES
+-- ===========================================================================
+
+do $$
+declare
+  refused boolean;
+  a_id uuid;
+  l_id uuid;
+  someone uuid;
+  other uuid;
+  st text;
+begin
+  select id into someone from auth.users limit 1;
+  select id into other from auth.users where id <> someone limit 1;
+  if someone is null or other is null then
+    raise notice '042: fewer than two accounts, so the rules could not be exercised';
+    return;
+  end if;
+
+  begin
+    insert into appointments
+      (full_name, position_title, employment_type, start_date, place_of_duty, terms,
+       drafted_by, status)
+    values ('A Specimen Appointee', 'Lecturer in Theology', 'permanent', date '2026-10-01',
+            'Buea campus', 'Subject to the conditions of service.', someone, 'draft')
+    returning id into a_id;
+
+    -- ---- NOBODY IS ACTIVE BEFORE THEY WERE APPOINTED ---------------------
+    -- The ordering rule that makes the rest mean anything. Without it an
+    -- administrator sets somebody active directly and the approval, the letter
+    -- and the acceptance are decoration on a path nobody has to walk.
+    for st in select unnest(array['accepted', 'active']) loop
+      refused := false;
+      begin
+        execute 'update appointments set status = $1, accepted_at = now(), activated_at = now() '
+                'where id = $2' using st, a_id;
+      exception when others then refused := true;
+      end;
+      if not refused then
+        raise exception '042 FAILED: an appointment reached % with no letter ever issued', st;
+      end if;
+    end loop;
+
+    -- ---- AN AMENDMENT SAYS WHAT CHANGED ----------------------------------
+    refused := false;
+    begin
+      update appointments set status = 'amendment_requested' where id = a_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '042 FAILED: an appointment was amended with no reason and nobody asking';
+    end if;
+
+    -- ---- WALK IT PROPERLY: approved, letter generated, ISSUED -------------
+    --
+    -- THE LETTER IS ARCHIVED BEFORE THE STATUS SAYS ISSUED, and it did not use
+    -- to be. 047 refuses an appointment to reach `issued` with no document
+    -- behind it — the University's own rule — so this proof walked a path the
+    -- system no longer permits, and reported "042 FAILED" on the second pass
+    -- of RUN-ALL while passing cleanly on the first.
+    --
+    -- The fix is not to stand the rule down. It is that this order was always
+    -- the right one: the appointee is holding the letter, and a register that
+    -- says a letter went out before one existed is the thing 047 closes.
+    update appointments
+       set status = 'approved', authorized_by = other, authorized_at = now() where id = a_id;
+    update appointments
+       set status = 'letter_generated', letter_generated_at = now() where id = a_id;
+    -- …and `issued` is set below, AFTER the letter is in the archive.
+
+    -- ---- THE REFERENCE IS THE SHAPE THE UNIVERSITY ASKED FOR --------------
+    refused := false;
+    begin
+      insert into appointment_letters (appointment_id, reference, issued_on, html)
+      values (a_id, 'IGUC/HR/2026/0001', current_date, '<p>x</p>');
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '042 FAILED: a letter was filed under a reference that is not APT-YYYY-NNNN';
+    end if;
+
+    insert into appointment_letters (appointment_id, reference, issued_on, html, kind)
+    values (a_id, 'APT-2026-0042', current_date, '<p>Version one.</p>', 'issued')
+    returning id into l_id;
+
+    -- NOW it can be issued, and not before. The archive holds the document the
+    -- appointee is about to be holding.
+    update appointments set status = 'issued', issued_at = now() where id = a_id;
+
+    -- ---- A SECOND VERSION SAYS WHY THERE IS ONE ---------------------------
+    -- Somebody is holding version 1 and has just been sent version 2.
+    update appointment_letters set superseded_at = now() where id = l_id;
+    refused := false;
+    begin
+      insert into appointment_letters
+        (appointment_id, reference, version, issued_on, html, kind)
+      values (a_id, 'APT-2026-0043', 2, current_date, '<p>Version two.</p>', 'amended');
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '042 FAILED: a revised letter was issued with no account of what changed';
+    end if;
+
+    insert into appointment_letters
+      (appointment_id, reference, version, issued_on, html, kind, supersedes_reason)
+    values (a_id, 'APT-2026-0043', 2, current_date, '<p>Version two.</p>', 'amended',
+            'The start date moved to the first of November.');
+
+    -- ---- WHAT A READER OF THE DOCUMENT IS TOLD ----------------------------
+    if (select status from appointment_letter_verification where reference = 'APT-2026-0043')
+       <> 'Valid' then
+      raise exception '042 FAILED: the current letter does not verify as valid';
+    end if;
+    -- A SUPERSEDED LETTER IS NOT INVALID. Saying so would be wrong in a way
+    -- that costs somebody a visa: it was genuine and it has been replaced.
+    if (select status from appointment_letter_verification where reference = 'APT-2026-0042')
+       <> 'Superseded' then
+      raise exception '042 FAILED: a replaced letter reports as something other than superseded';
+    end if;
+    -- AND IT CARRIES NO SALARY. A verification page that answered "what is
+    -- this person paid" to anybody holding a photograph of their letter would
+    -- be a data breach with a QR code on it.
+    if exists (
+      select 1 from information_schema.columns
+       where table_schema = 'public' and table_name = 'appointment_letter_verification'
+         and column_name in ('salary_amount', 'salary_currency', 'terms', 'postal_address',
+                             'email', 'phone', 'reports_to_name')
+    ) then
+      raise exception '042 FAILED: the public verification view carries private terms';
+    end if;
+
+    -- ---- THE STAFF RECORD FOLLOWS THE APPOINTMENT -------------------------
+    -- A staff record created first is a person the system says works here on
+    -- nobody's authority.
+    insert into appointments
+      (full_name, position_title, employment_type, start_date, place_of_duty, terms,
+       drafted_by, status)
+    values ('Not Yet Appointed', 'Lecturer', 'permanent', date '2027-01-01',
+            'Buea campus', 'Conditions of service.', someone, 'draft')
+    returning id into l_id;
+
+    refused := false;
+    begin
+      insert into lecturers (staff_id, first_name, last_name, appointment_id)
+      values ('PROOF-042-A', 'Not Yet', 'Appointed', l_id);
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '042 FAILED: somebody became a member of staff from an appointment that '
+                      'had never been issued';
+    end if;
+
+    -- …and from an issued one it works.
+    insert into lecturers (staff_id, first_name, last_name, appointment_id)
+    values ('PROOF-042-B', 'A Specimen', 'Appointee', a_id);
+
+    -- A staff record with NO appointment is still allowed: the University has
+    -- staff who predate this system, and refusing them would make it unusable
+    -- on the first day.
+    insert into lecturers (staff_id, first_name, last_name)
+    values ('PROOF-042-C', 'Predates', 'ThisSystem');
+
+    -- ---- ONE STAFF RECORD PER APPOINTMENT ---------------------------------
+    refused := false;
+    begin
+      insert into lecturers (staff_id, first_name, last_name, appointment_id)
+      values ('PROOF-042-D', 'A Second', 'Record', a_id);
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '042 FAILED: one appointment produced two members of staff';
+    end if;
+
+    raise exception 'PROOF_ROLLBACK';
+  exception when others then
+    if sqlerrm <> 'PROOF_ROLLBACK' then raise; end if;
+  end;
+
+  raise notice '042 OK: nobody is accepted or active before a letter was issued, an amendment '
+               'states what changed, a reference is APT-YYYY-NNNN, a revised letter accounts '
+               'for itself, a superseded letter verifies as superseded rather than invalid, '
+               'the public view carries no salary, and a staff record cannot be created from '
+               'an appointment that was never issued';
+end $$;
+
+
+-- ===========================================================================
+-- 6. VERIFY — READ THIS OUTPUT
+-- ===========================================================================
+
+-- The board: every appointment and where it has reached.
+select full_name, position_title, employment_type, status, start_date,
+       issued_at is not null as letter_issued,
+       accepted_at, activated_at, amendments
+  from appointments
+ order by created_at desc;
+
+-- THE LETTER HISTORY, as the University asked to read it.
+select a.full_name, l.reference, l.version,
+       initcap(l.kind) || ' ' || to_char(l.issued_on, 'DD Mon YYYY') as entry,
+       coalesce(l.supersedes_reason, '') as why,
+       (l.superseded_at is null) as is_current
+  from appointment_letters l
+  join appointments a on a.id = l.appointment_id
+ order by a.full_name, l.version;
+
+-- What a QR code resolves to, for every letter.
+select * from appointment_letter_verification order by reference;
+
+-- STAFF RECORDS WITH NO APPOINTMENT BEHIND THEM. Permitted — the University
+-- has staff who predate this system — but worth knowing about, because each is
+-- somebody the register cannot explain.
+select staff_id, first_name, last_name, status
+  from lecturers
+ where appointment_id is null
+ order by created_at;
+
+-- Appointments issued and never answered. Each is somebody who has not replied.
+select full_name, position_title, issued_at
+  from appointments
+ where status = 'issued' and accepted_at is null and declined_at is null
+ order by issued_at;
+
+
+-- ===========================================================================
+-- ===========================================================================
+--
+--   043_working_hours_and_the_appointing_authority.sql
+--
+-- ===========================================================================
+-- ===========================================================================
+
+-- ===========================================================================
+-- 043 — WORKING HOURS, AND WHO THE LETTER SAYS APPOINTED THEM
+-- ===========================================================================
+--
+-- ---------------------------------------------------------------------------
+-- WHAT CHANGES THE MOMENT THIS RUNS
+-- ---------------------------------------------------------------------------
+--
+-- Two fields the University named that the record did not carry, so the letter
+-- could not state them and somebody would have had to type them.
+--
+-- 1. WORKING HOURS. An appointment that does not say how many hours is a
+--    part-time post nobody can dispute and a full-time post nobody can enforce.
+--    It is the field a disagreement about workload turns on, and it was absent.
+--
+-- 2. THE APPOINTING AUTHORITY, which is NOT the person who approved it in this
+--    system. `authorized_by` is a user id — the officer who clicked approve.
+--    The letter says "on the authority of the University Council", and that is
+--    a different fact. Conflating them puts an administrator's name where a
+--    governing body belongs, on a document somebody may rely on for years.
+-- ===========================================================================
+
+alter table appointments
+  -- FREE TEXT, DELIBERATELY. "40 hours per week", "Two evenings per week during
+  -- semester", "As required, minimum 12 hours per term" are all real answers
+  -- and a numeric column would force the second and third to be rounded into a
+  -- number that is not true.
+  add column if not exists working_hours text,
+
+  -- THE BODY THE LETTER NAMES. A string rather than a reference, because the
+  -- Council, the Senate and the Vice Chancellor are not rows in this database
+  -- and inventing a table of governing bodies to hold three names would be
+  -- worse than the problem.
+  add column if not exists appointing_authority text,
+
+  -- WHEN THAT BODY DECIDED, which is not when somebody recorded it here. A
+  -- Council meeting on the 3rd entered on the 19th is dated the 3rd on the
+  -- letter, because that is when the University decided.
+  add column if not exists authority_decided_on date;
+
+comment on column appointments.appointing_authority is
+  'The body the letter names as making the appointment — the Council, the Senate, '
+  'the Vice Chancellor. NOT `authorized_by`, which is the officer who approved it '
+  'in this system.';
+
+do $$
+begin
+  -- A FULL-TIME APPOINTMENT SAYS ITS HOURS. Not every type: an honorary or
+  -- adjunct post genuinely has none, and demanding a figure would have somebody
+  -- type "N/A" into a field a dispute later turns on.
+  if not exists (select 1 from pg_constraint where conname = 'appointments_authority_dated') then
+    alter table appointments add constraint appointments_authority_dated
+      check (authority_decided_on is null or appointing_authority is not null);
+  end if;
+end $$;
+
+
+-- ===========================================================================
+-- 2. THE ARCHIVE HAS TO BE CHECKABLE
+-- ===========================================================================
+--
+-- 041 stores the letter as it was sent and a trigger refuses to let it be
+-- edited. That is the archive. What it could not do is PROVE itself: "this is
+-- the document we sent" rested on the trigger having worked, and a trigger that
+-- was dropped for an afternoon during maintenance leaves no trace.
+--
+-- A hash over the stored document closes it. Recompute it and compare: if the
+-- html has changed by any route at all — a trigger disabled, a direct database
+-- edit, a restore from a bad backup — the figures disagree and somebody finds
+-- out. It is also what a reader is given when they ask what exactly was issued.
+--
+-- SHA-256 OF THE HTML, computed by the application and stored here. Not
+-- computed in the database: the document is sealed and hashed in the same pass
+-- that generates it, and a second implementation in SQL would be a second
+-- answer to "what is this document's hash".
+
+alter table appointment_letters
+  add column if not exists content_hash text;
+
+do $$
+begin
+  -- A HASH IS A HASH. Sixty-four hexadecimal characters or nothing at all —
+  -- an empty string or a truncated value would compare unequal to everything
+  -- and read as tampering on every letter that has one.
+  if not exists (select 1 from pg_constraint where conname = 'appointment_letters_hash_shape') then
+    alter table appointment_letters add constraint appointment_letters_hash_shape
+      check (content_hash is null or content_hash ~ '^[0-9a-f]{64}$');
+  end if;
+end $$;
+
+comment on column appointment_letters.content_hash is
+  'SHA-256 of the stored html. Recompute and compare to prove the archived document '
+  'is the one that was issued, by any route it might have been changed.';
+
+-- LETTERS THE ARCHIVE CANNOT VOUCH FOR. Anything issued before this ran has no
+-- hash and cannot be checked — reported rather than backfilled, because a hash
+-- computed today over whatever the row holds today proves nothing at all.
+create or replace view appointment_letters_unverifiable
+with (security_invoker = true) as
+select l.id, l.reference, l.version, l.issued_on, a.full_name
+  from appointment_letters l
+  join appointments a on a.id = l.appointment_id
+ where l.content_hash is null;
+
+
+-- ===========================================================================
+-- PERFORMING THE RULES
+-- ===========================================================================
+
+do $$
+declare
+  refused boolean;
+  a_id uuid;
+  someone uuid;
+  other uuid;
+begin
+  select id into someone from auth.users limit 1;
+  -- TWO ACCOUNTS, because 041 refuses an approval by the drafter and this
+  -- proof has to walk an appointment as far as an issued letter to test the
+  -- hash. One account cannot do it, which is the rule working.
+  select id into other from auth.users where id <> someone limit 1;
+  if someone is null or other is null then
+    raise notice '043: fewer than two accounts, so the rules could not be exercised';
+    return;
+  end if;
+
+  begin
+    insert into appointments
+      (full_name, position_title, employment_type, start_date, place_of_duty, terms,
+       drafted_by, status)
+    values ('A Specimen Appointee', 'Lecturer', 'permanent', date '2026-10-01',
+            'Buea campus', 'Conditions of service.', someone, 'draft')
+    returning id into a_id;
+
+    -- ---- A DECISION DATE WITHOUT A BODY IS NOT A DECISION -----------------
+    -- "Decided on 3 September" with nobody named is a date on a letter that
+    -- cannot be traced to a meeting.
+    refused := false;
+    begin
+      update appointments set authority_decided_on = date '2026-09-03' where id = a_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '043 FAILED: an appointment recorded when it was decided without '
+                      'recording who decided it';
+    end if;
+
+    update appointments
+       set appointing_authority = 'The University Council',
+           authority_decided_on = date '2026-09-03',
+           working_hours = '40 hours per week'
+     where id = a_id;
+
+    -- ---- THE APPOINTING AUTHORITY IS NOT THE APPROVER --------------------
+    -- Two separate columns, asserted, because the whole reason this migration
+    -- exists is that one field cannot hold both an administrator's user id and
+    -- the name of a governing body.
+    if (select appointing_authority from appointments where id = a_id) is null
+       or (select authorized_by from appointments where id = a_id) is not null then
+      raise exception '043 FAILED: the body that appointed and the officer who approved are '
+                      'not being kept apart';
+    end if;
+
+    -- ---- A HASH IS SIXTY-FOUR HEX CHARACTERS OR NOTHING -------------------
+    -- A truncated or empty value compares unequal to everything and would read
+    -- as tampering on every letter that has one.
+    update appointments set status = 'approved', authorized_by = other,
+                            authorized_at = now() where id = a_id;
+    -- THE APPOINTMENT IS NOT MARKED ISSUED HERE, and it used to be. It never
+    -- needed to be: archiving a letter does not require the appointment to say
+    -- `issued`, and 047 now refuses that order anyway — an appointment reaches
+    -- `issued` only once a letter is in the archive, which is the opposite way
+    -- round from the line that stood here. Removed rather than worked around.
+
+    refused := false;
+    begin
+      insert into appointment_letters (appointment_id, reference, issued_on, html, content_hash)
+      values (a_id, 'APT-2026-8001', current_date, '<p>x</p>', 'not-a-hash');
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '043 FAILED: a letter was archived under something that is not a hash';
+    end if;
+
+    insert into appointment_letters (appointment_id, reference, issued_on, html, content_hash)
+    values (a_id, 'APT-2026-8001', current_date, '<p>x</p>',
+            repeat('a', 64));
+
+    raise exception 'PROOF_ROLLBACK';
+  exception when others then
+    if sqlerrm <> 'PROOF_ROLLBACK' then raise; end if;
+  end;
+
+  raise notice '043 OK: an appointment can state its working hours, the body that made it and '
+               'when that body decided, a decision date with nobody named is refused, and an '
+               'archived letter carries a hash that is a hash or nothing';
+end $$;
+
+
+-- ===========================================================================
+-- VERIFY
+-- ===========================================================================
+
+-- APPOINTMENTS THAT NAME NO APPOINTING AUTHORITY. Each is a letter that will
+-- go out saying the University appointed somebody without saying who decided.
+select full_name, position_title, status, start_date
+  from appointments
+ where appointing_authority is null and status <> 'draft'
+ order by start_date;
+
+-- LETTERS THE ARCHIVE CANNOT VOUCH FOR. Issued before the hash existed, so
+-- "this is the document we sent" rests on the edit trigger alone. Not
+-- backfilled: a hash computed today over whatever the row holds today proves
+-- nothing whatsoever.
+select * from appointment_letters_unverifiable order by issued_on;
+
+-- PAID POSTS WITH NO WORKING HOURS. The field a disagreement about workload
+-- turns on, left blank.
+select full_name, position_title, employment_type, start_date
+  from appointments
+ where working_hours is null
+   and employment_type in ('permanent', 'fixed-term', 'part-time', 'probationary')
+   and status not in ('draft', 'withdrawn', 'declined', 'ended')
+ order by start_date;
+
+
+-- ===========================================================================
+-- ===========================================================================
+--
+--   044_document_templates_and_the_letters_tied_to_them.sql
+--
+-- ===========================================================================
+-- ===========================================================================
+
+-- ===========================================================================
+-- 044 — DOCUMENT TEMPLATES, AND THE LETTERS THAT STAY TIED TO THEM
+-- ===========================================================================
+--
+-- ---------------------------------------------------------------------------
+-- WHAT CHANGES THE MOMENT THIS RUNS
+-- ---------------------------------------------------------------------------
+--
+-- 1. HR gets a template registry: eleven document types, each versioned, each
+--    with one active version at a time. A promotion letter stops being an
+--    appointment letter with different words typed into it.
+--
+-- 2. EVERY ISSUED LETTER RECORDS WHICH TEMPLATE VERSION PRODUCED IT, and that
+--    version can then never be deleted. This is the rule the University named
+--    after Dorothy's admission letter: a document issued in 2026 was produced
+--    by the wording of 2026, and a registry that has since replaced that
+--    wording cannot explain its own document without it.
+--
+-- 3. A template is ACTIVATED by somebody other than whoever wrote it, like
+--    everything else in this system that goes out under the University's name.
+--
+-- ---------------------------------------------------------------------------
+-- WHY NOT `credential_templates`
+-- ---------------------------------------------------------------------------
+--
+-- 005 built that table with a three-office approval chain: the Registrar, the
+-- Academic Office and the Vice Chancellor each sign before a design is
+-- published. That is the right ceremony for a degree certificate and the wrong
+-- ceremony for a transfer letter — a gate that heavy on an ordinary HR document
+-- is a gate that gets routed around, and the routing-around becomes the
+-- process.
+--
+-- So HR templates are their own registry with a real but lighter rule: one
+-- other person activates. Same principle, proportionate weight. The two
+-- registries share nothing except that idea, deliberately.
+-- ===========================================================================
+
+
+-- ===========================================================================
+-- 1. THE TEMPLATES
+-- ===========================================================================
+
+create table if not exists document_templates (
+  id            uuid primary key default gen_random_uuid(),
+
+  -- THE ELEVEN THE UNIVERSITY NAMED. A closed list, because "Promotion Letter"
+  -- and "promotion letter" and "Promotion" as free text produce three
+  -- templates and nobody can say which one is in force.
+  kind          text not null check (kind in (
+                  'initial-appointment', 'reappointment', 'contract-renewal', 'promotion',
+                  'transfer', 'acting-appointment', 'probation-confirmation',
+                  'contract-extension', 'appointment-amendment', 'termination', 'retirement')),
+
+  version       integer not null check (version >= 1),
+  name          text not null check (length(btrim(name)) >= 3),
+
+  -- The body, with placeholders the generator fills from the record. Stored as
+  -- text rather than a design document: an HR letter is prose, and modelling
+  -- prose as a layout tree makes it harder to read and no easier to change.
+  body          text not null check (length(btrim(body)) >= 40),
+
+  status        text not null default 'draft' check (status in ('draft', 'active', 'retired')),
+
+  created_by    uuid references auth.users (id) on delete set null,
+  created_at    timestamptz not null default now(),
+
+  activated_by  uuid references auth.users (id) on delete set null,
+  activated_at  timestamptz,
+  retired_at    timestamptz,
+
+  unique (kind, version)
+);
+
+create index if not exists document_templates_kind_idx on document_templates (kind, version desc);
+
+-- ONE ACTIVE VERSION PER KIND. Two would mean the generator had to choose, and
+-- whichever it chose would be the wrong one half the time — silently, because
+-- both are real templates and the letter would look right.
+create unique index if not exists document_templates_one_active_idx
+  on document_templates (kind) where status = 'active';
+
+do $$
+begin
+  -- ACTIVATED BY SOMEBODY ELSE. The same rule 005 applies to a certificate
+  -- design, 009 to a grade, 038 to an announcement and 041 to an appointment.
+  -- A template is the words the University says in every letter of its kind
+  -- from now on; one person writing and activating it alone is that rule at
+  -- its largest scale, because it applies to everybody appointed afterwards.
+  if not exists (select 1 from pg_constraint where conname = 'document_templates_second_pair_of_eyes') then
+    alter table document_templates add constraint document_templates_second_pair_of_eyes
+      check (activated_by is null or created_by is null or activated_by <> created_by);
+  end if;
+
+  -- AN ACTIVE TEMPLATE NAMES WHO ACTIVATED IT AND WHEN.
+  if not exists (select 1 from pg_constraint where conname = 'document_templates_activation_recorded') then
+    alter table document_templates add constraint document_templates_activation_recorded
+      check (status <> 'active' or (activated_by is not null and activated_at is not null));
+  end if;
+end $$;
+
+-- A TEMPLATE IS NOT EDITED ONCE IT HAS BEEN ACTIVE. A new version is written
+-- instead. Editing the words that produced a letter somebody is holding is the
+-- same fault as editing the letter, one step removed and harder to see.
+create or replace function refuse_active_template_edit() returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if old.status = 'draft' then
+    return new;                       -- a draft may still be worked on
+  end if;
+  -- Retiring and activating are changes of status, not of wording.
+  if new.body = old.body and new.kind = old.kind and new.version = old.version then
+    return new;
+  end if;
+  raise exception
+    'Template "% v%" has been active and its wording cannot be changed. Create a new version: '
+    'letters already issued were produced by these words, and a registry that rewrites them '
+    'cannot explain its own documents.', old.kind, old.version
+    using errcode = 'check_violation';
+end $$;
+
+drop trigger if exists document_templates_no_edit on document_templates;
+create trigger document_templates_no_edit
+  before update on document_templates
+  for each row execute function refuse_active_template_edit();
+
+alter table document_templates enable row level security;
+
+drop policy if exists document_templates_read on document_templates;
+create policy document_templates_read on document_templates
+  for select using (auth_role() in ('superadmin', 'admin', 'registrar', 'academic-office'));
+
+-- No write policy. Templates are written through the route, which checks the
+-- capability and records who did it.
+
+
+-- ===========================================================================
+-- 2. THE LETTER REMEMBERS WHICH WORDS PRODUCED IT
+-- ===========================================================================
+--
+-- ---------------------------------------------------------------------------
+-- THE DOROTHY RULE
+-- ---------------------------------------------------------------------------
+--
+-- A document issued in 2026 was produced by the wording of 2026. A registry
+-- that has since replaced that wording and kept no link to the old one cannot
+-- explain its own document: asked why the letter says what it says, the only
+-- answer is "the template used to be different" with nothing behind it.
+--
+-- ON DELETE RESTRICT, and that is the whole point of the column. A template
+-- version that produced a letter can never be deleted, cascaded away, or
+-- tidied up during a spring clean — the database refuses, and names the letter
+-- that depends on it.
+
+alter table appointment_letters
+  add column if not exists document_type text,
+  add column if not exists template_id uuid references document_templates (id) on delete restrict,
+  -- The version number as well as the id. Redundant on purpose: the id proves
+  -- which row, and the number is what a person reads on a screen without
+  -- joining anything. A letter whose template row somehow vanished still says
+  -- which version it was.
+  add column if not exists template_version integer;
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'appointment_letters_document_type_check') then
+    alter table appointment_letters add constraint appointment_letters_document_type_check
+      check (document_type is null or document_type in (
+        'initial-appointment', 'reappointment', 'contract-renewal', 'promotion',
+        'transfer', 'acting-appointment', 'probation-confirmation',
+        'contract-extension', 'appointment-amendment', 'termination', 'retirement'));
+  end if;
+end $$;
+
+create index if not exists appointment_letters_template_idx
+  on appointment_letters (template_id) where template_id is not null;
+
+comment on column appointment_letters.template_id is
+  'The template version that produced this letter. ON DELETE RESTRICT: a version '
+  'that has issued a document can never be removed, because the document cannot '
+  'be explained without it.';
+
+
+-- ===========================================================================
+-- 3. THE DELIVERY, WHICH DOES NOT REVERSE THE APPOINTMENT
+-- ===========================================================================
+--
+-- 041 gave a letter `delivery`, `attempts` and `delivery_detail`. What it did
+-- not record is WHEN each attempt happened, and the University asked for the
+-- four-line receipt: issued, archived, queued, delivered.
+--
+-- AN EMAIL FAILURE DOES NOT UNDO AN APPOINTMENT. The University appointed
+-- somebody; the mail server being unreachable is not a change of mind. The
+-- letter sits in an outbox and is retried, and the appointment stays issued —
+-- which is what these columns are for and why there is no path here that
+-- touches `appointments.status`.
+
+alter table appointment_letters
+  add column if not exists queued_at       timestamptz,
+  add column if not exists delivered_at    timestamptz,
+  add column if not exists last_attempt_at timestamptz;
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'appointment_letters_delivery_times') then
+    alter table appointment_letters add constraint appointment_letters_delivery_times
+      check (
+        (delivery <> 'sent' or delivered_at is not null)
+        and (attempts = 0 or last_attempt_at is not null)
+      );
+  end if;
+end $$;
+
+-- WHAT STILL NEEDS SENDING. Each row is somebody who has been appointed and
+-- has not been told.
+create or replace view appointment_letters_outbox
+with (security_invoker = true) as
+select l.id, l.reference, l.version, a.full_name, a.email,
+       l.attempts, l.last_attempt_at, l.delivery_detail
+  from appointment_letters l
+  join appointments a on a.id = l.appointment_id
+ where l.superseded_at is null
+   and l.delivery in ('pending', 'failed')
+ order by l.attempts, l.created_at;
+
+
+-- ===========================================================================
+-- 4. PERFORMING THE RULES
+-- ===========================================================================
+
+do $$
+declare
+  refused boolean;
+  t_id uuid;
+  a_id uuid;
+  l_id uuid;
+  someone uuid;
+  other uuid;
+begin
+  select id into someone from auth.users limit 1;
+  select id into other from auth.users where id <> someone limit 1;
+  if someone is null or other is null then
+    raise notice '044: fewer than two accounts, so the rules could not be exercised';
+    return;
+  end if;
+
+  begin
+    insert into document_templates (kind, version, name, body, created_by)
+    values ('promotion', 1, 'Promotion Letter',
+            'Dear {{full_name}}, we are pleased to promote you to {{position_title}}.',
+            someone)
+    returning id into t_id;
+
+    -- ---- THE WRITER DOES NOT ACTIVATE THEIR OWN --------------------------
+    -- A template is the words the University says in every letter of its kind
+    -- from now on. One person writing and activating it alone is the second
+    -- pair of eyes at its largest scale.
+    refused := false;
+    begin
+      update document_templates set status = 'active', activated_by = someone,
+                                    activated_at = now() where id = t_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '044 FAILED: somebody activated the template they wrote';
+    end if;
+
+    -- ---------------------------------------------------------------------
+    -- AND AN ACTIVE TEMPLATE STATES WHEN IT CAME INTO FORCE.
+    --
+    -- 051 adds `effective_from` and refuses an active template without one —
+    -- "which wording applied in March" is the question a dispute opens with.
+    -- This proof activated a template with no date, which was clean on a first
+    -- run of RUN-ALL and refused on the second, once 051's constraint existed.
+    --
+    -- Written as dynamic SQL because on a FIRST run the column does not exist
+    -- yet: 044 runs before 051. Setting a column that is not there would refuse
+    -- the migration on the run where nothing is wrong.
+    -- ---------------------------------------------------------------------
+    if exists (select 1 from information_schema.columns
+                where table_name = 'document_templates' and column_name = 'effective_from') then
+      execute format(
+        'update document_templates set status = %L, activated_by = %L, activated_at = now(), '
+        'effective_from = current_date where id = %L', 'active', other, t_id);
+    else
+      update document_templates set status = 'active', activated_by = other,
+                                    activated_at = now() where id = t_id;
+    end if;
+
+    -- ---- ONE ACTIVE VERSION PER KIND -------------------------------------
+    -- Two would mean the generator had to choose, and whichever it chose would
+    -- be wrong half the time — silently, because both are real templates.
+    insert into document_templates (kind, version, name, body, created_by)
+    values ('promotion', 2, 'Promotion Letter',
+            'Dear {{full_name}}, the University is pleased to promote you.', someone);
+    refused := false;
+    begin
+      update document_templates set status = 'active', activated_by = other,
+                                    activated_at = now()
+       where kind = 'promotion' and version = 2;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '044 FAILED: two versions of one template were active at once';
+    end if;
+
+    -- ---- AN ACTIVE TEMPLATE'S WORDING CANNOT BE CHANGED ------------------
+    refused := false;
+    begin
+      update document_templates set body = 'Something else entirely, at length, for the check.'
+       where id = t_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '044 FAILED: the wording that produced issued letters was rewritten';
+    end if;
+
+    -- …but retiring it is a change of status, not of wording.
+    update document_templates set status = 'retired', retired_at = now() where id = t_id;
+    -- Reactivating restores the date too, where 051 has added the column.
+    if exists (select 1 from information_schema.columns
+                where table_name = 'document_templates' and column_name = 'effective_from') then
+      execute format('update document_templates set status = %L, effective_from = '
+                     'coalesce(effective_from, current_date) where id = %L', 'active', t_id);
+    else
+      update document_templates set status = 'active' where id = t_id;
+    end if;
+
+    -- ---- A TEMPLATE THAT ISSUED A LETTER CANNOT BE DELETED ---------------
+    -- THE DOROTHY RULE. Asked why the letter says what it says, the only
+    -- answer without this is "the template used to be different".
+    insert into appointments
+      (full_name, position_title, employment_type, start_date, place_of_duty, terms,
+       drafted_by, authorized_by, authorized_at, status, issued_at)
+    values ('A Specimen Appointee', 'Senior Lecturer', 'permanent', date '2026-10-01',
+            'Buea campus', 'Conditions of service.', someone, other, now(), 'issued', now())
+    returning id into a_id;
+
+    insert into appointment_letters
+      (appointment_id, reference, issued_on, html, document_type, template_id, template_version)
+    values (a_id, 'APT-2026-7001', current_date, '<p>The letter.</p>',
+            'promotion', t_id, 1)
+    returning id into l_id;
+
+    refused := false;
+    begin
+      delete from document_templates where id = t_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '044 FAILED: a template version that had produced a letter was deleted, '
+                      'so that letter can no longer be explained';
+    end if;
+
+    -- ---- A DOCUMENT TYPE NOBODY DECLARED IS REFUSED ----------------------
+    refused := false;
+    begin
+      update appointment_letters set document_type = 'some-letter-somebody-invented'
+       where id = l_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '044 FAILED: a letter claimed a document type the University does not issue';
+    end if;
+
+    -- ---- A FAILED EMAIL DOES NOT UNDO AN APPOINTMENT ---------------------
+    -- The University appointed somebody; the mail server being unreachable is
+    -- not a change of mind.
+    update appointment_letters
+       set delivery = 'failed', attempts = 1, last_attempt_at = now(),
+           delivery_detail = 'Connection refused'
+     where id = l_id;
+
+    if (select status from appointments where id = a_id) <> 'issued' then
+      raise exception '044 FAILED: a failed email changed the appointment';
+    end if;
+    if not exists (select 1 from appointment_letters_outbox where id = l_id) then
+      raise exception '044 FAILED: a letter that failed to send is not in the outbox, so '
+                      'nobody will ever retry it and the appointee is never told';
+    end if;
+
+    -- ---- AND A DELIVERY RECORDS WHEN ------------------------------------
+    refused := false;
+    begin
+      update appointment_letters set delivery = 'sent' where id = l_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '044 FAILED: a letter was marked sent with no record of when';
+    end if;
+
+    update appointment_letters set delivery = 'sent', delivered_at = now(), attempts = 2
+     where id = l_id;
+    if exists (select 1 from appointment_letters_outbox where id = l_id) then
+      raise exception '044 FAILED: a delivered letter is still in the outbox';
+    end if;
+
+    raise exception 'PROOF_ROLLBACK';
+  exception when others then
+    if sqlerrm <> 'PROOF_ROLLBACK' then raise; end if;
+  end;
+
+  raise notice '044 OK: nobody activates the template they wrote, one version of each kind is '
+               'active, an active template''s wording cannot be rewritten, a version that '
+               'issued a letter cannot be deleted, a document type nobody declared is refused, '
+               'a failed email leaves the appointment issued and the letter in the outbox, and '
+               'a delivery records when it happened';
+end $$;
+
+
+-- ===========================================================================
+-- 5. VERIFY — READ THIS OUTPUT
+-- ===========================================================================
+
+-- The template registry, as Settings would show it.
+select kind, version, name, status, activated_at
+  from document_templates
+ order by kind, version desc;
+
+-- DOCUMENT TYPES WITH NO ACTIVE TEMPLATE. Each is a letter HR cannot generate
+-- at all, and the list is the work outstanding before this is usable.
+select t.kind as document_type_with_no_active_template
+  from (select unnest(array[
+          'initial-appointment', 'reappointment', 'contract-renewal', 'promotion',
+          'transfer', 'acting-appointment', 'probation-confirmation',
+          'contract-extension', 'appointment-amendment', 'termination', 'retirement']) as kind) t
+ where not exists (
+   select 1 from document_templates d where d.kind = t.kind and d.status = 'active'
+ )
+ order by 1;
+
+-- THE FOUR-LINE RECEIPT the University asked for, per letter.
+select a.full_name, l.reference, l.version,
+       (a.issued_at is not null)       as issued,
+       (l.content_hash is not null)    as archived,
+       (l.queued_at is not null)       as email_queued,
+       (l.delivery = 'sent')           as email_delivered,
+       l.attempts,
+       coalesce(l.delivery_detail, '') as last_error
+  from appointment_letters l
+  join appointments a on a.id = l.appointment_id
+ where l.superseded_at is null
+ order by l.created_at desc;
+
+-- THE OUTBOX. Each row is somebody who has been appointed and not told.
+select * from appointment_letters_outbox;
+
+-- Which template version produced each letter. Empty entries are letters
+-- issued before templates existed; they are not backfilled, because guessing
+-- which wording produced a document is the opposite of the point.
+select a.full_name, l.reference, l.document_type, l.template_version,
+       d.name as template_name
+  from appointment_letters l
+  join appointments a on a.id = l.appointment_id
+  left join document_templates d on d.id = l.template_id
+ order by l.created_at desc;
+
+
+-- ===========================================================================
+-- ===========================================================================
+--
+--   045_official_correspondence_and_who_initiated_it.sql
+--
+-- ===========================================================================
+-- ===========================================================================
+
+-- ===========================================================================
+-- 045 — OFFICIAL CORRESPONDENCE, AND WHO STARTED IT
+-- ===========================================================================
+--
+-- ---------------------------------------------------------------------------
+-- WHAT CHANGES THE MOMENT THIS RUNS
+-- ---------------------------------------------------------------------------
+--
+-- 1. THE UNIVERSITY GETS A REGISTER OF ITS OWN OFFICIAL LETTERS. Not
+--    appointment letters — those have one — but the correspondence an office
+--    originates and finishes: an invitation, a commendation, a letter to a
+--    ministry, a directive, a partnership approach. Until now none of it
+--    existed in this system at all, which means the University cannot say what
+--    it has written to whom.
+--
+-- 2. WHO INITIATED IS RECORDED SEPARATELY FROM WHO AUTHORISED. The same
+--    appointment can arrive two ways — HR proposes it, or the Vice-Chancellor
+--    starts it personally — and both are legitimate. What was not possible was
+--    telling them apart afterwards, because the record held only who approved.
+--
+-- 3. A LETTER PREPARED BY SOMEBODY ELSE IS STILL THE AUTHORITY'S LETTER. An
+--    administrator may be asked to draft; `prepared_by` records that, and
+--    issuing still requires the capability the preparer does not hold. The
+--    staff member never becomes the issuing authority.
+--
+-- ---------------------------------------------------------------------------
+-- THE ONE THING TO READ TWICE
+-- ---------------------------------------------------------------------------
+--
+-- WHERE ONE PERSON ORIGINATES AND ISSUES, THERE IS NO SECOND PAIR OF EYES, and
+-- this migration does not pretend otherwise. For correspondence that is the
+-- point: a letter to a government ministry IS the Vice-Chancellor speaking, and
+-- inventing an approver for it would be ceremony.
+--
+-- For an APPOINTMENT it is a different matter, because an appointment commits
+-- the University to paying somebody. 041 refuses an approval by the drafter and
+-- that rule stands. A Vice-Chancellor who personally initiates an appointment
+-- therefore still needs somebody else to approve it — OR the appointment is
+-- recorded as having been made on sole authority, which section 3 makes
+-- possible, visible and permanent. The University can do it; what it cannot do
+-- is do it quietly.
+-- ===========================================================================
+
+
+-- ===========================================================================
+-- 1. THE CORRESPONDENCE
+-- ===========================================================================
+
+create table if not exists correspondence (
+  id             uuid primary key default gen_random_uuid(),
+
+  -- A CLOSED LIST. The kind decides the letterhead, the register it appears in
+  -- and, in time, the template — and "Invitation", "invitation" and "Official
+  -- Invitation" as free text are three kinds within a month.
+  kind           text not null check (kind in (
+                   'general', 'appointment', 'reappointment', 'invitation',
+                   'commendation', 'recommendation', 'government', 'university',
+                   'partnership', 'directive', 'warning', 'authorization',
+                   'special', 'other')),
+
+  -- THE OFFICE THE LETTER COMES FROM, which is what the letterhead says and is
+  -- not the same as who typed it.
+  originating_office text not null default 'vice-chancellor'
+                       check (originating_office in (
+                         'vice-chancellor', 'chancellor', 'registrar',
+                         'academic-office', 'hr', 'admissions', 'finance')),
+
+  subject        text not null check (length(btrim(subject)) >= 4),
+  body           text not null check (length(btrim(body)) >= 40),
+
+  -- ---- Who it is to ------------------------------------------------------
+  --
+  -- FREE TEXT, because the recipient of a letter to a ministry is a ministry.
+  -- A foreign key to a person would have made half the University's outward
+  -- correspondence unrecordable.
+  recipient_name text not null check (length(btrim(recipient_name)) >= 2),
+  recipient_org  text,
+  recipient_email text,
+  recipient_address text,
+
+  -- ---- Who did what ------------------------------------------------------
+  --
+  -- INITIATED, PREPARED AND AUTHORISED ARE THREE ROLES AND OFTEN ONE PERSON.
+  -- Kept apart anyway: the whole point is that afterwards the record can say
+  -- which of them it was.
+  initiated_by   uuid not null references auth.users (id) on delete restrict,
+  prepared_by    uuid references auth.users (id) on delete set null,
+  authorized_by  uuid references auth.users (id) on delete restrict,
+  authorized_at  timestamptz,
+
+  status         text not null default 'draft'
+                   check (status in ('draft', 'preparing', 'awaiting_authority',
+                                     'authorized', 'scheduled', 'issued',
+                                     'withdrawn')),
+
+  -- When it should go out, for a letter written now and sent on a date.
+  scheduled_for  timestamptz,
+  issued_at      timestamptz,
+
+  withdrawn_reason text,
+
+  created_at     timestamptz not null default now(),
+  updated_at     timestamptz not null default now()
+);
+
+create index if not exists correspondence_status_idx
+  on correspondence (status, scheduled_for);
+create index if not exists correspondence_office_idx
+  on correspondence (originating_office, created_at desc);
+
+do $$
+begin
+  -- AN AUTHORISED LETTER NAMES ITS AUTHORITY AND THE MOMENT.
+  if not exists (select 1 from pg_constraint where conname = 'correspondence_authority_recorded') then
+    alter table correspondence add constraint correspondence_authority_recorded
+      check (status not in ('authorized', 'scheduled', 'issued')
+             or (authorized_by is not null and authorized_at is not null));
+  end if;
+
+  -- AN ISSUED LETTER HAS GONE OUT AT A TIME.
+  if not exists (select 1 from pg_constraint where conname = 'correspondence_issued_recorded') then
+    alter table correspondence add constraint correspondence_issued_recorded
+      check (status <> 'issued' or issued_at is not null);
+  end if;
+
+  -- A SCHEDULED LETTER HAS A TIME TO GO.
+  if not exists (select 1 from pg_constraint where conname = 'correspondence_scheduled_has_a_time') then
+    alter table correspondence add constraint correspondence_scheduled_has_a_time
+      check (status <> 'scheduled' or scheduled_for is not null);
+  end if;
+
+  -- WITHDRAWING SAYS WHY, like every other closure in this system.
+  if not exists (select 1 from pg_constraint where conname = 'correspondence_withdrawal_explained') then
+    alter table correspondence add constraint correspondence_withdrawal_explained
+      check (status <> 'withdrawn'
+             or (withdrawn_reason is not null and length(btrim(withdrawn_reason)) >= 10));
+  end if;
+
+  -- ---------------------------------------------------------------------
+  -- A PREPARER IS NOT AN AUTHORITY.
+  --
+  -- The rule that makes delegation safe. An administrator may be asked to
+  -- draft a letter and the letter remains the Vice-Chancellor's — but the
+  -- person who drafted it may not be the person who authorised it, or the
+  -- delegation has quietly moved the authority along with the typing.
+  -- ---------------------------------------------------------------------
+  if not exists (select 1 from pg_constraint where conname = 'correspondence_preparer_is_not_authority') then
+    alter table correspondence add constraint correspondence_preparer_is_not_authority
+      check (prepared_by is null or authorized_by is null or prepared_by <> authorized_by);
+  end if;
+end $$;
+
+
+-- ===========================================================================
+-- 2. THE LETTERS THEMSELVES, ARCHIVED LIKE EVERY OTHER DOCUMENT
+-- ===========================================================================
+--
+-- The same shape as `appointment_letters`, deliberately: a reference, a
+-- version, the html as sent, a hash, a seal, and a delivery that can fail
+-- without undoing anything. A third arrangement for the same job would be a
+-- third answer to "what did we send".
+
+create table if not exists correspondence_letters (
+  id               uuid primary key default gen_random_uuid(),
+  correspondence_id uuid not null references correspondence (id) on delete cascade,
+
+  -- IGUC/VC/2026/0042 in the letter, filed as VC-2026-0042 for the same reason
+  -- an appointment letter is: a reference with slashes cannot go in a URL path
+  -- and the verification link is where it ends up.
+  reference        text not null unique check (reference ~ '^[A-Z]{2,4}-[0-9]{4}-[0-9]{4,}$'),
+  version          integer not null default 1 check (version >= 1),
+
+  issued_on        date not null,
+  html             text not null,
+  content_hash     text check (content_hash is null or content_hash ~ '^[0-9a-f]{64}$'),
+
+  sealed           boolean not null default false,
+  seal_code        text,
+
+  signatory_name   text,
+  signatory_role   text,
+
+  template_id      uuid references document_templates (id) on delete restrict,
+  template_version integer,
+
+  delivery         text not null default 'pending'
+                     check (delivery in ('pending', 'sent', 'failed')),
+  delivery_detail  text,
+  attempts         integer not null default 0,
+  queued_at        timestamptz,
+  delivered_at     timestamptz,
+  last_attempt_at  timestamptz,
+
+  superseded_at    timestamptz,
+
+  created_by       uuid references auth.users (id) on delete set null,
+  created_at       timestamptz not null default now(),
+  updated_at       timestamptz not null default now(),
+
+  unique (correspondence_id, version)
+);
+
+create unique index if not exists correspondence_letters_one_current_idx
+  on correspondence_letters (correspondence_id) where superseded_at is null;
+
+-- An issued letter is never edited. Superseded by a new version, exactly as an
+-- appointment letter is, and for the same reason: somebody is holding it.
+drop trigger if exists correspondence_letters_no_edit on correspondence_letters;
+create trigger correspondence_letters_no_edit
+  before update on correspondence_letters
+  for each row execute function refuse_letter_edit();
+
+
+-- ===========================================================================
+-- 3. WHO INITIATED AN APPOINTMENT, AND WHETHER ANYBODY ELSE SAW IT
+-- ===========================================================================
+--
+-- THE SAME APPOINTMENT ARRIVES TWO WAYS and both are legitimate: HR proposes
+-- it, or the Vice-Chancellor starts it personally. The record held only who
+-- approved, so afterwards the two were indistinguishable.
+--
+-- AND THE HONEST PART. 041 refuses an approval by whoever drafted the
+-- appointment, because an appointment commits the University to paying
+-- somebody. A Vice-Chancellor who personally initiates one therefore needs
+-- somebody else to approve it — or the appointment is made on SOLE AUTHORITY,
+-- which is recorded here, permanently, in the same shape as 040's emergency
+-- publishing. The University can do it. What it cannot do is do it quietly.
+
+alter table appointments
+  add column if not exists initiated_by_office text
+    check (initiated_by_office is null or initiated_by_office in
+           ('hr', 'vice-chancellor', 'chancellor', 'registrar', 'academic-office')),
+  add column if not exists initiated_by uuid references auth.users (id) on delete set null,
+
+  -- THE MARK STAYS. Anybody reading this appointment in two years sees that
+  -- one person made it end to end.
+  add column if not exists made_on_sole_authority boolean not null default false,
+  add column if not exists sole_authority_reason text;
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'appointments_sole_authority_explained') then
+    alter table appointments add constraint appointments_sole_authority_explained
+      check (
+        not made_on_sole_authority
+        or (
+          -- ONLY THE OFFICES THAT ACTUALLY HOLD THAT AUTHORITY. An HR clerk
+          -- ticking this box would be the whole separation gone.
+          initiated_by_office in ('vice-chancellor', 'chancellor')
+          and sole_authority_reason is not null
+          and length(btrim(sole_authority_reason)) >= 20
+        )
+      );
+  end if;
+end $$;
+
+comment on column appointments.made_on_sole_authority is
+  'True where one office both initiated and approved this appointment, with no second '
+  'pair of eyes. Permitted for the Vice-Chancellor and the Chancellor, with a stated '
+  'reason, and the mark is permanent.';
+
+-- ---------------------------------------------------------------------------
+-- AND THE ORDINARY RULE STILL BITES.
+--
+-- 041's constraint refuses an approval by the drafter outright. An appointment
+-- made on sole authority names the same person as initiator and approver but
+-- leaves `drafted_by` to whoever prepared it — so the two rules do not collide,
+-- and an appointment with drafted_by = authorized_by is still refused whatever
+-- boxes are ticked.
+-- ---------------------------------------------------------------------------
+
+
+-- ===========================================================================
+-- 4. WHO CAN READ WHAT
+-- ===========================================================================
+
+alter table correspondence enable row level security;
+alter table correspondence_letters enable row level security;
+
+-- OUTWARD CORRESPONDENCE IS NOT ORDINARY INSTITUTIONAL INFORMATION. A warning
+-- letter, a directive, a partnership approach that has not been announced —
+-- each is the University's private business until it is not, and a policy that
+-- let every administrator read the Vice-Chancellor's outbox would be a worse
+-- failure than having no register at all.
+drop policy if exists correspondence_read on correspondence;
+create policy correspondence_read on correspondence
+  for select using (
+    auth_role() in ('superadmin', 'vice-chancellor', 'chancellor')
+    or initiated_by = auth.uid()
+    or prepared_by = auth.uid()
+  );
+
+drop policy if exists correspondence_letters_read on correspondence_letters;
+create policy correspondence_letters_read on correspondence_letters
+  for select using (
+    auth_role() in ('superadmin', 'vice-chancellor', 'chancellor')
+    or exists (select 1 from correspondence c
+                where c.id = correspondence_letters.correspondence_id
+                  and (c.initiated_by = auth.uid() or c.prepared_by = auth.uid()))
+  );
+
+-- No write policy on either. Everything goes through the route.
+
+
+-- ===========================================================================
+-- 5. PERFORMING THE RULES
+-- ===========================================================================
+
+do $$
+declare
+  refused boolean;
+  c_id uuid;
+  a_id uuid;
+  someone uuid;
+  other uuid;
+begin
+  select id into someone from auth.users limit 1;
+  select id into other from auth.users where id <> someone limit 1;
+  if someone is null or other is null then
+    raise notice '045: fewer than two accounts, so the rules could not be exercised';
+    return;
+  end if;
+
+  begin
+    insert into correspondence
+      (kind, subject, body, recipient_name, initiated_by, status)
+    values ('government', 'Accreditation correspondence',
+            'A letter of sufficient length to satisfy the constraint on the body.',
+            'The Ministry of Higher Education', someone, 'draft')
+    returning id into c_id;
+
+    -- ---- A PREPARER IS NOT AN AUTHORITY -----------------------------------
+    -- The rule that makes delegation safe. Without it, asking an administrator
+    -- to draft a letter quietly moves the authority along with the typing.
+    refused := false;
+    begin
+      update correspondence
+         set prepared_by = other, authorized_by = other, authorized_at = now(),
+             status = 'authorized'
+       where id = c_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '045 FAILED: the person who drafted a letter authorised it, so delegating '
+                      'the typing delegated the authority';
+    end if;
+
+    -- …and the Vice-Chancellor authorising what an administrator prepared is
+    -- exactly the arrangement this is for.
+    update correspondence
+       set prepared_by = other, authorized_by = someone, authorized_at = now(),
+           status = 'authorized'
+     where id = c_id;
+
+    -- ---- A SCHEDULED LETTER HAS A TIME TO GO ------------------------------
+    refused := false;
+    begin
+      update correspondence set status = 'scheduled' where id = c_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '045 FAILED: a letter was scheduled for no particular time';
+    end if;
+
+    -- ---- AN ISSUED LETTER RECORDS WHEN ------------------------------------
+    refused := false;
+    begin
+      update correspondence set status = 'issued' where id = c_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '045 FAILED: a letter was issued at no particular time';
+    end if;
+
+    update correspondence set status = 'issued', issued_at = now() where id = c_id;
+
+    -- ---- THE REFERENCE IS FILEABLE AND URL-SAFE ---------------------------
+    refused := false;
+    begin
+      insert into correspondence_letters (correspondence_id, reference, issued_on, html)
+      values (c_id, 'IGUC/VC/2026/0042', current_date, '<p>The letter.</p>');
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '045 FAILED: a letter was filed under a reference with slashes in it';
+    end if;
+
+    insert into correspondence_letters (correspondence_id, reference, issued_on, html)
+    values (c_id, 'VC-2026-0042', current_date, '<p>The letter.</p>');
+
+    -- ---- AND IT CANNOT BE REWRITTEN ---------------------------------------
+    refused := false;
+    begin
+      update correspondence_letters set html = '<p>Something else.</p>'
+       where reference = 'VC-2026-0042';
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '045 FAILED: an issued letter was rewritten';
+    end if;
+
+    -- =====================================================================
+    -- SOLE AUTHORITY ON AN APPOINTMENT
+    -- =====================================================================
+    insert into appointments
+      (full_name, position_title, employment_type, start_date, place_of_duty, terms,
+       drafted_by, status, initiated_by_office, initiated_by)
+    values ('A Specimen Appointee', 'Lecturer', 'permanent', date '2026-10-01',
+            'Buea campus', 'Conditions of service.', other, 'draft',
+            'vice-chancellor', someone)
+    returning id into a_id;
+
+    -- ---- AN HR-INITIATED APPOINTMENT CANNOT CLAIM SOLE AUTHORITY ----------
+    -- An HR clerk ticking this box would be the whole separation gone.
+    refused := false;
+    begin
+      update appointments
+         set initiated_by_office = 'hr', made_on_sole_authority = true,
+             sole_authority_reason = 'A reason of more than twenty characters, easily.'
+       where id = a_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '045 FAILED: an HR-initiated appointment was made on sole authority';
+    end if;
+
+    -- ---- AND THE VICE-CHANCELLOR MUST SAY WHY -----------------------------
+    refused := false;
+    begin
+      update appointments set made_on_sole_authority = true where id = a_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '045 FAILED: an appointment was made on sole authority with no account '
+                      'of why nobody else saw it';
+    end if;
+
+    update appointments
+       set made_on_sole_authority = true,
+           sole_authority_reason = 'Appointed directly by the Vice-Chancellor under Council '
+                                || 'standing authority of 3 September.'
+     where id = a_id;
+
+    -- ---- AND 041'S RULE STILL BITES ---------------------------------------
+    -- Sole authority records that one office made the appointment end to end.
+    -- It does NOT let the person who drafted it approve it, which is a
+    -- different claim and would make the mark meaningless.
+    refused := false;
+    begin
+      update appointments set authorized_by = other, authorized_at = now() where id = a_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '045 FAILED: the drafter approved an appointment because sole authority '
+                      'was ticked. The two rules are not the same rule.';
+    end if;
+
+    raise exception 'PROOF_ROLLBACK';
+  exception when others then
+    if sqlerrm <> 'PROOF_ROLLBACK' then raise; end if;
+  end;
+
+  raise notice '045 OK: a preparer cannot authorise what they prepared, a scheduled letter has '
+               'a time and an issued one records when, a reference is URL-safe, an issued '
+               'letter cannot be rewritten, only the Vice-Chancellor and Chancellor may act on '
+               'sole authority and only with a stated reason, and that does not let a drafter '
+               'approve their own appointment';
+end $$;
+
+
+-- ===========================================================================
+-- 6. VERIFY — READ THIS OUTPUT
+-- ===========================================================================
+
+-- The correspondence register, by office and kind.
+select originating_office, kind, status, count(*) as letters
+  from correspondence
+ group by 1, 2, 3
+ order by 1, 2;
+
+-- APPOINTMENTS MADE ON SOLE AUTHORITY. This list should be short and every
+-- line on it should be a decision somebody would defend out loud. If it grows,
+-- the second pair of eyes has become optional.
+select full_name, position_title, initiated_by_office, sole_authority_reason, start_date
+  from appointments
+ where made_on_sole_authority
+ order by start_date desc;
+
+-- WHO INITIATED WHAT. The question that could not be asked before: the same
+-- appointment arrives from HR or from the Vice-Chancellor and both are
+-- legitimate, but afterwards they were indistinguishable.
+select coalesce(initiated_by_office, '— not recorded —') as initiated_by_office,
+       count(*) as appointments
+  from appointments
+ group by 1
+ order by 2 desc;
+
+-- Letters written and not yet gone out.
+select c.kind, c.subject, c.recipient_name, c.status, c.scheduled_for
+  from correspondence c
+ where c.status in ('draft', 'preparing', 'awaiting_authority', 'authorized', 'scheduled')
+ order by c.created_at desc;
+
+-- Correspondence that failed to reach anybody.
+select c.subject, c.recipient_name, l.reference, l.attempts, l.delivery_detail
+  from correspondence_letters l
+  join correspondence c on c.id = l.correspondence_id
+ where l.delivery = 'failed' and l.superseded_at is null
+ order by l.created_at desc;
+
+
+-- ===========================================================================
+-- ===========================================================================
+--
+--   046_the_correspondence_history_and_the_delegated_draft.sql
+--
+-- ===========================================================================
+-- ===========================================================================
+
+-- ===========================================================================
+-- 046 — THE CORRESPONDENCE HISTORY, AND THE LETTER SOMEBODY ELSE PREPARES
+-- ===========================================================================
+--
+-- ---------------------------------------------------------------------------
+-- WHAT CHANGES THE MOMENT THIS RUNS
+-- ---------------------------------------------------------------------------
+--
+-- 1. OFFICIAL CORRESPONDENCE GETS A HISTORY. 045 built the register and then —
+--    this is the omission — left it as the only institutional act in this
+--    system with no append-only record of who did what to it. An appointment
+--    has `appointment_events`, an announcement has `announcement_events`, a
+--    credential has its audit. A letter to a ministry had the row and the row's
+--    current state, and nothing that said it had ever been anything else.
+--
+-- 2. "PREPARE THIS LETTER" BECOMES A REAL ACT. The Vice-Chancellor can hand a
+--    letter to an administrator with a brief, before the letter exists. That
+--    was not storable: 045 requires forty characters of body, and the whole
+--    point of a delegated draft is that the body has not been written yet.
+--
+-- 3. A REFERENCE CAN BE ALLOCATED WITHOUT A RACE. `next_correspondence_sequence`
+--    reads the register rather than the application counting rows and hoping.
+--    Two officers issuing at the same second previously had a real chance of
+--    both being handed VC-2026-0007.
+--
+-- ---------------------------------------------------------------------------
+-- THE ONE THING TO READ TWICE
+-- ---------------------------------------------------------------------------
+--
+-- THE BODY CHECK IS RELAXED FOR EXACTLY ONE STATE. A letter in `preparing` may
+-- have no body, because nobody has written it. In every other state — draft
+-- included — the forty characters are still required, so the relaxation cannot
+-- be used to authorise or issue an empty letter. The state it applies to is the
+-- one state from which a letter cannot be authorised at all.
+-- ===========================================================================
+
+
+-- ===========================================================================
+-- 1. THE HISTORY
+-- ===========================================================================
+--
+-- The same shape as `appointment_events`, deliberately. A third arrangement for
+-- the same job would be a third answer to "what happened to this document", and
+-- the person asking is usually asking because something went wrong.
+
+create table if not exists correspondence_events (
+  id                uuid primary key default gen_random_uuid(),
+  correspondence_id uuid not null references correspondence (id) on delete cascade,
+
+  -- A CLOSED LIST, and 'PREPARATION_REQUESTED' is in it because delegating is
+  -- an act of the authority and not a change of status that happened by itself.
+  event             text not null check (event in (
+                      'DRAFTED', 'EDITED', 'PREPARATION_REQUESTED', 'PREPARED',
+                      'SUBMITTED_TO_AUTHORITY', 'AUTHORIZED', 'RETURNED', 'SCHEDULED',
+                      'LETTER_GENERATED', 'ISSUED', 'DELIVERED', 'DELIVERY_FAILED',
+                      'LETTER_SUPERSEDED', 'WITHDRAWN')),
+
+  actor_id          uuid references auth.users (id) on delete set null,
+  actor_email       text,
+  actor_role        text,
+
+  previous_state    text,
+  new_state         text,
+  detail            text,
+  metadata          jsonb,
+
+  at                timestamptz not null default now()
+);
+
+create index if not exists correspondence_events_letter_idx
+  on correspondence_events (correspondence_id, at);
+
+-- ---------------------------------------------------------------------------
+-- APPEND-ONLY, ENFORCED RATHER THAN INTENDED.
+--
+-- A history that can be edited is a history that will be, at the moment
+-- somebody most wants it to say something else.
+-- ---------------------------------------------------------------------------
+create or replace function refuse_correspondence_history_edit() returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  raise exception
+    'The correspondence history cannot be changed. It records what was done and when, and a '
+    'record that can be corrected afterwards is not a record.'
+    using errcode = 'check_violation';
+end $$;
+
+drop trigger if exists correspondence_events_append_only on correspondence_events;
+create trigger correspondence_events_append_only
+  before update or delete on correspondence_events
+  for each row execute function refuse_correspondence_history_edit();
+
+
+-- ===========================================================================
+-- 2. DELEGATED PREPARATION
+-- ===========================================================================
+--
+-- "Prepare this letter", assigned to an administrator. The authority does not
+-- move with it: `prepared_by` is recorded, and 045's
+-- `correspondence_preparer_is_not_authority` still refuses that person to
+-- authorise what they prepared.
+
+alter table correspondence
+  -- WHAT THE AUTHORITY ASKED FOR. A delegation with no instruction is not a
+  -- delegation; it is a task somebody has to come back and ask about.
+  add column if not exists preparation_brief text,
+  add column if not exists preparation_requested_by uuid references auth.users (id) on delete set null,
+  add column if not exists preparation_requested_at timestamptz,
+  add column if not exists prepared_at timestamptz;
+
+-- A letter being prepared has nothing in it yet, so it needs a body it can hold.
+alter table correspondence alter column body set default '';
+
+do $$
+declare
+  c record;
+begin
+  -- ---------------------------------------------------------------------
+  -- THE BODY CHECK, RESTATED FOR ONE STATE.
+  --
+  -- 045 wrote it inline, so it carries whatever name Postgres generated. Found
+  -- by its definition rather than by guessing at `correspondence_body_check`,
+  -- which is the name on one server and not on another.
+  -- ---------------------------------------------------------------------
+  for c in
+    select conname from pg_constraint
+     where conrelid = 'correspondence'::regclass
+       and contype = 'c'
+       and conname <> 'correspondence_body_written_before_it_goes'
+       and pg_get_constraintdef(oid) like '%btrim(body)%'
+  loop
+    execute format('alter table correspondence drop constraint %I', c.conname);
+  end loop;
+
+  if not exists (select 1 from pg_constraint
+                  where conname = 'correspondence_body_written_before_it_goes') then
+    alter table correspondence add constraint correspondence_body_written_before_it_goes
+      check (status = 'preparing' or length(btrim(body)) >= 40);
+  end if;
+
+  -- A LETTER WITH A PREPARER NAMES THEM. `preparing` without a `prepared_by` is
+  -- a letter handed to nobody, sitting in a queue no office can see.
+  if not exists (select 1 from pg_constraint
+                  where conname = 'correspondence_preparing_names_the_preparer') then
+    alter table correspondence add constraint correspondence_preparing_names_the_preparer
+      check (status <> 'preparing' or prepared_by is not null);
+  end if;
+
+  -- AND THE BRIEF IS SAID, not left to a corridor conversation. Twenty
+  -- characters is not a specification; it is enough to refuse an empty one.
+  if not exists (select 1 from pg_constraint
+                  where conname = 'correspondence_delegation_says_what_for') then
+    alter table correspondence add constraint correspondence_delegation_says_what_for
+      check (preparation_requested_by is null
+             or (preparation_brief is not null
+                 and length(btrim(preparation_brief)) >= 20));
+  end if;
+end $$;
+
+comment on column correspondence.preparation_brief is
+  'What the authority asked the preparer to write. Recorded because the letter that comes '
+  'back is judged against it, and because "you did not ask for that" is otherwise one '
+  'person''s memory against another''s.';
+
+
+-- ===========================================================================
+-- 3. THE REFERENCE, ALLOCATED BY THE REGISTER
+-- ===========================================================================
+--
+-- COUNTED IN THE DATABASE, NOT IN THE APPLICATION. Two officers issuing in the
+-- same second both read "six letters this year" and both wrote VC-2026-0007;
+-- the unique index caught the second, which meant an officer saw a failure at
+-- the moment of issuing an official letter and had no idea why.
+
+create or replace function next_correspondence_sequence(prefix text, yr integer)
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  n integer;
+begin
+  if prefix is null or prefix !~ '^[A-Z]{2,4}$' then
+    raise exception 'Not an office prefix: %', coalesce(prefix, 'null')
+      using errcode = 'check_violation';
+  end if;
+  if yr is null or yr < 2000 or yr > 2999 then
+    raise exception 'Not a year this register runs in: %', coalesce(yr::text, 'null')
+      using errcode = 'check_violation';
+  end if;
+
+  select coalesce(max(substring(reference from '[0-9]+$')::integer), 0) + 1
+    into n
+    from correspondence_letters
+   where reference like prefix || '-' || yr::text || '-%';
+
+  return n;
+end $$;
+
+comment on function next_correspondence_sequence(text, integer) is
+  'The next sequence number for an office''s correspondence in a year. Read from the '
+  'register rather than counted by the application, so two officers issuing at the same '
+  'second are not handed the same reference.';
+
+
+-- ===========================================================================
+-- 4. WHO CAN READ THE HISTORY
+-- ===========================================================================
+
+alter table correspondence_events enable row level security;
+
+drop policy if exists correspondence_events_staff_read on correspondence_events;
+create policy correspondence_events_staff_read on correspondence_events
+  for select to authenticated
+  using (
+    -- THE HISTORY IS AS VISIBLE AS THE LETTER AND NO MORE. A warning letter is
+    -- not ordinary institutional information, and neither is the fact that one
+    -- was drafted, returned and redrafted twice.
+    exists (select 1 from correspondence c where c.id = correspondence_events.correspondence_id)
+  );
+
+
+-- ===========================================================================
+-- 5. PERFORMING THE RULES
+-- ===========================================================================
+
+do $$
+declare
+  refused boolean;
+  c_id uuid;
+  e_id uuid;
+  someone uuid;
+  other uuid;
+  seq integer;
+begin
+  select id into someone from auth.users limit 1;
+  select id into other from auth.users where id <> someone limit 1;
+  if someone is null or other is null then
+    raise notice '046: fewer than two accounts, so the rules could not be exercised';
+    return;
+  end if;
+
+  begin
+    -- ---- A DELEGATED DRAFT EXISTS BEFORE THE LETTER DOES -------------------
+    -- The thing 045 could not store. If this insert fails, "prepare this
+    -- letter" is still not an act the system can record.
+    insert into correspondence
+      (kind, subject, body, recipient_name, initiated_by, status,
+       prepared_by, preparation_requested_by, preparation_requested_at, preparation_brief)
+    values ('invitation', 'Convocation invitation', '',
+            'The Ministry of Higher Education', someone, 'preparing',
+            other, someone, now(),
+            'Invite the Ministry to the convocation and ask for a representative to speak.')
+    returning id into c_id;
+
+    -- ---- BUT AN EMPTY LETTER CANNOT LEAVE THAT STATE -----------------------
+    -- The relaxation above is the one that could be abused, so it is the one
+    -- performed. A body of nothing must not become a draft, still less a letter.
+    refused := false;
+    begin
+      update correspondence set status = 'draft' where id = c_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '046 FAILED: a letter with no body in it became a draft, so the '
+                      'relaxation for a delegated draft is a way to issue an empty letter';
+    end if;
+
+    -- ---- A DELEGATION SAYS WHAT FOR ---------------------------------------
+    refused := false;
+    begin
+      update correspondence set preparation_brief = 'Write it.' where id = c_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '046 FAILED: a letter was delegated with no brief worth the name';
+    end if;
+
+    -- ---- AND A LETTER BEING PREPARED NAMES ITS PREPARER --------------------
+    refused := false;
+    begin
+      update correspondence set prepared_by = null where id = c_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '046 FAILED: a letter was left in preparation by nobody in particular';
+    end if;
+
+    -- The preparer writes it, and now it is a draft the authority reads.
+    update correspondence
+       set body = 'The University would be honoured by the presence of the Ministry at its '
+                  'convocation, and invites a representative to address the assembly.',
+           status = 'awaiting_authority', prepared_at = now()
+     where id = c_id;
+
+    -- ---- THE HISTORY RECORDS IT, AND THEN CANNOT BE CHANGED ----------------
+    insert into correspondence_events
+      (correspondence_id, event, actor_id, previous_state, new_state, detail)
+    values (c_id, 'PREPARATION_REQUESTED', someone, null, 'preparing',
+            'Handed to an administrator to draft.')
+    returning id into e_id;
+
+    refused := false;
+    begin
+      update correspondence_events set detail = 'Something else.' where id = e_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '046 FAILED: the correspondence history was rewritten';
+    end if;
+
+    refused := false;
+    begin
+      delete from correspondence_events where id = e_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '046 FAILED: a line was removed from the correspondence history';
+    end if;
+
+    -- ---- AN EVENT NOBODY DEFINED IS REFUSED --------------------------------
+    refused := false;
+    begin
+      insert into correspondence_events (correspondence_id, event, actor_id)
+      values (c_id, 'SENT_BY_CARRIER_PIGEON', someone);
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '046 FAILED: the history accepted an event nobody defined';
+    end if;
+
+    -- ---- THE SEQUENCE COUNTS WHAT IS THERE ---------------------------------
+    seq := next_correspondence_sequence('VC', 2026);
+    if seq <> 1 then
+      raise exception '046 FAILED: an empty register did not start at 1, it started at %', seq;
+    end if;
+
+    update correspondence
+       set authorized_by = someone, authorized_at = now(), status = 'issued', issued_at = now()
+     where id = c_id;
+
+    insert into correspondence_letters (correspondence_id, reference, issued_on, html)
+    values (c_id, 'VC-2026-0009', current_date, '<p>The letter.</p>');
+
+    seq := next_correspondence_sequence('VC', 2026);
+    if seq <> 10 then
+      raise exception '046 FAILED: after VC-2026-0009 the next reference was %, not 10', seq;
+    end if;
+
+    -- …and another office counts separately, which is the point of the prefix.
+    seq := next_correspondence_sequence('REG', 2026);
+    if seq <> 1 then
+      raise exception '046 FAILED: the Registrar''s register was affected by the '
+                      'Vice-Chancellor''s, and started at %', seq;
+    end if;
+
+    -- ---- A PREFIX THAT IS NOT ONE IS REFUSED -------------------------------
+    refused := false;
+    begin
+      seq := next_correspondence_sequence('vice-chancellor', 2026);
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '046 FAILED: a reference was allocated under an office prefix that '
+                      'cannot appear in a reference';
+    end if;
+
+    raise exception 'PROOF_ROLLBACK';
+  exception
+    when others then
+      if sqlerrm <> 'PROOF_ROLLBACK' then raise; end if;
+  end;
+
+  raise notice '046 OK: a delegated draft can exist before the letter does, and an empty one '
+               'cannot leave that state';
+  raise notice '046 OK: the correspondence history is append-only and its vocabulary closed';
+  raise notice '046 OK: references are allocated by the register, per office, per year';
+end $$;
+
+
+-- ===========================================================================
+-- 6. VERIFY — READ THIS OUTPUT
+-- ===========================================================================
+
+-- What has happened to the University's correspondence, in order.
+select e.event, count(*) as times
+  from correspondence_events e
+ group by 1
+ order by 2 desc;
+
+-- Letters currently sitting with a preparer, and how long they have been there.
+select c.subject, c.originating_office, c.preparation_requested_at,
+       date_trunc('day', now() - c.preparation_requested_at) as waiting
+  from correspondence c
+ where c.status = 'preparing'
+ order by c.preparation_requested_at;
+
+
+-- ===========================================================================
+-- ===========================================================================
+--
+--   047_the_money_the_actors_and_the_two_axes.sql
+--
+-- ===========================================================================
+-- ===========================================================================
+
+-- ===========================================================================
+-- 047 — THE MONEY, THE ACTORS, AND THE TWO AXES OF AN APPOINTMENT
+-- ===========================================================================
+--
+-- ---------------------------------------------------------------------------
+-- WHAT CHANGES THE MOMENT THIS RUNS
+-- ---------------------------------------------------------------------------
+--
+-- 1. THE UNIVERSITY'S APPOINTMENTS ARE IN DOLLARS. New appointments default to
+--    USD, following the fee schedule, which the University converted to dollars
+--    at 600 FCFA to the dollar. EXISTING ROWS ARE NOT TOUCHED — an appointment
+--    already recorded in francs stays in francs, because restating somebody's
+--    salary in another currency is a decision about their pay, not a data
+--    migration.
+--
+-- 2. AN APPOINTMENT CAN CARRY ALLOWANCES. Housing, transport, communication,
+--    responsibility, research — each with its own amount and period, none
+--    assumed. Until now a salary was one number, so an appointment worth
+--    $2,000 basic plus $400 housing could only be recorded as $2,400, and the
+--    letter then stated something the University had not decided.
+--
+-- 3. THE RECORD NAMES FIVE PEOPLE, NOT THREE. `reviewed_by` and `issued_by`
+--    join the three that existed. "Who issued this?" was previously answerable
+--    only by inference from `authorized_by`, which is wrong whenever the
+--    authority approves on Monday and the letter goes out on Thursday.
+--
+-- 4. A CLOSED DOOR — READ THIS ONE. An appointment can no longer reach
+--    `issued` unless a letter for it is archived. The University's own words:
+--    "an appointment cannot be issued without an approved decision and an
+--    archived appointment document". Until now `issued` was a status somebody
+--    could set with no document behind it, and the appointee would then be
+--    holding nothing while the register said a letter had gone.
+--
+-- ---------------------------------------------------------------------------
+-- THE ONE THING TO READ TWICE
+-- ---------------------------------------------------------------------------
+--
+-- THE UNIVERSITY'S LIST OF APPOINTMENT TYPES IS TWO LISTS. Asked for fourteen
+-- types — Initial, Reappointment, Promotion, Renewal, Contract Extension,
+-- Transfer, Acting, Visiting, Part-Time, Full-Time, Adjunct, Probationary,
+-- Confirmation, Amendment — and they are not one vocabulary. Six of them say
+-- what KIND OF EMPLOYMENT this is (visiting, part-time, adjunct, probationary)
+-- and eight say WHAT THE UNIVERSITY IS DOING (promoting, renewing,
+-- transferring, confirming).
+--
+-- A promotion to a full-time post is both. Put in one column, it is neither:
+-- the University can then ask how many promotions it made this year or how many
+-- part-time staff it has, but never both, and the answer to the second silently
+-- excludes everybody whose row says "Promotion".
+--
+-- So `employment_type` keeps its meaning and `appointment_action` is added
+-- beside it. Nothing existing is renamed and no existing row changes.
+-- ===========================================================================
+
+
+-- ===========================================================================
+-- 1. THE MONEY
+-- ===========================================================================
+
+-- ---------------------------------------------------------------------------
+-- NEW ROWS ARE IN DOLLARS — AND THIS IS A TRIGGER, NOT A COLUMN DEFAULT.
+--
+-- It was `alter column salary_currency set default 'USD'` for about ten
+-- minutes, and the proof below refused it immediately: a column default applies
+-- to EVERY insert, so an honorary appointment carrying no pay at all came out
+-- with a currency and no amount, which 041 correctly refuses as an incomplete
+-- salary. The University would have discovered it the first time it appointed
+-- somebody unpaid.
+--
+-- The rule the University actually stated is conditional — "money is in
+-- dollars" — and a default cannot express a condition. This can: if an amount
+-- is given and nobody said in what, it is dollars.
+--
+-- EXISTING ROWS ARE NOT TOUCHED. An appointment already recorded in francs
+-- stays in francs; restating somebody's salary in another currency is a
+-- decision about their pay, not a data migration.
+-- ---------------------------------------------------------------------------
+alter table appointments alter column salary_currency drop default;
+
+create or replace function appointment_money_is_in_dollars() returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  if new.salary_amount is not null and new.salary_currency is null then
+    new.salary_currency := 'USD';
+  end if;
+  -- A FIGURE WITH NO PERIOD IS NOT A SALARY, and monthly is what the
+  -- University's own schedule is quoted over. Stated here rather than left to
+  -- whichever screen happened to post the row.
+  if new.salary_amount is not null and new.salary_period is null then
+    new.salary_period := 'month';
+  end if;
+  return new;
+end $$;
+
+drop trigger if exists appointments_money_is_in_dollars on appointments;
+create trigger appointments_money_is_in_dollars
+  before insert or update on appointments
+  for each row execute function appointment_money_is_in_dollars();
+
+do $$
+begin
+  -- THE PERIODS THE UNIVERSITY ACTUALLY PAYS OVER. 'contract' and 'stipend' are
+  -- the two that were missing and the two a visiting appointment needs: a sum
+  -- for the whole engagement, and an honorarium that is not a salary at all.
+  if not exists (select 1 from pg_constraint where conname = 'appointments_salary_period_known') then
+    alter table appointments add constraint appointments_salary_period_known
+      check (salary_period is null or salary_period in
+             ('hour', 'month', 'year', 'session', 'contract', 'stipend'));
+  end if;
+
+  if not exists (select 1 from pg_constraint where conname = 'appointments_currency_known') then
+    alter table appointments add constraint appointments_currency_known
+      check (salary_currency is null or salary_currency in
+             ('USD', 'FCFA', 'EUR', 'GBP', 'NGN'))
+      -- NOT VALID. There may be rows carrying a currency typed before there was
+      -- a list, and refusing to run rather than naming them would leave the
+      -- whole migration unapplied over somebody's historic spelling.
+      not valid;
+  end if;
+end $$;
+
+-- ---------------------------------------------------------------------------
+-- ALLOWANCES — EACH ONE ITS OWN ROW
+-- ---------------------------------------------------------------------------
+--
+-- NOT SEVEN COLUMNS ON `appointments`. Seven columns says every appointment has
+-- seven allowances and six of them are zero, which is a claim the University has
+-- not made: an honorary appointment has none, and a Dean's responsibility
+-- allowance is not a nil housing allowance. A row that does not exist says
+-- "this appointment does not carry one", and a row of zero says "it carries one
+-- and it is nothing" — two different facts, and the letter prints them
+-- differently.
+
+create table if not exists appointment_allowances (
+  id             uuid primary key default gen_random_uuid(),
+  appointment_id uuid not null references appointments (id) on delete cascade,
+
+  kind           text not null check (kind in (
+                   'housing', 'transport', 'communication', 'responsibility',
+                   'research', 'entertainment', 'medical', 'other')),
+  -- WHAT IT IS CALLED ON THE LETTER, where 'other' needs a name and the rest
+  -- have one. An allowance printed as "Other: $200" tells the appointee
+  -- nothing.
+  label          text,
+
+  amount         numeric(14, 2) not null check (amount > 0),
+  currency       text not null default 'USD'
+                   check (currency in ('USD', 'FCFA', 'EUR', 'GBP', 'NGN')),
+  period         text not null default 'month'
+                   check (period in ('hour', 'month', 'year', 'session',
+                                     'contract', 'stipend', 'once')),
+
+  note           text,
+  created_at     timestamptz not null default now()
+);
+
+create index if not exists appointment_allowances_appointment_idx
+  on appointment_allowances (appointment_id);
+
+do $$
+begin
+  -- AN 'other' ALLOWANCE SAYS WHAT IT IS.
+  if not exists (select 1 from pg_constraint where conname = 'appointment_allowances_other_is_named') then
+    alter table appointment_allowances add constraint appointment_allowances_other_is_named
+      check (kind <> 'other' or (label is not null and length(btrim(label)) >= 3));
+  end if;
+
+  -- ONE OF EACH KIND, except 'other' which may recur because it is the
+  -- catch-all and two different named allowances are two rows.
+  if not exists (select 1 from pg_indexes
+                  where indexname = 'appointment_allowances_one_of_each_idx') then
+    create unique index appointment_allowances_one_of_each_idx
+      on appointment_allowances (appointment_id, kind) where kind <> 'other';
+  end if;
+end $$;
+
+-- THE TOTAL, COMPUTED WHERE IT CANNOT DRIFT. A screen adding these up would be
+-- a second answer to "what does this post pay", and the two would disagree the
+-- first time somebody changed a rounding rule.
+create or replace view appointment_remuneration
+with (security_invoker = true) as
+  select a.id as appointment_id,
+         a.salary_amount,
+         a.salary_currency,
+         a.salary_period,
+         coalesce(sum(al.amount) filter (
+           where al.currency = a.salary_currency and al.period = a.salary_period), 0)
+           as allowances_same_basis,
+         count(al.id) as allowance_count,
+         -- SAID OUT LOUD WHEN THEY CANNOT BE ADDED. A monthly salary and an
+         -- annual research allowance do not sum, and a view that quietly added
+         -- them would put a wrong figure on a letter.
+         count(al.id) filter (
+           where al.currency <> a.salary_currency or al.period <> a.salary_period)
+           as allowances_on_another_basis
+    from appointments a
+    left join appointment_allowances al on al.appointment_id = a.id
+   group by a.id, a.salary_amount, a.salary_currency, a.salary_period;
+
+alter table appointment_allowances enable row level security;
+
+drop policy if exists appointment_allowances_read on appointment_allowances;
+create policy appointment_allowances_read on appointment_allowances
+  for select to authenticated
+  using (exists (select 1 from appointments a where a.id = appointment_allowances.appointment_id));
+
+
+-- ===========================================================================
+-- 2. THE FIVE ACTORS
+-- ===========================================================================
+--
+-- initiated_by  — whose appointment this is. 045.
+-- drafted_by    — who typed it. 041.
+-- reviewed_by   — who checked it before it went to the authority. Here.
+-- authorized_by — who approved it. 041.
+-- issued_by     — who sent the letter. Here.
+--
+-- THE LAST TWO ARE NOT THE SAME PERSON AND WERE NOT THE SAME ACT. An authority
+-- approves on Monday; the letter goes out on Thursday. Reading `issued_by` off
+-- `authorized_by` is right most of the time and wrong exactly when somebody is
+-- asking.
+
+alter table appointments
+  add column if not exists reviewed_by uuid references auth.users (id) on delete set null,
+  add column if not exists reviewed_at timestamptz,
+  add column if not exists issued_by uuid references auth.users (id) on delete set null;
+
+do $$
+begin
+  -- A REVIEW NAMES ITS REVIEWER AND ITS MOMENT, or it is not a review.
+  if not exists (select 1 from pg_constraint where conname = 'appointments_review_is_complete') then
+    alter table appointments add constraint appointments_review_is_complete
+      check ((reviewed_by is null) = (reviewed_at is null));
+  end if;
+
+  -- ---------------------------------------------------------------------
+  -- AND A REVIEWER IS NOT THE DRAFTER.
+  --
+  -- The point of an internal review is that a second person in the office
+  -- reads it before it reaches the Vice-Chancellor. A drafter who reviews
+  -- their own work has performed a ceremony, and the Vice-Chancellor is then
+  -- told the file was checked when it was not.
+  -- ---------------------------------------------------------------------
+  if not exists (select 1 from pg_constraint where conname = 'appointments_reviewer_is_not_the_drafter') then
+    alter table appointments add constraint appointments_reviewer_is_not_the_drafter
+      check (reviewed_by is null or drafted_by is null or reviewed_by <> drafted_by)
+      not valid;
+  end if;
+end $$;
+
+
+-- ===========================================================================
+-- 3. THE SECOND AXIS — WHAT THE UNIVERSITY IS DOING
+-- ===========================================================================
+
+alter table appointments
+  add column if not exists appointment_action text,
+  -- WHAT THIS ONE REPLACES OR CONTINUES. A promotion is a promotion FROM
+  -- something, and a renewal renews a term that existed. Without this the
+  -- register holds two unconnected appointments for one person and cannot say
+  -- which came first.
+  add column if not exists supersedes_appointment_id uuid references appointments (id)
+    on delete set null;
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'appointments_action_known') then
+    alter table appointments add constraint appointments_action_known
+      check (appointment_action is null or appointment_action in (
+        'initial', 'reappointment', 'promotion', 'renewal', 'extension',
+        'transfer', 'confirmation', 'amendment'));
+  end if;
+
+  -- ---------------------------------------------------------------------
+  -- THE ACTIONS THAT ARE ALWAYS ABOUT AN EARLIER APPOINTMENT.
+  --
+  -- A promotion, renewal, extension or confirmation with nothing behind it is
+  -- one of two things: a first appointment somebody mislabelled, or a record
+  -- that has lost its predecessor. Both need correcting and neither is
+  -- visible without this.
+  -- ---------------------------------------------------------------------
+  if not exists (select 1 from pg_constraint where conname = 'appointments_continuation_has_a_predecessor') then
+    alter table appointments add constraint appointments_continuation_has_a_predecessor
+      check (appointment_action is null
+             or appointment_action not in ('promotion', 'renewal', 'extension', 'confirmation')
+             or supersedes_appointment_id is not null)
+      not valid;
+  end if;
+
+  -- AND NOTHING SUPERSEDES ITSELF.
+  if not exists (select 1 from pg_constraint where conname = 'appointments_nothing_supersedes_itself') then
+    alter table appointments add constraint appointments_nothing_supersedes_itself
+      check (supersedes_appointment_id is null or supersedes_appointment_id <> id);
+  end if;
+end $$;
+
+comment on column appointments.appointment_action is
+  'What the University is doing: initial, reappointment, promotion, renewal, extension, '
+  'transfer, confirmation, amendment. The SECOND axis — employment_type says what kind of '
+  'employment it is (permanent, visiting, part-time). A promotion to a full-time post is '
+  'both, and one column could record only one of them.';
+
+
+-- ===========================================================================
+-- 4. THE INTERNAL REVIEW STATE
+-- ===========================================================================
+--
+-- ONE STATE ADDED, NOTHING RENAMED. The University proposed
+-- draft → submitted → under_review → pending_vc → approved → letter_generation
+-- → letter_ready → issued. Most of that already exists under other names, and
+-- renaming a live vocabulary rewrites every row and every guard in the system
+-- for no gain.
+--
+--   pending_vc        is what `submitted` already means — submitted TO the VC.
+--   letter_ready      is what `letter_generated` already means.
+--   letter_generation is not a state. It is the second the document is being
+--                     rendered, and a state nothing can be in for long is a
+--                     state a screen shows by accident during a refresh.
+--   returned          is `draft` again, with a RETURNED event in the history
+--                     saying why. A separate state would make "returned" a
+--                     place an appointment can sit forever without anybody
+--                     owning it.
+--
+-- `under_review` is the one that was genuinely missing: the office's own check
+-- before the file reaches the Vice-Chancellor.
+
+do $$
+declare
+  con text;
+begin
+  select conname into con from pg_constraint
+   where conrelid = 'appointments'::regclass and contype = 'c'
+     and pg_get_constraintdef(oid) like '%amendment_requested%'
+     and pg_get_constraintdef(oid) like '%letter_generated%'
+   limit 1;
+
+  if con is not null then
+    execute format('alter table appointments drop constraint %I', con);
+  end if;
+
+  if not exists (select 1 from pg_constraint where conname = 'appointments_status_known') then
+    alter table appointments add constraint appointments_status_known
+      check (status in (
+        'draft', 'under_review', 'submitted', 'approved', 'letter_generated',
+        'issued', 'accepted', 'active', 'amendment_requested',
+        'declined', 'withdrawn', 'ended'));
+  end if;
+end $$;
+
+
+-- ===========================================================================
+-- 5. THE DOOR THE UNIVERSITY ASKED TO CLOSE
+-- ===========================================================================
+--
+-- "An appointment cannot be `issued` without an approved decision and an
+-- archived appointment document."
+--
+-- A TRIGGER RATHER THAN A CHECK, because a check constraint cannot read another
+-- table. Until now `issued` was a status somebody could set with nothing behind
+-- it: the register said a letter had gone and the appointee was holding
+-- nothing.
+
+create or replace function refuse_issue_without_a_document() returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if new.status in ('issued', 'accepted', 'active')
+     and (old.status is distinct from new.status) then
+
+    if new.authorized_by is null or new.authorized_at is null then
+      raise exception
+        'This appointment has not been approved, so no letter can be issued from it. '
+        'Approval and issue are two acts by two authorities, and this is the second one '
+        'asking for the first.'
+        using errcode = 'check_violation';
+    end if;
+
+    if not exists (
+      select 1 from appointment_letters l
+       where l.appointment_id = new.id and l.superseded_at is null
+    ) then
+      raise exception
+        'No appointment letter is archived for this appointment, so it cannot be marked '
+        'issued. Generate the letter first: an appointment recorded as issued with no '
+        'document behind it is an appointee holding nothing while the register says '
+        'otherwise.'
+        using errcode = 'check_violation';
+    end if;
+  end if;
+  return new;
+end $$;
+
+drop trigger if exists appointments_issue_needs_a_document on appointments;
+create trigger appointments_issue_needs_a_document
+  before update on appointments
+  for each row execute function refuse_issue_without_a_document();
+
+
+-- ===========================================================================
+-- 6. PERFORMING THE RULES
+-- ===========================================================================
+
+do $$
+declare
+  refused boolean;
+  a_id uuid;
+  b_id uuid;
+  someone uuid;
+  other uuid;
+begin
+  select id into someone from auth.users limit 1;
+  select id into other from auth.users where id <> someone limit 1;
+  if someone is null or other is null then
+    raise notice '047: fewer than two accounts, so the rules could not be exercised';
+    return;
+  end if;
+
+  begin
+    -- ---- AN APPOINTMENT WITH NO PAY AT ALL IS STILL VALID -----------------
+    -- THE CASE A COLUMN DEFAULT BROKE. An honorary appointment carries no
+    -- salary, and a default currency gave it one with no amount beside it —
+    -- refused by 041, correctly, as an incomplete salary. Proved first because
+    -- it is the case nobody would have tried until the University appointed
+    -- somebody unpaid.
+    insert into appointments
+      (full_name, position_title, unit_name, employment_type, start_date,
+       terms, status, drafted_by)
+    values ('An Honorary Appointee', 'Honorary Fellow', 'Faculty of Theology', 'honorary',
+            current_date + 30, 'The terms.', 'draft', someone)
+    returning id into b_id;
+    if (select salary_currency from appointments where id = b_id) is not null then
+      raise exception '047 FAILED: an unpaid appointment was given a currency';
+    end if;
+    delete from appointments where id = b_id;
+
+    -- ---- AND ONE WITH PAY IS PRICED IN DOLLARS ----------------------------
+    insert into appointments
+      (full_name, position_title, unit_name, employment_type, start_date,
+       terms, status, drafted_by, salary_amount)
+    values ('A Specimen Appointee', 'Lecturer', 'Faculty of Theology', 'permanent',
+            current_date + 30, 'The terms.', 'draft', someone, 2000)
+    returning id into a_id;
+
+    if (select salary_currency from appointments where id = a_id) is distinct from 'USD' then
+      raise exception '047 FAILED: an appointment created without a currency came out in %, '
+                      'not dollars',
+        coalesce((select salary_currency from appointments where id = a_id), 'nothing');
+    end if;
+    if (select salary_period from appointments where id = a_id) is distinct from 'month' then
+      raise exception '047 FAILED: a figure with no period given did not become a monthly one';
+    end if;
+
+    -- ---- AN ALLOWANCE IS ITS OWN ROW WITH ITS OWN BASIS --------------------
+    insert into appointment_allowances (appointment_id, kind, amount, period)
+    values (a_id, 'housing', 400, 'month');
+
+    refused := false;
+    begin
+      insert into appointment_allowances (appointment_id, kind, amount, period)
+      values (a_id, 'housing', 100, 'month');
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '047 FAILED: one appointment carries two housing allowances';
+    end if;
+
+    -- ---- AN 'other' ALLOWANCE SAYS WHAT IT IS ------------------------------
+    refused := false;
+    begin
+      insert into appointment_allowances (appointment_id, kind, amount, period)
+      values (a_id, 'other', 100, 'month');
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '047 FAILED: an allowance called "other" and nothing else was accepted';
+    end if;
+
+    -- ---- AND NOTHING IS SILENTLY ADDED ACROSS BASES ------------------------
+    insert into appointment_allowances (appointment_id, kind, amount, period, currency)
+    values (a_id, 'research', 1200, 'year', 'USD');
+    if (select allowances_same_basis from appointment_remuneration
+         where appointment_id = a_id) <> 400 then
+      raise exception '047 FAILED: an annual allowance was added to a monthly salary';
+    end if;
+    if (select allowances_on_another_basis from appointment_remuneration
+         where appointment_id = a_id) <> 1 then
+      raise exception '047 FAILED: the allowance on another basis was not reported as one';
+    end if;
+
+    -- ---- A REVIEWER IS NOT THE DRAFTER -------------------------------------
+    refused := false;
+    begin
+      update appointments set reviewed_by = someone, reviewed_at = now() where id = a_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '047 FAILED: the drafter reviewed their own appointment, so the '
+                      'Vice-Chancellor is told a file was checked that nobody read';
+    end if;
+    update appointments set reviewed_by = other, reviewed_at = now() where id = a_id;
+
+    -- ---- A REVIEW WITH NO MOMENT IS NOT A REVIEW ---------------------------
+    refused := false;
+    begin
+      update appointments set reviewed_at = null where id = a_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '047 FAILED: an appointment was reviewed at no particular time';
+    end if;
+
+    -- ---- THE INTERNAL REVIEW STATE IS REACHABLE ----------------------------
+    update appointments set status = 'under_review' where id = a_id;
+    refused := false;
+    begin
+      update appointments set status = 'being_thought_about' where id = a_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '047 FAILED: the status vocabulary accepted a state nobody declared';
+    end if;
+
+    -- ---- A PROMOTION IS A PROMOTION FROM SOMETHING -------------------------
+    refused := false;
+    begin
+      update appointments set appointment_action = 'promotion' where id = a_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '047 FAILED: a promotion was recorded with nothing behind it';
+    end if;
+    update appointments set appointment_action = 'initial' where id = a_id;
+
+    insert into appointments
+      (full_name, position_title, unit_name, employment_type, start_date, terms,
+       status, drafted_by, appointment_action, supersedes_appointment_id)
+    values ('A Specimen Appointee', 'Senior Lecturer', 'Faculty of Theology', 'permanent',
+            current_date + 400, 'The terms.', 'draft', someone, 'promotion', a_id)
+    returning id into b_id;
+
+    refused := false;
+    begin
+      update appointments set supersedes_appointment_id = b_id where id = b_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '047 FAILED: an appointment superseded itself';
+    end if;
+
+    -- ---- AND THE DOOR: NO DOCUMENT, NO ISSUE -------------------------------
+    update appointments
+       set status = 'approved', authorized_by = other, authorized_at = now()
+     where id = a_id;
+
+    refused := false;
+    begin
+      update appointments set status = 'issued', issued_at = now() where id = a_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '047 FAILED: an appointment was issued with no letter archived for it, '
+                      'so the register says a document went out that does not exist';
+    end if;
+
+    -- With a letter archived, it goes.
+    insert into appointment_letters (appointment_id, reference, issued_on, html)
+    values (a_id, 'APT-2026-9047', current_date, '<p>The letter.</p>');
+    update appointments set status = 'issued', issued_at = now(), issued_by = other
+     where id = a_id;
+
+    -- ---- AND AN UNAPPROVED ONE STILL CANNOT, EVEN WITH A DOCUMENT ----------
+    insert into appointment_letters (appointment_id, reference, issued_on, html)
+    values (b_id, 'APT-2026-9048', current_date, '<p>The letter.</p>');
+    refused := false;
+    begin
+      update appointments set status = 'issued', issued_at = now() where id = b_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '047 FAILED: an appointment nobody approved was issued because a '
+                      'document happened to exist for it';
+    end if;
+
+    raise exception 'PROOF_ROLLBACK';
+  exception
+    when others then
+      if sqlerrm <> 'PROOF_ROLLBACK' then raise; end if;
+  end;
+
+  raise notice '047 OK: new appointments are priced in dollars and existing ones are untouched';
+  raise notice '047 OK: allowances are separate rows, one of each kind, never summed across '
+               'different currencies or periods';
+  raise notice '047 OK: a reviewer is not the drafter, and a review names its moment';
+  raise notice '047 OK: a promotion, renewal, extension or confirmation names what it follows';
+  raise notice '047 OK: nothing is issued without both an approval and an archived letter';
+end $$;
+
+
+-- ===========================================================================
+-- 7. VERIFY — READ THIS OUTPUT
+-- ===========================================================================
+
+-- What the University pays, by currency. Anything still in francs is a record
+-- made before this migration and is deliberately left alone.
+select salary_currency, salary_period, count(*) as appointments
+  from appointments
+ where salary_amount is not null
+ group by 1, 2
+ order by 1, 2;
+
+-- Appointments recorded as issued. After this migration every one of them has a
+-- letter behind it; if this returns rows, they predate the trigger and want
+-- looking at.
+select a.id, a.full_name, a.position_title, a.issued_at
+  from appointments a
+ where a.status in ('issued', 'accepted', 'active')
+   and not exists (select 1 from appointment_letters l
+                    where l.appointment_id = a.id and l.superseded_at is null)
+ order by a.issued_at;
+
+-- The two axes, crossed. This is the question that could not be asked before.
+select coalesce(appointment_action, '(not stated)') as action,
+       employment_type,
+       count(*) as appointments
+  from appointments
+ group by 1, 2
+ order by 1, 2;
+
+
+-- ===========================================================================
+-- ===========================================================================
+--
+--   048_the_job_descriptions_and_what_they_inherit.sql
+--
+-- ===========================================================================
+-- ===========================================================================
+
+-- ===========================================================================
+-- 048 — THE JOB DESCRIPTIONS, AND WHAT THEY INHERIT
+-- ===========================================================================
+--
+-- ---------------------------------------------------------------------------
+-- WHAT CHANGES THE MOMENT THIS RUNS
+-- ---------------------------------------------------------------------------
+--
+-- 1. THE UNIVERSITY GETS A REGISTER OF ITS POSTS. Forty-six of them, seeded
+--    with title, job code, family and reporting line. That is structure, not
+--    content: it says the post exists and where it sits, and nothing about what
+--    the holder does.
+--
+-- 2. EVERY POST HAS A JOB DESCRIPTION, INHERITED FROM ITS FAMILY. Eight family
+--    profiles carry the clauses that are genuinely common — an academic's
+--    teaching and research duties, a director's financial authority — and each
+--    post adds its own on top. Forty-six separate documents would be forty-six
+--    places to update the confidentiality clause, and within a year they would
+--    say four different things.
+--
+-- 3. NOTHING IS APPROVED. Every profile this migration writes is a DRAFT, at
+--    the University's instruction, and a draft cannot be attached to an
+--    appointment letter. Activating one requires somebody other than its
+--    author, exactly as 044 requires of a document template.
+--
+-- ---------------------------------------------------------------------------
+-- THE ONE THING TO READ TWICE
+-- ---------------------------------------------------------------------------
+--
+-- THE SEEDED WORDING IS NOT THE UNIVERSITY'S POLICY YET. It is a first draft
+-- written to be edited, and it is marked `draft` for that reason rather than as
+-- a formality. A job description states what somebody may authorise, what they
+-- must escalate, and what they are assessed on — it is the document produced
+-- when a dismissal is challenged. Nothing in it should reach a letter until the
+-- University has read it and somebody other than its author has activated it.
+--
+-- The Readiness panel and `position_profiles_unapproved` both report what is
+-- still sitting in draft, so this cannot be forgotten quietly.
+-- ===========================================================================
+
+
+-- ===========================================================================
+-- 1. THE POSTS
+-- ===========================================================================
+
+create table if not exists positions (
+  id             uuid primary key default gen_random_uuid(),
+
+  -- IGUC-ACA-LEC. The code is what a job description, an appointment and an
+  -- establishment return all name, and a title is not stable enough to be a
+  -- key: "Lecturer" and "Lecturer I" are the same post with a grade attached.
+  job_code       text not null unique check (job_code ~ '^[A-Z][A-Z0-9-]{2,23}$'),
+  title          text not null check (length(btrim(title)) >= 3),
+
+  -- THE FAMILY IS THE REUSE. Everything common to a family is written once on
+  -- the family's own profile and inherited.
+  family         text not null check (family in (
+                   'executive', 'academic-administration', 'faculty-leadership',
+                   'administration', 'student-services', 'ict',
+                   'academic-staff', 'other')),
+
+  -- WHERE IT SITS. Free text against the University's stated structure rather
+  -- than a foreign key: not every post belongs to a faculty, and a nullable
+  -- key to a table that does not cover half the establishment is worse than a
+  -- name.
+  unit_name      text,
+  faculty        text,
+  reports_to     text,
+  supervises     text,
+  duty_station   text,
+
+  employment_category text,
+  grade          text,
+
+  -- ---------------------------------------------------------------------
+  -- WHAT THE POST IS USUALLY WORTH — INDICATIVE, AND IT NEVER REACHES A
+  -- LETTER BY ITSELF.
+  --
+  -- The University's ruling: a figure may be carried on a template, and the
+  -- box may be left empty. So a post can hold one, and the Vice-Chancellor
+  -- can take it or type over it when making the appointment — but the letter
+  -- prints `appointments.salary_amount` and nothing else. A figure that could
+  -- print from here would be the University stating a salary it had not
+  -- decided for the person holding the letter.
+  -- ---------------------------------------------------------------------
+  indicative_salary_amount   numeric(14, 2)
+    check (indicative_salary_amount is null or indicative_salary_amount > 0),
+  indicative_salary_currency text
+    check (indicative_salary_currency is null or indicative_salary_currency in
+           ('USD', 'FCFA', 'EUR', 'GBP', 'NGN')),
+  indicative_salary_period   text
+    check (indicative_salary_period is null or indicative_salary_period in
+           ('hour', 'month', 'year', 'session', 'contract', 'stipend')),
+
+  -- A post the University no longer fills stays in the register. An
+  -- appointment made to it in 2026 must still name something in 2036.
+  active         boolean not null default true,
+
+  created_at     timestamptz not null default now()
+);
+
+create index if not exists positions_family_idx on positions (family, title);
+
+-- Added separately as well, so a database that already has `positions` from an
+-- earlier run of this file picks them up rather than silently lacking them.
+alter table positions
+  add column if not exists indicative_salary_amount numeric(14, 2),
+  add column if not exists indicative_salary_currency text,
+  add column if not exists indicative_salary_period text;
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'positions_indicative_salary_is_complete') then
+    alter table positions add constraint positions_indicative_salary_is_complete
+      check ((indicative_salary_amount is null)
+             or (indicative_salary_currency is not null and indicative_salary_period is not null));
+  end if;
+end $$;
+
+comment on column positions.indicative_salary_amount is
+  'What the post is usually worth. INDICATIVE ONLY — a letter prints appointments.salary_amount '
+  'and never this. It exists so the Vice-Chancellor can take a figure or type over it when '
+  'making the appointment, and so that the box may be left empty.';
+
+
+-- ===========================================================================
+-- 2. THE JOB DESCRIPTION
+-- ===========================================================================
+--
+-- VERSIONED, WITH ONE ACTIVE AT A TIME, ACTIVATED BY SOMEBODY OTHER THAN ITS
+-- AUTHOR. The same shape as 044's document templates, deliberately: a job
+-- description is a document the University issues and is held to, and a second
+-- arrangement for versioning one would be a second answer to "which wording was
+-- in force when this person was appointed".
+
+create table if not exists position_profiles (
+  id             uuid primary key default gen_random_uuid(),
+
+  -- EITHER a post's own profile, OR a family's. Exactly one, never both and
+  -- never neither — a profile belonging to nothing cannot be found, and one
+  -- belonging to both would be inherited by itself.
+  position_id    uuid references positions (id) on delete cascade,
+  family         text check (family in (
+                   'executive', 'academic-administration', 'faculty-leadership',
+                   'administration', 'student-services', 'ict',
+                   'academic-staff', 'other')),
+
+  version        integer not null default 1 check (version >= 1),
+
+  -- Why the post exists. The one section that is never inherited, because a
+  -- purpose shared between two posts means one of them is undefined.
+  job_purpose    text,
+
+  status         text not null default 'draft'
+                   check (status in ('draft', 'active', 'superseded')),
+
+  effective_from date,
+
+  created_by     uuid references auth.users (id) on delete set null,
+  activated_by   uuid references auth.users (id) on delete set null,
+  activated_at   timestamptz,
+
+  created_at     timestamptz not null default now(),
+  updated_at     timestamptz not null default now()
+);
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'position_profiles_belongs_to_one_thing') then
+    alter table position_profiles add constraint position_profiles_belongs_to_one_thing
+      check ((position_id is not null) <> (family is not null));
+  end if;
+
+  -- ---------------------------------------------------------------------
+  -- NOBODY ACTIVATES THE JOB DESCRIPTION THEY WROTE.
+  --
+  -- The same rule 044 applies to a letter template and 005 to a certificate
+  -- design, and it matters more here than in either: a job description says
+  -- what its holder may authorise and what they are assessed on. One person
+  -- writing and approving that alone is one person deciding the terms on
+  -- which somebody else can be dismissed.
+  -- ---------------------------------------------------------------------
+  if not exists (select 1 from pg_constraint where conname = 'position_profiles_second_pair_of_eyes') then
+    alter table position_profiles add constraint position_profiles_second_pair_of_eyes
+      check (activated_by is null or created_by is null or activated_by <> created_by);
+  end if;
+
+  if not exists (select 1 from pg_constraint where conname = 'position_profiles_activation_is_complete') then
+    alter table position_profiles add constraint position_profiles_activation_is_complete
+      check (status <> 'active' or (activated_by is not null and activated_at is not null));
+  end if;
+
+  -- AN ACTIVE PROFILE SAYS WHY THE POST EXISTS. A job description with no
+  -- purpose is a list of tasks, and the first question at any review is what
+  -- the post is for.
+  if not exists (select 1 from pg_constraint where conname = 'position_profiles_active_states_its_purpose') then
+    alter table position_profiles add constraint position_profiles_active_states_its_purpose
+      check (status <> 'active'
+             or (job_purpose is not null and length(btrim(job_purpose)) >= 40));
+  end if;
+end $$;
+
+-- ONE ACTIVE PROFILE PER POST, and one per family.
+create unique index if not exists position_profiles_one_active_per_post_idx
+  on position_profiles (position_id) where status = 'active' and position_id is not null;
+create unique index if not exists position_profiles_one_active_per_family_idx
+  on position_profiles (family) where status = 'active' and family is not null;
+
+create unique index if not exists position_profiles_version_per_post_idx
+  on position_profiles (position_id, version) where position_id is not null;
+create unique index if not exists position_profiles_version_per_family_idx
+  on position_profiles (family, version) where family is not null;
+
+
+-- ===========================================================================
+-- 3. THE CLAUSES
+-- ===========================================================================
+--
+-- ONE TABLE, NOT TWENTY COLUMNS. The University named about twenty sections and
+-- said most are "where applicable" — which as columns means twenty mostly-null
+-- fields, and no way to number the responsibilities within one. As rows, a
+-- section that does not apply simply has none, and the numbering the University
+-- asked for is the ordinal.
+
+create table if not exists position_profile_clauses (
+  id             uuid primary key default gen_random_uuid(),
+  profile_id     uuid not null references position_profiles (id) on delete cascade,
+
+  section        text not null check (section in (
+                   -- The responsibilities, in the University's own grouping.
+                   'key-responsibilities', 'institutional', 'academic',
+                   'administrative', 'financial', 'people-management',
+                   'student', 'research', 'ict', 'compliance',
+                   -- Decision-making authority, split three ways as asked. The
+                   -- split is the point: "may recommend" and "may authorise"
+                   -- are the difference between advice and a commitment.
+                   'may-authorize', 'may-recommend', 'must-obtain-approval',
+                   -- The rest.
+                   'reporting', 'performance-areas', 'performance-indicators',
+                   'qualifications', 'experience', 'technical-skills',
+                   'behavioural-competencies', 'working-relationships',
+                   'confidentiality', 'evaluation', 'amendment')),
+
+  ordinal        integer not null check (ordinal >= 1),
+  body           text not null check (length(btrim(body)) >= 10),
+
+  created_at     timestamptz not null default now(),
+
+  unique (profile_id, section, ordinal)
+);
+
+create index if not exists position_profile_clauses_profile_idx
+  on position_profile_clauses (profile_id, section, ordinal);
+
+
+-- ===========================================================================
+-- 4. THE INHERITANCE, RESOLVED IN ONE PLACE
+-- ===========================================================================
+--
+-- A POST'S JOB DESCRIPTION IS ITS FAMILY'S CLAUSES PLUS ITS OWN. Resolved here
+-- rather than in the application, because a screen and a letter working it out
+-- separately would be two answers to "what does this job description say", and
+-- the one that matters is whichever got printed.
+--
+-- A post's own clause in a section REPLACES the family's for that section. It
+-- does not merge: a Dean whose financial authority differs from the family's
+-- needs to state it, not to have it appended to a paragraph that contradicts it.
+
+create or replace view position_job_description
+with (security_invoker = true) as
+  with own_sections as (
+    select pp.position_id, c.section
+      from position_profiles pp
+      join position_profile_clauses c on c.profile_id = pp.id
+     where pp.position_id is not null and pp.status = 'active'
+     group by 1, 2
+  )
+  select p.id as position_id,
+         p.job_code,
+         p.title,
+         p.family,
+         c.section,
+         c.ordinal,
+         c.body,
+         case when pp.position_id is not null then 'position' else 'family' end as source
+    from positions p
+    join position_profiles pp
+      on pp.status = 'active'
+     and (pp.position_id = p.id or (pp.family = p.family and pp.position_id is null))
+    join position_profile_clauses c on c.profile_id = pp.id
+   -- A FAMILY CLAUSE IS DROPPED WHERE THE POST HAS ITS OWN IN THAT SECTION.
+   where pp.position_id is not null
+      or not exists (select 1 from own_sections o
+                      where o.position_id = p.id and o.section = c.section);
+
+-- What is still waiting to be read and approved. Named so the Readiness panel
+-- can ask, and so "we will approve them later" has somewhere to be counted.
+create or replace view position_profiles_unapproved
+with (security_invoker = true) as
+  select pp.id,
+         coalesce(p.title, 'Family: ' || pp.family) as what,
+         coalesce(p.job_code, pp.family) as code,
+         pp.version,
+         pp.created_at,
+         (select count(*) from position_profile_clauses c where c.profile_id = pp.id) as clauses
+    from position_profiles pp
+    left join positions p on p.id = pp.position_id
+   where pp.status = 'draft';
+
+
+-- ===========================================================================
+-- 5. AN APPOINTMENT NAMES THE POST AND THE WORDING IN FORCE
+-- ===========================================================================
+--
+-- THE DOROTHY RULE AGAIN, from 044. An appointment letter that referred to "the
+-- job description" and nothing more would be unreadable the moment the job
+-- description changed — and the appointee is holding the version they were
+-- given. `on delete restrict` means a profile that has been attached to an
+-- appointment can never be deleted.
+
+alter table appointments
+  add column if not exists position_id uuid references positions (id) on delete set null,
+  add column if not exists position_profile_id uuid references position_profiles (id)
+    on delete restrict;
+
+do $$
+begin
+  -- A JOB DESCRIPTION ATTACHED TO AN APPOINTMENT IS AN APPROVED ONE. This is
+  -- the door the draft state exists to close: a first draft written by one
+  -- person must not reach an appointee as the terms of their post.
+  if not exists (select 1 from pg_constraint where conname = 'appointments_jd_is_approved') then
+    alter table appointments add constraint appointments_jd_is_approved
+      check (position_profile_id is null or position_profile_approved(position_profile_id))
+      not valid;
+  end if;
+exception
+  when undefined_function then
+    -- The function is created below; on a first run the constraint is added
+    -- after it. Nothing to do here.
+    null;
+end $$;
+
+create or replace function position_profile_approved(p uuid) returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from position_profiles pp
+     where pp.id = p and pp.status in ('active', 'superseded')
+  );
+$$;
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'appointments_jd_is_approved') then
+    alter table appointments add constraint appointments_jd_is_approved
+      check (position_profile_id is null or position_profile_approved(position_profile_id))
+      not valid;
+  end if;
+end $$;
+
+
+-- ===========================================================================
+-- 6. WHO CAN READ AND WRITE
+-- ===========================================================================
+
+alter table positions enable row level security;
+alter table position_profiles enable row level security;
+alter table position_profile_clauses enable row level security;
+
+drop policy if exists positions_read on positions;
+create policy positions_read on positions
+  for select to authenticated using (true);
+
+drop policy if exists position_profiles_read on position_profiles;
+create policy position_profiles_read on position_profiles
+  for select to authenticated using (true);
+
+drop policy if exists position_profile_clauses_read on position_profile_clauses;
+create policy position_profile_clauses_read on position_profile_clauses
+  for select to authenticated using (true);
+
+
+-- ===========================================================================
+-- 7. THE REGISTER OF POSTS
+-- ===========================================================================
+--
+-- STRUCTURE ONLY. Title, code, family and reporting line — where the post sits,
+-- not what its holder does. The four faculties are the University's own, as
+-- stated on its site. Nothing else here asserts that a post is filled, and no
+-- person is named.
+
+insert into positions (job_code, title, family, reports_to, unit_name) values
+  -- Executive
+  ('EXE-VC',    'Vice-Chancellor',              'executive', 'The University Council', 'Office of the Vice-Chancellor'),
+  ('EXE-DVC',   'Deputy Vice-Chancellor',       'executive', 'Vice-Chancellor', 'Office of the Vice-Chancellor'),
+  ('EXE-PVC',   'Pro-Vice-Chancellor',          'executive', 'Vice-Chancellor', 'Office of the Vice-Chancellor'),
+  ('EXE-SEC',   'University Secretary',         'executive', 'Vice-Chancellor', 'Office of the Vice-Chancellor'),
+
+  -- Academic administration
+  ('ACA-REG',   'Registrar',                    'academic-administration', 'Vice-Chancellor', 'Registry'),
+  ('ACA-DREG',  'Deputy Registrar',             'academic-administration', 'Registrar', 'Registry'),
+  ('ACA-DAA',   'Director of Academic Affairs', 'academic-administration', 'Vice-Chancellor', 'Academic Affairs'),
+  ('ACA-DADM',  'Director of Admissions',       'academic-administration', 'Registrar', 'Admissions'),
+  ('ACA-DEXR',  'Director of Examinations and Records', 'academic-administration', 'Registrar', 'Examinations and Records'),
+  ('ACA-DGRAD', 'Dean of Graduate Studies',     'academic-administration', 'Director of Academic Affairs', 'Graduate Studies'),
+  ('ACA-DRES',  'Director of Research',         'academic-administration', 'Vice-Chancellor', 'Research'),
+  ('ACA-DQA',   'Director of Quality Assurance','academic-administration', 'Vice-Chancellor', 'Quality Assurance'),
+
+  -- Faculties. The four are the University's own.
+  ('FAC-DTHE',  'Dean, Faculty of Theology',    'faculty-leadership', 'Director of Academic Affairs', 'Faculty of Theology'),
+  ('FAC-DENG',  'Dean, Faculty of Engineering and Technology', 'faculty-leadership', 'Director of Academic Affairs', 'Faculty of Engineering and Technology'),
+  ('FAC-DBMS',  'Dean, Faculty of Business and Management Science', 'faculty-leadership', 'Director of Academic Affairs', 'Faculty of Business and Management Science'),
+  ('FAC-DEDU',  'Dean, Faculty of Education',   'faculty-leadership', 'Director of Academic Affairs', 'Faculty of Education'),
+  ('FAC-HOD',   'Head of Department',           'faculty-leadership', 'Dean of Faculty', null),
+  ('FAC-PC',    'Programme Coordinator',        'faculty-leadership', 'Head of Department', null),
+  ('FAC-ADMIN', 'Faculty Administrator',        'faculty-leadership', 'Dean of Faculty', null),
+
+  -- Administration
+  ('ADM-FIN',   'Finance Director',             'administration', 'Vice-Chancellor', 'Finance'),
+  ('ADM-HR',    'Human Resources Director',     'administration', 'Vice-Chancellor', 'Human Resources'),
+  ('ADM-PROC',  'Procurement Director',         'administration', 'Vice-Chancellor', 'Administration'),
+  ('ADM-DIR',   'Administrative Director',      'administration', 'Vice-Chancellor', 'Administration'),
+
+  -- Student services
+  ('STU-DSA',   'Director of Student Affairs',  'student-services', 'Vice-Chancellor', 'Student Affairs'),
+  ('STU-INTL',  'International Relations Director', 'student-services', 'Vice-Chancellor', 'International Relations'),
+  ('STU-LIB',   'University Librarian',         'student-services', 'Director of Academic Affairs', 'Library'),
+  ('STU-CAR',   'Career Services Director',     'student-services', 'Director of Student Affairs', 'Student Affairs'),
+  ('STU-ALU',   'Alumni Relations Officer',     'student-services', 'Director of Student Affairs', 'Alumni Relations'),
+
+  -- ICT
+  ('ICT-DIR',   'Director of ICT',              'ict', 'Vice-Chancellor', 'ICT'),
+  ('ICT-SYS',   'Systems Administrator',        'ict', 'Director of ICT', 'ICT'),
+  ('ICT-SUP',   'IT Support Officer',           'ict', 'Director of ICT', 'ICT'),
+  ('ICT-SEC',   'Information Security Officer', 'ict', 'Director of ICT', 'ICT'),
+
+  -- Academic staff
+  ('ACS-PROF',  'Professor',                    'academic-staff', 'Head of Department', null),
+  ('ACS-ASSOC', 'Associate Professor',          'academic-staff', 'Head of Department', null),
+  ('ACS-SLEC',  'Senior Lecturer',              'academic-staff', 'Head of Department', null),
+  ('ACS-LEC',   'Lecturer',                     'academic-staff', 'Head of Department', null),
+  ('ACS-ALEC',  'Assistant Lecturer',           'academic-staff', 'Head of Department', null),
+  ('ACS-RF',    'Research Fellow',              'academic-staff', 'Director of Research', 'Research'),
+
+  -- Other
+  ('OTH-CHAP',  'Director of Chaplaincy',       'other', 'Vice-Chancellor', 'Chaplaincy'),
+  ('OTH-COMM',  'Communications and Public Relations Director', 'other', 'Vice-Chancellor', 'Communications'),
+  ('OTH-EXO',   'Examination Officer',          'other', 'Director of Examinations and Records', 'Examinations and Records'),
+  ('OTH-ADMO',  'Admissions Officer',           'other', 'Director of Admissions', 'Admissions'),
+  ('OTH-REGO',  'Registry Officer',             'other', 'Registrar', 'Registry')
+on conflict (job_code) do nothing;
+
+
+-- ===========================================================================
+-- 8. THE FAMILY JOB DESCRIPTIONS — DRAFTS, EVERY ONE
+-- ===========================================================================
+--
+-- WRITTEN TO BE EDITED. These are a starting point for the University, not its
+-- policy, and every one is `draft` so that none of them can reach an appointee
+-- until somebody has read it and somebody else has activated it.
+
+do $$
+declare
+  fam text;
+  pid uuid;
+begin
+  foreach fam in array array['executive', 'academic-administration', 'faculty-leadership',
+                             'administration', 'student-services', 'ict',
+                             'academic-staff', 'other']
+  loop
+    if exists (select 1 from position_profiles where family = fam and position_id is null) then
+      continue;
+    end if;
+
+    insert into position_profiles (family, version, status, job_purpose)
+    values (fam, 1, 'draft',
+      'DRAFT FOR THE UNIVERSITY''S APPROVAL. This profile states the duties common to every '
+      || 'post in the ' || replace(fam, '-', ' ') || ' family. It has not been approved and '
+      || 'must not be attached to an appointment until it has been read and activated.')
+    returning id into pid;
+
+    -- ---- The clauses every post in the University carries -----------------
+    insert into position_profile_clauses (profile_id, section, ordinal, body) values
+      (pid, 'institutional', 1,
+       'Uphold the mission, statutes and regulations of ICOF Global University, and conduct '
+       'the duties of the post in accordance with the University''s policies in force from '
+       'time to time.'),
+      (pid, 'institutional', 2,
+       'Represent the University professionally in dealings with students, colleagues, '
+       'partner institutions and the public.'),
+      (pid, 'compliance', 1,
+       'Comply with the University''s policies on conduct, conflict of interest, data '
+       'protection and safeguarding, and report any breach that comes to notice.'),
+      (pid, 'confidentiality', 1,
+       'Treat student records, staff records, examination material and the University''s '
+       'commercial and legal affairs as confidential, during the appointment and after it '
+       'ends.'),
+      (pid, 'reporting', 1,
+       'Report to the officer named in the letter of appointment, and provide such written '
+       'reports as that officer or the Vice-Chancellor may require.'),
+      (pid, 'evaluation', 1,
+       'Performance is reviewed annually against the key performance areas set out in this '
+       'job description, and at the end of any probationary period.'),
+      (pid, 'amendment', 1,
+       'This job description may be amended by the University after consultation with the '
+       'post-holder. An amended version is issued as a new version; the version in force at '
+       'the date of appointment remains on the record.'),
+      (pid, 'must-obtain-approval', 1,
+       'Any commitment of University funds, any public statement made on behalf of the '
+       'University, and any agreement with an external body require the prior approval of '
+       'the Vice-Chancellor or of the officer to whom that authority has been delegated in '
+       'writing.');
+
+    -- ---- And what distinguishes the family --------------------------------
+    if fam = 'academic-staff' then
+      insert into position_profile_clauses (profile_id, section, ordinal, body) values
+        (pid, 'academic', 1, 'Teach the courses allocated by the Head of Department, to the '
+         'syllabus approved for the programme, and keep the teaching materials current.'),
+        (pid, 'academic', 2, 'Set, invigilate and mark assessments in accordance with the '
+         'University''s examination regulations, and submit marks by the published deadline.'),
+        (pid, 'academic', 3, 'Supervise student projects, dissertations and theses as '
+         'allocated.'),
+        (pid, 'student', 1, 'Act as academic adviser to allocated students and be available '
+         'to them at published consultation times.'),
+        (pid, 'research', 1, 'Pursue an active programme of research or scholarship '
+         'appropriate to the discipline and the grade of the post, and publish its results.'),
+        (pid, 'performance-areas', 1, 'Teaching quality, assessment turnaround, student '
+         'progression, research output, and contribution to the department.'),
+        (pid, 'qualifications', 1, 'A qualification in the discipline appropriate to the '
+         'grade of the post, as set out in the University''s conditions of service.'),
+        (pid, 'may-recommend', 1, 'Recommend marks, progression decisions and programme '
+         'changes to the Head of Department.');
+
+    elsif fam = 'faculty-leadership' then
+      insert into position_profile_clauses (profile_id, section, ordinal, body) values
+        (pid, 'academic', 1, 'Lead the academic work of the faculty or department, including '
+         'curriculum design, programme review and the maintenance of academic standards.'),
+        (pid, 'people-management', 1, 'Allocate teaching, supervise the academic staff of the '
+         'unit, and conduct their annual performance review.'),
+        (pid, 'administrative', 1, 'Chair the meetings of the unit, maintain its records, and '
+         'report to the Director of Academic Affairs.'),
+        (pid, 'student', 1, 'Deal with student academic matters within the unit, including '
+         'appeals at first instance.'),
+        (pid, 'may-authorize', 1, 'Approve course allocations and the unit''s teaching '
+         'timetable.'),
+        (pid, 'may-recommend', 1, 'Recommend appointments, promotions and programme approvals '
+         'to the Vice-Chancellor through the Director of Academic Affairs.'),
+        (pid, 'performance-areas', 1, 'Academic standards, student progression and '
+         'completion, staff development, and the timely conduct of the unit''s business.');
+
+    elsif fam = 'executive' then
+      insert into position_profile_clauses (profile_id, section, ordinal, body) values
+        (pid, 'institutional', 3, 'Exercise the authority conferred by the statutes of the '
+         'University and by the Council, and account to the Council for its exercise.'),
+        (pid, 'people-management', 1, 'Lead the officers of the University and oversee the '
+         'performance of the offices reporting to the post.'),
+        (pid, 'financial', 1, 'Oversee the financial position of the University within the '
+         'budget approved by the Council.'),
+        (pid, 'may-authorize', 1, 'Authorise appointments, official correspondence and '
+         'institutional decisions within the authority conferred by the statutes.'),
+        (pid, 'performance-areas', 1, 'Institutional standing, academic quality, financial '
+         'sustainability, and governance.');
+
+    elsif fam = 'academic-administration' then
+      insert into position_profile_clauses (profile_id, section, ordinal, body) values
+        (pid, 'administrative', 1, 'Direct the office named in the letter of appointment and '
+         'ensure its statutory and regulatory obligations are met.'),
+        (pid, 'academic', 1, 'Maintain the integrity of the University''s academic records, '
+         'admissions decisions and examination processes within the remit of the office.'),
+        (pid, 'people-management', 1, 'Supervise the staff of the office and conduct their '
+         'annual performance review.'),
+        (pid, 'may-authorize', 1, 'Authorise the routine business of the office within '
+         'delegated limits set in writing by the Vice-Chancellor.'),
+        (pid, 'performance-areas', 1, 'Accuracy and completeness of records, turnaround of '
+         'the office''s business, and regulatory compliance.');
+
+    elsif fam = 'administration' then
+      insert into position_profile_clauses (profile_id, section, ordinal, body) values
+        (pid, 'administrative', 1, 'Direct the function named in the letter of appointment and '
+         'maintain its policies, procedures and records.'),
+        (pid, 'financial', 1, 'Manage the budget of the function, and account for expenditure '
+         'against it.'),
+        (pid, 'people-management', 1, 'Supervise the staff of the function and conduct their '
+         'annual performance review.'),
+        (pid, 'performance-areas', 1, 'Service standards, budget management, compliance, and '
+         'the timely conduct of the function''s business.');
+
+    elsif fam = 'student-services' then
+      insert into position_profile_clauses (profile_id, section, ordinal, body) values
+        (pid, 'student', 1, 'Provide the services of the office to students, and maintain the '
+         'standards published in the student handbook.'),
+        (pid, 'administrative', 1, 'Maintain the records of the office and report on its '
+         'activity to the officer named in the letter of appointment.'),
+        (pid, 'performance-areas', 1, 'Student satisfaction, responsiveness, and the accuracy '
+         'of the office''s records.');
+
+    elsif fam = 'ict' then
+      insert into position_profile_clauses (profile_id, section, ordinal, body) values
+        (pid, 'ict', 1, 'Maintain the availability, integrity and security of the University''s '
+         'information systems.'),
+        (pid, 'ict', 2, 'Administer access to those systems in accordance with the '
+         'University''s role matrix, and grant no access that has not been authorised.'),
+        (pid, 'compliance', 2, 'Maintain the audit trails the University relies on, and take '
+         'no action that alters or removes a record of what a system has done.'),
+        (pid, 'performance-areas', 1, 'System availability, security posture, backup and '
+         'recovery, and responsiveness to support requests.');
+
+    else
+      insert into position_profile_clauses (profile_id, section, ordinal, body) values
+        (pid, 'administrative', 1, 'Carry out the duties of the office as directed by the '
+         'officer named in the letter of appointment.'),
+        (pid, 'performance-areas', 1, 'Accuracy, timeliness, and the standards set for the '
+         'office.');
+    end if;
+  end loop;
+end $$;
+
+
+-- ===========================================================================
+-- 9. PERFORMING THE RULES
+-- ===========================================================================
+
+do $$
+declare
+  refused boolean;
+  someone uuid;
+  other uuid;
+  fam_id uuid;
+  pos_id uuid;
+  own_id uuid;
+  n integer;
+begin
+  select id into someone from auth.users limit 1;
+  select id into other from auth.users where id <> someone limit 1;
+  if someone is null or other is null then
+    raise notice '048: fewer than two accounts, so the rules could not be exercised';
+    return;
+  end if;
+
+  begin
+    select id into pos_id from positions where job_code = 'ACS-LEC';
+    select id into fam_id from position_profiles
+      where family = 'academic-staff' and position_id is null;
+
+    -- ---- A PROFILE BELONGS TO A POST OR A FAMILY, NEVER BOTH ---------------
+    refused := false;
+    begin
+      insert into position_profiles (position_id, family, status)
+      values (pos_id, 'academic-staff', 'draft');
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '048 FAILED: a profile belonged to a post and a family at once, so it '
+                      'is inherited by itself';
+    end if;
+
+    refused := false;
+    begin
+      insert into position_profiles (status) values ('draft');
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '048 FAILED: a profile belonging to nothing was accepted';
+    end if;
+
+    -- ---- NOBODY ACTIVATES WHAT THEY WROTE ---------------------------------
+    update position_profiles set created_by = someone where id = fam_id;
+    refused := false;
+    begin
+      update position_profiles
+         set status = 'active', activated_by = someone, activated_at = now()
+       where id = fam_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '048 FAILED: the author of a job description activated it alone, so one '
+                      'person set the terms on which somebody else can be dismissed';
+    end if;
+
+    -- ---- AND AN ACTIVE ONE SAYS WHY THE POST EXISTS ------------------------
+    refused := false;
+    begin
+      update position_profiles
+         set job_purpose = 'Teaching.', status = 'active',
+             activated_by = other, activated_at = now()
+       where id = fam_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '048 FAILED: a job description was approved with no statement of what '
+                      'the post is for';
+    end if;
+
+    update position_profiles
+       set status = 'active', activated_by = other, activated_at = now()
+     where id = fam_id;
+
+    -- ---- THE POST INHERITS THE FAMILY'S CLAUSES ----------------------------
+    select count(*) into n from position_job_description where position_id = pos_id;
+    if n = 0 then
+      raise exception '048 FAILED: a Lecturer inherited nothing from the academic staff family';
+    end if;
+    if not exists (select 1 from position_job_description
+                    where position_id = pos_id and source = 'family') then
+      raise exception '048 FAILED: nothing in the Lecturer''s job description came from the '
+                      'family, so the inheritance is not working';
+    end if;
+
+    -- ---- AND ITS OWN CLAUSE REPLACES THE FAMILY'S FOR THAT SECTION ---------
+    insert into position_profiles (position_id, version, status, job_purpose,
+                                   created_by, activated_by, activated_at)
+    values (pos_id, 1, 'active',
+            'To teach the courses of the department to the standard the University requires, '
+            'and to supervise the students allocated to the post.',
+            someone, other, now())
+    returning id into own_id;
+    insert into position_profile_clauses (profile_id, section, ordinal, body)
+    values (own_id, 'research', 1,
+            'Pursue research in the discipline as agreed annually with the Head of Department.');
+
+    if exists (select 1 from position_job_description
+                where position_id = pos_id and section = 'research' and source = 'family') then
+      raise exception '048 FAILED: a post with its own research clause still inherited the '
+                      'family''s, so the job description says two things about one duty';
+    end if;
+    -- …while the sections it did not restate still come from the family.
+    if not exists (select 1 from position_job_description
+                    where position_id = pos_id and section = 'confidentiality'
+                      and source = 'family') then
+      raise exception '048 FAILED: stating one section lost the rest of the family''s clauses';
+    end if;
+
+    -- ---- A DRAFT JOB DESCRIPTION CANNOT REACH AN APPOINTEE -----------------
+    -- The door the draft state exists to close, and 048 seeds everything as a
+    -- draft, so this is the guard that keeps the seeded wording off a letter.
+    insert into position_profiles (position_id, version, status, created_by)
+    values (pos_id, 2, 'draft', someone)
+    returning id into own_id;
+
+    -- (validate so the NOT VALID constraint applies to what follows)
+    alter table appointments validate constraint appointments_jd_is_approved;
+
+    refused := false;
+    begin
+      insert into appointments
+        (full_name, position_title, employment_type, start_date, terms, status,
+         drafted_by, position_id, position_profile_id)
+      values ('A Specimen Appointee', 'Lecturer', 'permanent', current_date + 30,
+              'The terms.', 'draft', someone, pos_id, own_id);
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '048 FAILED: an unapproved job description was attached to an '
+                      'appointment, so a first draft reached an appointee as the terms of '
+                      'their post';
+    end if;
+
+    -- ---- AN INDICATIVE FIGURE IS A COMPLETE ONE OR NONE AT ALL ------------
+    -- A number with no currency beside it is the thing that ends up on a
+    -- letter as "2000" and is read as dollars by one officer and francs by
+    -- the next.
+    refused := false;
+    begin
+      update positions set indicative_salary_amount = 2000 where id = pos_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '048 FAILED: a post carries an indicative figure in no currency';
+    end if;
+    update positions
+       set indicative_salary_amount = 2000, indicative_salary_currency = 'USD',
+           indicative_salary_period = 'month'
+     where id = pos_id;
+
+    -- …and the appointment still carries no salary, because an indicative
+    -- figure is not a decision about anybody's pay.
+    if exists (select 1 from appointments where position_id = pos_id
+                 and salary_amount = 2000) then
+      raise exception '048 FAILED: an indicative figure reached an appointment by itself';
+    end if;
+
+    raise exception 'PROOF_ROLLBACK';
+  exception
+    when others then
+      if sqlerrm <> 'PROOF_ROLLBACK' then raise; end if;
+  end;
+
+  raise notice '048 OK: an indicative salary on a post is complete or absent, and never '
+               'reaches a letter by itself';
+  raise notice '048 OK: a profile belongs to a post or a family and never to both or neither';
+  raise notice '048 OK: nobody activates the job description they wrote, and an approved one '
+               'states what the post is for';
+  raise notice '048 OK: a post inherits its family''s clauses, and its own clause replaces '
+               'the family''s for that section without losing the rest';
+  raise notice '048 OK: an unapproved job description cannot be attached to an appointment';
+end $$;
+
+
+-- ===========================================================================
+-- 10. VERIFY — READ THIS OUTPUT
+-- ===========================================================================
+
+-- The establishment, by family.
+select family, count(*) as posts from positions group by 1 order by 1;
+
+-- ---------------------------------------------------------------------------
+-- EVERYTHING WAITING TO BE READ AND APPROVED. This should be eight rows — the
+-- eight family profiles — and every one of them is a draft written to be
+-- edited, not the University's policy.
+-- ---------------------------------------------------------------------------
+select what, code, version, clauses from position_profiles_unapproved order by what;
+
+
+-- ===========================================================================
+-- ===========================================================================
+--
+--   049_verification_signatures_and_the_written_letter.sql
+--
+-- ===========================================================================
+-- ===========================================================================
+
+-- ===========================================================================
+-- 049 — VERIFICATION, SIGNATURES, AND THE LETTER AS IT WAS WRITTEN
+-- ===========================================================================
+--
+-- ---------------------------------------------------------------------------
+-- WHAT CHANGES THE MOMENT THIS RUNS
+-- ---------------------------------------------------------------------------
+--
+-- 1. AN OFFICIAL LETTER CAN BE CHECKED BY A STRANGER. 042 built the
+--    verification view for appointment letters; correspondence had none, so a
+--    ministry holding a letter from the Vice-Chancellor could scan its QR code
+--    and be told nothing. `correspondence_verification` answers for it.
+--
+-- 2. A SIGNATURE IMAGE IS A CONTROLLED FEATURE, NOT A FILE ON A PAGE. The
+--    University asked that an electronic signature be explicit rather than an
+--    image pasted onto every document. `signature_specimens` holds one per
+--    officer, switched off until somebody OTHER than its owner enables it, and
+--    every letter records which mode it was signed in. An officer's signature
+--    that anybody can attach to anything is a forgery kit.
+--
+-- 3. THE VICE-CHANCELLOR CAN WRITE A LETTER RATHER THAN TYPE ONE. Official
+--    correspondence gains `body_format`, so a body can be plain text or the
+--    sanitised HTML a rich-text editor produces. Plain stays the default and
+--    every existing letter is plain.
+--
+-- 4. TWO KINDS OF LETTER THE UNIVERSITY NAMED AND THE REGISTER DID NOT HAVE:
+--    an Official Response and a Special Assignment.
+--
+-- ---------------------------------------------------------------------------
+-- THE ONE THING TO READ TWICE
+-- ---------------------------------------------------------------------------
+--
+-- THE PUBLIC VERIFICATION OF A LETTER NAMES NOBODY. An appointment letter's
+-- view already carries the holder and the post, because that is what a bank or
+-- an embassy is checking. Correspondence is different: a warning letter and a
+-- disciplinary directive are correspondence, and a verification page that
+-- printed "To: [name], Subject: Final written warning" would publish a
+-- disciplinary record to anybody who scanned the code.
+--
+-- So `correspondence_verification` carries the reference, the kind, the office,
+-- the date, the version and whether it stands — and no recipient, no subject
+-- and no body. It answers "is this a genuine, current letter of the University"
+-- and refuses to answer anything else.
+-- ===========================================================================
+
+
+-- ===========================================================================
+-- 1. THE TWO MISSING KINDS
+-- ===========================================================================
+
+do $$
+declare
+  con text;
+begin
+  select conname into con from pg_constraint
+   where conrelid = 'correspondence'::regclass and contype = 'c'
+     and pg_get_constraintdef(oid) like '%commendation%'
+     and pg_get_constraintdef(oid) like '%directive%'
+   limit 1;
+
+  if con is not null then
+    execute format('alter table correspondence drop constraint %I', con);
+  end if;
+
+  if not exists (select 1 from pg_constraint where conname = 'correspondence_kind_known') then
+    alter table correspondence add constraint correspondence_kind_known
+      check (kind in (
+        'general', 'appointment', 'reappointment', 'promotion', 'invitation',
+        'commendation', 'recommendation', 'government', 'university',
+        'partnership', 'directive', 'warning', 'authorization',
+        'official-response', 'special-assignment', 'special', 'other'));
+  end if;
+end $$;
+
+
+-- ===========================================================================
+-- 2. THE LETTER AS IT WAS WRITTEN
+-- ===========================================================================
+--
+-- SANITISED BEFORE IT ARRIVES, NOT WHEN IT IS DISPLAYED. The application holds
+-- a closed allow-list of tags and strips everything else on the way in, so what
+-- is stored is what can safely be printed. Sanitising on the way out would mean
+-- the archived bytes and the printed bytes are different documents, and the
+-- hash then proves the wrong one.
+--
+-- A NOTE ON WHY THIS IS NOT A FREE FIELD. The body goes onto a sealed document.
+-- Script, style, iframe, event handlers and external references are refused by
+-- the application, and this constraint is the database saying the same thing
+-- for a caller that forgets — a crude check, deliberately, because a
+-- sophisticated one in SQL would be a second sanitiser to keep in step.
+
+alter table correspondence
+  add column if not exists body_format text not null default 'plain';
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'correspondence_body_format_known') then
+    alter table correspondence add constraint correspondence_body_format_known
+      check (body_format in ('plain', 'html'));
+  end if;
+
+  if not exists (select 1 from pg_constraint where conname = 'correspondence_body_carries_no_script') then
+    alter table correspondence add constraint correspondence_body_carries_no_script
+      check (
+        body_format <> 'html'
+        -- `\y`, NOT `\b`. Postgres regular expressions read `\b` as a
+        -- backspace character, not a word boundary — so the first version of
+        -- this constraint matched nothing at all and the proof below walked a
+        -- script straight into the body of an official letter. It took one run
+        -- to find, which is the argument for performing a guard rather than
+        -- reading it.
+        or (body !~* '<\s*(script|style|iframe|object|embed|form|link|meta)\y'
+            and body !~* '\son[a-z]+\s*=')
+      );
+  end if;
+end $$;
+
+comment on column correspondence.body_format is
+  'plain or html. HTML is what a rich-text editor produced, sanitised by the application '
+  'against a closed allow-list BEFORE it was stored — so the archived bytes and the printed '
+  'bytes are the same document and the hash proves the one that went out.';
+
+
+-- ===========================================================================
+-- 3. SIGNATURES — AN EXPLICIT, CONTROLLED FEATURE
+-- ===========================================================================
+--
+-- The University's instruction: "make it an explicit controlled feature rather
+-- than simply placing an image of a signature onto every document."
+--
+-- So a specimen is off until switched on, switched on by somebody other than
+-- the person whose signature it is, and usable only by that person. An
+-- officer's signature image that any administrator can attach to any document
+-- is not a signature; it is a forgery kit with an audit trail.
+
+create table if not exists signature_specimens (
+  id            uuid primary key default gen_random_uuid(),
+
+  -- WHOSE SIGNATURE IT IS. One per person: two specimens for one officer means
+  -- two signatures on the University's documents and no way to say which is
+  -- theirs.
+  owner_id      uuid not null unique references auth.users (id) on delete cascade,
+  owner_name    text not null check (length(btrim(owner_name)) >= 3),
+  owner_role    text not null check (length(btrim(owner_role)) >= 2),
+
+  -- A data URI. Held in the row rather than in storage because it is small,
+  -- because it must not be fetchable by URL, and because a signature reachable
+  -- over HTTP is a signature anybody can download.
+  image         text check (image is null or image like 'data:image/%'),
+
+  -- OFF UNTIL SWITCHED ON.
+  enabled       boolean not null default false,
+  enabled_by    uuid references auth.users (id) on delete set null,
+  enabled_at    timestamptz,
+  -- Why the University permitted it. A specimen signature is a standing
+  -- authority to sign in somebody's name, and one nobody explained is one
+  -- nobody can withdraw with confidence.
+  authority     text,
+
+  revoked_at    timestamptz,
+  revoked_reason text,
+
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now()
+);
+
+do $$
+begin
+  -- NOBODY ENABLES THEIR OWN. The same second pair of eyes this system requires
+  -- of a certificate design, a letter template and a job description — and here
+  -- the thing being approved is the ability to reproduce somebody's signature.
+  if not exists (select 1 from pg_constraint where conname = 'signature_specimens_second_pair_of_eyes') then
+    alter table signature_specimens add constraint signature_specimens_second_pair_of_eyes
+      check (enabled_by is null or enabled_by <> owner_id);
+  end if;
+
+  -- AN ENABLED SPECIMEN NAMES WHO ENABLED IT, WHEN, ON WHAT AUTHORITY, AND HAS
+  -- AN IMAGE TO USE.
+  if not exists (select 1 from pg_constraint where conname = 'signature_specimens_enabling_is_complete') then
+    alter table signature_specimens add constraint signature_specimens_enabling_is_complete
+      check (
+        not enabled
+        or (enabled_by is not null and enabled_at is not null and image is not null
+            and authority is not null and length(btrim(authority)) >= 20)
+      );
+  end if;
+
+  -- A REVOKED SPECIMEN IS NOT ENABLED.
+  if not exists (select 1 from pg_constraint where conname = 'signature_specimens_revoked_is_off') then
+    alter table signature_specimens add constraint signature_specimens_revoked_is_off
+      check (revoked_at is null or not enabled);
+  end if;
+end $$;
+
+alter table signature_specimens enable row level security;
+
+-- NOBODY READS SOMEBODY ELSE'S SPECIMEN. Not HR, not an administrator. The
+-- letter generator runs with the service role and reads it for the person who
+-- is signing; nothing else has a reason to see the image at all.
+drop policy if exists signature_specimens_own on signature_specimens;
+create policy signature_specimens_own on signature_specimens
+  for select to authenticated using (owner_id = auth.uid());
+
+-- ---------------------------------------------------------------------------
+-- AND EVERY LETTER RECORDS HOW IT WAS SIGNED
+-- ---------------------------------------------------------------------------
+--
+-- "Signed by [name] / Title / Authorization date" — the three the University
+-- asked to be recorded, plus the one that matters afterwards: whether the
+-- document carries a reproduced signature or a typed name over a rule.
+
+alter table appointment_letters
+  add column if not exists signature_mode text not null default 'typed',
+  add column if not exists signature_specimen_id uuid references signature_specimens (id)
+    on delete restrict,
+  add column if not exists authorized_on date;
+
+alter table correspondence_letters
+  add column if not exists signature_mode text not null default 'typed',
+  add column if not exists signature_specimen_id uuid references signature_specimens (id)
+    on delete restrict,
+  add column if not exists authorized_on date;
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'appointment_letters_signature_mode_known') then
+    alter table appointment_letters add constraint appointment_letters_signature_mode_known
+      check (signature_mode in ('typed', 'specimen')
+             and (signature_mode <> 'specimen' or signature_specimen_id is not null));
+  end if;
+
+  if not exists (select 1 from pg_constraint where conname = 'correspondence_letters_signature_mode_known') then
+    alter table correspondence_letters add constraint correspondence_letters_signature_mode_known
+      check (signature_mode in ('typed', 'specimen')
+             and (signature_mode <> 'specimen' or signature_specimen_id is not null));
+  end if;
+end $$;
+
+
+-- ===========================================================================
+-- 4. WHAT A STRANGER IS TOLD
+-- ===========================================================================
+--
+-- THIS VIEW NAMES NOBODY, and that is the whole design of it. A warning letter
+-- and a disciplinary directive are correspondence. A verification page printing
+-- "To: [name] — Subject: Final written warning" would publish a disciplinary
+-- record to anybody who scanned the code off a document lying on a desk.
+--
+-- It answers one question: is this a genuine, current letter of the University.
+
+-- ---------------------------------------------------------------------------
+-- DROPPED FIRST, NOT REPLACED. `create or replace view` cannot remove a column,
+-- and on the SECOND run of RUN-ALL 042 recreates the appointment view in its
+-- own narrower shape and then this file tries to widen it again — which
+-- Postgres refuses with "cannot drop columns from view". The first pass was
+-- clean and the second was not, which is exactly what running it twice is for.
+-- ---------------------------------------------------------------------------
+drop view if exists correspondence_verification;
+
+create view correspondence_verification
+with (security_invoker = false) as
+select l.reference,
+       'Official Correspondence'::text as document,
+       -- The KIND is safe and useful — a reader is checking a letter they are
+       -- already holding, and it tells them the register agrees with the
+       -- letterhead in front of them.
+       c.kind,
+       c.originating_office            as office,
+       l.issued_on                     as issued,
+       l.version,
+       case
+         -- A SUPERSEDED LETTER IS NOT A FORGERY, and saying so would be wrong
+         -- in a way that costs somebody a contract. It was genuine and has
+         -- been replaced.
+         when l.superseded_at is not null then 'Superseded'
+         when c.status = 'withdrawn' then 'Withdrawn'
+         when c.status <> 'issued' then 'Not issued'
+         else 'Valid'
+       end                             as status,
+       (select max(v.version) from correspondence_letters v
+         where v.correspondence_id = l.correspondence_id) as current_version,
+       l.signature_mode
+  from correspondence_letters l
+  join correspondence c on c.id = l.correspondence_id;
+
+comment on view correspondence_verification is
+  'What the QR code on an official letter resolves to. Carries no recipient, no subject and '
+  'no body: a warning letter is correspondence, and a verification page that named the '
+  'recipient would publish a disciplinary record to anybody who scanned the code.';
+
+grant select on correspondence_verification to anon, authenticated, service_role;
+
+-- The appointment view gains the signature mode too, so a reader can be told
+-- whether the document they hold carries a reproduced signature.
+drop view if exists appointment_letter_verification;
+
+create view appointment_letter_verification
+with (security_invoker = false) as
+select l.reference,
+       'Appointment Letter'::text             as document,
+       a.full_name                            as holder,
+       a.position_title                       as position,
+       coalesce(a.unit_name, '')              as unit,
+       l.issued_on                            as issued,
+       l.version,
+       case
+         when l.superseded_at is not null then 'Superseded'
+         when a.status in ('withdrawn', 'declined') then 'Not in force'
+         when a.status = 'ended' then 'Ended'
+         else 'Valid'
+       end                                    as status,
+       (select max(v.version) from appointment_letters v
+         where v.appointment_id = l.appointment_id) as current_version,
+       l.signature_mode
+  from appointment_letters l
+  join appointments a on a.id = l.appointment_id;
+
+grant select on appointment_letter_verification to anon, authenticated, service_role;
+
+
+-- ===========================================================================
+-- 5. PERFORMING THE RULES
+-- ===========================================================================
+
+do $$
+declare
+  refused boolean;
+  someone uuid;
+  other uuid;
+  c_id uuid;
+  s_id uuid;
+  found text;
+begin
+  select id into someone from auth.users limit 1;
+  select id into other from auth.users where id <> someone limit 1;
+  if someone is null or other is null then
+    raise notice '049: fewer than two accounts, so the rules could not be exercised';
+    return;
+  end if;
+
+  begin
+    -- ---- THE TWO NEW KINDS ARE FILEABLE -----------------------------------
+    insert into correspondence (kind, subject, body, recipient_name, initiated_by, status)
+    values ('official-response', 'Response to the Ministry',
+            'The University responds to the correspondence received last month as follows.',
+            'The Ministry of Higher Education', someone, 'draft')
+    returning id into c_id;
+
+    insert into correspondence (kind, subject, body, recipient_name, initiated_by, status)
+    values ('special-assignment', 'Special assignment',
+            'You are assigned to the task described below for the period stated.',
+            'A Specimen Officer', someone, 'draft');
+
+    -- ---- A RICH-TEXT BODY CANNOT CARRY A SCRIPT ---------------------------
+    -- The body goes onto a sealed document. This is the database saying what
+    -- the application's sanitiser says, for the caller that forgets.
+    refused := false;
+    begin
+      update correspondence
+         set body_format = 'html',
+             body = '<p>Dear Minister,</p><script>alert(1)</script><p>Yours sincerely.</p>'
+       where id = c_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '049 FAILED: a script reached the body of an official letter';
+    end if;
+
+    refused := false;
+    begin
+      update correspondence
+         set body_format = 'html',
+             body = '<p onclick="steal()">Dear Minister, the University writes as follows.</p>'
+       where id = c_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '049 FAILED: an event handler reached the body of an official letter';
+    end if;
+
+    -- …and ordinary marked-up prose is fine.
+    update correspondence
+       set body_format = 'html',
+           body = '<p>Dear Minister,</p><p>The University writes to confirm the '
+                  || 'arrangements discussed, and <strong>accepts</strong> the timetable '
+                  || 'proposed.</p>'
+     where id = c_id;
+
+    -- ---- NOBODY ENABLES THEIR OWN SIGNATURE -------------------------------
+    insert into signature_specimens (owner_id, owner_name, owner_role, image)
+    values (someone, 'The Vice-Chancellor', 'Vice-Chancellor',
+            'data:image/png;base64,iVBORw0KGgo=')
+    returning id into s_id;
+
+    refused := false;
+    begin
+      update signature_specimens
+         set enabled = true, enabled_by = someone, enabled_at = now(),
+             authority = 'Approved by the University Council on the date stated.'
+       where id = s_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '049 FAILED: an officer switched on the reproduction of their own '
+                      'signature, so one person created a standing authority to sign in '
+                      'their own name';
+    end if;
+
+    -- ---- AND ENABLING ONE SAYS ON WHAT AUTHORITY --------------------------
+    refused := false;
+    begin
+      update signature_specimens
+         set enabled = true, enabled_by = other, enabled_at = now()
+       where id = s_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '049 FAILED: a specimen signature was switched on with no authority '
+                      'stated, so nobody can say on what basis it may be withdrawn';
+    end if;
+
+    update signature_specimens
+       set enabled = true, enabled_by = other, enabled_at = now(),
+           authority = 'Approved by the University Council on the date stated.'
+     where id = s_id;
+
+    -- ---- A LETTER SIGNED BY SPECIMEN NAMES THE SPECIMEN -------------------
+    refused := false;
+    begin
+      update correspondence_letters set signature_mode = 'specimen'
+       where reference = 'VC-2026-0042';
+    exception when others then refused := true;
+    end;
+    -- (the row may not exist on this database; what matters is that a mode of
+    -- 'specimen' with no specimen is refused, proved directly below)
+
+    insert into correspondence (kind, subject, body, recipient_name, initiated_by,
+                                status, authorized_by, authorized_at, issued_at)
+    values ('invitation', 'Convocation invitation',
+            'The University would be honoured by your presence at its convocation.',
+            'A Specimen Guest', someone, 'issued', other, now(), now())
+    returning id into c_id;
+
+    refused := false;
+    begin
+      insert into correspondence_letters
+        (correspondence_id, reference, issued_on, html, signature_mode)
+      values (c_id, 'VC-2026-9049', current_date, '<p>The letter.</p>', 'specimen');
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '049 FAILED: a letter claims a reproduced signature and names no '
+                      'specimen, so nobody can say whose signature is on it';
+    end if;
+
+    insert into correspondence_letters
+      (correspondence_id, reference, issued_on, html, signature_mode, signature_specimen_id)
+    values (c_id, 'VC-2026-9049', current_date, '<p>The letter.</p>', 'specimen', s_id);
+
+    -- ---- AND THE STRANGER IS TOLD ENOUGH, AND NO MORE ---------------------
+    select status into found from correspondence_verification where reference = 'VC-2026-9049';
+    if found is distinct from 'Valid' then
+      raise exception '049 FAILED: an issued letter verifies as %', coalesce(found, 'nothing');
+    end if;
+
+    -- THE PRIVACY CHECK, PERFORMED RATHER THAN ASSERTED IN A COMMENT.
+    if exists (
+      select 1 from information_schema.columns
+       where table_name = 'correspondence_verification'
+         and column_name in ('recipient_name', 'recipient_org', 'recipient_email',
+                             'subject', 'body', 'recipient_address')
+    ) then
+      raise exception '049 FAILED: the public verification of a letter carries the recipient '
+                      'or the subject, so scanning a warning letter publishes a disciplinary '
+                      'record';
+    end if;
+
+    -- A withdrawn letter says so rather than reading as a forgery.
+    update correspondence set status = 'withdrawn',
+           withdrawn_reason = 'Superseded by a later decision of the University.'
+     where id = c_id;
+    select status into found from correspondence_verification where reference = 'VC-2026-9049';
+    if found is distinct from 'Withdrawn' then
+      raise exception '049 FAILED: a withdrawn letter verifies as %', coalesce(found, 'nothing');
+    end if;
+
+    raise exception 'PROOF_ROLLBACK';
+  exception
+    when others then
+      if sqlerrm <> 'PROOF_ROLLBACK' then raise; end if;
+  end;
+
+  raise notice '049 OK: an official response and a special assignment are fileable kinds';
+  raise notice '049 OK: a rich-text body cannot carry a script, a style block or an event '
+               'handler onto a sealed document';
+  raise notice '049 OK: nobody switches on the reproduction of their own signature, and '
+               'enabling one states the authority for it';
+  raise notice '049 OK: a letter claiming a reproduced signature names whose it is';
+  raise notice '049 OK: a stranger can check a letter, and is told no recipient and no subject';
+end $$;
+
+
+-- ===========================================================================
+-- 6. VERIFY — READ THIS OUTPUT
+-- ===========================================================================
+
+-- Every letter a stranger could be holding, and what they would be told.
+select reference, kind, office, issued, version, status
+  from correspondence_verification
+ order by issued desc, reference;
+
+-- SPECIMEN SIGNATURES IN FORCE. Each one is a standing authority to reproduce
+-- somebody's signature on a University document. If this list is longer than
+-- the University expects, that is the thing to act on today.
+select owner_name, owner_role, enabled, enabled_at, authority
+  from signature_specimens
+ where enabled
+ order by owner_name;
+
+
+-- ===========================================================================
+-- ===========================================================================
+--
+--   050_acceptance_the_activation_rule_and_the_full_audit.sql
+--
+-- ===========================================================================
+-- ===========================================================================
+
+-- ===========================================================================
+-- 050 — ACCEPTANCE, THE ACTIVATION RULE, AND THE REST OF THE AUDIT TRAIL
+-- ===========================================================================
+--
+-- ---------------------------------------------------------------------------
+-- WHAT THE AUDIT FOUND, AND WHAT THIS FIXES
+-- ---------------------------------------------------------------------------
+--
+-- The University asked for a full implementation audit before more code. Of the
+-- eleven links it listed for an appointment, nine already existed: person,
+-- position, department, initiator, approver, issuer, documents, versions and
+-- audit events. TWO DID NOT.
+--
+-- 1. ACCEPTANCE WAS A TIMESTAMP. `appointments.accepted_at` said WHEN somebody
+--    accepted and nothing else — not who, and not WHICH VERSION of the letter
+--    they were looking at. An appointee who accepted version 1 and was later
+--    sent version 2 with a different salary had, on the record, simply
+--    "accepted". That is the fact a dispute turns on.
+--
+-- 2. FACULTY WAS NOT RECORDED. A department carries one; an appointment to a
+--    post that is not in a department carried nothing.
+--
+-- AND THE AUDIT VOCABULARY WAS SHORT. Of the fifteen actions the University
+-- named, `appointment_events` could record nine. Letter viewed, letter
+-- downloaded, email sent, email failed, appointment accepted and appointment
+-- renewed had no event to be recorded as — so the trail could not show them
+-- even though the code was willing to write them.
+--
+-- ---------------------------------------------------------------------------
+-- AND THE ONE THING TO READ TWICE
+-- ---------------------------------------------------------------------------
+--
+-- WHEN DOES SOMEBODY BECOME A MEMBER OF STAFF? The University said to keep
+-- approved, issued, accepted and active distinct — they now are — and to make
+-- the rule configurable rather than assumed.
+--
+-- `institutional_settings.staff_activation_point` is that rule, seeded to
+-- 'accepted'. THIS IS A DEFAULT AND NOT A DECISION: it is the most cautious of
+-- the three, because a staff record created on issue exists for somebody who
+-- may yet decline. Change it to 'issued' or 'start_date' if the University
+-- means something else; the trigger reads the setting rather than hard-coding
+-- any of them.
+-- ===========================================================================
+
+
+-- ===========================================================================
+-- 1. THE ACCEPTANCE
+-- ===========================================================================
+--
+-- ITS OWN TABLE, NOT A COLUMN. An acceptance is an act by the APPOINTEE — the
+-- only act in this whole workflow that is not the University's — and it is the
+-- one a dispute turns on. A row can say who, when, from where, and which
+-- version of which document they were answering.
+
+create table if not exists appointment_acceptances (
+  id             uuid primary key default gen_random_uuid(),
+  appointment_id uuid not null references appointments (id) on delete cascade,
+
+  -- WHICH DOCUMENT THEY WERE LOOKING AT. Not a copy of the reference for
+  -- convenience: the letter they read is the letter they agreed to, and an
+  -- amendment issued afterwards does not retroactively become the thing they
+  -- accepted.
+  letter_id      uuid not null references appointment_letters (id) on delete restrict,
+  reference      text not null,
+  version        integer not null check (version >= 1),
+
+  decision       text not null check (decision in ('accepted', 'declined')),
+
+  -- WHO. The appointee's own account where they have one, and their typed name
+  -- either way — an appointee accepting by a link in an email may not have a
+  -- portal account yet, and refusing the acceptance until they do would mean
+  -- the University could not record what actually happened.
+  accepted_by    uuid references auth.users (id) on delete set null,
+  accepted_name  text not null check (length(btrim(accepted_name)) >= 3),
+  accepted_email text,
+
+  -- A DECLINE SAYS WHY, like every other closure in this system.
+  reason         text,
+
+  at             timestamptz not null default now()
+);
+
+create index if not exists appointment_acceptances_appointment_idx
+  on appointment_acceptances (appointment_id, at);
+
+do $$
+begin
+  -- A DECLINE STATES A REASON.
+  if not exists (select 1 from pg_constraint where conname = 'appointment_acceptances_decline_explained') then
+    alter table appointment_acceptances add constraint appointment_acceptances_decline_explained
+      check (decision <> 'declined' or (reason is not null and length(btrim(reason)) >= 10));
+  end if;
+end $$;
+
+-- ---------------------------------------------------------------------------
+-- ONE STANDING ANSWER PER APPOINTMENT.
+--
+-- A partial unique index rather than a plain one: an appointee may decline and
+-- the University may later reissue an amended letter which they accept, and
+-- both rows are the truth. What must not happen is two LIVE answers at once.
+-- Superseded answers are marked rather than deleted.
+-- ---------------------------------------------------------------------------
+alter table appointment_acceptances
+  add column if not exists superseded_at timestamptz;
+
+create unique index if not exists appointment_acceptances_one_standing_idx
+  on appointment_acceptances (appointment_id) where superseded_at is null;
+
+-- ---------------------------------------------------------------------------
+-- AN ACCEPTANCE IS OF AN ISSUED LETTER, and of THE CURRENT one.
+--
+-- Accepting a superseded version is the failure this exists to catch: the
+-- appointee opens an old email, clicks accept, and the register records them as
+-- having agreed to terms the University has already replaced.
+-- ---------------------------------------------------------------------------
+create or replace function refuse_acceptance_of_a_stale_letter() returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  l record;
+begin
+  select * into l from appointment_letters where id = new.letter_id;
+  if l is null then
+    raise exception 'No such letter.' using errcode = 'check_violation';
+  end if;
+  if l.appointment_id <> new.appointment_id then
+    raise exception 'That letter belongs to a different appointment.'
+      using errcode = 'check_violation';
+  end if;
+  if l.superseded_at is not null then
+    raise exception
+      'This letter has been superseded. The appointee is answering a version the University '
+      'has already replaced — send them the current one rather than recording an agreement '
+      'to terms that no longer stand.'
+      using errcode = 'check_violation';
+  end if;
+  if not exists (select 1 from appointments a
+                  where a.id = new.appointment_id and a.issued_at is not null) then
+    raise exception
+      'This appointment has not been issued, so there is nothing for the appointee to have '
+      'accepted.'
+      using errcode = 'check_violation';
+  end if;
+  return new;
+end $$;
+
+drop trigger if exists appointment_acceptances_of_a_current_letter on appointment_acceptances;
+create trigger appointment_acceptances_of_a_current_letter
+  before insert on appointment_acceptances
+  for each row execute function refuse_acceptance_of_a_stale_letter();
+
+alter table appointment_acceptances enable row level security;
+
+drop policy if exists appointment_acceptances_read on appointment_acceptances;
+create policy appointment_acceptances_read on appointment_acceptances
+  for select to authenticated
+  using (exists (select 1 from appointments a where a.id = appointment_acceptances.appointment_id));
+
+
+-- ===========================================================================
+-- 2. THE FACULTY
+-- ===========================================================================
+--
+-- FREE TEXT AGAINST THE UNIVERSITY'S STATED STRUCTURE, matching `positions`.
+-- There is no faculties table — `departments.faculty` is text too — and
+-- inventing one here would mean this migration asserting a list of the
+-- University's faculties, which is not a migration's place.
+
+alter table appointments
+  add column if not exists faculty text;
+
+comment on column appointments.faculty is
+  'The faculty or school the post sits in. Text, matching departments.faculty and '
+  'positions.faculty — the University states its faculties in its own content, not in a '
+  'table a migration invented.';
+
+
+-- ===========================================================================
+-- 3. THE REST OF THE AUDIT VOCABULARY
+-- ===========================================================================
+--
+-- The six the University named that could not be recorded. Note what is NOT
+-- here: nothing that removes a line. The history has no delete path and no
+-- capability unlocks one.
+
+do $$
+declare
+  con text;
+begin
+  select conname into con from pg_constraint
+   where conrelid = 'appointment_events'::regclass and contype = 'c'
+     and pg_get_constraintdef(oid) like '%LETTER_SUPERSEDED%'
+   limit 1;
+
+  if con is not null then
+    execute format('alter table appointment_events drop constraint %I', con);
+  end if;
+
+  if not exists (select 1 from pg_constraint where conname = 'appointment_events_vocabulary') then
+    alter table appointment_events add constraint appointment_events_vocabulary
+      check (event in (
+        'DRAFTED', 'EDITED', 'REVIEWED', 'SUBMITTED_FOR_AUTHORITY', 'AUTHORIZED', 'RETURNED',
+        'LETTER_GENERATED', 'LETTER_ISSUED', 'LETTER_VIEWED', 'LETTER_DOWNLOADED',
+        'LETTER_SUPERSEDED', 'EMAIL_SENT', 'EMAIL_FAILED', 'LETTER_DELIVERY_FAILED',
+        'ACCEPTED', 'DECLINED', 'RENEWED', 'STAFF_ACTIVATED',
+        'WITHDRAWN', 'ENDED', 'ADMINISTRATIVE_OVERRIDE'));
+  end if;
+end $$;
+
+
+-- ===========================================================================
+-- 4. WHEN SOMEBODY BECOMES A MEMBER OF STAFF
+-- ===========================================================================
+--
+-- The University's instruction: keep approved, issued, accepted and active
+-- distinct, and CONFIGURE the point at which the employee record becomes
+-- active. So the rule is a row, not a line of code.
+
+create table if not exists institutional_settings (
+  key         text primary key,
+  value       text not null,
+  -- WHAT THIS SETTING MEANS, in the table, so that somebody changing it can
+  -- read what they are changing without finding the migration that made it.
+  description text,
+  -- THE CHOICES, so a screen can offer them and a typo cannot become a policy.
+  allowed     text[],
+  updated_by  uuid references auth.users (id) on delete set null,
+  updated_at  timestamptz not null default now()
+);
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'institutional_settings_value_is_allowed') then
+    alter table institutional_settings add constraint institutional_settings_value_is_allowed
+      check (allowed is null or value = any (allowed));
+  end if;
+end $$;
+
+insert into institutional_settings (key, value, description, allowed) values
+  ('staff_activation_point', 'accepted',
+   'When an appointee becomes a member of staff. '
+   '"issued" — as soon as the letter goes out, which creates a staff record for somebody who '
+   'may yet decline. '
+   '"accepted" — when the appointee has said yes. The cautious default, and what this is '
+   'seeded to. '
+   '"start_date" — not until the day the appointment begins, which is the strictest and means '
+   'a new lecturer has no portal account until their first day.',
+   array['issued', 'accepted', 'start_date'])
+on conflict (key) do nothing;
+
+alter table institutional_settings enable row level security;
+
+drop policy if exists institutional_settings_read on institutional_settings;
+create policy institutional_settings_read on institutional_settings
+  for select to authenticated using (true);
+
+-- ---------------------------------------------------------------------------
+-- AND THE RULE IS ENFORCED, NOT ADVISORY.
+--
+-- 042 refused a staff record whose appointment had not been ISSUED. That was
+-- the right floor and it is not the University's rule. This reads the setting.
+-- ---------------------------------------------------------------------------
+create or replace function staff_activation_is_permitted() returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  rule text;
+  a record;
+begin
+  if new.staff_record_id is null or old.staff_record_id is not null then
+    return new;
+  end if;
+
+  select value into rule from institutional_settings where key = 'staff_activation_point';
+  rule := coalesce(rule, 'accepted');
+
+  select * into a from appointments where id = new.id;
+
+  if rule = 'issued' then
+    if new.issued_at is null then
+      raise exception 'This appointment has not been issued, so nobody can be made staff from it.'
+        using errcode = 'check_violation';
+    end if;
+
+  elsif rule = 'accepted' then
+    if not exists (select 1 from appointment_acceptances ac
+                    where ac.appointment_id = new.id
+                      and ac.decision = 'accepted' and ac.superseded_at is null) then
+      raise exception
+        'The University''s rule is that a staff record follows ACCEPTANCE, and this appointee '
+        'has not accepted. Change institutional_settings.staff_activation_point if the '
+        'University means something else — do not work around it, because a staff record for '
+        'somebody who later declines is a person the system says works here.'
+        using errcode = 'check_violation';
+    end if;
+
+  elsif rule = 'start_date' then
+    if new.start_date is null or new.start_date > current_date then
+      raise exception
+        'The University''s rule is that a staff record begins on the start date, and this '
+        'appointment starts on %.', coalesce(new.start_date::text, 'no stated date')
+        using errcode = 'check_violation';
+    end if;
+  end if;
+
+  return new;
+end $$;
+
+drop trigger if exists appointments_staff_activation_rule on appointments;
+create trigger appointments_staff_activation_rule
+  before update on appointments
+  for each row execute function staff_activation_is_permitted();
+
+
+-- ===========================================================================
+-- 5. WHAT THE UNIVERSITY IS WAITING ON
+-- ===========================================================================
+
+create or replace view appointments_awaiting_acceptance
+with (security_invoker = true) as
+  select a.id,
+         a.full_name,
+         a.position_title,
+         a.unit_name,
+         a.issued_at,
+         l.reference,
+         l.version,
+         -- HOW LONG IT HAS BEEN SITTING. The number somebody acts on: an offer
+         -- unanswered for six weeks is a post the University thinks is filled.
+         (current_date - a.issued_at::date) as days_waiting
+    from appointments a
+    join appointment_letters l
+      on l.appointment_id = a.id and l.superseded_at is null
+   where a.issued_at is not null
+     and a.status = 'issued'
+     and not exists (select 1 from appointment_acceptances ac
+                      where ac.appointment_id = a.id and ac.superseded_at is null);
+
+
+-- ===========================================================================
+-- 6. PERFORMING THE RULES
+-- ===========================================================================
+
+do $$
+declare
+  refused boolean;
+  someone uuid;
+  other uuid;
+  a_id uuid;
+  l1 uuid;
+  l2 uuid;
+  staff uuid;
+begin
+  select id into someone from auth.users limit 1;
+  select id into other from auth.users where id <> someone limit 1;
+  if someone is null or other is null then
+    raise notice '050: fewer than two accounts, so the rules could not be exercised';
+    return;
+  end if;
+
+  begin
+    insert into appointments
+      (full_name, position_title, unit_name, faculty, employment_type, start_date, terms,
+       status, drafted_by, authorized_by, authorized_at)
+    values ('A Specimen Appointee', 'Lecturer', 'Department of Theology',
+            'Faculty of Theology', 'permanent', current_date + 30, 'The terms.',
+            'approved', someone, other, now())
+    returning id into a_id;
+
+    -- ---- NOTHING IS ACCEPTED BEFORE IT IS ISSUED --------------------------
+    insert into appointment_letters (appointment_id, reference, issued_on, html)
+    values (a_id, 'APT-2026-9050', current_date, '<p>Version one.</p>')
+    returning id into l1;
+
+    refused := false;
+    begin
+      insert into appointment_acceptances
+        (appointment_id, letter_id, reference, version, decision, accepted_name)
+      values (a_id, l1, 'APT-2026-9050', 1, 'accepted', 'A Specimen Appointee');
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '050 FAILED: an appointee accepted a letter that had not been issued';
+    end if;
+
+    update appointments set status = 'issued', issued_at = now(), issued_by = other
+     where id = a_id;
+
+    -- ---- A DECLINE STATES A REASON ----------------------------------------
+    refused := false;
+    begin
+      insert into appointment_acceptances
+        (appointment_id, letter_id, reference, version, decision, accepted_name)
+      values (a_id, l1, 'APT-2026-9050', 1, 'declined', 'A Specimen Appointee');
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '050 FAILED: an appointment was declined for no stated reason';
+    end if;
+
+    -- The acceptance itself, of the version they were actually sent.
+    insert into appointment_acceptances
+      (appointment_id, letter_id, reference, version, decision, accepted_name, accepted_email)
+    values (a_id, l1, 'APT-2026-9050', 1, 'accepted', 'A Specimen Appointee',
+            'appointee@example.test');
+
+    -- ---- ONE STANDING ANSWER ----------------------------------------------
+    refused := false;
+    begin
+      insert into appointment_acceptances
+        (appointment_id, letter_id, reference, version, decision, accepted_name, reason)
+      values (a_id, l1, 'APT-2026-9050', 1, 'declined', 'A Specimen Appointee',
+              'Changed their mind about the post.');
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '050 FAILED: one appointment carries two standing answers at once';
+    end if;
+
+    -- ---- AND NOBODY ACCEPTS A SUPERSEDED LETTER ---------------------------
+    -- The failure this is for: the appointee opens an old email, clicks accept,
+    -- and the register records them as agreeing to terms already replaced.
+    update appointment_acceptances set superseded_at = now() where appointment_id = a_id;
+    update appointment_letters set superseded_at = now() where id = l1;
+    insert into appointment_letters
+      (appointment_id, reference, version, issued_on, html, kind, supersedes_reason)
+    values (a_id, 'APT-2026-9051', 2, current_date, '<p>Version two.</p>', 'amended',
+            'The start date moved by one month at the appointee''s request.')
+    returning id into l2;
+
+    refused := false;
+    begin
+      insert into appointment_acceptances
+        (appointment_id, letter_id, reference, version, decision, accepted_name)
+      values (a_id, l1, 'APT-2026-9050', 1, 'accepted', 'A Specimen Appointee');
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '050 FAILED: an appointee accepted a letter the University had already '
+                      'replaced';
+    end if;
+
+    -- ---- THE ACTIVATION RULE IS READ, NOT ASSUMED -------------------------
+    -- Seeded to 'accepted'. The standing acceptance was superseded above, so
+    -- there is none — and a staff record must therefore be refused.
+    insert into lecturers (staff_id, first_name, last_name, email)
+    values ('SPEC-050', 'A Specimen', 'Appointee', 'appointee@example.test')
+    returning id into staff;
+
+    refused := false;
+    begin
+      update appointments set staff_record_id = staff, staff_activated_at = now()
+       where id = a_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '050 FAILED: somebody became a member of staff with no acceptance '
+                      'standing, under a rule that says acceptance is the point';
+    end if;
+
+    -- With the answer given against the current letter, it goes.
+    insert into appointment_acceptances
+      (appointment_id, letter_id, reference, version, decision, accepted_name)
+    values (a_id, l2, 'APT-2026-9051', 2, 'accepted', 'A Specimen Appointee');
+
+    update appointments set staff_record_id = staff, staff_activated_at = now()
+     where id = a_id;
+
+    -- ---- AND THE RULE IS GENUINELY CONFIGURABLE ---------------------------
+    -- Changing the setting changes the behaviour; it is not a comment.
+    refused := false;
+    begin
+      update institutional_settings set value = 'whenever-we-feel-like-it'
+       where key = 'staff_activation_point';
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '050 FAILED: the activation rule accepted a value nobody declared';
+    end if;
+
+    update institutional_settings set value = 'start_date'
+     where key = 'staff_activation_point';
+    update appointments set staff_record_id = null where id = a_id;
+
+    refused := false;
+    begin
+      update appointments set staff_record_id = staff where id = a_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '050 FAILED: under a start-date rule, somebody starting in thirty days '
+                      'was made staff today';
+    end if;
+
+    -- ---- THE SIX EVENTS THAT COULD NOT BE RECORDED ------------------------
+    insert into appointment_events (appointment_id, event, actor_id)
+    select a_id, e, someone from unnest(array[
+      'REVIEWED', 'LETTER_VIEWED', 'LETTER_DOWNLOADED',
+      'EMAIL_SENT', 'EMAIL_FAILED', 'ACCEPTED', 'RENEWED', 'STAFF_ACTIVATED'
+    ]) as e;
+
+    refused := false;
+    begin
+      insert into appointment_events (appointment_id, event, actor_id)
+      values (a_id, 'QUIETLY_CHANGED', someone);
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '050 FAILED: the audit trail accepted an event nobody declared';
+    end if;
+
+    raise exception 'PROOF_ROLLBACK';
+  exception
+    when others then
+      if sqlerrm <> 'PROOF_ROLLBACK' then raise; end if;
+  end;
+
+  raise notice '050 OK: an acceptance names who, when, and WHICH VERSION of which letter';
+  raise notice '050 OK: nothing is accepted before issue, a decline states a reason, and one '
+               'appointment carries one standing answer';
+  raise notice '050 OK: a superseded letter cannot be accepted';
+  raise notice '050 OK: the staff activation point is read from the settings and enforced, and '
+               'a value nobody declared is refused';
+  raise notice '050 OK: the audit trail can record all fifteen actions and nothing else';
+end $$;
+
+
+-- ===========================================================================
+-- 7. VERIFY — READ THIS OUTPUT
+-- ===========================================================================
+
+-- WHEN SOMEBODY BECOMES STAFF AT THIS UNIVERSITY. Read this and change it if it
+-- is not what the University means.
+select key, value, allowed from institutional_settings where key = 'staff_activation_point';
+
+-- OFFERS NOBODY HAS ANSWERED. An offer unanswered for six weeks is a post the
+-- University believes is filled and a candidate who has taken another job.
+select full_name, position_title, reference, version, days_waiting
+  from appointments_awaiting_acceptance
+ order by days_waiting desc;
+
+-- What the trail can now record, in use.
+select event, count(*) as times from appointment_events group by 1 order by 2 desc;
+
+
+-- ===========================================================================
+-- ===========================================================================
+--
+--   051_templates_for_every_document_the_university_issues.sql
+--
+-- ===========================================================================
+-- ===========================================================================
+
+-- ===========================================================================
+-- 051 — A TEMPLATE REGISTRY FOR EVERY DOCUMENT THE UNIVERSITY ISSUES
+-- ===========================================================================
+--
+-- ---------------------------------------------------------------------------
+-- WHAT CHANGES THE MOMENT THIS RUNS
+-- ---------------------------------------------------------------------------
+--
+-- 1. OFFICIAL CORRESPONDENCE GETS VERSIONED TEMPLATES, and every issued letter
+--    records which version produced it. 044 built the registry for eleven HR
+--    documents and gave `appointment_letters` a `template_id` with
+--    ON DELETE RESTRICT — the rule that keeps the wording of 2026 attached to a
+--    letter issued in 2026. Correspondence had neither. The Vice-Chancellor's
+--    letters to ministries were the one document family with no answer to
+--    "which wording was in force when we sent this".
+--
+-- 2. THE OTHER THREE DOCUMENTS OF AN APPOINTMENT PACKAGE become templates too:
+--    the Job Description, the Terms and Conditions of Appointment, and the
+--    Acceptance of Appointment. The University named four documents and only
+--    the first had a template.
+--
+-- 3. AN APPOINTMENT RECORDS WHICH CONDITIONS OF SERVICE APPLY TO IT. Until now
+--    the letter said "the conditions of service in force from time to time",
+--    which is true and unusable: an appointee in a dispute needs the version
+--    that was in force when they signed, and nothing recorded it.
+--
+-- 4. A TEMPLATE SAYS WHEN IT TAKES EFFECT. `effective_from`, which the
+--    University asked for and 044 did not carry.
+--
+-- ---------------------------------------------------------------------------
+-- THE ONE THING TO READ TWICE
+-- ---------------------------------------------------------------------------
+--
+-- CORRESPONDENCE TEMPLATE KINDS ARE PREFIXED `letter-`, AND THEY HAD TO BE.
+-- Three names appear in both vocabularies — 'reappointment', 'promotion' and
+-- 'appointment' are HR document types AND kinds of official correspondence.
+-- Merged without a prefix, a template written for the Vice-Chancellor's
+-- promotion LETTER would be picked up as the template for an HR promotion
+-- PACKAGE, and nobody would notice until somebody read the document that came
+-- out. Two vocabularies that share three words are not one vocabulary.
+-- ===========================================================================
+
+
+-- ===========================================================================
+-- 1. THE KINDS
+-- ===========================================================================
+
+do $$
+declare
+  con text;
+begin
+  select conname into con from pg_constraint
+   where conrelid = 'document_templates'::regclass and contype = 'c'
+     and pg_get_constraintdef(oid) like '%initial-appointment%'
+   limit 1;
+
+  if con is not null then
+    execute format('alter table document_templates drop constraint %I', con);
+  end if;
+
+  if not exists (select 1 from pg_constraint where conname = 'document_templates_kind_known') then
+    alter table document_templates add constraint document_templates_kind_known
+      check (kind in (
+        -- The eleven HR documents, unchanged. 044's rows keep their kind.
+        'initial-appointment', 'reappointment', 'contract-renewal', 'promotion',
+        'transfer', 'acting-appointment', 'probation-confirmation',
+        'contract-extension', 'appointment-amendment', 'termination', 'retirement',
+
+        -- The other three documents of an appointment package. The University
+        -- named four and only the letter had a template.
+        'job-description', 'terms-and-conditions', 'acceptance-form',
+
+        -- Official correspondence, PREFIXED. Three of these names —
+        -- reappointment, promotion, appointment — already mean something else
+        -- above, and a template written for one would have been served for the
+        -- other.
+        'letter-general', 'letter-appointment', 'letter-reappointment',
+        'letter-promotion', 'letter-invitation', 'letter-commendation',
+        'letter-recommendation', 'letter-government', 'letter-university',
+        'letter-partnership', 'letter-directive', 'letter-warning',
+        'letter-authorization', 'letter-official-response',
+        'letter-special-assignment', 'letter-special', 'letter-other'));
+  end if;
+end $$;
+
+
+-- ===========================================================================
+-- 2. WHEN A TEMPLATE TAKES EFFECT
+-- ===========================================================================
+
+alter table document_templates
+  add column if not exists effective_from date;
+
+do $$
+begin
+  -- AN ACTIVE TEMPLATE HAS A DATE IT CAME INTO FORCE. Not a formality: "which
+  -- wording applied in March" is the question a dispute opens with, and a
+  -- registry that can only answer "the one that is active now" cannot answer it.
+  --
+  -- NOT VALID, because 044's existing rows predate the column and refusing to
+  -- run over them would leave the whole migration unapplied.
+  if not exists (select 1 from pg_constraint where conname = 'document_templates_active_has_a_date') then
+    alter table document_templates add constraint document_templates_active_has_a_date
+      check (status <> 'active' or effective_from is not null) not valid;
+  end if;
+end $$;
+
+-- Existing active templates take effect from the day they were activated,
+-- which is the only honest answer available for a row written before the
+-- column existed.
+update document_templates
+   set effective_from = coalesce(effective_from, activated_at::date, created_at::date)
+ where status = 'active' and effective_from is null;
+
+
+-- ===========================================================================
+-- 3. CORRESPONDENCE RECORDS THE WORDING THAT MADE IT
+-- ===========================================================================
+--
+-- THE DOROTHY RULE, EXTENDED. `on delete restrict` means a template version
+-- that has produced a letter can never be deleted — so a document issued in
+-- 2026 keeps the wording of 2026 even after the template has been redesigned
+-- twice. 044 applied it to appointment letters. This applies it to the
+-- Vice-Chancellor's.
+
+alter table correspondence_letters
+  add column if not exists template_id uuid references document_templates (id) on delete restrict,
+  add column if not exists template_version integer;
+
+create index if not exists correspondence_letters_template_idx
+  on correspondence_letters (template_id) where template_id is not null;
+
+
+-- ===========================================================================
+-- 4. WHICH CONDITIONS OF SERVICE APPLY TO THIS APPOINTMENT
+-- ===========================================================================
+--
+-- "The conditions of service in force from time to time" is what the letter
+-- said, and it is true and unusable. An appointee in a dispute needs the
+-- version that was in force when they accepted, and nothing recorded it.
+--
+-- Restricted on delete for the same reason as the letter template: the
+-- conditions somebody was appointed under cannot be deleted out from under
+-- them.
+
+alter table appointments
+  add column if not exists terms_template_id uuid references document_templates (id)
+    on delete restrict,
+  add column if not exists job_description_template_id uuid references document_templates (id)
+    on delete restrict;
+
+comment on column appointments.terms_template_id is
+  'The version of the Terms and Conditions of Appointment that applies to this appointment. '
+  'Fixed at issue and never updated afterwards: an appointee is bound by the conditions in '
+  'force when they accepted, not by whatever the University writes next.';
+
+
+-- ===========================================================================
+-- 5. WHAT IS AND IS NOT COVERED
+-- ===========================================================================
+--
+-- The screen the University asked for needs to show which document types have
+-- an active template and which do not. Computing that in the application would
+-- mean the screen and the generator disagreeing about what "covered" means.
+
+create or replace view document_template_coverage
+with (security_invoker = true) as
+  select k.kind,
+         t.id            as active_template_id,
+         t.name,
+         t.version,
+         t.effective_from,
+         t.activated_at,
+         t.created_by,
+         t.activated_by,
+         (select count(*) from document_templates d where d.kind = k.kind) as versions,
+         -- LETTERS ALREADY ISSUED UNDER THIS KIND. The number that decides
+         -- whether a template can be retired quietly or whether somebody is
+         -- holding a document made from it.
+         (select count(*) from appointment_letters l
+           join document_templates d on d.id = l.template_id
+          where d.kind = k.kind) as appointment_letters_issued,
+         (select count(*) from correspondence_letters c
+           join document_templates d on d.id = c.template_id
+          where d.kind = k.kind) as correspondence_issued
+    from (select unnest(array[
+            'initial-appointment', 'reappointment', 'contract-renewal', 'promotion',
+            'transfer', 'acting-appointment', 'probation-confirmation',
+            'contract-extension', 'appointment-amendment', 'termination', 'retirement',
+            'job-description', 'terms-and-conditions', 'acceptance-form',
+            'letter-general', 'letter-appointment', 'letter-reappointment',
+            'letter-promotion', 'letter-invitation', 'letter-commendation',
+            'letter-recommendation', 'letter-government', 'letter-university',
+            'letter-partnership', 'letter-directive', 'letter-warning',
+            'letter-authorization', 'letter-official-response',
+            'letter-special-assignment', 'letter-special', 'letter-other']) as kind) k
+    left join document_templates t on t.kind = k.kind and t.status = 'active';
+
+
+-- ===========================================================================
+-- 6. PERFORMING THE RULES
+-- ===========================================================================
+
+do $$
+declare
+  refused boolean;
+  someone uuid;
+  other uuid;
+  t_id uuid;
+  c_id uuid;
+  a_id uuid;
+  n integer;
+begin
+  select id into someone from auth.users limit 1;
+  select id into other from auth.users where id <> someone limit 1;
+  if someone is null or other is null then
+    raise notice '051: fewer than two accounts, so the rules could not be exercised';
+    return;
+  end if;
+
+  begin
+    -- ---- THE NEW KINDS ARE REGISTRABLE ------------------------------------
+    insert into document_templates (kind, version, name, body, status, created_by)
+    values ('terms-and-conditions', 1, 'Conditions of Service',
+            'The conditions of service of the University, as approved by the Council.',
+            'draft', someone)
+    returning id into t_id;
+
+    insert into document_templates (kind, version, name, body, status, created_by)
+    values ('letter-government', 1, 'Government Correspondence',
+            'The standard form of a letter to a government ministry.', 'draft', someone);
+
+    -- ---- AND A KIND NOBODY DECLARED IS REFUSED ----------------------------
+    refused := false;
+    begin
+      insert into document_templates (kind, version, name, body, status, created_by)
+      values ('a-kind-we-made-up', 1, 'Something', 'A body long enough to pass.',
+              'draft', someone);
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '051 FAILED: the registry accepted a document kind nobody declared';
+    end if;
+
+    -- ---- AN ACTIVE TEMPLATE STATES WHEN IT TOOK EFFECT --------------------
+    alter table document_templates validate constraint document_templates_active_has_a_date;
+
+    refused := false;
+    begin
+      update document_templates
+         set status = 'active', activated_by = other, activated_at = now()
+       where id = t_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '051 FAILED: a template came into force on no particular date, so '
+                      '"which wording applied in March" cannot be answered';
+    end if;
+
+    update document_templates
+       set status = 'active', activated_by = other, activated_at = now(),
+           effective_from = current_date
+     where id = t_id;
+
+    -- ---- THE CONDITIONS SOMEBODY WAS APPOINTED UNDER CANNOT BE DELETED ----
+    insert into appointments
+      (full_name, position_title, employment_type, start_date, terms, status,
+       drafted_by, terms_template_id)
+    values ('A Specimen Appointee', 'Lecturer', 'permanent', current_date + 30,
+            'The conditions of service apply.', 'draft', someone, t_id)
+    returning id into a_id;
+
+    refused := false;
+    begin
+      delete from document_templates where id = t_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '051 FAILED: the conditions of service somebody was appointed under were '
+                      'deleted out from under them';
+    end if;
+
+    -- ---- AND A CORRESPONDENCE LETTER RECORDS ITS WORDING -------------------
+    insert into correspondence (kind, subject, body, recipient_name, initiated_by, status,
+                                authorized_by, authorized_at, issued_at)
+    values ('government', 'Accreditation correspondence',
+            'The University writes to the Ministry on the matter discussed.',
+            'The Ministry of Higher Education', someone, 'issued', other, now(), now())
+    returning id into c_id;
+
+    insert into correspondence_letters
+      (correspondence_id, reference, issued_on, html, template_id, template_version)
+    values (c_id, 'VC-2099-0051', current_date, '<p>The letter.</p>', t_id, 1);
+
+    refused := false;
+    begin
+      delete from document_templates where id = t_id;
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '051 FAILED: a template that produced a letter to a ministry was deleted, '
+                      'so the University cannot say what wording it sent';
+    end if;
+
+    -- ---- THE COVERAGE VIEW SEES WHAT IS MISSING ---------------------------
+    select count(*) into n from document_template_coverage where active_template_id is null;
+    if n = 0 then
+      raise exception '051 FAILED: the coverage view reports every document type as covered, '
+                      'which on a fresh database cannot be true';
+    end if;
+    if not exists (select 1 from document_template_coverage
+                    where kind = 'terms-and-conditions' and active_template_id is not null) then
+      raise exception '051 FAILED: the coverage view cannot see an active template';
+    end if;
+
+    raise exception 'PROOF_ROLLBACK';
+  exception
+    when others then
+      if sqlerrm <> 'PROOF_ROLLBACK' then raise; end if;
+  end;
+
+  raise notice '051 OK: every document the University issues has a template kind, and one '
+               'nobody declared is refused';
+  raise notice '051 OK: an active template states the date it came into force';
+  raise notice '051 OK: the conditions of service somebody was appointed under cannot be '
+               'deleted, and neither can the wording that produced a letter to a ministry';
+  raise notice '051 OK: the coverage view reports which document types have no active template';
+end $$;
+
+
+-- ===========================================================================
+-- 7. VERIFY — READ THIS OUTPUT
+-- ===========================================================================
+
+-- ---------------------------------------------------------------------------
+-- DOCUMENT TYPES WITH NO ACTIVE TEMPLATE. Every row here is a document the
+-- University can be asked to produce and has no approved wording for. This
+-- list will be long today and that is the point of showing it.
+-- ---------------------------------------------------------------------------
+select kind, versions
+  from document_template_coverage
+ where active_template_id is null
+ order by kind;
+
+-- And the ones that are covered, with the wording in force.
+select kind, name, version, effective_from,
+       appointment_letters_issued + correspondence_issued as documents_issued
+  from document_template_coverage
+ where active_template_id is not null
+ order by kind;
 

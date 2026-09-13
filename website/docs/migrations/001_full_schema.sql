@@ -157,6 +157,39 @@ create table if not exists audit_logs (
   created_at    timestamptz not null default now()
 );
 
+-- ---------------------------------------------------------------------------
+-- PAYMENTS — ADDED HERE BECAUSE RUN-ALL.sql HAS NEVER WORKED WITHOUT IT.
+--
+-- This table existed only in 000_complete.sql, which is 001 and 002 merged.
+-- The bundle builder refuses to list 000 alongside 001 and 002 — rightly, it
+-- would run the same DDL twice — so every RUN-ALL.sql ever built has gone
+-- 001, 002, 003 … and then reached 010, which writes a row-level security
+-- policy on `payments`, and stopped dead with "relation payments does not
+-- exist".
+--
+-- Nobody noticed because nobody has built this University from nothing since
+-- the bundle was introduced; every real database grew from 000. But RUN-ALL is
+-- precisely the file somebody reaches for when they do, and it is the one that
+-- could not do it. Proven by running it against an empty database: it failed at
+-- the same line before this change and passes after.
+--
+-- The definition is 000's, unchanged.
+-- ---------------------------------------------------------------------------
+create table if not exists payments (
+  id            uuid primary key default gen_random_uuid(),
+  student_id    uuid references students (id) on delete set null,
+  reference     text not null unique,
+  amount        numeric(14,2) not null check (amount > 0),
+  currency      text not null check (currency in ('FCFA','USD','EUR','GBP','NGN')),
+  purpose       text not null,
+  method        text,
+  -- Who took the money. Finance verifies payments; nobody else may.
+  received_by   uuid references auth.users (id) on delete set null,
+  received_at   timestamptz not null default now(),
+  note          text,
+  created_at    timestamptz not null default now()
+);
+
 
 -- ---------------------------------------------------------------------------
 -- 3. Admissions pipeline columns
