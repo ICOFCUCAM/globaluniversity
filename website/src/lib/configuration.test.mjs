@@ -189,6 +189,15 @@ console.log('\nEvery variable the code reads is on the report\n');
   const PLATFORM = [
     'NODE_ENV', 'VERCEL', 'VERCEL_ENV', 'VERCEL_URL', 'PORT',
     'VERCEL_GIT_COMMIT_SHA', 'VERCEL_GIT_COMMIT_REF', 'VERCEL_GIT_COMMIT_MESSAGE',
+    // NEXT_PUBLIC_, and deliberately so: this one is inlined into the BROWSER
+    // bundle at build time, which is the whole reason it is useful. Comparing
+    // it against the server's VERCEL_GIT_COMMIT_SHA is what distinguishes "the
+    // deployment has not happened" from "this tab was opened before it did" —
+    // and the second of those cost three exchanges to work out by hand.
+    //
+    // Platform-supplied, so it belongs here rather than in SETTINGS: telling
+    // the University to set it by hand would be advice to break a deployment.
+    'NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA',
   ];
   check('nothing the code reads is missing from the report',
     used.filter((v) => !declared.includes(v) && !PLATFORM.includes(v)), []);

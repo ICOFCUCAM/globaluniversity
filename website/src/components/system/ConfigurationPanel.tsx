@@ -59,6 +59,20 @@ const AREAS: Record<string, string> = {
   ai: 'The assistant',
 };
 
+/**
+ * The commit THIS BUNDLE was built from, inlined at build time.
+ *
+ * NEXT_PUBLIC_, so it is compiled into the JavaScript the browser downloads
+ * rather than read from the server at request time. That is the entire point:
+ * comparing it against what the server reports is what distinguishes "the
+ * deployment has not happened" from "this tab is old".
+ *
+ * Vercel sets it automatically when System Environment Variables are exposed.
+ * Absent elsewhere, and the comparison is simply not drawn — an absent value
+ * must never be reported as a mismatch.
+ */
+const BUNDLE_COMMIT = (process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA ?? '').slice(0, 9) || null;
+
 export default function ConfigurationPanel() {
   const [report, setReport] = React.useState<Report | null>(null);
   const [failed, setFailed] = React.useState<string | null>(null);
@@ -142,6 +156,36 @@ export default function ConfigurationPanel() {
             If this is not the commit you expect, the host has not rebuilt — the branch does not
             need merging for a change to reach a deployment built from it.
           </p>
+
+          {/* ----------------------------------------------------------------
+              AND THE OPPOSITE TRAP, WHICH IS THE ONE THAT ACTUALLY CAUGHT US.
+
+              This panel asks the SERVER which commit is running. The sidebar,
+              every screen and every rule in the browser are JavaScript that was
+              downloaded when the tab was first opened — and moving around the
+              portal is client-side routing, which never fetches it again.
+
+              So a tab opened before a deployment shows the NEW commit here and
+              runs the OLD code everywhere else. The University read this panel,
+              saw the right commit, and reasonably concluded the deployment had
+              not reached a screen that was in fact simply stale in the tab.
+              Three exchanges went on that.
+
+              The bundle carries the commit it was built from, so the two can
+              simply be compared. When they differ there is nothing to diagnose:
+              reload the page.
+              ---------------------------------------------------------------- */}
+          {BUNDLE_COMMIT && report.deployment.commit
+            && BUNDLE_COMMIT !== report.deployment.commit && (
+            <p className="mt-2 rounded border border-[#a07c12]/40 bg-[#fdf6e3] p-2
+                          text-[11px] leading-relaxed text-[#6b5410]">
+              <strong>This page is older than the server.</strong> The tab is running{' '}
+              <span className="font-mono">{BUNDLE_COMMIT}</span>, the server is on{' '}
+              <span className="font-mono">{report.deployment.commit}</span> — so a screen may be
+              missing something the deployment already has. Reload the page (hold Shift and press
+              reload) and it will catch up. Nothing is wrong with the deployment.
+            </p>
+          )}
         </div>
       ) : (
         <div className="mt-4 rounded-lg border border-[#ded6c8] bg-[#faf6ee] p-3 text-xs text-[#6b6076] dark:border-[#3d3349] dark:bg-[#241f2c] dark:text-[#9c93ad]">
