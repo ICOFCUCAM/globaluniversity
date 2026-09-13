@@ -95,6 +95,11 @@ export default function Appointments() {
   // button to somebody the route will refuse.
   const maySoleAuthority = (SOLE_AUTHORITY_ROLES as readonly string[])
     .includes(String(user?.role));
+  // THE THIRD BAND OF 056, named here so an empty table can say which of the
+  // two empty tables it is. Kept beside the policy it mirrors: these are the
+  // roles `appointments_read` lets past without a row-level reason.
+  const seesWholeRegister = ['superadmin', 'admin', 'registrar', 'vice-chancellor', 'chancellor']
+    .includes(String(user?.role));
 
   const [rows, setRows] = useState<Row[] | null>(null);
   const [creating, setCreating] = useState(false);
@@ -274,14 +279,40 @@ export default function Appointments() {
 
       {rows === null && <p className="text-sm text-[#6b6076]">Loading…</p>}
 
+      {/* -------------------------------------------------------------------
+          AN EMPTY TABLE MEANS TWO DIFFERENT THINGS AND USED TO SAY ONE.
+
+          Since 056 the appointment register is read in three bands: your own,
+          the files on your desk, and — for the Registrar, the Vice-Chancellor
+          and the Chancellor — the whole register. An HR officer with nothing
+          on their desk and an HR officer looking at a register full of other
+          people's work both get zero rows back, because a restricted row
+          arrives as an absent row, not as an error.
+
+          Telling both of them "no appointments recorded yet" is a lie to one
+          of them, and it is the lie that makes a permission problem look like
+          an empty database. Whoever reads it goes looking for the wrong fault.
+          ------------------------------------------------------------------- */}
       {rows !== null && rows.length === 0 && (
         <div className="rounded-2xl border border-dashed border-[#ded6c8] p-10 text-center
                         dark:border-[#3d3349]">
           <Users size={22} className="mx-auto mb-3 text-[#a49bb0]" />
-          <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">
-            No appointments recorded yet. Staff who predate this system are not listed here —
-            they have no appointment behind them, which is exactly what this page now requires.
-          </p>
+          {seesWholeRegister ? (
+            <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">
+              No appointments recorded yet. Staff who predate this system are not listed here —
+              they have no appointment behind them, which is exactly what this page now requires.
+            </p>
+          ) : (
+            <>
+              <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">
+                Nothing on your desk. This page shows the appointments you drafted, authorised or
+                were named in — not the University&rsquo;s whole register.
+              </p>
+              <p className="mt-2 text-xs text-[#8a8194] dark:text-[#847b95]">
+                The full register is kept by the Registrar.
+              </p>
+            </>
+          )}
         </div>
       )}
 

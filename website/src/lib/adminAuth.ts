@@ -27,6 +27,12 @@ export interface Caller {
   email: string | null;
   role: UserRole;
   fullName: string | null;
+  /**
+   * The grant that admitted this call, when the caller's ROLE does not carry
+   * the capability and a capability grant does (056). Null for the ordinary
+   * case, which is the one the role matrix answers.
+   */
+  viaGrant?: string | null;
 }
 
 export interface GuardOk {
@@ -85,8 +91,30 @@ export async function guard(
 
   if (!prof) return { ok: false, status: 403, error: 'no-profile' };
   if (prof.suspended_at) return { ok: false, status: 403, error: 'caller-suspended' };
+
+  // -------------------------------------------------------------------------
+  // THE ROLE FIRST, AND THEN THE GRANT.
+  //
+  // Order matters. Asking the database for a grant before checking the matrix
+  // would put a query on the path of every request that was always going to be
+  // allowed, and would quietly make `can()` stop being the answer to "why is
+  // this permitted" for the ordinary case.
+  //
+  // A grant is the exception, and it is read as one: only when the role does
+  // not carry the capability, and only from the view that already decides what
+  // "still in force" means. See 056 — expiry and revocation are settled there,
+  // once, rather than in each caller that remembers one and forgets the other.
+  // -------------------------------------------------------------------------
+  let grantId: string | null = null;
   if (!can(prof.role as UserRole, capability)) {
-    return { ok: false, status: 403, error: `not-permitted:${capability}` };
+    const { data: grant } = await admin
+      .from('capability_grants_in_force')
+      .select('id')
+      .eq('grantee_id', prof.id)
+      .eq('capability', capability)
+      .maybeSingle();
+    if (!grant) return { ok: false, status: 403, error: `not-permitted:${capability}` };
+    grantId = grant.id as string;
   }
 
   return {
@@ -97,6 +125,12 @@ export async function guard(
       email: prof.email ?? null,
       role: prof.role as UserRole,
       fullName: prof.full_name ?? null,
+      // WHICH GRANT LET THEM IN, so the routes that write an audit line can say
+      // "on a grant from the Superadministrator" rather than recording it as
+      // though the office itself carried the authority. A capability held by
+      // exception should never be indistinguishable in the record from one held
+      // by right.
+      viaGrant: grantId,
     },
   };
 }

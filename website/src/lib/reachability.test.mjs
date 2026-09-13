@@ -142,6 +142,10 @@ const READ_ONLY_BY_DESIGN = {
     + 'each filtering `enrollments` for themselves.',
   position_profiles_unapproved: 'A view.',
   admission_status_coverage: 'A view.',
+  capability_grants_in_force: 'A view over `capability_grants`, which /api/admin/capability-grant '
+    + 'writes. It exists so that "still in force" — not revoked AND not expired — is decided in '
+    + 'one place: a caller checking only `revoked_at is null` would honour a grant that ran out '
+    + 'months ago, and that is the mistake every caller makes eventually.',
   // Seeded by migration and read by the application.
   positions: 'Seeded by 048 and given standing by 053. The register of posts is '
     + 'institutional structure, changed by migration rather than by a screen.',

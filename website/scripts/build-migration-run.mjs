@@ -188,6 +188,11 @@ const MARKERS = {
   // can answer for it, and without a fourth form it would simply be absent
   // from this report, which is how 052 and 053 were missed.
   '055': "def:appointments_second_pair_of_eyes:made_on_sole_authority",
+  // 056 rewrites four read policies, widens a role vocabulary, adds a trigger
+  // and creates one table. The policies are the substance and none of them is
+  // probeable — a restricted row comes back absent, not refused — so the
+  // marker is the table, which nothing before this migration creates.
+  '056': 'capability_grants',
 };
 
 /** The SQL that answers "is this one here?", for each of the three forms. */
@@ -223,8 +228,49 @@ function landedTest(marker) {
 }
 
 function landedReport(files) {
+  // ---------------------------------------------------------------------
+  // A MIGRATION WITH NO MARKER STOPS THE BUILD.
+  //
+  // This used to `.filter(([n]) => MARKERS[n])` and say nothing, so a
+  // migration nobody had added a marker for was simply absent from the
+  // report — and the report is the only thing the University can actually
+  // SEE, because the Supabase editor does not display notices.
+  //
+  // It has now happened three times: 052, 053, and 056. Each time the bundle
+  // built, ran, applied correctly, and produced a table that quietly did not
+  // mention the newest migration — which is the exact shape of "it worked"
+  // and "it did not run" being indistinguishable.
+  //
+  // Refusing here costs one line in MARKERS. Not refusing costs somebody
+  // reading a table of YESes and believing it covers everything.
+  // ---------------------------------------------------------------------
+  // SCOPED TO THE ERA THE REPORT COVERS. MARKERS begins at the migration this
+  // table was introduced for; everything before it predates the report and was
+  // never listed. Demanding markers for those retroactively would refuse to
+  // build RUN-ALL at all — which is how this check failed the first time it was
+  // written. The floor is the lowest key in MARKERS, so it moves by itself if
+  // the table is ever trimmed.
+  const firstReported = Object.keys(MARKERS).sort()[0];
+  const unmarked = files
+    .map((f) => [f.slice(0, 3), f])
+    .filter(([n]) => n >= firstReported && !MARKERS[n]);
+  if (unmarked.length > 0) {
+    console.error(
+      `\nNo marker for ${unmarked.length === 1 ? 'this migration' : 'these migrations'}:\n`
+      + unmarked.map(([n, f]) => `  ${n}  ${f}`).join('\n')
+      + '\n\nAdd one to MARKERS in scripts/build-migration-run.mjs naming something the\n'
+      + 'migration creates that no earlier one does. Without it the migration is missing\n'
+      + 'from the DID IT LAND? table, which is the only output the Supabase SQL editor\n'
+      + 'shows — a silent failure would look exactly like a success.\n',
+    );
+    process.exit(1);
+  }
+
   const rows = files
     .map((f) => [f.slice(0, 3), f])
+    // The pre-report migrations are skipped, not refused — the check above has
+    // already refused anything from 036 on that has no marker, so whatever is
+    // dropped here is only ever the historical schema.
     .filter(([n]) => MARKERS[n])
     .map(([n, f]) => `  select '${n}' as migration, '${f.replace(/'/g, "''")}' as file,
          ${landedTest(MARKERS[n])} as landed,

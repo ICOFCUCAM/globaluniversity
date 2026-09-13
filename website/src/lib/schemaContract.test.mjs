@@ -309,10 +309,24 @@ console.log(`Checked ${checked.selects} selects and ${checked.writes} writes aga
 // enumerations shared with the database are compared to their CHECK lists.
 // ---------------------------------------------------------------------------
 
+// COMMENTS ARE STRIPPED BEFORE ANYTHING IS PARSED.
+//
+// The migrations in this repository explain themselves inside the statements,
+// not only above them — a vocabulary with a `-- why this value is here` note
+// against each group reads far better than a bare list. But the regexes below
+// take everything between the brackets as values, so 056's annotated role list
+// came back as a vocabulary containing "-- HUMAN RESOURCES. The offices that
+// hold 'draft-appointment'." and the check failed against a constraint that
+// was perfectly correct.
+//
+// A false failure is the expensive kind: the next person makes it pass by
+// deleting the comments, and the migrations get quieter every time this
+// happens.
 const allSql = migrations
   .filter((f) => !f.startsWith('001_') && !f.startsWith('002_'))
   .map((f) => readFileSync(join(migrationDir, f), 'utf8'))
-  .join('\n');
+  .join('\n')
+  .replace(/--[^\n]*/g, '');
 
 /**
  * The values a CHECK constraint permits for `table.column`.
@@ -413,6 +427,35 @@ checkVocabulary('what kinds of credential exist', 'credential_types', 'category'
 checkVocabulary('every audited credential action', 'credential_audit_events', 'action', A.AUDIT_ACTIONS);
 checkVocabulary('the correction workflow', 'credential_correction_requests', 'status', A.CORRECTION_STATES);
 checkVocabulary('the variant authorship record', 'social_post_variants', 'source', ['human', 'assistant']);
+
+// ---------------------------------------------------------------------------
+// EVERY ROLE THE APPLICATION DEFINES CAN ACTUALLY BE GIVEN TO SOMEBODY.
+//
+// This check is here because for a long time six of them could not be.
+// `src/lib/roles.ts` defined twenty-three roles; `profiles.role` permitted
+// seventeen. The six in the gap were hr-officer, hr-administrator,
+// exam-officer, examiner, moderator and invigilator.
+//
+// They were not decorative. 'draft-appointment' is held by five roles, two of
+// which were in that gap; 015 and 016 built the whole proctoring system around
+// the four examination offices. Every capability granted to any of the six was
+// unreachable — not refused, just impossible to hold, because assigning the
+// role fails at the moment somebody tries it rather than at the moment the
+// matrix is written. Nobody tries it until a real person needs the account.
+//
+// 056 widened the constraint. This is what stops the two lists drifting apart
+// again: add a role to roles.ts without adding it to the migration and the
+// suite fails here rather than in production, on a Tuesday, for one person.
+// ---------------------------------------------------------------------------
+const rolesBundle = join(out, 'roles.mjs');
+execFileSync('npx', [
+  'esbuild', join(root, 'src/lib/roles.ts'),
+  '--bundle', '--format=esm', '--platform=node', `--outfile=${rolesBundle}`, '--log-level=error',
+  `--alias:@=${join(root, 'src')}`,
+]);
+const R = await import(rolesBundle);
+checkVocabulary('every role the application defines can be stored on a profile',
+  'profiles', 'role', Object.keys(R.roleLabels));
 
 // ---------------------------------------------------------------------------
 

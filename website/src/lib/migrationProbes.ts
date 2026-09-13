@@ -477,6 +477,24 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
       + "where conname = 'appointments_second_pair_of_eyes';"
       + '  -- it should end with "OR made_on_sole_authority"',
   },
+  {
+    file: '056_what_an_office_may_not_even_see.sql',
+    what: 'The blank certificate and the blank transcript stop being readable by everybody — '
+      + 'until this runs, every student, applicant and unsigned-in visitor can read the '
+      + 'designs. The appointment register gets three bands: your own, the files on your desk, '
+      + 'and the whole register for the Registrar, the Vice-Chancellor and the Chancellor. An '
+      + 'executive post can only be filled by the appointing authority. Six offices the '
+      + 'application already has — HR Officer, HR Administrator, Examination Officer, Examiner, '
+      + 'Moderator, Invigilator — become assignable for the first time. And the '
+      + 'Superadministrator gets capability grants: a named person holds a named capability '
+      + 'until a stated date, for a stated reason, in a row that cannot be rewritten.',
+    // A TABLE THIS TIME. The read policies it rewrites cannot be probed through
+    // PostgREST — a restricted row comes back as an empty list, not an error,
+    // which is indistinguishable from a table that happens to be empty.
+    // `capability_grants` is new in this migration and nothing earlier creates
+    // it, so it is the honest marker.
+    table: 'capability_grants',
+  },
 ];
 
 /** What a probe came back as. */

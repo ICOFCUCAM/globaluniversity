@@ -68,13 +68,28 @@ export function createClient() {
         ? { data: { user: { id: world.users[token] } }, error: null }
         : { data: null, error: { message: 'bad token' } },
     },
-    from: () => ({
-      select: () => ({
-        eq: (_col, id) => ({
-          single: async () => ({ data: world.profiles?.[id] ?? null, error: null }),
-        }),
-      }),
-    }),
+    // TWO TABLES NOW, AND THE CHAIN IS LONGER THAN IT WAS.
+    //
+    // The profile read is .select().eq().single(); the capability-grant read
+    // (056) is .select().eq().eq().maybeSingle(). The first version of this
+    // stub returned an object with only .single() after one .eq(), so the
+    // second .eq() was not a function and every test after the grant check died
+    // — not with a failure, with a TypeError deep in the bundle.
+    //
+    // So the builder is recursive: each .eq() narrows and returns the same
+    // shape, and both terminators are always present. A stub that supports less
+    // than the code it stands in for does not test the code, it tests the stub.
+    from: (table) => {
+      const rows = table === 'capability_grants_in_force'
+        ? (world.grants ?? [])
+        : Object.values(world.profiles ?? {});
+      const build = (matched) => ({
+        eq: (col, value) => build(matched.filter((r) => r[col] === value)),
+        single: async () => ({ data: matched[0] ?? null, error: null }),
+        maybeSingle: async () => ({ data: matched[0] ?? null, error: null }),
+      });
+      return { select: () => build(rows) };
+    },
   };
 }
 `);
@@ -234,6 +249,67 @@ console.log('\nHolding a capability is not the same as being allowed to use it h
   const registrar = { id: 'user-2', email: null, role: 'registrar', fullName: null };
   const r = mayActOnTarget(registrar, { id: 'other', role: 'superadmin' });
   check('a registrar may not act on a Superadministrator', r?.error, 'outranked:superadmin');
+}
+
+console.log('\nA capability grant lets somebody past, and only that somebody, and only that\n');
+
+{
+  // 056's switch. The Superadministrator hands a named person a named
+  // capability until a stated date. `guard` honours it — but the whole value of
+  // the table is in what it does NOT honour, so most of this section is
+  // refusals.
+  const live = {
+    id: 'grant-1', grantee_id: 'user-1', capability: 'delete-application',
+  };
+
+  world('registrar');
+  globalThis.__icof.grants = [live];
+  const g = await guard(req('Bearer valid-token'), 'delete-application');
+  check('a grant admits a caller whose role does not carry the capability', g.ok, true);
+  // WHICH GRANT LET THEM IN. A capability held by exception must never be
+  // indistinguishable in the record from one held by right.
+  check('…and says which grant did it', g.caller.viaGrant, 'grant-1');
+
+  // THE ORDINARY CASE IS STILL THE ROLE. A Superadministrator holds this by
+  // right and must not be reported as holding it on somebody's grant.
+  world('superadmin');
+  globalThis.__icof.grants = [live];
+  const byRight = await guard(req('Bearer valid-token'), 'delete-application');
+  check('a role that carries it is not recorded as a grant',
+    [byRight.ok, byRight.caller.viaGrant], [true, null]);
+
+  // A GRANT OF SOMETHING ELSE IS NOT A GRANT OF THIS.
+  world('registrar');
+  globalThis.__icof.grants = [{ ...live, capability: 'issue-credential' }];
+  const other = await guard(req('Bearer valid-token'), 'delete-application');
+  check('a grant of a different capability does not open this door',
+    [other.error, other.status], ['not-permitted:delete-application', 403]);
+
+  // SOMEBODY ELSE'S GRANT IS SOMEBODY ELSE'S.
+  world('registrar');
+  globalThis.__icof.grants = [{ ...live, grantee_id: 'user-2' }];
+  const theirs = await guard(req('Bearer valid-token'), 'delete-application');
+  check('a grant to another account does not admit this one',
+    theirs.ok === true, false);
+
+  // AND AN EXPIRED OR REVOKED ONE IS SIMPLY ABSENT. The view decides that in
+  // the database — 056 proves both cases in SQL — so what reaches this code is
+  // an empty result, and this is the assertion that it is treated as a refusal
+  // rather than as an error to shrug at.
+  world('registrar');
+  globalThis.__icof.grants = [];
+  const spent = await guard(req('Bearer valid-token'), 'delete-application');
+  check('a grant that is no longer in force is a refusal',
+    [spent.error, spent.status], ['not-permitted:delete-application', 403]);
+
+  // A SUSPENDED ACCOUNT IS REFUSED BEFORE THE GRANT IS EVEN LOOKED AT.
+  world('registrar', { suspended_at: '2026-01-01T00:00:00Z' });
+  globalThis.__icof.grants = [live];
+  const suspended = await guard(req('Bearer valid-token'), 'delete-application');
+  check('a grant does not survive the account being suspended',
+    [suspended.error, suspended.status], ['caller-suspended', 403]);
+
+  delete globalThis.__icof.grants;
 }
 
 console.log('\nThe initial password is not guessable and not confusable\n');

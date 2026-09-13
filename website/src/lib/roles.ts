@@ -451,6 +451,24 @@ export type Capability =
   | typeof SYSTEM_CAPABILITIES[number];
 
 /**
+ * Every capability there is, as values rather than as a type.
+ *
+ * WHY THE LIST AND NOT JUST THE TYPE. A capability GRANT (056) names one in a
+ * text column — the database deliberately holds no vocabulary for it, because
+ * a copy of this list in SQL would go stale the moment a capability is added
+ * and would then refuse something the application has. So the check happens in
+ * /api/admin/capability-grant, at runtime, against this.
+ *
+ * A typo stored as a grant is the failure that makes this worth having: it
+ * would sit in the table looking exactly like access and match no capability
+ * anybody ever asks for.
+ */
+export const ALL_CAPABILITIES: readonly Capability[] = [
+  ...OPERATIONAL_CAPABILITIES,
+  ...SYSTEM_CAPABILITIES,
+];
+
+/**
  * What each role may do. Anything absent is forbidden.
  *
  * `superadmin` is the only wildcard. `admin` used to be, and that was the flaw
