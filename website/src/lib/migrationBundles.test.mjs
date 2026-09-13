@@ -72,7 +72,8 @@ console.log('\nEvery marker names a migration that exists\n');
 console.log('\nAnd the bundles end with the table rather than with a proof nobody can see\n');
 
 {
-  for (const bundle of ['RUN-OUTSTANDING.sql', 'RUN-ALL.sql']) {
+  for (const bundle of ['RUN-OUTSTANDING.sql', 'RUN-ALL.sql',
+    'RUN-PART-1.sql', 'RUN-PART-2.sql', 'RUN-PART-3.sql', 'RUN-PART-4.sql']) {
     const sql = readFileSync(join(migrations, bundle), 'utf8');
     check(`${bundle} closes with the landed report`,
       /DID IT LAND\?/.test(sql), true);
@@ -119,6 +120,58 @@ console.log('\nAnd the standalone check covers every migration the bundles do\n'
   check('it changes nothing',
     /^\s*(create|alter|drop|insert|update|delete|truncate|grant|revoke|do)\b/im.test(
       report.replace(/^--.*$/gm, '')), false);
+}
+
+console.log('\nAnd the four parts add up to exactly the outstanding bundle\n');
+
+// ---------------------------------------------------------------------------
+// WHY THE BUNDLE IS ALSO SHIPPED IN FOUR PIECES
+// ---------------------------------------------------------------------------
+//
+// RUN-OUTSTANDING.sql passed a megabyte and the Supabase SQL editor refused
+// it: "Query is too large to be run via the SQL Editor". The University could
+// not run the one file the whole hand-over depends on.
+//
+// So the same migrations are also built as RUN-PART-1 … RUN-PART-4, split at
+// migration boundaries and run in order.
+//
+// AND THE FAILURE TO GUARD AGAINST IS DRIFT. A new migration lands, the
+// generator rebuilds RUN-OUTSTANDING, and the parts are forgotten — so the
+// University pastes four files, sees four clean runs, and is missing the
+// newest migration with nothing anywhere saying so. That is worse than the
+// size limit was, because it looks like success.
+//
+// This asserts the parts are a partition: every migration in the outstanding
+// bundle appears in exactly one part, in the same order, with nothing extra.
+{
+  const numbersIn = (file) =>
+    [...readFileSync(join(migrations, file), 'utf8')
+      .matchAll(/select '(\d{3})' as migration/g)].map((m) => m[1]);
+
+  const whole = numbersIn('RUN-OUTSTANDING.sql');
+  const parts = [1, 2, 3, 4].map((n) => numbersIn(`RUN-PART-${n}.sql`));
+  const joined = parts.flat();
+
+  check('every migration in RUN-OUTSTANDING is in exactly one part, in order',
+    joined, whole);
+
+  // SEPARATELY, because a duplicate and a gap both break the check above and
+  // a reader needs to know which. Running one migration twice is harmless —
+  // they are idempotent — but a part that repeats another's work is a sign
+  // the split was edited by hand.
+  check('no migration appears in two parts',
+    joined.length, new Set(joined).size);
+
+  // AND NONE OF THEM MAY GROW BACK PAST THE LIMIT. The editor refused a file
+  // of 1,039,151 bytes. A quarter of a megabyte is well inside whatever the
+  // real threshold is, and leaves room for several more migrations before a
+  // part has to be split again.
+  const LIMIT = 400_000;
+  for (const n of [1, 2, 3, 4]) {
+    const size = readFileSync(join(migrations, `RUN-PART-${n}.sql`), 'utf8').length;
+    check(`RUN-PART-${n} is small enough for the SQL editor (${size} bytes)`,
+      size < LIMIT, true);
+  }
 }
 
 // ---------------------------------------------------------------------------
