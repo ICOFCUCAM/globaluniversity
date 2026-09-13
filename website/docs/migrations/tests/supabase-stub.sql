@@ -73,8 +73,23 @@ alter default privileges in schema public
 create schema if not exists auth;
 
 -- The columns the migrations actually touch, not the real table's shape.
+-- ---------------------------------------------------------------------------
+-- NO DEFAULT ON `id`, AND THAT IS THE POINT.
+--
+-- The real auth.users has none: Supabase's GoTrue generates the uuid in the
+-- application before it inserts. A stub that defaults it accepts
+--
+--     insert into auth.users (email) values (...) returning id
+--
+-- which the University's database refuses with 23502. 055 was written that
+-- way, proved clean twice here, and failed on the first line of its proof
+-- block in the SQL editor — the one failure mode this harness exists to
+-- catch, caused by the harness being kinder than the thing it stands in for.
+--
+-- Every migration supplies the id itself. This makes that compulsory here too.
+-- ---------------------------------------------------------------------------
 create table if not exists auth.users (
-  id            uuid primary key default gen_random_uuid(),
+  id            uuid primary key,
   email         text unique,
   raw_user_meta_data jsonb not null default '{}'::jsonb,
   created_at    timestamptz not null default now()

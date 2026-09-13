@@ -170,8 +170,15 @@ declare
   refused boolean;
 begin
   begin
-    insert into auth.users (email) values ('055-vc@example.test') returning id into vc;
-    insert into auth.users (email) values ('055-clerk@example.test') returning id into clerk;
+    -- THE ID IS SUPPLIED, NOT DEFAULTED. auth.users.id has no default on a
+    -- real Supabase project — GoTrue generates it in the application — so an
+    -- insert that leaves it out is refused with 23502. Every other migration
+    -- in this directory names it; this one did not, and failed here on the
+    -- University's database after passing twice on the local harness.
+    vc    := gen_random_uuid();
+    clerk := gen_random_uuid();
+    insert into auth.users (id, email) values (vc,    '055-vc@example.test');
+    insert into auth.users (id, email) values (clerk, '055-clerk@example.test');
 
     -- ---- THE ORDINARY RULE STILL BITES ------------------------------------
     -- An officer who is not the appointing authority drafting and approving
