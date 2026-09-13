@@ -6427,6 +6427,7 @@ declare
   someone uuid;
   other uuid;
   fam_id uuid;
+  src_id uuid;
   pos_id uuid;
   own_id uuid;
   n integer;
@@ -6441,29 +6442,56 @@ begin
   begin
     select id into pos_id from positions where job_code = 'ACS-LEC';
 
-    -- ---- THE ONE THIS PROOF MAY USE, CHOSEN AND NOT STUMBLED ON -----------
+    -- -----------------------------------------------------------------------
+    -- THE PROOF BRINGS ITS OWN FAMILY PROFILE. IT USED TO EDIT THE
+    -- UNIVERSITY'S.
     --
-    -- THE FAULT 044 WAS STOPPED BY ON THE LIVE DATABASE, WAITING TO HAPPEN
-    -- HERE. This was an unordered `select into` with no status filter, which
-    -- takes whichever row the planner hands over first. Today there is exactly
-    -- one academic-staff family profile and that is harmless. The moment the
-    -- University forks a second version — which is the whole point of the
-    -- Job Descriptions screen — there are two or three, this picks an
-    -- arbitrary one, and activating a superseded row while another is active
-    -- collides with `one_active_per_family_idx` and takes the migration down.
+    -- THIS IS WHAT STOPPED THE MIGRATION ON THE LIVE DATABASE, AT
+    -- `update position_profiles set created_by = someone where id = fam_id`:
     --
-    -- So: prefer a draft, fall back to the lowest version, and park anything
-    -- already active out of the way. All of it rolls back with the block, so
-    -- the University's own profile is exactly as it was the moment the proof
-    -- ends.
-    select id into fam_id from position_profiles
+    --   ERROR: new row for relation "position_profiles" violates check
+    --          constraint "position_profiles_second_pair_of_eyes"
+    --
+    -- The University had activated the academic-staff job description through
+    -- the Job Descriptions screen, and the account that activated it was the
+    -- same account this proof picks as `someone`. Writing that account into
+    -- `created_by` made the author and the activator one person, which is
+    -- precisely what the constraint exists to refuse. THE CONSTRAINT WAS
+    -- RIGHT. The proof had no business writing to their row at all.
+    --
+    -- Borrowing the University's data was the whole mistake, and it kept
+    -- producing new failures as they used the system: first an unordered
+    -- `select into` that would pick an arbitrary version once they forked one,
+    -- then this. So the proof now works on a profile of its own, at a version
+    -- far outside the range the University will ever reach, and touches their
+    -- row only to park it — which rolls back with everything else.
+    --
+    -- THE CLAUSES ARE COPIED because the inheritance check below is the point
+    -- of this migration: a Lecturer must inherit the family's clauses. A
+    -- profile with none would prove the opposite of what it claims.
+    -- -----------------------------------------------------------------------
+    select id into src_id from position_profiles
      where family = 'academic-staff' and position_id is null
-     order by (status = 'draft') desc, version
+     order by (status = 'active') desc, version desc
      limit 1;
 
     update position_profiles set status = 'superseded'
-     where family = 'academic-staff' and position_id is null
-       and status = 'active' and id <> fam_id;
+     where family = 'academic-staff' and position_id is null and status = 'active';
+
+    select coalesce(max(version), 0) + 1 into n from position_profiles
+     where family = 'academic-staff' and position_id is null;
+    if n < 9001 then n := 9001; end if;
+
+    insert into position_profiles (family, version, status, job_purpose)
+    values ('academic-staff', n, 'draft',
+            'To carry the teaching, assessment and scholarship of the discipline, and to '
+            'supervise the students allocated to the post.')
+    returning id into fam_id;
+
+    insert into position_profile_clauses (profile_id, section, ordinal, body)
+    select fam_id, c.section, c.ordinal, c.body
+      from position_profile_clauses c
+     where c.profile_id = src_id;
 
     -- ---- A PROFILE BELONGS TO A POST OR A FAMILY, NEVER BOTH ---------------
     refused := false;
@@ -6530,9 +6558,23 @@ begin
     end if;
 
     -- ---- AND ITS OWN CLAUSE REPLACES THE FAMILY'S FOR THAT SECTION ---------
+    --
+    -- THE NEXT FREE VERSION, AND THE POST'S OWN ACTIVE PROFILE PARKED FIRST.
+    -- Version 1 was hard-coded here, and `one_active_per_post_idx` permits one
+    -- active profile per post — so the first time the University gives the
+    -- Lecturer a job description of its own, both the version and the active
+    -- slot collide and the migration fails on a database where nothing is
+    -- wrong. Rolled back with the rest of the block.
+    update position_profiles set status = 'superseded'
+     where position_id = pos_id and status = 'active';
+
+    select coalesce(max(version), 0) + 1 into n from position_profiles
+     where position_id = pos_id;
+    if n < 9001 then n := 9001; end if;
+
     insert into position_profiles (position_id, version, status, job_purpose,
                                    created_by, activated_by, activated_at)
-    values (pos_id, 1, 'active',
+    values (pos_id, n, 'active',
             'To teach the courses of the department to the standard the University requires, '
             'and to supervise the students allocated to the post.',
             someone, other, now())
@@ -6556,8 +6598,9 @@ begin
     -- ---- A DRAFT JOB DESCRIPTION CANNOT REACH AN APPOINTEE -----------------
     -- The door the draft state exists to close, and 048 seeds everything as a
     -- draft, so this is the guard that keeps the seeded wording off a letter.
+    -- Again the next free version, for the reason above.
     insert into position_profiles (position_id, version, status, created_by)
-    values (pos_id, 2, 'draft', someone)
+    values (pos_id, n + 1, 'draft', someone)
     returning id into own_id;
 
     -- (validate so the NOT VALID constraint applies to what follows)

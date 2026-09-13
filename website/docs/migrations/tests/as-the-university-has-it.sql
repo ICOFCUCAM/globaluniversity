@@ -81,21 +81,27 @@ begin
   --
   -- These three are the kinds the proofs in 044, 051 and 052 activate. Any
   -- kind would do; these are the ones that have actually collided.
+  -- RE-RUNNABLE. This file is applied between landings, so a second
+  -- application must not try to create what the first one did — the kind is
+  -- skipped entirely once something of it is already in force.
   foreach k in array array['promotion', 'terms-and-conditions', 'letter-warning'] loop
-    select id into tid from document_templates
-     where kind = k and status = 'draft' order by version limit 1;
+    if not exists (select 1 from document_templates where kind = k and status = 'active') then
+      select id into tid from document_templates
+       where kind = k and status = 'draft' order by version limit 1;
 
-    if tid is null then
-      insert into document_templates (kind, version, name, body, status, created_by)
-      values (k, 1, 'The University''s own ' || k,
-              'A body long enough to pass the minimum length check.', 'draft', u1)
-      returning id into tid;
+      if tid is null then
+        insert into document_templates (kind, version, name, body, status, created_by)
+        values (k, coalesce((select max(version) from document_templates where kind = k), 0) + 1,
+                'The University''s own ' || k,
+                'A body long enough to pass the minimum length check.', 'draft', u1)
+        returning id into tid;
+      end if;
+
+      update document_templates
+         set status = 'active', activated_by = u2, activated_at = now(),
+             effective_from = current_date
+       where id = tid;
     end if;
-
-    update document_templates
-       set status = 'active', activated_by = u2, activated_at = now(),
-           effective_from = current_date
-     where id = tid;
   end loop;
 
   -- ---- JOB DESCRIPTIONS THE UNIVERSITY HAS ACTIVATED ----------------------
@@ -103,12 +109,38 @@ begin
   -- 048 seeds eight family profiles as drafts and the Job Descriptions screen
   -- activates them one click at a time. The moment it does, 048's own proof is
   -- working against a family that already has an active profile.
+  -- ACTIVATED BY u1, NOT u2, AND THAT IS THE POINT. The seeded profiles have
+  -- no author, so `second_pair_of_eyes` lets any account activate them — and
+  -- the University's Superadministrator, the first account in the table, is
+  -- who actually pressed the button.
+  --
+  -- That is exactly what broke 048 on their database. Its proof wrote the
+  -- first account into `created_by` on the University's own row, which was
+  -- already activated by that same account, making the author and the
+  -- activator one person. Activating as u2 here hid the fault; activating as
+  -- u1 reproduces it.
   foreach fam in array array['academic-staff', 'executive', 'academic-administration'] loop
     update position_profiles
-       set status = 'active', activated_by = u2, activated_at = now()
+       set status = 'active', activated_by = u1, activated_at = now()
      where family = fam and position_id is null and status = 'draft'
        and job_purpose is not null;
   end loop;
+
+  -- ---- A CERTIFICATE DESIGN THE UNIVERSITY HAS PUBLISHED ------------------
+  --
+  -- `credential_templates_one_active_per_type` is the last of the eleven
+  -- one-active indexes in this schema that no test had ever occupied. The
+  -- other ten are filled by the migrations themselves or by the blocks above,
+  -- and every one of those has now been run over twice; this one was empty,
+  -- so any proof that publishes a design had never met a University that
+  -- already had one.
+  if to_regclass('public.credential_templates') is not null
+     and not exists (select 1 from credential_templates where is_active) then
+    insert into credential_templates
+      (kind, version, name, design, is_active, lifecycle, created_by, published_at)
+    values ('certificate', 1, 'The University''s own certificate',
+            '{}'::jsonb, true, 'published', u1, now());
+  end if;
 
   -- ---- CONDITIONS WRITTEN FOR ONE POST ------------------------------------
   --
