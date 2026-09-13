@@ -38,6 +38,10 @@
 
 import { UNIVERSITY } from './constants';
 import { verificationQrSvg, type DocumentSeal } from './documentSecurity';
+// EMBEDDED, NOT LINKED. See crest.ts: a letterhead that fetches its own crest
+// over the network is a letterhead that renders as a broken image in every mail
+// client that blocks remote content, which is most of them.
+import { CREST_DATA_URI } from './crest';
 
 // ---------------------------------------------------------------------------
 // 1. THE PAGE, AS ONE SET OF NUMBERS
@@ -119,6 +123,15 @@ export function documentStyles(): string {
   p, .terms, .letterbody { orphans: 3; widows: 3; }
   .head { display: flex; gap: 14px; align-items: center;
           border-bottom: 2px solid #422e59; padding-bottom: 10px; }
+  /* THE UNIVERSITY'S CREST, ON ITS OWN LETTERS AT LAST.
+     The admission letter has carried it since the day somebody noticed it was
+     being loaded over the network and rendering as a broken image in every
+     email client that blocks remote content. The appointment letter and the
+     official correspondence — the two most formal documents this University
+     issues — were still going out under a line of text, because this shared
+     letterhead was written later and nobody carried the crest across.
+     Drawn at 52pt from a 156px source, so a printer has pixels to work with. */
+  .crest { width: 52pt; height: 52pt; flex: 0 0 auto; object-fit: contain; }
   .head h1 { font-size: 15pt; margin: 0; letter-spacing: .04em; color: #422e59; }
   .head p { margin: 2px 0 0; font-size: 8.5pt; color: #5c5366; }
   /* NO text-transform. It was uppercase, and the page-count test read the
@@ -244,6 +257,7 @@ export function documentStyles(): string {
  */
 export function letterhead(office?: string | null): string {
   return `<div class="head">
+  <img class="crest" src="${CREST_DATA_URI}" alt="">
   <div>
     <h1>${escape(UNIVERSITY.name)}</h1>
     <p>${escape(UNIVERSITY.address)}</p>
@@ -292,7 +306,13 @@ export function signatureBlock(s: Signature): string {
   ${s.byAuthorityOf
     ? `<p class="byauthority">BY AUTHORITY OF ${escape(s.byAuthorityOf.toUpperCase())}</p>`
     : ''}
-  <p>${escape(s.closing ?? 'Yours sincerely,')}</p>
+  ${
+  // AN EMPTY CLOSING PRINTS NOTHING, rather than an empty paragraph. Not every
+  // sealed document this University issues is a letter: a job description
+  // carries the same signature block and "Yours sincerely," at the foot of a
+  // schedule of duties is a document that has been made out of a template
+  // without being read.
+  s.closing === '' ? '' : `<p>${escape(s.closing ?? 'Yours sincerely,')}</p>`}
   ${s.image && s.image.startsWith('data:image/')
     // THE RULE IS DRAWN EITHER WAY. A reproduced signature sits ON it, not
     // instead of it: a document with an image and no line looks like a picture

@@ -212,10 +212,30 @@ console.log(`      ${measured.height}px of content — ${pages} printed page(s) 
 check('the last page carries a real part of the letter, not a stray line',
   lastPageInk >= Math.round(A4_PRINTABLE_HEIGHT / 5), true);
 
-// TWO IS THE CEILING. Three means the terms have overflowed in a way nobody
-// intended, and an appointment letter running to three pages is one somebody
-// does not read to the end. Pinned here so it cannot drift further.
-check('a full letter runs to no more than two pages', pages <= 2, true);
+// ---------------------------------------------------------------------------
+// THE CEILING MOVED, BECAUSE THE UNIVERSITY REPLACED THE LETTER.
+//
+// This was two, and the reasoning was sound for the letter it was written
+// against: a table, a paragraph of typed terms, and a signature. Three pages of
+// THAT would have meant something had overflowed.
+//
+// The University then supplied the letter it actually wanted — thirteen
+// numbered sections covering status, delegated authority, accountability,
+// remuneration, conduct, conditions, review, confidentiality, termination, the
+// job description and acceptance. That document is three pages when it is
+// correct, and clamping it at two would mean cutting sections the University
+// asked for.
+//
+// FOUR, NOT UNLIMITED. The duties printed under "Principal Areas of
+// Responsibility" come from the job description, and a job description with
+// forty clauses would run this to six pages without anybody deciding to. Four
+// is where it stops being a letter.
+//
+// THE REAL GUARD IS THE ONE ABOVE, and it did not change: whatever the page
+// count, the last page must carry a real part of the letter rather than a QR
+// code on a blank sheet.
+// ---------------------------------------------------------------------------
+check('a full letter runs to no more than four pages', pages <= 4, true);
 
 // THE ONE THAT WOULD ACTUALLY EMBARRASS THE UNIVERSITY. A final page carrying
 // nothing but the signature line and the seal is a page that looks like a
@@ -281,7 +301,11 @@ console.log('\nThe things a reader has to be able to find are on it\n');
     ['the working hours', '40 hours per week'],
     ['the place of duty', 'Buea campus'],
     ['the reporting officer', 'The Head of Academic Affairs'],
-    ['the appointing authority', 'The University Council'],
+    // LOWERCASE "the", DELIBERATELY. The record holds "The University Council"
+    // — correct in a table cell and wrong in the middle of "made on the
+    // authority of The University Council", which is what the letter said
+    // until `midSentence` was added. The article is the only thing touched.
+    ['the appointing authority', 'authority of the University Council'],
     ['the signatory', 'The Registrar'],
     // THE AUTHORITY, STATED. A reader in five years needs to know the letter
     // was made by the office that may make it, and a signature alone does not
@@ -329,8 +353,30 @@ console.log('\nThe seal panel is at the foot, where a reader looks for it\n');
   // below the signature, and this asserts the order rather than trusting the
   // markup to have stayed in it.
   check('the seal sits below the signature', measured.sealTop > measured.signTop, true);
-  check('and it is the last thing on the document',
-    measured.sealBottom >= measured.height - 40, true);
+  // ---------------------------------------------------------------------
+  // THE SEAL IS NO LONGER THE LAST THING, AND THAT IS THE UNIVERSITY'S OWN
+  // LAYOUT. Their draft closes with OFFICIAL DOCUMENT VERIFICATION and then
+  // ATTACHMENTS — the verification block first, then the manifest of what
+  // travels with the letter. A list of attachments printed above the seal
+  // would sit between the signature and the code, which is the one place
+  // nothing should go.
+  //
+  // So what is asserted is the ORDER, which is what actually matters:
+  // signature, then seal, then the manifest, and nothing after it.
+  // ---------------------------------------------------------------------
+  const tail = await page.evaluate(() => {
+    const seal = document.querySelector('.seal');
+    const att = document.querySelector('.attachments');
+    return {
+      sealBottom: seal ? Math.round(seal.getBoundingClientRect().bottom) : -1,
+      attTop: att ? Math.round(att.getBoundingClientRect().top) : -1,
+      attBottom: att ? Math.round(att.getBoundingClientRect().bottom) : -1,
+    };
+  });
+
+  check('the attachments are listed after the seal', tail.attTop >= tail.sealBottom, true);
+  check('and the manifest is the last thing on the document',
+    tail.attBottom >= measured.height - 40, true);
 }
 
 await browser.close();

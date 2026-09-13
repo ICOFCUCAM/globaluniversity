@@ -440,7 +440,7 @@ export const leadership: FacultyMember[] = [
 export const faculty: FacultyMember[] = [
   {
     name: 'Prof Aaron Ndenka',
-    role: 'Academic Director General',
+    role: 'Director of Academic Affairs',
     image: '/images/wp/ndenka.jpg',
     bio: 'Holds a PhD in Finance from the University of Buea and a PhD in Systematic Theology from ICOF College and University. Former lecturer at the University of Buea. Email: gad@iguc.net',
   },
@@ -486,7 +486,7 @@ export const administration: FacultyMember[] = [
   },
   {
     name: 'Prof Aaron Ndenka',
-    role: 'Academic Director General',
+    role: 'Director of Academic Affairs',
     image: '/images/wp/ndenka.jpg',
     bio: 'Holds a PhD in Finance from the University of Buea and a PhD in Systematic Theology from ICOF College and University. Former lecturer at the University of Buea; lecturer at the Bamenda University of Technology. Email: gad@iguc.net',
   },

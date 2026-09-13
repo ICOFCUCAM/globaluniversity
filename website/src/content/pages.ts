@@ -528,7 +528,7 @@ export const contentPages: ContentPage[] = [
           'Chancellor \u2014 Bishop Bernie L Wade, PhD: visionary oversight of the university and the worldwide ICOF family.',
           'President \u2014 Dr. Raymond L Young: institutional strategy and global coordination.',
           'Vice Chancellor \u2014 Prof Chamayah Meyembi: academic administration and institutional development.',
-          'Academic Director General \u2014 Prof Aaron Ndenka: academic quality across all faculties.',
+          'Director of Academic Affairs \u2014 Prof Aaron Ndenka: academic quality across all faculties.',
           'Registrar \u2014 Dr Divine Lyonga: records, registration and certification.',
           'Dissertation Council \u2014 presided by Professor Emeritus Arch Bishop Godfred Anyere Tah: examination of all doctoral research.',
         ],
@@ -536,7 +536,7 @@ export const contentPages: ContentPage[] = [
       {
         heading: 'Academic Structure',
         paragraphs: [
-          'Five schools and faculties carry the university\u2019s teaching mission: the Faculty of Theology in Buea, the School of Ministry in Douala, the Faculty of Education, the Faculty of Engineering and Technology, and the Global Institute of Business and Management Science (GIBMAS) \u2014 together with the PPDI-RC professional development center in Nigeria. Each is led by a director accountable to the Academic Director General.',
+          'Five schools and faculties carry the university\u2019s teaching mission: the Faculty of Theology in Buea, the School of Ministry in Douala, the Faculty of Education, the Faculty of Engineering and Technology, and the Global Institute of Business and Management Science (GIBMAS) \u2014 together with the PPDI-RC professional development center in Nigeria. Each is led by a director accountable to the Director of Academic Affairs.',
         ],
       },
       {

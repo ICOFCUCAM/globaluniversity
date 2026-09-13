@@ -269,7 +269,7 @@ export default function AcademicCatalogPage() {
           <Part id="governance" n="III" title="Governance">
             <P>
               The university is led by the Chancellor, with academic administration under the Vice
-              Chancellor, supported by the Academic Director General, the Registrar and the directors
+              Chancellor, supported by the Director of Academic Affairs, the Registrar and the directors
               of the schools. Doctoral work is examined by the Dissertation Council.
             </P>
             <H3>University Leadership</H3>

@@ -56,9 +56,29 @@ for (const probe of MIGRATION_PROBES) {
   if (probe.cannotSee) continue;
   const sql = read(probe.file);
   if (probe.column) {
-    const adds = new RegExp(
-      `alter table ${probe.table}[\\s\\S]{0,80}?add column if not exists\\s+${probe.column}\\b`, 'i',
-    ).test(sql)
+    // ---------------------------------------------------------------------
+    // THE WHOLE STATEMENT, NOT A WINDOW OF EIGHTY CHARACTERS.
+    //
+    // This used to look for the column within 80 characters of `alter table
+    // <name>`, which works only for a migration that adds one column and
+    // explains itself afterwards. 053 adds three, with a comment against each
+    // saying why it is not the other two — so the column it was probed on sat
+    // four hundred characters in, and the test reported that the migration did
+    // not add a column it plainly adds.
+    //
+    // A false failure here is not harmless: the next person makes the test
+    // pass by weakening it, and the check stops meaning anything.
+    //
+    // STILL SCOPED TO THE RIGHT TABLE. Each `alter table <name> … ;` is taken
+    // whole and the column looked for inside it, so a column added to a
+    // DIFFERENT table in the same migration does not count.
+    // ---------------------------------------------------------------------
+    const statements = [...sql.matchAll(
+      new RegExp(`alter table\\s+${probe.table}\\b[\\s\\S]*?;`, 'gi'),
+    )].map((m) => m[0]);
+
+    const adds = statements.some((s) =>
+      new RegExp(`add column if not exists\\s+${probe.column}\\b`, 'i').test(s))
       // A column added in the CREATE TABLE of the same migration counts too.
       || new RegExp(`create table if not exists ${probe.table}[\\s\\S]*?\\b${probe.column}\\b`, 'i').test(sql);
     check(`${probe.file} adds ${probe.table}.${probe.column}`, adds, true);

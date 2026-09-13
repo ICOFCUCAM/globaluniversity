@@ -1,9 +1,9 @@
 -- ===========================================================================
--- ICOF GLOBAL UNIVERSITY — MIGRATIONS 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013, 014, 015, 016, 017, 018, 019, 020, 021, 022, 023, 024, 025, 026, 027, 028, 029, 030, 031, 032, 033, 034, 035, 036, 037, 038, 039, 040, 041, 042, 043, 044, 045, 046, 047, 048, 049, 050, 051, 052, IN ORDER
+-- ICOF GLOBAL UNIVERSITY — MIGRATIONS 001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013, 014, 015, 016, 017, 018, 019, 020, 021, 022, 023, 024, 025, 026, 027, 028, 029, 030, 031, 032, 033, 034, 035, 036, 037, 038, 039, 040, 041, 042, 043, 044, 045, 046, 047, 048, 049, 050, 051, 052, 053, IN ORDER
 --
 -- GENERATED FILE. DO NOT EDIT.
 --   Generator: scripts/build-migration-run.mjs
---   Rebuild:   node scripts/build-migration-run.mjs --out=RUN-ALL.sql 001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020 021 022 023 024 025 026 027 028 029 030 031 032 033 034 035 036 037 038 039 040 041 042 043 044 045 046 047 048 049 050 051 052
+--   Rebuild:   node scripts/build-migration-run.mjs --out=RUN-ALL.sql 001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020 021 022 023 024 025 026 027 028 029 030 031 032 033 034 035 036 037 038 039 040 041 042 043 044 045 046 047 048 049 050 051 052 053
 --
 -- ---------------------------------------------------------------------------
 -- HOW TO RUN IT
@@ -19488,6 +19488,206 @@ select k.kind,
 
 
 -- ===========================================================================
+-- ===========================================================================
+--
+--   053_where_an_office_stands.sql
+--
+-- ===========================================================================
+-- ===========================================================================
+
+-- ===========================================================================
+-- 053 — WHERE AN OFFICE STANDS, AND THE OFFICE THAT WAS CALLED THREE THINGS
+-- ===========================================================================
+--
+-- WHAT CHANGES FOR THE UNIVERSITY THE MOMENT THIS RUNS
+--
+-- 1. THE APPOINTMENT LETTER STARTS SAYING DIFFERENT THINGS TO DIFFERENT
+--    OFFICES. It already did in the code; this is the data that feeds it. A
+--    post's `family` selects the register of wording — a Dean's letter, a
+--    Lecturer's and the Director of Academic Affairs' stop being the same
+--    generic executive letter with a different job title in it.
+--
+-- 2. THE DIRECTOR OF ACADEMIC AFFAIRS IS RECORDED AS RANKING IMMEDIATELY BELOW
+--    THE VICE-CHANCELLOR. The University stated this on 13 September 2026. It
+--    is stored on the post, and it is the ONLY post that carries it — so the
+--    sentence can be printed where it is true and nowhere else.
+--
+--    A LETTER THAT CLAIMS A RANK IS MAKING A CONSTITUTIONAL CLAIM. If that
+--    sentence lived in a template, every future template copying it would
+--    repeat the claim for whatever post it was pointed at, and a Lecturer's
+--    letter would quietly say the same thing. As a column on one row it cannot.
+--
+-- 3. NOTHING IS GRANTED. `precedence` and `standing` say where an office sits.
+--    They say nothing about what it may authorise, may recommend or must
+--    escalate — those three are in the job description, which 048 versions and
+--    approves separately, and this migration does not touch them.
+--
+-- ---------------------------------------------------------------------------
+-- AND IT DOES NOT RENAME ANYTHING
+-- ---------------------------------------------------------------------------
+--
+-- The University has ruled that the office called "Head of Academic Affairs" in
+-- this system and "Academic Director General" on the published About page is
+-- the DIRECTOR OF ACADEMIC AFFAIRS. 048 already seeded the post under that
+-- name, so there is no row here to rename — the disagreement was in the
+-- application's own constants and in the website's content, and both are fixed
+-- in the same change as this file. It is recorded here because somebody reading
+-- the migrations in five years will want to know when the three names became
+-- one.
+-- ===========================================================================
+
+-- ---------------------------------------------------------------------------
+-- 1. WHERE AN OFFICE STANDS
+-- ---------------------------------------------------------------------------
+
+alter table positions
+  add column if not exists executive_level text,
+  -- The rank, as it is printed in a table cell: "Second-ranking officer after
+  -- the Vice-Chancellor".
+  add column if not exists precedence      text,
+  -- The same standing, as a sentence in a paragraph. TWO COLUMNS ON PURPOSE:
+  -- lowercasing the first to make the second produced "The office of Director
+  -- of Academic Affairs is second-ranking officer after the Vice-Chancellor",
+  -- which is neither a rank nor English.
+  add column if not exists standing        text;
+
+comment on column positions.executive_level is
+  'The management band the office sits in, where the University has recorded one. Printed in '
+  'the appointment letter''s details table. Never derived.';
+
+comment on column positions.precedence is
+  'Where the office ranks, as a table-cell value. Printed ONLY for posts that carry it, so a '
+  'letter cannot claim a standing the University has not stated for that post.';
+
+comment on column positions.standing is
+  'The same fact as a sentence, for the letter''s opening paragraphs. Says where the office '
+  'sits and NOT what it may do — authority is in the job description and nowhere else.';
+
+-- NOT A FREE-TEXT INVITATION. A standing is a considered statement about the
+-- University's structure, and a one-word value in it is a typo rather than a
+-- ruling.
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'positions_standing_is_a_statement') then
+    alter table positions add constraint positions_standing_is_a_statement
+      check (standing is null or length(btrim(standing)) >= 20);
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'positions_precedence_is_a_rank') then
+    alter table positions add constraint positions_precedence_is_a_rank
+      check (precedence is null or length(btrim(precedence)) >= 8);
+  end if;
+end $$;
+
+-- ---------------------------------------------------------------------------
+-- 2. THE ONE POST THE UNIVERSITY HAS RANKED
+-- ---------------------------------------------------------------------------
+--
+-- WRITTEN ONLY WHERE IT IS STILL EMPTY. If the University has since edited
+-- either field, this must not put its own wording back on a re-run — a
+-- migration that overwrites a considered change is a migration nobody can run
+-- twice.
+
+update positions
+   set executive_level = coalesce(executive_level, 'Senior Executive Management'),
+       precedence      = coalesce(precedence, 'Second-ranking officer after the Vice-Chancellor'),
+       standing        = coalesce(standing,
+                                  'a senior executive office of the University, ranking '
+                                  'immediately below the Vice-Chancellor in the University''s '
+                                  'executive structure')
+ where job_code = 'ACA-DAA';
+
+-- ---------------------------------------------------------------------------
+-- 3. PROVE IT
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  ranked  int;
+  daa     record;
+  refused boolean;
+begin
+  -- ---- ONE POST CARRIES A RANK, AND ONLY ONE ------------------------------
+  select count(*) into ranked from positions where precedence is not null;
+  if ranked <> 1 then
+    raise exception '053 FAILED: % posts carry a precedence, expected exactly 1', ranked;
+  end if;
+
+  select job_code, precedence, standing, executive_level, family
+    into daa from positions where job_code = 'ACA-DAA';
+
+  if daa is null then
+    raise exception '053 FAILED: ACA-DAA is not in the register — run 048 first';
+  end if;
+  if daa.precedence is null or daa.standing is null then
+    raise exception '053 FAILED: the Director of Academic Affairs carries no standing';
+  end if;
+  if daa.family <> 'academic-administration' then
+    raise exception '053 FAILED: ACA-DAA is in family %, so it would take the wrong register',
+                    daa.family;
+  end if;
+
+  -- ---- EVERY POST HAS A FAMILY, because the family picks the wording ------
+  -- A post with none falls to the plainest register rather than the grandest,
+  -- which is safe — but a post with no family at all is a post nobody
+  -- classified, and the letter it produces is nobody's decision.
+  if exists (select 1 from positions where family is null or btrim(family) = '') then
+    raise exception '053 FAILED: some posts have no family, so their letters have no register';
+  end if;
+
+  -- ---- AND THE GUARDS REFUSE ---------------------------------------------
+  begin
+    refused := false;
+    begin
+      update positions set standing = 'senior' where job_code = 'ACA-DAA';
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '053 FAILED: a one-word standing was accepted as a statement of structure';
+    end if;
+
+    refused := false;
+    begin
+      update positions set precedence = 'top' where job_code = 'ACA-DAA';
+    exception when others then refused := true;
+    end;
+    if not refused then
+      raise exception '053 FAILED: a three-letter precedence was accepted as a rank';
+    end if;
+
+    raise exception 'PROOF_ROLLBACK';
+  exception
+    when others then
+      if sqlerrm <> 'PROOF_ROLLBACK' then raise; end if;
+  end;
+
+  raise notice '053 OK: every post carries a family, so every appointment letter has a register '
+               'of wording appropriate to the office';
+  raise notice '053 OK: the Director of Academic Affairs ranks immediately below the '
+               'Vice-Chancellor, and is the only post that carries a standing';
+  raise notice '053 OK: a standing too short to be a statement is refused';
+end $$;
+
+
+-- ===========================================================================
+-- 4. VERIFY — READ THIS OUTPUT
+-- ===========================================================================
+
+-- ---------------------------------------------------------------------------
+-- WHICH REGISTER EACH KIND OF OFFICE WILL TAKE, and which posts the University
+-- has ranked. Every family below should have posts in it; only ACA-DAA should
+-- show a precedence.
+-- ---------------------------------------------------------------------------
+select family,
+       count(*)                                        as posts,
+       count(*) filter (where precedence is not null)  as ranked,
+       string_agg(job_code, ', ' order by job_code)
+         filter (where precedence is not null)         as which
+  from positions
+ group by family
+ order by family;
+
+
+-- ===========================================================================
 -- DID IT LAND?  — READ THIS TABLE
 -- ===========================================================================
 --
@@ -19499,28 +19699,85 @@ select k.kind,
 -- editor does not show. This table is the same answer in a form it does.
 -- ===========================================================================
 
-select m.migration,
-       m.file,
-       case when to_regclass('public.' || m.marker) is not null then 'YES' else 'NO' end
-         as landed,
-       m.marker as what_it_creates
-  from (values
-    ('036', '036_the_steps_nothing_could_write.sql', 'admission_audit_log'),
-    ('037', '037_a_student_is_not_an_application.sql', 'students'),
-    ('038', '038_announcements_are_the_institution_speaking.sql', 'announcements'),
-    ('039', '039_a_destination_is_a_publishing_job.sql', 'announcement_media'),
-    ('040', '040_emergency_publishing_and_erasure.sql', 'announcement_tombstones'),
-    ('041', '041_appointments_and_the_letters_that_issue_from_them.sql', 'appointments'),
-    ('042', '042_the_appointment_lifecycle_and_the_staff_record.sql', 'appointment_events'),
-    ('043', '043_working_hours_and_the_appointing_authority.sql', 'appointment_letters_unverifiable'),
-    ('044', '044_document_templates_and_the_letters_tied_to_them.sql', 'document_templates'),
-    ('045', '045_official_correspondence_and_who_initiated_it.sql', 'correspondence'),
-    ('046', '046_the_correspondence_history_and_the_delegated_draft.sql', 'correspondence_events'),
-    ('047', '047_the_money_the_actors_and_the_two_axes.sql', 'appointment_allowances'),
-    ('048', '048_the_job_descriptions_and_what_they_inherit.sql', 'positions'),
-    ('049', '049_verification_signatures_and_the_written_letter.sql', 'signature_specimens'),
-    ('050', '050_acceptance_the_activation_rule_and_the_full_audit.sql', 'appointment_acceptances'),
-    ('051', '051_templates_for_every_document_the_university_issues.sql', 'document_template_coverage')
-  ) as m (migration, file, marker)
- order by m.migration;
+select * from (
+  select '036' as migration, '036_the_steps_nothing_could_write.sql' as file,
+         case when to_regclass('public.admission_audit_log') is not null then 'YES' else 'NO' end as landed,
+         'admission_audit_log' as what_it_creates
+  union all
+  select '037' as migration, '037_a_student_is_not_an_application.sql' as file,
+         case when to_regclass('public.students') is not null then 'YES' else 'NO' end as landed,
+         'students' as what_it_creates
+  union all
+  select '038' as migration, '038_announcements_are_the_institution_speaking.sql' as file,
+         case when to_regclass('public.announcements') is not null then 'YES' else 'NO' end as landed,
+         'announcements' as what_it_creates
+  union all
+  select '039' as migration, '039_a_destination_is_a_publishing_job.sql' as file,
+         case when to_regclass('public.announcement_media') is not null then 'YES' else 'NO' end as landed,
+         'announcement_media' as what_it_creates
+  union all
+  select '040' as migration, '040_emergency_publishing_and_erasure.sql' as file,
+         case when to_regclass('public.announcement_tombstones') is not null then 'YES' else 'NO' end as landed,
+         'announcement_tombstones' as what_it_creates
+  union all
+  select '041' as migration, '041_appointments_and_the_letters_that_issue_from_them.sql' as file,
+         case when to_regclass('public.appointments') is not null then 'YES' else 'NO' end as landed,
+         'appointments' as what_it_creates
+  union all
+  select '042' as migration, '042_the_appointment_lifecycle_and_the_staff_record.sql' as file,
+         case when to_regclass('public.appointment_events') is not null then 'YES' else 'NO' end as landed,
+         'appointment_events' as what_it_creates
+  union all
+  select '043' as migration, '043_working_hours_and_the_appointing_authority.sql' as file,
+         case when to_regclass('public.appointment_letters_unverifiable') is not null then 'YES' else 'NO' end as landed,
+         'appointment_letters_unverifiable' as what_it_creates
+  union all
+  select '044' as migration, '044_document_templates_and_the_letters_tied_to_them.sql' as file,
+         case when to_regclass('public.document_templates') is not null then 'YES' else 'NO' end as landed,
+         'document_templates' as what_it_creates
+  union all
+  select '045' as migration, '045_official_correspondence_and_who_initiated_it.sql' as file,
+         case when to_regclass('public.correspondence') is not null then 'YES' else 'NO' end as landed,
+         'correspondence' as what_it_creates
+  union all
+  select '046' as migration, '046_the_correspondence_history_and_the_delegated_draft.sql' as file,
+         case when to_regclass('public.correspondence_events') is not null then 'YES' else 'NO' end as landed,
+         'correspondence_events' as what_it_creates
+  union all
+  select '047' as migration, '047_the_money_the_actors_and_the_two_axes.sql' as file,
+         case when to_regclass('public.appointment_allowances') is not null then 'YES' else 'NO' end as landed,
+         'appointment_allowances' as what_it_creates
+  union all
+  select '048' as migration, '048_the_job_descriptions_and_what_they_inherit.sql' as file,
+         case when to_regclass('public.positions') is not null then 'YES' else 'NO' end as landed,
+         'positions' as what_it_creates
+  union all
+  select '049' as migration, '049_verification_signatures_and_the_written_letter.sql' as file,
+         case when to_regclass('public.signature_specimens') is not null then 'YES' else 'NO' end as landed,
+         'signature_specimens' as what_it_creates
+  union all
+  select '050' as migration, '050_acceptance_the_activation_rule_and_the_full_audit.sql' as file,
+         case when to_regclass('public.appointment_acceptances') is not null then 'YES' else 'NO' end as landed,
+         'appointment_acceptances' as what_it_creates
+  union all
+  select '051' as migration, '051_templates_for_every_document_the_university_issues.sql' as file,
+         case when to_regclass('public.document_template_coverage') is not null then 'YES' else 'NO' end as landed,
+         'document_template_coverage' as what_it_creates
+  union all
+  select '052' as migration, '052_a_first_draft_of_every_document.sql' as file,
+         case when to_regclass('public.document_templates') is null then 'NO'
+                 when exists (select 1 from document_templates where created_by is null) then 'YES'
+                 else 'NO' end as landed,
+         'rows:document_templates:created_by is null' as what_it_creates
+  union all
+  select '053' as migration, '053_where_an_office_stands.sql' as file,
+         case when exists (
+                   select 1 from information_schema.columns
+                    where table_schema = 'public'
+                      and table_name = 'positions'
+                      and column_name = 'standing')
+                 then 'YES' else 'NO' end as landed,
+         'positions.standing' as what_it_creates
+) as landed_report
+ order by migration;
 

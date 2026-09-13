@@ -67,7 +67,16 @@ console.log('\nA letter cannot be issued without the things a letter is\n');
 
   // THE FOUR THAT ARE NOT OPTIONAL. Each is a thing that, missing, makes the
   // document not an appointment letter.
-  for (const key of ['full_name', 'position_title', 'start_date', 'place_of_duty', 'terms']) {
+  // `terms` LEFT THIS LIST WHEN THE LETTER GREW ITS OWN.
+  //
+  // It was required because the letter had no terms except the ones an officer
+  // typed into that box: if it was empty, the document said nothing about
+  // conduct, nothing about notice, nothing about what the appointment was
+  // subject to. The letter now states all of that itself, from the register for
+  // the office. Keeping the box mandatory would make every officer retype, in
+  // free text, terms the letter already carries — and free text beside standard
+  // terms is how one letter comes to hold two versions of one obligation.
+  for (const key of ['full_name', 'position_title', 'start_date', 'place_of_duty']) {
     const m = A.missingFrom({ ...complete, [key]: null });
     check(`${key} is required`, m.map((x) => x.key), [key]);
     check(`…and it blocks`, A.blocked(m), true);

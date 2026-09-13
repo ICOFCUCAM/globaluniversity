@@ -39,7 +39,7 @@ export const careers = {
     {
       heading: 'How to Apply',
       paragraphs: [
-        'Send your curriculum vitae, a statement of teaching interest and copies of your qualifications to the Registrar at registrar@iguc.net, indicating the faculty or department you wish to join. For PPDI-RC facilitator roles, write to ppdirc@iguc.net. Applications are reviewed continuously, and shortlisted candidates are invited to interview with the relevant faculty director and the Academic Director General.',
+        'Send your curriculum vitae, a statement of teaching interest and copies of your qualifications to the Registrar at registrar@iguc.net, indicating the faculty or department you wish to join. For PPDI-RC facilitator roles, write to ppdirc@iguc.net. Applications are reviewed continuously, and shortlisted candidates are invited to interview with the relevant faculty director and the Director of Academic Affairs.',
       ],
     },
   ],

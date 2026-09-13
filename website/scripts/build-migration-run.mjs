@@ -147,16 +147,74 @@ const MARKERS = {
   '046': 'correspondence_events', '047': 'appointment_allowances',
   '048': 'positions', '049': 'signature_specimens',
   '050': 'appointment_acceptances', '051': 'document_template_coverage',
+
+  // ---------------------------------------------------------------------
+  // NOT EVERY MIGRATION CREATES A TABLE, and the two below did not appear in
+  // this report at all — they were simply absent from this list, so the
+  // University's only visible check stopped at 051 and said nothing either
+  // way about the two newest files. Silence reads as "fine".
+  //
+  // So a marker may now be one of three things:
+  //   'name'          a relation — table or view
+  //   'table.column'  a column, for a migration that only adds columns
+  //   'rows:table:predicate'  rows that match, for a migration that only seeds
+  // ---------------------------------------------------------------------
+
+  // 052 CREATES NO STRUCTURE AT ALL. It seeds one draft of each of the 31
+  // document kinds, so the only honest question is whether those rows are
+  // there.
+  //
+  // `created_by is null` IS THE TEST, and the first attempt — `version = 1` —
+  // was wrong in the way that matters: 044 and 051 also produce version-1
+  // rows, so the report said YES on a database where 052 had never run. A
+  // false YES is worse than no row at all, because it tells the University a
+  // migration landed when it did not.
+  //
+  // Only the seed has no author. Every template a person creates carries the
+  // id of whoever created it; these were written by nobody, which is the whole
+  // reason 052 can leave them editable by anyone.
+  '052': 'rows:document_templates:created_by is null',
+  // 053 ADDS THREE COLUMNS TO 048's TABLE. `standing` is the one no earlier
+  // migration created — and it is a column, which is exactly the mistake 043
+  // made when its marker was `working_hours` and the report said NO on a
+  // database where the migration had plainly landed.
+  '053': 'positions.standing',
 };
+
+/** The SQL that answers "is this one here?", for each of the three forms. */
+function landedTest(marker) {
+  if (marker.startsWith('rows:')) {
+    const [, table, predicate] = marker.split(':');
+    return `case when to_regclass('public.${table}') is null then 'NO'
+                 when exists (select 1 from ${table} where ${predicate}) then 'YES'
+                 else 'NO' end`;
+  }
+  if (marker.includes('.')) {
+    const [table, column] = marker.split('.');
+    return `case when exists (
+                   select 1 from information_schema.columns
+                    where table_schema = 'public'
+                      and table_name = '${table}'
+                      and column_name = '${column}')
+                 then 'YES' else 'NO' end`;
+  }
+  return `case when to_regclass('public.${marker}') is not null then 'YES' else 'NO' end`;
+}
 
 function landedReport(files) {
   const rows = files
     .map((f) => [f.slice(0, 3), f])
     .filter(([n]) => MARKERS[n])
-    .map(([n, f]) => `    ('${n}', '${f.replace(/'/g, "''")}', '${MARKERS[n]}')`);
+    .map(([n, f]) => `  select '${n}' as migration, '${f.replace(/'/g, "''")}' as file,
+         ${landedTest(MARKERS[n])} as landed,
+         '${MARKERS[n].replace(/'/g, "''")}' as what_it_creates`);
 
   if (rows.length === 0) return '';
 
+  // ONE SELECT PER MIGRATION, UNION'd — rather than a VALUES list and a single
+  // expression over it. A VALUES list can only carry a string, so every row had
+  // to be tested the same way, which is why a migration that added a column
+  // instead of a table could not be reported on at all.
   return `-- ===========================================================================
 -- DID IT LAND?  — READ THIS TABLE
 -- ===========================================================================
@@ -169,15 +227,10 @@ function landedReport(files) {
 -- editor does not show. This table is the same answer in a form it does.
 -- ===========================================================================
 
-select m.migration,
-       m.file,
-       case when to_regclass('public.' || m.marker) is not null then 'YES' else 'NO' end
-         as landed,
-       m.marker as what_it_creates
-  from (values
-${rows.join(',\n')}
-  ) as m (migration, file, marker)
- order by m.migration;
+select * from (
+${rows.join('\n  union all\n')}
+) as landed_report
+ order by migration;
 `;
 }
 
