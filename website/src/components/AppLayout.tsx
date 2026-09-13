@@ -29,6 +29,7 @@ import TimetableGrid from './academic/TimetableGrid';
 import AcademicOverview from './academic/AcademicOverview';
 import Rooms from './academic/Rooms';
 import AcademicCalendar from './academic/AcademicCalendar';
+import AcademicRecords from './academic/AcademicRecords';
 import ResultProcessing from './results/ResultProcessing';
 import GradeBook from './results/GradeBook';
 import ResultsApproval from './results/ResultsApproval';
@@ -284,6 +285,8 @@ export default function AppLayout() {
         return <Rooms />;
       case 'academic-calendar':
         return <AcademicCalendar />;
+      case 'academic-records':
+        return <AcademicRecords />;
       case 'academic-overview':
         return <AcademicOverview onNavigate={setCurrentView} />;
       case 'forum':

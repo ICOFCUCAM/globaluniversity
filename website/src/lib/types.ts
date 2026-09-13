@@ -323,6 +323,10 @@ export type ViewType =
   // it — so on 15 August 2027 three screens would have opened on 2026/2027
   // and said nothing. 065 derives it; this is where it is administered.
   | 'academic-calendar'
+  // ONE STUDENT, ONE RECORD. The transcript says what was passed; this says
+  // what is LEFT, which needs 057's curriculum, 057's programme_version_id on
+  // the student, and 067's views over the two.
+  | 'academic-records'
   // ATTENDANCE, SEPARATED FROM THE TIMETABLE. They were one screen because the
   // timetable kept its own invented slots; now that a class is a row every
   // other screen can read, marking who attended one is its own job.

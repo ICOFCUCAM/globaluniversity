@@ -205,6 +205,15 @@ export const menuGroups: MenuGroup[] = [
       // in beside them. Attendance keeps its own entry: it was only ever part
       // of this screen because this screen invented the slots it marked
       // against, and those slots matched no course, no lecturer and no room.
+      // ONE STUDENT, ONE RECORD. Below registration because it is the thing
+      // registration and results ADD UP TO — and the student sees their own.
+      {
+        id: 'academic-records',
+        label: 'Academic records',
+        icon: <ClipboardCheck size={18} />,
+        roles: ['superadmin', 'admin', 'registrar', 'chancellor', 'vice-chancellor',
+          'dean', 'hod', 'programme-coordinator', 'academic-office', 'student'],
+      },
       { id: 'timetable', label: 'Timetable', icon: <CalendarDays size={18} />, roles: ACADEMIC },
       {
         id: 'attendance',

@@ -857,25 +857,61 @@ begin
   -- joins only PUBLISHED versions, every version here is a draft, so it
   -- returned no rows and the count was 0. A proof that cannot see the thing
   -- it is checking always passes. Section 5 adds the view that can.
-  select count(*) into n from curriculum_progress
-   where courses_in_curriculum > 0
-     and total_credits is not null
-     and credits_in_curriculum <> total_credits;
+  -- ---------------------------------------------------------------------
+  -- SCOPED TO THE THREE THIS FILE SEEDS, AND THAT MATTERS.
+  --
+  -- These three checks were written GLOBALLY — "no curriculum anywhere fails
+  -- to add up", "exactly 3 curricula have courses", "no version anywhere is
+  -- other than a draft" — and every one of them was a time bomb.
+  --
+  -- The Curriculum Builder exists now. The day the University builds a fourth
+  -- curriculum, or approves one, or leaves a draft half-finished (which the
+  -- builder deliberately allows, showing the shortfall in red), re-running
+  -- this bundle would fail HERE and roll the whole thing back. The University
+  -- is invited to re-run it — it is idempotent, and the Readiness panel says
+  -- so — so this would have gone off.
+  --
+  -- It is the rule this repository already learned once and wrote down: A
+  -- MIGRATION CANNOT PROVE ANYTHING BY COUNTING ROWS IT DID NOT CREATE. 060
+  -- had the same fault in the other direction — asserting a global ABSENCE
+  -- that 061 and 062 then filled.
+  --
+  -- So each check now names the three programme codes this file seeds.
+  -- ---------------------------------------------------------------------
+  select count(*) into n from curriculum_progress cp
+    join programmes p on p.id = cp.programme_id
+   where p.code in ('bachelor-of-theology', 'bachelor-of-ministry', 'diploma-in-theology')
+     and cp.courses_in_curriculum > 0
+     and cp.total_credits is not null
+     and cp.credits_in_curriculum <> cp.total_credits;
   if n > 0 then
-    raise exception '062 FAILED: % curricula do not add up to what their programme claims', n;
+    raise exception
+      '062 FAILED: % of the curricula seeded here do not add up to what their programme claims', n;
   end if;
 
   -- AND IT SAW THEM. The assertion above is only worth having if the view
   -- returned the curricula this file just seeded.
-  select count(*) into n from curriculum_progress where courses_in_curriculum > 0;
+  select count(*) into n from curriculum_progress cp
+    join programmes p on p.id = cp.programme_id
+   where p.code in ('bachelor-of-theology', 'bachelor-of-ministry', 'diploma-in-theology')
+     and cp.courses_in_curriculum > 0;
   if n <> 3 then
-    raise exception '062 FAILED: the totals view sees % curricula, not the 3 just seeded', n;
+    raise exception '062 FAILED: the totals view sees % of the 3 seeded curricula', n;
   end if;
 
-  -- AND NOTHING WAS APPROVED ON THE WAY IN.
-  select count(*) into n from programme_versions where status <> 'draft';
+  -- AND NOTHING WAS APPROVED ON THE WAY IN — of the versions this file
+  -- touches. A version the University has since approved through the builder
+  -- is not this migration's business, and failing on it would refuse to
+  -- re-run over the University's own governance.
+  select count(*) into n
+    from programme_versions v
+    join programmes p on p.id = v.programme_id
+   where p.code in ('bachelor-of-theology', 'bachelor-of-ministry', 'diploma-in-theology')
+     and v.status <> 'draft';
   if n > 0 then
-    raise exception '062 FAILED: % versions are no longer drafts', n;
+    raise notice
+      '062 — % of the seeded versions are no longer drafts. That is the University''s own '
+      'approval and nothing here has changed it.', n;
   end if;
 
   raise notice '062 OK: 3 curricula moved into rows, course by course, each adding up to exactly what its programme claims';

@@ -215,6 +215,8 @@ const MARKERS = {
   // 066 adds a column and three views. `registration_window` is the one
   // every caller asks, and the one nothing before it could have created.
   '066': 'registration_window',
+  // 067 creates three views and no table. The one every screen reads.
+  '067': 'student_academic_record',
 };
 
 /** The SQL that answers "is this one here?", for each of the three forms. */

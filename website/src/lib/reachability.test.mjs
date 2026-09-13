@@ -170,6 +170,14 @@ const READ_ONLY_BY_DESIGN = {
     + '/api/academic/calendar writes the periods underneath it.',
   academic_period_calendar: 'A view: every registration, teaching, examination and results window '
     + 'with the term and year it belongs to. /api/academic/calendar writes academic_periods.',
+  student_academic_record: 'A view over students, programme_versions, results and '
+    + 'semester_gpas: where each student is up to and how far that is from the award. Nothing '
+    + 'writes it because every figure in it is counted from rows the registration and results '
+    + 'pipelines already write.',
+  student_curriculum_progress: 'A view: every course of the curriculum a student was admitted '
+    + 'under, marked passed, failed, registered or not-taken.',
+  student_term_record: 'A view: a student\'s terms with credits attempted and earned, keyed on '
+    + 'the term the course was TAKEN in rather than the curriculum\'s year and semester.',
   capability_grants_in_force: 'A view over `capability_grants`, which /api/admin/capability-grant '
     + 'writes. It exists so that "still in force" — not revoked AND not expired — is decided in '
     + 'one place: a caller checking only `revoked_at is null` would honour a grant that ran out '

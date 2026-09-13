@@ -614,6 +614,17 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
       + 'cannot perform it is one the Registry performs on paper, where nothing counts it.',
     table: 'registration_window',
   },
+  {
+    file: '067_one_student_one_record.sql',
+    what: 'The question the system could never answer: WHERE IS THIS STUDENT UP TO? Not what '
+      + 'they have passed \u2014 the transcript says that \u2014 but what is LEFT. Every course '
+      + 'of the curriculum they were admitted under, marked passed, failed, registered or '
+      + 'not-taken, with the totals against the award. `not-taken` is returned rather than '
+      + 'omitted because a list of what has been done cannot show what remains. An UNAPPROVED '
+      + 'mark is not a pass: it is a proposal a board may send back, and counting it would tell '
+      + 'a student they had finished a course the University has not agreed they finished.',
+    table: 'student_academic_record',
+  },
 ];
 
 /** What a probe came back as. */

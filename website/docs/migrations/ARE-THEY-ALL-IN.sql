@@ -187,6 +187,10 @@ select * from (
   select '066' as migration, '066_when_registration_is_open.sql' as file,
          case when to_regclass('public.registration_window') is not null then 'YES' else 'NO' end as landed,
          'registration_window' as what_it_creates
+  union all
+  select '067' as migration, '067_one_student_one_record.sql' as file,
+         case when to_regclass('public.student_academic_record') is not null then 'YES' else 'NO' end as landed,
+         'student_academic_record' as what_it_creates
 ) as landed_report
  order by migration;
 
