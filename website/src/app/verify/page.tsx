@@ -2,6 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { isDocumentReference } from '@/lib/documentReference';
 
 function VerifyInner() {
   const params = useSearchParams();
@@ -50,7 +51,15 @@ function VerifyInner() {
     // on it; asking them which KIND of register it belongs to would be asking
     // them to know something the document does not tell them. The shape of the
     // reference decides.
-    if (/^[A-Z]{2,4}-\d{4}-\d{4,}$/i.test(id)) {
+    //
+    // BOTH SHAPES, and the second is the one that matters. `APT-2026-0042` is
+    // how the register stores it; `IGUC/HR/APT/2026/0042` is what is actually
+    // printed on the letter, in four places, and is therefore the only form a
+    // reader has ever seen. This test recognised the stored form alone, so a
+    // reader typing exactly what was in front of them was sent to the
+    // credential register, which has never heard of their letter, and told no
+    // such credential exists.
+    if (isDocumentReference(id)) {
       const res = await fetch(`/api/document?reference=${encodeURIComponent(id)}`)
         .then((r) => r.json())
         .catch(() => null);
@@ -80,8 +89,30 @@ function VerifyInner() {
     // employer, and it has to work when it is opened rather than require the
     // recipient to retype anything.
     const id = params.get('id');
+    // ---------------------------------------------------------------------
+    // A SCANNED LETTER ARRIVES HERE, AND USED TO DO NOTHING.
+    //
+    // The QR on an appointment letter carried the whole signed payload: 376
+    // characters, a 77-module symbol, 0.30mm a module at the size it is
+    // printed — against a practical floor of about 0.5mm for a phone camera
+    // reading off paper. Measured, not guessed. It could not be scanned.
+    //
+    // It now carries `/verify?ref=IGUC/HR/APT/2026/0042`, which is 37 modules
+    // and 0.63mm — and this page had no idea what `ref` meant, so a reader who
+    // finally managed to scan one would have landed on an empty search box.
+    //
+    // The reference resolves against the University's own register rather than
+    // against a copy of the facts supplied by whoever is presenting the
+    // document, which is the stronger check, not the weaker one.
+    // ---------------------------------------------------------------------
+    const ref = params.get('ref');
     if (!d || !s) {
       setState('none');
+      if (ref) {
+        setNumber(ref.toUpperCase());
+        void lookUpNumber(ref);
+        return;
+      }
       if (id) {
         setNumber(id.toUpperCase());
         void lookUpNumber(id);

@@ -361,15 +361,46 @@ export function signatureBlock(s: Signature): string {
  */
 export async function sealPanel(
   seal: DocumentSeal | null, printedReference: string, version: number,
+  /**
+   * The site, when this document is on a register the public can query.
+   *
+   * ---------------------------------------------------------------------
+   * THE QR COULD NOT BE SCANNED, AND THIS IS THE FIX
+   * ---------------------------------------------------------------------
+   *
+   * MEASURED: the signed payload is 376 characters, which encodes as a
+   * 77-module symbol. Printed at 23.3mm that is 0.30mm a module, against a
+   * practical floor of about 0.5mm for a phone camera reading off paper. So
+   * every letter told its reader to scan a code that would not scan — and a
+   * verification story that fails at the last inch is worse than none, because
+   * the reader did what they were asked and got nothing.
+   *
+   * `/verify?ref=IGUC/HR/APT/2026/0006` is about 40 characters: a 37-module
+   * symbol, 0.63mm a module, comfortably scannable at the same printed size.
+   *
+   * NOTHING IS LOST BY DROPPING THE PAYLOAD. It was a copy of the facts
+   * supplied by whoever presented the document; the reference resolves against
+   * the University's own register instead. That is the stronger check. The
+   * signature stays printed as the seal code for a reader with no camera.
+   *
+   * OMITTED FOR A DOCUMENT NOT ON A REGISTER — a job description, say. A short
+   * URL that resolves to "no document with this reference" would make a
+   * genuine document scan as a forgery, which is exactly the mistake the
+   * credential short-form made once before.
+   */
+  registerSiteUrl?: string | null,
 ): Promise<string> {
   const verifiable = seal !== null && seal.sealed && seal.code !== '';
 
   let qr = '';
   if (verifiable) {
-    // THE SHORT FORM, as every other caller uses. It is the same string as the
-    // long one for a letter that is not on a register — but the day letters go
-    // on one, this becomes the scannable address without a second edit here.
-    try { qr = await verificationQrSvg(seal!.shortVerifyUrl, 88); } catch { qr = ''; }
+    const target = registerSiteUrl
+      ? `${registerSiteUrl.replace(/\/$/, '')}/verify?ref=${encodeURIComponent(printedReference)}`
+      // THE SHORT FORM, as every other caller uses. Identical to the long one
+      // for a document that is on no register — which is the honest answer
+      // there, because there is nothing to look it up by.
+      : seal!.shortVerifyUrl;
+    try { qr = await verificationQrSvg(target, 88); } catch { qr = ''; }
   }
 
   return `<div class="seal">

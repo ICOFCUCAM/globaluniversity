@@ -579,7 +579,7 @@ ${signatureBlock({
   authorizedOn: input.authorizedOn,
 })}
 
-${await sealPanel(seal, printedReference(input.reference), input.version)}
+${await sealPanel(seal, printedReference(input.reference), input.version, input.siteUrl)}
 
 ${attachments.length > 0 ? `<div class="attachments">
   <p><strong>Attachments</strong></p>

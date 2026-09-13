@@ -34,12 +34,15 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { supabaseUrl as SUPABASE_URL } from '@/lib/supabase';
+import { normaliseReference, STORED_REFERENCE } from '@/lib/documentReference';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-/** APT-2026-0042 or VC-2026-0042. Nothing else is a reference. */
-const REFERENCE = /^[A-Z]{2,4}-\d{4}-\d{4,}$/;
+// THE ONE PLACE THAT DECIDES WHAT A REFERENCE LOOKS LIKE. This file and the
+// /verify page each had their own regular expression, and they disagreed: the
+// printed form was accepted by neither, and the page used its copy to choose
+// WHICH register to search.
 
 // A SINGLE STRING LITERAL each. Concatenation makes supabase-js collapse the
 // inferred row type to GenericStringError[], silently.
@@ -50,15 +53,15 @@ const CORRESPONDENCE_COLUMNS = 'reference, document, kind, office, issued, versi
 
 export async function GET(request: Request) {
   const raw = new URL(request.url).searchParams.get('reference') ?? '';
-  const reference = raw.trim().toUpperCase();
+  const reference = normaliseReference(raw);
 
-  if (!REFERENCE.test(reference)) {
+  if (!STORED_REFERENCE.test(reference)) {
     return NextResponse.json({
       ok: false,
       found: false,
       note: 'That is not the shape of an ICOF Global University document reference. A reference '
         + 'reads like APT-2026-0042, and is printed at the head of the letter as '
-        + 'IGUC/HR/APT/2026/0042.',
+        + 'IGUC/HR/APT/2026/0042. Either form works here.',
     }, { status: 400 });
   }
 

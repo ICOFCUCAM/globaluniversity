@@ -69,6 +69,18 @@ execFileSync('npx', [
   '--platform=node', `--outfile=${out}`, '--log-level=error',
   `--alias:@=${join(here, '..')}`, '--external:qrcode',
 ]);
+// ---------------------------------------------------------------------------
+// A THROWAWAY SIGNING KEY, SO THE LETTER UNDER TEST IS A SEALED ONE.
+//
+// NOT A SECRET. It is forty-eight x's, and the University's real key is in the
+// deployment environment where it belongs. But without SOMETHING here,
+// `sealDocument` returns an unsealed seal, the panel correctly prints "this
+// copy carries no verification seal", and there is no QR code on the page at
+// all — so this file was measuring the geometry of a letter no appointee
+// receives, and the QR check below found nothing to measure.
+// ---------------------------------------------------------------------------
+process.env.CREDENTIAL_SECRET = 'x'.repeat(48);
+
 // THE GEOMETRY COMES FROM THE LETTER, not from a constant retyped here. It was
 // retyped for about ten minutes and immediately went stale when the margin
 // changed, reporting a letter with 46px more room as fitting more tightly.
@@ -375,6 +387,22 @@ console.log('\nThe seal panel is at the foot, where a reader looks for it\n');
   });
 
   check('the attachments are listed after the seal', tail.attTop >= tail.sealBottom, true);
+
+  // ---------------------------------------------------------------------
+  // THE QR ON THE REAL LETTER, MEASURED ON THE REAL LETTER.
+  //
+  // `officialDocument.test.mjs` measures the panel in isolation. This measures
+  // the square that is actually in the document this file renders — because
+  // the panel is only correct here if the letter passes it the right argument,
+  // and it did not for the whole life of the letter.
+  //
+  // 88 CSS px is 23.3mm. Divide by the modules across and compare against the
+  // ~0.5mm floor for a phone camera reading off paper.
+  // ---------------------------------------------------------------------
+  const qrModules = Number((/viewBox="0 0 (\d+)/.exec(letter.html) ?? [])[1] ?? -1);
+  const qrMm = (88 / 3.7795) / qrModules;
+  console.log(`      QR: ${qrModules} modules, ${qrMm.toFixed(2)}mm each`);
+  check('the letter’s own QR is coarse enough to scan', qrMm >= 0.5, true);
   check('and the manifest is the last thing on the document',
     tail.attBottom >= measured.height - 40, true);
 }

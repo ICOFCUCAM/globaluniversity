@@ -142,6 +142,52 @@ check('…and says nothing about a missing seal',
   /carries no verification seal/.test(panelSealed), false);
 
 // ---------------------------------------------------------------------------
+console.log('\nThe QR is coarse enough for a phone to read off paper\n');
+
+// ---------------------------------------------------------------------------
+// THE MEASUREMENT THAT FOUND IT, KEPT AS THE TEST.
+//
+// A QR is drawn at 88 CSS px, which is 23.3mm on paper. Divide that by the
+// number of modules across and you get the size of one module — and the
+// practical floor for a phone camera reading off paper is about 0.5mm.
+//
+// The appointment letter's QR carried the whole signed payload: 376
+// characters, 77 modules, 0.30mm each. It could not be scanned. So the letter
+// told its reader to scan a code that would not scan, which makes the
+// verification story fail at the last inch — the reader does what they are
+// asked and gets nothing.
+//
+// THE VIEWBOX IS THE MODULE COUNT. It is read from the generated SVG rather
+// than recomputed here, so this measures the square the letter actually
+// carries.
+// ---------------------------------------------------------------------------
+const PRINTED_MM = 88 / 3.7795;
+const FLOOR_MM = 0.5;
+
+const modulesOf = (svg) => {
+  const m = /viewBox="0 0 (\d+)/.exec(svg);
+  return m ? Number(m[1]) : -1;
+};
+
+const panelWithRegister = await sealPanel(
+  sealed, 'IGUC/HR/APT/2026/0006', 1, 'https://www.iguc.net',
+);
+const registeredModules = modulesOf(panelWithRegister);
+const registeredMm = PRINTED_MM / registeredModules;
+
+console.log(`      ${registeredModules} modules at ${PRINTED_MM.toFixed(1)}mm `
+  + `— ${registeredMm.toFixed(2)}mm each, floor ${FLOOR_MM}mm`);
+
+check('a registered document’s QR clears the floor', registeredMm >= FLOOR_MM, true);
+
+// AND THE OLD ONE DID NOT, asserted so the fix cannot be quietly undone by
+// somebody passing the long URL again.
+const panelWithoutRegister = await sealPanel(sealed, 'IGUC/HR/APT/2026/0006', 1);
+const payloadMm = PRINTED_MM / modulesOf(panelWithoutRegister);
+check('…and the payload form is the one that did not',
+  payloadMm < FLOOR_MM, true);
+
+// ---------------------------------------------------------------------------
 console.log('\nAnd a null seal is still handled\n');
 
 const panelNull = await sealPanel(null, 'IGUC/HR/APT/2026/0007', 2);
