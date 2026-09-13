@@ -113,10 +113,23 @@ end $$;
 
 create table if not exists programmes (
   id           uuid primary key default gen_random_uuid(),
-  -- THE ONE IMMUTABLE THING. Everything else about a programme may be revised
-  -- in a new version; the code is how the revisions are known to be the same
-  -- programme.
-  code         text not null unique check (code ~ '^[A-Z][A-Z0-9.-]{1,23}$'),
+  -- ---------------------------------------------------------------------
+  -- THE ONE IMMUTABLE THING, AND IT IS THE SLUG THE UNIVERSITY ALREADY USES.
+  --
+  -- Everything else about a programme may be revised in a new version; the
+  -- code is how the revisions are known to be the same programme.
+  --
+  -- This was an invented uppercase form capped at 24 characters, and 23 of the
+  -- University's 41 programmes have identifiers longer than that —
+  -- `diploma-in-air-conditioning-refrigeration` is 41. Abbreviating them would
+  -- have meant inventing 41 programme codes the University has never used.
+  --
+  -- It already has one. The slug is in every programme URL on the live site
+  -- and in `courses.programme_slug`, so taking it verbatim means the register
+  -- joins to the website and to the course table with no translation, and
+  -- nothing here is made up. It is also the same shape as `schools.code`.
+  -- ---------------------------------------------------------------------
+  code         text not null unique check (code ~ '^[a-z][a-z0-9-]{1,63}$'),
   award_id     uuid references awards (id) on delete restrict,
   -- The level, in the University's own vocabulary from programmeCatalogue.ts.
   award_level  text not null check (award_level in
@@ -655,7 +668,7 @@ begin
       returning id into dept;
 
     insert into programmes (code, award_level, status)
-      values ('PROOF-BTH', 'Bachelor''s', 'draft') returning id into prog;
+      values ('proof-bachelor-of-study', 'Bachelor''s', 'draft') returning id into prog;
 
     insert into programme_versions
       (programme_id, version_label, name, school_id, department_id,

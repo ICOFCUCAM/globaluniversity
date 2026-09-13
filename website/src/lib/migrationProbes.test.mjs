@@ -166,6 +166,8 @@ console.log('\nAnd what it cannot see, it says so about\n');
       // nor its absence — so it names the query to run by hand rather than
       // reporting the requirement as recorded because the table exists.
       '058_the_vice_chancellor_approves_a_curriculum.sql',
+      // 060 SEEDS ROWS into tables 057 created — same reason as 052 and 058.
+      '060_the_schools_and_programmes.sql',
     ]);
   check('…and carries the check to run by hand',
     blind.every((p) => /select|pg_constraint/i.test(p.cannotSee)), true);

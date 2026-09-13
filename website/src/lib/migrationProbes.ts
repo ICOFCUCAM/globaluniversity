@@ -532,6 +532,18 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
       + 'registration does.',
     table: 'academic_terms',
   },
+  {
+    file: '060_the_schools_and_programmes.sql',
+    what: 'The register stops being empty: the University\u2019s five schools and forty-one '
+      + 'programmes become rows, moved out of the TypeScript the website compiles them from. '
+      + 'EVERY PROGRAMME ARRIVES AS A DRAFT \u2014 nothing is opened for admission, because 023 '
+      + 'ruled that admission is opt-in. No curriculum and no duration is seeded: the University '
+      + 'has ruled the length of fourteen of them and published a RANGE for the other '
+      + 'twenty-seven, and "One to two academic years" is not a duration.',
+    // A SEEDED SET OF ROWS. 057 created the table, so its presence would report
+    // 060 as run on a database that has only had 057.
+    cannotSee: 'select count(*) from programmes;  -- it should be at least 41, every one a draft',
+  },
 ];
 
 /** What a probe came back as. */

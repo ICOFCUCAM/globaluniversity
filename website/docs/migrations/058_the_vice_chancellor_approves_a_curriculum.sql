@@ -115,7 +115,7 @@ begin
       returning id into sch;
     insert into departments (name, code, faculty, school_id)
       values ('A Proof Department', 'P58', 'A Proof School of Study', sch) returning id into dept;
-    insert into programmes (code, award_level) values ('PROOF-058', 'Doctorate')
+    insert into programmes (code, award_level) values ('proof-doctor-of-study', 'Doctorate')
       returning id into prog;
 
     -- A DOCTORATE IS TWO YEARS. The University's ruling, and the first row in

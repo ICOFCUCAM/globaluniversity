@@ -200,6 +200,8 @@ const MARKERS = {
   // the marker is the row itself.
   '058': "rows:academic_approval_requirements:subject = 'curriculum'",
   '059': 'academic_terms',
+  // 060 CREATES NOTHING — it fills 057's register. The marker is the rows.
+  '060': 'rows:programmes:true',
 };
 
 /** The SQL that answers "is this one here?", for each of the three forms. */

@@ -150,6 +150,12 @@ select * from (
   select '059' as migration, '059_the_academic_calendar.sql' as file,
          case when to_regclass('public.academic_terms') is not null then 'YES' else 'NO' end as landed,
          'academic_terms' as what_it_creates
+  union all
+  select '060' as migration, '060_the_schools_and_programmes.sql' as file,
+         case when to_regclass('public.programmes') is null then 'NO'
+                 when exists (select 1 from programmes where true) then 'YES'
+                 else 'NO' end as landed,
+         'rows:programmes:true' as what_it_creates
 ) as landed_report
  order by migration;
 
