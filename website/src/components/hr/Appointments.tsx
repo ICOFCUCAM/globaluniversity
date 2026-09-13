@@ -27,7 +27,7 @@
 // the first time a state was added.
 // ---------------------------------------------------------------------------
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { can } from '@/lib/roles';
@@ -36,8 +36,8 @@ import { Plus, Loader2, Check, X, AlertTriangle, Users } from 'lucide-react';
 import {
   EMPLOYMENT_TYPES, EMPLOYMENT_LABELS, CURRENCIES, SALARY_PERIODS, PERIOD_LABELS,
   DEFAULT_CURRENCY, DEFAULT_PERIOD,
-  countersFor, boardStatus, missingFrom, blocked, remunerationLine, probationEnds,
-  STATE_LABELS, EXPIRING_WINDOW_DAYS,
+  boardStatus, missingFrom, blocked, remunerationLine, probationEnds,
+  STATE_LABELS,
   type Appointment, type AppointmentState,
 } from '@/lib/appointments';
 
@@ -105,7 +105,6 @@ export default function Appointments() {
     return json;
   }
 
-  const counters = useMemo(() => countersFor(rows ?? []), [rows]);
 
   if (creating) {
     return (
@@ -126,8 +125,12 @@ export default function Appointments() {
     <div className="space-y-6">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
+          {/* NAMED FOR WHAT IS DONE HERE, not for the subject. Both this
+              screen and the dashboard were headed "Appointments", so two
+              sidebar entries opened two pages with the same title and a reader
+              could not tell from the page which one they were on. */}
           <h1 className="font-heading text-2xl font-bold text-[#422e59] dark:text-[#e9e2f2]">
-            Appointments
+            Draft &amp; submit
           </h1>
           <p className="mt-1 max-w-2xl text-sm text-[#6b6076] dark:text-[#9c93ad]">
             The University appoints somebody, a second officer approves it, the letter is
@@ -146,17 +149,23 @@ export default function Appointments() {
           ? 'bg-emerald-50 text-emerald-900' : 'bg-red-50 text-red-900'}`}>{notice.text}</p>
       )}
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        <Counter label="Pending approval" value={counters.pendingApproval} />
-        <Counter label="Approved" value={counters.approved} />
-        <Counter label="Letters to issue" value={counters.lettersToIssue} />
-        <Counter label="Active appointments" value={counters.active} />
-        {/* THE ONE THAT EARNS ITS PLACE. A fixed term that lapses because
-            nobody noticed is somebody turning up to work at an institution
-            that no longer employs them. */}
-        <Counter label={`Expiring within ${EXPIRING_WINDOW_DAYS} days`}
-          value={counters.expiringSoon} alarming={counters.expiringSoon > 0} />
-      </div>
+      {/* ------------------------------------------------------------------
+          THE COUNTERS ARE GONE FROM HERE, AND THAT IS THE FIX.
+
+          This screen carried five — "Pending approval", "Letters to issue",
+          "Active appointments" — and the Appointments dashboard beside it in
+          the same menu group carries nine, counting the SAME rows under
+          different names: "Awaiting VC", "Letters Ready", "Active".
+
+          Two screens counting one thing in two vocabularies is how somebody
+          comes to quote a number that does not match the one the officer
+          beside them is reading. The dashboard answers "where does everything
+          stand"; this screen drafts and submits. One place counts.
+
+          The one counter that was genuinely about work ON THIS SCREEN —
+          appointments expiring soon — is on the dashboard too, where it can be
+          clicked to see which.
+          ------------------------------------------------------------------ */}
 
       {rows === null && <p className="text-sm text-[#6b6076]">Loading…</p>}
 
@@ -277,18 +286,6 @@ export default function Appointments() {
   );
 }
 
-function Counter({ label, value, alarming }: {
-  label: string; value: number; alarming?: boolean;
-}) {
-  return (
-    <div className={`rounded-xl border p-4 ${alarming
-      ? 'border-amber-300 bg-[#faf6ee] dark:border-[#5a4a2f] dark:bg-[#241f2c]'
-      : 'border-[#e8e2f0] bg-white dark:border-[#332b3d] dark:bg-[#1c1823]'}`}>
-      <p className="font-heading text-2xl font-bold text-[#422e59] dark:text-[#e9e2f2]">{value}</p>
-      <p className="mt-1 text-xs leading-snug text-[#6b6076] dark:text-[#9c93ad]">{label}</p>
-    </div>
-  );
-}
 
 // ---------------------------------------------------------------------------
 // THE FORM
