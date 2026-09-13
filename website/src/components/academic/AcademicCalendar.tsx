@@ -56,6 +56,34 @@ const YEARS = 'id, label, starts_in, starts_on, ends_on, status';
 const NOW = 'id, label, starts_in, starts_on, ends_on, status';
 const DRIFT = 'id, label, starts_in, starts_on, ends_on, status, should_be';
 const TERMS = 'id, academic_year_id, sequence, name, starts_on, ends_on';
+// eslint-disable-next-line max-len
+const PERIODS = 'id, kind, starts_on, ends_on, note, term_id, term_sequence, term_name, academic_year_id, year_label, starts_in, in_force';
+
+// THE WINDOWS A TERM HAS, in the order a term actually runs through them.
+const PERIOD_KINDS = [
+  'registration', 'add-drop', 'teaching', 'examinations', 'results', 'break',
+] as const;
+const PERIOD_LABEL: Record<string, string> = {
+  registration: 'Registration',
+  'add-drop': 'Add / drop',
+  teaching: 'Teaching',
+  examinations: 'Examinations',
+  results: 'Results',
+  break: 'Break',
+};
+// WHAT EACH WINDOW ACTUALLY DOES, because a date with no consequence is a
+// date nobody maintains. Only the first two change what the system permits
+// today; the rest are recorded for the people reading the calendar, and it is
+// better to say so than to imply an enforcement that does not exist.
+const PERIOD_MEANS: Record<string, string> = {
+  registration: 'While this is open a student may register themselves. Outside it they cannot — '
+    + 'the Registry still can, and those are recorded as late registrations.',
+  'add-drop': 'The period in which a registration may still be changed.',
+  teaching: 'Recorded for the calendar. Nothing is refused outside it yet.',
+  examinations: 'Recorded for the calendar. Nothing is refused outside it yet.',
+  results: 'Recorded for the calendar. Nothing is refused outside it yet.',
+  break: 'Recorded for the calendar.',
+};
 
 interface Year {
   id: string; label: string; starts_in: number;
@@ -65,6 +93,11 @@ interface Drift extends Year { should_be: string; }
 interface Term {
   id: string; academic_year_id: string; sequence: number;
   name: string; starts_on: string; ends_on: string;
+}
+interface Period {
+  id: string; kind: string; starts_on: string; ends_on: string; note: string | null;
+  term_id: string; term_sequence: number; term_name: string;
+  academic_year_id: string; year_label: string; starts_in: number; in_force: boolean;
 }
 
 const STATUS_MEANS: Record<string, string> = {
@@ -89,6 +122,7 @@ export default function AcademicCalendar() {
   const [now, setNow] = useState<Year | null>(null);
   const [drift, setDrift] = useState<Drift[]>([]);
   const [terms, setTerms] = useState<Term[]>([]);
+  const [periods, setPeriods] = useState<Period[]>([]);
   const [note, setNote] = useState<{ tone: 'ok' | 'bad'; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState<string | null>(null);
@@ -96,11 +130,15 @@ export default function AcademicCalendar() {
 
   const load = useCallback(async () => {
     try {
-      const [ys, nw, df, tm] = await within(Promise.all([
+      const [ys, nw, df, tm, pd] = await within(Promise.all([
         supabase.from('academic_years').select(YEARS).order('starts_in'),
         supabase.from('academic_year_now').select(NOW).maybeSingle(),
         supabase.from('academic_year_drift').select(DRIFT),
         supabase.from('academic_terms').select(TERMS).order('sequence'),
+        // A DATABASE WITHOUT 066 HAS NO SUCH VIEW. The periods are an
+        // addition to this screen, not a precondition for it — the years and
+        // terms must still draw where the view is missing.
+        supabase.from('academic_period_calendar').select(PERIODS),
       ]));
       if (ys.error) { setFailed(ys.error.message); setYears([]); return; }
       setFailed(null);
@@ -110,6 +148,7 @@ export default function AcademicCalendar() {
       setNow((nw.data ?? null) as unknown as Year | null);
       setDrift((df.data ?? []) as unknown as Drift[]);
       setTerms((tm.data ?? []) as unknown as Term[]);
+      setPeriods((pd.data ?? []) as unknown as Period[]);
     } catch (e) {
       setFailed(e instanceof Error ? e.message : 'The calendar could not be read.');
       setYears([]);
@@ -142,6 +181,12 @@ export default function AcademicCalendar() {
     for (const t of terms) m.set(t.academic_year_id, [...(m.get(t.academic_year_id) ?? []), t]);
     return m;
   }, [terms]);
+
+  const periodsOf = useMemo(() => {
+    const m = new Map<string, Period[]>();
+    for (const p of periods) m.set(p.term_id, [...(m.get(p.term_id) ?? []), p]);
+    return m;
+  }, [periods]);
 
   const driftIds = useMemo(() => new Map(drift.map((d) => [d.id, d])), [drift]);
 
@@ -333,7 +378,14 @@ export default function AcademicCalendar() {
 
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     {(termsOf.get(y.id) ?? []).map((t) => (
-                      <TermRow key={t.id} term={t} mayEdit={mayEdit} busy={busy} onSave={act} />
+                      <TermRow
+                        key={t.id}
+                        term={t}
+                        periods={periodsOf.get(t.id) ?? []}
+                        mayEdit={mayEdit}
+                        busy={busy}
+                        onSave={act}
+                      />
                     ))}
                     {(termsOf.get(y.id) ?? []).length === 0 && (
                       <p className="rounded-lg border border-dashed border-red-300 p-3 text-xs
@@ -376,9 +428,10 @@ export default function AcademicCalendar() {
 }
 
 function TermRow({
-  term, mayEdit, busy, onSave,
+  term, periods, mayEdit, busy, onSave,
 }: {
   term: Term;
+  periods: Period[];
   mayEdit: boolean;
   busy: boolean;
   onSave: (p: Record<string, unknown>) => Promise<boolean>;
@@ -386,78 +439,287 @@ function TermRow({
   const [editing, setEditing] = useState(false);
   const [startsOn, setStartsOn] = useState(term.starts_on);
   const [endsOn, setEndsOn] = useState(term.ends_on);
+  const [addingWindow, setAddingWindow] = useState<string | null>(null);
   const backwards = endsOn <= startsOn;
 
-  if (!editing) {
-    return (
-      <div className="rounded-lg bg-[#faf8f4] px-3 py-2 dark:bg-[#241f2c]">
-        <p className="text-xs font-semibold text-[#422e59] dark:text-[#c8b6e8]">{term.name}</p>
-        <p className="text-[11px] text-[#6b6076] dark:text-[#9c93ad]">
-          {readable(term.starts_on)} – {readable(term.ends_on)}
-        </p>
-        {mayEdit && (
-          <button
-            onClick={() => setEditing(true)}
-            className="mt-1 text-[11px] font-medium text-[#422e59] underline dark:text-[#c8b6e8]"
-          >
-            Move it
-          </button>
-        )}
-      </div>
-    );
-  }
+  const byKind = new Map(periods.map((p) => [p.kind, p]));
+  const registration = byKind.get('registration');
 
   return (
-    <div className="space-y-2 rounded-lg border border-[#ded6c8] p-3 dark:border-[#3d3349]">
+    <div className="rounded-lg bg-[#faf8f4] px-3 py-2 dark:bg-[#241f2c]">
       <p className="text-xs font-semibold text-[#422e59] dark:text-[#c8b6e8]">{term.name}</p>
-      <div className="flex gap-2">
-        <input type="date" value={startsOn} onChange={(e) => setStartsOn(e.target.value)}
-          aria-label={`${term.name} starts on`}
-          className="w-full rounded-lg border border-[#ded6c8] px-2 py-1 text-xs
-                     dark:border-[#3d3349] dark:bg-[#241f2c]" />
-        <input type="date" value={endsOn} onChange={(e) => setEndsOn(e.target.value)}
-          aria-label={`${term.name} ends on`}
-          className="w-full rounded-lg border border-[#ded6c8] px-2 py-1 text-xs
-                     dark:border-[#3d3349] dark:bg-[#241f2c]" />
-      </div>
-      {backwards && (
-        <p className="text-[11px] text-red-600 dark:text-red-400">
-          A semester ends after it begins.
-        </p>
+
+      {!editing ? (
+        <>
+          <p className="text-[11px] text-[#6b6076] dark:text-[#9c93ad]">
+            {readable(term.starts_on)} – {readable(term.ends_on)}
+          </p>
+          {mayEdit && (
+            <button
+              onClick={() => setEditing(true)}
+              className="mt-1 text-[11px] font-medium text-[#422e59] underline dark:text-[#c8b6e8]"
+            >
+              Move the semester
+            </button>
+          )}
+        </>
+      ) : (
+        <div className="mt-2 space-y-2">
+          <div className="flex gap-2">
+            <input type="date" value={startsOn} onChange={(e) => setStartsOn(e.target.value)}
+              aria-label={`${term.name} starts on`} className={DATE} />
+            <input type="date" value={endsOn} onChange={(e) => setEndsOn(e.target.value)}
+              aria-label={`${term.name} ends on`} className={DATE} />
+          </div>
+          {backwards && (
+            <p className="text-[11px] text-red-600 dark:text-red-400">
+              A semester ends after it begins.
+            </p>
+          )}
+          <div className="flex gap-2">
+            <button
+              onClick={async () => {
+                const ok = await onSave({
+                  action: 'term-dates', termId: term.id, startsOn, endsOn,
+                });
+                if (ok) setEditing(false);
+              }}
+              disabled={busy || backwards}
+              className="rounded-lg bg-[#422e59] px-3 py-1 text-xs font-medium text-white
+                         hover:bg-[#322244] disabled:opacity-40"
+            >
+              Save
+            </button>
+            <button
+              onClick={() => {
+                setStartsOn(term.starts_on);
+                setEndsOn(term.ends_on);
+                setEditing(false);
+              }}
+              className="rounded-lg border border-[#ded6c8] px-3 py-1 text-xs text-[#6b6076]
+                         dark:border-[#3d3349] dark:text-[#9c93ad]"
+            >
+              Cancel
+            </button>
+          </div>
+          <p className="text-[10px] text-[#a49bb0]">
+            Two semesters of one year may not overlap — a date in two semesters gives every
+            question about it two answers, and the database refuses it.
+          </p>
+        </div>
       )}
-      <div className="flex gap-2">
-        <button
-          onClick={async () => {
-            const ok = await onSave({
-              action: 'term-dates', termId: term.id, startsOn, endsOn,
-            });
-            if (ok) setEditing(false);
-          }}
-          disabled={busy || backwards}
-          className="rounded-lg bg-[#422e59] px-3 py-1 text-xs font-medium text-white
-                     hover:bg-[#322244] disabled:opacity-40"
-        >
-          Save
-        </button>
-        <button
-          onClick={() => {
-            setStartsOn(term.starts_on);
-            setEndsOn(term.ends_on);
-            setEditing(false);
-          }}
-          className="rounded-lg border border-[#ded6c8] px-3 py-1 text-xs text-[#6b6076]
-                     dark:border-[#3d3349] dark:text-[#9c93ad]"
-        >
-          Cancel
-        </button>
+
+      {/* ------------------------------------------------------------------
+          THE WINDOWS INSIDE THE SEMESTER.
+
+          The University asked for these by name: "Registration period, Add/drop
+          period, Teaching period, Examination period, Results submission
+          deadline" — and then: "registration should know whether registration
+          is currently open."
+
+          059 built the table and left it EMPTY on purpose, saying so: the
+          University had stated when its semesters open, not when registration
+          does, and "a plausible deadline that was never agreed is worse than
+          none." This is where one gets agreed.
+          ------------------------------------------------------------------ */}
+      <div className="mt-3 border-t border-[#ece7de] pt-2 dark:border-[#2e2637]">
+        {/* REGISTRATION FIRST AND LOUDEST, because it is the only one that
+            changes what the system permits today. */}
+        <p className={`text-[11px] ${
+          !registration
+            ? 'text-[#a49bb0] dark:text-[#7b7289]'
+            : registration.in_force
+              ? 'font-medium text-emerald-700 dark:text-emerald-300'
+              : 'font-medium text-amber-700 dark:text-amber-300'
+        }`}>
+          {!registration
+            ? 'No registration window recorded — so nothing is refused on a deadline. '
+              + 'An absent window is not a closed one.'
+            : registration.in_force
+              ? `Registration is OPEN, until ${readable(registration.ends_on)}.`
+              : `Registration is CLOSED (${readable(registration.starts_on)} – `
+                + `${readable(registration.ends_on)}). The Registry can still register, `
+                + 'and those are recorded as late.'}
+        </p>
+
+        <ul className="mt-1.5 space-y-1">
+          {PERIOD_KINDS.filter((k) => byKind.has(k)).map((k) => {
+            const period = byKind.get(k) as Period;
+            return (
+              <li key={k} className="flex flex-wrap items-center gap-x-2 text-[11px]">
+                <span className="w-20 shrink-0 font-medium text-[#33234a] dark:text-[#e4dcf0]">
+                  {PERIOD_LABEL[k]}
+                </span>
+                <span className="text-[#6b6076] dark:text-[#9c93ad]">
+                  {readable(period.starts_on)} – {readable(period.ends_on)}
+                </span>
+                {period.in_force && (
+                  <span className="rounded-full bg-emerald-100 px-1.5 text-[10px] text-emerald-800
+                                   dark:bg-emerald-950/50 dark:text-emerald-200">
+                    now
+                  </span>
+                )}
+                {mayEdit && (
+                  <button
+                    onClick={() => setAddingWindow(k)}
+                    className="text-[#422e59] underline dark:text-[#c8b6e8]"
+                  >
+                    change
+                  </button>
+                )}
+                {mayEdit && (
+                  <button
+                    onClick={() => onSave({ action: 'period-clear', periodId: period.id })}
+                    disabled={busy}
+                    className="text-[#a49bb0] underline hover:text-red-600"
+                  >
+                    remove
+                  </button>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+
+        {mayEdit && (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {PERIOD_KINDS.filter((k) => !byKind.has(k)).map((k) => (
+              <button
+                key={k}
+                onClick={() => setAddingWindow(k)}
+                className="rounded-lg border border-dashed border-[#ded6c8] px-2 py-0.5
+                           text-[10px] text-[#6b6076] hover:border-[#422e59] hover:text-[#422e59]
+                           dark:border-[#3d3349] dark:text-[#9c93ad]"
+              >
+                + {PERIOD_LABEL[k]}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {addingWindow && (
+          <WindowEditor
+            kind={addingWindow}
+            term={term}
+            existing={byKind.get(addingWindow) ?? null}
+            busy={busy}
+            onClose={() => setAddingWindow(null)}
+            onSave={async (from, to) => {
+              const ok = await onSave({
+                action: 'period-set', termId: term.id, kind: addingWindow,
+                startsOn: from, endsOn: to,
+              });
+              if (ok) setAddingWindow(null);
+            }}
+          />
+        )}
       </div>
-      <p className="text-[10px] text-[#a49bb0]">
-        Two semesters of one year may not overlap — a date in two semesters gives every question
-        about it two answers, and the database refuses it.
-      </p>
     </div>
   );
 }
+
+/**
+ * Setting one window of one term.
+ *
+ * THE SEMESTER'S OWN DATES ARE THE BOUNDS, and they are shown. 066 refuses a
+ * window that falls outside its term with a sentence naming both sets of
+ * dates — a registration window that closes before the semester begins is not
+ * a deadline, it is a typo nobody catches until a student cannot register on a
+ * day the calendar says they should be able to.
+ */
+function WindowEditor({
+  kind, term, existing, busy, onClose, onSave,
+}: {
+  kind: string;
+  term: Term;
+  existing: Period | null;
+  busy: boolean;
+  onClose: () => void;
+  onSave: (from: string, to: string) => void;
+}) {
+  const [from, setFrom] = useState(existing?.starts_on ?? term.starts_on);
+  const [to, setTo] = useState(existing?.ends_on ?? term.ends_on);
+  const backwards = to <= from;
+  const outside = from < term.starts_on || to > term.ends_on;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${PERIOD_LABEL[kind]} window`}
+    >
+      <div onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-sm space-y-3 rounded-2xl bg-white p-5 dark:bg-[#1f1a27]">
+        <div>
+          <h3 className="font-heading text-lg font-bold text-[#422e59] dark:text-[#e4dcf0]">
+            {PERIOD_LABEL[kind]} window
+          </h3>
+          <p className="text-xs text-[#6b6076] dark:text-[#9c93ad]">
+            {term.name}, {readable(term.starts_on)} – {readable(term.ends_on)}
+          </p>
+        </div>
+
+        <p className="rounded-lg bg-[#faf8f4] p-2 text-[11px] text-[#6b6076]
+                      dark:bg-[#241f2c] dark:text-[#9c93ad]">
+          {PERIOD_MEANS[kind]}
+        </p>
+
+        <div className="flex gap-2">
+          <label className="flex-1 text-xs">
+            <span className="mb-1 block text-[10px] uppercase tracking-wide text-[#a49bb0]">
+              Opens
+            </span>
+            <input type="date" value={from} onChange={(e) => setFrom(e.target.value)}
+              className={DATE} />
+          </label>
+          <label className="flex-1 text-xs">
+            <span className="mb-1 block text-[10px] uppercase tracking-wide text-[#a49bb0]">
+              Closes
+            </span>
+            <input type="date" value={to} onChange={(e) => setTo(e.target.value)}
+              className={DATE} />
+          </label>
+        </div>
+
+        {backwards && (
+          <p className="text-[11px] text-red-600 dark:text-red-400">
+            A window closes after it opens.
+          </p>
+        )}
+        {outside && !backwards && (
+          <p className="text-[11px] text-red-600 dark:text-red-400">
+            This falls outside {term.name}, which runs {readable(term.starts_on)} to{' '}
+            {readable(term.ends_on)}. A window outside its own semester cannot be met by anybody,
+            and the database refuses it.
+          </p>
+        )}
+
+        <div className="flex gap-2">
+          <button
+            onClick={() => onSave(from, to)}
+            disabled={busy || backwards || outside}
+            className="flex-1 rounded-xl bg-[#422e59] px-4 py-2 text-sm font-medium text-white
+                       hover:bg-[#322244] disabled:opacity-40"
+          >
+            Save
+          </button>
+          <button
+            onClick={onClose}
+            className="rounded-xl border border-[#ded6c8] px-4 py-2 text-sm text-[#6b6076]
+                       dark:border-[#3d3349] dark:text-[#9c93ad]"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const DATE = 'w-full rounded-lg border border-[#ded6c8] px-2 py-1 text-xs '
+  + 'dark:border-[#3d3349] dark:bg-[#241f2c]';
 
 function AddYear({
   years, busy, onClose, onAdd,

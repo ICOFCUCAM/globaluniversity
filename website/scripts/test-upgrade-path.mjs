@@ -93,9 +93,34 @@ sh(`createdb -h ${SOCKET} -U postgres ${db}`);
 //
 // That is the second time a harness kinder than production has put a broken
 // migration in front of the University; the first was the 057 code constraint.
-// So every psql in this file now runs the way Supabase runs it.
+// So the thing being SHIPPED is now run the way Supabase runs it.
+//
+// ---------------------------------------------------------------------------
+// BUT THE BASELINE IS BUILT THE OTHER WAY, AND THAT IS DELIBERATE
+// ---------------------------------------------------------------------------
+//
+// There are two different databases in this file and they need two different
+// treatments.
+//
+// THE BASELINE is "what the University has already successfully run". It is
+// built by replaying old migrations one after another — which is how they
+// actually reached the University, over weeks, as separate runs. Forcing it
+// into one transaction models nothing real, and it broke the moment HEAD~1
+// contained the very 065 this flag was added to catch: the baseline could not
+// be built out of a file that had already been fixed on the branch.
+//
+// A migration that nobody can apply any more is not a fact about the upgrade
+// path. It is a fact about the version that got superseded, and it is already
+// recorded — in the commit that fixed it, and in the University's own error.
+//
+// THE BUNDLE is what is about to be handed over, and it runs under one
+// transaction, because that is the only way it will ever be run.
 // ---------------------------------------------------------------------------
 const psql = (file) =>
+  sh(`psql -h ${SOCKET} -U postgres -d ${db} -v ON_ERROR_STOP=1 -f ${file} 2>&1`);
+
+/** The way the University will actually run it: the whole script, one transaction. */
+const psqlAsSupabase = (file) =>
   sh(`psql -h ${SOCKET} -U postgres -d ${db} -v ON_ERROR_STOP=1 --single-transaction -f ${file} 2>&1`);
 
 console.log(`\nBuilding the database as it stood at ${base}\n`);
@@ -121,8 +146,10 @@ console.log('\nAnd now the current bundle, over the top of it\n');
 const bundle = join(migrations, 'RUN-OUTSTANDING.sql');
 for (const pass of [1, 2]) {
   try {
-    psql(bundle);
-    console.log(`ok    RUN-OUTSTANDING.sql applies to that database (pass ${pass})`);
+    psqlAsSupabase(bundle);
+    console.log(
+      `ok    RUN-OUTSTANDING.sql applies to that database, in ONE transaction (pass ${pass})`,
+    );
   } catch (e) {
     const text = String(e.stdout ?? '') + String(e.stderr ?? '');
     const line = text.split('\n').find((l) => /ERROR/.test(l)) ?? text.slice(0, 400);

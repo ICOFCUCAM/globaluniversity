@@ -210,6 +210,14 @@ export default function CourseRegistration() {
   const [sections, setSections] = useState<Record<string, string>>({});
   // Whether this term has been set up at all — see the file header.
   const [offeringsConfigured, setOfferingsConfigured] = useState(true);
+  // WHETHER REGISTRATION IS OPEN, answered by 066's view through the route.
+  // The screen does not compute it: a screen that thinks registration is open
+  // while the route thinks it is closed produces a form that submits and is
+  // refused, which is a support ticket for every single user.
+  const [window_, setWindow] = useState<{
+    open: boolean; recorded: boolean;
+    opens: string | null; closes: string | null; mayRegisterAnyway: boolean;
+  } | null>(null);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<{ kind: 'ok' | 'bad'; text: string } | null>(null);
   const [dropping, setDropping] = useState<string | null>(null);
@@ -253,6 +261,7 @@ export default function CourseRegistration() {
     setPassed((out.passed ?? []) as string[]);
     setCredits(Number(out.creditsEarned ?? 0));
     setOfferingsConfigured(out.offeringsConfigured !== false);
+    setWindow((out.registration ?? null) as typeof window_);
     setChosen(new Set());
     setSections({});
   }, [studentId, year, semester]);
@@ -456,6 +465,45 @@ export default function CourseRegistration() {
               registration still works, and the reason the lecturer and the
               hours are blank is stated rather than left to be guessed at.
               ------------------------------------------------------------- */}
+          {/* -------------------------------------------------------------
+              THE DEADLINE.
+
+              A student outside the window is refused by the route, so the
+              screen says so BEFORE they choose fifteen courses and press a
+              button. The Registry is not refused — late registration is a real
+              act, and one the system performs and records rather than leaving
+              to paper — so they are told what will be recorded instead.
+
+              NO WINDOW RECORDED IS NOT A CLOSED WINDOW, and nothing is drawn
+              in that case: an absent deadline is the normal state of a term
+              nobody has dated, not a problem to report.
+              ------------------------------------------------------------- */}
+          {window_ && window_.recorded && !window_.open && (
+            <p className={`flex items-start gap-2 rounded-xl border p-3 text-xs ${
+              window_.mayRegisterAnyway
+                ? 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200'
+                : 'border-red-200 bg-red-50 text-red-800 dark:border-red-900 dark:bg-red-950/30 dark:text-red-200'
+            }`}>
+              <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+              <span>
+                {window_.mayRegisterAnyway
+                  ? `Registration for this semester closed${window_.closes ? ` on ${window_.closes}` : ''}. `
+                    + 'You may still register a student — it will be recorded on their record as a '
+                    + 'late registration.'
+                  : `Registration for this semester closed${window_.closes ? ` on ${window_.closes}` : ''}. `
+                    + 'Write to the Registry, who can still register you.'}
+              </span>
+            </p>
+          )}
+          {window_ && window_.recorded && window_.open && window_.closes && (
+            <p className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50
+                          p-3 text-xs text-emerald-800 dark:border-emerald-900
+                          dark:bg-emerald-950/30 dark:text-emerald-200">
+              <Info size={14} className="mt-0.5 shrink-0" />
+              <span>Registration is open until {window_.closes}.</span>
+            </p>
+          )}
+
           {!offeringsConfigured && (
             <p className="flex items-start gap-2 rounded-xl border border-[#ded6c8] bg-[#faf8f4]
                           p-3 text-xs text-[#6b6076] dark:border-[#3d3349] dark:bg-[#241f2c]

@@ -38,6 +38,8 @@ const DIR = '/tmp/claude-0/-home-user/c9453aaa-aaac-5ac4-afe9-8b9092c06b92/scrat
 const YEARS = JSON.parse(readFileSync(`${DIR}/years.json`, 'utf8'));
 const TERMS = JSON.parse(readFileSync(`${DIR}/terms.json`, 'utf8'));
 const NOW = JSON.parse(readFileSync(`${DIR}/year-now.json`, 'utf8'));
+// THE WINDOWS, from the database that ran 066 — not fixtures somebody typed.
+const PERIODS = JSON.parse(readFileSync(`${DIR}/periods.json`, 'utf8'));
 
 let failures = 0;
 const fail = (m) => { failures++; console.error(`  FAIL  ${m}`); };
@@ -66,6 +68,7 @@ async function open(scenario, rows, nowRows, shot) {
     if (url.includes('/academic_year_now')) payload = nowRows[0] ?? null;
     else if (url.includes('/academic_year_drift')) payload = rows.drift;
     else if (url.includes('/academic_years')) payload = rows.years;
+    else if (url.includes('/academic_period_calendar')) payload = PERIODS;
     else if (url.includes('/academic_terms')) payload = TERMS;
     else payload = [];
     await route.fulfill({
@@ -179,6 +182,35 @@ if (/Today is in[\s\S]{0,80}2027\/2028/i.test(bodyB)) {
   pass('…and the year today is in still reads 2027/2028, not the stale stored value');
 } else {
   fail('the screen followed the stored status instead of the calendar');
+}
+
+// =========================================================================
+// THREE — THE REGISTRATION WINDOW
+// =========================================================================
+//
+// The University asked for this by name: "registration should know whether
+// registration is currently open." The rule is enforced in the route; what is
+// checked here is whether the calendar SAYS so, because a deadline nobody can
+// read is a deadline the Registry is telephoned about.
+console.log('\nThe registration window\n');
+
+if (/Registration is OPEN/i.test(bodyA)) {
+  pass('the calendar says registration is open, and until when');
+} else {
+  fail('the calendar does not say whether registration is open');
+}
+if (/Examinations/i.test(bodyA)) {
+  pass('and the other windows of the term are listed');
+} else {
+  fail('the term\'s other windows are not shown');
+}
+// THE SEMESTER WITH NO WINDOW MUST SAY THAT AN ABSENT ONE IS NOT A CLOSED ONE.
+// This is the sentence that stops somebody "fixing" an open term by recording
+// a window nobody agreed.
+if (/An absent window is not a closed one/i.test(bodyA)) {
+  pass('…and a term with no window recorded says an absent window is not a closed one');
+} else {
+  fail('a term with no window recorded does not explain what that means');
 }
 
 console.log('');

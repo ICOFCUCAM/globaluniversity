@@ -602,6 +602,18 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
       + 'the Academic Calendar screen can put them back in step.',
     table: 'academic_year_now',
   },
+  {
+    file: '066_when_registration_is_open.sql',
+    what: 'The registration deadline, which the University asked for by name: "registration '
+      + 'should know whether registration is currently open." NOTHING CLOSES when this runs \u2014 '
+      + 'no window is seeded, and a term with no window recorded is OPEN, because reading an '
+      + 'absent deadline as a closed one would lock every student out on the day it ran. Once a '
+      + 'window IS recorded: a student may register only while it is open; the Registry may '
+      + 'register at any time, and a registration it makes outside the window is RECORDED as '
+      + 'late rather than refused \u2014 late registration is a real act, and a system that '
+      + 'cannot perform it is one the Registry performs on paper, where nothing counts it.',
+    table: 'registration_window',
+  },
 ];
 
 /** What a probe came back as. */

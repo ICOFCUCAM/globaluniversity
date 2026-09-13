@@ -7,6 +7,8 @@
 //   year-status { yearId, status }               planning|current|closed
 //   term-dates  { termId, startsOn, endsOn }      move a semester
 //   year-add    { startsIn }                      extend the calendar
+//   period-set  { termId, kind, startsOn, endsOn, note }   a window in a term
+//   period-clear{ periodId }                     remove one
 //
 // ---------------------------------------------------------------------------
 // WHY THIS EXISTS AT ALL
@@ -53,7 +55,12 @@ const bad = (error: string, status: number, detail?: string) =>
 // NOT EXPORTED — Next.js route files export only handlers and runtime flags.
 const CAPABILITY: Capability = 'manage-academic-calendar' as Capability;
 const STATUSES = ['planning', 'current', 'closed'];
-const ACTIONS = ['roll', 'year-status', 'term-dates', 'year-add'];
+const ACTIONS = [
+  'roll', 'year-status', 'term-dates', 'year-add', 'period-set', 'period-clear',
+];
+const PERIOD_KINDS = [
+  'registration', 'add-drop', 'teaching', 'examinations', 'results', 'break',
+];
 
 const isDate = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(s));
 
@@ -284,6 +291,82 @@ export async function POST(request: Request) {
       detail: `${label} added, running ${opens} to ${closes}, with both semesters — `
         + 'Semester 1 to 1 January, Semester 2 from the 2nd. It is in planning; it becomes '
         + 'current on its own when the calendar reaches it and somebody rolls the year.',
+    });
+  }
+
+  // =========================================================================
+  // PERIODS — registration, add/drop, teaching, examinations, results
+  // =========================================================================
+  //
+  // 059 created `academic_periods` and left it empty, saying why: the
+  // University had stated when its semesters open, not when registration does,
+  // and "a plausible deadline that was never agreed is worse than none."
+  //
+  // This is how one gets agreed. 066 adds the rule that applies once a window
+  // exists — a student may register only while it is open; the Registry may
+  // register at any time and a late one is RECORDED as late — and until a
+  // window is recorded, nothing is refused.
+  if (action === 'period-set') {
+    const termId = String(body.termId ?? '');
+    const kind = String(body.kind ?? '');
+    const startsOn = String(body.startsOn ?? '');
+    const endsOn = String(body.endsOn ?? '');
+    if (!termId) return bad('no-term', 400);
+    if (!PERIOD_KINDS.includes(kind)) {
+      return bad('bad-kind', 400, `A window is one of: ${PERIOD_KINDS.join(', ')}.`);
+    }
+    if (!isDate(startsOn) || !isDate(endsOn)) {
+      return bad('bad-dates', 400, 'Both dates are needed, as YYYY-MM-DD.');
+    }
+    if (endsOn <= startsOn) {
+      return bad('backwards', 400, 'A window closes after it opens.');
+    }
+
+    // UPSERT ON (term_id, kind). 059 allows one window of each kind per term,
+    // because two registration windows in one semester is two answers to "is
+    // registration open" — and a caller meeting a unique-constraint error when
+    // they meant to CHANGE the dates learns nothing from it.
+    const { error } = await admin.from('academic_periods').upsert({
+      term_id: termId,
+      kind,
+      starts_on: startsOn,
+      ends_on: endsOn,
+      note: body.note ? String(body.note) : null,
+    }, { onConflict: 'term_id,kind' });
+    if (error) {
+      // 066's trigger refuses a window outside its own term, in a sentence
+      // naming both sets of dates. It is passed through rather than replaced.
+      return bad('period-failed', 409, error.message);
+    }
+
+    await audit(admin, {
+      action: 'academic-period-set', entityType: 'academic_term', entityId: termId,
+      performedBy: caller.id, details: { kind, startsOn, endsOn },
+    });
+    return NextResponse.json({
+      ok: true,
+      detail: kind === 'registration'
+        ? `Registration for this semester now runs ${startsOn} to ${endsOn}. Outside it a student `
+          + 'cannot register themselves; the Registry still can, and those are recorded as late.'
+        : `The ${kind} window now runs ${startsOn} to ${endsOn}.`,
+    });
+  }
+
+  if (action === 'period-clear') {
+    const id = String(body.periodId ?? '');
+    if (!id) return bad('no-period', 400);
+    const { error } = await admin.from('academic_periods').delete().eq('id', id);
+    if (error) return bad('period-failed', 500, error.message);
+    await audit(admin, {
+      action: 'academic-period-cleared', entityType: 'academic_period', entityId: id,
+      performedBy: caller.id,
+    });
+    return NextResponse.json({
+      ok: true,
+      // REMOVING A REGISTRATION WINDOW OPENS REGISTRATION. Said plainly,
+      // because the opposite is the intuitive reading of "clear".
+      detail: 'Removed. With no window recorded, nothing is refused on the grounds of a deadline '
+        + '— that is what an absent window means, not a closed one.',
     });
   }
 

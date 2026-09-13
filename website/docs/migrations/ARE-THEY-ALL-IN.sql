@@ -183,6 +183,10 @@ select * from (
   select '065' as migration, '065_the_year_that_cannot_lie.sql' as file,
          case when to_regclass('public.academic_year_now') is not null then 'YES' else 'NO' end as landed,
          'academic_year_now' as what_it_creates
+  union all
+  select '066' as migration, '066_when_registration_is_open.sql' as file,
+         case when to_regclass('public.registration_window') is not null then 'YES' else 'NO' end as landed,
+         'registration_window' as what_it_creates
 ) as landed_report
  order by migration;
 

@@ -164,6 +164,12 @@ const READ_ONLY_BY_DESIGN = {
   academic_year_drift: 'A view: years whose stored status no longer matches the calendar. The '
     + 'report that makes a stale year visible before three screens quietly open on the wrong '
     + 'one. /api/academic/calendar writes the table underneath it.',
+  registration_window: 'A view: whether registration is open for each term, and whether a window '
+    + 'was ever recorded — two different facts in two columns, because a term nobody has dated '
+    + 'is OPEN and a caller that collapsed them would lock out every student. '
+    + '/api/academic/calendar writes the periods underneath it.',
+  academic_period_calendar: 'A view: every registration, teaching, examination and results window '
+    + 'with the term and year it belongs to. /api/academic/calendar writes academic_periods.',
   capability_grants_in_force: 'A view over `capability_grants`, which /api/admin/capability-grant '
     + 'writes. It exists so that "still in force" — not revoked AND not expired — is decided in '
     + 'one place: a caller checking only `revoked_at is null` would honour a grant that ran out '

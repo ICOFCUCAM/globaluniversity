@@ -212,6 +212,9 @@ const MARKERS = {
   // 065 adds no table and no column \u2014 it adds two views and a function.
   // The derived view is the marker.
   '065': 'academic_year_now',
+  // 066 adds a column and three views. `registration_window` is the one
+  // every caller asks, and the one nothing before it could have created.
+  '066': 'registration_window',
 };
 
 /** The SQL that answers "is this one here?", for each of the three forms. */

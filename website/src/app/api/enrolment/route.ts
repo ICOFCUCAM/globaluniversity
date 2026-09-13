@@ -99,6 +99,24 @@ const OFFERING = 'id, course_id, status, delivery_mode, campus, max_enrolment, l
 // eslint-disable-next-line max-len
 const ROLL = 'offering_id, course_code, lecturer, registered, places_left, max_enrolment, starts_in, term_sequence';
 const SECTION = 'id, offering_id, code, day_of_week, starts_at, ends_at';
+// eslint-disable-next-line max-len
+const WINDOW = 'term_id, term_sequence, starts_in, registration_opens, registration_closes, window_recorded, is_open, add_drop_open';
+
+/**
+ * Whether registration is open for a term — 066's view, in one shape.
+ *
+ * `window_recorded` AND `is_open` ARE TWO DIFFERENT FACTS and are kept as two
+ * fields for that reason. A term nobody has dated is OPEN, not closed: 059
+ * left `academic_periods` empty deliberately, and a caller that collapsed the
+ * two would lock every student in the University out of registration.
+ */
+interface RegistrationWindow {
+  window_recorded: boolean;
+  is_open: boolean;
+  add_drop_open: boolean;
+  registration_opens: string | null;
+  registration_closes: string | null;
+}
 
 // EVERY ACTION NEEDS `register-courses`, and the difference between a student
 // and the Registry is WHOSE record may be touched, checked below. Splitting it
@@ -246,6 +264,28 @@ export async function POST(request: Request) {
     // refused. See the header.
     const offeringsConfigured = offerings.size > 0;
 
+    // ---- IS REGISTRATION EVEN OPEN? ---------------------------------------
+    //
+    // 066 answers this in ONE view, `registration_window`, read by this route,
+    // by the registration screen and by the calendar screen. A screen that
+    // thinks registration is open while the route thinks it is closed produces
+    // a form that submits and is refused — a support ticket for every user.
+    //
+    // AND A TERM WITH NO WINDOW RECORDED IS OPEN. 059 left academic_periods
+    // empty on purpose; reading an absent window as a closed one would lock
+    // every student out of registration. `window_recorded` and `is_open` are
+    // separate columns precisely so nothing can collapse them by accident.
+    let regWindow: RegistrationWindow | null = null;
+    if (termYear && termSeq) {
+      const { data: win } = await admin.from('registration_window').select(WINDOW)
+        .eq('starts_in', termYear).eq('term_sequence', termSeq).maybeSingle();
+      regWindow = (win ?? null) as unknown as RegistrationWindow | null;
+    }
+    // A DATABASE WITHOUT 066 HAS NO VIEW TO READ, and must behave exactly as it
+    // did before — open, with no window recorded.
+    const windowOpen = regWindow ? regWindow.is_open : true;
+    const windowRecorded = regWindow ? regWindow.window_recorded : false;
+
     // ---- WHAT THE STUDENT HAS ACTUALLY PASSED ----------------------------
     //
     // APPROVED RESULTS ONLY. A mark that has been entered but not approved is
@@ -331,7 +371,21 @@ export async function POST(request: Request) {
 
     if (action === 'offer') {
       return NextResponse.json({
-        ok: true, studentId, passed, creditsEarned, offeringsConfigured, courses: verdicts,
+        ok: true,
+        studentId,
+        passed,
+        creditsEarned,
+        offeringsConfigured,
+        registration: {
+          open: windowOpen,
+          recorded: windowRecorded,
+          opens: regWindow?.registration_opens ?? null,
+          closes: regWindow?.registration_closes ?? null,
+          // THE REGISTRY IS NOT STOPPED BY A CLOSED WINDOW, and the screen
+          // needs to know which of the two readers it is drawing for.
+          mayRegisterAnyway: isRegistry,
+        },
+        courses: verdicts,
       });
     }
 
@@ -347,6 +401,24 @@ export async function POST(request: Request) {
         'A registration belongs to a term. Without the year and the semester it cannot be '
         + 'placed on a transcript or counted towards anything.');
     }
+
+    // ---- THE DEADLINE --------------------------------------------------
+    //
+    // A STUDENT IS REFUSED. THE REGISTRY IS NOT, AND IS RECORDED.
+    //
+    // Late registration is a real act a University performs. A system that
+    // cannot perform it is one the Registry performs on paper instead, where
+    // nothing counts it — so the question was never whether it should be
+    // possible, but whether it should be INVISIBLE. It is recorded on the row.
+    if (!windowOpen && !isRegistry) {
+      return bad('registration-closed', 409,
+        regWindow?.registration_closes
+          ? `Registration for this semester closed on ${regWindow.registration_closes}. The `
+            + 'Registry can still register you — write to them, and it will be recorded as a late '
+            + 'registration.'
+          : 'Registration for this semester is not open. The Registry can still register you.');
+    }
+    const late = !windowOpen;
 
     const chosen = verdicts.filter((v) => wanted.includes(String(v.id)));
     const unknown = wanted.filter((id) => !byId.has(id));
@@ -403,6 +475,7 @@ export async function POST(request: Request) {
         enrolled_at: now,
         registered_by: caller.id,
         registered_via: isRegistry ? 'registry' : 'self',
+        registered_late: late,
         offering_id: o?.offeringId ?? null,
         section_id: section,
         dropped_at: null,
@@ -418,9 +491,13 @@ export async function POST(request: Request) {
     return NextResponse.json({
       ok: true,
       registered: chosen.map((c) => c.code),
+      late,
       detail: `Registered for ${chosen.length} course${chosen.length === 1 ? '' : 's'}: `
         + `${chosen.map((c) => c.code).join(', ')}. They now appear on the mark sheet for each, `
-        + 'and on the transcript once results are approved.',
+        + 'and on the transcript once results are approved.'
+        + (late
+          ? ' This was outside the registration window and is recorded as a late registration.'
+          : ''),
     });
   }
 
