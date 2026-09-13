@@ -225,6 +225,14 @@ export const menuGroups: MenuGroup[] = [
         roles: ['superadmin', 'admin', 'registrar', 'chancellor', 'vice-chancellor',
           'dean', 'hod', 'programme-coordinator', 'academic-office', 'student'],
       },
+      // THE END OF THE CHAIN, below the record it is the conclusion of.
+      {
+        id: 'graduation',
+        label: 'Graduation & awards',
+        icon: <Award size={18} />,
+        roles: ['superadmin', 'admin', 'registrar', 'chancellor', 'vice-chancellor',
+          'dean', 'academic-office'],
+      },
       { id: 'timetable', label: 'Timetable', icon: <CalendarDays size={18} />, roles: ACADEMIC },
       {
         id: 'attendance',

@@ -31,6 +31,7 @@ import Rooms from './academic/Rooms';
 import AcademicCalendar from './academic/AcademicCalendar';
 import AcademicRecords from './academic/AcademicRecords';
 import AcademicStructure from './academic/AcademicStructure';
+import Graduation from './academic/Graduation';
 import CourseShelf from './lms/CourseShelf';
 import ResultProcessing from './results/ResultProcessing';
 import GradeBook from './results/GradeBook';
@@ -295,6 +296,8 @@ export default function AppLayout() {
         return <AcademicRecords />;
       case 'academic-structure':
         return <AcademicStructure />;
+      case 'graduation':
+        return <Graduation />;
       case 'academic-overview':
         return <AcademicOverview onNavigate={setCurrentView} />;
       case 'forum':

@@ -332,6 +332,10 @@ export type ViewType =
   // portal showed forty-one programmes and not the five schools they hang
   // from — the University's original objection, one level up.
   | 'academic-structure'
+  // THE END OF THE CHAIN. `graduation_records` has existed since 019 with a
+  // careful design — the Senate's resolution date required, a degree refused
+  // if dated before it — and nothing has ever read or written a row into it.
+  | 'graduation'
   // ATTENDANCE, SEPARATED FROM THE TIMETABLE. They were one screen because the
   // timetable kept its own invented slots; now that a class is a row every
   // other screen can read, marking who attended one is its own job.

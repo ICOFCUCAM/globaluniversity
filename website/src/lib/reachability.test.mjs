@@ -184,6 +184,11 @@ const READ_ONLY_BY_DESIGN = {
   my_teaching: 'A view: the signed-in lecturer\'s courses, from their offerings and from '
     + 'courses.lecturer_id where no term has been set up yet. /api/academic/offerings writes the '
     + 'offerings underneath it.',
+  graduation_candidate: 'A view: every student reading for an award with the four inputs a '
+    + 'graduation decision needs, and whether one has already been conferred. '
+    + '/api/academic/graduation writes graduation_records underneath it.',
+  graduation_cohort: 'A view: conferrals grouped by the day they were conferred — a congregation, '
+    + 'as the register sees it.',
   capability_grants_in_force: 'A view over `capability_grants`, which /api/admin/capability-grant '
     + 'writes. It exists so that "still in force" — not revoked AND not expired — is decided in '
     + 'one place: a caller checking only `revoked_at is null` would honour a grant that ran out '

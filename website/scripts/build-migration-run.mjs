@@ -218,6 +218,7 @@ const MARKERS = {
   // 067 creates three views and no table. The one every screen reads.
   '067': 'student_academic_record',
   '068': 'course_materials',
+  '069': 'graduation_candidate',
 };
 
 /** The SQL that answers "is this one here?", for each of the three forms. */

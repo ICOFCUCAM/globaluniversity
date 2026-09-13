@@ -195,6 +195,10 @@ select * from (
   select '068' as migration, '068_the_course_as_a_place_to_learn.sql' as file,
          case when to_regclass('public.course_materials') is not null then 'YES' else 'NO' end as landed,
          'course_materials' as what_it_creates
+  union all
+  select '069' as migration, '069_the_end_of_the_chain.sql' as file,
+         case when to_regclass('public.graduation_candidate') is not null then 'YES' else 'NO' end as landed,
+         'graduation_candidate' as what_it_creates
 ) as landed_report
  order by migration;
 

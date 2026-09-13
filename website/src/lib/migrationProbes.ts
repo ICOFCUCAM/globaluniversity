@@ -637,6 +637,18 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
       + 're-uploading each August. Nothing is seeded \u2014 no outline is invented.',
     table: 'course_materials',
   },
+  {
+    file: '069_the_end_of_the_chain.sql',
+    what: 'Graduation, which the chain stopped one short of. `graduation_records` was created by '
+      + '019 with a careful design \u2014 the Senate\u2019s resolution date REQUIRED, a degree '
+      + 'refused if dated before it, one award conferred on one student once \u2014 and nothing '
+      + 'has ever read or written a row into it. This adds the view a decision needs and the one '
+      + 'column the table lacked: where the Senate confers DESPITE an unmet requirement, the '
+      + 'reason in words. Note what this system cannot establish: it records what was received, '
+      + 'not what was owed, so the fee check is UNKNOWN for everybody and no candidate fully '
+      + 'qualifies by computation. That is the truth, not a bug, and the screen says so.',
+    table: 'graduation_candidate',
+  },
 ];
 
 /** What a probe came back as. */

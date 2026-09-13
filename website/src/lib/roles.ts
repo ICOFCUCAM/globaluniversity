@@ -380,6 +380,22 @@ export const OPERATIONAL_CAPABILITIES = [
   // Theology course.
   // ---------------------------------------------------------------------
   'publish-course-material',
+  // ---------------------------------------------------------------------
+  // RECORDING A CONFERRAL — the end of the chain.
+  //
+  // NOT the act of conferring. `src/lib/graduation.ts` is explicit: "whether
+  // the Senate has resolved to confer is a meeting, not a computation, and no
+  // query stands in for it." What this capability permits is WRITING DOWN
+  // what the Senate resolved, and 019 makes the resolution date a required
+  // field so the record cannot exist without naming its authority.
+  //
+  // Held by the offices that keep the degree register: the Registry, which
+  // keeps the academic record, and the two officers in whose name degrees are
+  // conferred. Not by a teaching office — `issue-credential` is a separate
+  // capability for a separate act, and a degree exists before its certificate
+  // is printed.
+  // ---------------------------------------------------------------------
+  'confer-award',
 ] as const;
 
 /**
@@ -540,7 +556,7 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // the appointment capabilities, because the appointing authority is one
   // office and naming two would make "who appoints here" a question.
   chancellor: ['view-executive-dashboard', 'view-all-faculties', 'view-institutional-finance', 'view-admitted-students', 'monitor-progress',
-    'compose-correspondence', 'authorize-correspondence', 'issue-correspondence'],
+    'compose-correspondence', 'authorize-correspondence', 'issue-correspondence', 'confer-award'],
     // ---------------------------------------------------------------------
     // TWO THAT THE SUPERADMINISTRATOR HOLDS AND THIS OFFICE DELIBERATELY
     // DOES NOT, because giving them would do harm rather than nothing:
@@ -609,7 +625,7 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
     // starts and finishes their own letter, with no artificial loop through
     // HR. See src/lib/correspondence.ts for where that line is drawn and why
     // it does not extend to appointments.
-    'compose-correspondence', 'authorize-correspondence', 'issue-correspondence'],
+    'compose-correspondence', 'authorize-correspondence', 'issue-correspondence', 'confer-award'],
     // ---------------------------------------------------------------------
     // TWO THAT THE SUPERADMINISTRATOR HOLDS AND THIS OFFICE DELIBERATELY
     // DOES NOT, because giving them would do harm rather than nothing:
@@ -724,6 +740,7 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
     'manage-academic-calendar',
     // And the shape of the tree the record hangs from.
     'manage-academic-structure',
+    'confer-award',
   ],
 
   // The Head of Academic Affairs approves admissions and SIGNS the admission
