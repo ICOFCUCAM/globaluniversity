@@ -37,7 +37,7 @@ import { authedPost } from '@/lib/authedFetch';
 import { useAuth } from '@/contexts/AuthContext';
 import { can } from '@/lib/roles';
 import { BTN_PRIMARY, BTN_SECONDARY, INPUT, LABEL, FOCUS } from '@/lib/portalTheme';
-import { AlertTriangle, Check, Loader2, Plus, Trash2 } from 'lucide-react';
+import { AlertTriangle, Check, Loader2, Plus, Trash2, Printer } from 'lucide-react';
 import {
   POSITION_FAMILIES, FAMILY_LABELS, JD_SECTIONS, SECTION_LABELS,
   resolveJobDescription, sectionsOf, objectionsToProfile, canActivateProfile,
@@ -116,6 +116,35 @@ export default function JobDescriptions() {
     } finally {
       setBusy(null);
     }
+  };
+
+  /**
+   * Print one post's job description.
+   *
+   * OPENED IN A NEW WINDOW, like the letter preview: the document carries its
+   * own print stylesheet, and the reason for looking at it is to see the pages
+   * that will travel with the appointment letter.
+   */
+  const printJd = async (positionId: string, title: string) => {
+    setBusy(positionId);
+    setNote(null);
+    const out = await authedPost('/api/admin/job-description/document', { positionId });
+    setBusy(null);
+
+    if (!out.ok || typeof out.html !== 'string') {
+      setNote({ kind: 'bad', text: (out.detail as string | undefined)
+        ?? String(out.error ?? `${title} could not be printed.`) });
+      return;
+    }
+    const w = window.open('', '_blank');
+    if (!w) {
+      // A BLOCKED POP-UP LOOKS EXACTLY LIKE A BUTTON THAT DOES NOTHING.
+      setNote({ kind: 'bad', text: 'The document could not open — your browser blocked the new '
+        + 'window. Allow pop-ups for this site and press it again.' });
+      return;
+    }
+    w.document.write(out.html as string);
+    w.document.close();
   };
 
   const drafts = useMemo(
@@ -207,10 +236,30 @@ export default function JobDescriptions() {
               <div className="space-y-4 border-t border-gray-100 p-3">
                 {/* THE POSTS IT GOVERNS, named, so an officer editing the
                     academic-staff family can see they are editing the terms of
-                    every lecturer at the University. */}
-                <p className="text-xs text-gray-500">
-                  Governs: {inFamily.map((p) => p.title).join(', ') || '—'}
-                </p>
+                    every lecturer at the University.
+                    EACH ONE PRINTABLE, which it was not. The appointment letter
+                    names a post's job description as its own Attachment 1 and
+                    says it forms part of the appointment record — and the
+                    document could be produced by nothing. The data was here,
+                    the screen was here, the document did not exist. */}
+                <div className="text-xs text-gray-500">
+                  <p className="mb-1">Governs:</p>
+                  <ul className="flex flex-wrap gap-1.5">
+                    {inFamily.length === 0 && <li>—</li>}
+                    {inFamily.map((p) => (
+                      <li key={p.id}>
+                        <button type="button" disabled={busy !== null}
+                          title={`Print the job description for ${p.title}`}
+                          onClick={() => void printJd(String(p.id), String(p.title ?? p.job_code ?? 'this post'))}
+                          className={`inline-flex items-center gap-1 rounded-lg border
+                            border-gray-200 px-2 py-1 hover:bg-gray-50 disabled:opacity-40
+                            ${FOCUS}`}>
+                          <Printer size={11} /> {p.title}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
 
                 <div>
                   <label className={LABEL} htmlFor={`p-${family}`}>

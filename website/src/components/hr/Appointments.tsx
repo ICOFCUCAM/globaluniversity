@@ -29,17 +29,47 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { authedPost } from '@/lib/authedFetch';
 import { useAuth } from '@/contexts/AuthContext';
 import { can } from '@/lib/roles';
-import { BTN_PRIMARY, BTN_SECONDARY, INPUT, LABEL, FOCUS } from '@/lib/portalTheme';
-import { Plus, Loader2, Check, X, AlertTriangle, Users } from 'lucide-react';
+import { BTN_PRIMARY, BTN_SECONDARY, BTN_GHOST, INPUT, LABEL, FOCUS } from '@/lib/portalTheme';
+import {
+  Plus, Loader2, Check, X, AlertTriangle, Users, FileText, Send, Eye, Trash2,
+} from 'lucide-react';
 import {
   EMPLOYMENT_TYPES, EMPLOYMENT_LABELS, CURRENCIES, SALARY_PERIODS, PERIOD_LABELS,
+  ALLOWANCE_KINDS, allowanceLine,
   DEFAULT_CURRENCY, DEFAULT_PERIOD,
   boardStatus, missingFrom, blocked, remunerationLine, probationEnds,
   STATE_LABELS,
-  type Appointment, type AppointmentState,
+  type Appointment, type AppointmentState, type Allowance,
 } from '@/lib/appointments';
+import { FAMILY_LABELS, type PositionFamily } from '@/lib/positions';
+
+/**
+ * A post from the register, for the picker.
+ *
+ * THE PICKER IS THE WHOLE REASON THIS SCREEN CHANGED. An appointment was
+ * created by typing a job title into a box, and `position_id` was never set on
+ * any appointment this application has ever made. Everything downstream of the
+ * post — the register of wording the letter uses, the job description it names
+ * as its own Attachment 1, the standing of the office — hangs off that column,
+ * and all of it was unreachable.
+ */
+interface Post {
+  id: string;
+  job_code: string;
+  title: string;
+  family: string;
+  unit_name: string | null;
+  reports_to: string | null;
+  indicative_salary_amount: number | null;
+  indicative_salary_currency: string | null;
+  indicative_salary_period: string | null;
+}
+
+// eslint-disable-next-line max-len
+const POSTS = 'id, job_code, title, family, unit_name, reports_to, indicative_salary_amount, indicative_salary_currency, indicative_salary_period';
 
 // A SINGLE STRING LITERAL. Concatenation makes supabase-js collapse the
 // inferred type to GenericStringError[], silently.
@@ -57,6 +87,7 @@ export default function Appointments() {
   // sets pay, so a salary is not delivered to a browser that has no business
   // showing it.
   const maySeePay = can(user?.role, 'set-remuneration');
+  const mayIssue = can(user?.role, 'issue-appointment-letter');
 
   const [rows, setRows] = useState<Row[] | null>(null);
   const [creating, setCreating] = useState(false);
@@ -74,6 +105,73 @@ export default function Appointments() {
   }, [maySeePay]);
 
   useEffect(() => { void load(); }, [load]);
+
+  // -------------------------------------------------------------------------
+  // THE LETTER ACTIONS.
+  //
+  // SEPARATE FROM `act` because they call a different route under a different
+  // capability. Folding them together would have hidden the fact that nothing
+  // was calling the letter route at all — which is exactly what happened.
+  // -------------------------------------------------------------------------
+  async function letter(action: 'issue' | 'email', id: string) {
+    setBusy(true);
+    setNotice(null);
+    const out = await authedPost('/api/appointments/letter', { action, id });
+    setBusy(false);
+
+    if (!out.ok) {
+      setNotice({
+        tone: 'bad',
+        text: (out.detail as string | undefined) ?? String(out.error ?? 'That did not work.'),
+      });
+      return;
+    }
+    setNotice({
+      tone: 'ok',
+      text: (out.detail as string | undefined)
+        ?? (action === 'issue'
+          ? `Issued as ${String(out.reference ?? '')}. The letter is archived exactly as it was `
+            + 'produced, and cannot be edited.'
+          : 'Sent.'),
+    });
+    void load();
+  }
+
+  /**
+   * Generate the letter and show it, without issuing anything.
+   *
+   * OPENED IN A NEW WINDOW rather than an iframe: the letter carries its own
+   * print stylesheet and the whole point of looking at it is to see the pages
+   * the appointee will get. `document.write` into a blank window is the one
+   * way to render returned HTML with its own styles intact.
+   */
+  async function preview(id: string) {
+    setBusy(true);
+    setNotice(null);
+    const out = await authedPost('/api/appointments/letter', { action: 'generate', id });
+    setBusy(false);
+
+    if (!out.ok || typeof out.html !== 'string') {
+      setNotice({
+        tone: 'bad',
+        text: (out.detail as string | undefined) ?? String(out.error ?? 'The letter could not be produced.'),
+      });
+      return;
+    }
+    const w = window.open('', '_blank');
+    if (!w) {
+      // SAID, NOT SWALLOWED. A blocked pop-up looks exactly like a button that
+      // does nothing.
+      setNotice({
+        tone: 'bad',
+        text: 'The preview could not open — your browser blocked the new window. Allow pop-ups '
+          + 'for this site and press it again.',
+      });
+      return;
+    }
+    w.document.write(out.html);
+    w.document.close();
+  }
 
   async function act(payload: Record<string, unknown>) {
     setBusy(true);
@@ -267,6 +365,54 @@ export default function Appointments() {
                   )
                 )}
 
+                {/* ------------------------------------------------------
+                    THE LETTER, WHICH NOTHING COULD ISSUE.
+
+                    /api/appointments/letter has existed for the whole of this
+                    system: it generates the document, seals it, archives the
+                    exact bytes, records the issue and emails the appointee.
+                    No screen called it. An appointment could be drafted, sent
+                    for approval and approved — and then the workflow simply
+                    stopped, with no button anywhere, because the row sat at
+                    `approved` and nothing offered to do the next thing.
+
+                    An appointment system whose central document cannot be
+                    produced is a list of intentions.
+                    ------------------------------------------------------ */}
+                {a.status === 'approved' && (
+                  <>
+                    {/* PREVIEW FIRST, AND ANYBODY WHO MAY DRAFT MAY PREVIEW.
+                        Generating is not issuing — the route keeps them apart
+                        under two capabilities — and somebody about to commit
+                        the University should be able to read the document
+                        before they do. */}
+                    {mayDraft && (
+                      <button disabled={busy} className={BTN_GHOST}
+                        onClick={() => void preview(a.id)}>
+                        <Eye size={14} /> Preview the letter
+                      </button>
+                    )}
+                    {mayIssue && (
+                      <button disabled={busy} className={BTN_PRIMARY}
+                        onClick={() => void letter('issue', a.id)}>
+                        <FileText size={14} /> Issue the letter
+                      </button>
+                    )}
+                  </>
+                )}
+
+                {/* SENDING IS ITS OWN ACT. 042 archives the letter before it
+                    goes anywhere, and a failed send leaves the appointment
+                    issued and the letter waiting in the outbox rather than
+                    rolling anything back. So this is a separate button, and it
+                    can be pressed again. */}
+                {a.status === 'issued' && mayIssue && (
+                  <button disabled={busy} className={BTN_SECONDARY}
+                    onClick={() => void letter('email', a.id)}>
+                    <Send size={14} /> {a.issued_at ? 'Send it again' : 'Email it to the appointee'}
+                  </button>
+                )}
+
                 {['issued', 'accepted', 'active'].includes(String(a.status)) && mayDraft && (
                   <>
                     <input value={reason} onChange={(e) => setReason(e.target.value)}
@@ -302,15 +448,65 @@ function NewAppointment({
 }) {
   const [f, setF] = useState({
     fullName: '', email: '', phone: '', postalAddress: '',
-    positionTitle: '', unitName: '', employmentType: 'permanent',
+    positionId: '', positionTitle: '', unitName: '', faculty: '',
+    employmentType: 'permanent',
     startDate: '', endDate: '', effectiveDate: '', probationMonths: '',
     placeOfDuty: '', reportsToName: '', workingHours: '', terms: '',
     salaryAmount: '', salaryCurrency: DEFAULT_CURRENCY, salaryPeriod: DEFAULT_PERIOD,
     appointingAuthority: '', authorityDecidedOn: '',
   });
 
+  const [posts, setPosts] = useState<Post[] | null>(null);
+  const [allowances, setAllowances] = useState<Allowance[]>([]);
+
+  // THE REGISTER OF POSTS, READ ONCE. 048 seeds forty-three of them.
+  useEffect(() => {
+    void (async () => {
+      const { data } = await supabase.from('positions').select(POSTS)
+        .eq('status', 'open').order('family').order('title');
+      // `status` may not exist on an older database; fall back to everything
+      // rather than showing an empty picker, which reads as "no posts exist".
+      if (data && data.length > 0) { setPosts(data as unknown as Post[]); return; }
+      const { data: all } = await supabase.from('positions').select(POSTS)
+        .order('family').order('title');
+      setPosts((all ?? []) as unknown as Post[]);
+    })();
+  }, []);
+
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setF({ ...f, [k]: e.target.value });
+
+  /**
+   * Choosing a post fills what the register already knows.
+   *
+   * FILLED, NOT LOCKED. The unit and the reporting officer come from the post
+   * because that is what the post says, and typing them again is how an
+   * appointment comes to disagree with the register it was made against. But a
+   * particular appointment can legitimately differ — somebody seconded, or
+   * reporting to an acting officer — so each stays editable underneath.
+   *
+   * THE INDICATIVE SALARY IS OFFERED, NEVER IMPOSED. 048 holds it as what the
+   * post is usually worth; the University was explicit that the box may be
+   * left empty, so it is copied in only when nothing has been typed yet.
+   */
+  function choosePost(id: string) {
+    const p = (posts ?? []).find((x) => x.id === id);
+    if (!p) {
+      setF((prev) => ({ ...prev, positionId: '' }));
+      return;
+    }
+    setF((prev) => ({
+      ...prev,
+      positionId: p.id,
+      positionTitle: p.title,
+      unitName: prev.unitName || (p.unit_name ?? ''),
+      reportsToName: prev.reportsToName || (p.reports_to ?? ''),
+      salaryAmount: prev.salaryAmount || (p.indicative_salary_amount != null
+        ? String(p.indicative_salary_amount) : ''),
+      salaryCurrency: p.indicative_salary_currency ?? prev.salaryCurrency,
+      salaryPeriod: p.indicative_salary_period ?? prev.salaryPeriod,
+    }));
+  }
 
   const asRecord: Appointment = {
     full_name: f.fullName, position_title: f.positionTitle, unit_name: f.unitName,
@@ -370,12 +566,59 @@ function NewAppointment({
       <section className="space-y-4">
         <h2 className="font-heading text-sm font-bold uppercase tracking-wide text-[#422e59]
                        dark:text-[#c9b6e6]">Appointment</h2>
+        {/* ----------------------------------------------------------------
+            THE POST, FROM THE REGISTER.
+
+            This was a text box, and only a text box, for the whole life of
+            this system. Typing "Dean of Studies" made an appointment that was
+            attached to no post — so the letter had no family to take its
+            wording from, no job description to attach, and no standing to
+            print. Everything built on top of the register was unreachable
+            because of this one field.
+
+            STILL TYPEABLE UNDERNEATH. A post the register does not have yet is
+            a real situation, and refusing it would stop the work. But the
+            picker is first, and choosing from it is the normal thing.
+            ---------------------------------------------------------------- */}
+        <Field id="a-post" label="Post (from the register of positions)">
+          <select id="a-post" value={f.positionId}
+            onChange={(e) => choosePost(e.target.value)} className={INPUT}>
+            <option value="">
+              {posts === null ? 'Reading the register…' : 'Not one of the registered posts'}
+            </option>
+            {Object.entries(
+              (posts ?? []).reduce<Record<string, Post[]>>((acc, p) => {
+                (acc[p.family] ??= []).push(p);
+                return acc;
+              }, {}),
+            ).map(([family, list]) => (
+              <optgroup key={family}
+                label={FAMILY_LABELS[family as PositionFamily] ?? family}>
+                {list.map((p) => (
+                  <option key={p.id} value={p.id}>{p.title} ({p.job_code})</option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-[#6b6076] dark:text-[#9c93ad]">
+            {f.positionId
+              ? 'The letter will take its wording from this post’s family, attach its job '
+                + 'description, and print any standing the University has recorded for it.'
+              : 'Without a post, the letter falls back to the plainest wording and carries no '
+                + 'job description. Choose one wherever the register has it.'}
+          </p>
+        </Field>
+
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field id="a-pos" label="Position">
+          <Field id="a-pos" label="Position, as it is printed on the letter">
             <input id="a-pos" value={f.positionTitle} onChange={set('positionTitle')} className={INPUT} />
           </Field>
-          <Field id="a-unit" label="Department, faculty or school">
+          <Field id="a-unit" label="Department or office">
             <input id="a-unit" value={f.unitName} onChange={set('unitName')} className={INPUT} />
+          </Field>
+          <Field id="a-fac" label="Faculty or school">
+            <input id="a-fac" value={f.faculty} onChange={set('faculty')} className={INPUT}
+              placeholder="Left empty for a central post" />
           </Field>
           <Field id="a-type" label="Employment type">
             <select id="a-type" value={f.employmentType} onChange={set('employmentType')} className={INPUT}>
@@ -442,6 +685,94 @@ function NewAppointment({
             Leave the amount blank for an unpaid post. A figure without a currency and a period
             is not something anybody can rely on, so all three go together or none do.
           </p>
+
+          {/* ------------------------------------------------------------
+              ALLOWANCES, WHICH NOTHING COULD CREATE.
+
+              047 gave them a table of their own, with each allowance keeping
+              its own currency and period so that a monthly salary and an
+              annual research allowance are never added into one number. The
+              letter reads them and prints a line for each.
+
+              Nothing wrote them. Not this screen, not any route — so every
+              letter the University could produce showed a basic salary and
+              nothing else, and a housing allowance agreed in a meeting had no
+              way into the record at all.
+              ------------------------------------------------------------ */}
+          <div className="rounded-xl border border-[#e8e2f0] p-4 dark:border-[#332b3d]">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-sm font-semibold text-[#422e59] dark:text-[#e4dcf0]">
+                Allowances
+              </h3>
+              <button type="button" className={BTN_GHOST}
+                onClick={() => setAllowances([...allowances, {
+                  kind: ALLOWANCE_KINDS[0],
+                  amount: 0,
+                  currency: f.salaryCurrency,
+                  period: f.salaryPeriod,
+                } as Allowance])}>
+                <Plus size={13} /> Add one
+              </button>
+            </div>
+
+            {allowances.length === 0 ? (
+              <p className="mt-2 text-xs text-[#6b6076] dark:text-[#9c93ad]">
+                None. An appointment with no allowances says nothing about them on the letter —
+                it does not print “Allowances: none”, which would be a statement about the terms
+                rather than the absence of one.
+              </p>
+            ) : (
+              <ul className="mt-3 space-y-3">
+                {allowances.map((al, i) => (
+                  // eslint-disable-next-line react/no-array-index-key
+                  <li key={i} className="grid gap-2 sm:grid-cols-[1fr_90px_90px_110px_auto]">
+                    <select value={al.kind ?? ALLOWANCE_KINDS[0]} className={INPUT}
+                      aria-label="Kind of allowance"
+                      onChange={(e) => setAllowances(allowances.map((x, j) =>
+                        (j === i ? { ...x, kind: e.target.value } as Allowance : x)))}>
+                      {ALLOWANCE_KINDS.map((k) => (
+                        <option key={k} value={k}>{k.charAt(0).toUpperCase() + k.slice(1)}</option>
+                      ))}
+                    </select>
+                    <input type="number" min="0" value={al.amount ?? ''} className={INPUT}
+                      aria-label="Amount"
+                      onChange={(e) => setAllowances(allowances.map((x, j) =>
+                        (j === i ? { ...x, amount: Number(e.target.value) } : x)))} />
+                    <select value={al.currency ?? DEFAULT_CURRENCY} className={INPUT}
+                      aria-label="Currency"
+                      onChange={(e) => setAllowances(allowances.map((x, j) =>
+                        (j === i ? { ...x, currency: e.target.value } : x)))}>
+                      {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                    <select value={al.period ?? DEFAULT_PERIOD} className={INPUT}
+                      aria-label="Period"
+                      onChange={(e) => setAllowances(allowances.map((x, j) =>
+                        (j === i ? { ...x, period: e.target.value } : x)))}>
+                      {SALARY_PERIODS.map((p) => (
+                        <option key={p} value={p}>{PERIOD_LABELS[p]}</option>
+                      ))}
+                    </select>
+                    <button type="button" className={BTN_GHOST} aria-label="Remove this allowance"
+                      onClick={() => setAllowances(allowances.filter((_, j) => j !== i))}>
+                      <Trash2 size={13} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {/* WHAT THE LETTER WILL SAY, in the letter's own words. Built by
+                the same function the document uses, so the preview here and
+                the printed line cannot drift apart. */}
+            {allowances.filter((a) => Number(a.amount ?? 0) > 0).length > 0 && (
+              <ul className="mt-3 space-y-1 text-xs text-[#6b6076] dark:text-[#9c93ad]">
+                {allowances.filter((a) => Number(a.amount ?? 0) > 0).map((a, i) => (
+                  // eslint-disable-next-line react/no-array-index-key
+                  <li key={i}>{allowanceLine(a)}</li>
+                ))}
+              </ul>
+            )}
+          </div>
         </section>
       )}
 
@@ -479,7 +810,12 @@ function NewAppointment({
 
       <div className="flex flex-wrap gap-3">
         <button disabled={busy || blocked(missing)} className={BTN_PRIMARY}
-          onClick={() => onSave({ ...f })}>
+          onClick={() => onSave({
+            ...f,
+            // ONLY THE ONES WITH A FIGURE. An empty row somebody added and
+            // then thought better of is not an allowance of zero.
+            allowances: allowances.filter((a) => Number(a.amount ?? 0) > 0),
+          })}>
           {busy ? <><Loader2 size={15} className="animate-spin" /> Saving…</> : 'Save as draft'}
         </button>
         <button onClick={onCancel} className={BTN_SECONDARY}>Cancel</button>

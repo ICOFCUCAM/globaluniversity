@@ -5,10 +5,11 @@ import { roleLabels, can } from '@/lib/roles';
 import AdmissionOpenings from './AdmissionOpenings';
 import ConfigurationPanel from '@/components/system/ConfigurationPanel';
 import ConnectedAccounts from '@/components/social/ConnectedAccounts';
+import SignatureSpecimen from './SignatureSpecimen';
 import { GRADING_SCALE, CLASSIFICATION_BANDS, MAX_GRADE_POINT } from '@/lib/grading';
 import { UNIVERSITY } from '@/lib/constants';
 import {
-  User, Shield, Bell, Palette, Database, Save, CheckCircle2, DoorOpen, Share2, Settings2,} from 'lucide-react';
+  User, Shield, Bell, Palette, Database, Save, CheckCircle2, DoorOpen, Share2, Settings2, PenLine,} from 'lucide-react';
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -125,6 +126,13 @@ export default function SettingsPage() {
     ...(can(user?.role, 'connect-own-social') || can(user?.role, 'connect-university-social')
       ? [{ id: 'social', label: 'Connected social accounts', icon: <Share2 size={16} /> }]
       : []),
+    // MY SIGNATURE. Offered to whoever may issue a letter, because it is
+    // their own signature and nobody else's business. 049 built the table, both
+    // letter routes read it, and until now nothing could put one in — so the
+    // reading code ran against a table that could only be empty.
+    ...(can(user?.role, 'issue-appointment-letter') || can(user?.role, 'issue-correspondence')
+      ? [{ id: 'signature', label: 'My signature', icon: <PenLine size={16} /> }]
+      : []),
     { id: 'grading', label: 'Grading Scale', icon: <Database size={16} /> },
     // WHAT THIS DEPLOYMENT IS ACTUALLY CONFIGURED TO DO. Almost every variable
     // in this system is optional and degrades silently, which is right — and
@@ -211,6 +219,13 @@ export default function SettingsPage() {
           {activeTab === 'openings' && <AdmissionOpenings />}
 
           {activeTab === 'configuration' && <ConfigurationPanel />}
+
+          {activeTab === 'signature' && (
+            <SignatureSpecimen
+              defaultName={user?.name ?? undefined}
+              defaultRole={user?.role ? roleLabels[user.role] : undefined}
+            />
+          )}
 
           {activeTab === 'social' && (
             <div className="space-y-4">
