@@ -64,6 +64,8 @@ const INTERESTS: { id: string; label: string; icon: string; keys: string[] }[] =
 const COMMITMENTS: { id: string; label: string; note: string; awards: AwardLevel[] }[] = [
   { id: 'short', label: 'Under a year', note: 'A focused qualification', awards: ['Certificate'] },
   { id: 'medium', label: 'One to two years', note: 'Career-ready, or a step up', awards: ['Diploma', "Master's", 'Postgraduate Diploma', 'Doctorate'] },
+  // A Diploma is one year and a Master's two, so this band spans both — the
+  // label is a range because the BAND is, not because a duration is unknown.
   // THE BANDS FOLLOW THE RULINGS. A Bachelor's is three years and a Doctorate
   // is two, so "three years or more" described the Bachelor's alone and put
   // the Doctorate in the wrong band on the visitor's own filter.

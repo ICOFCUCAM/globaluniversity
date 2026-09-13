@@ -17,8 +17,8 @@
 -- curriculum in any case.
 --
 -- NO CURRICULUM IS SEEDED, and no duration. See the closing report: the
--- University has ruled the length of 14 of these
--- 41 programmes and published a RANGE for the other 27.
+-- University has ruled the length of 41 of these
+-- 41 programmes and published a RANGE for the other 0.
 -- "One to two academic years" is not a duration, and writing 1 or 2 into
 -- `duration_years` would be inventing the length of a degree.
 -- ===========================================================================
@@ -76,121 +76,121 @@ begin
   insert into programmes (code, award_level, status)
   values ('diploma-in-theology', 'Diploma', 'draft')
   on conflict (code) do nothing;
-  -- Diploma in Theology · 120 credits · One to two academic years
+  -- Diploma in Theology · 120 credits · One academic year
 
   select id into s_id from schools where code = 'ministry';
   insert into programmes (code, award_level, status)
   values ('diploma-in-ministry', 'Diploma', 'draft')
   on conflict (code) do nothing;
-  -- Diploma in Ministry · 120 credits · One to two academic years
+  -- Diploma in Ministry · 120 credits · One academic year
 
   select id into s_id from schools where code = 'ministry';
   insert into programmes (code, award_level, status)
   values ('diploma-in-christian-leadership', 'Diploma', 'draft')
   on conflict (code) do nothing;
-  -- Diploma in Christian Leadership · 120 credits · One to two academic years
+  -- Diploma in Christian Leadership · 120 credits · One academic year
 
   select id into s_id from schools where code = 'engineering';
   insert into programmes (code, award_level, status)
   values ('diploma-in-computer-networking', 'Diploma', 'draft')
   on conflict (code) do nothing;
-  -- Diploma in Computer Networking · 120 credits · One to two academic years
+  -- Diploma in Computer Networking · 120 credits · One academic year
 
   select id into s_id from schools where code = 'engineering';
   insert into programmes (code, award_level, status)
   values ('diploma-in-software-engineering', 'Diploma', 'draft')
   on conflict (code) do nothing;
-  -- Diploma in Software Engineering · 120 credits · One to two academic years
+  -- Diploma in Software Engineering · 120 credits · One academic year
 
   select id into s_id from schools where code = 'engineering';
   insert into programmes (code, award_level, status)
   values ('diploma-in-web-development', 'Diploma', 'draft')
   on conflict (code) do nothing;
-  -- Diploma in Web Development · 120 credits · One to two academic years
+  -- Diploma in Web Development · 120 credits · One academic year
 
   select id into s_id from schools where code = 'engineering';
   insert into programmes (code, award_level, status)
   values ('diploma-in-hardware-maintenance', 'Diploma', 'draft')
   on conflict (code) do nothing;
-  -- Diploma in Hardware Maintenance · 120 credits · One to two academic years
+  -- Diploma in Hardware Maintenance · 120 credits · One academic year
 
   select id into s_id from schools where code = 'engineering';
   insert into programmes (code, award_level, status)
   values ('diploma-in-laptop-chipset-technology', 'Diploma', 'draft')
   on conflict (code) do nothing;
-  -- Diploma in Laptop and Chipset Technology · 120 credits · One to two academic years
+  -- Diploma in Laptop and Chipset Technology · 120 credits · One academic year
 
   select id into s_id from schools where code = 'engineering';
   insert into programmes (code, award_level, status)
   values ('diploma-in-database-administration', 'Diploma', 'draft')
   on conflict (code) do nothing;
-  -- Diploma in Database Administration · 120 credits · One to two academic years
+  -- Diploma in Database Administration · 120 credits · One academic year
 
   select id into s_id from schools where code = 'engineering';
   insert into programmes (code, award_level, status)
   values ('diploma-in-air-conditioning-refrigeration', 'Diploma', 'draft')
   on conflict (code) do nothing;
-  -- Diploma in Air Conditioning and Refrigeration · 120 credits · One to two academic years
+  -- Diploma in Air Conditioning and Refrigeration · 120 credits · One academic year
 
   select id into s_id from schools where code = 'engineering';
   insert into programmes (code, award_level, status)
   values ('diploma-in-computerized-accounting', 'Diploma', 'draft')
   on conflict (code) do nothing;
-  -- Diploma in Computerised Accounting · 120 credits · One to two academic years
+  -- Diploma in Computerised Accounting · 120 credits · One academic year
 
   select id into s_id from schools where code = 'engineering';
   insert into programmes (code, award_level, status)
   values ('diploma-in-secretarial-duties', 'Diploma', 'draft')
   on conflict (code) do nothing;
-  -- Diploma in Secretarial Duties · 120 credits · One to two academic years
+  -- Diploma in Secretarial Duties · 120 credits · One academic year
 
   select id into s_id from schools where code = 'business';
   insert into programmes (code, award_level, status)
   values ('diploma-in-business-management', 'Diploma', 'draft')
   on conflict (code) do nothing;
-  -- Diploma in Business Management · 120 credits · One to two academic years
+  -- Diploma in Business Management · 120 credits · One academic year
 
   select id into s_id from schools where code = 'business';
   insert into programmes (code, award_level, status)
   values ('diploma-in-project-management', 'Diploma', 'draft')
   on conflict (code) do nothing;
-  -- Diploma in Project Management · 120 credits · One to two academic years
+  -- Diploma in Project Management · 120 credits · One academic year
 
   select id into s_id from schools where code = 'business';
   insert into programmes (code, award_level, status)
   values ('diploma-in-accountancy', 'Diploma', 'draft')
   on conflict (code) do nothing;
-  -- Diploma in Accountancy · 120 credits · One to two academic years
+  -- Diploma in Accountancy · 120 credits · One academic year
 
   select id into s_id from schools where code = 'business';
   insert into programmes (code, award_level, status)
   values ('diploma-in-banking-and-finance', 'Diploma', 'draft')
   on conflict (code) do nothing;
-  -- Diploma in Banking and Finance · 120 credits · One to two academic years
+  -- Diploma in Banking and Finance · 120 credits · One academic year
 
   select id into s_id from schools where code = 'business';
   insert into programmes (code, award_level, status)
   values ('diploma-in-non-profit-management', 'Diploma', 'draft')
   on conflict (code) do nothing;
-  -- Diploma in Non-Profit Management · 120 credits · One to two academic years
+  -- Diploma in Non-Profit Management · 120 credits · One academic year
 
   select id into s_id from schools where code = 'business';
   insert into programmes (code, award_level, status)
   values ('diploma-in-insurance', 'Diploma', 'draft')
   on conflict (code) do nothing;
-  -- Diploma in Insurance · 120 credits · One to two academic years
+  -- Diploma in Insurance · 120 credits · One academic year
 
   select id into s_id from schools where code = 'business';
   insert into programmes (code, award_level, status)
   values ('diploma-in-executive-secretarial-duties', 'Diploma', 'draft')
   on conflict (code) do nothing;
-  -- Diploma in Executive Secretarial Duties · 120 credits · One to two academic years
+  -- Diploma in Executive Secretarial Duties · 120 credits · One academic year
 
   select id into s_id from schools where code = 'business';
   insert into programmes (code, award_level, status)
   values ('diploma-in-bilingual-secretarial-duties', 'Diploma', 'draft')
   on conflict (code) do nothing;
-  -- Diploma in Bilingual Secretarial Duties · 120 credits · One to two academic years
+  -- Diploma in Bilingual Secretarial Duties · 120 credits · One academic year
 
   select id into s_id from schools where code = 'theology';
   insert into programmes (code, award_level, status)
@@ -232,31 +232,31 @@ begin
   insert into programmes (code, award_level, status)
   values ('master-of-theology', 'Master''s', 'draft')
   on conflict (code) do nothing;
-  -- Master of Theology · 120 credits · One to two academic years
+  -- Master of Theology · 120 credits · Two academic years
 
   select id into s_id from schools where code = 'theology';
   insert into programmes (code, award_level, status)
   values ('master-of-divinity', 'Master''s', 'draft')
   on conflict (code) do nothing;
-  -- Master of Divinity · 120 credits · One to two academic years
+  -- Master of Divinity · 120 credits · Two academic years
 
   select id into s_id from schools where code = 'ministry';
   insert into programmes (code, award_level, status)
   values ('masters-evangelism-mission', 'Master''s', 'draft')
   on conflict (code) do nothing;
-  -- Masters in Evangelism and Mission · 120 credits · One to two academic years
+  -- Masters in Evangelism and Mission · 120 credits · Two academic years
 
   select id into s_id from schools where code = 'ministry';
   insert into programmes (code, award_level, status)
   values ('master-of-arts-christian-leadership', 'Master''s', 'draft')
   on conflict (code) do nothing;
-  -- Master of Arts in Christian Leadership · 120 credits · One to two academic years
+  -- Master of Arts in Christian Leadership · 120 credits · Two academic years
 
   select id into s_id from schools where code = 'theology';
   insert into programmes (code, award_level, status)
   values ('black-liberation-theology', 'Master''s', 'draft')
   on conflict (code) do nothing;
-  -- Master of Arts in Black Liberation Theology · 120 credits · One to two academic years
+  -- Master of Arts in Black Liberation Theology · 120 credits · Two academic years
 
   select id into s_id from schools where code = 'theology';
   insert into programmes (code, award_level, status)
@@ -304,7 +304,7 @@ begin
   insert into programmes (code, award_level, status)
   values ('networking', 'Diploma', 'draft')
   on conflict (code) do nothing;
-  -- Computer Networking · 120 credits · One to two academic years
+  -- Computer Networking · 120 credits · One academic year
 
   select id into s_id from schools where code = 'business';
   insert into programmes (code, award_level, status)
@@ -316,7 +316,7 @@ begin
   insert into programmes (code, award_level, status)
   values ('project-management', 'Master''s', 'draft')
   on conflict (code) do nothing;
-  -- Project Management · 120 credits · One to two academic years
+  -- Project Management · 120 credits · Two academic years
 
 end $$;
 
@@ -355,14 +355,18 @@ begin
     raise exception '060 FAILED: % programmes are not drafts — the seed opened something for admission', n;
   end if;
 
-  -- AND NO CURRICULUM WAS INVENTED.
-  select count(*) into n from programme_versions;
+  -- NO CURRICULUM WAS INVENTED BY THIS FILE. Deliberately scoped to what
+  -- THIS migration created: 061 seeds a version per programme from the
+  -- durations the University has since ruled, so a blanket "no versions
+  -- exist" would be a proof that passes only until the next migration runs —
+  -- which is how 045 collided with 055.
+  select count(*) into n from curriculum_entries;
   if n > 0 then
-    raise exception '060 FAILED: % programme versions exist — a duration was invented', n;
+    raise exception '060 FAILED: % curriculum entries exist — a curriculum was invented', n;
   end if;
 
   raise notice '060 OK: 5 schools and 41 programmes are in the register, every one a draft';
-  raise notice '060 OK: no curriculum and no duration was seeded — the University has published a range, not a length, for 27 of them';
+  raise notice '060 OK: no curriculum and no duration was seeded — the University has published a range, not a length, for 0 of them';
 end $$;
 
 
@@ -381,39 +385,12 @@ select s.name as school,
   group by s.name order by s.name;
 
 -- ---------------------------------------------------------------------------
--- AND WHAT THE UNIVERSITY STILL HAS TO STATE.
+-- EVERY LEVEL HAS A RULED LENGTH. 061 gives each programme a version.
 --
--- 27 of 41 programmes have no length this system can record,
+-- 0 of 41 programmes have no length this system can record,
 -- because what is published is a range. Each needs a duration before a
 -- curriculum can be built for it:
 --
---   diploma-in-theology                        Diploma      published: One to two academic years
---   diploma-in-ministry                        Diploma      published: One to two academic years
---   diploma-in-christian-leadership            Diploma      published: One to two academic years
---   diploma-in-computer-networking             Diploma      published: One to two academic years
---   diploma-in-software-engineering            Diploma      published: One to two academic years
---   diploma-in-web-development                 Diploma      published: One to two academic years
---   diploma-in-hardware-maintenance            Diploma      published: One to two academic years
---   diploma-in-laptop-chipset-technology       Diploma      published: One to two academic years
---   diploma-in-database-administration         Diploma      published: One to two academic years
---   diploma-in-air-conditioning-refrigeration  Diploma      published: One to two academic years
---   diploma-in-computerized-accounting         Diploma      published: One to two academic years
---   diploma-in-secretarial-duties              Diploma      published: One to two academic years
---   diploma-in-business-management             Diploma      published: One to two academic years
---   diploma-in-project-management              Diploma      published: One to two academic years
---   diploma-in-accountancy                     Diploma      published: One to two academic years
---   diploma-in-banking-and-finance             Diploma      published: One to two academic years
---   diploma-in-non-profit-management           Diploma      published: One to two academic years
---   diploma-in-insurance                       Diploma      published: One to two academic years
---   diploma-in-executive-secretarial-duties    Diploma      published: One to two academic years
---   diploma-in-bilingual-secretarial-duties    Diploma      published: One to two academic years
---   master-of-theology                         Master's     published: One to two academic years
---   master-of-divinity                         Master's     published: One to two academic years
---   masters-evangelism-mission                 Master's     published: One to two academic years
---   master-of-arts-christian-leadership        Master's     published: One to two academic years
---   black-liberation-theology                  Master's     published: One to two academic years
---   networking                                 Diploma      published: One to two academic years
---   project-management                         Master's     published: One to two academic years
 --
 -- The three the University HAS ruled — Bachelor's three years, Doctorate two,
 -- Certificate up to one — need no further statement.

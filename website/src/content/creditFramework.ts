@@ -113,7 +113,7 @@ export const AWARD_LADDER: AwardLevel[] = [
     // years, which matches the stated duration below, where 180 is three and
     // put the diploma level with the bachelor's.
     ects: 120,
-    duration: 'One to two years',
+    duration: 'One year',
     purpose: 'Professional preparation, and advanced standing towards a degree.',
     source: 'Ruled by the University: “Diploma is 120. 180 is degree.” Framework §25 agrees.',
   },
@@ -127,7 +127,7 @@ export const AWARD_LADDER: AwardLevel[] = [
   {
     level: 'Master',
     ects: 120,
-    duration: 'One to two years',
+    duration: 'Two years',
     purpose: 'Advanced professional specialisation or theological scholarship.',
     source: 'Ruled by the University: “Masters is 120 credits.” Framework §25 agrees.',
   },

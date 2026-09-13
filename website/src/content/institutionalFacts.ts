@@ -242,7 +242,7 @@ export const PATHWAY = [
   },
   {
     award: 'Diploma',
-    duration: 'One to two years',
+    duration: 'One year',
     note: 'Career-ready professional qualification, and advanced standing towards a degree.',
     href: '/degrees/diploma-dip',
   },
@@ -254,7 +254,7 @@ export const PATHWAY = [
   },
   {
     award: 'Master’s',
-    duration: 'One to two years',
+    duration: 'Two years',
     note: 'Graduate specialisation by coursework or research, at 120 credits.',
     href: '/degrees/masters-degrees',
   },

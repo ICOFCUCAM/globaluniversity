@@ -1,9 +1,9 @@
 -- ===========================================================================
--- ICOF GLOBAL UNIVERSITY — MIGRATIONS 036, 037, 038, 039, 040, 041, 042, 043, 044, 045, 046, 047, 048, 049, 050, 051, 052, 053, 054, 055, 056, 057, 058, 059, 060, IN ORDER
+-- ICOF GLOBAL UNIVERSITY — MIGRATIONS 036, 037, 038, 039, 040, 041, 042, 043, 044, 045, 046, 047, 048, 049, 050, 051, 052, 053, 054, 055, 056, 057, 058, 059, 060, 061, IN ORDER
 --
 -- GENERATED FILE. DO NOT EDIT.
 --   Generator: scripts/build-migration-run.mjs
---   Rebuild:   node scripts/build-migration-run.mjs --out=RUN-OUTSTANDING.sql 036 037 038 039 040 041 042 043 044 045 046 047 048 049 050 051 052 053 054 055 056 057 058 059 060
+--   Rebuild:   node scripts/build-migration-run.mjs --out=RUN-OUTSTANDING.sql 036 037 038 039 040 041 042 043 044 045 046 047 048 049 050 051 052 053 054 055 056 057 058 059 060 061
 --
 -- ---------------------------------------------------------------------------
 -- HOW TO RUN IT
@@ -11762,8 +11762,8 @@ select count(*) as periods_recorded from academic_periods;
 -- curriculum in any case.
 --
 -- NO CURRICULUM IS SEEDED, and no duration. See the closing report: the
--- University has ruled the length of 14 of these
--- 41 programmes and published a RANGE for the other 27.
+-- University has ruled the length of 41 of these
+-- 41 programmes and published a RANGE for the other 0.
 -- "One to two academic years" is not a duration, and writing 1 or 2 into
 -- `duration_years` would be inventing the length of a degree.
 -- ===========================================================================
@@ -11821,121 +11821,121 @@ begin
   insert into programmes (code, award_level, status)
   values ('diploma-in-theology', 'Diploma', 'draft')
   on conflict (code) do nothing;
-  -- Diploma in Theology · 120 credits · One to two academic years
+  -- Diploma in Theology · 120 credits · One academic year
 
   select id into s_id from schools where code = 'ministry';
   insert into programmes (code, award_level, status)
   values ('diploma-in-ministry', 'Diploma', 'draft')
   on conflict (code) do nothing;
-  -- Diploma in Ministry · 120 credits · One to two academic years
+  -- Diploma in Ministry · 120 credits · One academic year
 
   select id into s_id from schools where code = 'ministry';
   insert into programmes (code, award_level, status)
   values ('diploma-in-christian-leadership', 'Diploma', 'draft')
   on conflict (code) do nothing;
-  -- Diploma in Christian Leadership · 120 credits · One to two academic years
+  -- Diploma in Christian Leadership · 120 credits · One academic year
 
   select id into s_id from schools where code = 'engineering';
   insert into programmes (code, award_level, status)
   values ('diploma-in-computer-networking', 'Diploma', 'draft')
   on conflict (code) do nothing;
-  -- Diploma in Computer Networking · 120 credits · One to two academic years
+  -- Diploma in Computer Networking · 120 credits · One academic year
 
   select id into s_id from schools where code = 'engineering';
   insert into programmes (code, award_level, status)
   values ('diploma-in-software-engineering', 'Diploma', 'draft')
   on conflict (code) do nothing;
-  -- Diploma in Software Engineering · 120 credits · One to two academic years
+  -- Diploma in Software Engineering · 120 credits · One academic year
 
   select id into s_id from schools where code = 'engineering';
   insert into programmes (code, award_level, status)
   values ('diploma-in-web-development', 'Diploma', 'draft')
   on conflict (code) do nothing;
-  -- Diploma in Web Development · 120 credits · One to two academic years
+  -- Diploma in Web Development · 120 credits · One academic year
 
   select id into s_id from schools where code = 'engineering';
   insert into programmes (code, award_level, status)
   values ('diploma-in-hardware-maintenance', 'Diploma', 'draft')
   on conflict (code) do nothing;
-  -- Diploma in Hardware Maintenance · 120 credits · One to two academic years
+  -- Diploma in Hardware Maintenance · 120 credits · One academic year
 
   select id into s_id from schools where code = 'engineering';
   insert into programmes (code, award_level, status)
   values ('diploma-in-laptop-chipset-technology', 'Diploma', 'draft')
   on conflict (code) do nothing;
-  -- Diploma in Laptop and Chipset Technology · 120 credits · One to two academic years
+  -- Diploma in Laptop and Chipset Technology · 120 credits · One academic year
 
   select id into s_id from schools where code = 'engineering';
   insert into programmes (code, award_level, status)
   values ('diploma-in-database-administration', 'Diploma', 'draft')
   on conflict (code) do nothing;
-  -- Diploma in Database Administration · 120 credits · One to two academic years
+  -- Diploma in Database Administration · 120 credits · One academic year
 
   select id into s_id from schools where code = 'engineering';
   insert into programmes (code, award_level, status)
   values ('diploma-in-air-conditioning-refrigeration', 'Diploma', 'draft')
   on conflict (code) do nothing;
-  -- Diploma in Air Conditioning and Refrigeration · 120 credits · One to two academic years
+  -- Diploma in Air Conditioning and Refrigeration · 120 credits · One academic year
 
   select id into s_id from schools where code = 'engineering';
   insert into programmes (code, award_level, status)
   values ('diploma-in-computerized-accounting', 'Diploma', 'draft')
   on conflict (code) do nothing;
-  -- Diploma in Computerised Accounting · 120 credits · One to two academic years
+  -- Diploma in Computerised Accounting · 120 credits · One academic year
 
   select id into s_id from schools where code = 'engineering';
   insert into programmes (code, award_level, status)
   values ('diploma-in-secretarial-duties', 'Diploma', 'draft')
   on conflict (code) do nothing;
-  -- Diploma in Secretarial Duties · 120 credits · One to two academic years
+  -- Diploma in Secretarial Duties · 120 credits · One academic year
 
   select id into s_id from schools where code = 'business';
   insert into programmes (code, award_level, status)
   values ('diploma-in-business-management', 'Diploma', 'draft')
   on conflict (code) do nothing;
-  -- Diploma in Business Management · 120 credits · One to two academic years
+  -- Diploma in Business Management · 120 credits · One academic year
 
   select id into s_id from schools where code = 'business';
   insert into programmes (code, award_level, status)
   values ('diploma-in-project-management', 'Diploma', 'draft')
   on conflict (code) do nothing;
-  -- Diploma in Project Management · 120 credits · One to two academic years
+  -- Diploma in Project Management · 120 credits · One academic year
 
   select id into s_id from schools where code = 'business';
   insert into programmes (code, award_level, status)
   values ('diploma-in-accountancy', 'Diploma', 'draft')
   on conflict (code) do nothing;
-  -- Diploma in Accountancy · 120 credits · One to two academic years
+  -- Diploma in Accountancy · 120 credits · One academic year
 
   select id into s_id from schools where code = 'business';
   insert into programmes (code, award_level, status)
   values ('diploma-in-banking-and-finance', 'Diploma', 'draft')
   on conflict (code) do nothing;
-  -- Diploma in Banking and Finance · 120 credits · One to two academic years
+  -- Diploma in Banking and Finance · 120 credits · One academic year
 
   select id into s_id from schools where code = 'business';
   insert into programmes (code, award_level, status)
   values ('diploma-in-non-profit-management', 'Diploma', 'draft')
   on conflict (code) do nothing;
-  -- Diploma in Non-Profit Management · 120 credits · One to two academic years
+  -- Diploma in Non-Profit Management · 120 credits · One academic year
 
   select id into s_id from schools where code = 'business';
   insert into programmes (code, award_level, status)
   values ('diploma-in-insurance', 'Diploma', 'draft')
   on conflict (code) do nothing;
-  -- Diploma in Insurance · 120 credits · One to two academic years
+  -- Diploma in Insurance · 120 credits · One academic year
 
   select id into s_id from schools where code = 'business';
   insert into programmes (code, award_level, status)
   values ('diploma-in-executive-secretarial-duties', 'Diploma', 'draft')
   on conflict (code) do nothing;
-  -- Diploma in Executive Secretarial Duties · 120 credits · One to two academic years
+  -- Diploma in Executive Secretarial Duties · 120 credits · One academic year
 
   select id into s_id from schools where code = 'business';
   insert into programmes (code, award_level, status)
   values ('diploma-in-bilingual-secretarial-duties', 'Diploma', 'draft')
   on conflict (code) do nothing;
-  -- Diploma in Bilingual Secretarial Duties · 120 credits · One to two academic years
+  -- Diploma in Bilingual Secretarial Duties · 120 credits · One academic year
 
   select id into s_id from schools where code = 'theology';
   insert into programmes (code, award_level, status)
@@ -11977,31 +11977,31 @@ begin
   insert into programmes (code, award_level, status)
   values ('master-of-theology', 'Master''s', 'draft')
   on conflict (code) do nothing;
-  -- Master of Theology · 120 credits · One to two academic years
+  -- Master of Theology · 120 credits · Two academic years
 
   select id into s_id from schools where code = 'theology';
   insert into programmes (code, award_level, status)
   values ('master-of-divinity', 'Master''s', 'draft')
   on conflict (code) do nothing;
-  -- Master of Divinity · 120 credits · One to two academic years
+  -- Master of Divinity · 120 credits · Two academic years
 
   select id into s_id from schools where code = 'ministry';
   insert into programmes (code, award_level, status)
   values ('masters-evangelism-mission', 'Master''s', 'draft')
   on conflict (code) do nothing;
-  -- Masters in Evangelism and Mission · 120 credits · One to two academic years
+  -- Masters in Evangelism and Mission · 120 credits · Two academic years
 
   select id into s_id from schools where code = 'ministry';
   insert into programmes (code, award_level, status)
   values ('master-of-arts-christian-leadership', 'Master''s', 'draft')
   on conflict (code) do nothing;
-  -- Master of Arts in Christian Leadership · 120 credits · One to two academic years
+  -- Master of Arts in Christian Leadership · 120 credits · Two academic years
 
   select id into s_id from schools where code = 'theology';
   insert into programmes (code, award_level, status)
   values ('black-liberation-theology', 'Master''s', 'draft')
   on conflict (code) do nothing;
-  -- Master of Arts in Black Liberation Theology · 120 credits · One to two academic years
+  -- Master of Arts in Black Liberation Theology · 120 credits · Two academic years
 
   select id into s_id from schools where code = 'theology';
   insert into programmes (code, award_level, status)
@@ -12049,7 +12049,7 @@ begin
   insert into programmes (code, award_level, status)
   values ('networking', 'Diploma', 'draft')
   on conflict (code) do nothing;
-  -- Computer Networking · 120 credits · One to two academic years
+  -- Computer Networking · 120 credits · One academic year
 
   select id into s_id from schools where code = 'business';
   insert into programmes (code, award_level, status)
@@ -12061,7 +12061,7 @@ begin
   insert into programmes (code, award_level, status)
   values ('project-management', 'Master''s', 'draft')
   on conflict (code) do nothing;
-  -- Project Management · 120 credits · One to two academic years
+  -- Project Management · 120 credits · Two academic years
 
 end $$;
 
@@ -12100,14 +12100,18 @@ begin
     raise exception '060 FAILED: % programmes are not drafts — the seed opened something for admission', n;
   end if;
 
-  -- AND NO CURRICULUM WAS INVENTED.
-  select count(*) into n from programme_versions;
+  -- NO CURRICULUM WAS INVENTED BY THIS FILE. Deliberately scoped to what
+  -- THIS migration created: 061 seeds a version per programme from the
+  -- durations the University has since ruled, so a blanket "no versions
+  -- exist" would be a proof that passes only until the next migration runs —
+  -- which is how 045 collided with 055.
+  select count(*) into n from curriculum_entries;
   if n > 0 then
-    raise exception '060 FAILED: % programme versions exist — a duration was invented', n;
+    raise exception '060 FAILED: % curriculum entries exist — a curriculum was invented', n;
   end if;
 
   raise notice '060 OK: 5 schools and 41 programmes are in the register, every one a draft';
-  raise notice '060 OK: no curriculum and no duration was seeded — the University has published a range, not a length, for 27 of them';
+  raise notice '060 OK: no curriculum and no duration was seeded — the University has published a range, not a length, for 0 of them';
 end $$;
 
 
@@ -12126,45 +12130,504 @@ select s.name as school,
   group by s.name order by s.name;
 
 -- ---------------------------------------------------------------------------
--- AND WHAT THE UNIVERSITY STILL HAS TO STATE.
+-- EVERY LEVEL HAS A RULED LENGTH. 061 gives each programme a version.
 --
--- 27 of 41 programmes have no length this system can record,
+-- 0 of 41 programmes have no length this system can record,
 -- because what is published is a range. Each needs a duration before a
 -- curriculum can be built for it:
 --
---   diploma-in-theology                        Diploma      published: One to two academic years
---   diploma-in-ministry                        Diploma      published: One to two academic years
---   diploma-in-christian-leadership            Diploma      published: One to two academic years
---   diploma-in-computer-networking             Diploma      published: One to two academic years
---   diploma-in-software-engineering            Diploma      published: One to two academic years
---   diploma-in-web-development                 Diploma      published: One to two academic years
---   diploma-in-hardware-maintenance            Diploma      published: One to two academic years
---   diploma-in-laptop-chipset-technology       Diploma      published: One to two academic years
---   diploma-in-database-administration         Diploma      published: One to two academic years
---   diploma-in-air-conditioning-refrigeration  Diploma      published: One to two academic years
---   diploma-in-computerized-accounting         Diploma      published: One to two academic years
---   diploma-in-secretarial-duties              Diploma      published: One to two academic years
---   diploma-in-business-management             Diploma      published: One to two academic years
---   diploma-in-project-management              Diploma      published: One to two academic years
---   diploma-in-accountancy                     Diploma      published: One to two academic years
---   diploma-in-banking-and-finance             Diploma      published: One to two academic years
---   diploma-in-non-profit-management           Diploma      published: One to two academic years
---   diploma-in-insurance                       Diploma      published: One to two academic years
---   diploma-in-executive-secretarial-duties    Diploma      published: One to two academic years
---   diploma-in-bilingual-secretarial-duties    Diploma      published: One to two academic years
---   master-of-theology                         Master's     published: One to two academic years
---   master-of-divinity                         Master's     published: One to two academic years
---   masters-evangelism-mission                 Master's     published: One to two academic years
---   master-of-arts-christian-leadership        Master's     published: One to two academic years
---   black-liberation-theology                  Master's     published: One to two academic years
---   networking                                 Diploma      published: One to two academic years
---   project-management                         Master's     published: One to two academic years
 --
 -- The three the University HAS ruled — Bachelor's three years, Doctorate two,
 -- Certificate up to one — need no further statement.
 -- ---------------------------------------------------------------------------
 select award_level, count(*) as programmes
   from programmes group by award_level order by award_level;
+
+
+-- ===========================================================================
+-- ===========================================================================
+--
+--   061_a_version_for_every_programme.sql
+--
+-- ===========================================================================
+-- ===========================================================================
+
+-- ===========================================================================
+-- 061 — A VERSION FOR EVERY PROGRAMME
+-- ===========================================================================
+--
+-- GENERATED FILE. DO NOT EDIT.
+--   Generator: scripts/build-academic-seed.mjs
+--
+-- WHAT CHANGES FOR THE UNIVERSITY THE MOMENT THIS RUNS
+--
+-- EVERY ONE OF THE 41 PROGRAMMES GETS A CURRICULUM VERSION to hang
+-- a curriculum from. 060 could not: 27 of them were published as "One to two
+-- academic years", and a range is not a length. The University has since
+-- ruled every level — Certificate one, Diploma one, Bachelor's three,
+-- Master's two, Doctorate two — so `duration_years` can hold a number for
+-- all of them.
+--
+-- EVERY VERSION IS A DRAFT, AND NONE HAS A SINGLE COURSE IN IT. A version
+-- becomes real when the Vice-Chancellor approves it (058) and it cannot be
+-- approved while its curriculum is empty of the credits it claims. This
+-- builds the shelf; the University fills it.
+--
+-- THE LABEL IS THE ACADEMIC YEAR, and the effective date is the day that
+-- year opens — 15 August, from 059. Nothing here is chosen: the version is
+-- named after the year it takes effect in, which is how a student admitted
+-- in 2026/2027 is later known to be reading the 2026/2027 curriculum.
+-- ===========================================================================
+
+do $$
+declare
+  y_label text;
+  y_start date;
+  p_id    uuid;
+  s_id    uuid;
+begin
+  -- THE ACADEMIC YEAR IN FORCE, asked of the calendar rather than assumed.
+  select label, starts_on into y_label, y_start from academic_years where status = 'current';
+  if y_label is null then
+    raise exception
+      'No academic year is current, so a version cannot be dated. 059 sets one from the date; run it first.'
+      using errcode = 'no_data_found';
+  end if;
+
+  select id into p_id from programmes where code = 'diploma-in-theology';
+  select id into s_id from schools where code = 'theology';
+  insert into programme_versions
+    (programme_id, version_label, name, school_id, duration_years,
+     semesters_per_year, total_credits, effective_from, status)
+  values (p_id, y_label, 'Diploma in Theology', s_id, 1,
+          2, 120, y_start, 'draft')
+  on conflict (programme_id, version_label) do nothing;
+
+  select id into p_id from programmes where code = 'diploma-in-ministry';
+  select id into s_id from schools where code = 'ministry';
+  insert into programme_versions
+    (programme_id, version_label, name, school_id, duration_years,
+     semesters_per_year, total_credits, effective_from, status)
+  values (p_id, y_label, 'Diploma in Ministry', s_id, 1,
+          2, 120, y_start, 'draft')
+  on conflict (programme_id, version_label) do nothing;
+
+  select id into p_id from programmes where code = 'diploma-in-christian-leadership';
+  select id into s_id from schools where code = 'ministry';
+  insert into programme_versions
+    (programme_id, version_label, name, school_id, duration_years,
+     semesters_per_year, total_credits, effective_from, status)
+  values (p_id, y_label, 'Diploma in Christian Leadership', s_id, 1,
+          2, 120, y_start, 'draft')
+  on conflict (programme_id, version_label) do nothing;
+
+  select id into p_id from programmes where code = 'diploma-in-computer-networking';
+  select id into s_id from schools where code = 'engineering';
+  insert into programme_versions
+    (programme_id, version_label, name, school_id, duration_years,
+     semesters_per_year, total_credits, effective_from, status)
+  values (p_id, y_label, 'Diploma in Computer Networking', s_id, 1,
+          2, 120, y_start, 'draft')
+  on conflict (programme_id, version_label) do nothing;
+
+  select id into p_id from programmes where code = 'diploma-in-software-engineering';
+  select id into s_id from schools where code = 'engineering';
+  insert into programme_versions
+    (programme_id, version_label, name, school_id, duration_years,
+     semesters_per_year, total_credits, effective_from, status)
+  values (p_id, y_label, 'Diploma in Software Engineering', s_id, 1,
+          2, 120, y_start, 'draft')
+  on conflict (programme_id, version_label) do nothing;
+
+  select id into p_id from programmes where code = 'diploma-in-web-development';
+  select id into s_id from schools where code = 'engineering';
+  insert into programme_versions
+    (programme_id, version_label, name, school_id, duration_years,
+     semesters_per_year, total_credits, effective_from, status)
+  values (p_id, y_label, 'Diploma in Web Development', s_id, 1,
+          2, 120, y_start, 'draft')
+  on conflict (programme_id, version_label) do nothing;
+
+  select id into p_id from programmes where code = 'diploma-in-hardware-maintenance';
+  select id into s_id from schools where code = 'engineering';
+  insert into programme_versions
+    (programme_id, version_label, name, school_id, duration_years,
+     semesters_per_year, total_credits, effective_from, status)
+  values (p_id, y_label, 'Diploma in Hardware Maintenance', s_id, 1,
+          2, 120, y_start, 'draft')
+  on conflict (programme_id, version_label) do nothing;
+
+  select id into p_id from programmes where code = 'diploma-in-laptop-chipset-technology';
+  select id into s_id from schools where code = 'engineering';
+  insert into programme_versions
+    (programme_id, version_label, name, school_id, duration_years,
+     semesters_per_year, total_credits, effective_from, status)
+  values (p_id, y_label, 'Diploma in Laptop and Chipset Technology', s_id, 1,
+          2, 120, y_start, 'draft')
+  on conflict (programme_id, version_label) do nothing;
+
+  select id into p_id from programmes where code = 'diploma-in-database-administration';
+  select id into s_id from schools where code = 'engineering';
+  insert into programme_versions
+    (programme_id, version_label, name, school_id, duration_years,
+     semesters_per_year, total_credits, effective_from, status)
+  values (p_id, y_label, 'Diploma in Database Administration', s_id, 1,
+          2, 120, y_start, 'draft')
+  on conflict (programme_id, version_label) do nothing;
+
+  select id into p_id from programmes where code = 'diploma-in-air-conditioning-refrigeration';
+  select id into s_id from schools where code = 'engineering';
+  insert into programme_versions
+    (programme_id, version_label, name, school_id, duration_years,
+     semesters_per_year, total_credits, effective_from, status)
+  values (p_id, y_label, 'Diploma in Air Conditioning and Refrigeration', s_id, 1,
+          2, 120, y_start, 'draft')
+  on conflict (programme_id, version_label) do nothing;
+
+  select id into p_id from programmes where code = 'diploma-in-computerized-accounting';
+  select id into s_id from schools where code = 'engineering';
+  insert into programme_versions
+    (programme_id, version_label, name, school_id, duration_years,
+     semesters_per_year, total_credits, effective_from, status)
+  values (p_id, y_label, 'Diploma in Computerised Accounting', s_id, 1,
+          2, 120, y_start, 'draft')
+  on conflict (programme_id, version_label) do nothing;
+
+  select id into p_id from programmes where code = 'diploma-in-secretarial-duties';
+  select id into s_id from schools where code = 'engineering';
+  insert into programme_versions
+    (programme_id, version_label, name, school_id, duration_years,
+     semesters_per_year, total_credits, effective_from, status)
+  values (p_id, y_label, 'Diploma in Secretarial Duties', s_id, 1,
+          2, 120, y_start, 'draft')
+  on conflict (programme_id, version_label) do nothing;
+
+  select id into p_id from programmes where code = 'diploma-in-business-management';
+  select id into s_id from schools where code = 'business';
+  insert into programme_versions
+    (programme_id, version_label, name, school_id, duration_years,
+     semesters_per_year, total_credits, effective_from, status)
+  values (p_id, y_label, 'Diploma in Business Management', s_id, 1,
+          2, 120, y_start, 'draft')
+  on conflict (programme_id, version_label) do nothing;
+
+  select id into p_id from programmes where code = 'diploma-in-project-management';
+  select id into s_id from schools where code = 'business';
+  insert into programme_versions
+    (programme_id, version_label, name, school_id, duration_years,
+     semesters_per_year, total_credits, effective_from, status)
+  values (p_id, y_label, 'Diploma in Project Management', s_id, 1,
+          2, 120, y_start, 'draft')
+  on conflict (programme_id, version_label) do nothing;
+
+  select id into p_id from programmes where code = 'diploma-in-accountancy';
+  select id into s_id from schools where code = 'business';
+  insert into programme_versions
+    (programme_id, version_label, name, school_id, duration_years,
+     semesters_per_year, total_credits, effective_from, status)
+  values (p_id, y_label, 'Diploma in Accountancy', s_id, 1,
+          2, 120, y_start, 'draft')
+  on conflict (programme_id, version_label) do nothing;
+
+  select id into p_id from programmes where code = 'diploma-in-banking-and-finance';
+  select id into s_id from schools where code = 'business';
+  insert into programme_versions
+    (programme_id, version_label, name, school_id, duration_years,
+     semesters_per_year, total_credits, effective_from, status)
+  values (p_id, y_label, 'Diploma in Banking and Finance', s_id, 1,
+          2, 120, y_start, 'draft')
+  on conflict (programme_id, version_label) do nothing;
+
+  select id into p_id from programmes where code = 'diploma-in-non-profit-management';
+  select id into s_id from schools where code = 'business';
+  insert into programme_versions
+    (programme_id, version_label, name, school_id, duration_years,
+     semesters_per_year, total_credits, effective_from, status)
+  values (p_id, y_label, 'Diploma in Non-Profit Management', s_id, 1,
+          2, 120, y_start, 'draft')
+  on conflict (programme_id, version_label) do nothing;
+
+  select id into p_id from programmes where code = 'diploma-in-insurance';
+  select id into s_id from schools where code = 'business';
+  insert into programme_versions
+    (programme_id, version_label, name, school_id, duration_years,
+     semesters_per_year, total_credits, effective_from, status)
+  values (p_id, y_label, 'Diploma in Insurance', s_id, 1,
+          2, 120, y_start, 'draft')
+  on conflict (programme_id, version_label) do nothing;
+
+  select id into p_id from programmes where code = 'diploma-in-executive-secretarial-duties';
+  select id into s_id from schools where code = 'business';
+  insert into programme_versions
+    (programme_id, version_label, name, school_id, duration_years,
+     semesters_per_year, total_credits, effective_from, status)
+  values (p_id, y_label, 'Diploma in Executive Secretarial Duties', s_id, 1,
+          2, 120, y_start, 'draft')
+  on conflict (programme_id, version_label) do nothing;
+
+  select id into p_id from programmes where code = 'diploma-in-bilingual-secretarial-duties';
+  select id into s_id from schools where code = 'business';
+  insert into programme_versions
+    (programme_id, version_label, name, school_id, duration_years,
+     semesters_per_year, total_credits, effective_from, status)
+  values (p_id, y_label, 'Diploma in Bilingual Secretarial Duties', s_id, 1,
+          2, 120, y_start, 'draft')
+  on conflict (programme_id, version_label) do nothing;
+
+  select id into p_id from programmes where code = 'certificate-in-theology';
+  select id into s_id from schools where code = 'theology';
+  insert into programme_versions
+    (programme_id, version_label, name, school_id, duration_years,
+     semesters_per_year, total_credits, effective_from, status)
+  values (p_id, y_label, 'Certificate of Theology', s_id, 1,
+          2, null, y_start, 'draft')
+  on conflict (programme_id, version_label) do nothing;
+
+  select id into p_id from programmes where code = 'certificate-in-christian-education';
+  select id into s_id from schools where code = 'theology';
+  insert into programme_versions
+    (programme_id, version_label, name, school_id, duration_years,
+     semesters_per_year, total_credits, effective_from, status)
+  values (p_id, y_label, 'Certificate of Christian Education', s_id, 1,
+          2, null, y_start, 'draft')
+  on conflict (programme_id, version_label) do nothing;
+
+  select id into p_id from programmes where code = 'divinity';
+  select id into s_id from schools where code = 'theology';
+  insert into programme_versions
+    (programme_id, version_label, name, school_id, duration_years,
+     semesters_per_year, total_credits, effective_from, status)
+  values (p_id, y_label, 'Bachelor of Divinity', s_id, 3,
+          2, null, y_start, 'draft')
+  on conflict (programme_id, version_label) do nothing;
+
+  select id into p_id from programmes where code = 'bachelor-of-theology';
+  select id into s_id from schools where code = 'theology';
+  insert into programme_versions
+    (programme_id, version_label, name, school_id, duration_years,
+     semesters_per_year, total_credits, effective_from, status)
+  values (p_id, y_label, 'Bachelor of Theology', s_id, 3,
+          2, 180, y_start, 'draft')
+  on conflict (programme_id, version_label) do nothing;
+
+  select id into p_id from programmes where code = 'bachelor-of-ministry';
+  select id into s_id from schools where code = 'ministry';
+  insert into programme_versions
+    (programme_id, version_label, name, school_id, duration_years,
+     semesters_per_year, total_credits, effective_from, status)
+  values (p_id, y_label, 'Bachelor of Ministry', s_id, 3,
+          2, 180, y_start, 'draft')
+  on conflict (programme_id, version_label) do nothing;
+
+  select id into p_id from programmes where code = 'bachelor-of-christian-education';
+  select id into s_id from schools where code = 'theology';
+  insert into programme_versions
+    (programme_id, version_label, name, school_id, duration_years,
+     semesters_per_year, total_credits, effective_from, status)
+  values (p_id, y_label, 'Bachelor of Christian Education', s_id, 3,
+          2, null, y_start, 'draft')
+  on conflict (programme_id, version_label) do nothing;
+
+  select id into p_id from programmes where code = 'master-of-theology';
+  select id into s_id from schools where code = 'theology';
+  insert into programme_versions
+    (programme_id, version_label, name, school_id, duration_years,
+     semesters_per_year, total_credits, effective_from, status)
+  values (p_id, y_label, 'Master of Theology', s_id, 2,
+          2, 120, y_start, 'draft')
+  on conflict (programme_id, version_label) do nothing;
+
+  select id into p_id from programmes where code = 'master-of-divinity';
+  select id into s_id from schools where code = 'theology';
+  insert into programme_versions
+    (programme_id, version_label, name, school_id, duration_years,
+     semesters_per_year, total_credits, effective_from, status)
+  values (p_id, y_label, 'Master of Divinity', s_id, 2,
+          2, 120, y_start, 'draft')
+  on conflict (programme_id, version_label) do nothing;
+
+  select id into p_id from programmes where code = 'masters-evangelism-mission';
+  select id into s_id from schools where code = 'ministry';
+  insert into programme_versions
+    (programme_id, version_label, name, school_id, duration_years,
+     semesters_per_year, total_credits, effective_from, status)
+  values (p_id, y_label, 'Masters in Evangelism and Mission', s_id, 2,
+          2, 120, y_start, 'draft')
+  on conflict (programme_id, version_label) do nothing;
+
+  select id into p_id from programmes where code = 'master-of-arts-christian-leadership';
+  select id into s_id from schools where code = 'ministry';
+  insert into programme_versions
+    (programme_id, version_label, name, school_id, duration_years,
+     semesters_per_year, total_credits, effective_from, status)
+  values (p_id, y_label, 'Master of Arts in Christian Leadership', s_id, 2,
+          2, 120, y_start, 'draft')
+  on conflict (programme_id, version_label) do nothing;
+
+  select id into p_id from programmes where code = 'black-liberation-theology';
+  select id into s_id from schools where code = 'theology';
+  insert into programme_versions
+    (programme_id, version_label, name, school_id, duration_years,
+     semesters_per_year, total_credits, effective_from, status)
+  values (p_id, y_label, 'Master of Arts in Black Liberation Theology', s_id, 2,
+          2, 120, y_start, 'draft')
+  on conflict (programme_id, version_label) do nothing;
+
+  select id into p_id from programmes where code = 'doctor-of-philosophy-theology';
+  select id into s_id from schools where code = 'theology';
+  insert into programme_versions
+    (programme_id, version_label, name, school_id, duration_years,
+     semesters_per_year, total_credits, effective_from, status)
+  values (p_id, y_label, 'Doctor of Philosophy (Ph.D.) in Theology', s_id, 2,
+          2, null, y_start, 'draft')
+  on conflict (programme_id, version_label) do nothing;
+
+  select id into p_id from programmes where code = 'doctor-of-theology';
+  select id into s_id from schools where code = 'theology';
+  insert into programme_versions
+    (programme_id, version_label, name, school_id, duration_years,
+     semesters_per_year, total_credits, effective_from, status)
+  values (p_id, y_label, 'Doctor of Theology', s_id, 2,
+          2, null, y_start, 'draft')
+  on conflict (programme_id, version_label) do nothing;
+
+  select id into p_id from programmes where code = 'doctor-of-systematic-theology';
+  select id into s_id from schools where code = 'theology';
+  insert into programme_versions
+    (programme_id, version_label, name, school_id, duration_years,
+     semesters_per_year, total_credits, effective_from, status)
+  values (p_id, y_label, 'Doctor of Systematic Theology', s_id, 2,
+          2, null, y_start, 'draft')
+  on conflict (programme_id, version_label) do nothing;
+
+  select id into p_id from programmes where code = 'doctor-of-ministry';
+  select id into s_id from schools where code = 'ministry';
+  insert into programme_versions
+    (programme_id, version_label, name, school_id, duration_years,
+     semesters_per_year, total_credits, effective_from, status)
+  values (p_id, y_label, 'Doctor of Ministry', s_id, 2,
+          2, null, y_start, 'draft')
+  on conflict (programme_id, version_label) do nothing;
+
+  select id into p_id from programmes where code = 'primary-education';
+  select id into s_id from schools where code = 'education';
+  insert into programme_versions
+    (programme_id, version_label, name, school_id, duration_years,
+     semesters_per_year, total_credits, effective_from, status)
+  values (p_id, y_label, 'Primary Education', s_id, 3,
+          2, null, y_start, 'draft')
+  on conflict (programme_id, version_label) do nothing;
+
+  select id into p_id from programmes where code = 'special-education';
+  select id into s_id from schools where code = 'education';
+  insert into programme_versions
+    (programme_id, version_label, name, school_id, duration_years,
+     semesters_per_year, total_credits, effective_from, status)
+  values (p_id, y_label, 'Special Education', s_id, 3,
+          2, null, y_start, 'draft')
+  on conflict (programme_id, version_label) do nothing;
+
+  select id into p_id from programmes where code = 'software-engineering';
+  select id into s_id from schools where code = 'engineering';
+  insert into programme_versions
+    (programme_id, version_label, name, school_id, duration_years,
+     semesters_per_year, total_credits, effective_from, status)
+  values (p_id, y_label, 'Software Engineering', s_id, 3,
+          2, null, y_start, 'draft')
+  on conflict (programme_id, version_label) do nothing;
+
+  select id into p_id from programmes where code = 'networking';
+  select id into s_id from schools where code = 'engineering';
+  insert into programme_versions
+    (programme_id, version_label, name, school_id, duration_years,
+     semesters_per_year, total_credits, effective_from, status)
+  values (p_id, y_label, 'Computer Networking', s_id, 1,
+          2, 120, y_start, 'draft')
+  on conflict (programme_id, version_label) do nothing;
+
+  select id into p_id from programmes where code = 'business-management';
+  select id into s_id from schools where code = 'business';
+  insert into programme_versions
+    (programme_id, version_label, name, school_id, duration_years,
+     semesters_per_year, total_credits, effective_from, status)
+  values (p_id, y_label, 'Business Management', s_id, 3,
+          2, null, y_start, 'draft')
+  on conflict (programme_id, version_label) do nothing;
+
+  select id into p_id from programmes where code = 'project-management';
+  select id into s_id from schools where code = 'business';
+  insert into programme_versions
+    (programme_id, version_label, name, school_id, duration_years,
+     semesters_per_year, total_credits, effective_from, status)
+  values (p_id, y_label, 'Project Management', s_id, 2,
+          2, 120, y_start, 'draft')
+  on conflict (programme_id, version_label) do nothing;
+
+end $$;
+
+
+-- ===========================================================================
+-- PROVE IT
+-- ===========================================================================
+
+do $$
+declare n integer; bad integer;
+begin
+  select count(*) into n from programme_versions;
+  if n < 41 then
+    raise exception '061 FAILED: % versions, expected at least 41', n;
+  end if;
+
+  -- EVERY PROGRAMME HAS ONE. A count alone passes if one programme has two.
+  select count(*) into bad from programmes p
+   where not exists (select 1 from programme_versions v where v.programme_id = p.id);
+  if bad > 0 then
+    raise exception '061 FAILED: % programmes still have no version', bad;
+  end if;
+
+  -- AND NOT ONE IS PUBLISHED. A version published here would have skipped
+  -- the Vice-Chancellor, which is the whole of 058.
+  select count(*) into bad from programme_versions where status <> 'draft';
+  if bad > 0 then
+    raise exception '061 FAILED: % versions are not drafts — the seed approved a curriculum', bad;
+  end if;
+
+  -- THE RULED LENGTHS, READ BACK. Not a spot check: every level at once.
+  select count(*) into bad from programme_versions v
+    join programmes p on p.id = v.programme_id
+   where v.duration_years <> case p.award_level
+           when 'Certificate' then 1
+           when 'Diploma' then 1
+           when 'Bachelor''s' then 3
+           when 'Master''s' then 2
+           when 'Doctorate' then 2
+           else v.duration_years end;
+  if bad > 0 then
+    raise exception '061 FAILED: % versions disagree with the ruled length for their award', bad;
+  end if;
+
+  raise notice '061 OK: all 41 programmes have a version, every one a draft with no courses in it';
+  raise notice '061 OK: every duration matches the length the University ruled for its award level';
+end $$;
+
+
+-- ===========================================================================
+-- VERIFY — READ THIS OUTPUT
+-- ===========================================================================
+
+-- ---------------------------------------------------------------------------
+-- EVERY PROGRAMME, ITS LENGTH AND WHAT ITS CURRICULUM ADDS UP TO SO FAR.
+-- `credits_in_curriculum` is 0 for all of them: the shelf is built and empty.
+-- The gap against `total_credits` is the Curriculum Builder's work.
+-- ---------------------------------------------------------------------------
+select p.award_level,
+       count(*)                                              as programmes,
+       min(v.duration_years)                                 as years,
+       count(*) filter (where v.total_credits is not null)   as with_a_credit_total,
+       count(*) filter (where v.status = 'draft')            as drafts
+  from programmes p
+  join programme_versions v on v.programme_id = p.id
+  group by p.award_level order by p.award_level;
 
 
 -- ===========================================================================
@@ -12294,6 +12757,12 @@ select * from (
                  when exists (select 1 from programmes where true) then 'YES'
                  else 'NO' end as landed,
          'rows:programmes:true' as what_it_creates
+  union all
+  select '061' as migration, '061_a_version_for_every_programme.sql' as file,
+         case when to_regclass('public.programme_versions') is null then 'NO'
+                 when exists (select 1 from programme_versions where true) then 'YES'
+                 else 'NO' end as landed,
+         'rows:programme_versions:true' as what_it_creates
 ) as landed_report
  order by migration;
 

@@ -39,9 +39,18 @@ import { programs as SITE_PROGRAMS } from './site';
 //   into the world that the Senate never approved, and it would be quoted back
 //   to the university by an applicant who relied on it.
 //
-//   The same applies to DURATION. "One to two academic years" is the
-//   university's own wording for diploma study and is used as the default; a
-//   programme is given a specific duration only where one is known.
+//   DURATION IS NOW RULED AT EVERY LEVEL, and this note used to say the
+//   opposite. It described "One to two academic years" as the University's own
+//   wording and used it as a default — a RANGE standing in for a length,
+//   because no length had been stated.
+//
+//   The University has since stated all of them: a Certificate up to one year,
+//   a Diploma ONE, a Bachelor's THREE, a Master's TWO, a Doctorate TWO. So the
+//   ranges are gone, and `programme_versions.duration_years` can hold a number
+//   for every programme instead of eighteen blanks.
+//
+//   programmeDurationYears.test.mjs holds each published sentence to its
+//   ruling and refuses any that reaches past it.
 //
 // Careers and pathways are written as what a programme PREPARES a graduate for,
 // never as a promise of employment.
@@ -182,7 +191,7 @@ FACULTIES.push(
 export const facultyById = (id: string) => FACULTIES.find((f) => f.id === id);
 
 /** The default duration for a diploma, in the university's own words. */
-export const DIPLOMA_DURATION = 'One to two academic years';
+export const DIPLOMA_DURATION = 'One academic year';
 
 const theology = (
   slug: string, title: string, summary: string, description: string[],
@@ -446,7 +455,7 @@ export const DIPLOMA_PROGRAMMES: Programme[] = [
  */
 export const PROGRESSION: { award: AwardLevel; note: string }[] = [
   { award: 'Certificate', note: 'Short, focused, professional' },
-  { award: 'Diploma', note: 'One to two years — employment or advanced standing' },
+  { award: 'Diploma', note: 'One year — employment or advanced standing' },
   { award: "Bachelor's", note: 'The full undergraduate degree' },
   { award: 'Postgraduate Diploma', note: 'Graduate study, one year' },
   { award: "Master's", note: 'Taught or research' },
@@ -652,7 +661,7 @@ const LEVEL_DURATION: Record<string, string> = {
   Certificate: 'Up to one academic year',
   Diploma: DIPLOMA_DURATION,
   Bachelor: 'Three academic years',
-  Master: 'One to two academic years',
+  Master: 'Two academic years',
   Doctorate: 'Two academic years of supervised research',
 };
 

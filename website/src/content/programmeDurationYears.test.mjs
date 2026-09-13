@@ -193,4 +193,50 @@ console.log('\nThe Doctorate is two years, wherever it is published\n');
     /Doctorate/.test(longBand), false);
 }
 
+// ---------------------------------------------------------------------------
+// AND NOW EVERY LEVEL IS RULED.
+//
+// The University has stated a length for all of them: Certificate up to one
+// year, Diploma ONE, Bachelor's THREE, Master's TWO, Doctorate TWO. Before
+// that, the Diploma and the Master's were published as "One to two academic
+// years" — a range standing in for a length, which meant 27 of the 41
+// programmes could not be given a `duration_years` at all.
+//
+// So the check is now the same shape for every level: the published sentence
+// must contain the ruled number, and must not reach past it.
+// ---------------------------------------------------------------------------
+
+console.log('\nEvery award level publishes the length the University ruled\n');
+
+{
+  const RULED = {
+    Diploma: { word: 'one', past: /\b(two|2|three|3|four|4|or more)\b/i },
+    Master: { word: 'two', past: /\b(three|3|four|4|or more)\b/i },
+  };
+
+  for (const [level, rule] of Object.entries(RULED)) {
+    const published = catalogue.durationFor
+      ? catalogue.durationFor(level)
+      : '';
+    const label = level === 'Master' ? "Master's" : level;
+    const fromCatalogue = published
+      || catalogue.ALL_PROGRAMMES.find((p) => p.award === label)?.duration || '';
+    check(`the catalogue publishes ${rule.word} for a ${label}`,
+      new RegExp(`\\b${rule.word}\\b`, 'i').test(fromCatalogue), true);
+    check(`…and does not reach past ${rule.word}`, rule.past.test(fromCatalogue), false);
+    console.log(`      ${label}: ${JSON.stringify(fromCatalogue)}`);
+
+    const ladder = (facts.PATHWAY ?? []).find((a) => a.award.replace(/\u2019/, "'") === label);
+    if (ladder) {
+      check(`…and institutionalFacts agrees for ${label}`,
+        rule.past.test(ladder.duration), false);
+    }
+    const framework = (credit.AWARD_LADDER ?? []).find((a) => a.level === level);
+    if (framework) {
+      check(`…and the credit framework agrees for ${label}`,
+        rule.past.test(framework.duration ?? ''), false);
+    }
+  }
+}
+
 process.exit(failures === 0 ? 0 : 1);

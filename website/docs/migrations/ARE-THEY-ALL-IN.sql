@@ -156,6 +156,12 @@ select * from (
                  when exists (select 1 from programmes where true) then 'YES'
                  else 'NO' end as landed,
          'rows:programmes:true' as what_it_creates
+  union all
+  select '061' as migration, '061_a_version_for_every_programme.sql' as file,
+         case when to_regclass('public.programme_versions') is null then 'NO'
+                 when exists (select 1 from programme_versions where true) then 'YES'
+                 else 'NO' end as landed,
+         'rows:programme_versions:true' as what_it_creates
 ) as landed_report
  order by migration;
 

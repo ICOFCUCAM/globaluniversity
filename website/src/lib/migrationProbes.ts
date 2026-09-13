@@ -544,6 +544,17 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
     // 060 as run on a database that has only had 057.
     cannotSee: 'select count(*) from programmes;  -- it should be at least 41, every one a draft',
   },
+  {
+    file: '061_a_version_for_every_programme.sql',
+    what: 'Every one of the 41 programmes gets a curriculum version to hang a curriculum from. '
+      + '060 could not: 27 were published as "One to two academic years", and a range is not a '
+      + 'length. The University has since ruled every level \u2014 Certificate one, Diploma one, '
+      + 'Bachelor\u2019s three, Master\u2019s two, Doctorate two. EVERY VERSION IS A DRAFT with '
+      + 'no courses in it: a version becomes real when the Vice-Chancellor approves it. This '
+      + 'builds the shelf; the University fills it.',
+    cannotSee: 'select count(*) from programme_versions;  -- it should be at least 41, '
+      + 'every one a draft',
+  },
 ];
 
 /** What a probe came back as. */

@@ -118,9 +118,19 @@ const programmes = ALL_PROGRAMMES.map((p) => ({
   credits: p.credits ?? null,
 }));
 
-// WHAT CANNOT BE TURNED INTO A NUMBER. Only the durations the University has
-// RULED are unambiguous; a published range is not a duration.
-const YEARS = { "Bachelor's": 3, Doctorate: 2, Certificate: 1 };
+// ---------------------------------------------------------------------------
+// EVERY LEVEL IS NOW RULED, AND 27 BLANKS BECAME 41 NUMBERS.
+//
+// This list held three entries and the other 27 programmes were published as
+// "One to two academic years" — a range, not a length, so no version could be
+// seeded for them. The University has since ruled: "Diploma is 1 year. Masters
+// is 2years."
+//
+// A Postgraduate Diploma is still absent, deliberately: no programme in the
+// catalogue carries that award, so there is nothing to give a length to and
+// nothing to guess.
+// ---------------------------------------------------------------------------
+const YEARS = { Certificate: 1, Diploma: 1, "Bachelor's": 3, "Master's": 2, Doctorate: 2 };
 const needDuration = programmes.filter((p) => !YEARS[p.award]);
 
 const lines = [];
@@ -235,10 +245,14 @@ w("    raise exception '060 FAILED: % programmes are not drafts — the seed ope
   + "something for admission', n;");
 w('  end if;');
 w();
-w('  -- AND NO CURRICULUM WAS INVENTED.');
-w('  select count(*) into n from programme_versions;');
+w('  -- NO CURRICULUM WAS INVENTED BY THIS FILE. Deliberately scoped to what');
+w('  -- THIS migration created: 061 seeds a version per programme from the');
+w('  -- durations the University has since ruled, so a blanket "no versions');
+w('  -- exist" would be a proof that passes only until the next migration runs —');
+w('  -- which is how 045 collided with 055.');
+w('  select count(*) into n from curriculum_entries;');
 w('  if n > 0 then');
-w("    raise exception '060 FAILED: % programme versions exist — a duration was invented', n;");
+w("    raise exception '060 FAILED: % curriculum entries exist — a curriculum was invented', n;");
 w('  end if;');
 w();
 w(`  raise notice '060 OK: ${schools.length} schools and ${programmes.length} programmes are in `
@@ -263,7 +277,9 @@ w('  left join programmes p on true');
 w('  group by s.name order by s.name;');
 w();
 w('-- ---------------------------------------------------------------------------');
-w('-- AND WHAT THE UNIVERSITY STILL HAS TO STATE.');
+w(needDuration.length === 0
+  ? '-- EVERY LEVEL HAS A RULED LENGTH. 061 gives each programme a version.'
+  : '-- AND WHAT THE UNIVERSITY STILL HAS TO STATE.');
 w('--');
 w(`-- ${needDuration.length} of ${programmes.length} programmes have no length this system can `
   + 'record,');
@@ -283,6 +299,143 @@ w();
 
 const out = join(root, 'docs/migrations/060_the_schools_and_programmes.sql');
 writeFileSync(out, lines.join('\n'));
+
+// ---------------------------------------------------------------------------
+// 061 — A VERSION PER PROGRAMME.
+//
+// Separate from 060 because 060 has already been handed to the University and
+// may already have been run. A file somebody has run is not edited; a new one
+// is added beside it. That is the lesson of the programmes_code_check failure,
+// applied before it happens rather than after.
+// ---------------------------------------------------------------------------
+if (needDuration.length === 0) {
+  const v = [];
+  const x = (t = '') => v.push(t);
+  x('-- ===========================================================================');
+  x('-- 061 — A VERSION FOR EVERY PROGRAMME');
+  x('-- ===========================================================================');
+  x('--');
+  x('-- GENERATED FILE. DO NOT EDIT.');
+  x('--   Generator: scripts/build-academic-seed.mjs');
+  x('--');
+  x('-- WHAT CHANGES FOR THE UNIVERSITY THE MOMENT THIS RUNS');
+  x('--');
+  x(`-- EVERY ONE OF THE ${programmes.length} PROGRAMMES GETS A CURRICULUM VERSION to hang`);
+  x('-- a curriculum from. 060 could not: 27 of them were published as "One to two');
+  x('-- academic years", and a range is not a length. The University has since');
+  x('-- ruled every level — Certificate one, Diploma one, Bachelor\'s three,');
+  x("-- Master's two, Doctorate two — so `duration_years` can hold a number for");
+  x('-- all of them.');
+  x('--');
+  x('-- EVERY VERSION IS A DRAFT, AND NONE HAS A SINGLE COURSE IN IT. A version');
+  x('-- becomes real when the Vice-Chancellor approves it (058) and it cannot be');
+  x('-- approved while its curriculum is empty of the credits it claims. This');
+  x('-- builds the shelf; the University fills it.');
+  x('--');
+  x('-- THE LABEL IS THE ACADEMIC YEAR, and the effective date is the day that');
+  x('-- year opens — 15 August, from 059. Nothing here is chosen: the version is');
+  x('-- named after the year it takes effect in, which is how a student admitted');
+  x('-- in 2026/2027 is later known to be reading the 2026/2027 curriculum.');
+  x('-- ===========================================================================');
+  x();
+  x('do $$');
+  x('declare');
+  x('  y_label text;');
+  x('  y_start date;');
+  x('  p_id    uuid;');
+  x('  s_id    uuid;');
+  x('begin');
+  x('  -- THE ACADEMIC YEAR IN FORCE, asked of the calendar rather than assumed.');
+  x("  select label, starts_on into y_label, y_start from academic_years where status = 'current';");
+  x('  if y_label is null then');
+  x('    raise exception');
+  x("      'No academic year is current, so a version cannot be dated. 059 sets one from the "
+    + "date; run it first.'");
+  x("      using errcode = 'no_data_found';");
+  x('  end if;');
+  x();
+  for (const p of programmes) {
+    x(`  select id into p_id from programmes where code = ${q(p.code)};`);
+    x(`  select id into s_id from schools where code = ${q(p.school)};`);
+    x('  insert into programme_versions');
+    x('    (programme_id, version_label, name, school_id, duration_years,');
+    x('     semesters_per_year, total_credits, effective_from, status)');
+    x(`  values (p_id, y_label, ${q(p.title)}, s_id, ${YEARS[p.award]},`);
+    x(`          2, ${p.credits ?? 'null'}, y_start, 'draft')`);
+    x('  on conflict (programme_id, version_label) do nothing;');
+    x();
+  }
+  x('end $$;');
+  x();
+  x();
+  x('-- ===========================================================================');
+  x('-- PROVE IT');
+  x('-- ===========================================================================');
+  x();
+  x('do $$');
+  x('declare n integer; bad integer;');
+  x('begin');
+  x('  select count(*) into n from programme_versions;');
+  x(`  if n < ${programmes.length} then`);
+  x(`    raise exception '061 FAILED: % versions, expected at least ${programmes.length}', n;`);
+  x('  end if;');
+  x();
+  x('  -- EVERY PROGRAMME HAS ONE. A count alone passes if one programme has two.');
+  x('  select count(*) into bad from programmes p');
+  x('   where not exists (select 1 from programme_versions v where v.programme_id = p.id);');
+  x('  if bad > 0 then');
+  x("    raise exception '061 FAILED: % programmes still have no version', bad;");
+  x('  end if;');
+  x();
+  x('  -- AND NOT ONE IS PUBLISHED. A version published here would have skipped');
+  x('  -- the Vice-Chancellor, which is the whole of 058.');
+  x("  select count(*) into bad from programme_versions where status <> 'draft';");
+  x('  if bad > 0 then');
+  x("    raise exception '061 FAILED: % versions are not drafts — the seed approved a "
+    + "curriculum', bad;");
+  x('  end if;');
+  x();
+  x('  -- THE RULED LENGTHS, READ BACK. Not a spot check: every level at once.');
+  x('  select count(*) into bad from programme_versions v');
+  x('    join programmes p on p.id = v.programme_id');
+  x('   where v.duration_years <> case p.award_level');
+  for (const [award, years] of Object.entries(YEARS)) {
+    x(`           when ${q(award)} then ${years}`);
+  }
+  x('           else v.duration_years end;');
+  x('  if bad > 0 then');
+  x("    raise exception '061 FAILED: % versions disagree with the ruled length for their "
+    + "award', bad;");
+  x('  end if;');
+  x();
+  x(`  raise notice '061 OK: all ${programmes.length} programmes have a version, every one a `
+    + `draft with no courses in it';`);
+  x("  raise notice '061 OK: every duration matches the length the University ruled for its "
+    + "award level';");
+  x('end $$;');
+  x();
+  x();
+  x('-- ===========================================================================');
+  x('-- VERIFY — READ THIS OUTPUT');
+  x('-- ===========================================================================');
+  x();
+  x('-- ---------------------------------------------------------------------------');
+  x('-- EVERY PROGRAMME, ITS LENGTH AND WHAT ITS CURRICULUM ADDS UP TO SO FAR.');
+  x('-- `credits_in_curriculum` is 0 for all of them: the shelf is built and empty.');
+  x('-- The gap against `total_credits` is the Curriculum Builder\'s work.');
+  x('-- ---------------------------------------------------------------------------');
+  x('select p.award_level,');
+  x('       count(*)                                              as programmes,');
+  x('       min(v.duration_years)                                 as years,');
+  x('       count(*) filter (where v.total_credits is not null)   as with_a_credit_total,');
+  x("       count(*) filter (where v.status = 'draft')            as drafts");
+  x('  from programmes p');
+  x('  join programme_versions v on v.programme_id = p.id');
+  x('  group by p.award_level order by p.award_level;');
+  x();
+  writeFileSync(join(root, 'docs/migrations/061_a_version_for_every_programme.sql'), v.join('\n'));
+  console.log('docs/migrations/061_a_version_for_every_programme.sql');
+}
 console.log(`docs/migrations/060_the_schools_and_programmes.sql`);
 console.log(`  ${schools.length} schools, ${programmes.length} programmes`);
 console.log(`  ${needDuration.length} programmes have no stated duration`);
