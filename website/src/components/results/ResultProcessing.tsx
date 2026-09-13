@@ -73,8 +73,20 @@ export default function ResultProcessing() {
     let live = true;
     (async () => {
       setLoadingRoll(true);
+      // ---------------------------------------------------------------
+      // THE LIVE ROLL, NOT EVERY ENROLMENT ROW.
+      //
+      // This read every row in `enrollments`, which was correct only while
+      // nothing could be dropped. 054 gives a registration a `dropped` state
+      // — and a mark sheet that lists a student who dropped the course puts
+      // them in front of an examiner, who marks them.
+      //
+      // `course_roll` is the view that answers "who is actually taking this",
+      // and the GPA engine and the graduation audit read the same one rather
+      // than each filtering for themselves.
+      // ---------------------------------------------------------------
       const { data: enrolled } = await supabase
-        .from('enrollments')
+        .from('course_roll')
         .select('student_id, students(id, first_name, last_name, matric_no, student_number)')
         .eq('course_id', selectedCourse);
 

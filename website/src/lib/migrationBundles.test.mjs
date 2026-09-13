@@ -104,15 +104,33 @@ function psql(db, sql) {
   ], { encoding: 'utf8' }).trim();
 }
 
+// ---------------------------------------------------------------------------
 // A DATABASE THAT HAS HAD EVERYTHING. Without one there is nothing to resolve
 // the markers against, and reporting that as a pass is how the 043 bug would
 // have survived.
+//
+// DISCOVERED, NOT LISTED. This named three databases — mall51, mall50, mall49 —
+// and took the first that answered. Which meant that the moment a migration
+// newer than 51 was written, the test resolved its markers against a schema
+// that predated it and reported the newest marker as a relation the database
+// does not have. A stale fixture reporting a real file as broken is the kind
+// of failure somebody fixes by deleting the check.
+//
+// So the harness is asked which `mall…` databases it has and the highest one
+// wins, which is the most-migrated by construction.
+// ---------------------------------------------------------------------------
 let complete = null;
-for (const db of ['mall51', 'mall50', 'mall49']) {
-  try {
-    if (psql(db, 'select 1') === '1') { complete = db; break; }
-  } catch { /* try the next */ }
-}
+try {
+  const found = psql('postgres',
+    "select datname from pg_database where datname ~ '^mall[0-9]+$'")
+    .split('\n').map((d) => d.trim()).filter(Boolean)
+    .sort((a, b) => Number(b.replace(/\D/g, '')) - Number(a.replace(/\D/g, '')));
+  for (const db of found) {
+    try {
+      if (psql(db, 'select 1') === '1') { complete = db; break; }
+    } catch { /* try the next */ }
+  }
+} catch { /* the harness is not running; handled below */ }
 
 if (!complete) {
   console.log('\n(no fully-migrated database was reachable, so the markers were not resolved)');

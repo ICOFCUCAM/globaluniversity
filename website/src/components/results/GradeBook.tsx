@@ -54,7 +54,9 @@ export default function GradeBook() {
       setLoading(true);
       setSaved(null);
       const [{ data: enrolments }, { data: results }] = await Promise.all([
-        supabase.from('enrollments').select('student_id, students(id, matric_no, first_name, last_name)').eq('course_id', courseId),
+        // THE LIVE ROLL. See ResultProcessing: a dropped student must not appear
+        // on a mark sheet.
+        supabase.from('course_roll').select('student_id, students(id, matric_no, first_name, last_name)').eq('course_id', courseId),
         supabase.from('results').select('id, student_id, ca_score, exam_score, status').eq('course_id', courseId),
       ]);
 

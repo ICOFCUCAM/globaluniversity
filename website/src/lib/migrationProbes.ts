@@ -452,6 +452,19 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
     table: 'positions',
     column: 'standing',
   },
+  {
+    file: '054_course_registration.sql',
+    what: 'Course registration. A student can be put on a course at all — the act nothing in '
+      + 'this system could perform, though the results pipeline, the GPA engine and the '
+      + 'graduation audit have all read `enrollments` since migration 001. A registration now '
+      + 'records who made it and whether the student did it themselves; a drop is a state with '
+      + 'a date and a reason rather than a deletion; and `course_roll` is the live roll, so a '
+      + 'student who dropped a course does not appear on its mark sheet.',
+    // THE VIEW IS THE MARKER. `enrollments` is 001's, and the columns this
+    // file adds sit on it — but `course_roll` is a relation no earlier
+    // migration created, which is the cheaper and less error-prone probe.
+    table: 'course_roll',
+  },
 ];
 
 /** What a probe came back as. */

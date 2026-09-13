@@ -179,6 +179,10 @@ const MARKERS = {
   // made when its marker was `working_hours` and the report said NO on a
   // database where the migration had plainly landed.
   '053': 'positions.standing',
+  // 054 adds columns to 001's `enrollments` AND creates a view. The view is
+  // the better marker: a relation either exists or it does not, with no
+  // information_schema lookup to get wrong.
+  '054': 'course_roll',
 };
 
 /** The SQL that answers "is this one here?", for each of the three forms. */

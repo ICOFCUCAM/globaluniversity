@@ -137,6 +137,9 @@ const READ_ONLY_BY_DESIGN = {
   correspondence_verification: 'A view.',
   document_template_coverage: 'A view.',
   position_job_description: 'A view: the resolved job description.',
+  course_roll: 'A view: who is actually taking a course, registered and completed but never '
+    + 'dropped. The mark sheet, the GPA engine and the graduation audit read it rather than '
+    + 'each filtering `enrollments` for themselves.',
   position_profiles_unapproved: 'A view.',
   admission_status_coverage: 'A view.',
   // Seeded by migration and read by the application.
@@ -177,10 +180,16 @@ for (const f of all.filter((x) => x.endsWith('.ts') || x.endsWith('.tsx'))) {
 // the screen and deleting the entry.
 // ---------------------------------------------------------------------------
 const KNOWN_MISSING = {
-  enrollments: 'No course-registration screen exists. The table, the results pipeline and the '
-    + 'graduation audit all read it and nothing writes it, so a student cannot be registered '
-    + 'for a course through the portal. Stated in src/lib/prerequisites.ts, which publishes the '
-    + 'rule that screen will need.',
+  // ---------------------------------------------------------------------
+  // EMPTY, AND THAT IS THE POINT OF THE CHECK BELOW.
+  //
+  // `enrollments` was the one entry here: no course-registration screen
+  // existed, so the results pipeline, the GPA engine and the graduation audit
+  // all read a table nothing could write to. 054 and /api/enrolment closed it,
+  // and this test refused to pass until the entry was removed — which is the
+  // behaviour that stops a list like this becoming a graveyard of things
+  // somebody once decided not to fix.
+  // ---------------------------------------------------------------------
 };
 
 const readNeverWritten = [...tablesRead]

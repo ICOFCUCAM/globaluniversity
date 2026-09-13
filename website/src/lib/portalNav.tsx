@@ -112,6 +112,21 @@ export const menuGroups: MenuGroup[] = [
     items: [
       { id: 'programme-resources', label: 'Programme resources', icon: <BookMarked size={18} />, roles: ACADEMIC },
       { id: 'courses', label: 'Courses', icon: <BookOpen size={18} />, roles: ACADEMIC },
+      // REGISTRATION IS NOT COURSE MANAGEMENT. 'Courses' is the catalogue —
+      // what the University teaches. This is who is taking what, which is the
+      // act that fills `enrollments` and therefore the mark sheet, the
+      // transcript and the graduation audit.
+      //
+      // THE STUDENT SEES IT TOO, and that is the normal case: a student
+      // registers themselves, and the Registry registers on their behalf. The
+      // route decides whose record may be touched; this only decides who is
+      // offered the screen.
+      {
+        id: 'course-registration',
+        label: 'Course registration',
+        icon: <ClipboardList size={18} />,
+        roles: ['student', 'superadmin', 'admin', 'registrar', 'hod', 'programme-coordinator'],
+      },
       { id: 'timetable', label: 'Timetable', icon: <ClipboardList size={18} />, roles: ACADEMIC },
       { id: 'lms', label: 'Learning (LMS)', icon: <Monitor size={18} />, roles: ALL },
     ],
