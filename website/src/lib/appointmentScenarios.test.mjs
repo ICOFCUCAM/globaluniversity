@@ -172,16 +172,48 @@ function psql(db, file) {
   ], { encoding: 'utf8' });
 }
 
+/**
+ * A one-line query, as opposed to a file.
+ *
+ * SEPARATE FROM `psql` BECAUSE THAT ONE TAKES A FILENAME. Passing SQL to it
+ * hands psql a `-f` pointing at a file called "select datname from…", which
+ * fails in a way that looks exactly like a database that is not there — and
+ * that is precisely how the first attempt at this reported no database was
+ * reachable on a harness holding thirty-five of them.
+ */
+function query(db, sql) {
+  return execFileSync('sh', ['-c',
+    `psql -h ${SOCKET} -U postgres -d ${db} -Atc "${sql.replace(/"/g, '\\"')}" 2>&1`,
+  ], { encoding: 'utf8' }).trim();
+}
+
 // The scenarios run inside one plpgsql block that rolls itself back, exactly as
 // the migrations do — so running this test leaves the database as it found it.
 const SCENARIOS = join(here, 'appointmentScenarios.sql');
 
 let output = '';
 let ran = false;
+// ---------------------------------------------------------------------------
 // NEWEST FIRST. A database built from an older RUN-ALL would run the scenarios
 // against a schema missing the very constraints they are performing, and report
 // success because nothing refused anything.
-for (const db of ['mall50', 'm50', 'mall49', 'mall48']) {
+//
+// DISCOVERED, NOT LISTED. This named four databases and took the first that
+// answered — so the moment those scratch databases were replaced by newer ones,
+// the test found none and refused to run at all. Refusing is the right
+// behaviour and it is why this was caught rather than silently skipped, but the
+// cause was a fixture going stale, which is the same defect the bundle test
+// had. The harness is asked what it holds and the highest number wins.
+// ---------------------------------------------------------------------------
+let candidates = [];
+try {
+  candidates = query('postgres',
+    "select datname from pg_database where datname ~ '^m(all)?[0-9]+$'")
+    .split('\n').map((d) => d.trim()).filter(Boolean)
+    .sort((a, b) => Number(b.replace(/\D/g, '')) - Number(a.replace(/\D/g, '')));
+} catch { /* the harness is not running; reported below */ }
+
+for (const db of candidates) {
   try {
     output = psql(db, SCENARIOS);
     ran = true;

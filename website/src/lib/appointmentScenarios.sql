@@ -25,13 +25,43 @@ declare
   n integer;
   s text;
 begin
-  select id into someone from auth.users limit 1;
-  select id into vc from auth.users where id <> someone limit 1;
-  select id into reviewer from auth.users where id not in (someone, vc) limit 1;
-  reviewer := coalesce(reviewer, vc);
+  -- ---------------------------------------------------------------------
+  -- THE THREE ACTORS ARE MADE HERE, NOT FOUND HERE.
+  --
+  -- These were picked out of whatever `auth.users` happened to contain:
+  --
+  --     select id into someone from auth.users limit 1;
+  --     select id into vc      from auth.users where id <> someone limit 1;
+  --     select id into reviewer from auth.users where id not in (someone, vc) limit 1;
+  --     reviewer := coalesce(reviewer, vc);
+  --
+  -- On a database with three or more accounts that works. On one with two, the
+  -- coalesce quietly made the REVIEWER the same person as the DRAFTER — and
+  -- Scenario B, which approves as the reviewer, then violated 041's
+  -- `appointments_second_pair_of_eyes` and reported a constraint error that
+  -- looked exactly like a defect in the system under test.
+  --
+  -- It had been passing only because the scratch database it happened to run
+  -- against held four accounts left by something else. A test whose result
+  -- depends on how many rows a fixture happens to have is not measuring the
+  -- thing it claims to measure.
+  --
+  -- The whole block rolls back, so these three exist for the length of the
+  -- proof and no longer.
+  -- ---------------------------------------------------------------------
+  insert into auth.users (email) values ('scenario-drafter@example.test')
+    returning id into someone;
+  insert into auth.users (email) values ('scenario-vc@example.test')
+    returning id into vc;
+  insert into auth.users (email) values ('scenario-reviewer@example.test')
+    returning id into reviewer;
 
-  if someone is null or vc is null then
-    raise exception 'SCENARIO SETUP FAILED: fewer than two accounts in auth.users';
+  -- ASSERTED RATHER THAN ASSUMED. If these three were ever to collapse into
+  -- fewer — a future change to how they are made — the scenarios must stop
+  -- rather than silently test a weaker arrangement.
+  if someone is null or vc is null or reviewer is null
+     or someone = vc or someone = reviewer or vc = reviewer then
+    raise exception 'SCENARIO SETUP FAILED: the three actors are not three distinct accounts';
   end if;
 
   begin
