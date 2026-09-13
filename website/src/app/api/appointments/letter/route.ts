@@ -361,6 +361,15 @@ export async function POST(request: Request) {
     }
 
     const printed = printedReference(letter.reference as string);
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? `https://${UNIVERSITY.website}`;
+    // THE LINK THAT MAKES THE ACCEPTANCE POSSIBLE. Without it the letter says
+    // "confirm your acceptance in writing" and the appointee has nowhere to do
+    // it — which is exactly what the system did until the /accept page existed.
+    const acceptUrl = letter.seal_code
+      ? `${siteUrl}/accept?reference=${encodeURIComponent(String(letter.reference))}`
+        + `&code=${encodeURIComponent(String(letter.seal_code))}`
+      : null;
+
     const result = await send({
       to,
       office: 'Office of the Vice-Chancellor',
@@ -376,8 +385,9 @@ export async function POST(request: Request) {
         'You may verify this document independently at '
         + `${UNIVERSITY.website}/verify using the reference above.`,
         '',
-        'Please confirm your acceptance in writing.',
-        '',
+        ...(acceptUrl
+          ? ['To accept or decline this appointment, open:', acceptUrl, '']
+          : ['Please confirm your acceptance in writing.', '']),
         UNIVERSITY.name,
       ].join('\n'),
       html: letter.html as string,

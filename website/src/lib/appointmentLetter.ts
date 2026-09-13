@@ -265,8 +265,10 @@ ${input.jobDescription || input.termsReference ? `<p class="attached">${[
 ${authority}
 
 <div class="closing">
-<p>Please confirm your acceptance of this appointment in writing. This letter may be verified
-independently using the reference and code below.</p>
+<p>Please confirm your acceptance of this appointment. You may do so at
+${escape(UNIVERSITY.website)}/accept using the reference and the verification code printed
+below, or in writing to the University. This letter may be verified independently using the
+same reference and code.</p>
 
 ${signatureBlock({
   // THE AUTHORITY IS STATED ON THE PAGE, not inferred from whose name is at the

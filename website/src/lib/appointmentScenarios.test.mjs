@@ -101,6 +101,48 @@ console.log('\nThe pipeline does things in the order that makes a failure surviv
 }
 
 // ---------------------------------------------------------------------------
+// AND THERE IS A DOOR TO IT
+// ---------------------------------------------------------------------------
+//
+// THE FAULT THIS SECTION EXISTS FOR HAS NOW HAPPENED TWICE. Screens were built,
+// routes were guarded, migrations were run — and nothing was reachable, because
+// no navigation entry and no link pointed at any of it.
+//
+// Acceptance was the worst case: `staff_activation_point` is set to `accepted`,
+// so nobody could become staff without answering, the API to answer existed and
+// was tested, and there was no page. A deadlock that every test passed through.
+
+console.log('\nAnd an appointee can actually reach the page that answers\n');
+
+{
+  check('the acceptance page exists',
+    existsSync(join(here, '../app/accept/page.tsx')), true);
+
+  // THE LETTER TELLS THEM WHERE TO GO. "Confirm your acceptance in writing" is
+  // what it said while there was nowhere to do it.
+  const letter = readFileSync(join(here, 'appointmentLetter.ts'), 'utf8');
+  check('the letter names the acceptance page', /\/accept/.test(letter), true);
+
+  // AND SO DOES THE EMAIL, with the reference and code already in the link —
+  // an appointee should click, not retype what is printed on their letter.
+  const route = readFileSync(
+    join(here, '../app/api/appointments/letter/route.ts'), 'utf8');
+  check('the email carries a ready-made acceptance link',
+    /\/accept\?reference=/.test(route), true);
+  check('…and the link carries the verification code that proves it is them',
+    /code=\$\{encodeURIComponent\(String\(letter\.seal_code\)\)\}/.test(route), true);
+
+  // THE PORTAL HAS DOORS TOO. Four screens shipped with no navigation entry;
+  // this is the check that would have caught it.
+  const nav = readFileSync(join(here, 'portalNav.tsx'), 'utf8');
+  for (const id of ['appointments', 'appointments-board', 'correspondence',
+    'document-templates', 'job-descriptions']) {
+    check(`'${id}' has a way into it from the sidebar`,
+      new RegExp(`id: '${id}'`).test(nav), true);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // THE DATABASE HALF — the six scenarios
 // ---------------------------------------------------------------------------
 
