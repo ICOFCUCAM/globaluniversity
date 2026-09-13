@@ -166,6 +166,10 @@ select * from (
   select '062' as migration, '062_the_curricula_already_written.sql' as file,
          case when to_regclass('public.curriculum_progress') is not null then 'YES' else 'NO' end as landed,
          'curriculum_progress' as what_it_creates
+  union all
+  select '063' as migration, '063_the_offering_and_the_class.sql' as file,
+         case when to_regclass('public.course_offerings') is not null then 'YES' else 'NO' end as landed,
+         'course_offerings' as what_it_creates
 ) as landed_report
  order by migration;
 

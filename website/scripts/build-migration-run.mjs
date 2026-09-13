@@ -204,6 +204,7 @@ const MARKERS = {
   '060': 'rows:programmes:true',
   '061': 'rows:programme_versions:true',
   '062': 'curriculum_progress',
+  '063': 'course_offerings',
 };
 
 /** The SQL that answers "is this one here?", for each of the three forms. */

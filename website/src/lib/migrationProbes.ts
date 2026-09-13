@@ -567,6 +567,18 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
     // The view is the marker: it is what 062 creates that nothing before it did.
     table: 'curriculum_progress',
   },
+  {
+    file: '063_the_offering_and_the_class.sql',
+    what: 'The two links missing from the middle of the academic chain: a COURSE OFFERING (a '
+      + 'course as actually offered — this year, this semester, this lecturer, this many places) '
+      + 'and a CLASS (a group, a room and an hour). Their absence is why four screens were '
+      + 'unsatisfactory at once: registration had nothing to register against, the timetable had '
+      + 'no room to clash, the LMS had no class a student belongs to, and an examination had no '
+      + 'candidate list. Room, lecturer and student-cohort conflicts are now one query. Nothing '
+      + 'is seeded \u2014 the University has not said where it teaches, and an invented room '
+      + 'number is what a student walks to.',
+    table: 'course_offerings',
+  },
 ];
 
 /** What a probe came back as. */
