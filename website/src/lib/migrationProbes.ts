@@ -625,6 +625,18 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
       + 'a student they had finished a course the University has not agreed they finished.',
     table: 'student_academic_record',
   },
+  {
+    file: '068_the_course_as_a_place_to_learn.sql',
+    what: 'The LMS, given a shape. The University objected that it "looks like a file repository" '
+      + 'whose contents "don\u2019t even appear connected to the University\u2019s actual '
+      + 'academic programmes." The invented rows went months ago; the SHAPE did not. Materials '
+      + 'lived in a JSON blob keyed on a course code typed as free text \u2014 a string is not a '
+      + 'foreign key, so nothing could list the materials OF a course and "my courses" had no '
+      + 'answer. A material now has a course_id, and optionally an offering_id: null there means '
+      + 'it belongs to the COURSE and stands every term it runs, so a reading list does not need '
+      + 're-uploading each August. Nothing is seeded \u2014 no outline is invented.',
+    table: 'course_materials',
+  },
 ];
 
 /** What a probe came back as. */

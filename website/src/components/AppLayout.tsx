@@ -31,6 +31,7 @@ import Rooms from './academic/Rooms';
 import AcademicCalendar from './academic/AcademicCalendar';
 import AcademicRecords from './academic/AcademicRecords';
 import AcademicStructure from './academic/AcademicStructure';
+import CourseShelf from './lms/CourseShelf';
 import ResultProcessing from './results/ResultProcessing';
 import GradeBook from './results/GradeBook';
 import ResultsApproval from './results/ResultsApproval';
@@ -251,8 +252,12 @@ export default function AppLayout() {
               onOpen={(id) => { setCurriculumVersion(id); setCurrentView('curriculum-builder'); }}
             />
           );
+      // THE LMS, REBUILT AROUND COURSES. The old module kept materials in a
+      // JSON blob keyed on a course code typed as free text — a string is not
+      // a foreign key, so nothing could list the materials OF a course, and
+      // 'my courses' had no answer at all. 068 gives a material a course_id.
       case 'lms':
-        return <LMSModule />;
+        return <CourseShelf />;
       case 'exams':
         return <ExamModule />;
       case 'questionbank':

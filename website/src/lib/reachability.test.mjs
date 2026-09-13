@@ -178,6 +178,12 @@ const READ_ONLY_BY_DESIGN = {
     + 'under, marked passed, failed, registered or not-taken.',
   student_term_record: 'A view: a student\'s terms with credits attempted and earned, keyed on '
     + 'the term the course was TAKEN in rather than the curriculum\'s year and semester.',
+  my_courses: 'A view: the signed-in student\'s own courses, filtered by auth.uid() in the '
+    + 'DATABASE rather than by a screen remembering to — a screen that forgets shows one student '
+    + 'another\'s courses. /api/enrolment writes the registrations underneath it.',
+  my_teaching: 'A view: the signed-in lecturer\'s courses, from their offerings and from '
+    + 'courses.lecturer_id where no term has been set up yet. /api/academic/offerings writes the '
+    + 'offerings underneath it.',
   capability_grants_in_force: 'A view over `capability_grants`, which /api/admin/capability-grant '
     + 'writes. It exists so that "still in force" — not revoked AND not expired — is decided in '
     + 'one place: a caller checking only `revoked_at is null` would honour a grant that ran out '

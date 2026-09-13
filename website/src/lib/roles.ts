@@ -365,6 +365,21 @@ export const OPERATIONAL_CAPABILITIES = [
   'download-transcript',
   'message-lecturers',
   'access-lms',
+  // ---------------------------------------------------------------------
+  // PUTTING MATERIAL ON A COURSE, which is not the same as reading it.
+  //
+  // `access-lms` is held by students — it is how they open the shelf. Writing
+  // on a course is the lecturer's and the catalogue office's, and it needs its
+  // own name or the two collapse into one and every student can post a
+  // reading list.
+  //
+  // HOLDING IT IS NOT ENOUGH ON ITS OWN. /api/academic/materials also checks
+  // that the caller is the lecturer ON THAT COURSE, because a capability
+  // cannot express "their own courses and nobody else's" — and without the
+  // row-level check, a programme coordinator in Business could publish on a
+  // Theology course.
+  // ---------------------------------------------------------------------
+  'publish-course-material',
 ] as const;
 
 /**
@@ -617,7 +632,7 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // Moderates submitted marks — the department's attestation that the marking
   // is consistent and the spread defensible. Cannot enter a mark and cannot
   // publish one.
-  hod: ['assign-lecturers-to-courses', 'approve-course-allocation', 'monitor-teaching', 'department-reports', 'view-registered-students', 'view-admitted-students', 'moderate-results'],
+  hod: ['assign-lecturers-to-courses', 'approve-course-allocation', 'monitor-teaching', 'department-reports', 'view-registered-students', 'view-admitted-students', 'moderate-results', 'publish-course-material'],
   'programme-coordinator': ['monitor-teaching', 'department-reports', 'view-registered-students', 'manage-courses'],
 
   // The Admissions Office makes the final assessment and admits.
@@ -751,6 +766,7 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
     // It does hold `manage-academic-structure` below, because the shape of the
     // academic tree IS its work.
     'manage-academic-structure',
+    'publish-course-material',
   ],
 
   // Approves moderated marks on behalf of the faculty. Third of four.
@@ -762,6 +778,7 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   lecturer: [
     'view-registered-students', 'upload-grades', 'submit-results',
     'take-attendance', 'access-lms',
+    'publish-course-material',
   ],
 
   // ---------------------------------------------------------------------

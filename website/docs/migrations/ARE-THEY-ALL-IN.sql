@@ -191,6 +191,10 @@ select * from (
   select '067' as migration, '067_one_student_one_record.sql' as file,
          case when to_regclass('public.student_academic_record') is not null then 'YES' else 'NO' end as landed,
          'student_academic_record' as what_it_creates
+  union all
+  select '068' as migration, '068_the_course_as_a_place_to_learn.sql' as file,
+         case when to_regclass('public.course_materials') is not null then 'YES' else 'NO' end as landed,
+         'course_materials' as what_it_creates
 ) as landed_report
  order by migration;
 
