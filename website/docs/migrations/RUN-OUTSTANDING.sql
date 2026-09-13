@@ -14598,8 +14598,53 @@ language plpgsql
 security definer
 set search_path = public, pg_temp
 as $$
+declare
+  moved_label text[] := '{}';
+  moved_was   text[] := '{}';
+  moved_now   text[] := '{}';
+  r           record;
 begin
-  -- THE ORDER MATTERS, AND THIS IS THE WHOLE REASON THIS IS A FUNCTION.
+  -- -------------------------------------------------------------------
+  -- NO TEMP TABLE. THIS IS THE SECOND VERSION, AND THE FIRST ONE FAILED
+  -- ON THE UNIVERSITY'S OWN DATABASE.
+  --
+  -- It collected the plan into `create temp table rolled_years on commit
+  -- drop`. `on commit drop` means exactly that: the table survives until the
+  -- transaction COMMITS. This function is called twice in this file — once to
+  -- correct the statuses, once inside the proof — and the Supabase SQL editor
+  -- runs a whole script as ONE transaction. So the second call met a temp
+  -- table the first had left behind:
+  --
+  --   ERROR: 42P07: relation "rolled_years" already exists
+  --
+  -- It passed locally because psql without --single-transaction commits after
+  -- every statement, which dropped the table between the two calls. The
+  -- harness was kinder than production, which is the same way the 057 code
+  -- constraint reached the University broken.
+  --
+  -- Arrays hold the plan instead. They are function-local, they cannot
+  -- collide with a previous call, and they work identically whether the
+  -- caller wraps the script in a transaction or not.
+  -- -------------------------------------------------------------------
+  for r in
+    select y.label as y_label,
+           y.status as was,
+           case
+             when current_date between y.starts_on and y.ends_on then 'current'
+             when y.ends_on < current_date                        then 'closed'
+             else 'planning'
+           end as should_be
+      from academic_years y
+     order by y.starts_in
+  loop
+    if r.was is distinct from r.should_be then
+      moved_label := moved_label || r.y_label;
+      moved_was   := moved_was   || r.was;
+      moved_now   := moved_now   || r.should_be;
+    end if;
+  end loop;
+
+  -- THE ORDER MATTERS, AND THIS IS THE OTHER REASON THIS IS A FUNCTION.
   --
   -- `academic_years_one_current` is a unique index over status where status =
   -- 'current'. A single UPDATE that moves 2026/2027 out of current and
@@ -14609,42 +14654,32 @@ begin
   --
   -- So the leaving year is stood down first, in its own statement, and only
   -- then is the arriving year stood up.
-  create temp table rolled_years on commit drop as
-  select y.id,
-         y.label as y_label,
-         y.status as was,
-         case
-           when current_date between y.starts_on and y.ends_on then 'current'
-           when y.ends_on < current_date                        then 'closed'
-           else 'planning'
-         end as should_be
-    from academic_years y;
+  update academic_years y
+     set status = case
+       when y.ends_on < current_date then 'closed'
+       else 'planning'
+     end
+   where not (current_date between y.starts_on and y.ends_on)
+     and y.status is distinct from (case
+       when y.ends_on < current_date then 'closed'
+       else 'planning'
+     end);
 
   update academic_years y
-     set status = r.should_be
-    from rolled_years r
-   where r.id = y.id
-     and r.should_be <> 'current'
-     and y.status is distinct from r.should_be;
-
-  update academic_years y
-     set status = r.should_be
-    from rolled_years r
-   where r.id = y.id
-     and r.should_be = 'current'
-     and y.status is distinct from r.should_be;
+     set status = 'current'
+   where current_date between y.starts_on and y.ends_on
+     and y.status is distinct from 'current';
 
   return query
-    select r.y_label, r.was, r.should_be
-      from rolled_years r
-     where r.was is distinct from r.should_be
-     order by r.y_label;
+    select * from unnest(moved_label, moved_was, moved_now);
 end $$;
 
 comment on function roll_the_academic_year() is
   'Brings every year''s stored status into line with the calendar, and returns what moved. Stands '
   'the leaving year down BEFORE standing the arriving one up: academic_years_one_current is a '
-  'unique index, and a single UPDATE doing both can be evaluated in the order that trips it.';
+  'unique index, and a single UPDATE doing both can be evaluated in the order that trips it. '
+  'Holds its plan in arrays rather than a temp table, so that calling it twice inside one '
+  'transaction — which is how the Supabase SQL editor runs a script — does not collide.';
 
 
 -- ===========================================================================

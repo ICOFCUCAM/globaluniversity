@@ -73,8 +73,30 @@ mkdirSync(scratch, { recursive: true });
 const db = 'm_upgrade_path';
 sh(`dropdb --if-exists -h ${SOCKET} -U postgres ${db} 2>/dev/null || true`);
 sh(`createdb -h ${SOCKET} -U postgres ${db}`);
+// ---------------------------------------------------------------------------
+// `--single-transaction`, AND IT IS NOT A DETAIL.
+//
+// THE SUPABASE SQL EDITOR RUNS A WHOLE SCRIPT AS ONE TRANSACTION. psql without
+// this flag commits after every statement, and that difference is not cosmetic:
+// it changes what the script is allowed to do.
+//
+// 065 was proved here and shipped, and failed on the University's own database
+// with
+//
+//   ERROR: 42P07: relation "rolled_years" already exists
+//
+// Its function built a `create temp table … on commit drop`. ON COMMIT means
+// exactly that — the table lives until the transaction commits. The file calls
+// the function twice, so under one transaction the second call met the first
+// call's table. Under autocommit the table was dropped in between, and the
+// harness reported success.
+//
+// That is the second time a harness kinder than production has put a broken
+// migration in front of the University; the first was the 057 code constraint.
+// So every psql in this file now runs the way Supabase runs it.
+// ---------------------------------------------------------------------------
 const psql = (file) =>
-  sh(`psql -h ${SOCKET} -U postgres -d ${db} -v ON_ERROR_STOP=1 -f ${file} 2>&1`);
+  sh(`psql -h ${SOCKET} -U postgres -d ${db} -v ON_ERROR_STOP=1 --single-transaction -f ${file} 2>&1`);
 
 console.log(`\nBuilding the database as it stood at ${base}\n`);
 psql(join(migrations, 'tests/supabase-stub.sql'));
@@ -110,7 +132,10 @@ for (const pass of [1, 2]) {
       + '      This is the path the University is on: it has already run an earlier version of\n'
       + '      a file that has since been edited. A constraint or default changed inside a\n'
       + '      `create table if not exists` block reaches a NEW database and not theirs —\n'
-      + '      it needs its own `alter table … drop constraint / add constraint`.\n',
+      + '      it needs its own `alter table … drop constraint / add constraint`.\n\n'
+      + '      AND THIS RUNS IN ONE TRANSACTION, as the Supabase editor does. A 42P07 on a\n'
+      + '      temp table, or anything else that depends on a statement having committed,\n'
+      + '      fails here and not under plain psql. See the note beside `psql` above.\n',
     );
     process.exit(1);
   }
