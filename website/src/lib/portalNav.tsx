@@ -489,22 +489,31 @@ export const STUDENT_GROUPS: MenuGroup[] = [
   {
     title: null,
     items: [
-      { id: 'dashboard', label: 'My dashboard', icon: <LayoutDashboard size={18} />, roles: ['student'] },
+      { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} />, roles: ['student'] },
     ],
   },
   {
-    title: 'My studies',
+    title: 'My academics',
     items: [
       // THEIR DEGREE, FIRST. Not the programme register — the one they are
       // reading for, with their own progress through it.
       { id: 'my-programme', label: 'My programme', icon: <GraduationCap size={18} />, roles: ['student'] },
-      { id: 'course-registration', label: 'Course registration', icon: <ClipboardList size={18} />, roles: ['student'] },
       { id: 'lms', label: 'My courses', icon: <BookOpen size={18} />, roles: ['student'] },
+      { id: 'course-registration', label: 'Course registration', icon: <ClipboardList size={18} />, roles: ['student'] },
       { id: 'timetable', label: 'My timetable', icon: <CalendarDays size={18} />, roles: ['student'] },
+      { id: 'my-calendar', label: 'Academic calendar', icon: <CalendarClock size={18} />, roles: ['student'] },
+      { id: 'results', label: 'Results', icon: <BarChart3 size={18} />, roles: ['student'] },
+      // 'Transcript' AND NOT ALSO 'Academic records'. The Registry's records
+      // screen is a register of five hundred students with a search box over
+      // it, and a student was being given it. Their own record is here, and
+      // their progress through the curriculum is under My programme — two
+      // entries where there had been three, and neither of them staff-shaped.
+      { id: 'my-transcript', label: 'Transcript', icon: <FileText size={18} />, roles: ['student'] },
+      { id: 'my-graduation', label: 'Graduation', icon: <Award size={18} />, roles: ['student'] },
     ],
   },
   {
-    title: 'My work',
+    title: 'Learning',
     items: [
       // 'Assessments' rather than 'Assignments': the University named it, and
       // it is the truer word — an assignment, a mid-semester paper and an
@@ -512,24 +521,39 @@ export const STUDENT_GROUPS: MenuGroup[] = [
       // as one list however differently the system files them.
       { id: 'assignments', label: 'Assessments', icon: <ClipboardCheck size={18} />, roles: ['student'] },
       { id: 'sit-examination', label: 'Sit an examination', icon: <Video size={18} />, roles: ['student'] },
+      { id: 'forum', label: 'Discussions', icon: <Share2 size={18} />, roles: ['student'] },
     ],
   },
   {
-    title: 'My record',
+    title: 'Finance',
     items: [
-      { id: 'results', label: 'My results', icon: <BarChart3 size={18} />, roles: ['student'] },
-      { id: 'academic-records', label: 'Academic record', icon: <ClipboardList size={18} />, roles: ['student'] },
-      { id: 'transcript', label: 'Transcript', icon: <FileText size={18} />, roles: ['student'] },
-      { id: 'my-credentials', label: 'My credentials', icon: <Award size={18} />, roles: ['student'] },
-      { id: 'documents', label: 'My documents', icon: <FolderOpen size={18} />, roles: ['student'] },
+      { id: 'my-finance', label: 'Fees & payments', icon: <Wallet size={18} />, roles: ['student'] },
     ],
   },
   {
-    title: 'University',
+    title: 'Documents',
     items: [
-      { id: 'announcements', label: 'Announcements', icon: <ClipboardList size={18} />, roles: ['student'] },
-      { id: 'forum', label: 'Discussion forum', icon: <Share2 size={18} />, roles: ['student'] },
-      { id: 'settings', label: 'Settings', icon: <Settings size={18} />, roles: ['student'] },
+      { id: 'my-documents', label: 'My documents', icon: <FolderOpen size={18} />, roles: ['student'] },
+      { id: 'my-credentials', label: 'My credentials', icon: <BadgeCheck size={18} />, roles: ['student'] },
+    ],
+  },
+  {
+    title: 'Services',
+    items: [
+      { id: 'student-services', label: 'Student services', icon: <Inbox size={18} />, roles: ['student'] },
+    ],
+  },
+  {
+    title: 'Community',
+    items: [
+      { id: 'my-announcements', label: 'Announcements', icon: <ClipboardList size={18} />, roles: ['student'] },
+    ],
+  },
+  {
+    title: 'Profile',
+    items: [
+      { id: 'my-profile', label: 'My profile', icon: <UserCog size={18} />, roles: ['student'] },
+      { id: 'settings', label: 'Account & security', icon: <Settings size={18} />, roles: ['student'] },
     ],
   },
 ];

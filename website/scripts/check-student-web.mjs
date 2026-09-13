@@ -50,7 +50,9 @@ const labels = (await nav.locator('nav button').allInnerTexts())
 
 console.log(`\nThe rail a student is given\n      ${labels.join(' · ')}\n`);
 
-for (const wanted of ['My programme', 'My timetable', 'My courses', 'Assessments', 'My results']) {
+for (const wanted of ['My programme', 'My timetable', 'My courses', 'Assessments', 'Results',
+  'Transcript', 'Graduation', 'Fees & payments', 'My documents', 'Student services',
+  'Announcements', 'My profile', 'Academic calendar']) {
   if (labels.some((l) => l.toLowerCase() === wanted.toLowerCase())) ok(`the rail offers "${wanted}"`);
   else bad(`the rail offers "${wanted}"`, `it has: ${labels.join(', ')}`);
 }
@@ -58,8 +60,11 @@ for (const wanted of ['My programme', 'My timetable', 'My courses', 'Assessments
 // THE STAFF-SHAPED ENTRIES ARE GONE. This is the University's actual
 // instruction — "should not simply expose the Superadmin Academic modules" —
 // and it is the one thing on this screen worth failing a build over.
+// 'Academic records' is on this list because it opens a REGISTER of five
+// hundred students with a search box over it, and a student was being given it.
 for (const unwanted of ['Question papers', 'Programme resources', 'Grade book',
-  'Academic calendar', 'Rooms', 'Course offerings', 'Attendance', 'Students']) {
+  'Rooms', 'Course offerings', 'Attendance', 'Students', 'Academic records',
+  'Result approval', 'Learning (LMS)', 'Fees & receipts']) {
   if (labels.some((l) => l.toLowerCase() === unwanted.toLowerCase())) {
     bad(`a student is not offered "${unwanted}"`, 'it is in the rail');
   } else ok(`a student is not offered "${unwanted}"`);
@@ -107,30 +112,53 @@ const FALSE_WHEN_OFFLINE = [
   /nothing is timetabled for you yet/i,
   /nothing has been set for you yet/i,
   /no courses/i,
+  /no documents yet/i,
+  /nothing to tell you/i,
+  /you have not asked us for anything yet/i,
+  /the calendar has no dates in it yet/i,
+  /the university has not recorded any payment/i,
 ];
 
-for (const screen of ['My programme', 'My timetable', 'Assessments', 'My results']) {
+// ---- AND THE GROUPS THE UNIVERSITY ASKED FOR, BY NAME ----
+const groupTitles = (await nav.locator('nav h2').allInnerTexts())
+  .map((t) => t.trim().toLowerCase()).filter(Boolean);
+console.log(`\n      groups: ${groupTitles.join(' · ')}\n`);
+for (const g of ['my academics', 'learning', 'finance', 'documents', 'services',
+  'community', 'profile']) {
+  if (groupTitles.includes(g)) ok(`the rail has a "${g}" group`);
+  else bad(`the rail has a "${g}" group`, `it has: ${groupTitles.join(', ')}`);
+}
+
+for (const screen of ['My programme', 'My timetable', 'Assessments', 'Results',
+  'Transcript', 'Graduation', 'Fees & payments', 'My documents', 'Student services',
+  'Announcements', 'Academic calendar', 'My profile']) {
   const entry = nav.getByRole('button', { name: screen, exact: true });
   if (await entry.count() === 0) { bad(`${screen} opens`, 'no such entry'); continue; }
-  await entry.click();
 
   // ---- HOW LONG THE STUDENT LOOKS AT NOTHING --------------------------
   //
-  // MEASURED, NOT ASSUMED. The first version of this check asserted at a
-  // fixed 2.5 seconds and reported four screens as drawing nothing at all.
-  // They were drawing a loading skeleton — which has no text in it — and
-  // settling somewhere between six and ten seconds later, because
-  // supabase-js retries a failed fetch several times before giving up.
+  // MEASURED, AND MEASURED FROM THE RIGHT MOMENT — which took three goes.
   //
-  // That is worth knowing rather than hiding behind a longer wait: a blank
-  // screen for eight seconds is what made "My programme" read its own copy
-  // of a row the portal had already loaded.
+  // The first version asserted at a fixed 2.5 seconds and reported four
+  // correct screens as drawing nothing: they were showing a loading skeleton,
+  // which has no text in it.
+  //
+  // The second waited for "any text in main", and that settles INSTANTLY —
+  // because at the moment of the click the previous screen is still on the
+  // page. It reported every screen as settling in 0.0s and then checked for a
+  // skeleton 2ms later, before React had even swapped the screen.
+  //
+  // So: remember what was on the page, click, and wait for it to CHANGE.
   const main = page.locator('#portal-main');
+  const before = (await main.innerText()).trim();
+  await entry.click();
+
   const began = Date.now();
   let text = '';
   while (Date.now() - began < 25000) {
     text = (await main.innerText()).trim();
-    if (text.length >= 20) break;
+    const skeleton = await main.locator('[role="status"]').count();
+    if (text !== before && text.length >= 20 && skeleton === 0) break;
     await page.waitForTimeout(250);
   }
   const settled = Date.now() - began;
@@ -152,7 +180,7 @@ for (const screen of ['My programme', 'My timetable', 'Assessments', 'My results
   } else ok(`${screen} does not claim an empty database when the read failed`);
 
   // AND IT IS NOT A SKELETON FOR EVER. Every one of these screens puts a
-  // deadline on its read; one that has not settled inside 25 seconds has not.
+  // deadline on its read; one still animating after 25 seconds has not.
   const spinning = await main.locator('[role="status"]').count();
   if (spinning > 0) bad(`${screen} settles`, `still a loading skeleton after ${settled}ms`);
   else ok(`${screen} settles`);
@@ -173,7 +201,7 @@ for (const screen of ['My programme', 'My timetable', 'Assessments', 'My results
 // ---------------------------------------------------------------------------
 // 3. THE DASHBOARD LEADS WITH WHERE THEY STAND
 // ---------------------------------------------------------------------------
-await nav.getByRole('button', { name: 'My dashboard', exact: true }).click();
+await nav.getByRole('button', { name: 'Dashboard', exact: true }).click();
 await page.waitForTimeout(1500);
 const dash = (await page.locator('#portal-main').innerText()).trim();
 // WHEN THE READ FAILED, the dashboard says so — it does not welcome somebody

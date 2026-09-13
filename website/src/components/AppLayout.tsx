@@ -23,6 +23,14 @@ import MyProgramme from './student/MyProgramme';
 import MyTimetable from './student/MyTimetable';
 import MyAssessments from './student/MyAssessments';
 import MyResults from './student/MyResults';
+import MyDocuments from './student/MyDocuments';
+import MyFinance from './student/MyFinance';
+import MyCalendar from './student/MyCalendar';
+import MyGraduation from './student/MyGraduation';
+import MyAnnouncements from './student/MyAnnouncements';
+import MyTranscript from './student/MyTranscript';
+import MyProfile from './student/MyProfile';
+import StudentServices from './student/StudentServices';
 import { UNIVERSITY } from '@/lib/constants';
 import LecturerManagement from './lecturers/LecturerManagement';
 import CourseRegistration from '@/components/courses/CourseRegistration';
@@ -231,6 +239,30 @@ export default function AppLayout() {
       // row — see the header of MyProgramme for why those are two screens.
       case 'my-programme':
         return <MyProgramme onNavigate={navigate} />;
+      // ---------------------------------------------------------------
+      // THE STUDENT'S OWN SIDE OF WHAT ALREADY EXISTED.
+      //
+      // Not one of these holds data of its own. Every one reads a view over
+      // rows this database has had all along and shown to nobody — the
+      // sealed credential register, the payments, the academic calendar the
+      // Registry keeps, 069's graduation assessment, the announcements.
+      // ---------------------------------------------------------------
+      case 'my-documents':
+        return <MyDocuments />;
+      case 'my-finance':
+        return <MyFinance />;
+      case 'my-calendar':
+        return <MyCalendar />;
+      case 'my-graduation':
+        return <MyGraduation onNavigate={navigate} />;
+      case 'my-announcements':
+        return <MyAnnouncements />;
+      case 'my-transcript':
+        return <MyTranscript onNavigate={navigate} />;
+      case 'my-profile':
+        return <MyProfile onNavigate={navigate} />;
+      case 'student-services':
+        return <StudentServices onNavigate={navigate} />;
       // -------------------------------------------------------------------
       // THREE IDS, TWO SCREENS EACH, AND THE ROLE DECIDES WHICH.
       //

@@ -226,6 +226,15 @@ const MARKERS = {
   // is the one that changes what a student is shown, and nothing before it
   // could have created a view by that name.
   '071': 'my_results',
+  // 072 creates no table. It adds a column to `programme_versions` and fills
+  // in blanks; the column is the marker, because nothing before it could say
+  // a version's figures were allocated rather than stated.
+  '072': 'programme_versions.provisional',
+  '073': 'student_requests',
+  // 074 creates six views and no table. `my_requests` is the marker: it is
+  // the one that unions all three request pipelines, and nothing earlier
+  // could have created a view by that name.
+  '074': 'my_requests',
 };
 
 /** The SQL that answers "is this one here?", for each of the three forms. */

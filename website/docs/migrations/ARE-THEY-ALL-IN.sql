@@ -207,6 +207,23 @@ select * from (
   select '071' as migration, '071_what_the_student_is_owed.sql' as file,
          case when to_regclass('public.my_results') is not null then 'YES' else 'NO' end as landed,
          'my_results' as what_it_creates
+  union all
+  select '072' as migration, '072_the_numbers_to_start_from.sql' as file,
+         case when exists (
+                   select 1 from information_schema.columns
+                    where table_schema = 'public'
+                      and table_name = 'programme_versions'
+                      and column_name = 'provisional')
+                 then 'YES' else 'NO' end as landed,
+         'programme_versions.provisional' as what_it_creates
+  union all
+  select '073' as migration, '073_asking_the_university_for_something.sql' as file,
+         case when to_regclass('public.student_requests') is not null then 'YES' else 'NO' end as landed,
+         'student_requests' as what_it_creates
+  union all
+  select '074' as migration, '074_connecting_what_was_already_there.sql' as file,
+         case when to_regclass('public.my_requests') is not null then 'YES' else 'NO' end as landed,
+         'my_requests' as what_it_creates
 ) as landed_report
  order by migration;
 

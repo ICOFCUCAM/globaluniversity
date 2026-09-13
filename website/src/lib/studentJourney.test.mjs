@@ -73,8 +73,14 @@ for (const stage of ['applying', 'not-admitted', 'deferred', 'admitted', 'awaiti
 
 console.log('\nAnd somebody who IS studying gets the whole of it\n');
 
+// 'my-transcript' AND NOT 'transcript', 'my-graduation' AND NOT
+// 'academic-records'. Those two ids open the Registry's screens — the one that
+// ISSUES a transcript, and a register of five hundred students with a search
+// box over it — and a student was being given both. Their own record is
+// 'my-transcript' and their progress is 'my-programme'.
 for (const view of ['course-registration', 'lms', 'timetable', 'my-programme',
-  'academic-records', 'results', 'transcript']) {
+  'my-transcript', 'results', 'my-graduation', 'my-finance', 'my-documents',
+  'student-services', 'my-announcements', 'my-profile']) {
   check(`a studying student is offered "${view}"`, J.showsAtStage('studying', view), true);
 }
 
@@ -86,10 +92,20 @@ check('…nor a timetable', J.showsAtStage('alumni', 'timetable'), false);
 // KEPT FOR DECADES. A transcript and a certificate are wanted long after the
 // last class, and a portal that withdraws them at graduation is one the
 // graduate has to telephone.
-check('…but keeps their transcript', J.showsAtStage('alumni', 'transcript'), true);
+check('…but keeps their transcript', J.showsAtStage('alumni', 'my-transcript'), true);
 check('…and their credentials', J.showsAtStage('alumni', 'my-credentials'), true);
 check('and a withdrawn student keeps their record',
-  J.showsAtStage('withdrawn', 'academic-records'), true);
+  J.showsAtStage('withdrawn', 'my-transcript'), true);
+// AND NOBODY IS EVER OFFERED A STAFF SCREEN. The University's instruction in
+// one assertion: these four ids open screens that WRITE — the transcript
+// issuer, the student register, the announcement composer, the assignment
+// setter — and no stage of a student's journey may offer any of them.
+for (const stage of J.STAGES) {
+  for (const staffScreen of ['transcript', 'academic-records', 'announcements', 'documents']) {
+    check(`a student at "${stage}" is never offered "${staffScreen}"`,
+      J.showsAtStage(stage, staffScreen), false);
+  }
+}
 check('a suspended student cannot register',
   J.showsAtStage('suspended', 'course-registration'), false);
 

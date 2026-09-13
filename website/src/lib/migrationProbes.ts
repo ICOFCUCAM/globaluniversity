@@ -673,6 +673,43 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
       + 'is one line in my_results.',
     table: 'my_results',
   },
+  {
+    file: '072_the_numbers_to_start_from.sql',
+    what: 'THE NUMBERS TO START FROM, every one of them adjustable. Seventeen rooms had no '
+      + 'capacity because nobody had measured them, and twelve of the University\u2019s '
+      + 'forty-one programmes had no credit total at all \u2014 so their progress bars read '
+      + '"0 / \u2014" and no graduation audit could say a student had finished. Both are filled '
+      + 'with STARTING figures, marked as starting figures in a column the screens read, and '
+      + 'cleared the moment somebody edits the row. Nothing the University has already corrected '
+      + 'is touched, however many times this is run. An online room is left with no capacity on '
+      + 'purpose: that is a fact about a licence, not about a room.',
+    table: 'programme_versions',
+    column: 'provisional',
+  },
+  {
+    file: '073_asking_the_university_for_something.sql',
+    what: 'ASKING THE UNIVERSITY FOR SOMETHING, in the system rather than by email: submitted, '
+      + 'under review, approved or declined, completed. A request cannot be made without enough '
+      + 'to act on, cannot be DECLINED WITHOUT A REASON, and cannot be completed without ever '
+      + 'having been decided \u2014 all three enforced in the table, not in a screen. '
+      + 'Deliberately does NOT handle transcripts or credential corrections: both already have '
+      + 'their own pipeline and their own Registry queue, and a second home for them would mean '
+      + 'one request in two tables. Also lets an announcement be addressed to a School, a '
+      + 'programme, a course or one student; an announcement with no target stays '
+      + 'university-wide, so nothing already written changes.',
+    table: 'student_requests',
+  },
+  {
+    file: '074_connecting_what_was_already_there.sql',
+    what: 'CONNECTING WHAT WAS ALREADY THERE, and creating no table at all. Documents, sealed '
+      + 'credentials, admission letters, payments, the academic calendar and 069\u2019s '
+      + 'graduation assessment have all been in this database for months with no screen a '
+      + 'student could open. Six views give them one. Financial clearance is reported as UNKNOWN '
+      + 'rather than ticked, because nothing here records what a student is charged \u2014 a '
+      + 'green tick nobody computed would send somebody to a congregation believing they were '
+      + 'cleared. Writes nothing and none of the six can be written through.',
+    table: 'my_requests',
+  },
 ];
 
 /** What a probe came back as. */

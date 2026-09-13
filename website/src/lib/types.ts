@@ -340,6 +340,25 @@ export type ViewType =
   // which lists forty-one programmes and is the Registry's — this is the
   // one they are reading for, with their own progress through it.
   | 'my-programme'
+  // ---------------------------------------------------------------------
+  // THE STUDENT'S OWN SIDE OF SEVEN THINGS THAT ALREADY EXISTED.
+  //
+  // Every one of these opens rows the database has been holding all along
+  // and showing to nobody — documents, payments, the calendar, the
+  // graduation assessment, announcements, the academic record. They are
+  // separate view ids rather than role branches on the staff ids because
+  // they are separate ENTRIES in the student's own navigation; where one
+  // subject genuinely has two sides (results, assignments, timetable) the
+  // id is shared and AppLayout picks the screen by role.
+  // ---------------------------------------------------------------------
+  | 'my-documents'
+  | 'my-finance'
+  | 'my-calendar'
+  | 'my-graduation'
+  | 'my-announcements'
+  | 'my-transcript'
+  | 'my-profile'
+  | 'student-services'
   // ATTENDANCE, SEPARATED FROM THE TIMETABLE. They were one screen because the
   // timetable kept its own invented slots; now that a class is a row every
   // other screen can read, marking who attended one is its own job.

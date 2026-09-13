@@ -78,8 +78,19 @@ export interface StageMeaning {
 // studying. Listed once rather than repeated across the stages that share it.
 const STUDYING: ViewType[] = [
   'dashboard', 'my-programme', 'course-registration', 'lms', 'timetable',
-  'academic-records', 'results', 'transcript', 'my-credentials',
-  'assignments', 'sit-examination', 'documents', 'announcements', 'forum', 'settings',
+  'my-calendar', 'results', 'my-transcript', 'my-graduation',
+  'assignments', 'sit-examination', 'forum',
+  'my-finance', 'my-documents', 'my-credentials',
+  'student-services', 'my-announcements', 'my-profile', 'settings',
+];
+
+// What is worth offering to somebody who is not studying: nothing about
+// courses, and everything about their own record and their own account. Listed
+// once rather than repeated across the four stages that share it.
+const RECORD_ONLY: ViewType[] = [
+  'dashboard', 'my-transcript', 'my-graduation', 'results', 'my-documents',
+  'my-credentials', 'my-finance', 'student-services', 'my-announcements',
+  'my-profile', 'settings',
 ];
 
 export const STAGE_MEANING: Record<Stage, StageMeaning> = {
@@ -98,7 +109,7 @@ export const STAGE_MEANING: Record<Stage, StageMeaning> = {
       + 'payment — is in the Admissions Portal.',
     whatNext: null,
     waitingOn: 'The Admissions Office. You will be emailed when a decision is made.',
-    shows: ['dashboard', 'documents', 'announcements', 'settings'],
+    shows: ['dashboard', 'my-documents', 'my-announcements', 'my-profile', 'settings'],
     tone: 'waiting',
   },
   'not-admitted': {
@@ -107,7 +118,7 @@ export const STAGE_MEANING: Record<Stage, StageMeaning> = {
       + 'is outstanding on your side.',
     whatNext: null,
     waitingOn: 'Nobody. The Admissions Office can tell you about applying again.',
-    shows: ['dashboard', 'documents', 'settings'],
+    shows: ['dashboard', 'my-documents', 'my-profile', 'settings'],
     tone: 'ended',
   },
   deferred: {
@@ -116,7 +127,8 @@ export const STAGE_MEANING: Record<Stage, StageMeaning> = {
       + 'is held; there is nothing academic to do until it opens.',
     whatNext: null,
     waitingOn: 'The Registry, who will write when your intake opens.',
-    shows: ['dashboard', 'documents', 'announcements', 'settings'],
+    shows: ['dashboard', 'my-documents', 'my-announcements', 'student-services',
+      'my-profile', 'settings'],
     tone: 'waiting',
   },
 
@@ -132,7 +144,8 @@ export const STAGE_MEANING: Record<Stage, StageMeaning> = {
     says: 'Your admission letter is ready. Accepting it and enrolling is what turns the offer '
       + 'into a place — until then there is no programme record to read.',
     whatNext: { label: 'Read your admission letter', goTo: 'my-credentials' },
-    shows: ['dashboard', 'my-credentials', 'documents', 'announcements', 'settings'],
+    shows: ['dashboard', 'my-credentials', 'my-documents', 'my-announcements',
+      'student-services', 'my-profile', 'settings'],
     tone: 'attention',
   },
 
@@ -148,7 +161,8 @@ export const STAGE_MEANING: Record<Stage, StageMeaning> = {
       + 'and no progress to show. That is the Registry’s next step, not yours.',
     whatNext: null,
     waitingOn: 'The Registry, who attach your record to the curriculum you were admitted under.',
-    shows: ['dashboard', 'my-credentials', 'documents', 'announcements', 'settings'],
+    shows: ['dashboard', 'my-credentials', 'my-documents', 'my-finance',
+      'my-announcements', 'student-services', 'my-profile', 'settings'],
     tone: 'waiting',
   },
   registering: {
@@ -177,26 +191,23 @@ export const STAGE_MEANING: Record<Stage, StageMeaning> = {
       + 'results remain, and remain yours.',
     whatNext: null,
     waitingOn: 'The Registry. A suspension is lifted by the office that recorded it.',
-    shows: ['dashboard', 'academic-records', 'results', 'transcript', 'my-credentials',
-      'documents', 'settings'],
+    shows: RECORD_ONLY,
     tone: 'attention',
   },
   withdrawn: {
     heading: 'You have withdrawn',
     says: 'Your studies have ended. Everything you completed stays on your record and you can '
       + 'still request a transcript of it.',
-    whatNext: { label: 'Your academic record', goTo: 'academic-records' },
-    shows: ['dashboard', 'academic-records', 'results', 'transcript', 'my-credentials',
-      'documents', 'settings'],
+    whatNext: { label: 'Your transcript', goTo: 'my-transcript' },
+    shows: RECORD_ONLY,
     tone: 'ended',
   },
   graduated: {
     heading: 'You have completed your programme',
     says: 'Your studies are finished and your award is being processed. The certificate follows '
       + 'the Senate’s conferral.',
-    whatNext: { label: 'Your academic record', goTo: 'academic-records' },
-    shows: ['dashboard', 'academic-records', 'results', 'transcript', 'my-credentials',
-      'documents', 'announcements', 'settings'],
+    whatNext: { label: 'Where you stand', goTo: 'my-graduation' },
+    shows: RECORD_ONLY,
     tone: 'good',
   },
   // THE DEGREE IS CONFERRED. A graduate is not a student, and the portal
@@ -207,8 +218,7 @@ export const STAGE_MEANING: Record<Stage, StageMeaning> = {
     says: 'Your degree has been conferred. Your transcript and certificate are here whenever you '
       + 'need them — for as long as the University keeps records, which is for ever.',
     whatNext: { label: 'Your credentials', goTo: 'my-credentials' },
-    shows: ['dashboard', 'academic-records', 'transcript', 'my-credentials', 'documents',
-      'announcements', 'settings'],
+    shows: RECORD_ONLY,
     tone: 'good',
   },
 };
@@ -230,7 +240,7 @@ export function meaningOf(stage: string | null | undefined): StageMeaning {
       + 'with it; write to the Registry if you need something in the meantime.',
     whatNext: null,
     waitingOn: 'The Registry.',
-    shows: ['dashboard', 'documents', 'announcements', 'settings'],
+    shows: ['dashboard', 'my-documents', 'my-announcements', 'my-profile', 'settings'],
     tone: 'waiting',
   };
 }

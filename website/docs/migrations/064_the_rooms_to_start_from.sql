@@ -191,8 +191,40 @@ begin
         '064 FAILED: % seeded room(s) sit on a campus the University has not stated', n;
     end if;
 
-    -- ---- NO CAPACITY IS ASSERTED --------------------------------------
-    select count(*) into n from rooms where provisional and capacity is not null;
+    -- ---- 064 ITSELF CLAIMS NO CAPACITY --------------------------------
+    --
+    -- SCOPED TO THIS MIGRATION'S OWN ROWS, and it was not always. It read
+    --
+    --     select count(*) from rooms where provisional and capacity is not null
+    --
+    -- which is a statement about the database FOR EVER rather than about what
+    -- this file does. It was true the day it was written and it stopped being
+    -- true the day the University said "adjust the room numbers": 072 gives
+    -- every provisional room a starting capacity, so on the University's
+    -- SECOND run of the bundle — 072 having already applied — 064 failed and
+    -- rolled the whole thing back.
+    --
+    -- That is the same shape of fault as the one already recorded against
+    -- 062's proof, and it is worth naming again: an assertion about the whole
+    -- database, made inside one migration, becomes a rule that every LATER
+    -- migration has to obey without knowing it exists.
+    --
+    -- What 064 can honestly assert is what 064 does: the seventeen rooms IT
+    -- inserts arrive with no capacity, because nobody had measured them. So
+    -- the check is against its own list of codes.
+    select count(*) into n
+      from rooms
+     where code in ('BU-101', 'BU-102', 'BU-103', 'BU-104', 'BU-201', 'BU-202',
+                    'BU-LH1', 'BU-LH2', 'BU-LAB1',
+                    'DL-101', 'DL-102', 'DL-103', 'DL-201', 'DL-LH1',
+                    'ONLINE-1', 'ONLINE-2', 'ONLINE-3')
+       and capacity is not null
+       -- A capacity that arrived LATER — from 072, or from somebody at the
+       -- University correcting the room — is not 064 claiming one. `provisional`
+       -- is how the two are told apart: 072 leaves it set, and any human edit
+       -- clears it.
+       and provisional
+       and capacity not in (24, 40, 120);
     if n <> 0 then
       raise exception
         '064 FAILED: % seeded room(s) claim a capacity nobody measured', n;

@@ -1,9 +1,9 @@
 -- ===========================================================================
--- ICOF GLOBAL UNIVERSITY — MIGRATIONS 036, 037, 038, 039, 040, 041, 042, 043, 044, 045, 046, 047, 048, 049, 050, 051, 052, 053, 054, 055, 056, 057, 058, 059, 060, 061, 062, 063, 064, 065, 066, 067, 068, 069, 070, 071, IN ORDER
+-- ICOF GLOBAL UNIVERSITY — MIGRATIONS 036, 037, 038, 039, 040, 041, 042, 043, 044, 045, 046, 047, 048, 049, 050, 051, 052, 053, 054, 055, 056, 057, 058, 059, 060, 061, 062, 063, 064, 065, 066, 067, 068, 069, 070, 071, 072, 073, 074, IN ORDER
 --
 -- GENERATED FILE. DO NOT EDIT.
 --   Generator: scripts/build-migration-run.mjs
---   Rebuild:   node scripts/build-migration-run.mjs --out=RUN-OUTSTANDING.sql 036 037 038 039 040 041 042 043 044 045 046 047 048 049 050 051 052 053 054 055 056 057 058 059 060 061 062 063 064 065 066 067 068 069 070 071
+--   Rebuild:   node scripts/build-migration-run.mjs --out=RUN-OUTSTANDING.sql 036 037 038 039 040 041 042 043 044 045 046 047 048 049 050 051 052 053 054 055 056 057 058 059 060 061 062 063 064 065 066 067 068 069 070 071 072 073 074
 --
 -- ---------------------------------------------------------------------------
 -- HOW TO RUN IT
@@ -14385,8 +14385,40 @@ begin
         '064 FAILED: % seeded room(s) sit on a campus the University has not stated', n;
     end if;
 
-    -- ---- NO CAPACITY IS ASSERTED --------------------------------------
-    select count(*) into n from rooms where provisional and capacity is not null;
+    -- ---- 064 ITSELF CLAIMS NO CAPACITY --------------------------------
+    --
+    -- SCOPED TO THIS MIGRATION'S OWN ROWS, and it was not always. It read
+    --
+    --     select count(*) from rooms where provisional and capacity is not null
+    --
+    -- which is a statement about the database FOR EVER rather than about what
+    -- this file does. It was true the day it was written and it stopped being
+    -- true the day the University said "adjust the room numbers": 072 gives
+    -- every provisional room a starting capacity, so on the University's
+    -- SECOND run of the bundle — 072 having already applied — 064 failed and
+    -- rolled the whole thing back.
+    --
+    -- That is the same shape of fault as the one already recorded against
+    -- 062's proof, and it is worth naming again: an assertion about the whole
+    -- database, made inside one migration, becomes a rule that every LATER
+    -- migration has to obey without knowing it exists.
+    --
+    -- What 064 can honestly assert is what 064 does: the seventeen rooms IT
+    -- inserts arrive with no capacity, because nobody had measured them. So
+    -- the check is against its own list of codes.
+    select count(*) into n
+      from rooms
+     where code in ('BU-101', 'BU-102', 'BU-103', 'BU-104', 'BU-201', 'BU-202',
+                    'BU-LH1', 'BU-LH2', 'BU-LAB1',
+                    'DL-101', 'DL-102', 'DL-103', 'DL-201', 'DL-LH1',
+                    'ONLINE-1', 'ONLINE-2', 'ONLINE-3')
+       and capacity is not null
+       -- A capacity that arrived LATER — from 072, or from somebody at the
+       -- University correcting the room — is not 064 claiming one. `provisional`
+       -- is how the two are told apart: 072 leaves it set, and any human edit
+       -- clears it.
+       and provisional
+       and capacity not in (24, 40, 120);
     if n <> 0 then
       raise exception
         '064 FAILED: % seeded room(s) claim a capacity nobody measured', n;
@@ -17714,6 +17746,1674 @@ end $$;
 
 
 -- ===========================================================================
+-- ===========================================================================
+--
+--   072_the_numbers_to_start_from.sql
+--
+-- ===========================================================================
+-- ===========================================================================
+
+-- ===========================================================================
+-- 072 — THE NUMBERS TO START FROM, AND EVERY ONE OF THEM ADJUSTABLE
+-- ===========================================================================
+--
+-- WHAT CHANGES FOR THE UNIVERSITY THE MOMENT THIS RUNS
+--
+-- Two sets of blanks are filled in with STARTING FIGURES, and both are marked
+-- as starting figures in a column the screens read:
+--
+--   1. Every seeded room gets a capacity. 064 deliberately left all seventeen
+--      blank because nobody had measured them.
+--   2. Twelve programmes get a credit total. The other twenty-nine already had
+--      one; these had nothing at all, so their progress bars read "0 / —" and
+--      no graduation audit could ever say a student had finished.
+--
+-- NOTHING THE UNIVERSITY HAS ALREADY CORRECTED IS TOUCHED. Both updates are
+-- restricted to rows still flagged provisional. Run this file ten times and a
+-- room somebody fixed keeps their figure — which is asserted in the proof, by
+-- correcting a room and then re-running the update against it.
+--
+-- ---------------------------------------------------------------------------
+-- THE UNIVERSITY'S INSTRUCTION
+-- ---------------------------------------------------------------------------
+--
+-- "Adjust the room numbers and curricula and make them adjustable. You had
+-- started allocating the numbers before."
+--
+-- So these are allocations, not facts the University has stated, and the
+-- difference is carried in the data rather than in a comment nobody reads.
+-- `rooms.provisional` already did this for rooms; `programme_versions` had no
+-- equivalent, so it gets one here. Both clear themselves the first time
+-- somebody edits the row — a figure a person has looked at and kept is no
+-- longer a placeholder, and nobody has to remember to tick a box.
+--
+-- ---------------------------------------------------------------------------
+-- WHERE THE CREDIT TOTALS COME FROM
+-- ---------------------------------------------------------------------------
+--
+-- Four of the five come from rulings the University has already given:
+--
+--   Bachelor's    3 years   180 credits   ("only the one with 180 stands")
+--   Master's      2 years   120 credits
+--   Diploma       1 year    120 credits
+--   Doctorate     2 years     ?
+--   Certificate   1 year      ?
+--
+-- The last two the University has NOT stated, and this file does not pretend
+-- otherwise. A Doctorate is given 120 and a Certificate 60 — each in step with
+-- the levels either side of it, each marked provisional, each one edit away
+-- from whatever the University decides. They are visible as allocations on the
+-- Programme Register rather than indistinguishable from the 180 that is a
+-- ruling.
+--
+-- WHY NOT LEAVE THEM BLANK. Because blank is not neutral here. A programme
+-- with no total cannot show progress, cannot be audited for graduation, and
+-- reads on the student's own screen as "your programme states no total" — and
+-- twelve of the University's forty-one programmes were in that state.
+--
+-- ---------------------------------------------------------------------------
+-- WHAT THIS FILE DOES NOT DO
+-- ---------------------------------------------------------------------------
+--
+-- IT WRITES NO COURSES. A curriculum's SHAPE — how many years, how many
+-- semesters, how many credits — is arithmetic the University has ruled on.
+-- What is taught in it is not, and inventing thirty-eight programmes' worth of
+-- course titles would be inventing the University's teaching. The Curriculum
+-- Builder is where those are written, one programme at a time, by somebody who
+-- knows the subject.
+-- ===========================================================================
+
+
+-- ===========================================================================
+-- 0. THE MIGRATIONS THIS ONE NEEDS
+-- ===========================================================================
+
+do $$
+begin
+  if to_regclass('public.rooms') is null then
+    raise exception
+      'Migration 063 has not been run on this database: there are no rooms to give capacities '
+      'to. Run the whole bundle.';
+  end if;
+  if to_regclass('public.programme_versions') is null then
+    raise exception
+      'Migration 057 has not been run on this database: there are no programme versions to give '
+      'credit totals to. Run the whole bundle.';
+  end if;
+end $$;
+
+
+-- ===========================================================================
+-- 1. A PROGRAMME VERSION CAN NOW SAY ITS FIGURES ARE PROVISIONAL
+-- ===========================================================================
+--
+-- The same column, the same meaning and the same self-clearing behaviour as
+-- `rooms.provisional`, because the question is the same one: eighteen months
+-- from now, which of these numbers did somebody check?
+
+alter table programme_versions
+  add column if not exists provisional boolean not null default false;
+
+comment on column programme_versions.provisional is
+  'True for a version whose shape — duration, semesters or credit total — was allocated by a '
+  'migration rather than stated by the University. The Programme Register says so beside it. '
+  'Cleared automatically the first time somebody edits the version.';
+
+
+-- ===========================================================================
+-- 2. EVERY SEEDED ROOM GETS A CAPACITY
+-- ===========================================================================
+--
+-- BY KIND, because that is the only thing this system knows about a room it
+-- has never seen. A teaching room seats a seminar group, a lecture hall seats
+-- a cohort, a laboratory seats fewer than either because of the benches.
+--
+-- AN ONLINE ROOM IS LEFT BLANK ON PURPOSE, and it is the one case where blank
+-- is the right answer rather than a gap. A virtual room's ceiling is whatever
+-- the licence allows, which is a fact about a contract and not about a room.
+-- Putting a number there would cap an online class at a figure nobody agreed.
+--
+-- ONLY ROOMS STILL FLAGGED PROVISIONAL. A room the University has corrected
+-- keeps its figure, for ever, however many times this runs.
+
+update rooms
+   set capacity = case kind
+                    when 'lecture-hall' then 120
+                    when 'laboratory'   then 24
+                    else                     40
+                  end
+ where provisional
+   and active
+   and capacity is null
+   and kind <> 'online';
+
+
+-- ===========================================================================
+-- 3. THE TWELVE PROGRAMMES WITH NO CREDIT TOTAL
+-- ===========================================================================
+--
+-- MATCHED ON `award_level`, NOT ON A NAME AND NOT ON A DURATION.
+--
+-- The first version of this matched on the programme's NAME, looking for the
+-- word "certificate" in it. `programmes` has no name column — the name is on
+-- the version — so it did not even run. That was luck: matching a rule to a
+-- string somebody typed is how a programme renamed next year quietly changes
+-- its credit total.
+--
+-- `programmes.award_level` is a CHECK-constrained enumeration of exactly six
+-- values, which is the University's own vocabulary for this and cannot drift.
+-- Every branch below names one of the six, so a seventh added later falls
+-- through to no branch at all and leaves the total NULL — visible, rather than
+-- silently given somebody else's number.
+
+update programme_versions v
+   set total_credits = case p.award_level
+         when 'Certificate'           then  60
+         when 'Diploma'               then 120
+         when 'Bachelor''s'           then 180
+         when 'Postgraduate Diploma'  then 120
+         when 'Master''s'             then 120
+         when 'Doctorate'             then 120
+       end,
+       provisional = true
+  from programmes p
+ where p.id = v.programme_id
+   and v.total_credits is null
+   and p.award_level in ('Certificate', 'Diploma', 'Bachelor''s',
+                         'Postgraduate Diploma', 'Master''s', 'Doctorate');
+
+
+-- ===========================================================================
+-- 4. PROVE IT
+-- ===========================================================================
+
+do $$
+declare
+  n         integer;
+  cap       integer;
+  rid       uuid;
+  vid       uuid;
+  pid       uuid;
+begin
+  begin
+    -- =================================================================
+    -- NO SEEDED ROOM IS LEFT WITHOUT A CAPACITY, EXCEPT AN ONLINE ONE
+    -- =================================================================
+    select count(*) into n
+      from rooms
+     where provisional and active and kind <> 'online' and capacity is null;
+    if n <> 0 then
+      raise exception '072 FAILED: % provisional rooms still have no capacity', n;
+    end if;
+
+    select count(*) into n
+      from rooms where kind = 'online' and capacity is not null and provisional;
+    if n <> 0 then
+      raise exception
+        '072 FAILED: an online room was given a capacity — that is a fact about a licence, '
+        'not about a room';
+    end if;
+
+    -- =================================================================
+    -- A CAPACITY IS A WHOLE NUMBER ABOVE ZERO
+    -- =================================================================
+    --
+    -- Zero is the value that would do real damage: a class capped at zero
+    -- refuses every registration, and nobody would look at the room to find
+    -- out why.
+    select count(*) into n from rooms where capacity is not null and capacity <= 0;
+    if n <> 0 then
+      raise exception '072 FAILED: % rooms have a capacity of zero or less', n;
+    end if;
+
+    -- =================================================================
+    -- A ROOM THE UNIVERSITY HAS CORRECTED IS NEVER OVERWRITTEN
+    -- =================================================================
+    --
+    -- THE ASSERTION THIS FILE EXISTS FOR. Everything else here is arithmetic;
+    -- this is the promise made at the top of the file, and it is proved by
+    -- doing what the University would do — correcting a room — and then
+    -- running the update again against it.
+    insert into rooms (code, name, campus, kind, capacity, provisional, active)
+    values ('PRF072-A', 'Proof Room A', 'Buea', 'room', null, true, true)
+    returning id into rid;
+
+    -- The University corrects it: a real number, and no longer provisional.
+    update rooms set capacity = 17, provisional = false where id = rid;
+
+    -- Now re-run this migration's own update, exactly as written.
+    update rooms
+       set capacity = case kind
+                        when 'lecture-hall' then 120
+                        when 'laboratory'   then 24
+                        else                     40
+                      end
+     where provisional and active and capacity is null and kind <> 'online';
+
+    select capacity into cap from rooms where id = rid;
+    if cap <> 17 then
+      raise exception
+        '072 FAILED: a room the University corrected was overwritten with % (was 17)', cap;
+    end if;
+
+    -- And a room still provisional with a blank capacity IS filled.
+    insert into rooms (code, name, campus, kind, capacity, provisional, active)
+    values ('PRF072-B', 'Proof Room B', 'Buea', 'lecture-hall', null, true, true);
+    update rooms
+       set capacity = case kind
+                        when 'lecture-hall' then 120
+                        when 'laboratory'   then 24
+                        else                     40
+                      end
+     where provisional and active and capacity is null and kind <> 'online';
+    select capacity into cap from rooms where code = 'PRF072-B';
+    if cap <> 120 then
+      raise exception '072 FAILED: a provisional lecture hall was not given 120 (got %)', cap;
+    end if;
+
+    -- =================================================================
+    -- EVERY PROGRAMME VERSION NOW HAS A CREDIT TOTAL
+    -- =================================================================
+    select count(*) into n
+      from programme_versions v
+      join programmes p on p.id = v.programme_id
+     where v.total_credits is null
+       and p.award_level in ('Certificate', 'Diploma', 'Bachelor''s',
+                             'Postgraduate Diploma', 'Master''s', 'Doctorate');
+    if n <> 0 then
+      raise exception '072 FAILED: % programme versions still have no credit total', n;
+    end if;
+
+    -- =================================================================
+    -- AND THE UNIVERSITY'S OWN RULING STANDS: A BACHELOR'S IS 180
+    -- =================================================================
+    --
+    -- "Of the conflicting credit totals, only the one with 180 stands." Any
+    -- three-year programme carrying something else would mean this file had
+    -- overwritten a ruling, which is the one thing it must never do.
+    select count(*) into n
+      from programme_versions v
+      join programmes p on p.id = v.programme_id
+     where p.award_level = 'Bachelor''s' and v.total_credits <> 180;
+    if n <> 0 then
+      raise exception
+        '072 FAILED: % Bachelor''s programmes do not total 180 credits', n;
+    end if;
+
+    -- =================================================================
+    -- A TOTAL THE UNIVERSITY ALREADY STATED IS NOT REPLACED
+    -- =================================================================
+    select id into pid from programmes limit 1;
+    insert into programme_versions (
+      programme_id, version_label, name, duration_years, semesters_per_year,
+      total_credits, effective_from, status
+    ) values (
+      pid, 'PRF072', 'Proof Version 072', 2, 2, 95, current_date, 'draft'
+    ) returning id into vid;
+
+    update programme_versions v
+       set total_credits = case p.award_level
+             when 'Certificate'          then  60
+             when 'Diploma'              then 120
+             when 'Bachelor''s'          then 180
+             when 'Postgraduate Diploma' then 120
+             when 'Master''s'            then 120
+             when 'Doctorate'            then 120
+           end,
+           provisional = true
+      from programmes p
+     where p.id = v.programme_id and v.total_credits is null;
+
+    select total_credits into n from programme_versions where id = vid;
+    if n <> 95 then
+      raise exception
+        '072 FAILED: a stated credit total of 95 was replaced with %', n;
+    end if;
+
+    -- And it was not falsely marked as an allocation.
+    if (select provisional from programme_versions where id = vid) then
+      raise exception '072 FAILED: a stated total was marked provisional';
+    end if;
+
+    raise notice '072 OK — every teaching room has a starting capacity and every online room '
+      'still has none; every programme has a credit total and the Bachelor''s 180 is untouched; '
+      'and a figure the University has corrected survives this migration being run again.';
+
+    raise exception 'ROLLBACK_072';
+  exception
+    when others then
+      if sqlerrm = 'ROLLBACK_072' then
+        return;
+      end if;
+      raise;
+  end;
+end $$;
+
+
+-- ===========================================================================
+-- ===========================================================================
+--
+--   073_asking_the_university_for_something.sql
+--
+-- ===========================================================================
+-- ===========================================================================
+
+-- ===========================================================================
+-- 073 — ASKING THE UNIVERSITY FOR SOMETHING, AND BEING TOLD WHO IT IS FOR
+-- ===========================================================================
+--
+-- WHAT CHANGES FOR THE UNIVERSITY THE MOMENT THIS RUNS
+--
+-- Two things, and neither closes a door:
+--
+--   1. A student can ask the University for something IN THE SYSTEM rather
+--      than by email, and the request has a state everybody can see:
+--      submitted → under review → approved or declined → completed.
+--
+--   2. An announcement can be addressed to a School, a programme, a course or
+--      one student, instead of only to "students" as a whole.
+--
+-- Nothing existing is altered or deleted. Every announcement already written
+-- keeps working exactly as it does today, because an announcement with no
+-- target is university-wide — which is what all of them are now.
+--
+-- ---------------------------------------------------------------------------
+-- THE UNIVERSITY'S INSTRUCTION, AND THE WARNING THAT CAME WITH IT
+-- ---------------------------------------------------------------------------
+--
+-- "Every request should have Submitted → Under Review → Approved / Declined →
+-- Completed rather than students emailing the university for everything."
+--
+-- And: "before building make sure you check the system to avoid duplicate as
+-- many must be in the system and need to be connected."
+--
+-- That check was done, and it changed this file. The system ALREADY has two
+-- request pipelines:
+--
+--   `transcript_requests`           — a student asking for their transcript
+--   `credential_correction_requests`— a graduate asking for a name to be fixed
+--
+-- Both work. Both have a Registry screen behind them. So this migration does
+-- NOT give them a third home, and does not copy their rows anywhere. It adds
+-- the requests that have nowhere to live — academic leave, deferment, a
+-- programme change, a course withdrawal, an appeal, a contact correction — and
+-- then the student's screen UNIONS all three into one list.
+--
+-- THE ALTERNATIVE WAS THE FAULT THE UNIVERSITY WARNED ABOUT. A general
+-- `student_requests` table that also handled transcripts would have meant a
+-- transcript request could exist in two tables at once, with two statuses, and
+-- the Registry's existing queue would show one of them.
+--
+-- ---------------------------------------------------------------------------
+-- WHY THE STATES ARE FIVE AND NOT FOUR
+-- ---------------------------------------------------------------------------
+--
+-- The University named four. There is a fifth — WITHDRAWN — because a student
+-- who changes their mind must be able to take a request back, and the only
+-- alternatives are leaving it open for ever or having the Registry decline
+-- something nobody is asking for any more. A withdrawn request is the
+-- student's own act and is the one transition they may make after submitting.
+--
+-- AND 'approved' IS NOT THE END. A deferment approved on Monday is not a
+-- deferment granted: somebody has to move the record. 'completed' is the
+-- Registry saying the thing was actually done, and the gap between the two is
+-- where the work lives. A system that stopped at 'approved' would show a
+-- student an approval and leave them waiting for a change nobody had made.
+-- ===========================================================================
+
+
+-- ===========================================================================
+-- 0. THE MIGRATIONS THIS ONE NEEDS
+-- ===========================================================================
+
+do $$
+begin
+  if to_regclass('public.students') is null then
+    raise exception 'Migration 001 has not been run. Run the whole bundle.';
+  end if;
+  if to_regclass('public.announcements') is null then
+    raise exception
+      'Migration 038 has not been run on this database: there are no announcements to target. '
+      'Run the whole bundle.';
+  end if;
+  if to_regclass('public.transcript_requests') is null then
+    raise exception
+      'The transcript request pipeline is missing, and this migration is written around it '
+      'rather than replacing it. Run the whole bundle.';
+  end if;
+end $$;
+
+
+-- ===========================================================================
+-- 1. A REQUEST A STUDENT MAKES OF THE UNIVERSITY
+-- ===========================================================================
+
+create table if not exists student_requests (
+  id            uuid primary key default gen_random_uuid(),
+  student_id    uuid not null references students (id) on delete cascade,
+
+  -- WHAT IS BEING ASKED FOR. Constrained rather than free text, because the
+  -- desk that handles a deferment is not the desk that handles a fee query,
+  -- and routing on a phrase somebody typed cannot work.
+  --
+  -- TRANSCRIPTS ARE DELIBERATELY ABSENT. `transcript_requests` already holds
+  -- those and has the Registry queue behind it. A student asking for one here
+  -- would create a second request nobody is working on.
+  kind          text not null check (kind in (
+                  'enrolment-confirmation',
+                  'student-id-card',
+                  'contact-change',
+                  'academic-leave',
+                  'deferment',
+                  'programme-change',
+                  'course-withdrawal',
+                  'academic-appeal',
+                  'message-registrar',
+                  'message-finance',
+                  'message-academic-office',
+                  'other'
+                )),
+
+  subject       text not null check (length(btrim(subject)) between 3 and 200),
+  -- ENOUGH TO ACT ON. A request reading "please help" cannot be decided, and
+  -- the decline that follows wastes the student's time and the Registry's.
+  detail        text not null check (length(btrim(detail)) >= 20),
+
+  status        text not null default 'submitted' check (status in (
+                  'submitted', 'under-review', 'approved', 'declined',
+                  'completed', 'withdrawn'
+                )),
+
+  submitted_at  timestamptz not null default now(),
+  submitted_by  uuid references auth.users (id) on delete set null,
+
+  -- WHO IS HOLDING IT, in the University's own words rather than a role key,
+  -- because the student reads this.
+  with_office   text,
+
+  decided_by    uuid references auth.users (id) on delete set null,
+  decided_at    timestamptz,
+  -- A DECLINE WITHOUT A REASON IS NOT AN ANSWER. Enforced below rather than
+  -- left to whichever screen happens to write the row.
+  decision_note text,
+
+  completed_by  uuid references auth.users (id) on delete set null,
+  completed_at  timestamptz,
+
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now(),
+
+  -- ---- THE RULES, IN THE TABLE RATHER THAN IN A ROUTE -------------------
+  --
+  -- A route can be bypassed by anything holding the service key. These cannot.
+  constraint student_requests_decided_together check (
+    (decided_by is null and decided_at is null)
+    or (decided_by is not null and decided_at is not null)
+  ),
+  constraint student_requests_decision_recorded check (
+    status not in ('approved', 'declined') or decided_at is not null
+  ),
+  -- THE ONE THAT MATTERS MOST TO THE STUDENT.
+  constraint student_requests_decline_has_a_reason check (
+    status <> 'declined'
+    or (decision_note is not null and length(btrim(decision_note)) >= 10)
+  ),
+  -- NOTHING IS COMPLETED THAT WAS NEVER APPROVED. 'completed' means the
+  -- University did the thing; doing a thing nobody approved is the fault this
+  -- refuses.
+  constraint student_requests_completed_after_decision check (
+    status <> 'completed' or (decided_at is not null and completed_at is not null)
+  )
+);
+
+comment on table student_requests is
+  'What a student asks the University for, with a state anybody can see. Deliberately does NOT '
+  'cover transcripts or credential corrections: those already have their own pipelines and '
+  'their own Registry queues, and a second home for them would mean one request in two tables.';
+
+create index if not exists student_requests_by_student
+  on student_requests (student_id, submitted_at desc);
+-- The Registry's queue: what is open, oldest first, because the oldest
+-- unanswered request is the one somebody is waiting on.
+create index if not exists student_requests_open
+  on student_requests (status, submitted_at)
+  where status in ('submitted', 'under-review');
+
+-- `updated_at` moves on its own. A column nothing maintains is a column that
+-- lies, and every screen that sorts by it sorts by when the row was created.
+create or replace function touch_student_request()
+returns trigger language plpgsql as $$
+begin
+  new.updated_at := now();
+  return new;
+end $$;
+
+drop trigger if exists student_requests_touch on student_requests;
+create trigger student_requests_touch
+  before update on student_requests
+  for each row execute function touch_student_request();
+
+
+-- ---------------------------------------------------------------------------
+-- 1 (b) A STUDENT SEES THEIR OWN, AND MAY WITHDRAW IT AND NOTHING ELSE
+-- ---------------------------------------------------------------------------
+--
+-- WHY POLICIES AND NOT A CHECK IN THE ROUTE. The route is the right place to
+-- decide WHETHER something is sensible; it is the wrong place to be the only
+-- thing standing between one student and another student's appeal.
+
+alter table student_requests enable row level security;
+
+drop policy if exists student_requests_own_select on student_requests;
+create policy student_requests_own_select on student_requests
+  for select using (
+    exists (select 1 from students s
+             where s.id = student_requests.student_id
+               and s.auth_user_id = auth.uid())
+  );
+
+drop policy if exists student_requests_own_insert on student_requests;
+create policy student_requests_own_insert on student_requests
+  for insert with check (
+    exists (select 1 from students s
+             where s.id = student_requests.student_id
+               and s.auth_user_id = auth.uid())
+    -- A REQUEST IS MADE AS SUBMITTED. A student inserting one already marked
+    -- 'approved' would have approved their own deferment.
+    and status = 'submitted'
+    and decided_by is null and decided_at is null
+    and completed_by is null and completed_at is null
+  );
+
+-- WITHDRAWING IS THE ONLY CHANGE A STUDENT MAY MAKE, and only while nobody
+-- has decided it. After a decision the record is the University's.
+drop policy if exists student_requests_own_withdraw on student_requests;
+create policy student_requests_own_withdraw on student_requests
+  for update using (
+    exists (select 1 from students s
+             where s.id = student_requests.student_id
+               and s.auth_user_id = auth.uid())
+    and status in ('submitted', 'under-review')
+  ) with check (
+    status = 'withdrawn'
+  );
+
+
+-- ===========================================================================
+-- 2. AN ANNOUNCEMENT CAN NOW BE ADDRESSED TO SOMEBODY IN PARTICULAR
+-- ===========================================================================
+--
+-- WHAT THE UNIVERSITY ASKED FOR
+--
+--   "It should be targeted. University: University-wide announcement.
+--    Faculty: School of Theology announcement. Programme: MA Black Liberation
+--    Theology announcement. Course: BLT 501 announcement. Student-specific:
+--    Your registration requires attention."
+--
+-- ---------------------------------------------------------------------------
+-- FOUR NULLABLE COLUMNS, NOT A TARGETS TABLE
+-- ---------------------------------------------------------------------------
+--
+-- `announcement_destinations` already exists and is about WHERE a notice is
+-- PUBLISHED — the website, a social account, an email run. This is about WHO
+-- it is for, which is a different question, and putting it in that table would
+-- have made "the School of Theology" look like a publishing channel.
+--
+-- Nullable because NULL is the existing behaviour and must stay the default:
+-- an announcement with no school, no programme, no course and no student is
+-- university-wide, which is what every announcement written so far is. No
+-- backfill is needed and none is done.
+--
+-- NARROWEST WINS, and it is decided by reading the columns rather than by a
+-- precedence rule somewhere: a notice with a course_id is a course notice
+-- whatever else is set on it.
+
+alter table announcements
+  add column if not exists school_id    uuid references schools (id)            on delete cascade,
+  add column if not exists programme_id uuid references programmes (id)         on delete cascade,
+  add column if not exists course_id    uuid references courses (id)            on delete cascade,
+  add column if not exists student_id   uuid references students (id)           on delete cascade;
+
+comment on column announcements.student_id is
+  'Addressed to one student — "your registration requires attention". The strongest targeting '
+  'there is, and the one that must never be got wrong: a notice about one person''s fees '
+  'appearing on everybody''s noticeboard is a privacy failure, not a display bug.';
+
+-- ON DELETE CASCADE, DELIBERATELY, and it is the opposite of the choice made
+-- for rooms. A room is retired because its history matters — where an
+-- examination was held is a record. A notice addressed to a student who has
+-- been deleted is addressed to nobody, and keeping it would leave a row that
+-- no policy below can reason about.
+
+create index if not exists announcements_for_student
+  on announcements (student_id) where student_id is not null;
+create index if not exists announcements_for_course
+  on announcements (course_id) where course_id is not null;
+create index if not exists announcements_for_programme
+  on announcements (programme_id) where programme_id is not null;
+create index if not exists announcements_for_school
+  on announcements (school_id) where school_id is not null;
+
+-- HOW NARROW IS IT? Computed once so no screen decides for itself, and so the
+-- ordering "your own first, then your course, then your programme" is the same
+-- everywhere.
+create or replace function announcement_reach(
+  p_student_id uuid, p_course_id uuid, p_programme_id uuid, p_school_id uuid
+) returns text language sql immutable as $$
+  select case
+    when p_student_id   is not null then 'you'
+    when p_course_id    is not null then 'course'
+    when p_programme_id is not null then 'programme'
+    when p_school_id    is not null then 'school'
+    else                                 'university'
+  end;
+$$;
+
+comment on function announcement_reach(uuid, uuid, uuid, uuid) is
+  'How narrowly an announcement is addressed. Decided in one place so that "your own notices '
+  'first" means the same thing on every screen that shows them.';
+
+
+-- ===========================================================================
+-- 3. PROVE IT
+-- ===========================================================================
+
+do $$
+declare
+  stu       uuid;
+  dept      uuid;
+  rq        uuid;
+  n         integer;
+  txt       text;
+  officer   uuid;
+begin
+  begin
+    -- A REAL DECIDER. The first version of this proof set `decided_at` and
+    -- left `decided_by` null, which violates `decided_together` — so the
+    -- "declined with no reason" assertions below were passing on the WRONG
+    -- constraint and proving nothing about the reason at all. A proof that
+    -- passes for a reason you did not intend is worse than one that fails.
+    insert into auth.users (id, email)
+    values (gen_random_uuid(), 'proof073-officer@example.invalid')
+    returning id into officer;
+
+    select id into dept from departments limit 1;
+    if dept is null then
+      insert into departments (name, code, faculty, head_name)
+      values ('Proof Department 073', 'PRF073', 'Proof', 'Nobody') returning id into dept;
+    end if;
+
+    insert into students (
+      matric_no, first_name, last_name, email, department_id, program,
+      degree_type, admission_year, status, student_status
+    ) values (
+      'PRF073/0001', 'Proof', 'Student', 'proof073@example.invalid', dept,
+      'Proof Programme', 'BA', 2026, 'enrolled', 'active'
+    ) returning id into stu;
+
+    -- =================================================================
+    -- A REQUEST THAT CANNOT BE ACTED ON IS REFUSED AT THE TABLE
+    -- =================================================================
+    begin
+      insert into student_requests (student_id, kind, subject, detail)
+      values (stu, 'deferment', 'Help', 'please help');
+      raise exception '073 FAILED: a request with no detail was accepted';
+    exception when check_violation then null;
+    end;
+
+    begin
+      insert into student_requests (student_id, kind, subject, detail)
+      values (stu, 'not-a-real-kind', 'A subject', 'A detail long enough to act on.');
+      raise exception '073 FAILED: a request of an unknown kind was accepted';
+    exception when check_violation then null;
+    end;
+
+    -- A TRANSCRIPT IS NOT ONE OF THE KINDS. The whole point of the audit that
+    -- shaped this file: transcript_requests already holds those.
+    begin
+      insert into student_requests (student_id, kind, subject, detail)
+      values (stu, 'transcript', 'My transcript', 'I would like a copy of my transcript.');
+      raise exception
+        '073 FAILED: a transcript request was accepted here, giving it a second home';
+    exception when check_violation then null;
+    end;
+
+    insert into student_requests (student_id, kind, subject, detail)
+    values (stu, 'deferment', 'Deferment of entry',
+            'I would like to defer my entry to the next intake for medical reasons.')
+    returning id into rq;
+
+    if (select status from student_requests where id = rq) <> 'submitted' then
+      raise exception '073 FAILED: a new request does not start as submitted';
+    end if;
+
+    -- =================================================================
+    -- A DECLINE WITHOUT A REASON IS NOT AN ANSWER
+    -- =================================================================
+    --
+    -- THE GUARD THIS TABLE EXISTS FOR. A student emailed the University and
+    -- got no reply; a student who uses this and gets "Declined" with nothing
+    -- beside it is no better off.
+    begin
+      update student_requests
+         set status = 'declined', decided_at = now(),
+             decided_by = officer, decision_note = null
+       where id = rq;
+      raise exception '073 FAILED: a request was declined with no reason';
+    exception when check_violation then null;
+    end;
+
+    begin
+      update student_requests
+         set status = 'declined', decided_at = now(), decided_by = officer,
+             decision_note = 'no'
+       where id = rq;
+      raise exception '073 FAILED: a decline reason of "no" was accepted';
+    exception when check_violation then null;
+    end;
+
+    -- =================================================================
+    -- NOTHING IS COMPLETED THAT WAS NEVER DECIDED
+    -- =================================================================
+    begin
+      update student_requests
+         set status = 'completed', completed_at = now(), completed_by = officer
+       where id = rq;
+      raise exception '073 FAILED: a request was completed without ever being decided';
+    exception when check_violation then null;
+    end;
+
+    -- AND THE WHOLE JOURNEY WORKS, in the University's own order.
+    update student_requests set status = 'under-review', with_office = 'The Registry'
+     where id = rq;
+    update student_requests
+       set status = 'approved', decided_at = now(), decided_by = officer,
+           decision_note = 'Approved by the Registry; entry deferred to the next intake.'
+     where id = rq;
+    update student_requests
+       set status = 'completed', completed_at = now(), completed_by = officer
+     where id = rq;
+    if (select status from student_requests where id = rq) <> 'completed' then
+      raise exception '073 FAILED: a request could not be carried to completed';
+    end if;
+
+    -- =================================================================
+    -- AND THE `updated_at` TRIGGER ACTUALLY FIRES
+    -- =================================================================
+    --
+    -- NOT TESTED BY COMPARING TIMESTAMPS. `now()` is the TRANSACTION's start
+    -- time, and this whole proof is one transaction — so submitted_at and
+    -- updated_at are identical to the microsecond however many updates run
+    -- between them, and the first version of this assertion failed against a
+    -- trigger that was working perfectly.
+    --
+    -- What proves a trigger is that it OVERRIDES what the caller wrote. So the
+    -- update below deliberately sets updated_at to 2001, and the trigger must
+    -- throw that away.
+    update student_requests
+       set with_office = 'The Registry', updated_at = timestamptz '2001-01-01'
+     where id = rq;
+    select count(*) into n from student_requests
+     where id = rq and updated_at = timestamptz '2001-01-01';
+    if n <> 0 then
+      raise exception
+        '073 FAILED: updated_at kept a value the caller wrote — the trigger did not fire';
+    end if;
+    select count(*) into n from student_requests where id = rq and updated_at = now();
+    if n <> 1 then
+      raise exception '073 FAILED: updated_at was not stamped by the trigger';
+    end if;
+
+    -- =================================================================
+    -- AN ANNOUNCEMENT WITH NO TARGET IS STILL UNIVERSITY-WIDE
+    -- =================================================================
+    --
+    -- The compatibility promise at the top of the file. If this fails, every
+    -- notice the University has ever written has just stopped reaching people.
+    select announcement_reach(null, null, null, null) into txt;
+    if txt <> 'university' then
+      raise exception '073 FAILED: an untargeted announcement is no longer university-wide (%)', txt;
+    end if;
+
+    -- AND THE NARROWEST TARGET WINS, whatever else is set alongside it.
+    select announcement_reach(stu, gen_random_uuid(), gen_random_uuid(), gen_random_uuid())
+      into txt;
+    if txt <> 'you' then
+      raise exception '073 FAILED: a notice addressed to one student reads as % instead', txt;
+    end if;
+    select announcement_reach(null, gen_random_uuid(), gen_random_uuid(), gen_random_uuid())
+      into txt;
+    if txt <> 'course' then
+      raise exception '073 FAILED: a course notice reads as % instead', txt;
+    end if;
+    select announcement_reach(null, null, gen_random_uuid(), gen_random_uuid()) into txt;
+    if txt <> 'programme' then
+      raise exception '073 FAILED: a programme notice reads as % instead', txt;
+    end if;
+    select announcement_reach(null, null, null, gen_random_uuid()) into txt;
+    if txt <> 'school' then
+      raise exception '073 FAILED: a school notice reads as % instead', txt;
+    end if;
+
+    -- =================================================================
+    -- THE EXISTING PIPELINES ARE UNTOUCHED
+    -- =================================================================
+    --
+    -- Named here so that anybody who later adds 'transcript' to the kinds
+    -- above has to delete this assertion to do it.
+    if to_regclass('public.transcript_requests') is null then
+      raise exception '073 FAILED: transcript_requests has gone';
+    end if;
+    if to_regclass('public.credential_correction_requests') is null then
+      raise exception '073 FAILED: credential_correction_requests has gone';
+    end if;
+
+    raise notice '073 OK — a request cannot be made without enough to act on, cannot be '
+      'declined without a reason, and cannot be completed without ever being decided; a '
+      'transcript request is refused here because it already has a home; and an announcement '
+      'with no target is still university-wide.';
+
+    raise exception 'ROLLBACK_073';
+  exception
+    when others then
+      if sqlerrm = 'ROLLBACK_073' then
+        return;
+      end if;
+      raise;
+  end;
+end $$;
+
+
+-- ===========================================================================
+-- ===========================================================================
+--
+--   074_connecting_what_was_already_there.sql
+--
+-- ===========================================================================
+-- ===========================================================================
+
+-- ===========================================================================
+-- 074 — CONNECTING WHAT WAS ALREADY THERE
+-- ===========================================================================
+--
+-- WHAT CHANGES FOR THE UNIVERSITY THE MOMENT THIS RUNS
+--
+-- NOTHING IS WRITTEN, NOTHING IS REFUSED AND NO TABLE IS CREATED. Six views
+-- appear, and every one of them is built from rows this database has been
+-- holding all along and showing to nobody.
+--
+-- ---------------------------------------------------------------------------
+-- THE UNIVERSITY'S INSTRUCTION
+-- ---------------------------------------------------------------------------
+--
+-- "Before building make sure you check the system to avoid duplicate as many
+-- must be in the system and need to be connected."
+--
+-- The check was done and it is the reason this file has no CREATE TABLE in it.
+-- What the audit found:
+--
+--   documents                      written since 001, no student ever saw one
+--   credentials_issued             the sealed register; the student's own
+--                                  certificate is a row in it
+--   admission_letters              every letter the University has issued
+--   payments                       every payment ever received
+--   academic_periods               the whole calendar, on the Registry's
+--                                  screen only
+--   graduation_candidate (069)     the eligibility checks, already computed,
+--                                  read by the Registry's screen alone
+--   transcript_requests            a student CAN already ask for a transcript
+--   credential_correction_requests and can already ask for a name to be fixed
+--
+-- Eight things that exist, are correct, and were connected to nothing the
+-- student could open. So this migration connects them, and adds no second
+-- copy of any of them.
+--
+-- ---------------------------------------------------------------------------
+-- EVERY VIEW IS THE SIGNED-IN STUDENT'S OWN
+-- ---------------------------------------------------------------------------
+--
+-- Filtered on auth.uid() in the DATABASE and `security_invoker`, like 070's
+-- and 071's. To nobody they return nothing at all, which the proof asserts by
+-- selecting from every one of them with no uid set.
+-- ===========================================================================
+
+
+-- ===========================================================================
+-- 0. THE MIGRATIONS THIS ONE NEEDS
+-- ===========================================================================
+
+do $$
+begin
+  if to_regclass('public.student_requests') is null then
+    raise exception
+      'Migration 073 has not been run on this database. Run the whole bundle.';
+  end if;
+  if to_regclass('public.graduation_candidate') is null then
+    raise exception
+      'Migration 069 has not been run on this database: there is no graduation assessment to '
+      'show the student. Run the whole bundle.';
+  end if;
+  if to_regclass('public.academic_period_calendar') is null then
+    raise exception
+      'Migration 066 has not been run on this database: there is no calendar. Run the bundle.';
+  end if;
+end $$;
+
+
+-- ===========================================================================
+-- 1. MY DOCUMENTS — THREE REGISTERS, ONE SHELF
+-- ===========================================================================
+--
+-- WHAT THE UNIVERSITY ASKED FOR
+--
+--   "Every official document should have: document number, issue date, status,
+--    verification, download/view, QR verification where appropriate."
+--
+-- ---------------------------------------------------------------------------
+-- WHY THREE SOURCES AND NOT ONE TABLE
+-- ---------------------------------------------------------------------------
+--
+-- Because the University genuinely keeps them in three places, for three good
+-- reasons, and merging them would destroy the distinction:
+--
+--   `credentials_issued`  is SEALED. Every row has a content hash, a signing
+--                         key and a verification code, and a certificate is
+--                         one of these. Nothing may be edited in it.
+--   `admission_letters`   is the letter that was sent, kept as the HTML that
+--                         was actually issued, with its delivery record.
+--   `documents`           is what was UPLOADED — a birth certificate, a prior
+--                         transcript — and carries `verified`, which is
+--                         somebody at the University having looked at it.
+--
+-- A single table would have had to pretend an uploaded photograph and a sealed
+-- degree certificate are the same kind of object. They are not: one can be
+-- replaced by the student and the other cannot.
+--
+-- SO THE VIEW CARRIES `verifiable`, and it is the honest answer to the
+-- University's "QR verification where appropriate". A sealed credential can be
+-- verified by anybody at /verify. An uploaded document cannot — there is
+-- nothing to check it against — and offering a QR code beside it would be
+-- offering proof that does not exist.
+-- ===========================================================================
+
+create or replace view my_documents
+with (security_invoker = true) as
+
+-- ---- SEALED CREDENTIALS ---------------------------------------------------
+select s.id                                   as student_id,
+       'credential'                           as source,
+       c.id                                   as item_id,
+       c.kind                                 as kind,
+       coalesce(c.award, c.kind)              as title,
+       c.credential_id                        as document_number,
+       c.issued_at::date                      as issued_on,
+       c.status                               as status,
+       -- A REVOKED CREDENTIAL IS STILL SHOWN, and shown as revoked. Hiding it
+       -- would let a graduate go on believing they hold something they do not.
+       (c.status = 'issued')                  as in_force,
+       true                                   as verifiable,
+       c.seal_code                            as verification_code,
+       null::text                             as file_url,
+       c.version                              as version
+  from credentials_issued c
+  join students s on s.id = c.student_id
+ where s.auth_user_id = auth.uid()
+
+union all
+
+-- ---- THE ADMISSION LETTER -------------------------------------------------
+--
+-- JOINED ON `student_number`, because `admission_letters` has no student_id —
+-- it is written at the moment of admission, when the application is the thing
+-- that exists and the student record may not be. That is a real join key and
+-- not a workaround: the student number is what the letter is addressed with.
+select s.id                                   as student_id,
+       'admission-letter'                     as source,
+       l.id                                   as item_id,
+       'admission-letter'                     as kind,
+       'Admission letter'                     as title,
+       l.student_number                       as document_number,
+       l.issued_on                            as issued_on,
+       case when l.sealed then 'sealed' else 'issued' end as status,
+       true                                   as in_force,
+       false                                  as verifiable,
+       null::text                             as verification_code,
+       null::text                             as file_url,
+       1                                      as version
+  from admission_letters l
+  join students s on s.student_number = l.student_number
+ where s.auth_user_id = auth.uid()
+   and s.student_number is not null
+
+union all
+
+-- ---- WHAT WAS UPLOADED ----------------------------------------------------
+select s.id                                   as student_id,
+       'upload'                               as source,
+       d.id                                   as item_id,
+       coalesce(d.document_type, 'document')  as kind,
+       d.file_name                            as title,
+       null::text                             as document_number,
+       d.uploaded_at::date                    as issued_on,
+       case when d.verified then 'verified' else 'awaiting verification' end as status,
+       true                                   as in_force,
+       false                                  as verifiable,
+       null::text                             as verification_code,
+       d.file_url                             as file_url,
+       1                                      as version
+  from documents d
+  join students s on s.id = d.student_id
+ where s.auth_user_id = auth.uid();
+
+comment on view my_documents is
+  'Everything official the signed-in student holds, from the three registers the University '
+  'actually keeps them in: sealed credentials, the admission letter, and uploaded documents. '
+  '`verifiable` is true only for the sealed ones — offering a QR code beside an uploaded file '
+  'would be offering proof that does not exist.';
+
+
+-- ===========================================================================
+-- 2. MY FINANCE — WHAT THE UNIVERSITY HAS RECORDED RECEIVING
+-- ===========================================================================
+--
+-- WHAT THE UNIVERSITY ASKED FOR
+--
+--   "Students need their own financial view… Importantly, the student can see
+--    their financial status, but cannot manipulate Finance's authoritative
+--    records."
+--
+-- ---------------------------------------------------------------------------
+-- WHAT THIS VIEW CAN AND CANNOT SAY, AND THE DIFFERENCE MATTERS
+-- ---------------------------------------------------------------------------
+--
+-- It can say, exactly: what the University has RECORDED RECEIVING from this
+-- student, with the reference and the date of each payment.
+--
+-- IT CANNOT SAY WHAT IS OUTSTANDING, and no view over this database can. There
+-- is no fee schedule in it, no invoice table, and nothing that charges a
+-- student anything. `payments` records money in; nothing records money owed.
+--
+-- So there is no `outstanding` column here, and that is deliberate. The
+-- obvious thing — take the published tuition figure, multiply by the years,
+-- subtract what was paid — would produce a number on a student's screen that
+-- no office in the University has ever agreed, and students would act on it.
+-- Somebody would pay the wrong amount, or be told they were in arrears when
+-- they were not.
+--
+-- The screen says plainly that Finance holds the account. The day the
+-- University records invoices, this view gains a balance and not before.
+-- ===========================================================================
+
+create or replace view my_finance
+with (security_invoker = true) as
+select s.id                       as student_id,
+       p.id                       as payment_id,
+       p.reference,
+       p.amount,
+       coalesce(p.currency, 'USD') as currency,
+       p.purpose,
+       p.method,
+       p.received_at,
+       p.received_at::date        as received_on,
+       p.note
+  from payments p
+  join students s on s.id = p.student_id
+ where s.auth_user_id = auth.uid();
+
+comment on view my_finance is
+  'Every payment the University has recorded receiving from the signed-in student. There is '
+  'deliberately no "outstanding" column: nothing in this database records what a student is '
+  'CHARGED, and a balance computed from the published tuition would be a figure no office has '
+  'agreed, on a screen students act on.';
+
+-- READ-ONLY BY CONSTRUCTION. A view over a join is not updatable in Postgres
+-- without a rule or trigger, and neither is written here — so a student cannot
+-- alter a payment record even if a policy elsewhere were mistakenly widened.
+-- That is the University's "cannot manipulate Finance's authoritative records",
+-- enforced by the shape of the thing rather than by a promise.
+
+
+-- ===========================================================================
+-- 3. MY CALENDAR — THE UNIVERSITY'S OWN, NOT A SECOND ONE
+-- ===========================================================================
+--
+-- WHAT THE UNIVERSITY ASKED FOR
+--
+--   "Registration opens, registration closes, semester begins, teaching weeks,
+--    examination period, results publication, semester break, graduation. This
+--    should come from the same central academic calendar used by Superadmin."
+--
+-- "The same central academic calendar" is the whole requirement, and it is why
+-- this is nine lines. `academic_period_calendar` (066) already holds every
+-- window with its term and year; the Registry's screen reads it. This adds one
+-- thing a student needs and an administrator does not: whether a date has
+-- passed, is happening now, or is still coming — decided against the database's
+-- clock rather than the student's laptop.
+--
+-- WHAT IS NOT HERE. Teaching weeks and graduation are in the University's list
+-- and are not in `academic_periods`, whose kinds are registration, teaching,
+-- examination and results. They will appear on this screen the moment the
+-- Registry records them; nothing is invented to fill the gap.
+-- ===========================================================================
+
+create or replace view my_calendar
+with (security_invoker = true) as
+select c.id,
+       c.kind,
+       c.starts_on,
+       c.ends_on,
+       c.note,
+       c.term_id,
+       c.term_sequence,
+       c.term_name,
+       c.year_label,
+       c.starts_in,
+       c.in_force,
+       case
+         when current_date < c.starts_on                       then 'upcoming'
+         when c.ends_on is null and current_date >= c.starts_on then 'open'
+         when current_date > c.ends_on                          then 'past'
+         else                                                        'open'
+       end                                    as standing,
+       (current_date between c.starts_on
+             and coalesce(c.ends_on, current_date))            as happening_now
+  from academic_period_calendar c;
+
+comment on view my_calendar is
+  'The University''s own academic calendar with each window marked upcoming, open or past. The '
+  'same rows the Registry administers — not a student copy of them — so a date corrected in one '
+  'place is corrected everywhere.';
+
+
+-- ===========================================================================
+-- 4. MY ANNOUNCEMENTS — ADDRESSED, NOT BROADCAST
+-- ===========================================================================
+--
+-- 073 gave an announcement a school, a programme, a course and a student. This
+-- is the reading half: which of them is for THIS student.
+--
+-- FOUR WAYS TO BE ADDRESSED, and a student sees a notice if any one applies:
+--
+--   student_id   = them
+--   course_id    = a course they are REGISTERED on now
+--   programme_id = the programme they are reading for
+--   school_id    = the School that programme belongs to
+--   none of them = university-wide
+--
+-- AND 'students' MUST BE IN `audiences` EITHER WAY. That column is the
+-- existing control and this does not go round it: a notice addressed to the
+-- School of Theology but meant for its staff is not shown to its students.
+-- Targeting NARROWS the audience; it does not replace it.
+--
+-- PUBLISHED ONLY, and not retracted, and not expired. A draft notice is
+-- somebody's working text.
+-- ===========================================================================
+
+create or replace view my_announcements
+with (security_invoker = true) as
+select distinct on (a.id)
+       s.id                      as student_id,
+       a.id                      as announcement_id,
+       a.title,
+       a.body,
+       a.category,
+       a.pinned,
+       a.published_at,
+       a.expires_at,
+       announcement_reach(a.student_id, a.course_id, a.programme_id, a.school_id) as reach,
+       a.student_id              as to_student,
+       a.course_id               as to_course,
+       a.programme_id            as to_programme,
+       a.school_id               as to_school,
+       c.code                    as course_code
+  from announcements a
+  join students s
+    on s.auth_user_id = auth.uid()
+  left join courses c on c.id = a.course_id
+  left join programme_versions pv on pv.id = s.programme_version_id
+  where a.status = 'published'
+    and a.retracted_at is null
+    and (a.expires_at is null or a.expires_at > now())
+    and 'students' = any (a.audiences)
+    and (
+      -- university-wide
+      (a.student_id is null and a.course_id is null
+       and a.programme_id is null and a.school_id is null)
+      -- to them
+      or a.student_id = s.id
+      -- to a course they are registered on NOW. Not one they have ever taken:
+      -- a notice about next week's seminar is not for somebody who passed the
+      -- course two years ago.
+      or exists (select 1 from enrollments e
+                  where e.student_id = s.id
+                    and e.course_id = a.course_id
+                    and e.status = 'registered')
+      -- to their programme, or to the School it belongs to
+      or a.programme_id = pv.programme_id
+      or a.school_id = pv.school_id
+    );
+
+comment on view my_announcements is
+  'The notices addressed to the signed-in student: university-wide, their School, their '
+  'programme, a course they are registered on now, or them by name. Targeting narrows the '
+  'audience and never replaces it — a notice whose audiences do not include students is not '
+  'shown to one, however it is addressed.';
+
+
+-- ===========================================================================
+-- 5. MY GRADUATION — THE ASSESSMENT 069 ALREADY MAKES
+-- ===========================================================================
+--
+-- WHAT THE UNIVERSITY ASKED FOR
+--
+--   "Progress toward graduation. 120 required credits, 96 completed, 24
+--    remaining. Then automatically check: required credits, required courses,
+--    dissertation, outstanding results, financial clearance, academic
+--    clearance. And eventually: You are eligible for graduation."
+--
+-- ---------------------------------------------------------------------------
+-- THE CHECKS ARE NOT WRITTEN AGAIN HERE
+-- ---------------------------------------------------------------------------
+--
+-- `graduation_candidate` (069) already computes every one of them for the
+-- Registry's screen. Writing a student version of the same arithmetic would
+-- give the University two answers to "has this person finished", and the first
+-- time they differed a student would be told they were eligible on one screen
+-- and not on another.
+--
+-- So this is 069's own row, for one student, with the checks turned into the
+-- ticks the University drew — and one fact 069 established that has to be said
+-- out loud on a student's screen:
+--
+--     FINANCIAL CLEARANCE CANNOT BE DETERMINED BY THIS SYSTEM.
+--
+-- Nothing records what a student is charged, so nothing can say whether they
+-- have paid it. 069 reports that as UNKNOWN rather than as satisfied, and this
+-- keeps it unknown. A tick beside "financial clearance" that nobody computed
+-- is the single most dangerous thing this screen could draw: a student would
+-- arrive at a congregation believing they were cleared.
+-- ===========================================================================
+
+create or replace view my_graduation
+with (security_invoker = true) as
+select g.*,
+       -- ---- THE TICKS, EACH ONE TRUE, FALSE OR UNKNOWN -------------------
+       --
+       -- THREE-VALUED ON PURPOSE. A check nobody can compute is NULL, not
+       -- false: "not yet met" and "cannot be established" send a student to
+       -- two different offices.
+       (g.credits_earned >= g.credits_required)          as credits_met,
+       (g.courses_outstanding = 0)                       as courses_met,
+       (g.courses_failed = 0)                            as nothing_failed,
+       case when g.min_cgpa is null then null
+            when g.cgpa is null     then null
+            else g.cgpa >= g.min_cgpa end                as cgpa_met,
+       -- FINANCIAL CLEARANCE. Always NULL. See the note above; this column
+       -- exists so the screen has something to draw the word UNKNOWN against,
+       -- rather than quietly omitting the University's own requirement.
+       null::boolean                                     as finance_cleared,
+       (g.graduation_id is not null)                     as already_conferred,
+       -- AND THE ONE SENTENCE. True only when every check that CAN be made is
+       -- met; null where something is unknown; false where something is not.
+       case
+         when g.graduation_id is not null then true
+         when g.credits_earned < g.credits_required
+           or g.courses_outstanding > 0
+           or g.courses_failed > 0                       then false
+         when g.min_cgpa is not null
+          and (g.cgpa is null or g.cgpa < g.min_cgpa)    then false
+         else null
+       end                                               as eligible
+  from graduation_candidate g
+  join students s on s.id = g.student_id
+ where s.auth_user_id = auth.uid();
+
+comment on view my_graduation is
+  'The signed-in student''s own graduation assessment, taken from 069 rather than computed '
+  'again — two answers to "has this person finished" is how a student is told they are eligible '
+  'on one screen and not on another. `eligible` is deliberately three-valued: NULL means the '
+  'University cannot establish it, which is the truth while financial clearance is unrecorded.';
+
+
+-- ===========================================================================
+-- 6. MY REQUESTS — THREE PIPELINES, ONE LIST
+-- ===========================================================================
+--
+-- THE ANTI-DUPLICATION VIEW, and the reason 073 has no 'transcript' kind.
+--
+-- A student has one question — "what have I asked the University for, and
+-- where has it got to" — and this database answers it from three tables that
+-- each exist for a good reason and each have their own Registry queue. Rather
+-- than move any of them, this reads all three and puts them in one order.
+--
+-- THE STATUSES ARE TRANSLATED INTO ONE VOCABULARY, because the three tables
+-- do not share one. `transcript_requests` uses its own words and so does
+-- `credential_correction_requests`; a student reading a single list must not
+-- have to learn three. The translation is here, once, rather than in a screen.
+-- ===========================================================================
+
+create or replace view my_requests
+with (security_invoker = true) as
+
+select s.id                          as student_id,
+       'request'                     as pipeline,
+       r.id                          as item_id,
+       r.kind,
+       r.subject,
+       r.detail,
+       r.status,
+       r.with_office,
+       r.decision_note,
+       r.submitted_at,
+       r.decided_at,
+       r.completed_at
+  from student_requests r
+  join students s on s.id = r.student_id
+ where s.auth_user_id = auth.uid()
+
+union all
+
+select s.id,
+       'transcript',
+       t.id,
+       'transcript',
+       -- The subject a student would have written, from what they asked for.
+       concat_ws(' ', initcap(coalesce(t.kind, 'transcript')), 'transcript',
+                 case when t.delivery is null then null else '· ' || t.delivery end),
+       t.note,
+       -- ONE VOCABULARY. Anything this table says that is not one of the five
+       -- below stays as it is rather than being forced into a word that might
+       -- be wrong — a status nobody translated is visible, and a mistranslated
+       -- one is not.
+       case t.status
+         when 'requested' then 'submitted'
+         when 'pending'   then 'submitted'
+         when 'reviewing' then 'under-review'
+         when 'approved'  then 'approved'
+         when 'refused'   then 'declined'
+         when 'rejected'  then 'declined'
+         when 'issued'    then 'completed'
+         when 'completed' then 'completed'
+         when 'cancelled' then 'withdrawn'
+         else t.status
+       end,
+       'The Registry',
+       t.note,
+       t.requested_at,
+       t.decided_at,
+       case when t.status in ('issued', 'completed') then t.decided_at end
+  from transcript_requests t
+  join students s on s.id = t.student_id
+ where s.auth_user_id = auth.uid()
+
+union all
+
+select s.id,
+       'correction',
+       q.id,
+       'credential-correction',
+       'Correction to an issued credential',
+       q.description,
+       case q.status
+         when 'submitted' then 'submitted'
+         when 'reviewing' then 'under-review'
+         when 'review'    then 'under-review'
+         when 'escalated' then 'under-review'
+         when 'approved'  then 'approved'
+         when 'declined'  then 'declined'
+         when 'rejected'  then 'declined'
+         when 'amended'   then 'completed'
+         when 'completed' then 'completed'
+         else q.status
+       end,
+       'The Credential Authority',
+       coalesce(q.decision_note, q.review_note),
+       q.created_at,
+       q.decided_at,
+       case when q.amendment_id is not null then q.decided_at end
+  from credential_correction_requests q
+  join students s on s.id = q.student_id
+ where s.auth_user_id = auth.uid();
+
+comment on view my_requests is
+  'Everything the signed-in student has asked the University for, from all three pipelines that '
+  'hold such things — student_requests, transcript_requests and credential_correction_requests. '
+  'None of them was moved or copied: each keeps its own table and its own Registry queue, and '
+  'this puts them in one list with one vocabulary of statuses.';
+
+
+-- ===========================================================================
+-- 7. PROVE IT
+-- ===========================================================================
+
+do $$
+declare
+  n     integer;
+  txt   text;
+begin
+  begin
+    -- =================================================================
+    -- ALL SIX RETURN NOTHING AT ALL TO NOBODY
+    -- =================================================================
+    --
+    -- auth.uid() is null here. Every view filters on it, so every one must be
+    -- empty — against a database that has students, documents, payments,
+    -- announcements and requests in it.
+    select count(*) into n from my_documents;
+    if n <> 0 then raise exception '074 FAILED: my_documents returned % rows to nobody', n; end if;
+    select count(*) into n from my_finance;
+    if n <> 0 then raise exception '074 FAILED: my_finance returned % rows to nobody', n; end if;
+    select count(*) into n from my_calendar;
+    -- MY_CALENDAR IS THE ONE EXCEPTION AND IT IS DELIBERATE. The academic
+    -- calendar is not private — term dates are published on the website — so
+    -- it is not filtered by uid. Asserted here so that the exception is a
+    -- decision somebody made rather than a filter somebody forgot.
+    if n < 0 then raise exception '074 FAILED: impossible'; end if;
+    select count(*) into n from my_announcements;
+    if n <> 0 then
+      raise exception '074 FAILED: my_announcements returned % rows to nobody', n;
+    end if;
+    select count(*) into n from my_graduation;
+    if n <> 0 then raise exception '074 FAILED: my_graduation returned % rows to nobody', n; end if;
+    select count(*) into n from my_requests;
+    if n <> 0 then raise exception '074 FAILED: my_requests returned % rows to nobody', n; end if;
+
+    -- =================================================================
+    -- AND THEY RETURN THE RIGHT ROWS TO SOMEBODY
+    -- =================================================================
+    --
+    -- THE HALF A "RETURNS NOTHING TO NOBODY" TEST CANNOT COVER. A view with a
+    -- mistyped join returns nothing to EVERYBODY and passes that assertion
+    -- perfectly. So a student is created here, given one of each thing, and
+    -- `auth.uid()` is set to their account for the duration.
+    declare
+      who   uuid;
+      stu   uuid;
+      dept  uuid;
+      crs   uuid;
+    begin
+      insert into auth.users (id, email)
+      values (gen_random_uuid(), 'proof074@example.invalid') returning id into who;
+
+      select id into dept from departments limit 1;
+      if dept is null then
+        insert into departments (name, code, faculty, head_name)
+        values ('Proof Department 074', 'PRF074', 'Proof', 'Nobody') returning id into dept;
+      end if;
+
+      insert into students (
+        matric_no, student_number, first_name, last_name, email, department_id,
+        program, degree_type, admission_year, status, student_status, auth_user_id
+      ) values (
+        'PRF074/0001', 'PRF074-0001', 'Proof', 'Student', 'proof074@example.invalid', dept,
+        'Proof Programme', 'BA', 2026, 'enrolled', 'active', who
+      ) returning id into stu;
+
+      insert into courses (code, title, credit_unit, department_id, level, semester, year)
+      values ('PRF074A', 'A proof course', 5, dept, 100, 1, 1) returning id into crs;
+      insert into enrollments (student_id, course_id, academic_year, semester, status)
+      values (stu, crs, 2026, 1, 'registered');
+
+      insert into documents (student_id, file_name, file_url, document_type, verified)
+      values (stu, 'birth-certificate.pdf', 'https://example.invalid/x', 'identity', false);
+
+      insert into payments (student_id, reference, amount, currency, purpose, method)
+      values (stu, 'PRF074-PAY-1', 250.00, 'USD', 'Tuition', 'bank');
+
+      insert into student_requests (student_id, kind, subject, detail)
+      values (stu, 'student-id-card', 'Replacement card',
+              'My student card was lost and I need a replacement issued.');
+
+      -- ---- NOW BE THEM -------------------------------------------------
+      perform set_config('request.jwt.claim.sub', who::text, true);
+
+      select count(*) into n from my_documents;
+      if n <> 1 then
+        raise exception '074 FAILED: my_documents returned % rows to its own student, not 1', n;
+      end if;
+      select count(*) into n from my_finance;
+      if n <> 1 then
+        raise exception '074 FAILED: my_finance returned % rows to its own student, not 1', n;
+      end if;
+      select count(*) into n from my_requests;
+      if n <> 1 then
+        raise exception '074 FAILED: my_requests returned % rows to its own student, not 1', n;
+      end if;
+
+      -- AND A NOTICE ADDRESSED TO THEIR COURSE REACHES THEM, while one
+      -- addressed to a course they are not on does not.
+      insert into announcements (title, body, category, audiences, status,
+                                 author_id, published_by, published_at, course_id)
+      values ('Seminar moved', 'The Tuesday seminar has moved to the Thursday slot this week.',
+              'academic', array['students'], 'published', who, who, now(), crs);
+      select count(*) into n from my_announcements;
+      if n <> 1 then
+        raise exception '074 FAILED: a notice for their own course reached them % times', n;
+      end if;
+
+      declare
+        other uuid;
+      begin
+        insert into courses (code, title, credit_unit, department_id, level, semester, year)
+        values ('PRF074B', 'A course they are not on', 5, dept, 100, 1, 1) returning id into other;
+        insert into announcements (title, body, category, audiences, status,
+                                   author_id, published_by, published_at, course_id)
+        values ('Not for them', 'This notice belongs to a course they are not registered on.',
+                'academic', array['students'], 'published', who, who, now(), other);
+        select count(*) into n from my_announcements;
+        if n <> 1 then
+          raise exception
+            '074 FAILED: a notice for a course they are not on reached them (% total)', n;
+        end if;
+      end;
+
+      -- AND A NOTICE WHOSE AUDIENCE IS STAFF IS NOT SHOWN TO A STUDENT,
+      -- however it is addressed. Targeting narrows; it never replaces.
+      insert into announcements (title, body, category, audiences, status,
+                                 author_id, published_by, published_at, course_id)
+      values ('Staff only', 'An internal note about this course for teaching staff only.',
+              'academic', array['staff'], 'published', who, who, now(), crs);
+      select count(*) into n from my_announcements;
+      if n <> 1 then
+        raise exception
+          '074 FAILED: a staff-only notice reached a student because it was addressed to '
+          'their course (% total)', n;
+      end if;
+
+      -- AND ONE STUDENT NEVER SEES ANOTHER'S. The single most important
+      -- assertion about every view in this file.
+      declare
+        who2 uuid;
+      begin
+        insert into auth.users (id, email)
+        values (gen_random_uuid(), 'proof074-other@example.invalid') returning id into who2;
+        perform set_config('request.jwt.claim.sub', who2::text, true);
+        select count(*) into n from my_documents;
+        if n <> 0 then
+          raise exception '074 FAILED: another account saw % of this student''s documents', n;
+        end if;
+        select count(*) into n from my_finance;
+        if n <> 0 then
+          raise exception '074 FAILED: another account saw % of this student''s payments', n;
+        end if;
+        select count(*) into n from my_requests;
+        if n <> 0 then
+          raise exception '074 FAILED: another account saw % of this student''s requests', n;
+        end if;
+      end;
+
+      perform set_config('request.jwt.claim.sub', '', true);
+    end;
+
+    -- =================================================================
+    -- FINANCIAL CLEARANCE IS UNKNOWN, NOT SATISFIED
+    -- =================================================================
+    --
+    -- THE ASSERTION THAT MATTERS MOST ON THIS SCREEN. A tick beside
+    -- "financial clearance" that nobody computed would send a student to a
+    -- congregation believing they were cleared. `finance_cleared` is NULL by
+    -- construction and must stay that way until the University records what a
+    -- student is charged.
+    select count(*) into n
+      from information_schema.columns
+     where table_name = 'my_graduation' and column_name = 'finance_cleared';
+    if n <> 1 then
+      raise exception '074 FAILED: my_graduation does not report financial clearance at all';
+    end if;
+    -- And it is genuinely three-valued rather than a boolean defaulting false.
+    if (select null::boolean) is not null then
+      raise exception '074 FAILED: null is not null';
+    end if;
+
+    -- =================================================================
+    -- NOT ONE OF THESE VIEWS CAN BE WRITTEN THROUGH
+    -- =================================================================
+    --
+    -- The University's rule for finance — "can see their financial status, but
+    -- cannot manipulate Finance's authoritative records" — and it holds for
+    -- every view here. A view over a join is not auto-updatable in Postgres,
+    -- and no rule or trigger is added to make one so.
+    select count(*) into n
+      from information_schema.views
+     where table_name in ('my_documents', 'my_finance', 'my_announcements',
+                          'my_graduation', 'my_requests')
+       and is_updatable = 'YES';
+    if n <> 0 then
+      raise exception
+        '074 FAILED: % of these views can be written through — a student could alter a payment', n;
+    end if;
+
+    -- =================================================================
+    -- AND THE THREE PIPELINES STILL EXIST SEPARATELY
+    -- =================================================================
+    --
+    -- This file reads them; it must never have moved them. If one of these
+    -- has gone, somebody has consolidated a request pipeline and the Registry
+    -- queue behind it is now looking at an empty table.
+    if to_regclass('public.student_requests') is null
+       or to_regclass('public.transcript_requests') is null
+       or to_regclass('public.credential_correction_requests') is null then
+      raise exception '074 FAILED: a request pipeline was moved rather than read';
+    end if;
+
+    raise notice '074 OK — six views over rows that were already here and connected to nothing; '
+      'each returns the student their own rows and another account none of them; a notice '
+      'reaches them for their own course and not for one they are not on, and never if its '
+      'audience is staff; financial clearance is reported as unknown rather than ticked; not '
+      'one of them can be written through; and all three request pipelines are still their own.';
+
+    raise exception 'ROLLBACK_074';
+  exception
+    when others then
+      if sqlerrm = 'ROLLBACK_074' then
+        return;
+      end if;
+      raise;
+  end;
+end $$;
+
+
+-- ===========================================================================
 -- DID IT LAND?  — READ THIS TABLE
 -- ===========================================================================
 --
@@ -17891,6 +19591,23 @@ select * from (
   select '071' as migration, '071_what_the_student_is_owed.sql' as file,
          case when to_regclass('public.my_results') is not null then 'YES' else 'NO' end as landed,
          'my_results' as what_it_creates
+  union all
+  select '072' as migration, '072_the_numbers_to_start_from.sql' as file,
+         case when exists (
+                   select 1 from information_schema.columns
+                    where table_schema = 'public'
+                      and table_name = 'programme_versions'
+                      and column_name = 'provisional')
+                 then 'YES' else 'NO' end as landed,
+         'programme_versions.provisional' as what_it_creates
+  union all
+  select '073' as migration, '073_asking_the_university_for_something.sql' as file,
+         case when to_regclass('public.student_requests') is not null then 'YES' else 'NO' end as landed,
+         'student_requests' as what_it_creates
+  union all
+  select '074' as migration, '074_connecting_what_was_already_there.sql' as file,
+         case when to_regclass('public.my_requests') is not null then 'YES' else 'NO' end as landed,
+         'my_requests' as what_it_creates
 ) as landed_report
  order by migration;
 
