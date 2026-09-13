@@ -27,28 +27,31 @@
 // Neither is a student reading their own record. That is what this is.
 //
 // ---------------------------------------------------------------------------
-// AND IT DOES NOT OFFER A DOWNLOAD, BECAUSE A DOWNLOAD WOULD BE A FORGERY
+// UPON REQUEST, AND ONCE
 // ---------------------------------------------------------------------------
 //
-// The University asked for "Download Official Transcript", and this screen
-// deliberately does not have that button. The reason matters.
+// The University's ruling: "transcript from student must be upon request and
+// only one time to be downloaded by student. After which they can only
+// request."
 //
-// An OFFICIAL transcript is a sealed document: it carries the University's
-// signature, a content hash and a verification code, and a stranger can check
-// it at /verify without contacting anybody. Sealing one is done by the office
-// that holds `design-credentials`, and the signing endpoint refuses everybody
-// else — it refuses them because it once did not, and an open signing endpoint
-// let anybody have the University sign a degree of their choosing.
+// So there is no standing download on this page. A student reads their record
+// here as often as they like; taking a copy away means the Registry issued
+// one, and the copy is released exactly once.
 //
-// So a student pressing "download" could only ever be given an UNSEALED
-// printout. It would look exactly like the real thing, carry no verification
-// code, and be handed to employers who would believe it. The most damaging
-// possible outcome of this screen is a document that looks official and is not.
+// THE ONCE IS NOT ENFORCED BY THIS SCREEN, and could not be. Hiding a button
+// after the first press stops nobody: the request can be replayed, and a
+// student who wants a second copy needs the back button rather than any
+// sophistication. 076 spends the download in the same SQL statement that
+// checks it — `where downloaded < downloads_allowed` — so two clicks arriving
+// together cannot both succeed. This screen only asks and reports.
 //
-// What they get instead is the record itself — everything on it, on screen,
-// to read and check — and a request that produces a genuinely sealed one.
-// `transcript_requests` and its Registry queue have existed for months for
-// exactly this, so the button goes there rather than anywhere new.
+// AND WHY THE COPY IS SEALED RATHER THAN PRINTED FROM HERE. An official
+// transcript carries the University's signature, a content hash and a
+// verification code a stranger can check at /verify. Sealing one is done by
+// the office holding `design-credentials` — the signing endpoint refuses
+// everybody else, because it once did not. A button here that produced an
+// unsealed printout would hand students a document that looks exactly like
+// the real thing and is not, and employers would believe it.
 // ---------------------------------------------------------------------------
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -59,9 +62,23 @@ import StudentScreen from './StudentScreen';
 import { readMine } from '@/lib/studentReads';
 import { useJourney } from '@/contexts/JourneyContext';
 import { termLabel, newestFirst, type ResultRow, type TermRow } from './MyResults';
+import { supabase } from '@/lib/supabase';
 import { FOCUS } from '@/lib/portalTheme';
-import { BadgeCheck, Clock, FileText, ShieldCheck } from 'lucide-react';
+import {
+  BadgeCheck, Clock, Download, FileText, ShieldCheck,
+} from 'lucide-react';
 import type { ViewType } from '@/lib/types';
+
+// eslint-disable-next-line max-len
+const REQUESTS = 'student_id, pipeline, item_id, kind, subject, status, submitted_at, downloads_allowed, downloaded';
+
+interface TranscriptRequest {
+  item_id: string;
+  status: string;
+  submitted_at: string;
+  downloads_allowed: number | null;
+  downloaded: number | null;
+}
 
 // eslint-disable-next-line max-len
 const RESULTS = 'student_id, result_id, course_id, course_code, course_title, credits, academic_year, semester, ca_score, exam_score, total_score, grade, grade_point, quality_points, attempt, status, official, standing, with_whom, approved_at';
@@ -72,20 +89,57 @@ export default function MyTranscript({ onNavigate }: { onNavigate?: (v: ViewType
   const { journey, loading: journeyLoading, failed: journeyFailed } = useJourney();
   const [results, setResults] = useState<ResultRow[]>([]);
   const [terms, setTerms] = useState<TermRow[]>([]);
+  const [requests, setRequests] = useState<TranscriptRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState<string | null>(null);
+  const [claiming, setClaiming] = useState(false);
+  const [said, setSaid] = useState<{ ok: boolean; text: string } | null>(null);
 
   const load = useCallback(async () => {
     if (journeyLoading) return;
-    const [r, t] = await Promise.all([
+    const [r, t, q] = await Promise.all([
       readMine<ResultRow>('my_results', RESULTS),
       readMine<TermRow>('my_result_terms', TERMS),
+      readMine<TranscriptRequest>('my_requests', REQUESTS),
     ]);
     setResults(r.rows); setTerms(t.rows);
+    setRequests(q.rows.filter((x) => (x as unknown as { pipeline: string })
+      .pipeline === 'transcript'));
     setFailed(journeyFailed ?? r.failed ?? t.failed);
     setLoading(false);
   }, [journeyLoading, journeyFailed]);
   useEffect(() => { void load(); }, [load]);
+
+  /**
+   * Spend the one download, if there is one to spend.
+   *
+   * THE ANSWER COMES FROM THE DATABASE, not from the count this screen is
+   * holding. That count may be stale — another tab, another device — and a
+   * screen that decided for itself would either refuse a download the student
+   * still has or offer one they do not.
+   */
+  const claim = useCallback(async (requestId: string) => {
+    setClaiming(true); setSaid(null);
+    const { data, error } = await supabase.rpc('claim_transcript_download', {
+      p_request: requestId,
+    });
+    setClaiming(false);
+    if (error) { setSaid({ ok: false, text: error.message }); return; }
+    const row = (Array.isArray(data) ? data[0] : data) as
+      { granted: boolean; reason: string | null; credential_ref: string | null } | null;
+    if (!row?.granted) {
+      setSaid({ ok: false, text: row?.reason ?? 'That download could not be released.' });
+      await load();
+      return;
+    }
+    setSaid({
+      ok: true,
+      text: `Released. Your transcript${row.credential_ref ? ` (${row.credential_ref})` : ''} `
+        + 'is under My documents, where you can open and verify it. This request has now been '
+        + 'used — another copy means another request.',
+    });
+    await load();
+  }, [load]);
 
   // ---------------------------------------------------------------------
   // ONLY APPROVED RESULTS APPEAR ON A TRANSCRIPT.
@@ -128,6 +182,79 @@ export default function MyTranscript({ onNavigate }: { onNavigate?: (v: ViewType
       ) : undefined}
     >
       <div className="space-y-5">
+        {/* ------------------------------------------------------------------
+            THE ONE DOWNLOAD, WHERE THERE IS ONE WAITING.
+
+            Drawn only when the Registry has actually issued a transcript and
+            the student has not yet taken it. Once it is spent the panel says
+            so and points at a fresh request — the University's "after which
+            they can only request", said rather than implied by a missing
+            button.
+            ------------------------------------------------------------------ */}
+        {said && (
+          <Card className={`flex items-start gap-3 p-4 ${
+            said.ok
+              ? 'border-emerald-300 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30'
+              : 'border-amber-300 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30'
+          }`}>
+            {said.ok
+              ? <BadgeCheck size={16} className="mt-0.5 shrink-0 text-emerald-700 dark:text-emerald-300" />
+              : <Clock size={16} className="mt-0.5 shrink-0 text-amber-700 dark:text-amber-300" />}
+            <p className={`text-xs leading-relaxed ${
+              said.ok ? 'text-emerald-800 dark:text-emerald-200'
+                : 'text-amber-800 dark:text-amber-200'
+            }`}>
+              {said.text}
+            </p>
+          </Card>
+        )}
+
+        {requests.length > 0 && (
+          <Card className="p-4">
+            <h2 className="font-heading text-sm font-bold text-[#422e59] dark:text-[#c8b6e8]">
+              Your transcript requests
+            </h2>
+            <ul className="mt-2 divide-y divide-[#f0ece4] dark:divide-[#2a2333]">
+              {requests.map((q) => {
+                const allowed = q.downloads_allowed ?? 0;
+                const used = q.downloaded ?? 0;
+                const left = Math.max(0, allowed - used);
+                const issued = q.status === 'completed' || q.status === 'approved';
+                return (
+                  <li key={q.item_id}
+                    className="flex flex-wrap items-center gap-x-4 gap-y-1 py-2.5">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm text-[#33234a] dark:text-[#e4dcf0]">
+                        Requested {new Date(q.submitted_at).toLocaleDateString('en-GB', {
+                          day: 'numeric', month: 'long', year: 'numeric',
+                        })}
+                      </p>
+                      <p className="text-[11px] text-[#a49bb0]">
+                        {!issued
+                          ? `With the Registry \u2014 ${q.status.replace('-', ' ')}`
+                          : left > 0
+                            ? `Issued. ${left} download${left === 1 ? '' : 's'} waiting for you.`
+                            : 'Issued and downloaded. Ask again for another copy.'}
+                      </p>
+                    </div>
+                    {issued && left > 0 && (
+                      <button
+                        onClick={() => claim(q.item_id)}
+                        disabled={claiming}
+                        className={`flex shrink-0 items-center gap-2 rounded-lg bg-[#422e59]
+                                    px-3 py-1.5 text-xs font-semibold text-white transition
+                                    hover:bg-[#33234a] disabled:opacity-50 ${FOCUS}`}
+                      >
+                        <Download size={13} /> {claiming ? 'Releasing…' : 'Download once'}
+                      </button>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </Card>
+        )}
+
         {/* ---- WHO THIS RECORD IS ABOUT ---- */}
         <Card className="p-5">
           <dl className="grid gap-x-8 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">

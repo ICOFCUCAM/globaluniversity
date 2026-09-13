@@ -400,7 +400,23 @@ comment on view my_announcements is
 -- arrive at a congregation believing they were cleared.
 -- ===========================================================================
 
-create or replace view my_graduation
+-- DROPPED BEFORE IT IS CREATED, AND THAT IS NOT TIDINESS.
+--
+-- A LATER MIGRATION WIDENS THIS VIEW. 076 adds columns to it, and on a SECOND
+-- run of the bundle this statement executes again — after 076's wider version
+-- is already in place. `create or replace view` may only ADD columns, so it
+-- fails with "cannot drop columns from view" and takes the whole bundle down
+-- with it.
+--
+-- That is not hypothetical: it is what the second pass of RUN-ALL found, which
+-- is the entire reason the bundle is run twice. The University runs this file
+-- more than once.
+--
+-- A plain DROP rather than CASCADE: if something has come to depend on this
+-- view, the drop fails and says so instead of silently deleting it.
+drop view if exists my_graduation;
+
+create view my_graduation
 with (security_invoker = true) as
 select g.*,
        -- ---- THE TICKS, EACH ONE TRUE, FALSE OR UNKNOWN -------------------
@@ -458,7 +474,23 @@ comment on view my_graduation is
 -- have to learn three. The translation is here, once, rather than in a screen.
 -- ===========================================================================
 
-create or replace view my_requests
+-- DROPPED BEFORE IT IS CREATED, AND THAT IS NOT TIDINESS.
+--
+-- A LATER MIGRATION WIDENS THIS VIEW. 076 adds columns to it, and on a SECOND
+-- run of the bundle this statement executes again — after 076's wider version
+-- is already in place. `create or replace view` may only ADD columns, so it
+-- fails with "cannot drop columns from view" and takes the whole bundle down
+-- with it.
+--
+-- That is not hypothetical: it is what the second pass of RUN-ALL found, which
+-- is the entire reason the bundle is run twice. The University runs this file
+-- more than once.
+--
+-- A plain DROP rather than CASCADE: if something has come to depend on this
+-- view, the drop fails and says so instead of silently deleting it.
+drop view if exists my_requests;
+
+create view my_requests
 with (security_invoker = true) as
 
 select s.id                          as student_id,

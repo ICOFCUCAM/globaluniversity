@@ -710,6 +710,31 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
       + 'cleared. Writes nothing and none of the six can be written through.',
     table: 'my_requests',
   },
+  {
+    file: '075_what_a_student_is_charged.sql',
+    what: 'WHAT A STUDENT IS CHARGED \u2014 a number that has never existed in this system. '
+      + '`payments` recorded money IN and nothing recorded money OWED, so no student could be '
+      + 'shown a balance and the graduation audit could never establish financial clearance. The '
+      + 'Superadministrator sets a fee schedule, Finance raises it against a student, and an '
+      + 'assessment SNAPSHOTS the amount \u2014 so raising next year\u2019s tuition does not put '
+      + 'every student who has already paid into arrears. Nothing is charged to anybody by the '
+      + 'migration itself. Money is never added across currencies, because this system holds no '
+      + 'exchange rate. And financial clearance becomes a DECISION Finance records, with the '
+      + 'ledger kept beside it, rather than a subtraction.',
+    table: 'fee_schedules',
+  },
+  {
+    file: '076_one_transcript_one_download.sql',
+    what: 'ONE TRANSCRIPT, ONE DOWNLOAD, on the University\u2019s ruling \u2014 "only one time '
+      + 'to be downloaded by student. After which they can only request." The counter is spent '
+      + 'in the SAME SQL statement that checks it, so a replayed request or a double click '
+      + 'cannot take a second copy, and a CHECK constraint refuses the count being pushed past '
+      + 'its allowance even by a direct write. The refusal says how to get another rather than '
+      + 'just saying no. Also connects 075\u2019s financial clearance to the graduation audit, '
+      + 'which until now reported it as permanently unknown.',
+    table: 'transcript_requests',
+    column: 'downloads_allowed',
+  },
 ];
 
 /** What a probe came back as. */

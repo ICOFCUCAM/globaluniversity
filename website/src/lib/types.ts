@@ -359,6 +359,10 @@ export type ViewType =
   | 'my-transcript'
   | 'my-profile'
   | 'student-services'
+  // WHAT THE UNIVERSITY CHARGES. Until 075 nothing recorded it, so no student
+  // could be shown a balance and the graduation audit could never establish
+  // financial clearance. The Superadministrator sets it here.
+  | 'fee-schedules'
   // ATTENDANCE, SEPARATED FROM THE TIMETABLE. They were one screen because the
   // timetable kept its own invented slots; now that a class is a row every
   // other screen can read, marking who attended one is its own job.

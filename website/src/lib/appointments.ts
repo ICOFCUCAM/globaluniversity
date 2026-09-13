@@ -695,7 +695,30 @@ export function soleAuthorityOffice(role: string | null | undefined): string | n
 export function canAuthorizeAlone(
   a: Appointment, callerId: string, role: string | null | undefined,
 ): boolean {
-  return (a.status === 'submitted' || a.status === 'amendment_requested')
+  // ---------------------------------------------------------------------
+  // 'draft' IS IN THIS LIST, AND IT IS THE WHOLE POINT OF THE RULE.
+  //
+  // The University asked: "how come the VC cannot complete an appointment from
+  // draft to finished without others. I thought this was fixed."
+  //
+  // It was fixed, and it was fixed one step short. 055 opened the self-approval
+  // route and the screen offered it — but only once the appointment was
+  // SUBMITTED, and the only way to submit one is a button reading "Send for
+  // approval". So an office that needs nobody's approval had to press a button
+  // saying it was asking for somebody's, and then approve it themselves.
+  //
+  // That is not a separation of duties. It is a two-step form with a
+  // misleading label on the first step, and a Vice-Chancellor reading it
+  // reasonably concluded the system still required a second officer.
+  //
+  // Allowing 'draft' here is what lets the screen offer ONE button: draft it
+  // and approve it, in a single act. Nothing about the CONTROL changes — the
+  // caller must still hold a sole-authority office, must still be the drafter,
+  // and 055's constraint still refuses any self-approval that is not
+  // permanently marked as one.
+  // ---------------------------------------------------------------------
+  return (a.status === 'draft' || a.status === 'submitted'
+          || a.status === 'amendment_requested')
     && a.drafted_by === callerId
     && (SOLE_AUTHORITY_ROLES as readonly string[]).includes(String(role));
 }

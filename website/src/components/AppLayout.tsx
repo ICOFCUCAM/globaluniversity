@@ -68,6 +68,7 @@ import JobDescriptions from './admin/JobDescriptions';
 import TimetableModule from './timetable/TimetableModule';
 import ForumModule from './forum/ForumModule';
 import FeeModule from './fees/FeeModule';
+import FeeSchedules from './finance/FeeSchedules';
 import AnalyticsDashboard from './analytics/AnalyticsDashboard';
 import InsightsModule from './insights/InsightsModule';
 import SettingsPage from './settings/SettingsPage';
@@ -360,6 +361,8 @@ export default function AppLayout() {
         return <ForumModule />;
       case 'fees':
         return <FeeModule />;
+      case 'fee-schedules':
+        return <FeeSchedules />;
       case 'documents':
         return <DocumentManagement />;
       case 'analytics':

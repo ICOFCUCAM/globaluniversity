@@ -775,11 +775,34 @@ console.log('\nThe office that needs no second signature\n');
   check('it does not fire for an appointment somebody else drafted',
     A.canAuthorizeAlone(drafted, 'another-vc', 'vice-chancellor'), false);
 
-  // NOR ON A ROW THAT IS NOT AWAITING APPROVAL.
-  check('nor on a draft that was never submitted',
-    A.canAuthorizeAlone({ status: 'draft', drafted_by: 'vc-1' }, 'vc-1', 'vice-chancellor'), false);
+  // ---------------------------------------------------------------------
+  // A DRAFT IS NOW ENOUGH, AND THIS ASSERTION USED TO SAY THE OPPOSITE.
+  //
+  // It read "nor on a draft that was never submitted", and it was the reason
+  // the University asked "how come the VC cannot complete an appointment from
+  // draft to finished without others". The self-approval route was open, but
+  // only after a button reading SEND FOR APPROVAL had been pressed — so the
+  // one office that needs nobody's approval had to ask for one first.
+  //
+  // The control is unchanged: still the drafter, still a sole-authority
+  // office, and 055's constraint still refuses any self-approval that is not
+  // permanently marked. What changed is that it no longer takes two steps.
+  // ---------------------------------------------------------------------
+  check('a sole authority may approve straight from their own draft',
+    A.canAuthorizeAlone({ status: 'draft', drafted_by: 'vc-1' }, 'vc-1', 'vice-chancellor'), true);
+  check('and so may the Superadministrator, on their own draft',
+    A.canAuthorizeAlone({ status: 'draft', drafted_by: 'sa-1' }, 'sa-1', 'superadmin'), true);
+  // BUT NOT ON SOMEBODY ELSE'S DRAFT. Opening `draft` must not have opened a
+  // way for one office to approve another office's unfinished work.
+  check('but not on somebody else’s draft',
+    A.canAuthorizeAlone({ status: 'draft', drafted_by: 'hr-1' }, 'vc-1', 'vice-chancellor'),
+    false);
+  // AND NOT ON ONE THAT IS ALREADY DECIDED. There is nothing left to approve.
   check('nor on one already approved',
     A.canAuthorizeAlone({ status: 'approved', drafted_by: 'vc-1' }, 'vc-1', 'vice-chancellor'),
+    false);
+  check('nor on one already issued',
+    A.canAuthorizeAlone({ status: 'issued', drafted_by: 'vc-1' }, 'vc-1', 'vice-chancellor'),
     false);
 
   // THE OFFICE RECORDED AGAINST IT. 055 refuses the flag from any office not

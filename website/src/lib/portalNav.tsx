@@ -16,7 +16,7 @@ import {
   FileText, Award, Monitor, PenTool, FolderOpen, BarChart3,
   Settings, Shield, BookMarked, Wallet, Stamp, UserCog, Inbox,
   ClipboardCheck, Share2, BadgeCheck, Video, Eye, CalendarClock, TrendingUp,
-  CalendarDays, MapPin, Building2,
+  CalendarDays, MapPin, Building2, Receipt,
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -308,6 +308,17 @@ export const menuGroups: MenuGroup[] = [
       { id: 'my-credentials', label: 'My credentials', icon: <Award size={18} />, roles: ['student'] },
       { id: 'documents', label: 'Documents', icon: <FolderOpen size={18} />, roles: ['superadmin', 'admin', 'student'] },
       { id: 'fees', label: 'Fees & receipts', icon: <Wallet size={18} />, roles: ['superadmin', 'admin', 'finance', 'finance-director'] },
+      // WHAT THE UNIVERSITY CHARGES, as against what it has received.
+      // 'Fees & receipts' is Finance's record of money IN; this is the
+      // schedule money is owed against, and the University reserved setting
+      // it to the Superadministrator. The Finance Director is here to READ it
+      // — they raise invoices from it and cannot publish one.
+      {
+        id: 'fee-schedules',
+        label: 'Fee schedules',
+        icon: <Receipt size={18} />,
+        roles: ['superadmin', 'admin', 'finance-director'],
+      },
     ],
   },
   {

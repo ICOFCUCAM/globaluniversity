@@ -224,6 +224,19 @@ select * from (
   select '074' as migration, '074_connecting_what_was_already_there.sql' as file,
          case when to_regclass('public.my_requests') is not null then 'YES' else 'NO' end as landed,
          'my_requests' as what_it_creates
+  union all
+  select '075' as migration, '075_what_a_student_is_charged.sql' as file,
+         case when to_regclass('public.fee_schedules') is not null then 'YES' else 'NO' end as landed,
+         'fee_schedules' as what_it_creates
+  union all
+  select '076' as migration, '076_one_transcript_one_download.sql' as file,
+         case when exists (
+                   select 1 from information_schema.columns
+                    where table_schema = 'public'
+                      and table_name = 'transcript_requests'
+                      and column_name = 'downloads_allowed')
+                 then 'YES' else 'NO' end as landed,
+         'transcript_requests.downloads_allowed' as what_it_creates
 ) as landed_report
  order by migration;
 

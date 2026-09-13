@@ -13,32 +13,30 @@
 // financial status, but cannot manipulate Finance's authoritative records."
 //
 // ---------------------------------------------------------------------------
-// THERE IS NO "OUTSTANDING" ON THIS SCREEN, AND THAT IS THE HONEST ANSWER
+// THERE IS AN "OUTSTANDING" NOW, AND IT WAS EARNED RATHER THAN GUESSED
 // ---------------------------------------------------------------------------
 //
-// The University asked for Total, Paid and Outstanding. Two of the three can be
-// stated truthfully today and the third cannot.
+// This screen used to refuse to show a balance, and the refusal was right at
+// the time: nothing in the database recorded what a student was CHARGED, only
+// what had been received. The only way to produce a figure was to take the
+// published $12,200, multiply by the years and subtract the payments — a
+// number no office in the University had ever agreed, on a screen students act
+// on. Somebody pays the wrong amount; somebody is told they are in arrears and
+// is not.
 //
-//   PAID          `payments` records every payment received. Real.
-//   TOTAL         the published tuition schedule. Real, and quoted below
-//                 exactly as the University publishes it on iguc.net/tuition.
-//   OUTSTANDING   nothing in this database charges a student anything. There
-//                 is no invoice table, no fee assessment, no record of what
-//                 THIS student was asked to pay.
+// 075 changed the fact rather than the policy. The Superadministrator sets a
+// fee schedule, Finance raises it against a student, and the balance is now
+// arithmetic on rows that somebody at the University typed deliberately.
 //
-// The obvious move is to subtract: take $12,200, multiply by the years,
-// subtract what was paid. That would put a number on a student's screen that
-// no office in the University has ever agreed — and students act on this
-// screen. Somebody pays the wrong amount. Somebody is told they are in arrears
-// and is not. Somebody is told they are clear and is not, and finds out at
-// graduation.
+// SO THE RULE IS UNCHANGED AND STILL ENFORCED: a balance is shown only where
+// the student has actually been assessed. `has_been_assessed` is the column
+// that carries it, and where it is false this screen says "nothing has been
+// charged to you yet" rather than "you owe nothing" — which are different
+// statements and only one of them is true.
 //
-// A published price is not an invoice. Full-time and part-time differ,
-// dependants change the figure, and none of that is recorded per student.
-//
-// So this screen shows what was paid, quotes the published schedule as
-// published, and says plainly that Finance holds the account. It gains a
-// balance the day the University records invoices, and not before.
+// AND NEVER ACROSS CURRENCIES. The account is per currency, because this
+// system holds no exchange rate and inventing one would put a wrong number on
+// a financial screen.
 // ---------------------------------------------------------------------------
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -50,6 +48,10 @@ import { Wallet, Receipt, Info } from 'lucide-react';
 
 // eslint-disable-next-line max-len
 const COLUMNS = 'student_id, payment_id, reference, amount, currency, purpose, method, received_at, received_on, note';
+// eslint-disable-next-line max-len
+const ACCOUNT = 'student_id, currency, assessed, waived, payable, paid, outstanding, has_been_assessed, standing';
+// eslint-disable-next-line max-len
+const CHARGES = 'student_id, assessment_id, session_label, semester, label, category, amount, waived, payable, currency, due_on, waiver_reason, raised_at, overdue';
 
 export interface Payment {
   payment_id: string;
@@ -91,20 +93,56 @@ export function money(amount: number, currency: string): string {
   }
 }
 
+export interface AccountLine {
+  currency: string;
+  assessed: number;
+  waived: number;
+  payable: number;
+  paid: number;
+  outstanding: number;
+  has_been_assessed: boolean;
+  standing: string;
+}
+
+export interface Charge {
+  assessment_id: string;
+  session_label: string;
+  semester: number | null;
+  label: string;
+  category: string;
+  amount: number;
+  waived: number;
+  payable: number;
+  currency: string;
+  due_on: string | null;
+  waiver_reason: string | null;
+  overdue: boolean;
+}
+
 export default function MyFinance() {
   const [rows, setRows] = useState<Payment[]>([]);
+  const [account, setAccount] = useState<AccountLine[]>([]);
+  const [charges, setCharges] = useState<Charge[]>([]);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const { rows: r, failed: f } = await readMine<Payment>(
-      'my_finance', COLUMNS, { column: 'received_at', ascending: false },
-    );
-    setRows(r); setFailed(f); setLoading(false);
+    const [p, a, c] = await Promise.all([
+      readMine<Payment>('my_finance', COLUMNS, { column: 'received_at', ascending: false }),
+      readMine<AccountLine>('my_fee_account', ACCOUNT),
+      readMine<Charge>('my_fee_assessments', CHARGES, { column: 'raised_at', ascending: false }),
+    ]);
+    setRows(p.rows); setAccount(a.rows); setCharges(c.rows);
+    // THE ACCOUNT IS THE ONE THAT MATTERS. If the payments read but the
+    // account did not, a screen showing payments alone reads as "nothing is
+    // owed" — so any failure fails the whole screen.
+    setFailed(p.failed ?? a.failed ?? c.failed);
+    setLoading(false);
   }, []);
   useEffect(() => { void load(); }, [load]);
 
   const totals = useMemo(() => totalsByCurrency(rows), [rows]);
+  const assessed = useMemo(() => account.filter((a) => a.has_been_assessed), [account]);
 
   return (
     <StudentScreen
@@ -146,27 +184,131 @@ export default function MyFinance() {
         </div>
 
         {/* ------------------------------------------------------------------
-            THE SENTENCE THAT REPLACES A BALANCE.
+            THE BALANCE, WHERE THERE IS ONE TO SHOW.
 
-            It is a panel rather than a footnote because it is the most
-            important thing on the screen: a student who assumes the absence
-            of a balance means they owe nothing is worse off than one who is
-            told where to ask.
+            `has_been_assessed` is what separates the two cases, and they are
+            drawn completely differently on purpose: a student who owes
+            nothing and a student nobody has charged yet must never read the
+            same.
             ------------------------------------------------------------------ */}
-        <Card className="flex items-start gap-3 border-[#c5a55a] p-4">
-          <Info size={16} className="mt-0.5 shrink-0 text-[#c5a55a]" />
-          <div className="text-xs leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">
-            <p className="font-semibold text-[#33234a] dark:text-[#e4dcf0]">
-              This portal does not show a balance, and you should not read one into it.
-            </p>
-            <p className="mt-1">
-              The University&apos;s record of what you have been charged is held by the Finance
-              Office, not here. This page shows only what has been recorded as received from you.
-              For a statement of your account — what is due and by when — ask Finance under
-              Student services.
-            </p>
-          </div>
-        </Card>
+        {assessed.length === 0 ? (
+          <Card className="flex items-start gap-3 border-[#c5a55a] p-4">
+            <Info size={16} className="mt-0.5 shrink-0 text-[#c5a55a]" />
+            <div className="text-xs leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">
+              <p className="font-semibold text-[#33234a] dark:text-[#e4dcf0]">
+                Nothing has been charged to you yet.
+              </p>
+              <p className="mt-1">
+                That is not the same as owing nothing. The University has not raised any fee
+                against your record in this system, so there is no balance to show. The Finance
+                Office holds the account — ask them under Student services if you need a
+                statement.
+              </p>
+            </div>
+          </Card>
+        ) : (
+          <section className="space-y-2">
+            <h2 className="font-heading text-sm font-bold text-[#422e59] dark:text-[#c8b6e8]">
+              Your account
+            </h2>
+            {assessed.map((a) => (
+              <Card key={a.currency} className={`p-5 ${
+                a.outstanding > 0 ? 'border-[#c5a55a]' : ''
+              }`}>
+                <div className="grid gap-4 sm:grid-cols-4">
+                  <Line label="Charged" value={money(Number(a.assessed), a.currency)} />
+                  {Number(a.waived) > 0 && (
+                    <Line label="Waived" value={money(Number(a.waived), a.currency)} />
+                  )}
+                  <Line label="Paid" value={money(Number(a.paid), a.currency)} />
+                  <Line
+                    label={Number(a.outstanding) < 0 ? 'In credit' : 'Outstanding'}
+                    value={money(Math.abs(Number(a.outstanding)), a.currency)}
+                    tone={Number(a.outstanding) > 0 ? 'attention' : 'ok'}
+                  />
+                </div>
+                <p className="mt-3 text-[11px] text-[#a49bb0] dark:text-[#7b7289]">
+                  {a.standing === 'paid in full'
+                    ? 'Your account is settled in this currency.'
+                    : a.standing === 'in credit'
+                      ? 'You have paid more than has been charged. Ask Finance about a refund or '
+                        + 'carrying it forward.'
+                      : 'Payments are recorded by the Finance Office. If you have paid something '
+                        + 'that is not shown here, ask them under Student services.'}
+                </p>
+              </Card>
+            ))}
+            {/* A PAYMENT IN A CURRENCY NOTHING WAS CHARGED IN. Shown, and shown
+                as unapplied, because the alternative is a student seeing a
+                full balance beside a payment they know they made. */}
+            {account.some((a) => !a.has_been_assessed && Number(a.paid) > 0) && (
+              <Card className="flex items-start gap-3 p-4">
+                <Info size={15} className="mt-0.5 shrink-0 text-[#c5a55a]" />
+                <p className="text-xs leading-relaxed text-[#6b6076] dark:text-[#9c93ad]">
+                  Some of your payments are in a currency nothing has been charged in
+                  {' ('}
+                  {account.filter((a) => !a.has_been_assessed && Number(a.paid) > 0)
+                    .map((a) => a.currency).join(', ')}
+                  {'). '}
+                  They are recorded, and they are not set against the balances above — the
+                  University has recorded no exchange rate, so this portal will not invent one.
+                  Finance can apply them.
+                </p>
+              </Card>
+            )}
+          </section>
+        )}
+
+        {/* ---- WHAT WAS CHARGED, LINE BY LINE ---- */}
+        {charges.length > 0 && (
+          <section className="space-y-2">
+            <h2 className="font-heading text-sm font-bold text-[#422e59] dark:text-[#c8b6e8]">
+              What you have been charged
+            </h2>
+            <Card className="divide-y divide-[#f0ece4] dark:divide-[#2a2333]">
+              {charges.map((c) => (
+                <div key={c.assessment_id}
+                  className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-[#33234a] dark:text-[#e4dcf0]">
+                      {c.label}
+                    </p>
+                    <p className="truncate text-[11px] text-[#a49bb0]">
+                      {c.session_label}
+                      {c.semester ? ` · Semester ${c.semester}` : ''}
+                      {c.category ? ` · ${c.category}` : ''}
+                      {/* A WAIVER IS SHOWN WITH ITS REASON rather than the
+                          amount being quietly reduced — see 075. */}
+                      {Number(c.waived) > 0 && c.waiver_reason
+                        ? ` · waived: ${c.waiver_reason}` : ''}
+                    </p>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="text-sm font-semibold tabular-nums
+                                  text-[#33234a] dark:text-[#e4dcf0]">
+                      {money(Number(c.payable), c.currency)}
+                      {Number(c.waived) > 0 && (
+                        <span className="ml-2 text-[11px] font-normal text-[#a49bb0] line-through">
+                          {money(Number(c.amount), c.currency)}
+                        </span>
+                      )}
+                    </p>
+                    {c.due_on && (
+                      <p className={`text-[11px] ${
+                        c.overdue ? 'font-medium text-red-700 dark:text-red-300' : 'text-[#a49bb0]'
+                      }`}>
+                        {c.overdue ? 'was due ' : 'due '}
+                        {new Date(`${c.due_on}T00:00:00`).toLocaleDateString('en-GB', {
+                          day: 'numeric', month: 'long', year: 'numeric',
+                        })}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </Card>
+          </section>
+        )}
 
         {/* ---- THE PAYMENTS THEMSELVES ---- */}
         {rows.length > 0 && (
@@ -242,5 +384,23 @@ export default function MyFinance() {
         </p>
       </div>
     </StudentScreen>
+  );
+}
+
+/** One figure of the account. Four of these make a balance a person can read. */
+function Line({
+  label, value, tone = 'plain',
+}: { label: string; value: string; tone?: 'plain' | 'ok' | 'attention' }) {
+  return (
+    <div>
+      <p className="text-xs uppercase tracking-wide text-[#a49bb0]">{label}</p>
+      <p className={`mt-0.5 font-heading text-xl font-bold tabular-nums ${
+        tone === 'attention' ? 'text-[#a07c12]'
+          : tone === 'ok' ? 'text-emerald-700 dark:text-emerald-300'
+            : 'text-[#422e59] dark:text-[#c8b6e8]'
+      }`}>
+        {value}
+      </p>
+    </div>
   );
 }

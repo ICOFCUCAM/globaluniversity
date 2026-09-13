@@ -217,6 +217,10 @@ const READ_ONLY_BY_DESIGN = {
   my_result_terms: 'A view: the same marks by term, with the GPA READ from semester_gpas rather '
     + 'than recomputed — a second opinion on a GPA is how a portal and a transcript come to '
     + 'disagree about the most consulted number in the University.',
+  student_fee_account: 'A view over `student_fee_assessments` and `payments`: what the ledger '
+    + 'says, per student per currency. Never stored, because a stored balance drifts from the '
+    + 'rows it came from and nobody can then say which is right. /api/finance/fees writes the '
+    + 'assessments and the Finance desk writes the payments underneath it.',
   capability_grants_in_force: 'A view over `capability_grants`, which /api/admin/capability-grant '
     + 'writes. It exists so that "still in force" — not revoked AND not expired — is decided in '
     + 'one place: a caller checking only `revoked_at is null` would honour a grant that ran out '
@@ -274,6 +278,26 @@ const KNOWN_MISSING = {
   // behaviour that stops a list like this becoming a graveyard of things
   // somebody once decided not to fix.
   // ---------------------------------------------------------------------
+  //
+  // AND ONE ENTRY, FOUND BY A SCREEN THAT MERELY WANTED TO READ IT.
+  //
+  // The Fee Schedules screen lists programmes so a schedule can be scoped to
+  // one. It is the FIRST thing in the application to read `programmes` by
+  // name — every other screen goes through `programme_in_force` or
+  // `curriculum_progress` — and the moment it did, this check found that
+  // nothing in the portal can WRITE that table.
+  //
+  // The University's forty-one programmes were seeded by migration 060. There
+  // is no screen that creates a forty-second: Schools & departments creates
+  // schools and departments and stops there, and the Curriculum Builder works
+  // on VERSIONS of a programme that already exists.
+  //
+  // Named here rather than in READ_ONLY_BY_DESIGN because it is not by
+  // design. A University that opens a new programme should not need a
+  // migration to say so.
+  programmes: 'The register of programmes is seeded by migration 060 and no screen creates one. '
+    + 'Opening a new programme currently means writing SQL. The Schools & departments screen is '
+    + 'where it belongs, beside the two levels above it.',
 
 };
 

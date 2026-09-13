@@ -235,6 +235,11 @@ const MARKERS = {
   // the one that unions all three request pipelines, and nothing earlier
   // could have created a view by that name.
   '074': 'my_requests',
+  '075': 'fee_schedules',
+  // 076 creates no table. It adds columns to `transcript_requests` and a
+  // function; the counter is the marker, because nothing before it could
+  // limit how many times a transcript was released.
+  '076': 'transcript_requests.downloads_allowed',
 };
 
 /** The SQL that answers "is this one here?", for each of the three forms. */

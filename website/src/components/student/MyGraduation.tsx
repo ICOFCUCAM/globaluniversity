@@ -28,23 +28,29 @@
 // turned into the ticks the University drew.
 //
 // ---------------------------------------------------------------------------
-// A TICK THIS SYSTEM CANNOT EARN IS NOT DRAWN
+// FINANCIAL CLEARANCE IS A DECISION, AND THE LEDGER IS SHOWN BESIDE IT
 // ---------------------------------------------------------------------------
 //
-// FINANCIAL CLEARANCE IS UNKNOWN, ALWAYS, and it is shown as unknown rather
-// than left off the list. Nothing in this database records what a student is
-// charged, so nothing can say whether they have paid it. 069 established that
-// and this keeps it.
+// This screen used to report financial clearance as permanently UNKNOWN,
+// because nothing recorded what a student was charged. 075 and 076 changed
+// that, and the University asked what the best answer was. This is it:
 //
-// A green tick beside "Financial clearance" that nobody computed is the single
-// most damaging mark this screen could make. A student would read it, believe
-// they were cleared, and find out otherwise at the congregation — with their
-// family already there.
+//   THE LEDGER says what is outstanding. Computed, never stored.
+//   FINANCE says whether the student is clear. Dated, attributable, required.
 //
-// So the three states are kept apart everywhere: MET, NOT MET, and CANNOT BE
-// ESTABLISHED. The last one sends a student to an office; the second sends
-// them to their studies; and a system that collapsed them would send both to
-// the wrong place.
+// Neither alone is right. Computing clearance refuses a degree to a student
+// who paid cash at a desk that was never keyed in, and can never clear one
+// whose fees were waived. Recording it alone lets somebody tick without
+// looking.
+//
+// So BOTH are drawn, side by side. A clearance granted against an outstanding
+// balance reads as exactly that — "cleared by Finance, $400 outstanding,
+// because: instalment agreement" — rather than as a green tick that hides the
+// judgement somebody made.
+//
+// AND IT IS STILL THREE-VALUED. Null no longer means "this system cannot
+// know"; it means Finance has not decided yet, which is something a student
+// can act on. False means Finance looked and refused.
 // ---------------------------------------------------------------------------
 
 import React, { useCallback, useEffect, useState } from 'react';
@@ -59,7 +65,7 @@ import {
 import type { ViewType } from '@/lib/types';
 
 // eslint-disable-next-line max-len
-const COLUMNS = 'student_id, full_name, programme_code, programme_name, credits_required, credits_earned, credits_against_award, courses_outstanding, courses_failed, cgpa, min_cgpa, award_title, graduation_id, senate_approved_on, conferred_on, convocation_on, classification, graduation_number, credits_met, courses_met, nothing_failed, cgpa_met, finance_cleared, already_conferred, eligible';
+const COLUMNS = 'student_id, full_name, programme_code, programme_name, credits_required, credits_earned, credits_against_award, courses_outstanding, courses_failed, cgpa, min_cgpa, award_title, graduation_id, senate_approved_on, conferred_on, convocation_on, classification, graduation_number, credits_met, courses_met, nothing_failed, cgpa_met, finance_cleared, finance_reason, finance_decided_at, finance_outstanding, finance_currency, finance_assessed, already_conferred, eligible';
 
 export interface GraduationRow {
   full_name: string;
@@ -83,6 +89,11 @@ export interface GraduationRow {
   nothing_failed: boolean | null;
   cgpa_met: boolean | null;
   finance_cleared: boolean | null;
+  finance_reason: string | null;
+  finance_decided_at: string | null;
+  finance_outstanding: number | null;
+  finance_currency: string | null;
+  finance_assessed: boolean;
   already_conferred: boolean;
   eligible: boolean | null;
 }
@@ -136,12 +147,23 @@ export function checksFor(g: GraduationRow): Check[] {
             : `Cumulative GPA ${Number(g.cgpa).toFixed(2)}, below the minimum of ${g.min_cgpa}.`,
     },
     {
-      // ALWAYS UNKNOWN. See the header — this is the one that must never
-      // silently become a tick.
+      // THE DECISION, WITH THE LEDGER BESIDE IT. Never a bare tick — see the
+      // header. Where Finance cleared somebody who still owes money, that is
+      // a legitimate judgement and the student should see both halves of it.
       label: 'Financial clearance',
-      state: null,
-      says: 'This system does not record what a student is charged, so it cannot tell you '
-        + 'whether you are cleared. The Finance Office holds that, and only they can confirm it.',
+      state: g.finance_cleared,
+      says: g.finance_cleared === null
+        ? (g.finance_assessed && (g.finance_outstanding ?? 0) > 0
+          ? `The Finance Office has not yet decided. Their record shows `
+            + `${fmtMoney(g.finance_outstanding, g.finance_currency)} outstanding.`
+          : 'The Finance Office has not yet recorded a decision on your account.')
+        : g.finance_cleared
+          ? ((g.finance_outstanding ?? 0) > 0
+            ? `Cleared by the Finance Office with `
+              + `${fmtMoney(g.finance_outstanding, g.finance_currency)} outstanding`
+              + (g.finance_reason ? ` \u2014 ${g.finance_reason}` : '.')
+            : 'Cleared by the Finance Office; nothing outstanding on your account.')
+          : (g.finance_reason ?? 'The Finance Office has not cleared your account.'),
     },
   ];
 }
@@ -310,6 +332,20 @@ export default function MyGraduation({ onNavigate }: { onNavigate?: (v: ViewType
       )}
     </StudentScreen>
   );
+}
+
+/** An amount and its currency, or a plain sentence where there is neither. */
+export function fmtMoney(amount: number | null, currency: string | null): string {
+  if (amount === null) return 'an amount the Finance Office holds';
+  const n = Number(amount);
+  try {
+    return new Intl.NumberFormat('en-GB', {
+      style: 'currency', currency: currency ?? 'USD', currencyDisplay: 'narrowSymbol',
+    }).format(n);
+  } catch {
+    // AN UNKNOWN CURRENCY CODE MUST NOT BLANK A GRADUATION SCREEN.
+    return `${currency ?? ''} ${n.toFixed(2)}`.trim();
+  }
 }
 
 function readable(iso: string): string {

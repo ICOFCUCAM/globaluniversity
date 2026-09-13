@@ -396,6 +396,49 @@ export default function Appointments() {
                   </button>
                 )}
 
+                {/* ---------------------------------------------------------
+                    THE SECOND BUTTON, BESIDE THE FIRST.
+
+                    The University asked for it by name: "how come the VC
+                    cannot complete an appointment from draft to finished
+                    without others. I thought this was fixed" — and then "I
+                    think it should have a different button beside draft and
+                    submit", and "that extra button should be on superadmin
+                    too".
+
+                    It WAS fixed, and it was fixed one step short. Approving
+                    your own appointment has been permitted since 055, but
+                    only once the appointment was SUBMITTED — and the only
+                    route to submitted was a button reading "Send for
+                    approval". So an office that needs nobody's approval had
+                    to press a button saying it was asking for one.
+
+                    This does the whole thing in a single act, and offers it
+                    only to the offices that hold the authority: the
+                    Vice-Chancellor, the Chancellor, and the two system
+                    accounts. Everybody else sees the ordinary button alone.
+
+                    THE CONTROL IS UNCHANGED. 055's constraint still refuses
+                    any self-approval that is not permanently marked as one,
+                    and the record will show that one office did both.
+                    --------------------------------------------------------- */}
+                {a.status === 'draft' && mayDraft && !blocked(missing)
+                  && maySoleAuthority && a.drafted_by === user?.id && (
+                  <div className="space-y-2">
+                    <button disabled={busy} className={BTN_PRIMARY}
+                      onClick={() => void act({
+                        action: 'decide', id: a.id, decision: 'approve',
+                        ...(reason.trim() ? { reason: reason.trim() } : {}),
+                      })}>
+                      <Check size={14} /> Approve on my own authority
+                    </button>
+                    <p className="text-xs text-[#6b6076] dark:text-[#9c93ad]">
+                      Yours to do without a second officer. The record will show permanently
+                      that one office both drafted and approved it.
+                    </p>
+                  </div>
+                )}
+
                 {a.status === 'submitted' && mayApprove && (
                   a.drafted_by === user?.id ? (
                     // ---------------------------------------------------
