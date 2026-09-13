@@ -9,6 +9,7 @@
 
 import React from 'react';
 import type { ViewType, UserRole } from './types';
+import { showsAtStage } from './studentJourney';
 import {
   UserCheck,
   LayoutDashboard, Users, GraduationCap, BookOpen, ClipboardList,
@@ -445,17 +446,134 @@ export const menuGroups: MenuGroup[] = [
 ];
 
 
-/** Every item the given role may reach, flattened — what search looks through. */
-export function navItemsFor(role: UserRole | undefined | null): Array<MenuItem & { group: string }> {
+// ===========================================================================
+// THE STUDENT'S OWN NAVIGATION.
+//
+// ---------------------------------------------------------------------------
+// WHAT THE UNIVERSITY ASKED FOR
+// ---------------------------------------------------------------------------
+//
+// "The student web should not simply expose the Superadmin Academic modules.
+// It should be a student-facing academic journey, with information and actions
+// appearing according to the student's actual status."
+//
+// The list above is the University's administration, grouped by OFFICE —
+// Admissions, Academic, Teaching, Records — because that is how the work is
+// divided among the people who do it. Filtering it down to a student's rows
+// leaves them reading a filing cabinet: 'Learning (LMS)' under Academic,
+// 'Assignments' under Teaching, 'Results' and 'Transcript' under Records, and
+// their own degree nowhere at all.
+//
+// A student has one office and it is their own. So the groups below are the
+// four questions they actually have — what am I doing, what is due, what have
+// I earned, and what is going on — and the labels are in the first person
+// because the screens are theirs.
+//
+// ---------------------------------------------------------------------------
+// AND THE ENTRIES MOVE WITH THE JOURNEY
+// ---------------------------------------------------------------------------
+//
+// `showsAtStage` decides which of them are worth offering today. A person
+// whose application is under review does not get a Timetable that opens on an
+// empty week, and a graduate is not offered Course registration. That is not a
+// permission — roles.ts still decides what may be OPENED — it is the
+// difference between a portal that knows where somebody is and one that draws
+// every screen it owns and lets them find out.
+//
+// A NULL STAGE NARROWS NOTHING. While the read is in flight, and after one
+// that failed, every entry is offered. Hiding navigation because the network
+// was slow is the worse of the two mistakes by a distance.
+// ===========================================================================
+
+export const STUDENT_GROUPS: MenuGroup[] = [
+  {
+    title: null,
+    items: [
+      { id: 'dashboard', label: 'My dashboard', icon: <LayoutDashboard size={18} />, roles: ['student'] },
+    ],
+  },
+  {
+    title: 'My studies',
+    items: [
+      // THEIR DEGREE, FIRST. Not the programme register — the one they are
+      // reading for, with their own progress through it.
+      { id: 'my-programme', label: 'My programme', icon: <GraduationCap size={18} />, roles: ['student'] },
+      { id: 'course-registration', label: 'Course registration', icon: <ClipboardList size={18} />, roles: ['student'] },
+      { id: 'lms', label: 'My courses', icon: <BookOpen size={18} />, roles: ['student'] },
+      { id: 'timetable', label: 'My timetable', icon: <CalendarDays size={18} />, roles: ['student'] },
+    ],
+  },
+  {
+    title: 'My work',
+    items: [
+      // 'Assessments' rather than 'Assignments': the University named it, and
+      // it is the truer word — an assignment, a mid-semester paper and an
+      // examination are all things due on a date, and a student thinks of them
+      // as one list however differently the system files them.
+      { id: 'assignments', label: 'Assessments', icon: <ClipboardCheck size={18} />, roles: ['student'] },
+      { id: 'sit-examination', label: 'Sit an examination', icon: <Video size={18} />, roles: ['student'] },
+    ],
+  },
+  {
+    title: 'My record',
+    items: [
+      { id: 'results', label: 'My results', icon: <BarChart3 size={18} />, roles: ['student'] },
+      { id: 'academic-records', label: 'Academic record', icon: <ClipboardList size={18} />, roles: ['student'] },
+      { id: 'transcript', label: 'Transcript', icon: <FileText size={18} />, roles: ['student'] },
+      { id: 'my-credentials', label: 'My credentials', icon: <Award size={18} />, roles: ['student'] },
+      { id: 'documents', label: 'My documents', icon: <FolderOpen size={18} />, roles: ['student'] },
+    ],
+  },
+  {
+    title: 'University',
+    items: [
+      { id: 'announcements', label: 'Announcements', icon: <ClipboardList size={18} />, roles: ['student'] },
+      { id: 'forum', label: 'Discussion forum', icon: <Share2 size={18} />, roles: ['student'] },
+      { id: 'settings', label: 'Settings', icon: <Settings size={18} />, roles: ['student'] },
+    ],
+  },
+];
+
+/**
+ * The groups a signed-in person is offered.
+ *
+ * @param stage the student's journey stage, or null to narrow nothing.
+ */
+export function groupsFor(
+  role: UserRole | undefined | null,
+  stage?: string | null,
+): MenuGroup[] {
   if (!role) return [];
-  return menuGroups.flatMap((g) =>
-    g.items.filter((i) => i.roles.includes(role)).map((i) => ({ ...i, group: g.title ?? 'General' })),
-  );
+  const source = role === 'student' ? STUDENT_GROUPS : menuGroups;
+  return source
+    .map((g) => ({
+      ...g,
+      items: g.items.filter((i) => i.roles.includes(role)
+        && (role !== 'student' || !stage || showsAtStage(stage, i.id))),
+    }))
+    .filter((g) => g.items.length > 0);
 }
 
-/** The label for a view, for the breadcrumb. */
-export function labelForView(view: ViewType): string {
-  for (const g of menuGroups) {
+/** Every item the given role may reach, flattened — what search looks through. */
+export function navItemsFor(
+  role: UserRole | undefined | null,
+  stage?: string | null,
+): Array<MenuItem & { group: string }> {
+  return groupsFor(role, stage)
+    .flatMap((g) => g.items.map((i) => ({ ...i, group: g.title ?? 'General' })));
+}
+
+/**
+ * The label for a view, for the breadcrumb and the browser tab.
+ *
+ * THE STUDENT'S NAMES WIN WHERE THEY DIFFER, because a student is the only
+ * person who reaches those ids by those names: 'lms' is 'My courses' to them
+ * and 'Learning (LMS)' to a lecturer, and the tab should say what the sidebar
+ * they clicked said.
+ */
+export function labelForView(view: ViewType, role?: UserRole | null): string {
+  const source = role === 'student' ? [...STUDENT_GROUPS, ...menuGroups] : menuGroups;
+  for (const g of source) {
     const hit = g.items.find((i) => i.id === view);
     if (hit) return hit.label;
   }
@@ -463,8 +581,9 @@ export function labelForView(view: ViewType): string {
 }
 
 /** The group a view sits in, for the breadcrumb. */
-export function groupForView(view: ViewType): string | null {
-  for (const g of menuGroups) {
+export function groupForView(view: ViewType, role?: UserRole | null): string | null {
+  const source = role === 'student' ? [...STUDENT_GROUPS, ...menuGroups] : menuGroups;
+  for (const g of source) {
     if (g.items.some((i) => i.id === view)) return g.title;
   }
   return null;

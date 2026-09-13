@@ -219,6 +219,13 @@ const MARKERS = {
   '067': 'student_academic_record',
   '068': 'course_materials',
   '069': 'graduation_candidate',
+  // 070 creates a function and three views and no table. `my_journey` is the
+  // one the whole student portal hangs off.
+  '070': 'my_journey',
+  // 071 creates four views and one function. `my_results` is the marker: it
+  // is the one that changes what a student is shown, and nothing before it
+  // could have created a view by that name.
+  '071': 'my_results',
 };
 
 /** The SQL that answers "is this one here?", for each of the three forms. */

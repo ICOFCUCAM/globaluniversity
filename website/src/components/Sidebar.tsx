@@ -23,7 +23,8 @@ import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { IMAGES, UNIVERSITY } from '@/lib/constants';
 import type { ViewType } from '@/lib/types';
-import { menuGroups } from '@/lib/portalNav';
+import { groupsFor } from '@/lib/portalNav';
+import { useJourney } from '@/contexts/JourneyContext';
 import { roleLabels, SYSTEM_ROLES } from '@/lib/roles';
 import { FOCUS } from '@/lib/portalTheme';
 import { LogOut, ChevronLeft, ChevronRight, X } from 'lucide-react';
@@ -42,10 +43,12 @@ export default function Sidebar({
   currentView, onViewChange, collapsed, onToggle, mobileOpen = false, onMobileClose,
 }: SidebarProps) {
   const { user, logout } = useAuth();
-
-  const groups = menuGroups
-    .map((g) => ({ ...g, items: g.items.filter((i) => user && i.roles.includes(user.role)) }))
-    .filter((g) => g.items.length > 0);
+  // A STUDENT'S RAIL IS THEIR OWN, AND MOVES WITH THEM. See STUDENT_GROUPS in
+  // portalNav — staff get the University's offices, a student gets their
+  // journey, and `stage` narrows it to what is worth offering today. Null
+  // stage (unread, or unreadable) narrows nothing.
+  const { stage } = useJourney();
+  const groups = groupsFor(user?.role, stage);
 
   const initials = (user?.name ?? '')
     .split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();

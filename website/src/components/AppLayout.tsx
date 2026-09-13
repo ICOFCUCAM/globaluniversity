@@ -18,6 +18,11 @@ import AdmissionsOffice from './admissions/AdmissionsOffice';
 import AcademicAdmissions from './admissions/AcademicAdmissions';
 import { isEnrolledRole } from '@/lib/roles';
 import { labelForView } from '@/lib/portalNav';
+import { JourneyProvider } from '@/contexts/JourneyContext';
+import MyProgramme from './student/MyProgramme';
+import MyTimetable from './student/MyTimetable';
+import MyAssessments from './student/MyAssessments';
+import MyResults from './student/MyResults';
 import { UNIVERSITY } from '@/lib/constants';
 import LecturerManagement from './lecturers/LecturerManagement';
 import CourseRegistration from '@/components/courses/CourseRegistration';
@@ -102,9 +107,9 @@ export default function AppLayout() {
   // registrar with the admissions desk and the student register open in two
   // tabs had two identical tabs and had to click to tell them apart.
   useEffect(() => {
-    const label = labelForView(currentView);
+    const label = labelForView(currentView, user?.role);
     document.title = `${label} · ${UNIVERSITY.shortName} Portal`;
-  }, [currentView]);
+  }, [currentView, user?.role]);
 
   // Escape closes it, and the body stops scrolling underneath while it is open
   // — without that, a swipe on the drawer scrolls the page behind it.
@@ -222,8 +227,27 @@ export default function AppLayout() {
         return <CourseManagement />;
       case 'course-registration':
         return <CourseRegistration />;
+      // THE STUDENT'S OWN DEGREE. Not the programme register filtered to one
+      // row — see the header of MyProgramme for why those are two screens.
+      case 'my-programme':
+        return <MyProgramme onNavigate={navigate} />;
+      // -------------------------------------------------------------------
+      // THREE IDS, TWO SCREENS EACH, AND THE ROLE DECIDES WHICH.
+      //
+      // A student and a lecturer both reach 'results', 'assignments' and
+      // 'timetable' — and they want opposite things there. The staff screens
+      // are the ones that WRITE: ResultProcessing enters marks,
+      // AssignmentModule sets briefs, TimetableGrid builds the schedule. A
+      // student opening any of them was being handed the tool that produces
+      // the thing rather than the thing.
+      //
+      // The alternative was three more ViewType ids and three more sidebar
+      // entries, which would have put "Results" and "My results" in the same
+      // search box meaning almost the same thing. The University's own
+      // framing settles it: it is one subject, seen from two sides.
+      // -------------------------------------------------------------------
       case 'results':
-        return <ResultProcessing />;
+        return user?.role === 'student' ? <MyResults /> : <ResultProcessing />;
       case 'gradebook':
         return <GradeBook />;
       case 'result-approval':
@@ -264,7 +288,7 @@ export default function AppLayout() {
       case 'questionbank':
         return <QuestionBank />;
       case 'assignments':
-        return <AssignmentModule />;
+        return user?.role === 'student' ? <MyAssessments /> : <AssignmentModule />;
       case 'announcements':
         return <AnnouncementModule />;
       case 'appointments':
@@ -283,7 +307,7 @@ export default function AppLayout() {
       // of them could ever be detected. Its attendance half is still real
       // work, and keeps its own entry.
       case 'timetable':
-        return <TimetableGrid />;
+        return user?.role === 'student' ? <MyTimetable /> : <TimetableGrid />;
       case 'attendance':
         return <TimetableModule />;
       case 'course-offerings':
@@ -341,6 +365,10 @@ export default function AppLayout() {
   }
 
   return (
+    // WHERE THE STUDENT STANDS, READ ONCE, ABOVE EVERYTHING THAT READS IT.
+    // The rail, the breadcrumb, the search box and every student screen share
+    // one answer rather than each asking the database for their own.
+    <JourneyProvider>
     <div className="min-h-screen bg-[#f7f5f0] dark:bg-[#17131d]">
       {/* Scrim. Only on small screens, and only while the drawer is open. */}
       {mobileNavOpen && (
@@ -384,11 +412,12 @@ export default function AppLayout() {
         <div className="p-4 sm:p-6">
           {/* Keyed on the view so moving to another screen resets the boundary
               rather than leaving the last failure on display. */}
-          <ScreenBoundary key={currentView} screen={labelForView(currentView)}>
+          <ScreenBoundary key={currentView} screen={labelForView(currentView, user?.role)}>
             {renderView()}
           </ScreenBoundary>
         </div>
       </main>
     </div>
+    </JourneyProvider>
   );
 }

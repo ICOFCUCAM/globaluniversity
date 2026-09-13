@@ -189,6 +189,34 @@ const READ_ONLY_BY_DESIGN = {
     + '/api/academic/graduation writes graduation_records underneath it.',
   graduation_cohort: 'A view: conferrals grouped by the day they were conferred — a congregation, '
     + 'as the register sees it.',
+  // ---------------------------------------------------------------------
+  // THE SIX THE STUDENT PORTAL READS AND NOTHING WRITES, ON PURPOSE.
+  //
+  // Every one of them filters on auth.uid() INSIDE THE DATABASE rather than
+  // leaving a screen to remember to. That is the whole reason they are views
+  // and not queries: a screen that forgets the filter shows one student
+  // another student's marks, and no amount of care in the browser prevents
+  // that as reliably as a view that cannot return anybody else's rows.
+  // ---------------------------------------------------------------------
+  my_journey: 'A view: where the signed-in student stands in their own journey, from '
+    + '`student_stage()`. Nothing writes it because every fact in it is counted from rows the '
+    + 'admissions, enrolment, registration and results pipelines already write.',
+  my_curriculum: 'A view: the signed-in student\'s own curriculum with each course marked, plus '
+    + 'whether it is OFFERED this term — the fact that separates "outstanding" from "not yet '
+    + 'available". /api/enrolment and /api/academic/offerings write underneath it.',
+  my_week: 'A view: the signed-in student\'s own classes arranged as a week, with the day NAMED '
+    + 'in SQL. Named there and not in the browser because class_sections.day_of_week is ISO '
+    + '(1 = Monday) and a browser assuming 0 = Sunday puts every class on the wrong day. '
+    + '/api/academic/offerings writes the classes underneath it.',
+  my_assessments: 'A view: assignment briefs and published examinations for the courses the '
+    + 'signed-in student is registered on, in one list. The Assignments screen writes the briefs '
+    + 'into module_records and the examination office writes the papers.',
+  my_results: 'A view: the signed-in student\'s marks from the moment the lecturer SUBMITS them, '
+    + 'each flagged official or provisional. A draft is not in it. /api/results and the approval '
+    + 'chain write the results underneath it.',
+  my_result_terms: 'A view: the same marks by term, with the GPA READ from semester_gpas rather '
+    + 'than recomputed — a second opinion on a GPA is how a portal and a transcript come to '
+    + 'disagree about the most consulted number in the University.',
   capability_grants_in_force: 'A view over `capability_grants`, which /api/admin/capability-grant '
     + 'writes. It exists so that "still in force" — not revoked AND not expired — is decided in '
     + 'one place: a caller checking only `revoked_at is null` would honour a grant that ran out '

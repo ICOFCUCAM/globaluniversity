@@ -336,6 +336,10 @@ export type ViewType =
   // careful design — the Senate's resolution date required, a degree refused
   // if dated before it — and nothing has ever read or written a row into it.
   | 'graduation'
+  // THE STUDENT'S OWN VIEW OF THEIR DEGREE. Not the Programme register,
+  // which lists forty-one programmes and is the Registry's — this is the
+  // one they are reading for, with their own progress through it.
+  | 'my-programme'
   // ATTENDANCE, SEPARATED FROM THE TIMETABLE. They were one screen because the
   // timetable kept its own invented slots; now that a class is a row every
   // other screen can read, marking who attended one is its own job.

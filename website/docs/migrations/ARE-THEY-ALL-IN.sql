@@ -199,6 +199,14 @@ select * from (
   select '069' as migration, '069_the_end_of_the_chain.sql' as file,
          case when to_regclass('public.graduation_candidate') is not null then 'YES' else 'NO' end as landed,
          'graduation_candidate' as what_it_creates
+  union all
+  select '070' as migration, '070_where_the_student_stands.sql' as file,
+         case when to_regclass('public.my_journey') is not null then 'YES' else 'NO' end as landed,
+         'my_journey' as what_it_creates
+  union all
+  select '071' as migration, '071_what_the_student_is_owed.sql' as file,
+         case when to_regclass('public.my_results') is not null then 'YES' else 'NO' end as landed,
+         'my_results' as what_it_creates
 ) as landed_report
  order by migration;
 

@@ -649,6 +649,30 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
       + 'qualifies by computation. That is the truth, not a bug, and the screen says so.',
     table: 'graduation_candidate',
   },
+  {
+    file: '070_where_the_student_stands.sql',
+    what: 'WHERE THE STUDENT STANDS, decided once. The student portal had to work out for '
+      + 'itself \u2014 from two status columns and a handful of counts \u2014 whether a person '
+      + 'was applying, admitted, enrolled, registering, studying, suspended or a graduate. Four '
+      + 'screens each working that out separately would eventually disagree, and the first time '
+      + 'they did, a student would be offered a registration button beside a message saying '
+      + 'registration had closed. `student_stage()` decides it in SQL and the dashboard, the '
+      + 'navigation and every student screen read the same answer. Writes nothing, refuses '
+      + 'nothing.',
+    table: 'my_journey',
+  },
+  {
+    file: '071_what_the_student_is_owed.sql',
+    what: 'THE WEEK, THE WORK AND THE MARKS \u2014 and one ruling the University should see. '
+      + 'Today a student sees nothing of a mark until the Registrar approves it. After this they '
+      + 'see it from the moment the LECTURER SUBMITS it, labelled PROVISIONAL and counting '
+      + 'towards no GPA, with the desk holding it named. A mark still in DRAFT stays with the '
+      + 'lecturer, which is the line the approval chain exists to draw. Also gives the student '
+      + 'timetable its week and puts assignments and examinations into one list of things due. '
+      + 'Writes nothing. If the University would rather a student saw nothing until approval, it '
+      + 'is one line in my_results.',
+    table: 'my_results',
+  },
 ];
 
 /** What a probe came back as. */

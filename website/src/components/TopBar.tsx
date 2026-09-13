@@ -27,6 +27,7 @@ import { useTheme } from '@/components/theme-provider';
 import { supabase } from '@/lib/supabase';
 import { listByKind } from '@/lib/moduleStore';
 import { navItemsFor, labelForView, groupForView } from '@/lib/portalNav';
+import { useJourney } from '@/contexts/JourneyContext';
 import { FOCUS, INPUT } from '@/lib/portalTheme';
 import type { ViewType, UserRole } from '@/lib/types';
 import { Search, Bell, Sun, Moon, Menu, CornerDownLeft } from 'lucide-react';
@@ -43,6 +44,7 @@ export default function TopBar({
 }: TopBarProps) {
   const { user, session, switchRole } = useAuth();
   const { resolvedTheme, setTheme } = useTheme();
+  const { stage } = useJourney();
   const [query, setQuery] = useState('');
   const [openSearch, setOpenSearch] = useState(false);
   const [highlight, setHighlight] = useState(0);
@@ -59,10 +61,14 @@ export default function TopBar({
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return [];
-    return navItemsFor(user?.role)
+    // SEARCH FINDS WHAT THE RAIL OFFERS, and nothing it does not. A student
+    // typing "grade" should not be handed the Grade Book, and one still
+    // applying should not be handed a timetable — a search box that reaches
+    // past the navigation is a second, undocumented navigation.
+    return navItemsFor(user?.role, stage)
       .filter((i) => i.label.toLowerCase().includes(q) || i.group.toLowerCase().includes(q))
       .slice(0, 7);
-  }, [query, user?.role]);
+  }, [query, user?.role, stage]);
 
   useEffect(() => setHighlight(0), [query]);
 
@@ -131,7 +137,7 @@ export default function TopBar({
   }, []);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
-  const group = groupForView(currentView);
+  const group = groupForView(currentView, user?.role);
 
   return (
     <header
@@ -158,7 +164,7 @@ export default function TopBar({
               </>
             )}
             <li className="truncate font-heading font-bold text-[#422e59] dark:text-[#e4dcf0]">
-              {labelForView(currentView)}
+              {labelForView(currentView, user?.role)}
             </li>
           </ol>
         </nav>
