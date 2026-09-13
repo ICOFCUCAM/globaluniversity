@@ -3939,6 +3939,34 @@ begin
   end if;
 
   begin
+    -- -----------------------------------------------------------------------
+    -- FIRST, GET OUT OF THE UNIVERSITY'S WAY.
+    --
+    -- THIS IS THE BUG THAT STOPPED THE MIGRATION ON THE LIVE DATABASE. The
+    -- proof below activates a 'promotion' template, and `one_active_idx`
+    -- permits one active template per kind. On a University that has since
+    -- activated its own promotion template through Settings, this proof
+    -- collided with it — "duplicate key value violates unique constraint
+    -- document_templates_one_active_idx, Key (kind)=(promotion) already
+    -- exists" — and took the whole migration down with it.
+    --
+    -- The version number was already kept out of the University's way, for
+    -- exactly this reason, and the note below says so. THE ACTIVE SLOT IS THE
+    -- SAME KIND OF SHARED RESOURCE and was not.
+    --
+    -- Parking it is safe because this entire block is rolled back: the
+    -- University's template is active again the moment the proof ends, and
+    -- the only state that survives is the notice at the bottom.
+    --
+    -- AND IT MAKES THE PROOF PROVE WHAT IT CLAIMS. With a real active
+    -- template still in the way, the "nobody activates their own" check below
+    -- would be satisfied by the INDEX refusing the write rather than by the
+    -- authorship rule — a pass for the wrong reason, which is worse than a
+    -- failure.
+    -- -----------------------------------------------------------------------
+    update document_templates set status = 'retired'
+     where kind = 'promotion' and status = 'active';
+
     -- VERSION 9001, NOT 1. 052 seeds a first draft of every document kind at
     -- version 1, so a proof claiming version 1 of 'promotion' collided with it
     -- on the SECOND run of RUN-ALL — clean on the first, a duplicate-key error
@@ -6412,8 +6440,30 @@ begin
 
   begin
     select id into pos_id from positions where job_code = 'ACS-LEC';
+
+    -- ---- THE ONE THIS PROOF MAY USE, CHOSEN AND NOT STUMBLED ON -----------
+    --
+    -- THE FAULT 044 WAS STOPPED BY ON THE LIVE DATABASE, WAITING TO HAPPEN
+    -- HERE. This was an unordered `select into` with no status filter, which
+    -- takes whichever row the planner hands over first. Today there is exactly
+    -- one academic-staff family profile and that is harmless. The moment the
+    -- University forks a second version — which is the whole point of the
+    -- Job Descriptions screen — there are two or three, this picks an
+    -- arbitrary one, and activating a superseded row while another is active
+    -- collides with `one_active_per_family_idx` and takes the migration down.
+    --
+    -- So: prefer a draft, fall back to the lowest version, and park anything
+    -- already active out of the way. All of it rolls back with the block, so
+    -- the University's own profile is exactly as it was the moment the proof
+    -- ends.
     select id into fam_id from position_profiles
-      where family = 'academic-staff' and position_id is null;
+     where family = 'academic-staff' and position_id is null
+     order by (status = 'draft') desc, version
+     limit 1;
+
+    update position_profiles set status = 'superseded'
+     where family = 'academic-staff' and position_id is null
+       and status = 'active' and id <> fam_id;
 
     -- ---- A PROFILE BELONGS TO A POST OR A FAMILY, NEVER BOTH ---------------
     refused := false;
@@ -7898,6 +7948,18 @@ begin
   end if;
 
   begin
+    -- ---- FIRST, GET OUT OF THE UNIVERSITY'S WAY ---------------------------
+    -- The same fault 044 was stopped by on the live database: this proof
+    -- activates a 'terms-and-conditions' template, and `one_active_idx`
+    -- permits one active per kind. A University that has activated its own
+    -- conditions of service through Settings would collide with this proof and
+    -- the migration would fail on a database where nothing is wrong.
+    --
+    -- Rolled back with the rest of the block, so the University's template is
+    -- active again the moment the proof ends.
+    update document_templates set status = 'retired'
+     where kind = 'terms-and-conditions' and status = 'active';
+
     -- ---- THE NEW KINDS ARE REGISTRABLE ------------------------------------
     -- VERSION 9001, NOT 1, and for the reason 044's proof now carries too: 052
     -- seeds a version 1 of every kind, so a proof claiming version 1 collides
@@ -8409,8 +8471,41 @@ begin
   end if;
 
   begin
-    select id into t_id from document_templates
-     where kind = 'letter-warning' and status = 'draft' limit 1;
+    -- -----------------------------------------------------------------------
+    -- THE PROOF BRINGS ITS OWN DRAFT. IT USED TO BORROW THE UNIVERSITY'S.
+    --
+    -- TWO WAYS THIS BROKE ON A REAL DATABASE, both found by running it against
+    -- a copy of the University's own state rather than a clean one.
+    --
+    -- 1. It read `where kind = 'letter-warning' and status = 'draft'`. Once the
+    --    University activates its seeded warning letter through Settings there
+    --    is no draft left, `t_id` is null, every following update touches no
+    --    rows, and the check below reports "an active template's wording was
+    --    rewritten in place" — a FAILURE MESSAGE DESCRIBING SOMETHING THAT DID
+    --    NOT HAPPEN, which is the worst kind, because it sends whoever reads
+    --    it looking for a fault that is not there.
+    --
+    -- 2. Activating it collided with the University's own active template on
+    --    `one_active_idx` — the same fault that stopped 044.
+    --
+    -- Both go away if the proof stops competing for the University's rows.
+    -- Version 9001 stays out of the way of their versions, and `created_by`
+    -- stays NULL because that is the property being proved: a seeded draft has
+    -- no author, so any officer may put it in force without tripping 044's
+    -- "nobody activates their own".
+    --
+    -- The retirement below is still needed — one active per kind — and rolls
+    -- back with the rest of the block, so the University's template is active
+    -- again the moment the proof ends.
+    -- -----------------------------------------------------------------------
+    update document_templates set status = 'retired'
+     where kind = 'letter-warning' and status = 'active';
+
+    insert into document_templates (kind, version, name, body, status, created_by)
+    values ('letter-warning', 9001, 'Warning Letter',
+            'A specimen warning letter, long enough to satisfy the minimum body length.',
+            'draft', null)
+    returning id into t_id;
 
     -- ---- A SEEDED DRAFT CAN BE ACTIVATED BY ANY OFFICER ---------------------
     -- `created_by` is null on every seeded row, so 044's "nobody activates
@@ -21723,8 +21818,16 @@ begin
 
   -- ---- A SET A PERSON WROTE IS NOT ACTIVE UNTIL SOMEBODY ACTIVATES IT ----
   if someone is not null then
+    -- THE NEXT FREE VERSION, NOT VERSION 1. `version_per_post_idx` is unique
+    -- per post, so a hard-coded 1 collides with a version 1 the University has
+    -- written for this post — the same class of fault that stopped 044 on the
+    -- live database, where a proof competed for a value the University's own
+    -- data occupies.
+    select coalesce(max(version), 0) + 1 into n
+      from appointment_condition_sets where position_id = pos_id;
+
     insert into appointment_condition_sets (position_id, version, status, created_by)
-    values (pos_id, 1, 'draft', someone)
+    values (pos_id, n, 'draft', someone)
     returning id into sid;
 
     refused := false;
@@ -21784,8 +21887,26 @@ begin
   -- The rule the letter and the screen must agree about. Proved by writing a
   -- post-specific `notice` and watching the family's `notice` disappear while
   -- the family's `leave` stays.
+  --
+  -- FIRST, GET OUT OF THE UNIVERSITY'S WAY — the fault 044 was stopped by on
+  -- the live database, which this migration had too. `one_active_per_post_idx`
+  -- permits one active set per post, and the moment the University gives the
+  -- Director of Academic Affairs conditions of their own through the
+  -- Conditions of appointment screen, this insert collides with it and the
+  -- migration fails on a database where nothing is wrong.
+  --
+  -- The version is chosen rather than assumed for the same reason: a
+  -- hard-coded 2 collides with a version 2 the University has written.
+  -- Everything here rolls back, so their set is active again the moment the
+  -- proof ends.
+  update appointment_condition_sets set status = 'superseded'
+   where position_id = pos_id and status = 'active';
+
+  select coalesce(max(version), 0) + 1 into n
+    from appointment_condition_sets where position_id = pos_id;
+
   insert into appointment_condition_sets (position_id, version, status, effective_from)
-  values (pos_id, 2, 'active', current_date)
+  values (pos_id, n, 'active', current_date)
   returning id into sid;
 
   insert into appointment_condition_clauses (set_id, section, ordinal, body)

@@ -642,8 +642,30 @@ begin
 
   begin
     select id into pos_id from positions where job_code = 'ACS-LEC';
+
+    -- ---- THE ONE THIS PROOF MAY USE, CHOSEN AND NOT STUMBLED ON -----------
+    --
+    -- THE FAULT 044 WAS STOPPED BY ON THE LIVE DATABASE, WAITING TO HAPPEN
+    -- HERE. This was an unordered `select into` with no status filter, which
+    -- takes whichever row the planner hands over first. Today there is exactly
+    -- one academic-staff family profile and that is harmless. The moment the
+    -- University forks a second version — which is the whole point of the
+    -- Job Descriptions screen — there are two or three, this picks an
+    -- arbitrary one, and activating a superseded row while another is active
+    -- collides with `one_active_per_family_idx` and takes the migration down.
+    --
+    -- So: prefer a draft, fall back to the lowest version, and park anything
+    -- already active out of the way. All of it rolls back with the block, so
+    -- the University's own profile is exactly as it was the moment the proof
+    -- ends.
     select id into fam_id from position_profiles
-      where family = 'academic-staff' and position_id is null;
+     where family = 'academic-staff' and position_id is null
+     order by (status = 'draft') desc, version
+     limit 1;
+
+    update position_profiles set status = 'superseded'
+     where family = 'academic-staff' and position_id is null
+       and status = 'active' and id <> fam_id;
 
     -- ---- A PROFILE BELONGS TO A POST OR A FAMILY, NEVER BOTH ---------------
     refused := false;

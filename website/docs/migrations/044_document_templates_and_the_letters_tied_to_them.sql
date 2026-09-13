@@ -247,6 +247,34 @@ begin
   end if;
 
   begin
+    -- -----------------------------------------------------------------------
+    -- FIRST, GET OUT OF THE UNIVERSITY'S WAY.
+    --
+    -- THIS IS THE BUG THAT STOPPED THE MIGRATION ON THE LIVE DATABASE. The
+    -- proof below activates a 'promotion' template, and `one_active_idx`
+    -- permits one active template per kind. On a University that has since
+    -- activated its own promotion template through Settings, this proof
+    -- collided with it — "duplicate key value violates unique constraint
+    -- document_templates_one_active_idx, Key (kind)=(promotion) already
+    -- exists" — and took the whole migration down with it.
+    --
+    -- The version number was already kept out of the University's way, for
+    -- exactly this reason, and the note below says so. THE ACTIVE SLOT IS THE
+    -- SAME KIND OF SHARED RESOURCE and was not.
+    --
+    -- Parking it is safe because this entire block is rolled back: the
+    -- University's template is active again the moment the proof ends, and
+    -- the only state that survives is the notice at the bottom.
+    --
+    -- AND IT MAKES THE PROOF PROVE WHAT IT CLAIMS. With a real active
+    -- template still in the way, the "nobody activates their own" check below
+    -- would be satisfied by the INDEX refusing the write rather than by the
+    -- authorship rule — a pass for the wrong reason, which is worse than a
+    -- failure.
+    -- -----------------------------------------------------------------------
+    update document_templates set status = 'retired'
+     where kind = 'promotion' and status = 'active';
+
     -- VERSION 9001, NOT 1. 052 seeds a first draft of every document kind at
     -- version 1, so a proof claiming version 1 of 'promotion' collided with it
     -- on the SECOND run of RUN-ALL — clean on the first, a duplicate-key error

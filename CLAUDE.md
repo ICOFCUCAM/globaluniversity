@@ -39,6 +39,23 @@ it is holding it.
    creates that no earlier migration created, so the Readiness panel can see it.
    `src/lib/migrationProbes.test.mjs` fails if the newest migration has none.
 
+   **And prove it against a database that looks like the University's, not an
+   empty one.** Load `tests/as-the-university-has-it.sql` after the first
+   landing, then run the bundles twice more. An empty harness has no active
+   templates, no activated job descriptions and no conditions written for a
+   particular post; the University's database has all three and gets more of
+   them every time they use the system properly.
+
+   **A proof must never compete for anything the University's own data
+   occupies** — not a version number, not a reference, and not a unique slot
+   like "the active template of this kind" or "the active conditions for this
+   post". 044 activated a `promotion` template, the University had activated
+   their own, and the migration died on `document_templates_one_active_idx`
+   after passing three clean runs here. Where a proof genuinely needs the slot,
+   it parks what is there FIRST, inside its own rolled-back block — which also
+   makes it test what it claims, instead of passing because a unique index
+   refused the write for an unrelated reason.
+
 4. **Hand it over in the reply.** Attach the bundle, give the raw GitHub link,
    and paste the new migration into the message. Say what the expected output
    looks like — which `NNN OK` notices appear — so a silent failure is visible.

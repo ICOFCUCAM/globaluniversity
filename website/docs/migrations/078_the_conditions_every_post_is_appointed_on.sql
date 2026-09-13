@@ -527,8 +527,16 @@ begin
 
   -- ---- A SET A PERSON WROTE IS NOT ACTIVE UNTIL SOMEBODY ACTIVATES IT ----
   if someone is not null then
+    -- THE NEXT FREE VERSION, NOT VERSION 1. `version_per_post_idx` is unique
+    -- per post, so a hard-coded 1 collides with a version 1 the University has
+    -- written for this post — the same class of fault that stopped 044 on the
+    -- live database, where a proof competed for a value the University's own
+    -- data occupies.
+    select coalesce(max(version), 0) + 1 into n
+      from appointment_condition_sets where position_id = pos_id;
+
     insert into appointment_condition_sets (position_id, version, status, created_by)
-    values (pos_id, 1, 'draft', someone)
+    values (pos_id, n, 'draft', someone)
     returning id into sid;
 
     refused := false;
@@ -588,8 +596,26 @@ begin
   -- The rule the letter and the screen must agree about. Proved by writing a
   -- post-specific `notice` and watching the family's `notice` disappear while
   -- the family's `leave` stays.
+  --
+  -- FIRST, GET OUT OF THE UNIVERSITY'S WAY — the fault 044 was stopped by on
+  -- the live database, which this migration had too. `one_active_per_post_idx`
+  -- permits one active set per post, and the moment the University gives the
+  -- Director of Academic Affairs conditions of their own through the
+  -- Conditions of appointment screen, this insert collides with it and the
+  -- migration fails on a database where nothing is wrong.
+  --
+  -- The version is chosen rather than assumed for the same reason: a
+  -- hard-coded 2 collides with a version 2 the University has written.
+  -- Everything here rolls back, so their set is active again the moment the
+  -- proof ends.
+  update appointment_condition_sets set status = 'superseded'
+   where position_id = pos_id and status = 'active';
+
+  select coalesce(max(version), 0) + 1 into n
+    from appointment_condition_sets where position_id = pos_id;
+
   insert into appointment_condition_sets (position_id, version, status, effective_from)
-  values (pos_id, 2, 'active', current_date)
+  values (pos_id, n, 'active', current_date)
   returning id into sid;
 
   insert into appointment_condition_clauses (set_id, section, ordinal, body)

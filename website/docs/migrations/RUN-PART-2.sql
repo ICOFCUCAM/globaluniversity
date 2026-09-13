@@ -684,8 +684,30 @@ begin
 
   begin
     select id into pos_id from positions where job_code = 'ACS-LEC';
+
+    -- ---- THE ONE THIS PROOF MAY USE, CHOSEN AND NOT STUMBLED ON -----------
+    --
+    -- THE FAULT 044 WAS STOPPED BY ON THE LIVE DATABASE, WAITING TO HAPPEN
+    -- HERE. This was an unordered `select into` with no status filter, which
+    -- takes whichever row the planner hands over first. Today there is exactly
+    -- one academic-staff family profile and that is harmless. The moment the
+    -- University forks a second version — which is the whole point of the
+    -- Job Descriptions screen — there are two or three, this picks an
+    -- arbitrary one, and activating a superseded row while another is active
+    -- collides with `one_active_per_family_idx` and takes the migration down.
+    --
+    -- So: prefer a draft, fall back to the lowest version, and park anything
+    -- already active out of the way. All of it rolls back with the block, so
+    -- the University's own profile is exactly as it was the moment the proof
+    -- ends.
     select id into fam_id from position_profiles
-      where family = 'academic-staff' and position_id is null;
+     where family = 'academic-staff' and position_id is null
+     order by (status = 'draft') desc, version
+     limit 1;
+
+    update position_profiles set status = 'superseded'
+     where family = 'academic-staff' and position_id is null
+       and status = 'active' and id <> fam_id;
 
     -- ---- A PROFILE BELONGS TO A POST OR A FAMILY, NEVER BOTH ---------------
     refused := false;
@@ -2170,6 +2192,18 @@ begin
   end if;
 
   begin
+    -- ---- FIRST, GET OUT OF THE UNIVERSITY'S WAY ---------------------------
+    -- The same fault 044 was stopped by on the live database: this proof
+    -- activates a 'terms-and-conditions' template, and `one_active_idx`
+    -- permits one active per kind. A University that has activated its own
+    -- conditions of service through Settings would collide with this proof and
+    -- the migration would fail on a database where nothing is wrong.
+    --
+    -- Rolled back with the rest of the block, so the University's template is
+    -- active again the moment the proof ends.
+    update document_templates set status = 'retired'
+     where kind = 'terms-and-conditions' and status = 'active';
+
     -- ---- THE NEW KINDS ARE REGISTRABLE ------------------------------------
     -- VERSION 9001, NOT 1, and for the reason 044's proof now carries too: 052
     -- seeds a version 1 of every kind, so a proof claiming version 1 collides
@@ -2681,8 +2715,41 @@ begin
   end if;
 
   begin
-    select id into t_id from document_templates
-     where kind = 'letter-warning' and status = 'draft' limit 1;
+    -- -----------------------------------------------------------------------
+    -- THE PROOF BRINGS ITS OWN DRAFT. IT USED TO BORROW THE UNIVERSITY'S.
+    --
+    -- TWO WAYS THIS BROKE ON A REAL DATABASE, both found by running it against
+    -- a copy of the University's own state rather than a clean one.
+    --
+    -- 1. It read `where kind = 'letter-warning' and status = 'draft'`. Once the
+    --    University activates its seeded warning letter through Settings there
+    --    is no draft left, `t_id` is null, every following update touches no
+    --    rows, and the check below reports "an active template's wording was
+    --    rewritten in place" — a FAILURE MESSAGE DESCRIBING SOMETHING THAT DID
+    --    NOT HAPPEN, which is the worst kind, because it sends whoever reads
+    --    it looking for a fault that is not there.
+    --
+    -- 2. Activating it collided with the University's own active template on
+    --    `one_active_idx` — the same fault that stopped 044.
+    --
+    -- Both go away if the proof stops competing for the University's rows.
+    -- Version 9001 stays out of the way of their versions, and `created_by`
+    -- stays NULL because that is the property being proved: a seeded draft has
+    -- no author, so any officer may put it in force without tripping 044's
+    -- "nobody activates their own".
+    --
+    -- The retirement below is still needed — one active per kind — and rolls
+    -- back with the rest of the block, so the University's template is active
+    -- again the moment the proof ends.
+    -- -----------------------------------------------------------------------
+    update document_templates set status = 'retired'
+     where kind = 'letter-warning' and status = 'active';
+
+    insert into document_templates (kind, version, name, body, status, created_by)
+    values ('letter-warning', 9001, 'Warning Letter',
+            'A specimen warning letter, long enough to satisfy the minimum body length.',
+            'draft', null)
+    returning id into t_id;
 
     -- ---- A SEEDED DRAFT CAN BE ACTIVATED BY ANY OFFICER ---------------------
     -- `created_by` is null on every seeded row, so 044's "nobody activates

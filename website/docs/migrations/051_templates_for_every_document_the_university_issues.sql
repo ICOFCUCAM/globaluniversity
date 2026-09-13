@@ -219,6 +219,18 @@ begin
   end if;
 
   begin
+    -- ---- FIRST, GET OUT OF THE UNIVERSITY'S WAY ---------------------------
+    -- The same fault 044 was stopped by on the live database: this proof
+    -- activates a 'terms-and-conditions' template, and `one_active_idx`
+    -- permits one active per kind. A University that has activated its own
+    -- conditions of service through Settings would collide with this proof and
+    -- the migration would fail on a database where nothing is wrong.
+    --
+    -- Rolled back with the rest of the block, so the University's template is
+    -- active again the moment the proof ends.
+    update document_templates set status = 'retired'
+     where kind = 'terms-and-conditions' and status = 'active';
+
     -- ---- THE NEW KINDS ARE REGISTRABLE ------------------------------------
     -- VERSION 9001, NOT 1, and for the reason 044's proof now carries too: 052
     -- seeds a version 1 of every kind, so a proof claiming version 1 collides
