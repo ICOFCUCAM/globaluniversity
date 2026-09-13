@@ -318,10 +318,26 @@ begin
     end if;
 
     -- ---- THE COVERAGE VIEW SEES WHAT IS MISSING ---------------------------
-    select count(*) into n from document_template_coverage where active_template_id is null;
-    if n = 0 then
-      raise exception '051 FAILED: the coverage view reports every document type as covered, '
-                      'which on a fresh database cannot be true';
+    --
+    -- THIS USED TO ASSERT THAT SOMETHING WAS MISSING — and said so in its own
+    -- failure message: "which on a fresh database cannot be true".
+    --
+    -- The University's database is not a fresh database. They have put a
+    -- template in force for EVERY kind the University issues, which is exactly
+    -- the work this view exists to track to completion. So the proof failed
+    -- them for having finished it, and the message sent whoever read it
+    -- looking for a broken view.
+    --
+    -- A PROOF MUST NOT ASSUME A STATE. IT MUST CREATE THE STATE IT OBSERVES.
+    -- So: park one kind's active template, check the view notices it has gone,
+    -- and let the rollback put it back.
+    update document_templates set status = 'retired'
+     where kind = 'transfer' and status = 'active';
+
+    if not exists (select 1 from document_template_coverage
+                    where kind = 'transfer' and active_template_id is null) then
+      raise exception '051 FAILED: a document type with no active template is reported as '
+                      'covered, so the list of what is still outstanding cannot be trusted';
     end if;
     if not exists (select 1 from document_template_coverage
                     where kind = 'terms-and-conditions' and active_template_id is not null) then

@@ -46,15 +46,27 @@ it is holding it.
    particular post; the University's database has all three and gets more of
    them every time they use the system properly.
 
-   **A proof must never compete for anything the University's own data
-   occupies** — not a version number, not a reference, and not a unique slot
-   like "the active template of this kind" or "the active conditions for this
-   post". 044 activated a `promotion` template, the University had activated
-   their own, and the migration died on `document_templates_one_active_idx`
-   after passing three clean runs here. Where a proof genuinely needs the slot,
-   it parks what is there FIRST, inside its own rolled-back block — which also
-   makes it test what it claims, instead of passing because a unique index
-   refused the write for an unrelated reason.
+   Three faults have come out of this, and all three are the same mistake —
+   **a proof reasoning about the University's data instead of making its own**:
+
+   - **Never compete for what their data occupies.** Not a version number, not
+     a reference, not a unique slot like "the active template of this kind".
+     044 activated a `promotion` template, they had activated theirs, and the
+     migration died on `document_templates_one_active_idx`. Where a proof
+     genuinely needs the slot, park what is there FIRST, inside the rollback.
+   - **Never write to their rows.** 048 set `created_by` on the job
+     description they had activated, making the author and the activator one
+     person, and `second_pair_of_eyes` refused it — correctly. Build your own
+     row at version 9001 and copy in whatever the proof needs to observe.
+   - **Never assert their data is empty.** 051 checked that some document kind
+     still had no template — "which on a fresh database cannot be true" — so it
+     failed them for having finished the work the view exists to track. Create
+     the condition you want to observe (park one kind's template) instead of
+     assuming it.
+
+   A sample is not enough in the fixture either: with three template kinds
+   activated, 051's assertion still held and the fault stayed hidden. It
+   activates **every** kind and **all eight** job descriptions for that reason.
 
 4. **Hand it over in the reply.** Attach the bundle, give the raw GitHub link,
    and paste the new migration into the message. Say what the expected output

@@ -81,11 +81,22 @@ begin
   --
   -- These three are the kinds the proofs in 044, 051 and 052 activate. Any
   -- kind would do; these are the ones that have actually collided.
-  -- RE-RUNNABLE. This file is applied between landings, so a second
-  -- application must not try to create what the first one did — the kind is
-  -- skipped entirely once something of it is already in force.
-  foreach k in array array['promotion', 'terms-and-conditions', 'letter-warning'] loop
-    if not exists (select 1 from document_templates where kind = k and status = 'active') then
+  -- EVERY KIND, NOT A SAMPLE. The University has put a template in force for
+  -- every document it issues — which is precisely the work the coverage view
+  -- exists to track to completion.
+  --
+  -- A SAMPLE OF THREE WAS NOT ENOUGH, AND THAT IS THE SECOND LESSON THIS FILE
+  -- CARRIES. 051's proof asserted that SOMETHING was still uncovered, in its
+  -- own words "which on a fresh database cannot be true" — so it failed the
+  -- University for having finished the job. With three kinds activated here
+  -- the assertion still held and the fault stayed hidden. It only appears on a
+  -- database where the work is done.
+  --
+  -- RE-RUNNABLE: a kind already in force is skipped, so this file can be
+  -- applied between landings without colliding with itself.
+  if to_regclass('public.document_template_coverage') is not null then
+    for k in select c.kind from document_template_coverage c
+              where c.active_template_id is null loop
       select id into tid from document_templates
        where kind = k and status = 'draft' order by version limit 1;
 
@@ -101,8 +112,8 @@ begin
          set status = 'active', activated_by = u2, activated_at = now(),
              effective_from = current_date
        where id = tid;
-    end if;
-  end loop;
+    end loop;
+  end if;
 
   -- ---- JOB DESCRIPTIONS THE UNIVERSITY HAS ACTIVATED ----------------------
   --
@@ -119,7 +130,12 @@ begin
   -- already activated by that same account, making the author and the
   -- activator one person. Activating as u2 here hid the fault; activating as
   -- u1 reproduces it.
-  foreach fam in array array['academic-staff', 'executive', 'academic-administration'] loop
+  -- ALL EIGHT, for the same reason every template kind is activated above: a
+  -- sample leaves the state a proof assumes still partly true, and the fault
+  -- hides until the University finishes the job.
+  foreach fam in array array['executive', 'academic-administration',
+                             'faculty-leadership', 'administration',
+                             'student-services', 'ict', 'academic-staff', 'other'] loop
     update position_profiles
        set status = 'active', activated_by = u1, activated_at = now()
      where family = fam and position_id is null and status = 'draft'
