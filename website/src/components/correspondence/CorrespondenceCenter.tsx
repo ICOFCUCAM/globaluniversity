@@ -31,9 +31,11 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { authedFetch, authedPost } from '@/lib/authedFetch';
 import { can } from '@/lib/roles';
 import { BTN_PRIMARY, BTN_SECONDARY, INPUT, LABEL, FOCUS } from '@/lib/portalTheme';
 import { Plus, Loader2, Send, Clock, Save, UserPlus, AlertTriangle, Eye } from 'lucide-react';
+import { UNIVERSITY } from '@/lib/constants';
 import {
   LETTER_KINDS, KIND_LABELS, OFFICES, OFFICE_LABELS, STATE_LABELS,
   TABS, TAB_LABELS, tabFor, countersFor, actionsFor, objectionsTo, blocks,
@@ -71,9 +73,8 @@ export default function CorrespondenceCenter() {
 
   const load = useCallback(async () => {
     try {
-      const r = await fetch('/api/correspondence', { credentials: 'include' });
-      const j = await r.json();
-      if (!j.ok) throw new Error(j.error ?? 'not-read');
+      const j = await authedFetch('/api/correspondence');
+      if (!j.ok) throw new Error(j.detail ?? j.error ?? 'not-read');
       setRows(j.letters as Row[]);
     } catch (e) {
       // SAID, NOT SWALLOWED. The sandbox cannot reach the University's
@@ -99,13 +100,7 @@ export default function CorrespondenceCenter() {
     setBusy(label);
     setMessage(null);
     try {
-      const r = await fetch('/api/correspondence', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(payload),
-      });
-      const j = await r.json();
+      const j = await authedPost('/api/correspondence', payload);
       if (!j.ok) {
         setMessage({ kind: 'bad', text: j.detail ?? j.error ?? 'That was refused.' });
         return null;
@@ -385,25 +380,77 @@ export default function CorrespondenceCenter() {
               code, because neither exists until the letter is issued — and
               inventing a specimen reference here would put a number on a screen
               that never appears on the document. */}
+          {/* ----------------------------------------------------------------
+              THE PREVIEW, WITH THE LETTERHEAD ON IT.
+
+              "Where is the letterhead?" was a fair question: the composer said
+              the system adds it and then showed a preview with no letterhead
+              in it, so the only way to see the actual document was to issue
+              one. A preview that omits the part the author cannot control is
+              a preview of the wrong thing.
+
+              WHAT IT STILL CANNOT SHOW is the reference and the verification
+              code, because neither exists until the letter is issued —
+              inventing a specimen reference here would put a number on screen
+              that never appears on the document.
+              ---------------------------------------------------------------- */}
           {previewing && (
-            <div className="rounded-lg border border-gray-200 bg-gray-50 p-6 font-serif text-sm">
-              <p className="text-xs uppercase tracking-wide text-purple-800">
-                {OFFICE_LABELS[draft.originating_office as Office]}
-              </p>
-              <p className="mt-4 font-semibold">
+            <div className="rounded-lg border border-gray-300 bg-white p-8 font-serif text-[13px] leading-relaxed text-gray-900 shadow-sm">
+              <div className="flex items-center gap-3 border-b-2 border-purple-900 pb-2.5">
+                <div>
+                  <p className="text-lg font-bold tracking-wide text-purple-900">
+                    {UNIVERSITY.name}
+                  </p>
+                  <p className="text-[10px] text-gray-500">{UNIVERSITY.address}</p>
+                  <p className="text-[10px] text-gray-500">
+                    {UNIVERSITY.phone} · {UNIVERSITY.email} · {UNIVERSITY.website}
+                  </p>
+                  <p className="mt-1.5 text-[11px] tracking-wide text-purple-900">
+                    {OFFICE_LABELS[draft.originating_office as Office]}
+                  </p>
+                </div>
+              </div>
+
+              <h2 className="my-3 text-center text-[13px] font-semibold uppercase tracking-[0.16em]">
                 {KIND_LABELS[draft.kind as LetterKind]}
-              </p>
-              <p className="mt-3">{draft.recipient_name || '—'}</p>
+              </h2>
+
+              <div className="flex justify-between text-[11px] text-gray-500">
+                <span>Date: {new Date().toLocaleDateString('en-GB', {
+                  day: 'numeric', month: 'long', year: 'numeric',
+                })}</span>
+                <span className="italic">Ref: allocated on issue</span>
+              </div>
+
+              <p className="mt-4">{draft.recipient_name || '—'}</p>
               {draft.recipient_org && <p>{draft.recipient_org}</p>}
               {draft.recipient_address && <p>{draft.recipient_address}</p>}
-              <p className="mt-3">Dear {draft.recipient_name || '—'},</p>
+
+              <p className="mt-4">Dear {draft.recipient_name || '—'},</p>
               <p className="mt-2 font-semibold">{draft.subject || '—'}</p>
               <p className="mt-2 whitespace-pre-wrap">{draft.body}</p>
-              <p className="mt-6 text-xs text-gray-500">
-                Reference, date, signature block and verification code are added on issue.
-              </p>
+
+              <div className="mt-8">
+                <p>Yours sincerely,</p>
+                <div className="mt-8 w-[62mm] border-t border-gray-900" />
+                <p className="mt-1">
+                  <strong>{user?.name ?? 'The Vice-Chancellor'}</strong><br />
+                  {OFFICE_LABELS[draft.originating_office as Office]}<br />
+                  {UNIVERSITY.name}
+                </p>
+              </div>
+
+              <div className="mt-4 flex items-center gap-3 border-t border-gray-200 pt-2 text-[10px] text-gray-500">
+                <span className="flex h-[52px] w-[52px] items-center justify-center rounded border border-dashed border-gray-300 text-center text-[8px] text-gray-400">
+                  QR on issue
+                </span>
+                <span>
+                  The verification code and reference are generated when the letter is issued,
+                  and printed here.
+                </span>
+              </div>
             </div>
-          )}
+                    )}
         </section>
       )}
 

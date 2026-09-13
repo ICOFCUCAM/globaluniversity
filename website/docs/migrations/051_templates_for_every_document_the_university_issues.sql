@@ -220,21 +220,24 @@ begin
 
   begin
     -- ---- THE NEW KINDS ARE REGISTRABLE ------------------------------------
+    -- VERSION 9001, NOT 1, and for the reason 044's proof now carries too: 052
+    -- seeds a version 1 of every kind, so a proof claiming version 1 collides
+    -- with the University's own first draft on a re-run.
     insert into document_templates (kind, version, name, body, status, created_by)
-    values ('terms-and-conditions', 1, 'Conditions of Service',
+    values ('terms-and-conditions', 9001, 'Conditions of Service',
             'The conditions of service of the University, as approved by the Council.',
             'draft', someone)
     returning id into t_id;
 
     insert into document_templates (kind, version, name, body, status, created_by)
-    values ('letter-government', 1, 'Government Correspondence',
+    values ('letter-government', 9001, 'Government Correspondence',
             'The standard form of a letter to a government ministry.', 'draft', someone);
 
     -- ---- AND A KIND NOBODY DECLARED IS REFUSED ----------------------------
     refused := false;
     begin
       insert into document_templates (kind, version, name, body, status, created_by)
-      values ('a-kind-we-made-up', 1, 'Something', 'A body long enough to pass.',
+      values ('a-kind-we-made-up', 9001, 'Something', 'A body long enough to pass.',
               'draft', someone);
     exception when others then refused := true;
     end;
@@ -290,7 +293,7 @@ begin
 
     insert into correspondence_letters
       (correspondence_id, reference, issued_on, html, template_id, template_version)
-    values (c_id, 'VC-2099-0051', current_date, '<p>The letter.</p>', t_id, 1);
+    values (c_id, 'VC-2099-0051', current_date, '<p>The letter.</p>', t_id, 9001);
 
     refused := false;
     begin

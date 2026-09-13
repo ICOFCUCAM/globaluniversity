@@ -426,6 +426,19 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
     // sit on tables that already existed.
     table: 'document_template_coverage',
   },
+  {
+    file: '052_a_first_draft_of_every_document.sql',
+    what: 'A first draft of all thirty-one documents the University issues — every '
+      + 'appointment document, the conditions of service, the acceptance form, and a frame for '
+      + 'each kind of official letter. NOTHING IS ACTIVE: each is a version 1 in draft, written '
+      + 'to be read and edited in Document Templates, and none produces a document until '
+      + 'somebody at the University activates it.',
+    // NOT A TABLE — 051 made them all. The marker is that a specific seeded
+    // row exists, which no probe shape can express, so this is stated rather
+    // than claimed.
+    cannotSee: "select count(*) as drafts from document_templates where status = 'draft';"
+      + '  -- it should be 31 on a database where nobody has activated any yet',
+  },
 ];
 
 /** What a probe came back as. */

@@ -289,7 +289,7 @@ begin
     -- Proved here by changing what a template says and re-reading the archive.
     if to_regclass('document_templates') is not null then
       insert into document_templates (kind, version, name, body, status, created_by)
-      values ('initial-appointment', 90, 'Appointment Letter',
+      values ('initial-appointment', 9090, 'Appointment Letter',
               'The wording of 2099, entirely rewritten.', 'draft', someone)
       on conflict do nothing;
     end if;

@@ -42,7 +42,10 @@ import {
 } from '@/lib/correspondence';
 import { correspondenceLetterHtml } from '@/lib/correspondenceLetter';
 import { contentHash } from '@/lib/officialDocument';
-import { sanitiseLetterHtml } from '@/lib/letterMarkup';
+import { sanitiseLetterHtml, letterPlainText } from '@/lib/letterMarkup';
+import { send, mailConfigured } from '@/lib/mailer';
+import { UNIVERSITY, OFFICE_REPLY_TO } from '@/lib/constants';
+import { OFFICE_LABELS } from '@/lib/correspondence';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -392,8 +395,8 @@ export async function POST(request: Request) {
         + 'are different acts by design.');
     }
 
-    const office = String(row.originating_office ?? 'vice-chancellor') as Office;
-    const prefix = OFFICE_PREFIX[office];
+    const officeKey = String(row.originating_office ?? 'vice-chancellor') as Office;
+    const prefix = OFFICE_PREFIX[officeKey];
     if (!prefix) return bad('unknown-office', 400);
 
     const year = new Date().getUTCFullYear();
@@ -407,7 +410,7 @@ export async function POST(request: Request) {
       return bad(`no-reference: ${seqError?.message ?? 'no sequence'}`, 500,
         'The register could not allocate a reference. Migration 046 may not have been run.');
     }
-    const reference = buildReference(office, year, seq);
+    const reference = buildReference(officeKey, year, seq);
 
     const issuedOn = new Date().toISOString().slice(0, 10);
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.iguc.net';
@@ -494,12 +497,92 @@ export async function POST(request: Request) {
     if (error) return bad(`not-issued: ${error.message}`, 500);
     await record(row.id as string, 'ISSUED', 'authorized', 'issued', reference);
 
+    // ---------------------------------------------------------------------
+    // AND THEN IT IS SENT — which it was not, and that was the gap.
+    //
+    // An admission letter has been emailed since 031. Correspondence was
+    // archived, marked issued, and left sitting there: the register said the
+    // University had written to a ministry and nothing had left the building.
+    //
+    // LAST, AND ITS FAILURE UNDOES NOTHING. The same rule as an appointment
+    // letter: a letter reversed because a mail server was down is a letter the
+    // register says was never sent when it was in fact written, authorised and
+    // archived. The attempt is counted and `delivery` records what happened.
+    // ---------------------------------------------------------------------
+    const to = (row.recipient_email as string | null) ?? '';
+    const office = OFFICE_LABELS[officeKey] ?? 'Office of the Vice-Chancellor';
+    const now2 = new Date().toISOString();
+    let delivery: { sent: boolean; detail?: string | null } = { sent: false };
+
+    if (!to) {
+      delivery = { sent: false, detail: 'no-address' };
+      await admin.from('correspondence_letters').update({
+        delivery: 'failed',
+        delivery_detail: 'No email address was recorded for the recipient. The letter is '
+          + 'issued and archived; somebody has to post it.',
+        last_attempt_at: now2, queued_at: now2,
+      }).eq('reference', reference);
+      await record(row.id as string, 'DELIVERY_FAILED', null, null, 'no-address');
+    } else if (!mailConfigured()) {
+      delivery = { sent: false, detail: 'not-configured' };
+      await admin.from('correspondence_letters').update({
+        delivery: 'failed',
+        delivery_detail: 'Outbound mail is not configured on this deployment.',
+        last_attempt_at: now2, queued_at: now2,
+      }).eq('reference', reference);
+      await record(row.id as string, 'DELIVERY_FAILED', null, null, 'not-configured');
+    } else {
+      const result = await send({
+        to,
+        office,
+        // ---------------------------------------------------------------
+        // WHERE A REPLY GOES. The originating office's own address where it
+        // has one; otherwise the Academic Office, which is the mailbox the
+        // University has confirmed is monitored — the same one that receives
+        // replies to admission letters. A letter whose reply goes nowhere is
+        // a letter the University never hears the answer to.
+        // ---------------------------------------------------------------
+        replyTo: OFFICE_REPLY_TO[office] ?? UNIVERSITY.academicAffairsEmail,
+        subject: `${row.subject}  [${generated.printed}]`,
+        text: [
+          `Dear ${row.recipient_name},`,
+          '',
+          letterPlainText(String(row.body ?? ''), row.body_format as string | null),
+          '',
+          `Reference: ${generated.printed}`,
+          `This letter may be verified at ${UNIVERSITY.website}/verify using the reference `
+          + 'above.',
+          '',
+          office,
+          UNIVERSITY.name,
+        ].join('\n'),
+        html: generated.html,
+      });
+
+      delivery = { sent: result.sent, detail: 'detail' in result ? result.detail : null };
+      await admin.from('correspondence_letters').update({
+        delivery: result.sent ? 'sent' : 'failed',
+        delivery_detail: result.sent ? null : (delivery.detail ?? 'refused'),
+        attempts: 1,
+        last_attempt_at: now2,
+        queued_at: now2,
+        ...(result.sent ? { delivered_at: now2 } : {}),
+      }).eq('reference', reference);
+      await record(row.id as string, result.sent ? 'DELIVERED' : 'DELIVERY_FAILED',
+        null, null, result.sent ? to : (delivery.detail ?? null));
+    }
+
     return NextResponse.json({
       ok: true,
       status: 'issued',
       reference,
       printed: generated.printed,
       sealed: !!generated.seal,
+      delivery: delivery.sent ? 'sent' : 'failed',
+      ...(delivery.sent ? {} : {
+        deliveryDetail: 'The letter is issued and archived. The email did not go: '
+          + `${delivery.detail}. Nothing has been reversed.`,
+      }),
       // SAID OUT LOUD WHEN IT IS NOT SEALED. A letter that carries no
       // verification code must not be reported as though it does.
       ...(generated.seal ? {} : {

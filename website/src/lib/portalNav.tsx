@@ -287,6 +287,15 @@ export const menuGroups: MenuGroup[] = [
         icon: <BookMarked size={18} />,
         roles: ['superadmin', 'admin', 'chancellor', 'vice-chancellor'],
       },
+      // THE REGISTER OF POSTS AND WHAT EACH ONE IS FOR. 048 seeded eight family
+      // drafts and there was no screen to read them on, so the University had
+      // forty-six job descriptions it could not open.
+      {
+        id: 'job-descriptions',
+        label: 'Job descriptions',
+        icon: <UserCog size={18} />,
+        roles: ['superadmin', 'admin', 'chancellor', 'vice-chancellor'],
+      },
       // ONE ENTRY, FOUR AREAS — design, approval, the register, the specimen
       // book. This was three entries: 'Credential studio', 'Credential
       // approvals' and 'Credential authority'. The first two were the SAME
