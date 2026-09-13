@@ -45,6 +45,40 @@ function when(iso: string | null | undefined): string {
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+/**
+ * One tickable opening.
+ *
+ * OUT HERE, NOT INSIDE THE SCREEN. A component declared inside another is a new
+ * function on every render, so React throws the subtree away and rebuilds it
+ * each time — taking the focused element with it. On the appointment form that
+ * made typing impossible; here it cost the checkbox its keyboard focus on every
+ * tick, which is the same fault with a quieter symptom.
+ *
+ * `src/lib/noNestedComponents.test.mjs` refuses both.
+ */
+function OpeningRow({ o, on, dirty, onToggle }: {
+  o: Opening; on: boolean; dirty: boolean; onToggle: (next: boolean) => void;
+}) {
+  return (
+    <label className="flex items-center gap-3 rounded-lg border border-[#ece7de] px-3 py-2.5 dark:border-[#2e2637]">
+      <input
+        type="checkbox"
+        checked={on}
+        onChange={(e) => onToggle(e.target.checked)}
+        className="h-4 w-4 accent-[#422e59]"
+      />
+      <span className={`text-sm ${on ? 'text-[#33234a] dark:text-[#e4dcf0]' : 'text-[#9c93ad] line-through'}`}>
+        {o.label}
+      </span>
+      {dirty && (
+        <span className="ml-auto rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800">
+          unsaved
+        </span>
+      )}
+    </label>
+  );
+}
+
 export default function AdmissionOpenings() {
   const [rows, setRows] = useState<Opening[] | null>(null);
   const [configured, setConfigured] = useState(true);
@@ -128,25 +162,6 @@ export default function AdmissionOpenings() {
     return acc;
   }, {});
   const closedCount = rows.filter((r) => !isOpen(r)).length;
-
-  const Row = ({ o }: { o: Opening }) => (
-    <label className="flex items-center gap-3 rounded-lg border border-[#ece7de] px-3 py-2.5 dark:border-[#2e2637]">
-      <input
-        type="checkbox"
-        checked={isOpen(o)}
-        onChange={(e) => setDraft((d) => ({ ...d, [key(o)]: e.target.checked }))}
-        className="h-4 w-4 accent-[#422e59]"
-      />
-      <span className={`text-sm ${isOpen(o) ? 'text-[#33234a] dark:text-[#e4dcf0]' : 'text-[#9c93ad] line-through'}`}>
-        {o.label}
-      </span>
-      {key(o) in draft && draft[key(o)] !== o.open && (
-        <span className="ml-auto rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800">
-          unsaved
-        </span>
-      )}
-    </label>
-  );
 
   return (
     <div className="space-y-6">
@@ -296,7 +311,11 @@ export default function AdmissionOpenings() {
           Award levels
         </h4>
         <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {levels.map((o) => <Row key={key(o)} o={o} />)}
+          {levels.map((o) => (
+            <OpeningRow key={key(o)} o={o} on={isOpen(o)}
+              dirty={key(o) in draft && draft[key(o)] !== o.open}
+              onToggle={(next) => setDraft((d) => ({ ...d, [key(o)]: next }))} />
+          ))}
         </div>
       </section>
 
@@ -306,7 +325,11 @@ export default function AdmissionOpenings() {
             {faculty}
           </h4>
           <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {list.map((o) => <Row key={key(o)} o={o} />)}
+            {list.map((o) => (
+              <OpeningRow key={key(o)} o={o} on={isOpen(o)}
+                dirty={key(o) in draft && draft[key(o)] !== o.open}
+                onToggle={(next) => setDraft((d) => ({ ...d, [key(o)]: next }))} />
+            ))}
           </div>
         </section>
       ))}

@@ -100,6 +100,38 @@ const COLUMNS = 'id, full_name, position_title, unit_name, employment_type, star
 
 type Row = Appointment & { id: string; issued_at?: string | null };
 
+// ---------------------------------------------------------------------------
+// A LABELLED FIELD — AND WHY IT LIVES OUT HERE.
+//
+// THIS WAS DEFINED INSIDE THE FORM COMPONENT, AND IT MADE THE FORM UNUSABLE.
+// The University: "immediately I type a letter the cursor goes off and the
+// window cannot input character."
+//
+// A component declared inside another is a NEW FUNCTION on every render. React
+// compares element types by identity, so on each keystroke it saw a different
+// component, threw the whole subtree away — the <input> with it — and built a
+// fresh one. The character was kept; the focused element it was typed into no
+// longer existed. One letter per click, on every field of the form.
+//
+// Nothing about the markup was wrong, which is why reading it found nothing.
+// The fault was entirely in WHERE the declaration sat.
+//
+// `src/lib/noNestedComponents.test.mjs` now fails the build on any component
+// declared inside another, because this is invisible on inspection and
+// obvious the moment somebody types.
+// ---------------------------------------------------------------------------
+
+function Field({ id, label, children }: {
+  id: string; label: string; children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <label htmlFor={id} className={LABEL}>{label}</label>
+      {children}
+    </div>
+  );
+}
+
 export default function Appointments() {
   const { user } = useAuth();
   const mayDraft = can(user?.role, 'draft-appointment');
@@ -848,13 +880,6 @@ function NewAppointment({
     salary_period: f.salaryAmount ? f.salaryPeriod : null,
   };
   const missing = missingFrom(asRecord);
-
-  const Field = ({ id, label, children }: { id: string; label: string; children: React.ReactNode }) => (
-    <div className="space-y-1.5">
-      <label htmlFor={id} className={LABEL}>{label}</label>
-      {children}
-    </div>
-  );
 
   return (
     <div className="max-w-3xl space-y-6">
