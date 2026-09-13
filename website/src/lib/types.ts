@@ -282,6 +282,7 @@ export type ViewType =
   | 'correspondence'
   | 'document-templates'
   | 'job-descriptions'
+  | 'appointment-conditions'
   | 'dashboard' 
   | 'students' 
   | 'lecturers' 

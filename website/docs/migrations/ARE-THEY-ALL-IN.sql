@@ -244,6 +244,10 @@ select * from (
                                pg_get_viewdef('public.my_results'::regclass)) > 0
                  then 'YES' else 'NO' end as landed,
          'viewdef:my_results:Moderated, with the Faculty' as what_it_creates
+  union all
+  select '078' as migration, '078_the_conditions_every_post_is_appointed_on.sql' as file,
+         case when to_regclass('public.appointment_condition_sets') is not null then 'YES' else 'NO' end as landed,
+         'appointment_condition_sets' as what_it_creates
 ) as landed_report
  order by migration;
 

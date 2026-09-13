@@ -66,6 +66,7 @@ import Appointments from './hr/Appointments';
 import CorrespondenceCenter from './correspondence/CorrespondenceCenter';
 import DocumentTemplates from './admin/DocumentTemplates';
 import JobDescriptions from './admin/JobDescriptions';
+import AppointmentConditions from './hr/AppointmentConditions';
 import TimetableModule from './timetable/TimetableModule';
 import ForumModule from './forum/ForumModule';
 import FeeModule from './fees/FeeModule';
@@ -336,6 +337,8 @@ export default function AppLayout() {
         return <DocumentTemplates />;
       case 'job-descriptions':
         return <JobDescriptions />;
+      case 'appointment-conditions':
+        return <AppointmentConditions />;
       // THE TIMETABLE IS THE CLASSES THAT EXIST. The old module kept its own
       // slots — a day, an hour and the course typed in as free text — which
       // matched no course, no lecturer and no room, so no conflict between two

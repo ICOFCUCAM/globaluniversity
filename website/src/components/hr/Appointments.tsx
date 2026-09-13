@@ -46,6 +46,9 @@ import {
   type Appointment, type AppointmentState, type Allowance,
 } from '@/lib/appointments';
 import { FAMILY_LABELS, type PositionFamily } from '@/lib/positions';
+import {
+  CONDITION_COLUMNS, renderConditions, countConditions, type ConditionClause,
+} from '@/lib/appointmentConditions';
 import { UNIVERSITY } from '@/lib/constants';
 
 /**
@@ -65,13 +68,29 @@ interface Post {
   family: string;
   unit_name: string | null;
   reports_to: string | null;
+  // ---------------------------------------------------------------------
+  // THREE THE REGISTER HOLDS AND THIS FORM WAS NOT ASKING FOR.
+  //
+  // `positions` has carried `duty_station`, `employment_category` and `grade`
+  // since 048, and the select below did not name them — so choosing a post
+  // filled the title and the unit and left the officer to type the place of
+  // duty and the employment type by hand, out of a register that was sitting
+  // right there.
+  //
+  // They are empty on all forty-three posts today, which is why nobody
+  // noticed. Selected now so that the day the University fills one in, it
+  // reaches the letter instead of being a column nothing reads.
+  // ---------------------------------------------------------------------
+  duty_station: string | null;
+  employment_category: string | null;
+  grade: string | null;
   indicative_salary_amount: number | null;
   indicative_salary_currency: string | null;
   indicative_salary_period: string | null;
 }
 
 // eslint-disable-next-line max-len
-const POSTS = 'id, job_code, title, family, unit_name, reports_to, indicative_salary_amount, indicative_salary_currency, indicative_salary_period';
+const POSTS = 'id, job_code, title, family, unit_name, reports_to, duty_station, employment_category, grade, indicative_salary_amount, indicative_salary_currency, indicative_salary_period';
 
 // A SINGLE STRING LITERAL. Concatenation makes supabase-js collapse the
 // inferred type to GenericStringError[], silently.
@@ -594,6 +613,16 @@ function NewAppointment({
   const [posts, setPosts] = useState<Post[] | null>(null);
   const [allowances, setAllowances] = useState<Allowance[]>([]);
 
+  /**
+   * What happened when the chosen post's conditions were looked up.
+   *
+   * `count` 0 after loading means 078 has not been run, and the screen says so
+   * rather than leaving an empty box that looks like a choice somebody made.
+   */
+  const [conditions, setConditions] = useState<{
+    loading: boolean; count: number; filled: boolean; source: string | null;
+  } | null>(null);
+
   // THE REGISTER OF POSTS, READ ONCE. 048 seeds forty-three of them.
   useEffect(() => {
     void (async () => {
@@ -660,23 +689,112 @@ function NewAppointment({
    * post is usually worth; the University was explicit that the box may be
    * left empty, so it is copied in only when nothing has been typed yet.
    */
-  function choosePost(id: string) {
+  async function choosePost(id: string) {
     const p = (posts ?? []).find((x) => x.id === id);
     if (!p) {
       setF((prev) => ({ ...prev, positionId: '' }));
+      setConditions(null);
       return;
     }
+
+    // -----------------------------------------------------------------
+    // ONE SELECTION FILLS THE WHOLE LETTER, NOT A THIRD OF IT.
+    //
+    // The University asked: "must I write the letter when there could be one
+    // in the system? At least what you generated should be the minimum with
+    // a click."
+    //
+    // They were right, and the form had TWO half-answers that did not meet.
+    // Choosing a post filled the title, the unit and the reporting officer.
+    // A separate button filled the ordinary terms — hours, place of duty,
+    // probation, dates, authority. Neither filled the four fields that
+    // BLOCK the letter, so after using both an officer still faced "Full
+    // name is missing… Position is missing… Start date is missing… Place of
+    // duty is missing."
+    //
+    // So choosing a post now does both, in one act, and the order is the
+    // point: THE REGISTER'S OWN FACTS WIN, and the ordinary defaults only
+    // fill what the register is silent about. A post that records its duty
+    // station uses it; the forty-three that do not fall back to the
+    // University's published address.
+    //
+    // WHAT IS STILL NOT FILLED IS THE PERSON. A button that invented a name,
+    // an email and an address would produce a letter addressed to nobody.
+    // That is the one thing an officer must type, and it is the one thing
+    // they should.
+    // -----------------------------------------------------------------
+    const start = firstOfNextMonth();
     setF((prev) => ({
       ...prev,
       positionId: p.id,
+      // ---- WHAT THE POST ITSELF SAYS -------------------------------
       positionTitle: p.title,
       unitName: prev.unitName || (p.unit_name ?? ''),
-      reportsToName: prev.reportsToName || (p.reports_to ?? ''),
+      reportsToName: prev.reportsToName || (p.reports_to ?? '') || 'The Vice-Chancellor',
       salaryAmount: prev.salaryAmount || (p.indicative_salary_amount != null
         ? String(p.indicative_salary_amount) : ''),
       salaryCurrency: p.indicative_salary_currency ?? prev.salaryCurrency,
       salaryPeriod: p.indicative_salary_period ?? prev.salaryPeriod,
+      // The register's own, where it has them; the ordinary default where it
+      // has not. `employment_category` is the post's kind of employment —
+      // permanent, fixed-term — and is only used when it is one this form
+      // knows, so a value nobody anticipated does not silently set the wrong
+      // contract.
+      employmentType: prev.employmentType !== 'permanent'
+        ? prev.employmentType
+        : ((EMPLOYMENT_TYPES as readonly string[]).includes(String(p.employment_category))
+          ? String(p.employment_category) : prev.employmentType),
+      // ---- AND THE TERMS THAT ARE THE SAME FOR EVERY APPOINTMENT ----
+      workingHours: prev.workingHours || '40 hours per week',
+      // THE UNIVERSITY'S OWN PUBLISHED ADDRESS, not an invented campus name.
+      placeOfDuty: prev.placeOfDuty || p.duty_station || UNIVERSITY.address,
+      probationMonths: prev.probationMonths || '6',
+      startDate: prev.startDate || start,
+      effectiveDate: prev.effectiveDate || start,
+      // THE OFFICE THE UNIVERSITY HAS RULED MAKES APPOINTMENTS.
+      appointingAuthority: prev.appointingAuthority || 'The Vice-Chancellor',
+      authorityDecidedOn: prev.authorityDecidedOn || new Date().toISOString().slice(0, 10),
     }));
+
+    // -------------------------------------------------------------------
+    // AND THE CONDITIONS THE POST IS APPOINTED ON.
+    //
+    // 078 holds them per family of posts, overridable post by post, and
+    // resolves the inheritance in `position_default_conditions`. The box
+    // below was empty before it and stayed empty, which meant every letter
+    // the University issued was silent about duration, probation, notice,
+    // confidentiality and intellectual property.
+    //
+    // FILLED, NEVER FORCED. If the officer has already typed conditions,
+    // they are left alone — a convenience that discards work is one nobody
+    // presses twice. The box stays editable either way: these are the
+    // University's standard conditions, read and amended by a human before
+    // anybody is bound by them, not a document appended unread.
+    // -------------------------------------------------------------------
+    setConditions({ loading: true, count: 0, filled: false, source: null });
+
+    const { data, error } = await supabase.from('position_default_conditions')
+      .select(CONDITION_COLUMNS).eq('position_id', p.id);
+
+    if (error || !data || data.length === 0) {
+      setConditions({ loading: false, count: 0, filled: false, source: null });
+      return;
+    }
+
+    const rows = data as unknown as ConditionClause[];
+    const text = renderConditions(rows);
+    // READ, THEN WRITE. Deciding `filled` inside the updater would read a
+    // value React has not committed yet, and the notice would say the box was
+    // filled on a run where it was not. Nothing else in this handler touches
+    // `terms`, so the rendered value is the current one.
+    const filled = !f.terms.trim();
+    if (filled) setF((prev) => (prev.terms.trim() ? prev : { ...prev, terms: text }));
+    setConditions({
+      loading: false,
+      count: countConditions(rows),
+      filled,
+      source: rows.some((r) => r.source === 'position') ? 'position' : 'family',
+    });
   }
 
   const asRecord: Appointment = {
@@ -785,7 +903,7 @@ function NewAppointment({
             ---------------------------------------------------------------- */}
         <Field id="a-post" label="Post (from the register of positions)">
           <select id="a-post" value={f.positionId}
-            onChange={(e) => choosePost(e.target.value)} className={INPUT}>
+            onChange={(e) => void choosePost(e.target.value)} className={INPUT}>
             <option value="">
               {posts === null ? 'Reading the register…' : 'Not one of the registered posts'}
             </option>
@@ -805,10 +923,14 @@ function NewAppointment({
           </select>
           <p className="mt-1 text-xs text-[#6b6076] dark:text-[#9c93ad]">
             {f.positionId
-              ? 'The letter will take its wording from this post’s family, attach its job '
-                + 'description, and print any standing the University has recorded for it.'
-              : 'Without a post, the letter falls back to the plainest wording and carries no '
-                + 'job description. Choose one wherever the register has it.'}
+              ? 'Filled in from the register, and the rest with the University’s ordinary terms. '
+                + 'The letter will take its wording from this post’s family, attach its job '
+                + 'description, and print any standing the University has recorded for it. '
+                + 'Only the person is left to you — change anything else that is wrong.'
+              : 'Choosing a post fills the whole letter: its title, unit and reporting officer '
+                + 'from the register, and the ordinary terms — hours, place of duty, probation, '
+                + 'dates, authority — leaving only the person. Without one, the letter falls '
+                + 'back to the plainest wording and carries no job description.'}
           </p>
         </Field>
 
@@ -855,9 +977,52 @@ function NewAppointment({
               className={INPUT} placeholder="e.g. Buea campus" />
           </Field>
         </div>
+        {/* ----------------------------------------------------------------
+            THE CONDITIONS, WHICH USED TO BE A BOX NOBODY COULD FILL.
+
+            The University: "just with the letter and empty conditions it
+            cannot match the sample you generated earlier. At least what you
+            generated should be the minimum with a click."
+
+            It is now the minimum with a click. Choosing a post fills this box
+            with the University's standard conditions for that family of posts
+            — 078 holds them — and every word stays editable.
+
+            TWENTY-TWO CONDITIONS, NOT FOUR LINES. The box is deep enough to
+            read them in, because a contract term nobody scrolls to is a
+            contract term nobody has read.
+            ---------------------------------------------------------------- */}
         <Field id="a-terms" label="Appointment conditions">
-          <textarea id="a-terms" rows={4} value={f.terms} onChange={set('terms')} className={INPUT} />
+          <textarea id="a-terms" rows={14} value={f.terms} onChange={set('terms')}
+            className={`${INPUT} font-mono text-xs leading-relaxed`}
+            placeholder="Choose a post above and the University’s standard conditions are filled in here." />
         </Field>
+
+        {conditions && !conditions.loading && (
+          conditions.count > 0 ? (
+            <p className="text-xs text-[#6b6076] dark:text-[#9c93ad]">
+              {conditions.filled
+                ? `Filled in with the University’s ${conditions.count} standard conditions for this post`
+                : `This post has ${conditions.count} standard conditions. The box already had `
+                  + 'wording in it, so it was left alone'}
+              {conditions.source === 'position'
+                ? ', including the conditions written for this post in particular. '
+                : '. '}
+              Every word is editable, and nobody is bound by any of it until the letter is
+              approved and issued.
+            </p>
+          ) : (
+            <p className="flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-xs
+                          text-amber-900 dark:bg-amber-500/10 dark:text-amber-200">
+              <AlertTriangle size={14} className="mt-px shrink-0" />
+              <span>
+                This post has no standard conditions in the system, so the box above stays
+                empty and whatever is typed into it is the whole contract. If migration 078
+                has not been run yet, that is why.
+              </span>
+            </p>
+          )
+        )}
       </section>
 
       {/* WHAT SOMEBODY IS PAID IS A SEPARATE AUTHORITY. Not shown at all to a

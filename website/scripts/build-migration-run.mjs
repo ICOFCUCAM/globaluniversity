@@ -245,6 +245,11 @@ const MARKERS = {
   // The desk-name only the NARROWED view carries: before 077 a submitted mark
   // reached the student and was labelled with the Head of Department.
   '077': 'viewdef:my_results:Moderated, with the Faculty',
+  // The table that holds the conditions a post is appointed on. No earlier
+  // migration has one: 048 holds job descriptions, which say what the
+  // post-holder does, not what the University and the post-holder owe each
+  // other.
+  '078': 'appointment_condition_sets',
 };
 
 /** The SQL that answers "is this one here?", for each of the three forms. */

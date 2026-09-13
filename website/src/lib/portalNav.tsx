@@ -16,7 +16,7 @@ import {
   FileText, Award, Monitor, PenTool, FolderOpen, BarChart3,
   Settings, Shield, BookMarked, Wallet, Stamp, UserCog, Inbox,
   ClipboardCheck, Share2, BadgeCheck, Video, Eye, CalendarClock, TrendingUp,
-  CalendarDays, MapPin, Building2, Receipt,
+  CalendarDays, MapPin, Building2, Receipt, ScrollText,
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -467,6 +467,17 @@ export const menuGroups: MenuGroup[] = [
         id: 'job-descriptions',
         label: 'Job descriptions',
         icon: <UserCog size={18} />,
+        roles: ['superadmin', 'admin', 'chancellor', 'vice-chancellor'],
+      },
+      // WHAT THE UNIVERSITY AND A MEMBER OF STAFF OWE EACH OTHER. A separate
+      // entry from the job description on purpose: one says what the
+      // post-holder does, the other is the contract. 078 seeded them and only
+      // SQL could change a word, which meant they were not the University's
+      // conditions at all.
+      {
+        id: 'appointment-conditions',
+        label: 'Conditions of appointment',
+        icon: <ScrollText size={18} />,
         roles: ['superadmin', 'admin', 'chancellor', 'vice-chancellor'],
       },
       // ONE ENTRY, FOUR AREAS — design, approval, the register, the specimen

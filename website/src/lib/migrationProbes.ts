@@ -748,6 +748,20 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
       + 'still count towards no GPA.',
     table: 'my_results',
   },
+  {
+    file: '078_the_conditions_every_post_is_appointed_on.sql',
+    what: 'EVERY POST HAS DEFAULT CONDITIONS OF APPOINTMENT. The "Appointment conditions" box '
+      + 'on the appointment form was empty, and nothing in the system had anything to put in '
+      + 'it — so every letter the University issued was silent about duration, probation, '
+      + 'notice, confidentiality and intellectual property. Eight family sets now cover all '
+      + 'forty-three posts with twenty-two standard conditions each, inherited by family and '
+      + 'overridable post by post, and choosing a post fills the box. They are EDITABLE '
+      + 'DEFAULTS, not a document appended unread — which is why these are active while '
+      + '048’s job descriptions are still drafts. Also sets a place of duty on all '
+      + 'forty-three posts, which had none. Grade and employment category are deliberately '
+      + 'left empty rather than invented.',
+    table: 'appointment_condition_sets',
+  },
 ];
 
 /** What a probe came back as. */

@@ -137,6 +137,10 @@ const READ_ONLY_BY_DESIGN = {
   correspondence_verification: 'A view.',
   document_template_coverage: 'A view.',
   position_job_description: 'A view: the resolved job description.',
+  position_default_conditions: 'A view: the conditions of appointment in force for a post — '
+    + 'its own active set where it has one, its family\'s everywhere else, section by '
+    + 'section. Written through `appointment_condition_sets` and '
+    + '`appointment_condition_clauses`, which the Conditions of appointment screen edits.',
   course_roll: 'A view: who is actually taking a course, registered and completed but never '
     + 'dropped. The mark sheet, the GPA engine and the graduation audit read it rather than '
     + 'each filtering `enrollments` for themselves.',
