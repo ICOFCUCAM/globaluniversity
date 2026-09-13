@@ -111,6 +111,76 @@ const parts = files.map((f) => {
   return `\n-- ${rule}\n-- ${rule}\n--\n--   ${f}\n--\n-- ${rule}\n-- ${rule}\n\n${sql}`;
 });
 
+// ---------------------------------------------------------------------------
+// THE LAST QUERY IN THE FILE: DID IT LAND?
+//
+// ---------------------------------------------------------------------------
+// WHY THIS EXISTS, AND IT IS AN APOLOGY
+// ---------------------------------------------------------------------------
+//
+// Every one of these migrations proves itself in plpgsql and reports with
+// RAISE NOTICE — and the Supabase SQL editor, which is where the University
+// actually runs them, DOES NOT DISPLAY NOTICES. So the handover instruction
+// "expect four OK notices" named output nobody could see, and the only signal
+// available was the absence of a red error.
+//
+// A proof whose result is invisible in the tool the reader is holding is not a
+// proof they have. This appends a plain SELECT — visible in the Results pane
+// like any other — that names each migration in the bundle and whether the
+// thing it creates is now there.
+//
+// It reads `to_regclass`, so it asks the database rather than a log.
+// ---------------------------------------------------------------------------
+
+/** What each migration creates, so the closing report can look for it. */
+const MARKERS = {
+  '036': 'admission_audit_log', '037': 'students', '038': 'announcements',
+  '039': 'announcement_media', '040': 'announcement_tombstones',
+  '041': 'appointments', '042': 'appointment_events',
+  // A VIEW, NOT A COLUMN. This said `working_hours`, which 043 adds to
+  // `appointments` — and to_regclass looks for a RELATION, so it came back
+  // null and the report said 043 had not landed on a database where it plainly
+  // had. A false NO sends somebody to re-run a migration that is already
+  // applied, which is the one thing this table exists to prevent.
+  '043': 'appointment_letters_unverifiable',
+  '044': 'document_templates', '045': 'correspondence',
+  '046': 'correspondence_events', '047': 'appointment_allowances',
+  '048': 'positions', '049': 'signature_specimens',
+  '050': 'appointment_acceptances', '051': 'document_template_coverage',
+};
+
+function landedReport(files) {
+  const rows = files
+    .map((f) => [f.slice(0, 3), f])
+    .filter(([n]) => MARKERS[n])
+    .map(([n, f]) => `    ('${n}', '${f.replace(/'/g, "''")}', '${MARKERS[n]}')`);
+
+  if (rows.length === 0) return '';
+
+  return `-- ===========================================================================
+-- DID IT LAND?  — READ THIS TABLE
+-- ===========================================================================
+--
+-- Every row should say YES. A row saying NO means that migration did not take
+-- effect: scroll up for the first red ERROR, fix it, and run the file again.
+-- Running it twice is safe.
+--
+-- The proofs inside each migration also RAISE NOTICE, which the Supabase SQL
+-- editor does not show. This table is the same answer in a form it does.
+-- ===========================================================================
+
+select m.migration,
+       m.file,
+       case when to_regclass('public.' || m.marker) is not null then 'YES' else 'NO' end
+         as landed,
+       m.marker as what_it_creates
+  from (values
+${rows.join(',\n')}
+  ) as m (migration, file, marker)
+ order by m.migration;
+`;
+}
+
 const out = `-- ===========================================================================
 -- ICOF GLOBAL UNIVERSITY — MIGRATIONS ${wanted.join(', ')}, IN ORDER
 --
@@ -156,9 +226,14 @@ ${wanted.includes('000') ? `-- -------------------------------------------------
 ` : ''}-- ---------------------------------------------------------------------------
 -- AFTERWARDS
 --
--- Run docs/migrations/VERIFY.sql to see what landed.
+-- The LAST THING this file prints is a table saying which of these migrations
+-- landed. You do not have to run anything else to find out — and you should
+-- not have to, because the Supabase SQL editor does not display the NOTICE
+-- lines the proofs write.
 -- ===========================================================================
 ${parts.join('\n')}
+
+${landedReport(files)}
 `;
 
 writeFileSync(join(dir, OUT), out);

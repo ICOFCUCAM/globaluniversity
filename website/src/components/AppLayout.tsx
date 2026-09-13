@@ -33,6 +33,12 @@ import QuestionBank from './exams/QuestionBank';
 import DocumentManagement from './documents/DocumentManagement';
 import AssignmentModule from './assignments/AssignmentModule';
 import AnnouncementModule from './announcements/AnnouncementModule';
+// THE SCREENS THAT HAD NO DOOR. Built, guarded, migrated for — and
+// unreachable until they were added to portalNav and to this switch.
+import AppointmentDashboard from './hr/AppointmentDashboard';
+import Appointments from './hr/Appointments';
+import CorrespondenceCenter from './correspondence/CorrespondenceCenter';
+import DocumentTemplates from './admin/DocumentTemplates';
 import TimetableModule from './timetable/TimetableModule';
 import ForumModule from './forum/ForumModule';
 import FeeModule from './fees/FeeModule';
@@ -213,6 +219,14 @@ export default function AppLayout() {
         return <AssignmentModule />;
       case 'announcements':
         return <AnnouncementModule />;
+      case 'appointments':
+        return <AppointmentDashboard />;
+      case 'appointments-board':
+        return <Appointments />;
+      case 'correspondence':
+        return <CorrespondenceCenter />;
+      case 'document-templates':
+        return <DocumentTemplates />;
       case 'timetable':
         return <TimetableModule />;
       case 'forum':

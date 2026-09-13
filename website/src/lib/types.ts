@@ -268,6 +268,19 @@ export type ViewType =
   // unreachable until this screen existed.
   | 'enrolment'
   | 'programme-resources'
+  // ---------------------------------------------------------------------
+  // APPOINTMENTS AND OFFICIAL CORRESPONDENCE.
+  //
+  // Declared here LAST of all, and that ordering is the fault: the screens,
+  // the routes and seven migrations existed before any of these four ids did,
+  // so the Vice-Chancellor signed in to a portal with no Appointments and no
+  // Correspondence in the sidebar. A closed union is what caught it — adding
+  // the cases to AppLayout without adding them here would not compile.
+  // ---------------------------------------------------------------------
+  | 'appointments'
+  | 'appointments-board'
+  | 'correspondence'
+  | 'document-templates'
   | 'dashboard' 
   | 'students' 
   | 'lecturers' 
