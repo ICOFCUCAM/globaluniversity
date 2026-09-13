@@ -26,7 +26,10 @@
 -- ---------------------------------------------------------------------------
 -- AFTERWARDS
 --
--- Run docs/migrations/VERIFY.sql to see what landed.
+-- The LAST THING this file prints is a table saying which of these migrations
+-- landed. You do not have to run anything else to find out — and you should
+-- not have to, because the Supabase SQL editor does not display the NOTICE
+-- lines the proofs write.
 -- ===========================================================================
 
 -- ===========================================================================
@@ -7984,4 +7987,42 @@ select kind, name, version, effective_from,
   from document_template_coverage
  where active_template_id is not null
  order by kind;
+
+
+-- ===========================================================================
+-- DID IT LAND?  — READ THIS TABLE
+-- ===========================================================================
+--
+-- Every row should say YES. A row saying NO means that migration did not take
+-- effect: scroll up for the first red ERROR, fix it, and run the file again.
+-- Running it twice is safe.
+--
+-- The proofs inside each migration also RAISE NOTICE, which the Supabase SQL
+-- editor does not show. This table is the same answer in a form it does.
+-- ===========================================================================
+
+select m.migration,
+       m.file,
+       case when to_regclass('public.' || m.marker) is not null then 'YES' else 'NO' end
+         as landed,
+       m.marker as what_it_creates
+  from (values
+    ('036', '036_the_steps_nothing_could_write.sql', 'admission_audit_log'),
+    ('037', '037_a_student_is_not_an_application.sql', 'students'),
+    ('038', '038_announcements_are_the_institution_speaking.sql', 'announcements'),
+    ('039', '039_a_destination_is_a_publishing_job.sql', 'announcement_media'),
+    ('040', '040_emergency_publishing_and_erasure.sql', 'announcement_tombstones'),
+    ('041', '041_appointments_and_the_letters_that_issue_from_them.sql', 'appointments'),
+    ('042', '042_the_appointment_lifecycle_and_the_staff_record.sql', 'appointment_events'),
+    ('043', '043_working_hours_and_the_appointing_authority.sql', 'appointment_letters_unverifiable'),
+    ('044', '044_document_templates_and_the_letters_tied_to_them.sql', 'document_templates'),
+    ('045', '045_official_correspondence_and_who_initiated_it.sql', 'correspondence'),
+    ('046', '046_the_correspondence_history_and_the_delegated_draft.sql', 'correspondence_events'),
+    ('047', '047_the_money_the_actors_and_the_two_axes.sql', 'appointment_allowances'),
+    ('048', '048_the_job_descriptions_and_what_they_inherit.sql', 'positions'),
+    ('049', '049_verification_signatures_and_the_written_letter.sql', 'signature_specimens'),
+    ('050', '050_acceptance_the_activation_rule_and_the_full_audit.sql', 'appointment_acceptances'),
+    ('051', '051_templates_for_every_document_the_university_issues.sql', 'document_template_coverage')
+  ) as m (migration, file, marker)
+ order by m.migration;
 

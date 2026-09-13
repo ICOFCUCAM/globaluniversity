@@ -199,6 +199,55 @@ export const menuGroups: MenuGroup[] = [
       },
     ],
   },
+  // ---------------------------------------------------------------------
+  // THE GROUP THAT DID NOT EXIST, AND EVERYTHING IN IT WAS ALREADY BUILT.
+  //
+  // The Vice-Chancellor signed in and had no Appointments, no Correspondence
+  // and no Document Templates in the sidebar. Every one of those screens
+  // existed, every route behind them was guarded, and seven migrations had
+  // been run for them — and none of it was reachable, because nobody had put
+  // a door in.
+  //
+  // That is the same fault this file already records against the Academic
+  // Affairs desk: "the capability was granted and the door was not built."
+  // It happened again, at a larger scale, and it is the reason to look at
+  // the sidebar rather than at the test suite when asking whether something
+  // is finished.
+  // ---------------------------------------------------------------------
+  {
+    title: 'Appointments & Correspondence',
+    items: [
+      // THE VICE-CHANCELLOR'S OWN SCREEN. Where every appointment in the
+      // University stands — nine counters, each one clickable.
+      {
+        id: 'appointments',
+        label: 'Appointments',
+        icon: <BarChart3 size={18} />,
+        roles: ['superadmin', 'admin', 'chancellor', 'vice-chancellor', 'registrar',
+          'hr-officer', 'hr-administrator'],
+      },
+      // THE BOARD AND THE FORM. HR prepares here; the VC approves and issues.
+      // Separate from the dashboard because they are different work: one is
+      // "where does everything stand", the other is "draft this appointment".
+      {
+        id: 'appointments-board',
+        label: 'Draft & submit',
+        icon: <ClipboardList size={18} />,
+        roles: ['superadmin', 'admin', 'registrar', 'hr-officer', 'hr-administrator',
+          'vice-chancellor'],
+      },
+      // THE LETTERS AN OFFICE STARTS AND FINISHES ITSELF. The VC, the
+      // Chancellor and the Registrar compose; HR administration may be asked
+      // to prepare one and appears here for that reason alone.
+      {
+        id: 'correspondence',
+        label: 'Correspondence',
+        icon: <Stamp size={18} />,
+        roles: ['superadmin', 'admin', 'chancellor', 'vice-chancellor', 'registrar',
+          'hr-administrator'],
+      },
+    ],
+  },
   {
     title: 'Insight',
     items: [
@@ -226,6 +275,18 @@ export const menuGroups: MenuGroup[] = [
     title: 'System',
     items: [
       { id: 'accounts', label: 'Accounts', icon: <UserCog size={18} />, roles: ['superadmin'] },
+      // THE WORDING OF EVERY DOCUMENT THE UNIVERSITY ISSUES. Under System with
+      // the credential designs rather than under Appointments, because it is
+      // the same act as approving a certificate design and holds the same
+      // capability — and because the templates cover correspondence and the
+      // appointment package alike, so filing it under either would hide it
+      // from the other.
+      {
+        id: 'document-templates',
+        label: 'Document templates',
+        icon: <BookMarked size={18} />,
+        roles: ['superadmin', 'admin', 'chancellor', 'vice-chancellor'],
+      },
       // ONE ENTRY, FOUR AREAS — design, approval, the register, the specimen
       // book. This was three entries: 'Credential studio', 'Credential
       // approvals' and 'Credential authority'. The first two were the SAME
