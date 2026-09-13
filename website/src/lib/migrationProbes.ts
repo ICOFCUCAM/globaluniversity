@@ -591,6 +591,17 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
     table: 'rooms',
     column: 'provisional',
   },
+  {
+    file: '065_the_year_that_cannot_lie.sql',
+    what: 'A fault that had not gone off yet. 059 set every academic year\u2019s status ONCE, '
+      + 'with current_date, on the day it ran \u2014 under a comment saying the date decides it. '
+      + 'It decided it once. On 15 August 2027 the column would still have said 2026/2027, and '
+      + 'Course Offerings, the Timetable and the Academic Overview all opened on it: three '
+      + 'screens, wrong year, in silence. `academic_year_now` derives it from the dates every '
+      + 'time it is asked; `academic_year_drift` reports where the stored record disagrees; and '
+      + 'the Academic Calendar screen can put them back in step.',
+    table: 'academic_year_now',
+  },
 ];
 
 /** What a probe came back as. */

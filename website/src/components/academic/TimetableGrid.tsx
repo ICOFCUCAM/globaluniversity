@@ -94,6 +94,8 @@ export default function TimetableGrid() {
   // Whether the calendar has ANSWERED, as against being empty. See the
   // year picker below: the two look identical and mean opposite things.
   const [calendarRead, setCalendarRead] = useState(false);
+  // The year the DATES say it is — see the note where it is read.
+  const [currentYearId, setCurrentYearId] = useState<string | null>(null);
   const [yearId, setYearId] = useState('');
   const [term, setTerm] = useState(1);
 
@@ -119,7 +121,26 @@ export default function TimetableGrid() {
         if (error) { setFailed(error.message); setLoading(false); return; }
         const ys = (data ?? []) as unknown as Year[];
         setYears(ys);
-        const current = ys.find((y) => y.status === 'current') ?? ys[0];
+        // WHICH YEAR IS IT? ASKED OF THE DATES, NOT OF A STORED COLUMN.
+        //
+        // This read `status === 'current'`. 059 set that column ONCE, with
+        // current_date, on the day the migration ran — under a comment saying
+        // the date decides it. It decided it once. On 15 August 2027 the
+        // column would still have said 2026/2027, and this screen would have
+        // opened on last year's data and said nothing at all.
+        //
+        // 065's `academic_year_now` derives it from the dates every time it is
+        // asked, so it cannot go stale. The stored status is the fallback and
+        // the first year is the fallback's fallback — both only reached if 065
+        // has not been run.
+        const { data: nowRow } = await within(
+          supabase.from('academic_year_now').select(YEAR).maybeSingle(),
+        ).catch(() => ({ data: null }));
+        const derived = (nowRow ?? null) as unknown as Year | null;
+        const current = (derived && ys.find((y) => y.id === derived.id))
+          ?? ys.find((y) => y.status === 'current')
+          ?? ys[0];
+        setCurrentYearId(current?.id ?? null);
         if (current) setYearId(current.id);
         else setLoading(false);
       } catch (e) {
@@ -268,7 +289,7 @@ export default function TimetableGrid() {
             )}
             {years.map((y) => (
               <option key={y.id} value={y.id}>
-                {y.label}{y.status === 'current' ? ' — current' : ''}
+                {y.label}{y.id === currentYearId ? ' — current' : ''}
               </option>
             ))}
           </select>

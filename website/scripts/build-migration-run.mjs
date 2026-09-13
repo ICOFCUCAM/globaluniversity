@@ -209,6 +209,9 @@ const MARKERS = {
   // `provisional` is the marker: nothing before it had a way to say that a
   // room arrived in a seed rather than from the University.
   '064': 'rooms.provisional',
+  // 065 adds no table and no column \u2014 it adds two views and a function.
+  // The derived view is the marker.
+  '065': 'academic_year_now',
 };
 
 /** The SQL that answers "is this one here?", for each of the three forms. */

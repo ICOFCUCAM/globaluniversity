@@ -318,6 +318,11 @@ export type ViewType =
   // WHERE THE UNIVERSITY TEACHES. A class can only be checked for a room
   // clash if it is in a room, and until 064 there were no rooms at all.
   | 'rooms'
+  // THE YEAR BOUNDARY, WHICH NOTHING COULD MOVE. 059 set every year's
+  // status once, on the day it ran, under a comment saying the date decides
+  // it — so on 15 August 2027 three screens would have opened on 2026/2027
+  // and said nothing. 065 derives it; this is where it is administered.
+  | 'academic-calendar'
   // ATTENDANCE, SEPARATED FROM THE TIMETABLE. They were one screen because the
   // timetable kept its own invented slots; now that a class is a row every
   // other screen can read, marking who attended one is its own job.

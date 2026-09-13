@@ -133,6 +133,21 @@ export const OPERATIONAL_CAPABILITIES = [
   'assign-lecturers',
   'build-timetable',
   'manage-courses',
+  // ---------------------------------------------------------------------
+  // ROLLING THE ACADEMIC YEAR OVER.
+  //
+  // Narrower than any of the three above, and deliberately so. Marking one
+  // year closed and the next current moves the Course Offerings screen, the
+  // Timetable and the Academic Overview onto a different year for everybody
+  // at once — it is the single most consequential button in the academic
+  // section, and it is not a teaching act.
+  //
+  // `build-timetable` is held by every lecturer; `manage-courses` by every
+  // programme coordinator. Neither should be able to declare that the
+  // University is now in 2027/2028. The academic year is a fact about the
+  // RECORD, so it sits with the Registry.
+  // ---------------------------------------------------------------------
+  'manage-academic-calendar',
   // The social pipeline. COMPOSING and PUBLISHING are operational — this is
   // the university talking about itself, which is an administrator's job.
   // ---------------------------------------------------------------------
@@ -675,6 +690,9 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
     'issue-credential',
     'forward-credential',
     'set-admission-openings',
+    // The year boundary is a fact about the academic record, and the academic
+    // record is the Registry's. See the capability's own note.
+    'manage-academic-calendar',
   ],
 
   // The Head of Academic Affairs approves admissions and SIGNS the admission
@@ -700,6 +718,9 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
     'issue-credential',
     'forward-credential',
     'set-admission-openings',
+    // The year boundary is a fact about the academic record, and the academic
+    // record is the Registry's. See the capability's own note.
+    'manage-academic-calendar',
   ],
 
   // Approves moderated marks on behalf of the faculty. Third of four.

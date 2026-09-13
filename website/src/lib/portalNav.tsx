@@ -185,6 +185,16 @@ export const menuGroups: MenuGroup[] = [
       // registers themselves, and the Registry registers on their behalf. The
       // route decides whose record may be touched; this only decides who is
       // offered the screen.
+      // THE CALENDAR EVERYTHING ELSE IS DATED AGAINST. Above registration
+      // because a registration cannot be filed without a term, and the term
+      // comes from here.
+      {
+        id: 'academic-calendar',
+        label: 'Academic calendar',
+        icon: <CalendarDays size={18} />,
+        roles: ['superadmin', 'admin', 'registrar', 'chancellor', 'vice-chancellor',
+          'dean', 'hod', 'programme-coordinator', 'academic-office'],
+      },
       {
         id: 'course-registration',
         label: 'Course registration',
