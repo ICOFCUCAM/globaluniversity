@@ -87,6 +87,40 @@ console.log('\nAnd the bundles end with the table rather than with a proof nobod
   }
 }
 
+console.log('\nAnd the standalone check covers every migration the bundles do\n');
+
+// ---------------------------------------------------------------------------
+// ARE-THEY-ALL-IN.sql IS THE ANSWER TO "HOW DO I CHECK?", and it is generated
+// from the same MARKERS table as the bundles — so the failure worth guarding
+// against is not that it is wrong, but that it is STALE. A newer migration
+// lands, the bundles are rebuilt, and this file is forgotten; it then reports
+// a clean sweep of YESes that stops one short, which is worse than not
+// existing, because somebody has now checked and been told everything is fine.
+//
+// It must also stay READ-ONLY. It is the one file in this directory somebody
+// will run on the live database without reading first, precisely because it is
+// advertised as safe.
+// ---------------------------------------------------------------------------
+{
+  const report = readFileSync(join(migrations, 'ARE-THEY-ALL-IN.sql'), 'utf8');
+  const outstanding = readFileSync(join(migrations, 'RUN-OUTSTANDING.sql'), 'utf8');
+
+  const reported = [...report.matchAll(/select '(\d{3})' as migration/g)].map((m) => m[1]);
+  const bundled = [...outstanding.matchAll(/select '(\d{3})' as migration/g)].map((m) => m[1]);
+  check('it reports on exactly what RUN-OUTSTANDING reports on', reported, bundled);
+
+  // THE NEWEST MIGRATION, NAMED. The check above passes if BOTH files are a
+  // migration behind, which is the state they arrive at together.
+  const newest = readdirSync(migrations)
+    .filter((f) => /^\d{3}_.*\.sql$/.test(f)).sort().pop().slice(0, 3);
+  check(`…and the newest migration (${newest}) is one of them`,
+    reported.includes(newest), true);
+
+  check('it changes nothing',
+    /^\s*(create|alter|drop|insert|update|delete|truncate|grant|revoke|do)\b/im.test(
+      report.replace(/^--.*$/gm, '')), false);
+}
+
 // ---------------------------------------------------------------------------
 // THE PART THAT NEEDS A DATABASE
 // ---------------------------------------------------------------------------

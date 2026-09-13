@@ -49,12 +49,18 @@ begin
   -- The whole block rolls back, so these three exist for the length of the
   -- proof and no longer.
   -- ---------------------------------------------------------------------
-  insert into auth.users (email) values ('scenario-drafter@example.test')
-    returning id into someone;
-  insert into auth.users (email) values ('scenario-vc@example.test')
-    returning id into vc;
-  insert into auth.users (email) values ('scenario-reviewer@example.test')
-    returning id into reviewer;
+  -- THE ID IS SUPPLIED, NOT DEFAULTED. auth.users.id has no default on a real
+  -- Supabase project — GoTrue generates the uuid in the application before it
+  -- inserts — so `insert into auth.users (email) … returning id` is refused
+  -- with 23502. This file leaned on a default that only the local test stub
+  -- had, which is the same defect 055 shipped with and the University hit in
+  -- the SQL editor. The stub no longer has it, which is what surfaced this.
+  someone  := gen_random_uuid();
+  vc       := gen_random_uuid();
+  reviewer := gen_random_uuid();
+  insert into auth.users (id, email) values (someone,  'scenario-drafter@example.test');
+  insert into auth.users (id, email) values (vc,       'scenario-vc@example.test');
+  insert into auth.users (id, email) values (reviewer, 'scenario-reviewer@example.test');
 
   -- ASSERTED RATHER THAN ASSUMED. If these three were ever to collapse into
   -- fewer — a future change to how they are made — the scenarios must stop

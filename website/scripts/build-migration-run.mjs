@@ -356,6 +356,58 @@ ${parts.join('\n')}
 ${landedReport(files)}
 `;
 
+// ---------------------------------------------------------------------------
+// --report-only — THE CHECK WITHOUT THE MIGRATIONS
+//
+// "How can I check if all migrations are in place?" had no short answer. The
+// DID IT LAND? table exists, but only at the foot of a bundle — so asking the
+// question meant re-running half a megabyte of DDL to read twenty lines at the
+// end of it. Safe, because every migration is idempotent, but nobody should
+// have to run a migration to find out whether they need to.
+//
+// This emits the report alone: reads nothing but the catalogue, writes
+// nothing, and comes from the same MARKERS table as the bundles, so it cannot
+// drift from what they check.
+// ---------------------------------------------------------------------------
+if (argv.includes('--report-only')) {
+  const reportOnly = `-- ===========================================================================
+-- ICOF GLOBAL UNIVERSITY — ARE ALL THE MIGRATIONS IN PLACE?
+--
+-- GENERATED FILE. DO NOT EDIT.
+--   Generator: scripts/build-migration-run.mjs --report-only
+--
+-- ---------------------------------------------------------------------------
+-- READS ONLY. CHANGES NOTHING.
+--
+-- Paste the whole file into the Supabase SQL editor and run it. It asks the
+-- database catalogue what exists and reports one line per migration. It
+-- creates nothing, alters nothing and drops nothing, so it is safe to run at
+-- any time, as often as you like, on a live database.
+--
+-- ---------------------------------------------------------------------------
+-- HOW TO READ THE RESULT
+--
+--   landed = YES   the thing that migration creates is there.
+--   landed = NO    it is not. That migration has not been run.
+--
+-- A NO with YESes after it is the case worth stopping on: migrations are
+-- written to run in order, and a gap means something later was applied to a
+-- database that was missing what it assumed. Run RUN-OUTSTANDING.sql, which is
+-- idempotent and will skip everything already present.
+--
+-- WHAT THIS CANNOT TELL YOU. It checks that each migration's marker exists —
+-- not that every statement inside it succeeded. A migration that created its
+-- table and then failed on a later statement reports YES. The bundles' own
+-- proofs are what cover that, and they stop the run on failure.
+-- ===========================================================================
+
+${landedReport(files)}
+`;
+  writeFileSync(join(dir, 'ARE-THEY-ALL-IN.sql'), reportOnly);
+  console.log(`docs/migrations/ARE-THEY-ALL-IN.sql  ${files.length} migrations reported on`);
+  process.exit(0);
+}
+
 writeFileSync(join(dir, OUT), out);
 console.log(`docs/migrations/${OUT}  ${files.length} files, ${(out.length / 1024).toFixed(1)}KB`);
 console.log(`  ${files.join('\n  ')}`);
