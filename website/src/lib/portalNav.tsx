@@ -331,6 +331,16 @@ export const menuGroups: MenuGroup[] = [
       // register through the Registrar's screens, not through a wallet.
       { id: 'my-credentials', label: 'My credentials', icon: <Award size={18} />, roles: ['student'] },
       { id: 'documents', label: 'Documents', icon: <FolderOpen size={18} />, roles: ['superadmin', 'admin', 'student'] },
+      // WHAT STUDENTS HAVE ASKED FOR, and the offices that answer them. Held
+      // by the four a student actually writes to — not by a lecturer, whose
+      // work a deferment or a fee query is not.
+      {
+        id: 'student-request-queue',
+        label: 'Student services',
+        icon: <Inbox size={18} />,
+        roles: ['superadmin', 'admin', 'registrar', 'academic-office',
+          'finance-director', 'student-affairs'],
+      },
       { id: 'fees', label: 'Fees & receipts', icon: <Wallet size={18} />, roles: ['superadmin', 'admin', 'finance', 'finance-director'] },
       // WHAT THE UNIVERSITY CHARGES, as against what it has received.
       // 'Fees & receipts' is Finance's record of money IN; this is the

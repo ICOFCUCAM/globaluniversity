@@ -420,6 +420,20 @@ export const OPERATIONAL_CAPABILITIES = [
   // that stops a congregation.
   'set-fee-schedule',
   'confirm-financial-clearance',
+  // ---------------------------------------------------------------------
+  // ANSWERING A STUDENT.
+  //
+  // 073 gave a student a way to ask the University for something and gave the
+  // request a state anybody could see. Nothing could MOVE it — no office
+  // screen, no route, no way off 'submitted'. A student could ask for
+  // academic leave, watch the screen say Submitted, and wait for ever, which
+  // is worse than the emailing it replaced because an email at least lands in
+  // somebody's inbox.
+  //
+  // Held by the offices a student actually writes to. Not by a lecturer: a
+  // request about fees, deferment or an appeal is not their work, and a
+  // capability that covers everybody covers nobody.
+  'handle-student-request',
 ] as const;
 
 /**
@@ -685,7 +699,7 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // holds all three, which is a statement about this office rather than about
   // the acts: a Registrar or a Dean still holds none of them.
   // ---------------------------------------------------------------------
-  'finance-director': ['verify-payment', 'approve-refund', 'generate-invoice', 'manage-student-accounts', 'view-institutional-finance', 'confirm-financial-clearance', 'set-fee-schedule'],
+  'finance-director': ['handle-student-request', 'verify-payment', 'approve-refund', 'generate-invoice', 'manage-student-accounts', 'view-institutional-finance', 'confirm-financial-clearance', 'set-fee-schedule'],
 
   // Moderates submitted marks — the department's attestation that the marking
   // is consistent and the spread defensible. Cannot enter a mark and cannot
@@ -743,8 +757,48 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
     'set-remuneration',
   ],
 
-  'library-staff': ['manage-library'],
-  'student-affairs': ['manage-hostel', 'manage-student-welfare'],
+  // ---------------------------------------------------------------------
+  // THE LIBRARY, AND WHY THERE IS NO LIBRARY MODULE HERE.
+  //
+  // This office held `manage-library` and had no screen for it. The obvious
+  // reading is that one is missing. It is not.
+  //
+  // A library runs on a library system — a catalogue, holdings, circulation,
+  // reservations, fines, interlibrary loan, and a bibliographic standard this
+  // system has no business reimplementing. Universities run those as their own
+  // systems and connect them to the student record; they do not build them
+  // inside it. A half-built catalogue in a student record system is worse than
+  // none: it becomes the place nobody's holdings actually are.
+  //
+  // What a library genuinely needs FROM the student record is one thing: is
+  // this person a current student, and what is their standing. That is what a
+  // borrower card is issued against and what a loan is refused on. It is
+  // `view-registered-students`, which already exists and which this office
+  // should always have held.
+  //
+  // `manage-library` stays in the vocabulary, named and unenforced, because it
+  // describes real work the University does somewhere else. Deleting it would
+  // suggest the office has no such duty; enforcing it would suggest this
+  // system carries it.
+  // ---------------------------------------------------------------------
+  'library-staff': ['manage-library', 'view-registered-students'],
+  // STUDENT AFFAIRS' REAL WORK IN THIS SYSTEM.
+  //
+  // This office held `manage-hostel` and `manage-student-welfare` and had no
+  // screen for either — four menu entries, all of them the ones every office
+  // gets. An audit named it and printed it on every test run.
+  //
+  // A hostel module is not the answer and neither is a welfare case system:
+  // both are substantial subsystems, and inventing half of one is worse than
+  // having none. What this office genuinely does in a student record system is
+  // ANSWER STUDENTS — academic leave, deferment, welfare, a replacement card —
+  // and 073 already built that pipeline with nobody to work it.
+  //
+  // So they get the queue. `manage-hostel` and `manage-student-welfare` stay
+  // named and unenforced, because they describe work this system does not do
+  // and pretending otherwise is how a capability comes to mean nothing.
+  'student-affairs': ['manage-hostel', 'manage-student-welfare', 'handle-student-request',
+    'view-registered-students'],
 
   applicant: ['apply', 'upload-documents', 'track-application'],
 
@@ -753,7 +807,10 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   finance: ['verify-payment', 'approve-refund', 'generate-invoice', 'manage-student-accounts'],
 
   // Cannot edit payments. 'verify-payment' and 'approve-refund' are absent.
+  // The Registry answers most of what a student asks: enrolment
+  // confirmations, cards, leave, deferment, a change of programme.
   registrar: [
+    'handle-student-request',
     // Retained: the Registrar's own approve route still holds this, and the
     // university may want a single-office fallback if the Admissions Office is
     // unstaffed. The pipeline gate is the record's status, not this list.
@@ -790,7 +847,10 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // but cannot issue it would mean somebody else pressing the button under
   // their name, which is precisely the arrangement the signature exists to
   // prevent.
+  // The Academic Office answers the academic ones — a programme change, a
+  // course withdrawal, an appeal.
   'academic-office': [
+    'handle-student-request',
     'assign-lecturers', 'build-timetable', 'manage-courses',
     'approve-credential-design', 'recompute-gpa',
     // THE ACADEMIC ADMISSION DECISION. This office signs page 1 of the

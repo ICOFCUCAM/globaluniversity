@@ -735,6 +735,19 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
     table: 'transcript_requests',
     column: 'downloads_allowed',
   },
+  {
+    file: '077_a_mark_is_moderated_before_anybody_sees_it.sql',
+    what: 'A MARK IS MODERATED BEFORE ANYBODY SEES IT, and this corrects 071 rather than '
+      + 'refining it. 071 released a mark the moment the LECTURER SUBMITTED it, arguing that it '
+      + 'had left their hands \u2014 which is about custody, not about whether anybody has '
+      + 'CHECKED it. A submitted mark is one person\u2019s unverified marking. Moderation is '
+      + 'what catches a misread total or a cohort marked against the wrong rubric, and a mark a '
+      + 'student has already seen is far harder to correct downwards than one they have not. '
+      + 'After this: nothing at draft, nothing at submitted, PROVISIONAL from moderated, '
+      + 'OFFICIAL at approved. Students will see FEWER marks than before. Provisional marks '
+      + 'still count towards no GPA.',
+    table: 'my_results',
+  },
 ];
 
 /** What a probe came back as. */

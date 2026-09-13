@@ -363,6 +363,9 @@ export type ViewType =
   // could be shown a balance and the graduation audit could never establish
   // financial clearance. The Superadministrator sets it here.
   | 'fee-schedules'
+  // THE OFFICE'S SIDE OF A STUDENT'S REQUEST. 073 built the request and the
+  // student's half of it; nothing could move one off 'submitted'.
+  | 'student-request-queue'
   // ATTENDANCE, SEPARATED FROM THE TIMETABLE. They were one screen because the
   // timetable kept its own invented slots; now that a class is a row every
   // other screen can read, marking who attended one is its own job.

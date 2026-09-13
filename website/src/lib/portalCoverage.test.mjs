@@ -83,9 +83,27 @@ const ROLES = (() => {
   return [...block.matchAll(/^\s*\|\s*'([a-z-]+)'/gm)].map((m) => m[1]);
 })();
 
-/** Every screen the portal can draw. */
+/**
+ * Every screen the portal can draw.
+ *
+ * COMMENTS ARE STRIPPED FIRST, and that line is the whole reason this function
+ * has a comment of its own.
+ *
+ * The first version read every quoted string after `export type ViewType`.
+ * This file's header is about a measuring instrument that counted the word
+ * 'applicant' out of a COMMENT in portalNav.tsx — and then this function did
+ * exactly the same thing to itself: a comment added beside a new view id
+ * mentioned `'submitted'`, and the test reported a screen called "submitted"
+ * as unrouted and unreachable.
+ *
+ * Stripping the comments is not a workaround for one word. The union is
+ * written both one-per-line and several-to-a-line, so the ids cannot be taken
+ * from line starts either; what is left after the prose is the vocabulary.
+ */
 const VIEWS = (() => {
-  const block = types.slice(types.indexOf('export type ViewType'));
+  const block = types.slice(types.indexOf('export type ViewType'))
+    .replace(/\/\/[^\n]*/g, '')
+    .replace(/\/\*[\s\S]*?\*\//g, '');
   return [...block.matchAll(/'([a-z0-9-]+)'/g)].map((m) => m[1]);
 })();
 
@@ -143,11 +161,32 @@ const THIN = ROLES
  * every run so it cannot become a thing nobody is reminded of.
  */
 const NO_SCREEN_YET = {
-  'library-staff': 'Holds `manage-library`. There is no library module: no catalogue, no loans, '
-    + 'no returns. The role exists, the capability is granted, and the only screens it can open '
-    + 'are the ones every office gets.',
-  'student-affairs': 'Holds `manage-hostel` and `manage-student-welfare`. Neither has a screen. '
-    + 'Hostel allocation and welfare cases are done outside this system entirely.',
+  // ---------------------------------------------------------------------
+  // THE LIBRARY, AND WHY IT IS NOT A MISSING SCREEN.
+  //
+  // The obvious reading of an office with a capability and no module is that
+  // somebody forgot to build one. Here it is a decision.
+  //
+  // A library runs on a library system: catalogue, holdings, circulation,
+  // reservations, fines, interlibrary loan, and a bibliographic standard a
+  // student record system has no business reimplementing. Universities run
+  // those as their own systems and connect them; they do not build them
+  // inside the registry. A half-built catalogue here would become the place
+  // nobody's holdings actually are.
+  //
+  // What a library needs FROM this system is one thing — is this person a
+  // current student — and `view-registered-students` is that. This office now
+  // holds it.
+  //
+  // STUDENT AFFAIRS WAS ON THIS LIST AND IS NOT ANY MORE. They held
+  // `manage-hostel` and `manage-student-welfare` and had nothing to open. The
+  // answer was not a hostel module: it was the request queue 073 had already
+  // built with nobody to work it. Answering students IS their work.
+  // ---------------------------------------------------------------------
+  'library-staff': 'Holds `manage-library`, and deliberately has no library module: a catalogue, '
+    + 'circulation and holdings belong in a library system, not in a student record system. What '
+    + 'the library needs from here \u2014 whether somebody is a current student \u2014 it now '
+    + 'has through `view-registered-students`.',
 };
 
 const unexplainedThin = THIN.filter((r) => !NO_SCREEN_YET[r]);
@@ -277,8 +316,10 @@ const NOT_ENFORCED = {
   'approve-transfers': 'NO DOOR. `transfer_credits` exists as a table and no screen reads or '
     + 'writes it.',
   'assign-proctor': 'NO DOOR. `examination_officers` exists and nothing reads it.',
-  'manage-hostel': 'NO DOOR. There is no hostel module.',
-  'manage-student-welfare': 'NO DOOR. There is no welfare module.',
+  'manage-hostel': 'Named, not enforced, and deliberately so: hostel allocation is not work this '
+    + 'system does. Student Affairs\u2019 actual work here is the request queue.',
+  'manage-student-welfare': 'The same. A welfare case system is its own thing; what reaches this '
+    + 'system is a student ASKING for something, and that is `handle-student-request`.',
   'message-lecturers': 'NO DOOR. There is no messaging in this system; the forum is the only '
     + 'place anybody writes to anybody.',
   'reinstate-account': 'NO DOOR. Accounts can be suspended and nothing lifts one.',

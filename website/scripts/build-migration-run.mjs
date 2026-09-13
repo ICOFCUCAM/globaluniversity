@@ -240,6 +240,11 @@ const MARKERS = {
   // function; the counter is the marker, because nothing before it could
   // limit how many times a transcript was released.
   '076': 'transcript_requests.downloads_allowed',
+  // 077 creates nothing new — it narrows `my_results`. The marker is the
+  // comment on the view, which no earlier migration wrote.
+  // The desk-name only the NARROWED view carries: before 077 a submitted mark
+  // reached the student and was labelled with the Head of Department.
+  '077': 'viewdef:my_results:Moderated, with the Faculty',
 };
 
 /** The SQL that answers "is this one here?", for each of the three forms. */
@@ -254,6 +259,25 @@ function landedTest(marker) {
                    select 1 from pg_constraint
                     where conname = '${name}'
                       and position('${needle}' in pg_get_constraintdef(oid)) > 0)
+                 then 'YES' else 'NO' end`;
+  }
+  // ---------------------------------------------------------------------
+  // A VIEW'S OWN DEFINITION, for a migration that only NARROWS one.
+  //
+  // 077 creates no table, no column and no view that did not already exist —
+  // it changes which marks `my_results` shows. `def:` reads constraints and
+  // `to_regclass` only says the view is there, which it was before.
+  //
+  // `pg_get_viewdef` renders the view as SQL, so asking whether a phrase is in
+  // it is asking the database what the view actually does. The phrase chosen
+  // must be one the NEW definition has and the old one did not.
+  // ---------------------------------------------------------------------
+  if (marker.startsWith('viewdef:')) {
+    const [, name, ...rest] = marker.split(':');
+    const needle = rest.join(':');
+    return `case when to_regclass('public.${name}') is null then 'NO'
+                 when position('${needle.replace(/'/g, "''")}' in
+                               pg_get_viewdef('public.${name}'::regclass)) > 0
                  then 'YES' else 'NO' end`;
   }
   if (marker.startsWith('rows:')) {

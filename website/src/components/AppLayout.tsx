@@ -70,6 +70,7 @@ import TimetableModule from './timetable/TimetableModule';
 import ForumModule from './forum/ForumModule';
 import FeeModule from './fees/FeeModule';
 import FeeSchedules from './finance/FeeSchedules';
+import StudentRequestQueue from './services/StudentRequestQueue';
 import AnalyticsDashboard from './analytics/AnalyticsDashboard';
 import InsightsModule from './insights/InsightsModule';
 import SettingsPage from './settings/SettingsPage';
@@ -364,6 +365,8 @@ export default function AppLayout() {
         return <FeeModule />;
       case 'fee-schedules':
         return <FeeSchedules />;
+      case 'student-request-queue':
+        return <StudentRequestQueue />;
       case 'documents':
         return <DocumentManagement />;
       case 'analytics':

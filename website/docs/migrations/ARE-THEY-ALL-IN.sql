@@ -237,6 +237,13 @@ select * from (
                       and column_name = 'downloads_allowed')
                  then 'YES' else 'NO' end as landed,
          'transcript_requests.downloads_allowed' as what_it_creates
+  union all
+  select '077' as migration, '077_a_mark_is_moderated_before_anybody_sees_it.sql' as file,
+         case when to_regclass('public.my_results') is null then 'NO'
+                 when position('Moderated, with the Faculty' in
+                               pg_get_viewdef('public.my_results'::regclass)) > 0
+                 then 'YES' else 'NO' end as landed,
+         'viewdef:my_results:Moderated, with the Faculty' as what_it_creates
 ) as landed_report
  order by migration;
 
