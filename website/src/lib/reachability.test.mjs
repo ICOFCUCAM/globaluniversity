@@ -142,6 +142,9 @@ const READ_ONLY_BY_DESIGN = {
     + 'each filtering `enrollments` for themselves.',
   position_profiles_unapproved: 'A view.',
   admission_status_coverage: 'A view.',
+  academic_term_now: 'A view over `academic_term_on(current_date)`, which reads the academic '
+    + 'calendar. Nothing writes it because nothing writes a date — it answers "which term is it" '
+    + 'so that no screen has to reach for new Date().getFullYear() and be wrong every January.',
   capability_grants_in_force: 'A view over `capability_grants`, which /api/admin/capability-grant '
     + 'writes. It exists so that "still in force" — not revoked AND not expired — is decided in '
     + 'one place: a caller checking only `revoked_at is null` would honour a grant that ran out '

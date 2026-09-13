@@ -199,6 +199,7 @@ const MARKERS = {
   // 058 CREATES NOTHING. It seeds one row into 057's requirements table, so
   // the marker is the row itself.
   '058': "rows:academic_approval_requirements:subject = 'curriculum'",
+  '059': 'academic_terms',
 };
 
 /** The SQL that answers "is this one here?", for each of the three forms. */

@@ -520,6 +520,18 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
     cannotSee: "select subject, office from academic_approval_requirements "
       + "where subject = 'curriculum';  -- it should list vice-chancellor",
   },
+  {
+    file: '059_the_academic_calendar.sql',
+    what: 'The academic calendar, on the western system the University ruled: Semester 1 opens '
+      + '15 August, Semester 2 opens 2 January, so the academic year runs 15 August to 14 August '
+      + 'and is written 2026/2027. FIXES A LIVE DEFECT: registration took its year from '
+      + 'new Date().getFullYear(), and Semester 1 straddles New Year \u2014 so one cohort in one '
+      + 'term split across two academic years and had its GPA computed twice, over half its '
+      + 'courses each time. The windows INSIDE a term (registration, teaching, examinations, '
+      + 'results) arrive empty: the University has stated when its semesters open, not when '
+      + 'registration does.',
+    table: 'academic_terms',
+  },
 ];
 
 /** What a probe came back as. */

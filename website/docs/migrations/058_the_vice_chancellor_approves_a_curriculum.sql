@@ -54,6 +54,34 @@
 -- `made_on_sole_authority` belongs to appointments and does not appear here.
 -- ===========================================================================
 
+-- ---------------------------------------------------------------------------
+-- 057 FIRST, AND SAY SO RATHER THAN LETTING POSTGRES SAY IT.
+--
+-- The University ran this file on its own and got:
+--
+--     ERROR: 42P01: relation "academic_approval_requirements" does not exist
+--
+-- which is true, unhelpful, and looks like a defect in the migration rather
+-- than a missing one before it. 057 creates that table; this file only puts a
+-- row in it.
+--
+-- A migration that depends on an earlier one should name it. The cost of not
+-- doing so is somebody reading a Postgres error code at the end of a long day
+-- and concluding the file is broken.
+-- ---------------------------------------------------------------------------
+
+do $$
+begin
+  if to_regclass('public.academic_approval_requirements') is null then
+    raise exception
+      '058 needs 057 first. 057_the_academic_structure.sql creates the academic structure — '
+      'schools, programmes, programme versions and the approvals table this file seeds — and it '
+      'has not been run on this database. Run RUN-OUTSTANDING.sql, which contains both in order '
+      'and is safe to re-run over anything already applied.'
+      using errcode = 'undefined_table';
+  end if;
+end $$;
+
 insert into academic_approval_requirements (subject, office, note)
 values ('curriculum', 'vice-chancellor',
         'The University''s ruling: the Vice-Chancellor approves a curriculum. A version moves '

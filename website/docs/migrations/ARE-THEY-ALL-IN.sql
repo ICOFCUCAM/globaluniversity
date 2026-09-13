@@ -146,6 +146,10 @@ select * from (
                  when exists (select 1 from academic_approval_requirements where subject = 'curriculum') then 'YES'
                  else 'NO' end as landed,
          'rows:academic_approval_requirements:subject = ''curriculum''' as what_it_creates
+  union all
+  select '059' as migration, '059_the_academic_calendar.sql' as file,
+         case when to_regclass('public.academic_terms') is not null then 'YES' else 'NO' end as landed,
+         'academic_terms' as what_it_creates
 ) as landed_report
  order by migration;
 

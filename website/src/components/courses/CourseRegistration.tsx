@@ -70,8 +70,32 @@ interface Student {
 
 const STUDENTS = 'id, first_name, last_name, matric_no';
 
-/** The academic year a registration defaults to. */
-const thisYear = () => new Date().getFullYear();
+/**
+ * THE TERM A REGISTRATION DEFAULTS TO, ASKED OF THE CALENDAR.
+ *
+ * This used to be
+ *
+ *     const thisYear = () => new Date().getFullYear();
+ *
+ * which is the CALENDAR year, and the University's academic year is not. On
+ * the western calendar it runs 15 August to 14 August, so Semester 1 straddles
+ * New Year — and a student registering in December filed under 2026 while one
+ * registering for THE SAME SEMESTER in January filed under 2027.
+ *
+ * `semester_gpas` is keyed on (student_id, academic_year, semester), so that
+ * student's grade point average was computed twice for one term, each time
+ * over half their courses.
+ *
+ * 059 puts the answer in the database — `academic_term_now` — so every screen
+ * and route asks one question and gets one answer instead of each reaching for
+ * the clock and being wrong in January in its own way.
+ */
+interface TermNow {
+  year_label: string;
+  starts_in: number;
+  term_sequence: number;
+  term_name: string;
+}
 
 export default function CourseRegistration() {
   const { user } = useAuth();
@@ -84,8 +108,27 @@ export default function CourseRegistration() {
   const [students, setStudents] = useState<Student[]>([]);
   const [studentId, setStudentId] = useState('');
   const [query, setQuery] = useState('');
-  const [year, setYear] = useState(String(thisYear()));
-  const [semester, setSemester] = useState('1');
+  // EMPTY UNTIL THE CALENDAR ANSWERS. A default guessed from the clock is the
+  // bug this replaced; a blank field that fills itself a moment later is
+  // honest, and the route already refuses a registration with no term.
+  const [year, setYear] = useState('');
+  const [semester, setSemester] = useState('');
+  const [term, setTerm] = useState<TermNow | null>(null);
+  const [noCalendar, setNoCalendar] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from('academic_term_now')
+        .select('year_label, starts_in, term_sequence, term_name')
+        .maybeSingle();
+      if (!data) { setNoCalendar(true); return; }
+      const t = data as unknown as TermNow;
+      setTerm(t);
+      setYear(String(t.starts_in));
+      setSemester(String(t.term_sequence));
+    })();
+  }, []);
 
   const [offered, setOffered] = useState<Offered[] | null>(null);
   const [passed, setPassed] = useState<string[]>([]);
@@ -243,10 +286,40 @@ export default function CourseRegistration() {
             </select>
           </div>
         )}
+        {/* -----------------------------------------------------------
+            THE TERM, NAMED THE WAY THE UNIVERSITY NAMES IT.
+
+            The University's own objection: registration "shouldn't simply say:
+            Academic year: 2026. It should know: 2026/2027 — Semester 1."
+
+            So the term is stated in full, from the calendar, and the integer
+            underneath it — which is what `enrollments.academic_year` actually
+            stores — is shown as the supporting detail rather than as the whole
+            answer. 2026 means the year the term OPENED in, which is why a
+            January registration still reads 2026.
+            ----------------------------------------------------------- */}
         <div className="space-y-1.5">
-          <label htmlFor="cr-year" className={LABEL}>Academic year</label>
-          <input id="cr-year" type="number" min="2000" max="2100" value={year}
-            onChange={(e) => setYear(e.target.value)} className={INPUT} />
+          <span className={LABEL}>Term</span>
+          {term ? (
+            <div className="rounded-lg border border-[#ded6c8] bg-[#faf8f4] px-3 py-2
+                            dark:border-[#3d3349] dark:bg-[#241f2c]">
+              <p className="text-sm font-medium text-[#33234a] dark:text-[#e4dcf0]">
+                {term.year_label} — {term.term_name}
+              </p>
+              <p className="text-xs text-[#a49bb0] dark:text-[#7b7289]">
+                Filed under academic year {term.starts_in}
+              </p>
+            </div>
+          ) : noCalendar ? (
+            <p className="rounded-lg border border-dashed border-amber-300 bg-amber-50 px-3 py-2
+                          text-xs text-amber-800 dark:border-amber-800/60 dark:bg-amber-950/30
+                          dark:text-amber-200">
+              Today falls in no academic year the calendar covers, so a registration cannot be
+              dated. The academic calendar is set in Academic Structure.
+            </p>
+          ) : (
+            <p className="text-xs text-[#a49bb0] dark:text-[#7b7289]">Reading the calendar…</p>
+          )}
         </div>
         <div className="space-y-1.5">
           <label htmlFor="cr-sem" className={LABEL}>Semester</label>
