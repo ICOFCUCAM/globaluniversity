@@ -19,6 +19,7 @@ import AcademicAdmissions from './admissions/AcademicAdmissions';
 import { isEnrolledRole } from '@/lib/roles';
 import { labelForView } from '@/lib/portalNav';
 import { JourneyProvider } from '@/contexts/JourneyContext';
+import { GradingProvider } from '@/contexts/GradingContext';
 import MyProgramme from './student/MyProgramme';
 import MyTimetable from './student/MyTimetable';
 import MyAssessments from './student/MyAssessments';
@@ -403,6 +404,11 @@ export default function AppLayout() {
     // WHERE THE STUDENT STANDS, READ ONCE, ABOVE EVERYTHING THAT READS IT.
     // The rail, the breadcrumb, the search box and every student screen share
     // one answer rather than each asking the database for their own.
+    // THE GRADING SCALE, LOADED ONCE AND ABOVE EVERYTHING THAT COMPUTES A
+    // GRADE. Until this existed the University could restate its scale,
+    // approve it and publish it, and every screen would go on computing the
+    // copy in the repository.
+    <GradingProvider>
     <JourneyProvider>
     <div className="min-h-screen bg-[#f7f5f0] dark:bg-[#17131d]">
       {/* Scrim. Only on small screens, and only while the drawer is open. */}
@@ -454,5 +460,6 @@ export default function AppLayout() {
       </main>
     </div>
     </JourneyProvider>
+    </GradingProvider>
   );
 }

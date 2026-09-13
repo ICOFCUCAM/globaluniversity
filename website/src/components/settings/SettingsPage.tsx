@@ -6,13 +6,17 @@ import AdmissionOpenings from './AdmissionOpenings';
 import ConfigurationPanel from '@/components/system/ConfigurationPanel';
 import ConnectedAccounts from '@/components/social/ConnectedAccounts';
 import SignatureSpecimen from './SignatureSpecimen';
-import { GRADING_SCALE, CLASSIFICATION_BANDS, MAX_GRADE_POINT } from '@/lib/grading';
+import { CLASSIFICATION_BANDS, MAX_GRADE_POINT } from '@/lib/grading';
+import { useGrading } from '@/contexts/GradingContext';
 import { UNIVERSITY } from '@/lib/constants';
 import {
   User, Shield, Bell, Palette, Database, Save, CheckCircle2, DoorOpen, Share2, Settings2, PenLine,} from 'lucide-react';
 
 export default function SettingsPage() {
   const { user } = useAuth();
+  // The scale every grade in the portal is computed on — read once when the
+  // portal starts, so this panel and the mark sheets cannot disagree.
+  const grading = useGrading();
   const [activeTab, setActiveTab] = useState('profile');
   const [saved, setSaved] = useState(false);
 
@@ -244,7 +248,57 @@ export default function SettingsPage() {
           {activeTab === 'grading' && (
             <div className="space-y-4">
               <h3 className="font-semibold text-[#33234a] dark:text-[#e4dcf0]">Grading Scale Configuration</h3>
-              <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">Current grading scale used for all result processing</p>
+              {/* ----------------------------------------------------------
+                  THE SCALE IN FORCE, NOT THE CONSTANT.
+
+                  This table printed `GRADING_SCALE` — the copy in the
+                  repository — while the portal computed on whatever the
+                  University had published. The same fault this file already
+                  records against itself two panels down: "two statements of
+                  the same rule, in different files, disagreeing — and the one
+                  a student would read was the wrong one."
+                  ---------------------------------------------------------- */}
+              <p className="text-sm text-[#6b6076] dark:text-[#9c93ad]">
+                Every grade, GPA and classification in this system is computed on the scale below.
+              </p>
+              <div className={`flex items-start gap-3 rounded-xl p-4 text-xs leading-relaxed ${
+                grading.source === 'university'
+                  ? 'bg-[#faf8f4] text-[#6b6076] dark:bg-[#241f2c] dark:text-[#9c93ad]'
+                  : 'border border-amber-300 bg-amber-50 text-amber-900 '
+                    + 'dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200'
+              }`}>
+                <Database size={15} className="mt-0.5 shrink-0" />
+                <div>
+                  {grading.source === 'university' ? (
+                    <>
+                      <strong>{grading.scale.name}</strong> — read from the University&apos;s own
+                      record. Pass mark {grading.scale.passMark}%, highest grade point{' '}
+                      {grading.scale.maxPoint.toFixed(2)}.
+                      {grading.divergence.length > 0 && (
+                        <>
+                          {' '}The published regulations differ from it:{' '}
+                          {grading.divergence.join('; ')}. Somebody should reconcile the two.
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <strong>The published regulations are standing in.</strong>{' '}
+                      {grading.why ?? 'No scale is recorded in the database.'} Grades are being
+                      computed from the bands in the repository, which match the regulations —
+                      but a scale the University restates will not reach this system until it can
+                      be read.
+                    </>
+                  )}
+                  {/* A SCALE IS RESTATED, NEVER EDITED, and this says so where
+                      somebody would otherwise look for an edit button. */}
+                  <p className="mt-1.5 text-[11px] opacity-80">
+                    There is no edit button here on purpose. A transcript issued under these bands
+                    was computed under them; changing them would change what the University
+                    already said about a graduate. A new scale is published as a new version.
+                  </p>
+                </div>
+              </div>
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-[#ece7de] bg-[#faf8f4] dark:border-[#2e2637] dark:bg-[#241f2c]">
@@ -255,7 +309,7 @@ export default function SettingsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#f0ece4] dark:divide-[#2a2333]">
-                  {GRADING_SCALE.map((g) => (
+                  {grading.scale.bands.map((g) => (
                     <tr key={g.grade} className="hover:bg-[#faf8f4] dark:hover:bg-[#241f2c]">
                       <td className="px-4 py-2 text-sm">{g.minScore} - {g.maxScore}</td>
                       <td className="px-4 py-2 text-sm text-center font-bold">{g.grade}</td>

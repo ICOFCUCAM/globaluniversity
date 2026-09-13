@@ -55,7 +55,33 @@ const STATUSES = ['active', 'suspended', 'archived'];
 const ACTIONS = [
   'school-add', 'school-set', 'school-status',
   'dept-add', 'dept-set', 'dept-status',
+  // THE LEVEL THAT WAS MISSING. Schools and departments could be created and
+  // the thing they exist to hold could not — see the note on the handler.
+  'programme-add', 'programme-status',
 ];
+
+/** `programmes.award_level`, which the database constrains to exactly these. */
+const AWARD_LEVELS = ['Certificate', 'Diploma', "Bachelor's", 'Postgraduate Diploma',
+  "Master's", 'Doctorate'];
+
+/**
+ * How long each award runs, and what it is worth, where the University has
+ * ruled on it.
+ *
+ * NOT INVENTED HERE — these are the University's own rulings, already applied
+ * by migration 072 to the twelve programmes that had no credit total. They are
+ * OFFERED as the starting figures on a new programme and every one of them can
+ * be overridden on the form; a Doctorate that runs three years is typed as
+ * three.
+ */
+const SHAPE: Record<string, { years: number; credits: number }> = {
+  Certificate: { years: 1, credits: 60 },
+  Diploma: { years: 1, credits: 120 },
+  "Bachelor's": { years: 3, credits: 180 },
+  'Postgraduate Diploma': { years: 1, credits: 120 },
+  "Master's": { years: 2, credits: 120 },
+  Doctorate: { years: 2, credits: 120 },
+};
 
 // 060's own pattern. A school code is a slug because it appears in a URL and
 // in a programme code, and 'Faculty of Theology' does not.
@@ -84,6 +110,166 @@ export async function POST(request: Request) {
   const status = body.status ? String(body.status) : null;
   if (status && !STATUSES.includes(status)) {
     return bad('bad-status', 400, `It is one of: ${STATUSES.join(', ')}.`);
+  }
+
+  // =========================================================================
+  // PROGRAMMES
+  // =========================================================================
+  //
+  // ---------------------------------------------------------------------
+  // THE LEVEL THAT COULD NOT BE CREATED
+  // ---------------------------------------------------------------------
+  //
+  // An audit found it: this route could create a School and a Department, and
+  // nothing anywhere in the portal could create the thing they exist to hold.
+  // The University's forty-one programmes were seeded by migration 060, and a
+  // forty-second meant writing SQL.
+  //
+  // It was invisible because no screen READ `programmes` by name — every one
+  // went through `programme_in_force` or `curriculum_progress` — so the
+  // reachability test, which asks whether anything can write what something
+  // reads, had nothing to ask about.
+  //
+  // ---------------------------------------------------------------------
+  // AND IT CREATES THE FIRST VERSION IN THE SAME ACT
+  // ---------------------------------------------------------------------
+  //
+  // A programme with no version cannot be taught, timetabled, registered for
+  // or examined. The Academic overview already counts them — "38 programmes
+  // with no curriculum at all" — and creating a forty-second of those would be
+  // adding to a problem rather than closing one.
+  //
+  // So one act writes both: the programme, and a DRAFT version carrying the
+  // duration and credit total. The curriculum still has to be written, which
+  // is the Curriculum Builder's job and cannot be done from here — but the
+  // shape is there for it to be written into.
+  if (action === 'programme-add') {
+    const code = String(body.code ?? '').trim().toLowerCase();
+    if (!CODE.test(code)) {
+      return bad('bad-code', 400,
+        'A programme code is a slug: lower case, digits and hyphens, starting with a letter — '
+        + 'like `master-of-divinity`. It appears in the address of the programme’s page.');
+    }
+
+    const name = String(body.name ?? '').trim();
+    if (name.length < 3) {
+      return bad('no-name', 400, 'A programme needs the name it is awarded under.');
+    }
+
+    const awardLevel = String(body.awardLevel ?? '');
+    if (!AWARD_LEVELS.includes(awardLevel)) {
+      return bad('bad-award-level', 400, `It is one of: ${AWARD_LEVELS.join(', ')}.`);
+    }
+
+    const shape = SHAPE[awardLevel];
+    const durationYears = Number(body.durationYears ?? shape.years);
+    const semestersPerYear = Number(body.semestersPerYear ?? 2);
+    const totalCredits = body.totalCredits === null || body.totalCredits === ''
+      ? null : Number(body.totalCredits ?? shape.credits);
+
+    if (!Number.isInteger(durationYears) || durationYears < 1 || durationYears > 10) {
+      return bad('bad-duration', 400, 'A programme runs between one and ten years.');
+    }
+    if (!Number.isInteger(semestersPerYear) || semestersPerYear < 1 || semestersPerYear > 3) {
+      return bad('bad-semesters', 400, 'A year has one, two or three semesters.');
+    }
+    if (totalCredits !== null && (!Number.isInteger(totalCredits) || totalCredits < 1)) {
+      return bad('bad-credits', 400,
+        'A credit total is a whole number above zero. Leave it blank if the University has not '
+        + 'decided — blank means "not decided", and a zero would mean the award requires '
+        + 'nothing.');
+    }
+
+    const sessionLabel = String(body.sessionLabel ?? '').trim();
+    if (sessionLabel.length < 4) {
+      return bad('no-session', 400,
+        'Say which session this version takes effect from — "2026/2027".');
+    }
+
+    // ---- THE PROGRAMME -------------------------------------------------
+    const { data: prog, error: progErr } = await admin.from('programmes').insert({
+      code,
+      award_level: awardLevel,
+      ...(body.awardId ? { award_id: String(body.awardId) } : {}),
+      // DRAFT, LIKE EVERYTHING ELSE THE UNIVERSITY CREATES. 023 seeds every
+      // programme closed for admission on purpose; a new one opening itself
+      // would undo that in the one place nobody would look.
+      status: 'draft',
+      created_by: caller.id,
+    }).select('id').single();
+
+    if (progErr || !prog) {
+      return bad('not-created', 409, /duplicate|unique/i.test(progErr?.message ?? '')
+        ? `A programme with the code ${code} already exists.`
+        : (progErr?.message ?? 'The programme was not created.'));
+    }
+
+    // ---- AND ITS FIRST VERSION -----------------------------------------
+    const { error: verErr } = await admin.from('programme_versions').insert({
+      programme_id: prog.id as string,
+      version_label: sessionLabel,
+      name,
+      duration_years: durationYears,
+      semesters_per_year: semestersPerYear,
+      total_credits: totalCredits,
+      effective_from: new Date().toISOString().slice(0, 10),
+      status: 'draft',
+      ...(body.schoolId ? { school_id: String(body.schoolId) } : {}),
+      ...(body.departmentId ? { department_id: String(body.departmentId) } : {}),
+      drafted_by: caller.id,
+    });
+
+    if (verErr) {
+      // THE PROGRAMME IS LEFT STANDING rather than rolled back by hand. It is
+      // a real row the University now has, the register shows it, and a
+      // version can be added to it — whereas deleting it here would discard
+      // something that succeeded because something after it failed.
+      await audit(admin, {
+        action: 'programme-created-without-version', entityType: 'programme',
+        entityId: prog.id as string, performedBy: caller.id,
+        details: { code, error: verErr.message },
+      });
+      return NextResponse.json({
+        ok: true,
+        id: prog.id,
+        versionFailed: true,
+        detail: `The programme ${code} was created, but its first version was not: `
+          + `${verErr.message}. Add a version from the Programme register before it can be `
+          + 'taught.',
+      });
+    }
+
+    await audit(admin, {
+      action: 'programme-created', entityType: 'programme', entityId: prog.id as string,
+      performedBy: caller.id,
+      details: { code, name, awardLevel, durationYears, semestersPerYear, totalCredits },
+    });
+    return NextResponse.json({
+      ok: true,
+      id: prog.id,
+      detail: `${name} was created as a draft, with a ${sessionLabel} version of `
+        + `${durationYears} year${durationYears === 1 ? '' : 's'}. Write its curriculum in the `
+        + 'Curriculum builder — until there are courses in it, nothing can be registered '
+        + 'against it.',
+    });
+  }
+
+  if (action === 'programme-status') {
+    const id = String(body.programmeId ?? '');
+    if (!id) return bad('no-programme', 400);
+    const to = String(body.status ?? '');
+    const PROGRAMME_STATUSES = ['draft', 'under_review', 'approved', 'open_for_admission',
+      'active', 'suspended', 'archived'];
+    if (!PROGRAMME_STATUSES.includes(to)) {
+      return bad('bad-status', 400, `It is one of: ${PROGRAMME_STATUSES.join(', ')}.`);
+    }
+    const { error } = await admin.from('programmes').update({ status: to }).eq('id', id);
+    if (error) return bad('not-changed', 409, error.message);
+    await audit(admin, {
+      action: 'programme-status-changed', entityType: 'programme', entityId: id,
+      performedBy: caller.id, details: { status: to },
+    });
+    return NextResponse.json({ ok: true });
   }
 
   // =========================================================================

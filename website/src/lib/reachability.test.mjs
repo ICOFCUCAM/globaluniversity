@@ -217,6 +217,27 @@ const READ_ONLY_BY_DESIGN = {
   my_result_terms: 'A view: the same marks by term, with the GPA READ from semester_gpas rather '
     + 'than recomputed — a second opinion on a GPA is how a portal and a transcript come to '
     + 'disagree about the most consulted number in the University.',
+  // ---------------------------------------------------------------------
+  // THE ONE TABLE THAT IS DELIBERATELY NOT EDITABLE FROM A SCREEN.
+  //
+  // The portal now READS the grading scale — that is the whole point of the
+  // grading context — and nothing in it writes one, on purpose.
+  //
+  // A transcript issued in 2026 was computed under the 2026 bands. Editing
+  // those bands changes what the University said about a graduate after the
+  // fact, so a scale is never edited: it is RESTATED as a new version, and
+  // migration 020 enforces that with a trigger rather than trusting any
+  // screen. 035 is what a restatement looks like — version 1 deactivated,
+  // version 2 written beside it, both kept.
+  //
+  // A "change the grading scale" button would be a button that quietly
+  // rewrites history, and the right home for a restatement is a migration
+  // that can be read, reviewed and proved before it runs.
+  // ---------------------------------------------------------------------
+  grading_scales: 'Read by the grading context, which loads the active scale when the portal '
+    + 'starts. Written only by migration, deliberately: a scale is restated as a new version '
+    + 'rather than edited, because editing it changes what the University already said about '
+    + 'graduates computed under it.',
   student_fee_account: 'A view over `student_fee_assessments` and `payments`: what the ledger '
     + 'says, per student per currency. Never stored, because a stored balance drifts from the '
     + 'rows it came from and nobody can then say which is right. /api/finance/fees writes the '
@@ -279,25 +300,17 @@ const KNOWN_MISSING = {
   // somebody once decided not to fix.
   // ---------------------------------------------------------------------
   //
-  // AND ONE ENTRY, FOUND BY A SCREEN THAT MERELY WANTED TO READ IT.
+  // AND THE ONE ENTRY THIS LIST HELD IS GONE, WHICH IS THE POINT.
   //
-  // The Fee Schedules screen lists programmes so a schedule can be scoped to
-  // one. It is the FIRST thing in the application to read `programmes` by
-  // name — every other screen goes through `programme_in_force` or
-  // `curriculum_progress` — and the moment it did, this check found that
-  // nothing in the portal can WRITE that table.
+  // `programmes` was named here after the Fee Schedules screen became the
+  // first thing in the application to read it and this check found that
+  // nothing could write it — the University's forty-one were seeded by
+  // migration 060 and a forty-second meant writing SQL.
   //
-  // The University's forty-one programmes were seeded by migration 060. There
-  // is no screen that creates a forty-second: Schools & departments creates
-  // schools and departments and stops there, and the Curriculum Builder works
-  // on VERSIONS of a programme that already exists.
-  //
-  // Named here rather than in READ_ONLY_BY_DESIGN because it is not by
-  // design. A University that opens a new programme should not need a
-  // migration to say so.
-  programmes: 'The register of programmes is seeded by migration 060 and no screen creates one. '
-    + 'Opening a new programme currently means writing SQL. The Schools & departments screen is '
-    + 'where it belongs, beside the two levels above it.',
+  // The Programme register now creates one, so the entry had to go: this test
+  // fails while something is excused that no longer needs excusing, which is
+  // what stops a list like this becoming a record of things somebody once
+  // decided not to fix.
 
 };
 

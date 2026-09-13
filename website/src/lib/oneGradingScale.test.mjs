@@ -26,17 +26,21 @@
 // two agree today only because both were written from the same document.
 //
 // ---------------------------------------------------------------------------
-// WHAT THIS TEST DOES, AND WHAT IT DELIBERATELY DOES NOT
+// AND IT IS NOW FIXED — SO THIS TEST GUARDS TWO THINGS
 // ---------------------------------------------------------------------------
 //
-// It does NOT fix it. Making the portal read the table at runtime means every
-// grade calculation becomes asynchronous, and that is a change to make
-// deliberately rather than as part of an audit.
+// `GradingContext` reads the active scale when the portal starts and adopts it
+// into `grading.ts`, where all fifteen files that compute a grade already
+// look. The University's own scale is what the portal computes on.
 //
-// What it does is hold the two together. If somebody edits the bands in either
-// place without the other, this fails and names the band. That turns a silent
-// divergence — a student's transcript disagreeing with the Faculty Handbook —
-// into a failed build.
+// THE PUBLISHED BANDS REMAIN THE FALLBACK, for a database that cannot be
+// reached, a migration that has not been run, or a stored scale that will not
+// parse. So the two must still agree — a fallback that grades differently from
+// the real thing is worse than no fallback, because it works.
+//
+// So: they agree band for band, AND adopting a scale actually changes what the
+// portal computes. The second half is what stops the wiring being quietly
+// removed later.
 // ---------------------------------------------------------------------------
 
 import { execFileSync } from 'node:child_process';
@@ -105,7 +109,7 @@ for (const f of seedFiles) {
   }
 }
 
-console.log('\nThe University writes its grading scale down twice\n');
+console.log('\nThe University writes its grading scale down twice, and they must agree\n');
 
 check('the database is seeded with a grading scale', seeded !== null, true);
 if (!seeded) {
@@ -158,16 +162,48 @@ for (const band of G.GRADING_SCALE) {
 check('the same pass mark', Number(G.PASS_MARK), passMark);
 check('the same maximum grade point', Number(G.MAX_GRADE_POINT), maxPoint);
 
-// ---------------------------------------------------------------------------
-// AND THE THING THIS TEST CANNOT FIX, SAID ON EVERY RUN
-// ---------------------------------------------------------------------------
+// ===========================================================================
+// AND ADOPTING A SCALE ACTUALLY CHANGES WHAT THE PORTAL COMPUTES
+// ===========================================================================
+//
+// The agreement above would pass just as happily if the wiring were removed
+// and the portal went back to computing on the constant — because the two
+// agree. So this proves the mechanism itself, by adopting a scale that is
+// DELIBERATELY WRONG and checking the answer moves.
+//
+// A test that cannot tell a working system from a disconnected one is the
+// thing this whole audit was about.
 
-console.log('\n      STILL OPEN: nothing in the application reads `grading_scales`. The table, its');
-console.log('      `is_active` flag, its per-award variants and the `grading_scale_restatements`');
-console.log('      approval trail are all unread. A restatement published in the database will');
-console.log('      not change a single grade the portal computes until grading.ts reads it.');
+console.log('\nAnd the scale the University publishes is the one the portal computes on\n');
+
+const before = G.calculateGrade(95);
+check('on the published bands, 95 is an A', before.grade, 'A');
+
+G.adoptScale({
+  name: 'A scale invented by this test',
+  passMark: 50,
+  maxPoint: 4,
+  bands: [
+    { grade: 'PROOF', gradePoint: 3.21, minScore: 0, maxScore: 100, remark: 'Proof' },
+  ],
+});
+check('adopting a scale changes the grade', G.calculateGrade(95).grade, 'PROOF');
+check('…and the grade point with it', G.calculateGrade(95).gradePoint, 3.21);
+check('…and the pass mark', [G.isPass(55), G.passMarkInUse()], [true, 50]);
+check('…and the portal says which scale it is on',
+  G.scaleInForce(), { name: 'A scale invented by this test', fromDatabase: true });
+
+// A SCALE WITH NO BANDS IS REFUSED, not adopted. It would grade every mark in
+// the University as F, silently.
+G.adoptScale({ name: 'Empty', passMark: 1, maxPoint: 4, bands: [] });
+check('a scale with no bands is refused', G.calculateGrade(95).grade, 'A');
+
+G.adoptScale(null);
+check('and putting it back restores the published bands', G.calculateGrade(95).grade, 'A');
+check('…and says so', G.scaleInForce().fromDatabase, false);
 
 console.log(failures === 0
-  ? '\nThe two scales agree, and will fail the build the day they stop.'
+  ? '\nOne scale: the University\u2019s, with the published bands behind it and holding them '
+    + 'to each other.'
   : `\n${failures} failed — the portal and the database disagree about a grade.`);
 process.exit(failures === 0 ? 0 : 1);

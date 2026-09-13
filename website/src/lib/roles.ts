@@ -403,10 +403,9 @@ export const OPERATIONAL_CAPABILITIES = [
   // neither existed before 075 gave the University a fee schedule at all.
   //
   // 'set-fee-schedule' is deciding what the University charges. The
-  // University named the holder itself — "the superadmin should be able to
-  // fix it and it is recorded in the system" — and it is granted to nobody
-  // else here. A Finance Director who should also set fees is one line in
-  // the matrix below, and it is the University's call rather than mine.
+  // University named the holders itself, in two goes: "the superadmin should
+  // be able to fix it and it is recorded in the system", and then "financial
+  // director can also set fees". Both hold it; nobody else does.
   //
   // RAISING AN INVOICE IS NOT HERE, deliberately. `generate-invoice` and
   // `manage-student-accounts` already exist and the Finance Director already
@@ -668,12 +667,25 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
     // ---------------------------------------------------------------------
 
   // Directs Finance. Still cannot admit.
-  // 'confirm-financial-clearance' and NOT 'set-fee-schedule'. This office says
-  // whether a particular student is clear — which it is uniquely placed to
-  // know — and does not decide what the University charges, which the
-  // University reserved to the Superadministrator. If it should set fees too,
-  // add 'set-fee-schedule' here and nowhere else.
-  'finance-director': ['verify-payment', 'approve-refund', 'generate-invoice', 'manage-student-accounts', 'view-institutional-finance', 'confirm-financial-clearance'],
+  // ---------------------------------------------------------------------
+  // AND THIS OFFICE SETS FEES TOO, ON THE UNIVERSITY'S INSTRUCTION.
+  //
+  // The note that stood here said 'set-fee-schedule' was the
+  // Superadministrator's alone and invited the University to say otherwise.
+  // They did: "financial director can also set fees."
+  //
+  // So both hold it, and that is the whole change — the Superadministrator
+  // keeps it, because a system account that cannot correct a fee schedule
+  // cannot help when the Finance Director is away.
+  //
+  // STILL THREE SEPARATE ACTS. Deciding what the University charges
+  // ('set-fee-schedule'), charging a particular student ('generate-invoice')
+  // and saying a student is square with the University
+  // ('confirm-financial-clearance') remain three capabilities. This office now
+  // holds all three, which is a statement about this office rather than about
+  // the acts: a Registrar or a Dean still holds none of them.
+  // ---------------------------------------------------------------------
+  'finance-director': ['verify-payment', 'approve-refund', 'generate-invoice', 'manage-student-accounts', 'view-institutional-finance', 'confirm-financial-clearance', 'set-fee-schedule'],
 
   // Moderates submitted marks — the department's attestation that the marking
   // is consistent and the spread defensible. Cannot enter a mark and cannot

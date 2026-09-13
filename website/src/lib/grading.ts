@@ -81,11 +81,100 @@ export const MAX_GRADE_POINT = Math.max(...GRADING_SCALE.map((g) => g.gradePoint
  * Calculate grade from total score
  */
 export function calculateGrade(totalScore: number): { grade: string; gradePoint: number; remark: string } {
-  const scale = GRADING_SCALE.find(
+  // THE SCALE IN FORCE, not the constant. See `adoptScale` below.
+  const scale = bandsInUse().find(
     (s) => totalScore >= s.minScore && totalScore <= s.maxScore
   );
   if (!scale) return { grade: 'F', gradePoint: 0.0, remark: 'Fail' };
   return { grade: scale.grade, gradePoint: scale.gradePoint, remark: scale.remark };
+}
+
+// ===========================================================================
+// THE SCALE THE UNIVERSITY HAS PUBLISHED, WHEN IT HAS PUBLISHED ONE
+// ===========================================================================
+//
+// ---------------------------------------------------------------------------
+// THE FAULT THIS CLOSES
+// ---------------------------------------------------------------------------
+//
+// The University's grading scale was written down TWICE: in `grading_scales`,
+// with bands, a pass mark, per-award variants, an `is_active` flag and a whole
+// `grading_scale_restatements` approval trail — and again in this file, which
+// was the only one anything computed on.
+//
+// So the University could restate its scale, carry it through the approval
+// process built for exactly that, publish it, and not one grade would change.
+// The two agreed only because both were written from the same document.
+//
+// ---------------------------------------------------------------------------
+// WHY A MODULE-LEVEL OVERRIDE RATHER THAN MAKING EVERYTHING ASYNCHRONOUS
+// ---------------------------------------------------------------------------
+//
+// Fifteen files compute a grade, a GPA or a classification, and every one of
+// them does it synchronously while rendering. Turning `calculateGrade` into a
+// promise would touch all fifteen, and every one of those touches is a chance
+// to render a grade before the await resolves.
+//
+// Instead the scale is loaded ONCE, when the portal starts, and adopted here.
+// Every existing call site keeps its shape and starts computing on the
+// University's own scale the moment it lands.
+//
+// ---------------------------------------------------------------------------
+// AND THE PUBLISHED BANDS REMAIN THE FLOOR
+// ---------------------------------------------------------------------------
+//
+// Until the read lands — and for ever, if the database cannot be reached, or
+// the migration has not been run, or the stored scale will not parse — the
+// bands above stand. A registry that cannot grade because a table is
+// unreachable is worse than one grading on a constant that matches the
+// published regulations, and grading everything as F, which an empty scale
+// would do, is worse than both.
+// ===========================================================================
+
+let adopted: { bands: GradeScale[]; passMark: number; maxPoint: number; name: string } | null
+  = null;
+
+/**
+ * Compute on the University's stored scale from here on.
+ *
+ * Called once by the grading context when the portal starts. Passing nothing
+ * puts the published bands back, which is what a failed read should leave
+ * behind rather than a half-applied scale.
+ */
+export function adoptScale(
+  scale: { bands: GradeScale[]; passMark: number; maxPoint: number; name: string } | null,
+): void {
+  // A SCALE WITH NO BANDS IS REFUSED, not adopted. It would grade every mark
+  // in the University as F, and it would do it silently.
+  adopted = scale && scale.bands.length > 0 ? scale : null;
+}
+
+/** The bands in force: the University's stored scale, or the published ones. */
+export function bandsInUse(): GradeScale[] {
+  return adopted?.bands ?? GRADING_SCALE;
+}
+
+/** The pass mark in force. */
+export function passMarkInUse(): number {
+  return adopted?.passMark ?? PASS_MARK;
+}
+
+/** The highest grade point in force. */
+export function maxGradePointInUse(): number {
+  return adopted?.maxPoint ?? MAX_GRADE_POINT;
+}
+
+/**
+ * Which scale the portal is computing on, for a screen that needs to say so.
+ *
+ * WORTH SHOWING SOMEWHERE. A registrar looking at a mark sheet should be able
+ * to find out whether the figures came from the University's published scale
+ * or from a constant standing in for it because a table could not be read.
+ */
+export function scaleInForce(): { name: string; fromDatabase: boolean } {
+  return adopted
+    ? { name: adopted.name, fromDatabase: true }
+    : { name: 'Published regulations', fromDatabase: false };
 }
 
 /**
@@ -216,9 +305,16 @@ export type { MarkingScheme };
  */
 export const CLASSIFICATION_BANDS = classificationBands;
 
-/** Whether a mark earns credit. Read from the published pass mark, not 40. */
+/**
+ * Whether a mark earns credit.
+ *
+ * READ FROM THE SCALE IN FORCE, not from the published constant and certainly
+ * not from 40. A University that restates its pass mark has restated what
+ * "passed" means, and a screen still comparing against the old number would
+ * award credit for a mark the University now calls a fail.
+ */
 export function isPass(totalScore: number): boolean {
-  return totalScore >= PASS_MARK;
+  return totalScore >= passMarkInUse();
 }
 
 /**
