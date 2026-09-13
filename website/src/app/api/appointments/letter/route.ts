@@ -52,8 +52,8 @@ import { send, mailConfigured } from '@/lib/mailer';
 import { appointmentLetterHtml } from '@/lib/appointmentLetter';
 import { contentHash } from '@/lib/officialDocument';
 import {
-  letterReference, printedReference, missingFrom, blocked,
-  MIN_AMENDMENT_REASON, type AppointmentEvent,
+  letterReference, printedReference, missingFrom, blocked, ACTION_TEMPLATE,
+  MIN_AMENDMENT_REASON, type AppointmentEvent, type AppointmentAction, type Allowance,
 } from '@/lib/appointments';
 import type { Capability } from '@/lib/roles';
 
@@ -181,6 +181,48 @@ export async function POST(request: Request) {
     const issuedOn = new Date().toISOString().slice(0, 10);
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? `https://${UNIVERSITY.website}`;
 
+    // ---------------------------------------------------------------------
+    // THE ALLOWANCES, THE JOB DESCRIPTION, AND THE TEMPLATE THAT MADE IT.
+    //
+    // All three tables existed and nothing read them. 044 gave this letter a
+    // `template_id` with ON DELETE RESTRICT — the rule that keeps the wording
+    // of 2026 attached to a letter issued in 2026 — and the column had never
+    // been set, so the rule was declared and inert. Credentials record their
+    // template version; appointment letters did not.
+    // ---------------------------------------------------------------------
+    const { data: allowanceRows } = await admin.from('appointment_allowances')
+      .select('kind, label, amount, currency, period, note')
+      .eq('appointment_id', appointment.id as string)
+      .order('kind');
+
+    const action = (appointment.appointment_action as AppointmentAction | null) ?? 'initial';
+    const { data: template } = await admin.from('document_templates')
+      .select('id, version, kind')
+      .eq('kind', ACTION_TEMPLATE[action] ?? 'initial-appointment')
+      .eq('status', 'active')
+      .maybeSingle();
+    const tpl = template as Row | null;
+
+    // THE JOB DESCRIPTION IS REFERENCED, NOT REPRINTED. It is its own record
+    // with its own version and its own approval; inlining it would let the
+    // letter say something the JD could later contradict.
+    let jobDescription: { code?: string; title?: string; version?: number } | null = null;
+    if (appointment.position_id) {
+      const { data: post } = await admin.from('positions')
+        .select('job_code, title').eq('id', appointment.position_id as string).maybeSingle();
+      const { data: profile } = await admin.from('position_profiles')
+        .select('version').eq('position_id', appointment.position_id as string)
+        .eq('status', 'active').maybeSingle();
+      const po = post as Row | null;
+      if (po) {
+        jobDescription = {
+          code: po.job_code as string,
+          title: po.title as string,
+          ...(profile ? { version: (profile as Row).version as number } : {}),
+        };
+      }
+    }
+
     // A SPECIMEN SIGNATURE, ONLY THE CALLER'S OWN AND ONLY IF ENABLED. 049
     // keeps it switched off until somebody other than its owner turns it on.
     const { data: spec } = await admin.from('signature_specimens')
@@ -200,6 +242,9 @@ export async function POST(request: Request) {
         siteUrl,
         signatureImage: (sig?.image as string | undefined) ?? null,
         authorizedOn: (appointment.authorized_at as string | null)?.slice(0, 10) ?? null,
+        allowances: (allowanceRows ?? []) as Allowance[],
+        jobDescription,
+        termsReference: 'the University\u2019s conditions of service in force from time to time',
       });
     } catch (e) {
       return { error: bad('not-generated', 409, e instanceof Error ? e.message : String(e)) };
@@ -220,6 +265,12 @@ export async function POST(request: Request) {
       signature_mode: sig?.image ? 'specimen' : 'typed',
       signature_specimen_id: sig?.image ? sig.id : null,
       authorized_on: (appointment.authorized_at as string | null)?.slice(0, 10) ?? null,
+      // WHICH WORDING PRODUCED THIS DOCUMENT. Recorded so that 044's
+      // `on delete restrict` finally has something to restrict, and so a letter
+      // issued in 2026 can still name the template that made it after the
+      // template has been redesigned twice.
+      ...(tpl ? { template_id: tpl.id, template_version: tpl.version } : {}),
+      document_type: ACTION_TEMPLATE[action] ?? 'initial-appointment',
       ...(reason ? { supersedes_reason: reason, kind: 'amended' } : {}),
       created_by: caller.id,
     }).select(LETTER).single();

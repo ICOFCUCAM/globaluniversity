@@ -137,9 +137,29 @@ export function documentStyles(): string {
   th { width: 38%; font-weight: normal; color: #5c5366; }
   .terms, .letterbody { white-space: pre-wrap; font-size: 9.5pt; margin: 8px 0; }
   .auth { font-size: 9.5pt; color: #4a4155; font-style: italic; }
+  .attached { font-size: 9pt; color: #4a4155; }
   /* KEPT TOGETHER. Even at this spacing a long body can push the signature
      over, and a signature separated from the letter it signs is the failure
      this whole block exists to prevent. */
+  /* -------------------------------------------------------------------
+     THE CLOSING, THE SIGNATURE AND THE SEAL MOVE AS ONE BLOCK.
+
+     MEASURED. A realistic appointment letter — salary, three allowances, full
+     terms, a job-description reference — comes to 1109px against a 987px page,
+     so it is a two-page document. That is normal for a university letter and
+     not a fault.
+
+     What IS a fault is what happened next: the signature ended page one and
+     the seal panel alone began page two, so the appointee turned over and
+     found a QR code on an otherwise blank sheet. Binding just the signature
+     and seal together does not fix it either — the pair then lands at the very
+     top of page two with nothing above it, which looks the same.
+
+     Bound with the closing paragraph, page two carries a sentence, a
+     signature and a seal: a page that reads as the end of a letter rather than
+     as a printing accident.
+     ------------------------------------------------------------------- */
+  .closing { break-inside: avoid; page-break-inside: avoid; }
   .sign { margin-top: 12px; break-inside: avoid; page-break-inside: avoid; }
   .byauthority { letter-spacing: .1em; font-size: 9pt; font-weight: bold; margin-bottom: 10px; }
   .sign .line { border-top: 1px solid #1c1720; width: 62mm; margin-top: 16px; }

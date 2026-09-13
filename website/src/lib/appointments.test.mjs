@@ -357,7 +357,16 @@ console.log('\nAnd the migrations hold the same lifecycle\n');
   const sql = [
     '042_the_appointment_lifecycle_and_the_staff_record.sql',
     '047_the_money_the_actors_and_the_two_axes.sql',
+    '050_acceptance_the_activation_rule_and_the_full_audit.sql',
   ].map((f) => readFileSync(join(here, '../../docs/migrations/', f), 'utf8')).join('\n');
+
+  // EVERY EVENT THE CODE KNOWS, KNOWN TO THE DATABASE TOO. This list was
+  // thirteen in TypeScript while the constraint accepted twenty-one: a route
+  // could write LETTER_VIEWED and the database would take it, but no screen
+  // could offer it because nothing in the code knew it existed.
+  for (const ev of A.APPOINTMENT_EVENTS) {
+    check(`the database accepts the event '${ev}'`, sql.includes(`'${ev}'`), true);
+  }
 
   for (const st of A.APPOINTMENT_STATES) {
     check(`the database knows '${st}'`, sql.includes(`'${st}'`), true);

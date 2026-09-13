@@ -89,7 +89,7 @@ const appointment = {
   appointing_authority: 'The University Council',
   authority_decided_on: '2026-09-03',
   salary_amount: 450000,
-  salary_currency: 'FCFA',
+  salary_currency: 'USD',
   salary_period: 'month',
   // A REALISTIC BLOCK OF TERMS, not one sentence. The page count is decided by
   // this paragraph more than by anything else, and measuring a letter with a
@@ -108,7 +108,18 @@ const appointment = {
   ].join('\n'),
 };
 
+// A REALISTIC APPOINTMENT CARRIES ALLOWANCES AND A JOB DESCRIPTION. Measuring
+// a letter without them measures a letter the University does not send: 047's
+// allowances each add a row, and the job-description reference adds a
+// paragraph. The page count is decided by exactly these.
 const letter = await appointmentLetterHtml({
+  allowances: [
+    { kind: 'housing', amount: 400, currency: 'USD', period: 'month' },
+    { kind: 'transport', amount: 150, currency: 'USD', period: 'month' },
+    { kind: 'research', amount: 1200, currency: 'USD', period: 'year' },
+  ],
+  jobDescription: { code: 'ACS-LEC', title: 'Lecturer', version: 2 },
+  termsReference: 'the University\u2019s conditions of service in force from time to time',
   appointment,
   reference: 'APT-2026-0042',
   issuedOn: '2026-09-12',
@@ -150,41 +161,61 @@ const measured = await page.evaluate(() => {
   const body = document.body;
   const sign = document.querySelector('.sign');
   const seal = document.querySelector('.seal');
+  const closing = document.querySelector('.closing');
   return {
     height: Math.ceil(body.getBoundingClientRect().height),
     width: Math.ceil(body.getBoundingClientRect().width),
     signTop: sign ? Math.round(sign.getBoundingClientRect().top) : -1,
     sealTop: seal ? Math.round(seal.getBoundingClientRect().top) : -1,
     sealBottom: seal ? Math.round(seal.getBoundingClientRect().bottom) : -1,
+    closingTop: closing ? Math.round(closing.getBoundingClientRect().top) : -1,
+    closingHeight: closing ? Math.ceil(closing.getBoundingClientRect().height) : 0,
   };
 });
 
-const pages = Math.ceil(measured.height / A4_PRINTABLE_HEIGHT);
-const headroom = (pages * A4_PRINTABLE_HEIGHT) - measured.height;
-console.log(`      measured ${measured.height}px tall — ${pages} page(s) at A4, `
-  + `${headroom}px to spare`);
-
-// HOW CLOSE IT IS, said out loud. A letter that fits by four pixels fits on
-// this machine and on no other: a font substituted on a different platform, or
-// a slightly longer name, tips it over. Reporting the headroom is what stops
-// "it passes" being mistaken for "it is comfortable".
-check('and it fits with room to spare, not by a pixel', headroom >= 30, true);
-
-// TWO PAGES IS ACCEPTABLE FOR A LETTER WITH FULL TERMS. Three is not: it means
-// the terms have overflowed in a way nobody intended, and an appointment letter
-// running to three pages is one somebody will not read to the end.
-// ONE PAGE FOR A LETTER WITH FULL TERMS, and pinned at one rather than two.
+// ---------------------------------------------------------------------------
+// THE PAGE COUNT COMES FROM A REAL PDF, NOT FROM DIVIDING A HEIGHT.
 //
-// It was two: 1293px against a 987px page, with the signature 40px onto the
-// second. Trimmed to fit, it then measured 1001px — still two pages, with a
-// second page carrying fourteen pixels of the seal panel. A page that exists
-// to hold the bottom edge of a box is a page somebody prints, looks at, and
-// throws away wondering what went wrong.
+// The DOM height was the measurement here for a long time and it is wrong the
+// moment anything carries `break-inside: avoid`: the block moves to the next
+// page when printed and the DOM knows nothing about it, so a letter that
+// prints on two pages measures as two pages' worth of pixels whatever the
+// breaks actually do. Chromium is asked to print it and the pages are counted.
+// ---------------------------------------------------------------------------
+const pdf = await page.pdf({ format: 'A4', printBackground: true });
+const pages = (pdf.toString('latin1').match(/\/Type\s*\/Page[^s]/g) ?? []).length;
+// WHAT THE LAST PAGE ACTUALLY CARRIES. The closing paragraph, the signature
+// and the seal move as one block, so the last page holds either that block
+// alone or that block plus whatever preceded it. Either way this is the number
+// that decides whether page two reads as the end of a letter or as a mistake.
+const lastPageInk = measured.closingTop >= 0
+  && (measured.closingTop % A4_PRINTABLE_HEIGHT) + measured.closingHeight > A4_PRINTABLE_HEIGHT
+  ? measured.closingHeight
+  : measured.height - ((pages - 1) * A4_PRINTABLE_HEIGHT);
+
+console.log(`      ${measured.height}px of content — ${pages} printed page(s) at A4, `
+  + `the last carrying ${lastPageInk}px`);
+
+// ---------------------------------------------------------------------------
+// A LAST PAGE THAT IS NEARLY EMPTY IS THE FAULT, NOT A SECOND PAGE.
 //
-// Pinned here so it cannot drift back. If the University lengthens its
-// standard terms this will fail, which is the right moment to decide whether
-// the letter becomes two pages deliberately.
-check('a full letter is one page', pages, 1);
+// This asked for ONE page and got it while the letter was thin. A realistic
+// appointment letter — salary, three allowances, full terms, a job-description
+// reference — is 1109px against a 987px page, and a two-page letter of
+// appointment is entirely normal for a university.
+//
+// What is not normal is turning over to find a QR code on a blank sheet. The
+// closing paragraph, signature and seal are bound together precisely so the
+// final page carries a sentence, a signature and a seal rather than the last
+// forty pixels of a box.
+// ---------------------------------------------------------------------------
+check('the last page carries a real part of the letter, not a stray line',
+  lastPageInk >= Math.round(A4_PRINTABLE_HEIGHT / 5), true);
+
+// TWO IS THE CEILING. Three means the terms have overflowed in a way nobody
+// intended, and an appointment letter running to three pages is one somebody
+// does not read to the end. Pinned here so it cannot drift further.
+check('a full letter runs to no more than two pages', pages <= 2, true);
 
 // THE ONE THAT WOULD ACTUALLY EMBARRASS THE UNIVERSITY. A final page carrying
 // nothing but the signature line and the seal is a page that looks like a
@@ -198,13 +229,22 @@ check('a full letter is one page', pages, 1);
 // The honest question is how much of the letter shares the page with the
 // signature. Less than a fifth of a page above it means the signature is the
 // page: a reader turns over and finds a name, a line and a QR code.
-const MINIMUM_ABOVE_THE_SIGNATURE = Math.round(A4_PRINTABLE_HEIGHT / 5);
 {
-  const pageOfSignature = Math.floor(measured.signTop / A4_PRINTABLE_HEIGHT);
-  const above = measured.signTop - (pageOfSignature * A4_PRINTABLE_HEIGHT);
-  console.log(`      the signature sits ${above}px into page ${pageOfSignature + 1}`);
-  check('the signature shares its page with the letter',
-    above >= MINIMUM_ABOVE_THE_SIGNATURE || pageOfSignature === 0, true);
+  // THE DOM COORDINATE IS NOT WHERE IT PRINTS. This reported "the signature
+  // sits 866px into page 1" while the signature was in fact printing on page
+  // two — because `.closing` carries `break-inside: avoid` and the DOM knows
+  // nothing about the break. A position read from the DOM and described as a
+  // page is a measurement of the wrong thing stated confidently.
+  //
+  // The signature is inside `.closing`, so what matters is where that block
+  // lands, and `lastPageInk` above is exactly that.
+  const signInClosing = measured.signTop >= measured.closingTop
+    && measured.signTop <= measured.closingTop + measured.closingHeight;
+  check('the signature is bound to the closing block, so it cannot be orphaned',
+    signInClosing, true);
+  check('and the seal is bound with it',
+    measured.sealTop >= measured.closingTop
+      && measured.sealBottom <= measured.closingTop + measured.closingHeight + 1, true);
 }
 
 console.log('\nAnd it is the width of the page, not wider\n');
@@ -253,7 +293,29 @@ console.log('\nThe things a reader has to be able to find are on it\n');
 
   // THE SALARY IS ON THE LETTER AND NOWHERE ELSE. It is not on the public
   // verification page, and this is the only document that carries it.
-  check('the remuneration is on the letter', text.includes('FCFA 450,000 per month'), true);
+  check('the remuneration is on the letter', text.includes('USD 450,000 per month'), true);
+
+  // THE ALLOWANCES ARE EACH THEIR OWN LINE, in their own currency and period,
+  // and nothing is added together. A letter printing one combined figure would
+  // state a number the University never decided.
+  for (const [what, line] of [
+    ['housing', 'Housing allowance — USD 400 per month'],
+    ['transport', 'Transport allowance — USD 150 per month'],
+    // ON ITS OWN BASIS. An annual allowance beside a monthly salary, printed as
+    // annual, because summing them would be arithmetic the University did not do.
+    ['research', 'Research allowance — USD 1,200 per annum'],
+  ]) {
+    check(`the ${what} allowance is on the letter, on its own basis`,
+      text.includes(line), true);
+  }
+
+  // AND THE JOB DESCRIPTION IS REFERENCED BY CODE AND VERSION. "See the
+  // attached job description" is useless in five years; this names the document
+  // the University can still produce.
+  check('the job description is referenced by code', text.includes('ACS-LEC'), true);
+  check('…and by version', text.includes('version 2'), true);
+  check('…and the conditions of service are pointed at',
+    text.includes('conditions of service'), true);
 
   // AND THE PROBATION SAYS WHEN IT ENDS, rather than a number the appointee
   // has to do arithmetic on.

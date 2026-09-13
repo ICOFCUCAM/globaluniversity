@@ -210,9 +210,16 @@ ${c.body_format === 'html'
   ? `<div class="letterbody rich">${c.body ?? ''}</div>`
   : `<p class="letterbody">${escape(c.body)}</p>`}
 
-${signatureBlock({ name: input.signatoryName, role: input.signatoryRole })}
+<div class="closing">
+${signatureBlock({
+  name: input.signatoryName,
+  role: input.signatoryRole,
+  image: input.signatureImage,
+  authorizedOn: input.authorizedOn,
+})}
 
 ${await sealPanel(seal, printedReference(input.reference), input.version)}
+</div>
 ${runningFooter(printedReference(input.reference), kind)}
 `,
   };

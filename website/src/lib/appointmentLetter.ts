@@ -47,9 +47,9 @@ import {
   DOCUMENT_FAMILIES,
 } from './officialDocument';
 import {
-  EMPLOYMENT_LABELS, remunerationLine, probationEnds, printedReference,
-  missingFrom, blocked,
-  type Appointment, type EmploymentType,
+  EMPLOYMENT_LABELS, ACTION_LABELS, remunerationLine, probationEnds, printedReference,
+  missingFrom, blocked, allowanceLine,
+  type Appointment, type EmploymentType, type AppointmentAction, type Allowance,
 } from './appointments';
 
 export interface LetterInput {
@@ -74,6 +74,27 @@ export interface LetterInput {
   signatureImage?: string | null;
   /** The date the authority approved it, printed under the signature block. */
   authorizedOn?: string | null;
+  /**
+   * The allowances this appointment carries — housing, transport, and the rest.
+   *
+   * NONE ASSUMED. An appointment with no allowances passes an empty list and the
+   * letter says nothing about them, because a nil housing allowance is a
+   * statement the University has not made. 047 keeps each one as its own row
+   * with its own currency and period precisely so they are not silently added
+   * to the salary and printed as one figure.
+   */
+  allowances?: Allowance[];
+  /**
+   * The job description this appointment is made against.
+   *
+   * REFERENCED, NOT REPRINTED. The University asked the letter to carry a
+   * "reference to attached Job Description" — the JD is its own institutional
+   * record with its own version and its own approval, and inlining it would
+   * make the letter say something the JD could later contradict.
+   */
+  jobDescription?: { code?: string | null; title?: string | null; version?: number | null } | null;
+  /** Where the conditions of service are set out. */
+  termsReference?: string | null;
 }
 
 export interface GeneratedLetter {
@@ -168,6 +189,22 @@ export async function appointmentLetterHtml(input: LetterInput): Promise<Generat
     ['Remuneration', pay],
   ];
 
+  // ---------------------------------------------------------------------
+  // THE ALLOWANCES, EACH ON ITS OWN LINE AND NEVER ADDED TOGETHER.
+  //
+  // A monthly salary and an annual research allowance do not sum, and a letter
+  // printing one combined figure would state a number the University never
+  // decided. 047 keeps them apart in the database for the same reason; this is
+  // the page agreeing rather than a second opinion.
+  //
+  // An appointment with none prints nothing at all — not "Allowances: none",
+  // which is a claim about the terms rather than an absence of one.
+  // ---------------------------------------------------------------------
+  for (const al of input.allowances ?? []) {
+    const line = allowanceLine(al);
+    if (line) rows.push([' ', line]);
+  }
+
   const authority = a.appointing_authority
     ? `<p class="auth">This appointment is made on the authority of ${escape(a.appointing_authority)}`
       + `${a.authority_decided_on ? `, ${escape(longDate(a.authority_decided_on))}` : ''}.</p>`
@@ -208,8 +245,26 @@ ${rows.filter(([, v]) => v).map(([k, v]) =>
 
 ${a.terms ? `<p class="terms">${escape(a.terms)}</p>` : ''}
 
+${input.jobDescription || input.termsReference ? `<p class="attached">${[
+  // REFERENCED BY CODE AND VERSION. "See the attached job description" is
+  // useless in five years; "IGUC/ACS-LEC, version 2" names the document the
+  // University can still produce.
+  input.jobDescription?.code
+    ? `The duties of the post are set out in the job description for ${
+      escape(input.jobDescription.title ?? input.jobDescription.code)} (${
+      escape(input.jobDescription.code)}${
+      input.jobDescription.version ? `, version ${input.jobDescription.version}` : ''
+    }), which accompanies this letter and forms part of it.`
+    : '',
+  input.termsReference
+    ? `The conditions of service referred to above are those set out in ${
+      escape(input.termsReference)}.`
+    : '',
+].filter(Boolean).join(' ')}</p>` : ''}
+
 ${authority}
 
+<div class="closing">
 <p>Please confirm your acceptance of this appointment in writing. This letter may be verified
 independently using the reference and code below.</p>
 
@@ -225,6 +280,7 @@ ${signatureBlock({
 })}
 
 ${await sealPanel(seal, printedReference(input.reference), input.version)}
+</div>
 ${runningFooter(printedReference(input.reference), DOCUMENT_FAMILIES.appointment.label)}
 `,
   };

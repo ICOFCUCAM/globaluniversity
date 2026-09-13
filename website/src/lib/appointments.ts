@@ -157,10 +157,24 @@ export function canActivateStaff(a: Appointment & { issued_at?: string | null })
     && (a.status === 'issued' || a.status === 'accepted' || a.status === 'active');
 }
 
+/**
+ * Every action the audit trail can record.
+ *
+ * ALL TWENTY-ONE, matching 050's constraint exactly. This list was thirteen
+ * while the database accepted twenty-one — the drift the audit was looking for:
+ * a route could write LETTER_VIEWED and the database would take it, but nothing
+ * in TypeScript knew the event existed, so no screen could offer it and no
+ * reader of this file would know it was available.
+ *
+ * `appointments.test.mjs` holds this against the constraint, so the two cannot
+ * separate again.
+ */
 export const APPOINTMENT_EVENTS = [
-  'DRAFTED', 'EDITED', 'SUBMITTED_FOR_AUTHORITY', 'AUTHORIZED', 'RETURNED',
-  'LETTER_GENERATED', 'LETTER_ISSUED', 'LETTER_DELIVERY_FAILED', 'LETTER_SUPERSEDED',
-  'DECLINED', 'WITHDRAWN', 'ENDED', 'ADMINISTRATIVE_OVERRIDE',
+  'DRAFTED', 'EDITED', 'REVIEWED', 'SUBMITTED_FOR_AUTHORITY', 'AUTHORIZED', 'RETURNED',
+  'LETTER_GENERATED', 'LETTER_ISSUED', 'LETTER_VIEWED', 'LETTER_DOWNLOADED',
+  'LETTER_SUPERSEDED', 'EMAIL_SENT', 'EMAIL_FAILED', 'LETTER_DELIVERY_FAILED',
+  'ACCEPTED', 'DECLINED', 'RENEWED', 'STAFF_ACTIVATED',
+  'WITHDRAWN', 'ENDED', 'ADMINISTRATIVE_OVERRIDE',
 ] as const;
 
 export type AppointmentEvent = (typeof APPOINTMENT_EVENTS)[number];
@@ -346,6 +360,36 @@ export const CONTINUES_AN_EARLIER: AppointmentAction[] = [
 export function isAppointmentAction(v: unknown): v is AppointmentAction {
   return typeof v === 'string' && (APPOINTMENT_ACTIONS as readonly string[]).includes(v);
 }
+
+/**
+ * Which document template produces the letter for each action.
+ *
+ * ---------------------------------------------------------------------------
+ * THE MAPPING THAT MAKES 044'S RULE LIVE
+ * ---------------------------------------------------------------------------
+ *
+ * 044 gave `appointment_letters` a `template_id` with `on delete restrict` — so
+ * a template version that produced a letter can never be deleted, and a
+ * document issued in 2026 keeps the wording of 2026. The audit found the rule
+ * INERT: nothing had ever set the column. Credentials record their template
+ * version; appointment letters did not, so the same rule was implemented for
+ * one document family and merely declared for the other.
+ *
+ * The two vocabularies were already parallel — eight actions, and eight of the
+ * eleven document types are exactly those actions. This states the
+ * correspondence between them in one place rather than letting each caller
+ * guess.
+ */
+export const ACTION_TEMPLATE: Record<AppointmentAction, DocumentType> = {
+  initial: 'initial-appointment',
+  reappointment: 'reappointment',
+  promotion: 'promotion',
+  renewal: 'contract-renewal',
+  extension: 'contract-extension',
+  transfer: 'transfer',
+  confirmation: 'probation-confirmation',
+  amendment: 'appointment-amendment',
+};
 
 /** How the letter opens, which is not the same sentence for each action. */
 export const ACTION_OPENING: Record<AppointmentAction, string> = {
