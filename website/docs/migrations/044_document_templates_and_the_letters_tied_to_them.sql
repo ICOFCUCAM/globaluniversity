@@ -267,8 +267,27 @@ begin
       raise exception '044 FAILED: somebody activated the template they wrote';
     end if;
 
-    update document_templates set status = 'active', activated_by = other,
-                                  activated_at = now() where id = t_id;
+    -- ---------------------------------------------------------------------
+    -- AND AN ACTIVE TEMPLATE STATES WHEN IT CAME INTO FORCE.
+    --
+    -- 051 adds `effective_from` and refuses an active template without one —
+    -- "which wording applied in March" is the question a dispute opens with.
+    -- This proof activated a template with no date, which was clean on a first
+    -- run of RUN-ALL and refused on the second, once 051's constraint existed.
+    --
+    -- Written as dynamic SQL because on a FIRST run the column does not exist
+    -- yet: 044 runs before 051. Setting a column that is not there would refuse
+    -- the migration on the run where nothing is wrong.
+    -- ---------------------------------------------------------------------
+    if exists (select 1 from information_schema.columns
+                where table_name = 'document_templates' and column_name = 'effective_from') then
+      execute format(
+        'update document_templates set status = %L, activated_by = %L, activated_at = now(), '
+        'effective_from = current_date where id = %L', 'active', other, t_id);
+    else
+      update document_templates set status = 'active', activated_by = other,
+                                    activated_at = now() where id = t_id;
+    end if;
 
     -- ---- ONE ACTIVE VERSION PER KIND -------------------------------------
     -- Two would mean the generator had to choose, and whichever it chose would
@@ -300,7 +319,14 @@ begin
 
     -- …but retiring it is a change of status, not of wording.
     update document_templates set status = 'retired', retired_at = now() where id = t_id;
-    update document_templates set status = 'active' where id = t_id;
+    -- Reactivating restores the date too, where 051 has added the column.
+    if exists (select 1 from information_schema.columns
+                where table_name = 'document_templates' and column_name = 'effective_from') then
+      execute format('update document_templates set status = %L, effective_from = '
+                     'coalesce(effective_from, current_date) where id = %L', 'active', t_id);
+    else
+      update document_templates set status = 'active' where id = t_id;
+    end if;
 
     -- ---- A TEMPLATE THAT ISSUED A LETTER CANNOT BE DELETED ---------------
     -- THE DOROTHY RULE. Asked why the letter says what it says, the only

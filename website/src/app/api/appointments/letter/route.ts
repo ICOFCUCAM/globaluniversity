@@ -70,7 +70,7 @@ const CAPABILITY: Record<string, Capability> = {
 // A SINGLE STRING LITERAL. Concatenation collapses the supabase-js row type to
 // GenericStringError[], silently and with no error at the call site.
 // eslint-disable-next-line max-len
-const APPOINTMENT = 'id, full_name, email, postal_address, position_title, unit_name, faculty, employment_type, appointment_action, start_date, end_date, effective_date, probation_months, place_of_duty, reports_to_name, working_hours, appointing_authority, authority_decided_on, terms, salary_amount, salary_currency, salary_period, status, drafted_by, authorized_by, authorized_at, issued_at';
+const APPOINTMENT = 'id, full_name, email, postal_address, position_title, unit_name, faculty, employment_type, appointment_action, start_date, end_date, effective_date, probation_months, place_of_duty, reports_to_name, working_hours, appointing_authority, authority_decided_on, terms, salary_amount, salary_currency, salary_period, status, drafted_by, authorized_by, authorized_at, issued_at, position_id, terms_template_id';
 // eslint-disable-next-line max-len
 const LETTER = 'id, appointment_id, reference, version, issued_on, html, content_hash, sealed, seal_code, to_email, delivery, delivery_detail, attempts, superseded_at, signatory_name, signatory_role';
 
@@ -195,6 +195,15 @@ export async function POST(request: Request) {
       .eq('appointment_id', appointment.id as string)
       .order('kind');
 
+    // THE CONDITIONS OF SERVICE THAT APPLY TO THIS APPOINTMENT, BY VERSION.
+    // The letter said "in force from time to time", which is true and unusable:
+    // an appointee in a dispute needs the version in force when they accepted.
+    // 051 records it on the appointment and restricts its deletion.
+    const { data: termsTemplate } = await admin.from('document_templates')
+      .select('id, version, name, effective_from')
+      .eq('kind', 'terms-and-conditions').eq('status', 'active').maybeSingle();
+    const terms = termsTemplate as Row | null;
+
     const action = (appointment.appointment_action as AppointmentAction | null) ?? 'initial';
     const { data: template } = await admin.from('document_templates')
       .select('id, version, kind')
@@ -244,7 +253,13 @@ export async function POST(request: Request) {
         authorizedOn: (appointment.authorized_at as string | null)?.slice(0, 10) ?? null,
         allowances: (allowanceRows ?? []) as Allowance[],
         jobDescription,
-        termsReference: 'the University\u2019s conditions of service in force from time to time',
+        // NAMED BY VERSION WHERE THERE IS ONE, and honest where there is not.
+        // "In force from time to time" is what a letter says when the
+        // University cannot tell you which version it means.
+        termsReference: terms
+          ? `${terms.name} (version ${terms.version}${
+            terms.effective_from ? `, in force from ${terms.effective_from}` : ''})`
+          : 'the University\u2019s conditions of service in force from time to time',
       });
     } catch (e) {
       return { error: bad('not-generated', 409, e instanceof Error ? e.message : String(e)) };
@@ -276,6 +291,17 @@ export async function POST(request: Request) {
     }).select(LETTER).single();
 
     if (error || !data) return { error: bad(`not-archived: ${error?.message ?? 'no row'}`, 500) };
+
+    // FIXED AT GENERATION AND NEVER UPDATED AFTERWARDS. An appointee is bound
+    // by the conditions in force when they accepted, not by whatever the
+    // University writes next — so this is written once, on the appointment that
+    // does not yet have one.
+    if (terms && !appointment.terms_template_id) {
+      await admin.from('appointments')
+        .update({ terms_template_id: terms.id })
+        .eq('id', appointment.id as string)
+        .is('terms_template_id', null);
+    }
 
     await admin.from('appointments').update({
       status: 'letter_generated', letter_generated_at: new Date().toISOString(),

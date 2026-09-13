@@ -413,6 +413,19 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
       + 'actions the University listed; six of them had no event to be recorded as.',
     table: 'appointment_acceptances',
   },
+  {
+    file: '051_templates_for_every_document_the_university_issues.sql',
+    what: 'Official correspondence gets versioned templates, and every issued letter records '
+      + 'which version produced it — 044 built that rule for eleven HR documents and the '
+      + 'Vice-Chancellor’s letters had none. The other three documents of an appointment '
+      + 'package (job description, conditions of service, acceptance form) become templates '
+      + 'too. And an appointment now records WHICH VERSION of the conditions of service '
+      + 'applies to it: "in force from time to time" is true and unusable to somebody in a '
+      + 'dispute.',
+    // The view is the marker: document_templates is 044's and the new columns
+    // sit on tables that already existed.
+    table: 'document_template_coverage',
+  },
 ];
 
 /** What a probe came back as. */

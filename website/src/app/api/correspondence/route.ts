@@ -430,6 +430,17 @@ export async function POST(request: Request) {
       .maybeSingle();
     const sig = specimen as Record<string, unknown> | null;
 
+    // THE WORDING THAT PRODUCED THIS LETTER. 051 extended 044's registry to
+    // official correspondence with the same `on delete restrict`: a template
+    // version that has produced a letter to a ministry can never be deleted,
+    // so the University can always say what wording it sent.
+    const { data: tplRow } = await admin.from('document_templates')
+      .select('id, version')
+      .eq('kind', `letter-${String(row.kind ?? 'general')}`)
+      .eq('status', 'active')
+      .maybeSingle();
+    const tpl = tplRow as Row | null;
+
     let generated;
     try {
       generated = await correspondenceLetterHtml({
@@ -466,6 +477,7 @@ export async function POST(request: Request) {
       // HOW IT WAS SIGNED, recorded on the document itself. A reader in five
       // years needs to know whether the signature on their copy was reproduced
       // or typed, and the archive is the only place that can say.
+      ...(tpl ? { template_id: tpl.id, template_version: tpl.version } : {}),
       signature_mode: sig?.image ? 'specimen' : 'typed',
       signature_specimen_id: sig?.image ? sig.id : null,
       authorized_on: (row.authorized_at as string | null)?.slice(0, 10) ?? null,

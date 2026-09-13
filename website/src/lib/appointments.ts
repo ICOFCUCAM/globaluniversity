@@ -917,6 +917,155 @@ export function countersFor(
   };
 }
 
+// ---------------------------------------------------------------------------
+// THE DASHBOARD
+// ---------------------------------------------------------------------------
+//
+// NINE COUNTERS, and they are not a longer version of the five above. The five
+// answer "what is on my desk"; these answer "where is every appointment in the
+// University". `countersFor` is kept exactly as it was because the Appointments
+// board reads it, and a screen that quietly changed what "approved" counted
+// would be a screen nobody could trust afterwards.
+//
+// EACH ONE IS A QUESTION SOMEBODY ASKS. "Awaiting acceptance" is the one that
+// earns its place hardest: an offer unanswered for six weeks is a post the
+// University believes is filled and a candidate who has taken another job, and
+// until the acceptance record existed the question could not be asked at all.
+
+export interface DashboardCounters {
+  draft: number;
+  awaitingReview: number;
+  awaitingVc: number;
+  approved: number;
+  lettersReady: number;
+  issued: number;
+  awaitingAcceptance: number;
+  active: number;
+  expiringSoon: number;
+}
+
+export const DASHBOARD_LABELS: Record<keyof DashboardCounters, string> = {
+  draft: 'Draft',
+  awaitingReview: 'Awaiting Review',
+  awaitingVc: 'Awaiting VC',
+  approved: 'Approved',
+  lettersReady: 'Letters Ready',
+  issued: 'Issued',
+  awaitingAcceptance: 'Awaiting Acceptance',
+  active: 'Active',
+  expiringSoon: 'Expiring Soon',
+};
+
+export interface DashboardRow extends Appointment {
+  end_date?: string | null;
+  accepted_at?: string | null;
+  // THE THREE FIELDS THE DASHBOARD FILTERS ON that the base record does not
+  // declare. `Appointment` predates 047's second axis and 050's faculty, and a
+  // screen reading a column the interface does not know about compiles only
+  // because of a cast — which is how a filter comes to read a field that was
+  // renamed.
+  initiated_by_office?: string | null;
+  appointment_action?: string | null;
+  faculty?: string | null;
+}
+
+export function dashboardCounters(
+  rows: DashboardRow[], today = new Date(),
+): DashboardCounters {
+  const horizon = new Date(today);
+  horizon.setUTCDate(horizon.getUTCDate() + EXPIRING_WINDOW_DAYS);
+  const iso = (d: Date) => d.toISOString().slice(0, 10);
+  const is = (s: string) => rows.filter((r) => r.status === s).length;
+
+  return {
+    draft: is('draft'),
+    awaitingReview: is('under_review'),
+    // SUBMITTED MEANS SUBMITTED TO THE VICE-CHANCELLOR. An amendment awaiting
+    // approval is also awaiting the VC, and counting it elsewhere would let it
+    // sit unseen — which is exactly what happened to amendments before.
+    awaitingVc: is('submitted') + is('amendment_requested'),
+    approved: is('approved'),
+    lettersReady: is('letter_generated'),
+    issued: is('issued'),
+    // ISSUED AND UNANSWERED. Not the same as `issued`: this is the subset
+    // nobody has replied to, which is the number somebody acts on.
+    awaitingAcceptance: rows.filter(
+      (r) => r.status === 'issued' && !r.accepted_at).length,
+    active: is('active') + is('accepted'),
+    expiringSoon: rows.filter((r) => {
+      if (r.status !== 'active' && r.status !== 'accepted') return false;
+      if (!r.end_date) return false;
+      return r.end_date >= iso(today) && r.end_date <= iso(horizon);
+    }).length,
+  };
+}
+
+/** Which appointments a counter stands for, so a number can be clicked. */
+export function matching(
+  rows: DashboardRow[], counter: keyof DashboardCounters, today = new Date(),
+): DashboardRow[] {
+  const horizon = new Date(today);
+  horizon.setUTCDate(horizon.getUTCDate() + EXPIRING_WINDOW_DAYS);
+  const iso = (d: Date) => d.toISOString().slice(0, 10);
+  switch (counter) {
+    case 'draft': return rows.filter((r) => r.status === 'draft');
+    case 'awaitingReview': return rows.filter((r) => r.status === 'under_review');
+    case 'awaitingVc':
+      return rows.filter((r) => r.status === 'submitted' || r.status === 'amendment_requested');
+    case 'approved': return rows.filter((r) => r.status === 'approved');
+    case 'lettersReady': return rows.filter((r) => r.status === 'letter_generated');
+    case 'issued': return rows.filter((r) => r.status === 'issued');
+    case 'awaitingAcceptance':
+      return rows.filter((r) => r.status === 'issued' && !r.accepted_at);
+    case 'active': return rows.filter((r) => r.status === 'active' || r.status === 'accepted');
+    case 'expiringSoon':
+      return rows.filter((r) => (r.status === 'active' || r.status === 'accepted')
+        && !!r.end_date && r.end_date >= iso(today) && r.end_date <= iso(horizon));
+    default: return rows;
+  }
+}
+
+/**
+ * The filters the University asked for.
+ *
+ * STATED AS DATA so the screen draws them from one list and the filtering reads
+ * the same list. Two places deciding what "Faculty" filters on is how a
+ * dashboard comes to show a different count from the board beside it.
+ */
+export const APPOINTMENT_FILTERS = [
+  { key: 'faculty', label: 'Faculty', field: 'faculty' },
+  { key: 'unit', label: 'Department', field: 'unit_name' },
+  { key: 'position', label: 'Position', field: 'position_title' },
+  { key: 'action', label: 'Appointment type', field: 'appointment_action' },
+  { key: 'employment', label: 'Employment', field: 'employment_type' },
+  { key: 'status', label: 'Status', field: 'status' },
+  { key: 'office', label: 'Initiated by', field: 'initiated_by_office' },
+] as const;
+
+export type FilterKey = (typeof APPOINTMENT_FILTERS)[number]['key'];
+
+export function applyFilters(
+  rows: DashboardRow[], chosen: Partial<Record<FilterKey, string>>,
+): DashboardRow[] {
+  return rows.filter((r) => APPOINTMENT_FILTERS.every((f) => {
+    const want = chosen[f.key];
+    if (!want) return true;
+    return String((r as Record<string, unknown>)[f.field] ?? '') === want;
+  }));
+}
+
+/** The values actually present, so a filter never offers an empty result. */
+export function optionsFor(rows: DashboardRow[], key: FilterKey): string[] {
+  const f = APPOINTMENT_FILTERS.find((x) => x.key === key);
+  if (!f) return [];
+  const seen = new Set<string>();
+  for (const r of rows) {
+    const v = String((r as Record<string, unknown>)[f.field] ?? '').trim();
+    if (v) seen.add(v);
+  }
+  return Array.from(seen).sort();
+}
+
 /** What the list column says, in the University\'s words rather than the code\'s. */
 export function boardStatus(a: Appointment): string {
   if (a.status === 'approved' || a.status === 'letter_generated') return 'Letter ready';
