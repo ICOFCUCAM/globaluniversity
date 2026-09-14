@@ -41,8 +41,8 @@ import { Users, BookOpen } from 'lucide-react';
 
 interface Teaching {
   course_id: string;
-  code: string | null;
-  title: string | null;
+  course_code: string | null;
+  course_title: string | null;
 }
 
 interface Student {
@@ -61,8 +61,13 @@ export default function MyStudents() {
     // `my_teaching` FILTERS ON auth.uid() IN SQL, exactly as the learning space
     // uses it. Nothing is filtered here, so a screen cannot disagree with the
     // view about which courses are somebody's.
+    // THE VIEW'S OWN COLUMN NAMES. `my_teaching` calls them `course_code` and
+    // `course_title`, not `code` and `title` — PostgREST refuses the whole
+    // query over a column a view does not have, so the first version of this
+    // screen came back empty for everybody and looked like a lecturer with no
+    // courses. The same fault 081 was written for, in a new place.
     const { data } = await supabase.from('my_teaching')
-      .select('course_id, code, title').order('code');
+      .select('course_id, course_code, course_title').order('course_code');
     const list = (data ?? []) as Teaching[];
     setCourses(list);
     if (list.length > 0) setChosen((c) => c ?? list[0].course_id);
@@ -106,7 +111,7 @@ export default function MyStudents() {
       ) : (
         <Card>
           <CardHeader
-            title={courses.find((c) => c.course_id === chosen)?.title ?? 'Roll'}
+            title={courses.find((c) => c.course_id === chosen)?.course_title ?? 'Roll'}
             subtitle={roll === null ? 'Reading the roll…'
               : `${roll.length} registered`}
           />
@@ -119,7 +124,7 @@ export default function MyStudents() {
               className="mt-1 w-full max-w-md rounded-lg border border-[#ded6c8] px-3 py-2 text-sm dark:border-[#3d3349] dark:bg-[#1f1a27]">
               {courses.map((c) => (
                 <option key={c.course_id} value={c.course_id}>
-                  {[c.code, c.title].filter(Boolean).join(' — ')}
+                  {[c.course_code, c.course_title].filter(Boolean).join(' — ')}
                 </option>
               ))}
             </select>

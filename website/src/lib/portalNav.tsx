@@ -9,6 +9,7 @@
 
 import React from 'react';
 import type { ViewType, UserRole } from './types';
+import { can, type Capability } from './roles';
 import { showsAtStage } from './studentJourney';
 import {
   UserCheck,
@@ -24,6 +25,29 @@ export interface MenuItem {
   label: string;
   icon: React.ReactNode;
   roles: UserRole[];
+  /**
+   * The capability this entry needs, where a role list is not the whole story.
+   *
+   * ---------------------------------------------------------------------
+   * WHY THIS FIELD EXISTS
+   * ---------------------------------------------------------------------
+   *
+   * The sidebar was gated by ROLE ONLY. A menu item had no capability at all,
+   * so what somebody SAW and what somebody MAY DO were never connected, and it
+   * leaked in both directions: a lecturer held `view-registered-students` with
+   * no screen gated on it, and reached Course management — a write screen for
+   * the University's catalogue — holding no `manage-courses`.
+   *
+   * The University then ruled in capability terms: "a lecturer should be able
+   * to teach a course, but should not be able to define the University's
+   * course catalogue." A role list cannot say that. This can.
+   *
+   * BOTH MUST PASS where both are given. The role list stays because it is what
+   * decides the SHAPE of somebody's portal — a Finance Officer has no business
+   * on a teaching screen whatever they hold — and the capability is what
+   * decides whether the door opens.
+   */
+  capability?: Capability;
 }
 
 export interface MenuGroup {
@@ -202,7 +226,27 @@ export const menuGroups: MenuGroup[] = [
           'programme-coordinator', 'academic-office'],
       },
       { id: 'programme-resources', label: 'Programme resources', icon: <BookMarked size={18} />, roles: ACADEMIC },
-      { id: 'courses', label: 'Courses', icon: <BookOpen size={18} />, roles: ACADEMIC },
+      // THE CATALOGUE, AND IT IS NOT A LECTURER'S. The University: "a lecturer
+      // teaching BLT 501 can manage their teaching content for BLT 501, but
+      // should not be able to change BLT 501 → 5 credits → Core → Semester 1,
+      // because that is curriculum governance." This screen creates and edits
+      // courses, so it is gated on the capability that says so. A lecturer
+      // gets `my-courses` below instead: the same entries, read-only, and only
+      // the ones they teach.
+      {
+        id: 'courses',
+        label: 'Course catalogue',
+        icon: <BookOpen size={18} />,
+        roles: ACADEMIC,
+        capability: 'manage-courses',
+      },
+      {
+        id: 'my-courses',
+        label: 'My courses',
+        icon: <BookOpen size={18} />,
+        roles: ACADEMIC,
+        capability: 'view-own-courses',
+      },
       // COURSES IS THE CATALOGUE. THIS IS THE TERM.
       //
       // Two entries because they are two things, which is the distinction the
@@ -298,9 +342,20 @@ export const menuGroups: MenuGroup[] = [
         label: 'My students',
         icon: <Users size={18} />,
         roles: ['lecturer', 'dean', 'hod', 'programme-coordinator'],
+        capability: 'view-registered-students',
       },
       { id: 'assignments', label: 'Assignments', icon: <ClipboardList size={18} />, roles: ALL },
-      { id: 'exams', label: 'Question papers', icon: <PenTool size={18} />, roles: ALL },
+      // DRAFT ONLY, FOR THEIR OWN COURSES. The University ruled the paper is a
+      // lecturer's to compose and not theirs to approve or publish — those are
+      // `schedule-examination` and `publish-examination`, and a lecturer holds
+      // neither. The screen enforces the draft; this decides who gets in.
+      {
+        id: 'exams',
+        label: 'Question papers',
+        icon: <PenTool size={18} />,
+        roles: ALL,
+        capability: 'draft-question-paper',
+      },
       // THE LIVE EXAMINATION SYSTEM. Three screens because they are three
       // different jobs, and each role sees only the one that is theirs — a
       // candidate must never see the console, and an invigilator has no
@@ -323,7 +378,13 @@ export const menuGroups: MenuGroup[] = [
         icon: <CalendarClock size={18} />,
         roles: ['superadmin', 'admin', 'exam-officer', 'moderator', 'registrar'],
       },
-      { id: 'questionbank', label: 'Question bank', icon: <PenTool size={18} />, roles: ['superadmin', 'admin', 'lecturer'] },
+      {
+        id: 'questionbank',
+        label: 'Question bank',
+        icon: <PenTool size={18} />,
+        roles: ['superadmin', 'admin', 'lecturer'],
+        capability: 'manage-question-bank',
+      },
       { id: 'gradebook', label: 'Grade book', icon: <ClipboardList size={18} />, roles: ['superadmin', 'admin', 'lecturer'] },
     ],
   },
@@ -385,6 +446,15 @@ export const menuGroups: MenuGroup[] = [
   {
     title: 'Community',
     items: [
+      // NO CAPABILITY GATE, AND THAT IS DELIBERATE — I put one here and took it
+      // out again. Every CONTROL on this screen is already behind
+      // `compose-announcement`, `approve-announcement` and the rest, which a
+      // lecturer does not hold; gating the ENTRY on the same capability would
+      // have hidden the University's own notices from almost everybody who
+      // needs to read them, the Registrar and the Academic Office included.
+      //
+      // Reading a notice is not composing one. The University's ruling is
+      // "create university announcements: no", and that is already true.
       { id: 'announcements', label: 'Announcements', icon: <ClipboardList size={18} />, roles: EVERYONE },
       { id: 'forum', label: 'Discussion forum', icon: <ClipboardList size={18} />, roles: EVERYONE },
       // The University talking about itself. An administrator's job, so it sits
@@ -461,7 +531,13 @@ export const menuGroups: MenuGroup[] = [
       // one counts the institution, the other flags individual students at
       // risk. So the fix is names that say which, and icons that differ.
       { id: 'analytics', label: 'Institutional analytics', icon: <BarChart3 size={18} />, roles: ['superadmin', 'admin', 'chancellor', 'vice-chancellor', 'registrar', 'finance-director', 'dean'] },
-      { id: 'insights', label: 'Student early warning', icon: <TrendingUp size={18} />, roles: ['superadmin', 'admin', 'lecturer'] },
+      {
+        id: 'insights',
+        label: 'Student early warning',
+        icon: <TrendingUp size={18} />,
+        roles: ['superadmin', 'admin', 'lecturer'],
+        capability: 'view-own-student-risk',
+      },
       // 'System' because it is not the only audit surface: credential actions
       // are recorded in their own immutable trail, under Credentials. Naming
       // the scope is what stops "who revoked this" having two answers and no
@@ -527,7 +603,7 @@ export const menuGroups: MenuGroup[] = [
       // was opened for somebody — their number, their post, the letter they
       // signed — and was invisible to the one person it is about, because
       // Appointments and Correspondence are gated to the offices.
-      { id: 'my-record', label: 'My record', icon: <IdCard size={18} />, roles: STAFF },
+      { id: 'my-record', label: 'My record', icon: <IdCard size={18} />, roles: STAFF, capability: 'view-own-staff-record' },
       { id: 'settings', label: 'Settings', icon: <Settings size={18} />, roles: EVERYONE },
     ],
   },
@@ -661,6 +737,8 @@ export function groupsFor(
     .map((g) => ({
       ...g,
       items: g.items.filter((i) => i.roles.includes(role)
+        // AND THE CAPABILITY, WHERE ONE IS NAMED. See MenuItem.capability.
+        && (!i.capability || can(role, i.capability))
         && (role !== 'student' || !stage || showsAtStage(stage, i.id))),
     }))
     .filter((g) => g.items.length > 0);

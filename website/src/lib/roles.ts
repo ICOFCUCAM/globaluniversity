@@ -342,6 +342,54 @@ export const OPERATIONAL_CAPABILITIES = [
   'monitor-progress',
   // Lecturer
   'view-registered-students',
+  // ---------------------------------------------------------------------
+  // THE UNIVERSITY'S RULING ON WHAT A LECTURER MAY DO, SEPTEMBER 2026.
+  //
+  // "A lecturer should be able to teach a course, but should not be able to
+  // define the University's course catalogue."
+  //
+  // That sentence is the whole of it, and it needed vocabulary the matrix did
+  // not have. `manage-courses` was the only course capability there was, so
+  // the choice was between a lecturer who could rewrite BLT 501 from 5 credits
+  // to 3 and a lecturer who could not see BLT 501 at all. These are the
+  // narrower halves.
+  //
+  // EVERY ONE OF THEM IS SCOPED TO THEIR OWN COURSES. The capability admits
+  // them to the screen; the screen reads a caller-scoped view — `my_teaching`
+  // — to decide which courses are theirs. A capability cannot express "own"
+  // on its own, and pretending otherwise is how somebody ends up marking
+  // another faculty's papers.
+  // ---------------------------------------------------------------------
+  /** Read their own staff record, their post and the letter they signed. */
+  'view-own-staff-record',
+  /** See the catalogue entry for a course they teach. VIEW, never edit. */
+  'view-own-courses',
+  /** Write question-bank items for their own courses. */
+  'manage-question-bank',
+  /**
+   * Compose a question paper for their own course, AS A DRAFT.
+   *
+   * The University: "Create question papers — draft only / own assigned
+   * courses." Approving and publishing a paper are `schedule-examination` and
+   * `publish-examination`, held elsewhere, and a lecturer holds neither.
+   */
+  'draft-question-paper',
+  // ---------------------------------------------------------------------
+  // THERE IS NO `create-course-announcement`, AND THERE SHOULD NOT BE.
+  //
+  // The University's ruling has a row for it — "create course announcements:
+  // own courses" — and it is already true. `course_materials.kind` has
+  // admitted 'announcement' since 068, the learning space renders one with a
+  // megaphone beside it, and posting one is `publish-course-material` scoped
+  // to the poster's own courses by `my_teaching`.
+  //
+  // I granted a second capability for it anyway, and portalCoverage.test.mjs
+  // caught it within the hour: a capability enforced nowhere. Its own message
+  // says why that matters — "two capability names for one act is how a grant
+  // comes to mean nothing."
+  // ---------------------------------------------------------------------
+  /** The early-warning scores for their own students, and no others. */
+  'view-own-student-risk',
   'upload-grades',
   'take-attendance',
   // Executive
@@ -596,7 +644,10 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // typed out so a capability added above cannot be quietly withheld from the
   // administrator by forgetting to list it here — and, more importantly, so a
   // capability added to SYSTEM_CAPABILITIES is withheld automatically.
-  admin: [...OPERATIONAL_CAPABILITIES],
+  admin: [
+    // EVERY MEMBER OF STAFF HAS A RECORD, and every one of them was unable
+    // to read it. See `view-own-staff-record` in the capability list.
+    'view-own-staff-record',...OPERATIONAL_CAPABILITIES],
 
   // The two executive offices see everything and decide nothing operationally.
   // 'admit-student' and 'verify-payment' are deliberately absent from both: an
@@ -606,7 +657,10 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // Vice-Chancellor does — it is their own office's letter — and holds none of
   // the appointment capabilities, because the appointing authority is one
   // office and naming two would make "who appoints here" a question.
-  chancellor: ['view-executive-dashboard', 'view-all-faculties', 'view-institutional-finance', 'view-admitted-students', 'monitor-progress',
+  chancellor: [
+    // EVERY MEMBER OF STAFF HAS A RECORD, and every one of them was unable
+    // to read it. See `view-own-staff-record` in the capability list.
+    'view-own-staff-record','view-executive-dashboard', 'view-all-faculties', 'view-institutional-finance', 'view-admitted-students', 'monitor-progress',
     'compose-correspondence', 'authorize-correspondence', 'issue-correspondence', 'confer-award'],
     // ---------------------------------------------------------------------
     // TWO THAT THE SUPERADMINISTRATOR HOLDS AND THIS OFFICE DELIBERATELY
@@ -637,6 +691,9 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // different offices rather than in two desks of the same one.
   // ---------------------------------------------------------------------
   'vice-chancellor': [
+    // EVERY MEMBER OF STAFF HAS A RECORD, and every one of them was unable
+    // to read it. See `view-own-staff-record` in the capability list.
+    'view-own-staff-record',
     // The University named this office to open a staff record from an
     // accepted appointment.
     'open-staff-record','view-executive-dashboard', 'view-all-faculties', 'view-institutional-finance', 'view-admitted-students', 'monitor-progress', 'department-reports', 'approve-credential-design',
@@ -715,13 +772,22 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // holds all three, which is a statement about this office rather than about
   // the acts: a Registrar or a Dean still holds none of them.
   // ---------------------------------------------------------------------
-  'finance-director': ['handle-student-request', 'verify-payment', 'approve-refund', 'generate-invoice', 'manage-student-accounts', 'view-institutional-finance', 'confirm-financial-clearance', 'set-fee-schedule'],
+  'finance-director': [
+    // EVERY MEMBER OF STAFF HAS A RECORD, and every one of them was unable
+    // to read it. See `view-own-staff-record` in the capability list.
+    'view-own-staff-record','handle-student-request', 'verify-payment', 'approve-refund', 'generate-invoice', 'manage-student-accounts', 'view-institutional-finance', 'confirm-financial-clearance', 'set-fee-schedule'],
 
   // Moderates submitted marks — the department's attestation that the marking
   // is consistent and the spread defensible. Cannot enter a mark and cannot
   // publish one.
-  hod: ['assign-lecturers-to-courses', 'approve-course-allocation', 'monitor-teaching', 'department-reports', 'view-registered-students', 'view-admitted-students', 'moderate-results', 'publish-course-material'],
-  'programme-coordinator': ['monitor-teaching', 'department-reports', 'view-registered-students', 'manage-courses'],
+  hod: [
+    // EVERY MEMBER OF STAFF HAS A RECORD, and every one of them was unable
+    // to read it. See `view-own-staff-record` in the capability list.
+    'view-own-staff-record','assign-lecturers-to-courses', 'approve-course-allocation', 'monitor-teaching', 'department-reports', 'view-registered-students', 'view-admitted-students', 'moderate-results', 'publish-course-material'],
+  'programme-coordinator': [
+    // EVERY MEMBER OF STAFF HAS A RECORD, and every one of them was unable
+    // to read it. See `view-own-staff-record` in the capability list.
+    'view-own-staff-record','monitor-teaching', 'department-reports', 'view-registered-students', 'manage-courses'],
 
   // The Admissions Office makes the final assessment and admits.
   //
@@ -733,6 +799,9 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // — 'assign-programme' and 'create-student-record' stay with the Registrar,
   // so an application cannot enter this queue except through that office.
   'admissions-officer': [
+    // EVERY MEMBER OF STAFF HAS A RECORD, and every one of them was unable
+    // to read it. See `view-own-staff-record` in the capability list.
+    'view-own-staff-record',
     'process-applications', 'request-documents', 'track-application',
     'admit-student', 'reject-application', 'defer-admission', 'view-admitted-students',
   ],
@@ -757,10 +826,16 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // authority is the Vice-Chancellor, so 'issue-appointment-letter' is absent
   // from both HR roles and present on exactly one office.
   'hr-officer': [
+    // EVERY MEMBER OF STAFF HAS A RECORD, and every one of them was unable
+    // to read it. See `view-own-staff-record` in the capability list.
+    'view-own-staff-record',
     'draft-appointment',
   ],
 
   'hr-administrator': [
+    // EVERY MEMBER OF STAFF HAS A RECORD, and every one of them was unable
+    // to read it. See `view-own-staff-record` in the capability list.
+    'view-own-staff-record',
     'draft-appointment',
     // ASKED TO DRAFT, NOT TO DECIDE. This is the capability that exists to be
     // held on its own: HR can write a letter the Vice-Chancellor requested and
@@ -797,7 +872,10 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // suggest the office has no such duty; enforcing it would suggest this
   // system carries it.
   // ---------------------------------------------------------------------
-  'library-staff': ['manage-library', 'view-registered-students'],
+  'library-staff': [
+    // EVERY MEMBER OF STAFF HAS A RECORD, and every one of them was unable
+    // to read it. See `view-own-staff-record` in the capability list.
+    'view-own-staff-record','manage-library', 'view-registered-students'],
   // STUDENT AFFAIRS' REAL WORK IN THIS SYSTEM.
   //
   // This office held `manage-hostel` and `manage-student-welfare` and had no
@@ -813,19 +891,28 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // So they get the queue. `manage-hostel` and `manage-student-welfare` stay
   // named and unenforced, because they describe work this system does not do
   // and pretending otherwise is how a capability comes to mean nothing.
-  'student-affairs': ['manage-hostel', 'manage-student-welfare', 'handle-student-request',
+  'student-affairs': [
+    // EVERY MEMBER OF STAFF HAS A RECORD, and every one of them was unable
+    // to read it. See `view-own-staff-record` in the capability list.
+    'view-own-staff-record','manage-hostel', 'manage-student-welfare', 'handle-student-request',
     'view-registered-students'],
 
   applicant: ['apply', 'upload-documents', 'track-application'],
 
   // Cannot admit students. 'admit-student' is absent, and that absence is the
   // control — not a comment, not a UI condition.
-  finance: ['verify-payment', 'approve-refund', 'generate-invoice', 'manage-student-accounts'],
+  finance: [
+    // EVERY MEMBER OF STAFF HAS A RECORD, and every one of them was unable
+    // to read it. See `view-own-staff-record` in the capability list.
+    'view-own-staff-record','verify-payment', 'approve-refund', 'generate-invoice', 'manage-student-accounts'],
 
   // Cannot edit payments. 'verify-payment' and 'approve-refund' are absent.
   // The Registry answers most of what a student asks: enrolment
   // confirmations, cards, leave, deferment, a change of programme.
   registrar: [
+    // EVERY MEMBER OF STAFF HAS A RECORD, and every one of them was unable
+    // to read it. See `view-own-staff-record` in the capability list.
+    'view-own-staff-record',
     // The University named this office to open a staff record from an
     // accepted appointment.
     'open-staff-record',
@@ -869,6 +956,9 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // The Academic Office answers the academic ones — a programme change, a
   // course withdrawal, an appeal.
   'academic-office': [
+    // EVERY MEMBER OF STAFF HAS A RECORD, and every one of them was unable
+    // to read it. See `view-own-staff-record` in the capability list.
+    'view-own-staff-record',
     // The University named this office to open a staff record from an
     // accepted appointment.
     'open-staff-record',
@@ -911,15 +1001,46 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   ],
 
   // Approves moderated marks on behalf of the faculty. Third of four.
-  dean: ['view-admitted-students', 'approve-transfers', 'monitor-progress', 'approve-results'],
+  dean: [
+    // EVERY MEMBER OF STAFF HAS A RECORD, and every one of them was unable
+    // to read it. See `view-own-staff-record` in the capability list.
+    'view-own-staff-record','view-admitted-students', 'approve-transfers', 'monitor-progress', 'approve-results'],
 
   // Enters marks AND declares a class finished — but cannot approve one, not
   // even their own. 'moderate-results' and everything after it are absent, and
   // that absence is the first link of the chain.
   lecturer: [
-    'view-registered-students', 'upload-grades', 'submit-results',
-    'take-attendance', 'access-lms',
-    'publish-course-material',
+    // ---------------------------------------------------------------------
+    // THE UNIVERSITY'S OWN LIST, SEPTEMBER 2026, AND NOTHING BESIDE IT.
+    //
+    // "A lecturer should be able to teach a course, but should not be able to
+    // define the University's course catalogue." A lecturer teaching BLT 501
+    // manages their teaching content for BLT 501 and cannot change
+    // BLT 501 → 5 credits → Core → Semester 1, because that is curriculum
+    // governance and belongs to the offices that hold it.
+    //
+    // WHAT IS DELIBERATELY ABSENT, each because the University said so:
+    //   manage-courses          define or edit the catalogue
+    //   schedule-examination    approve an examination paper
+    //   publish-examination     publish an official paper
+    //   moderate-results        approve a mark, including their own
+    //   approve-results         the same, one step further on
+    //   compose-announcement    speak for the University
+    //   build-timetable         move a class
+    // ---------------------------------------------------------------------
+    // Themselves
+    'view-own-staff-record',
+    // Their students and their courses
+    'view-registered-students', 'view-own-courses',
+    'take-attendance', 'view-own-student-risk',
+    // Their teaching
+    // `publish-course-material` is also how a course announcement is posted:
+    // 'announcement' is one of the material kinds. See the note in the
+    // capability list above.
+    'access-lms', 'publish-course-material',
+    // Their assessment — set and mark, never approve
+    'manage-question-bank', 'draft-question-paper',
+    'upload-grades', 'submit-results',
   ],
 
   // ---------------------------------------------------------------------
@@ -930,6 +1051,9 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // sitting that has gone wrong. DOES NOT MARK and cannot find misconduct —
   // the office that arranges an examination must not also grade it.
   'exam-officer': [
+    // EVERY MEMBER OF STAFF HAS A RECORD, and every one of them was unable
+    // to read it. See `view-own-staff-record` in the capability list.
+    'view-own-staff-record',
     'schedule-examination', 'publish-examination', 'assign-proctor',
     'control-exam-session', 'terminate-examination',
     'view-registered-students', 'department-reports',
@@ -940,6 +1064,9 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // is a determination about a student's academic record rather than an
   // observation about a sitting.
   examiner: [
+    // EVERY MEMBER OF STAFF HAS A RECORD, and every one of them was unable
+    // to read it. See `view-own-staff-record` in the capability list.
+    'view-own-staff-record',
     'mark-examination', 'proctor-examination', 'record-exam-incident',
     'control-exam-session', 'view-registered-students', 'access-lms',
     'upload-grades', 'submit-results',
@@ -949,12 +1076,18 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // watches and writes down what they saw. They cannot mark, cannot moderate,
   // cannot terminate a sitting and cannot decide that what they saw was
   // cheating. Their observation is evidence; somebody else weighs it.
-  invigilator: ['proctor-examination', 'record-exam-incident'],
+  invigilator: [
+    // EVERY MEMBER OF STAFF HAS A RECORD, and every one of them was unable
+    // to read it. See `view-own-staff-record` in the capability list.
+    'view-own-staff-record','proctor-examination', 'record-exam-incident'],
 
   // Second-marks, and determines misconduct — the academic-integrity decision
   // the University said a human must make. Cannot enter a first mark, and
   // migration 015 refuses to let anyone moderate their own marking.
   moderator: [
+    // EVERY MEMBER OF STAFF HAS A RECORD, and every one of them was unable
+    // to read it. See `view-own-staff-record` in the capability list.
+    'view-own-staff-record',
     'moderate-examination', 'determine-misconduct', 'moderate-results',
     'view-registered-students', 'department-reports',
   ],

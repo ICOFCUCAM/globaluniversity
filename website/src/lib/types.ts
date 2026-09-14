@@ -263,6 +263,10 @@ export type ViewType =
   // the courses they teach. A staff record was opened for somebody and was
   // invisible to them; `view-registered-students` was held by every lecturer
   // with no screen gated on it.
+  // THE CATALOGUE ENTRY FOR A COURSE SOMEBODY TEACHES, read-only. The
+  // University: "a lecturer should be able to teach a course, but should not be
+  // able to define the University's course catalogue."
+  | 'my-courses'
   | 'my-record'
   | 'my-students'
   // Superadministrator only. See src/lib/roles.ts — SYSTEM_CAPABILITIES.
