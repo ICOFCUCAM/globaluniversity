@@ -265,6 +265,10 @@ const MARKERS = {
   '082': 'staff_records',
   // NOT `students`, which 001 created. What 083 changes is who may read it.
   '083': 'policydef:students_staff_read:teaches_this_student',
+  '084': 'course_lessons',
+  // NOT `course_activities`, which reads as though the migration were about
+  // having assignments. The answer key is the thing 085 is really for.
+  '085': 'activity_answer_key',
 };
 
 /** The SQL that answers "is this one here?", for each of the three forms. */

@@ -842,6 +842,26 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
     rpc: 'teaches_this_student',
     rpcArgs: { the_student: '00000000-0000-0000-0000-000000000000' },
   },
+  {
+    file: '084_a_course_is_a_place_to_learn.sql',
+    what: 'A COURSE BECOMES A PLACE TO LEARN RATHER THAN A LIST OF FILES — modules, and '
+      + 'lessons inside them: text written in the LMS, documents, readings with author and '
+      + 'year, audio lectures, uploaded and external video, images, presentations and live '
+      + 'classes, each with its own learning objective and study instructions. Students get '
+      + 'progress, private notes and bookmarks. AND IT CLOSES A DOOR: course material was '
+      + 'readable by ANY signed-in account — every course, to a student registered on '
+      + 'nothing — and is now readable by the class and the people who teach it.',
+    table: 'course_lessons',
+  },
+  {
+    file: '085_assignments_quizzes_and_the_answer_key.sql',
+    what: 'ASSIGNMENTS, QUIZZES, KNOWLEDGE CHECKS AND COURSE DISCUSSIONS, with marks, lecturer '
+      + 'feedback and attendance. The correct answers live in their own table that NO student '
+      + 'policy admits — row-level security cannot hide a column, so an `is_correct` beside '
+      + 'the option label would reach the student’s own browser and the quiz would be '
+      + 'decorative. Marking happens on the server against a table the student cannot read.',
+    table: 'activity_answer_key',
+  },
 ];
 
 /** What a probe came back as. */

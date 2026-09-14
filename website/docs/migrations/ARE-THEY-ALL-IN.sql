@@ -288,6 +288,14 @@ select * from (
                                    pg_get_expr(p.polqual, p.polrelid)) > 0)
                  then 'YES' else 'NO' end as landed,
          'policydef:students_staff_read:teaches_this_student' as what_it_creates
+  union all
+  select '084' as migration, '084_a_course_is_a_place_to_learn.sql' as file,
+         case when to_regclass('public.course_lessons') is not null then 'YES' else 'NO' end as landed,
+         'course_lessons' as what_it_creates
+  union all
+  select '085' as migration, '085_assignments_quizzes_and_the_answer_key.sql' as file,
+         case when to_regclass('public.activity_answer_key') is not null then 'YES' else 'NO' end as landed,
+         'activity_answer_key' as what_it_creates
 ) as landed_report
  order by migration;
 
