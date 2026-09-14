@@ -1644,9 +1644,44 @@ comment on column appointments.faculty is
 -- here: nothing that removes a line. The history has no delete path and no
 -- capability unlocks one.
 
+-- ---------------------------------------------------------------------------
+-- A MIGRATION MUST NOT ABORT OVER HISTORY IT DID NOT WRITE.
+--
+-- This block failed on the University's own database:
+--
+--   ERROR: check constraint "appointment_events_vocabulary" of relation
+--          "appointment_events" is violated by some row
+--
+-- It dropped the narrower vocabulary and added the wider one, and PostgreSQL
+-- checks every existing row when a CHECK is added. One row in the University's
+-- history carried an event word this list does not have, and the whole of
+-- part two of the hand-over stopped because of it.
+--
+-- THE HISTORY IS NOT THE THING TO FIX. `appointment_events` is append-only by
+-- design — the University's own rule, written into 041: "nothing that removes
+-- a line". A migration that refuses to run until somebody edits the audit
+-- trail is asking for exactly the act the audit trail exists to prevent.
+--
+-- SO: the vocabulary governs everything written FROM NOW ON, and a row already
+-- there that falls outside it is REPORTED BY NAME rather than deleted, edited
+-- or silently accepted. `not valid` is what PostgreSQL calls that, and 037
+-- uses it for the same reason on `students.status`.
+--
+-- WHERE NOTHING VIOLATES IT, THE CONSTRAINT IS VALIDATED IMMEDIATELY, so a
+-- clean database gets a fully enforced constraint and not a weaker one.
+--
+-- AND THE LIST AGREES WITH 079. `WHATSAPP_HANDED_OVER` is 079's word, and it
+-- is here too — otherwise re-running the whole bundle after somebody has sent
+-- a letter by WhatsApp would drop 079's wider vocabulary, re-add this narrower
+-- one, and fail on the row 079 had quite properly allowed. That is this same
+-- fault waiting to happen a second time.
+-- ---------------------------------------------------------------------------
+
 do $$
 declare
-  con text;
+  con      text;
+  stray    text;
+  strays   integer;
 begin
   select conname into con from pg_constraint
    where conrelid = 'appointment_events'::regclass and contype = 'c'
@@ -1658,13 +1693,39 @@ begin
   end if;
 
   if not exists (select 1 from pg_constraint where conname = 'appointment_events_vocabulary') then
+
+    -- ---- WHAT IS ALREADY THERE THAT THIS LIST DOES NOT KNOW ----------------
+    select count(*), string_agg(distinct event, ', ' order by event)
+      into strays, stray
+      from appointment_events
+     where event not in (
+       'DRAFTED', 'EDITED', 'REVIEWED', 'SUBMITTED_FOR_AUTHORITY', 'AUTHORIZED', 'RETURNED',
+       'LETTER_GENERATED', 'LETTER_ISSUED', 'LETTER_VIEWED', 'LETTER_DOWNLOADED',
+       'LETTER_SUPERSEDED', 'EMAIL_SENT', 'EMAIL_FAILED', 'LETTER_DELIVERY_FAILED',
+       'ACCEPTED', 'DECLINED', 'RENEWED', 'STAFF_ACTIVATED',
+       'WITHDRAWN', 'ENDED', 'ADMINISTRATIVE_OVERRIDE', 'WHATSAPP_HANDED_OVER');
+
     alter table appointment_events add constraint appointment_events_vocabulary
       check (event in (
         'DRAFTED', 'EDITED', 'REVIEWED', 'SUBMITTED_FOR_AUTHORITY', 'AUTHORIZED', 'RETURNED',
         'LETTER_GENERATED', 'LETTER_ISSUED', 'LETTER_VIEWED', 'LETTER_DOWNLOADED',
         'LETTER_SUPERSEDED', 'EMAIL_SENT', 'EMAIL_FAILED', 'LETTER_DELIVERY_FAILED',
         'ACCEPTED', 'DECLINED', 'RENEWED', 'STAFF_ACTIVATED',
-        'WITHDRAWN', 'ENDED', 'ADMINISTRATIVE_OVERRIDE'));
+        'WITHDRAWN', 'ENDED', 'ADMINISTRATIVE_OVERRIDE', 'WHATSAPP_HANDED_OVER'))
+      not valid;
+
+    if coalesce(strays, 0) = 0 then
+      -- NOTHING IN THE WAY, so it is enforced over the whole table and not
+      -- only over what comes next.
+      alter table appointment_events validate constraint appointment_events_vocabulary;
+      raise notice '050: the appointment history vocabulary is in force over every row';
+    else
+      raise notice '050: % existing appointment history row(s) carry an event word this '
+                   'vocabulary does not list — %. They are LEFT EXACTLY AS THEY ARE, because '
+                   'this history is append-only by the University''s own rule. The vocabulary '
+                   'governs everything written from now on. To see them: select event, count(*) '
+                   'from appointment_events group by event order by 2 desc;', strays, stray;
+    end if;
   end if;
 end $$;
 

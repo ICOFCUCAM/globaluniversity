@@ -56,7 +56,18 @@
 -- value already there stays, so no existing row is invalidated — and the
 -- proof at the end shows the old words are still accepted.
 
+-- NOT VALID, FOR THE REASON 050 NOW CARRIES TOO. Adding a CHECK makes
+-- PostgreSQL test every row already in the table, and this history is
+-- append-only by the University's own rule — a migration that will not run
+-- until somebody edits the audit trail is asking for the one act the audit
+-- trail exists to prevent. The vocabulary governs what is written from here
+-- on; anything already there is reported by 050 and left alone.
+--
+-- It is VALIDATED below where nothing is in the way, so a clean database gets
+-- a fully enforced constraint rather than a weaker one.
 do $$
+declare
+  strays integer;
 begin
   if exists (select 1 from pg_constraint where conname = 'appointment_events_vocabulary') then
     alter table appointment_events drop constraint appointment_events_vocabulary;
@@ -71,10 +82,29 @@ begin
       'STAFF_ACTIVATED', 'WITHDRAWN', 'ENDED', 'ADMINISTRATIVE_OVERRIDE',
       -- NEW. The officer opened WhatsApp with this letter's reference and
       -- verification address prepared. Not a delivery — see the header.
-      'WHATSAPP_HANDED_OVER'));
+      'WHATSAPP_HANDED_OVER'))
+    not valid;
+
+  select count(*) into strays from appointment_events
+   where event not in (
+     'DRAFTED', 'EDITED', 'REVIEWED', 'SUBMITTED_FOR_AUTHORITY', 'AUTHORIZED',
+     'RETURNED', 'LETTER_GENERATED', 'LETTER_ISSUED', 'LETTER_VIEWED',
+     'LETTER_DOWNLOADED', 'LETTER_SUPERSEDED', 'EMAIL_SENT', 'EMAIL_FAILED',
+     'LETTER_DELIVERY_FAILED', 'ACCEPTED', 'DECLINED', 'RENEWED',
+     'STAFF_ACTIVATED', 'WITHDRAWN', 'ENDED', 'ADMINISTRATIVE_OVERRIDE',
+     'WHATSAPP_HANDED_OVER');
+
+  if coalesce(strays, 0) = 0 then
+    alter table appointment_events validate constraint appointment_events_vocabulary;
+  end if;
 end $$;
 
+-- THE SAME CARE ON THE CORRESPONDENCE HISTORY, and for the same reason: it is
+-- append-only too, and a letter to a ministry that was recorded under an older
+-- word must not stop the University's database from being migrated.
 do $$
+declare
+  strays integer;
 begin
   if exists (select 1 from pg_constraint
               where conname = 'correspondence_events_event_check') then
@@ -87,7 +117,23 @@ begin
       'SUBMITTED_TO_AUTHORITY', 'AUTHORIZED', 'RETURNED', 'SCHEDULED',
       'LETTER_GENERATED', 'ISSUED', 'DELIVERED', 'DELIVERY_FAILED',
       'LETTER_SUPERSEDED', 'WITHDRAWN',
-      'WHATSAPP_HANDED_OVER'));
+      'WHATSAPP_HANDED_OVER'))
+    not valid;
+
+  select count(*) into strays from correspondence_events
+   where event not in (
+     'DRAFTED', 'EDITED', 'PREPARATION_REQUESTED', 'PREPARED',
+     'SUBMITTED_TO_AUTHORITY', 'AUTHORIZED', 'RETURNED', 'SCHEDULED',
+     'LETTER_GENERATED', 'ISSUED', 'DELIVERED', 'DELIVERY_FAILED',
+     'LETTER_SUPERSEDED', 'WITHDRAWN', 'WHATSAPP_HANDED_OVER');
+
+  if coalesce(strays, 0) = 0 then
+    alter table correspondence_events validate constraint correspondence_events_event_check;
+  else
+    raise notice '079: % correspondence history row(s) carry an event word this vocabulary '
+                 'does not list. They are left exactly as they are; the vocabulary governs '
+                 'what is written from now on.', strays;
+  end if;
 end $$;
 
 
