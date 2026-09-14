@@ -865,3 +865,82 @@ export function officeFor(role: string | null | undefined, actingFor?: string): 
   if (actingFor) return OFFICE_FOR_ROLE[actingFor] ?? actingFor;
   return OFFICE_FOR_ROLE[role ?? ''] ?? 'Unattributed';
 }
+
+// ---------------------------------------------------------------------------
+// WHOSE DESK IS THIS RECORD ON?
+// ---------------------------------------------------------------------------
+//
+// The University asked twice, weeks apart, why a particular person was not on
+// the Enrolment screen — and both times the answer was that they had not
+// reached that desk yet. Nothing in the system could say so: each desk knew
+// which states IT held and nothing could turn a state back into an office.
+//
+// WHAT IT IS WAITING FOR, IN THE UNIVERSITY'S OWN WORDS. Not a state name. An
+// officer reading "ready_for_academic_review" has to know the vocabulary; one
+// reading "On the Head of Academic Affairs' desk, awaiting the decision" does
+// not.
+//
+// THE OUTCOMES ARE NOT DESKS. `rejected`, `declined`, `deferred` and
+// `withdrawn` are finished, and saying they are "waiting" on somebody would be
+// false — so they say what happened instead.
+// ---------------------------------------------------------------------------
+
+export interface WhereItStands {
+  /** The office holding it, or null where it is finished with. */
+  office: string | null;
+  /** What is happening, in a sentence somebody can act on. */
+  waitingFor: string;
+}
+
+const WHERE: Record<string, WhereItStands> = {
+  draft: { office: null, waitingFor: 'Started and never submitted by the applicant' },
+  applicant: { office: 'Admissions Office', waitingFor: 'Submitted, not yet opened' },
+  under_review: { office: 'Admissions Office', waitingFor: 'Being assessed' },
+  documents_required: { office: null, waitingFor: 'Waiting on the applicant for documents' },
+  documents_verified: { office: 'Admissions Office', waitingFor: 'Documents checked, not yet forwarded' },
+  fee_pending: { office: 'Finance Office', waitingFor: 'The application fee has been asked for' },
+  fee_paid: { office: 'Office of Academic Affairs', waitingFor: 'Fee confirmed, awaiting the decision' },
+  registrar_approved: { office: 'Admissions Office', waitingFor: 'Verified by the Registrar and forwarded' },
+  ready_for_academic_review: { office: 'Office of Academic Affairs', waitingFor: 'Awaiting the academic decision' },
+  returned: { office: 'Admissions Office', waitingFor: 'Sent back for correction' },
+  // ---- Decided, and the issuance that has to follow ---------------------
+  approved: {
+    office: 'Office of Academic Affairs',
+    waitingFor: 'Admitted — the admission has not been issued yet, so there is no letter, '
+      + 'no student number and no account',
+  },
+  conditional: {
+    office: 'Office of Academic Affairs',
+    waitingFor: 'Admitted with conditions — not yet issued',
+  },
+  admission_processing: { office: 'Office of Academic Affairs', waitingFor: 'Issuance under way' },
+  admission_processing_failed: {
+    office: 'Office of Academic Affairs',
+    waitingFor: 'Issuance stopped part way — retry it from the Admissions decision desk',
+  },
+  // ---- At the Registrar's desk, and past it -----------------------------
+  //
+  // THESE TWO ARE HERE EVEN THOUGH THE ENROLMENT SCREEN NEVER ASKS ABOUT THEM.
+  // They are the states that desk holds, so it lists them itself — but this
+  // function answers "where does this record stand" for any screen, and one
+  // that could not describe an enrolled student would be a vocabulary with a
+  // hole in it. The test named them; they were omitted on exactly the reasoning
+  // that they were somebody else's business.
+  admission_issued: {
+    office: 'Office of the Registrar',
+    waitingFor: 'Admitted and issued — the letter, the student number and the account exist, '
+      + 'and the Registrar has not yet recorded whether the place was taken up',
+  },
+  enrolled: { office: null, waitingFor: 'Enrolled — the place was taken up' },
+  // ---- Finished with ----------------------------------------------------
+  rejected: { office: null, waitingFor: 'Refused by the Head of Academic Affairs' },
+  declined: { office: null, waitingFor: 'Refused by the Registrar at verification' },
+  deferred: { office: null, waitingFor: 'Held over to a later intake' },
+  withdrawn: { office: null, waitingFor: 'The applicant stepped away' },
+};
+
+/** Where a record stands, for a screen that has to explain an absence. */
+export function whereItStands(status: string | null | undefined): WhereItStands {
+  return WHERE[String(status ?? '')]
+    ?? { office: null, waitingFor: `Recorded as ${String(status ?? 'nothing at all')}` };
+}

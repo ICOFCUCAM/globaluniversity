@@ -33,7 +33,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { statesForDesk, MIN_WITHDRAW_REASON, DECISION_CHECKS, type DecisionRefusal } from '@/lib/admissionWorkflow';
+import { statesForDesk, whereItStands, MIN_WITHDRAW_REASON, DECISION_CHECKS, type DecisionRefusal } from '@/lib/admissionWorkflow';
 import { stages, stageOf, stageChipClass } from '@/lib/admissions';
 import {
   Card, CardHeader, PageHeader, EmptyState, Skeleton, Figure,
@@ -53,16 +53,19 @@ interface Row {
   status: string | null;
   decided_at: string | null;
   enrolled_at: string | null;
+  /** The account the welcome email's username and password belong to. */
+  auth_user_id: string | null;
 }
 
 // One literal — supabase-js reads the row type from it. See the note in
 // AcademicAdmissions: a concatenation widens it to `string` and the query
 // silently returns the wrong type.
 // eslint-disable-next-line max-len
-const COLUMNS = 'id, first_name, last_name, email, matric_no, student_number, program, status, decided_at, enrolled_at';
+const COLUMNS = 'id, first_name, last_name, email, matric_no, student_number, program, status, decided_at, enrolled_at, auth_user_id';
 
 export default function Enrolment() {
   const [rows, setRows] = useState<Row[] | null>(null);
+  const [elsewhere, setElsewhere] = useState<Row[] | null>(null);
   const [reachable, setReachable] = useState(true);
   const [busy, setBusy] = useState(false);
   const [withdrawing, setWithdrawing] = useState<Row | null>(null);
@@ -78,6 +81,29 @@ export default function Enrolment() {
       .limit(200);
     setReachable(!error);
     setRows((data ?? []) as Row[]);
+
+    // -----------------------------------------------------------------
+    // AND WHERE EVERYBODY ELSE IS.
+    //
+    // The University asked twice, three weeks apart: "Mabel is also enrolled
+    // and why is it not showing here?" and "why is Dorothy the only enrolled?"
+    //
+    // Both times the answer was that the other applicant had not reached this
+    // desk — and the screen could not say so. It showed two numbers and
+    // "Nobody is waiting", which is true of THIS desk and reads as a claim
+    // about the whole University. A register that cannot say where somebody is
+    // sends the person who asked to ask a human instead.
+    //
+    // So the desk now names them and says whose desk they are on. It decides
+    // nothing and offers no controls: it is an answer, not a queue.
+    // -----------------------------------------------------------------
+    const { data: rest } = await supabase
+      .from('students')
+      .select(COLUMNS)
+      .not('status', 'in', `(${statesForDesk('enrolment').join(',')})`)
+      .order('decided_at', { ascending: false, nullsFirst: false })
+      .limit(200);
+    setElsewhere((rest ?? []) as Row[]);
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -268,7 +294,7 @@ export default function Enrolment() {
           <CardHeader title="Enrolled" subtitle="Took up the place, most recent first" />
           <TableShell>
             <THead>
-              <tr><Th>Student</Th><Th>Programme</Th><Th>Enrolled</Th><Th>State</Th></tr>
+              <tr><Th>Student</Th><Th>Programme</Th><Th>Enrolled</Th><Th>Account</Th><Th>State</Th></tr>
             </THead>
             <TBody>
               {[...enrolled].reverse().map((r) => (
@@ -279,6 +305,27 @@ export default function Enrolment() {
                   </Td>
                   <Td>{r.program ?? '—'}</Td>
                   <Td>{r.enrolled_at ? new Date(r.enrolled_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</Td>
+                  {/* THE USERNAME IS THE EMAIL, and the account is made when
+                      the admission is ISSUED — not here. The University: "those
+                      enrolled are supposed to have a student account with
+                      username and password." They are, and until now the desk
+                      that records enrolment could not show whether one exists,
+                      so an issuance that failed part way looked exactly like
+                      one that worked. The password is not shown and never
+                      was: it is generated once, sent in the welcome email, and
+                      not kept. */}
+                  <Td>
+                    {r.auth_user_id ? (
+                      <span className="text-[#3f7d4e]">{r.email ?? 'account created'}</span>
+                    ) : (
+                      <span className="text-amber-700">
+                        No account
+                        <span className="block text-[11px]">
+                          Re-issue the admission to create one
+                        </span>
+                      </span>
+                    )}
+                  </Td>
                   <Td>
                     <span className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ${stageChipClass[stages[stageOf(r)].tone]}`}>
                       {stages[stageOf(r)].label}
@@ -286,6 +333,56 @@ export default function Enrolment() {
                   </Td>
                 </tr>
               ))}
+            </TBody>
+          </TableShell>
+        </Card>
+      )}
+
+      {/* -----------------------------------------------------------------
+          AND EVERYBODY WHO HAS NOT REACHED THIS DESK.
+
+          The University asked twice, weeks apart, why a particular person was
+          not on this screen. Both times they had not been issued yet — and the
+          screen could not say so. It showed two numbers and "Nobody is
+          waiting", which is true of THIS desk and reads as a statement about
+          the whole University.
+
+          It decides nothing and offers no controls. It is an answer to
+          "where is she?", which is the question this screen kept provoking.
+          ----------------------------------------------------------------- */}
+      {elsewhere !== null && elsewhere.length > 0 && (
+        <Card>
+          <CardHeader
+            title="Not at this desk yet"
+            subtitle="Everybody else on the register, and what each is waiting for"
+          />
+          <TableShell>
+            <THead>
+              <tr><Th>Student</Th><Th>Programme</Th><Th>Where it stands</Th><Th>Office</Th></tr>
+            </THead>
+            <TBody>
+              {elsewhere.map((r) => {
+                const w = whereItStands(r.status);
+                return (
+                  <tr key={r.id}>
+                    <Td>
+                      <span className="font-medium">
+                        {[r.first_name, r.last_name].filter(Boolean).join(' ') || '—'}
+                      </span>
+                      <span className="block text-[11px] text-[#a49bb0]">
+                        {r.student_number ?? r.email ?? ''}
+                      </span>
+                    </Td>
+                    <Td>{r.program ?? '—'}</Td>
+                    <Td>{w.waitingFor}</Td>
+                    <Td>
+                      {w.office ?? (
+                        <span className="text-[#a49bb0]">Finished with</span>
+                      )}
+                    </Td>
+                  </tr>
+                );
+              })}
             </TBody>
           </TableShell>
         </Card>
