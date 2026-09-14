@@ -193,5 +193,27 @@ check('a decider who may not store one is not shown the form',
 check('…and a refusal on `mine` is not shown to them as a fault',
   /not-permitted[\s\S]{0,120}setMayStore\(false\)/.test(specimen), true);
 
+// ---------------------------------------------------------------------------
+// AND THE PANEL IS VISIBLE WHEN THERE IS NOTHING IN IT.
+//
+// "Why is the signature of the University not in superadmin?" It was. The
+// Superadministrator holds every capability, the tab was there, and the panel
+// rendered NOTHING — because no officer had stored a specimen yet and an empty
+// list was treated exactly like a refusal.
+//
+// A panel that disappears when it has nothing to report disappears precisely
+// when somebody goes looking for it, and the reader concludes the feature was
+// never built. "Nobody has stored one yet" is the most useful thing this screen
+// can say to an officer wondering why every letter prints a blank rule.
+// ---------------------------------------------------------------------------
+check('a refusal and an empty list are told apart',
+  /setRows\(null\); setAllowed\(false\)/.test(specimen), true);
+check('…the panel is drawn whenever the officer may decide',
+  /if \(allowed !== true \|\| rows === null\) return null;/.test(specimen), true);
+check('…and an empty list says so instead of vanishing',
+  /rows\.length === 0 && \(/.test(specimen), true);
+check('…in words that name where a signature is stored',
+  /No officer has stored a signature yet/.test(specimen), true);
+
 console.log(failures ? `\n${failures} check(s) failed.\n` : '\nAll signatory checks passed.\n');
 process.exit(failures ? 1 : 0);

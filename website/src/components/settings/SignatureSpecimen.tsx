@@ -104,16 +104,30 @@ const MIN_REASON = 12;
  */
 function SpecimensAwaiting() {
   const [rows, setRows] = useState<Specimen[] | null>(null);
+  /** Whether `list` answered at all. Undecided until it has. */
+  const [allowed, setAllowed] = useState<boolean | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [authority, setAuthority] = useState<Record<string, string>>({});
   const [reason, setReason] = useState<Record<string, string>>({});
   const [note, setNote] = useState<{ tone: 'ok' | 'bad'; text: string } | null>(null);
 
+  // MAY-NOT-SEE AND NOTHING-TO-SEE ARE DIFFERENT ANSWERS.
+  //
+  // They were the same one, and the Superadministrator asked "why is the
+  // signature of the University not in superadmin?" — it was, and it was
+  // invisible, because no officer had stored a specimen and an empty list
+  // rendered as nothing at all. A panel that disappears when it has nothing to
+  // report disappears exactly when somebody goes looking for it, and the reader
+  // concludes the feature was never built.
+  //
+  // `null` here means not permitted, and renders nothing. An empty ARRAY means
+  // permitted and empty, and says so.
   const load = useCallback(async () => {
     const out = await authedPost('/api/admin/signature', { action: 'list' });
-    // NOT PERMITTED IS NOT AN ERROR HERE. It is the ordinary case for most of
-    // the people who open this screen.
-    if (!out.ok) { setRows([]); return; }
+    // NOT PERMITTED IS NOT AN ERROR. It is the ordinary case for most of the
+    // people who open this screen.
+    if (!out.ok) { setRows(null); setAllowed(false); return; }
+    setAllowed(true);
     setRows((out.specimens ?? []) as Specimen[]);
   }, []);
 
@@ -141,7 +155,10 @@ function SpecimensAwaiting() {
     }
   }
 
-  if (rows === null || rows.length === 0) return null;
+  // NOTHING AT ALL only for an officer who may not decide about a signature,
+  // and only once we know that. Before the answer arrives, nothing is drawn —
+  // a panel that flashes into view and vanishes is worse than one that waits.
+  if (allowed !== true || rows === null) return null;
 
   return (
     <div className="space-y-4 border-t border-[#ece7de] pt-6 dark:border-[#2e2637]">
@@ -163,6 +180,20 @@ function SpecimensAwaiting() {
         }`}
         >
           {note.text}
+        </div>
+      )}
+
+      {rows.length === 0 && (
+        <div className="rounded-xl border border-[#ece7de] p-4 text-sm dark:border-[#2e2637]">
+          <p className="flex items-center gap-2 font-medium text-[#a07c12]">
+            <AlertTriangle size={15} /> No officer has stored a signature yet
+          </p>
+          <p className="mt-1 text-[#6b6076] dark:text-[#9c93ad]">
+            There is nothing here to switch on, and every letter the University issues will print
+            an empty rule for signing by hand. An officer stores their own under
+            <strong> Settings → My signature</strong>; it then appears here for a second officer
+            to put in force.
+          </p>
         </div>
       )}
 
