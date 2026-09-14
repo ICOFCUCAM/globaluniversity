@@ -17,17 +17,29 @@
 // So this opens the generated letter in Chromium at A4 and measures it.
 //
 // ---------------------------------------------------------------------------
-// AND WHY THERE IS NO PDF
+// THIS FILE MEASURES THE PAGE. SOMETHING ELSE MEASURES THE PDF.
 // ---------------------------------------------------------------------------
 //
-// `playwright` is a DEV dependency. Chromium is not present in the deployment,
-// so a route that rendered a PDF on the server would work here and fail on
-// Vercel — which is worse than not having one, because it would be discovered
-// by the first officer trying to issue a letter.
+// This once said there was no server-side PDF, because `playwright` is a DEV
+// dependency and Chromium was not in the deployment. Both halves of that have
+// since changed: the University asked for a real A4 PDF, `@sparticuz/chromium`
+// supplies a browser on Vercel, and `src/lib/renderPdf.ts` prints one.
 //
-// The letter is therefore HTML with print CSS, as the admission letter already
-// is, and the browser produces the PDF. What this file guarantees is that the
-// thing the browser prints is the right shape.
+// The division of labour is worth keeping straight, because each file catches
+// something the other cannot:
+//
+//   this file                 opens the letter in Playwright and reads the
+//                             LAID-OUT PAGE — what fits on page one, where the
+//                             signature and the seal land.
+//   renderPdf.test.mjs        drives the production path (puppeteer-core,
+//                             `preferCSSPageSize`) and reads the MediaBox out
+//                             of the bytes, so a letter silently printed at US
+//                             Letter fails.
+//   scripts/check-pdf-tracing.mjs
+//                             reads Next's file-tracing manifest after a build,
+//                             because a browser that is not IN the deployment
+//                             makes no PDF wherever it works locally. That is
+//                             the fault an appointee actually hit.
 // ---------------------------------------------------------------------------
 
 import { execFileSync } from 'node:child_process';

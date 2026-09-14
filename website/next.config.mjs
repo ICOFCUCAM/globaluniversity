@@ -1,5 +1,43 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // -------------------------------------------------------------------------
+  // THE LETTER COULD NOT BE MADE INTO A PDF ON VERCEL.
+  //
+  // "The input directory /vercel/path0/website/node_modules/@sparticuz/
+  // chromium/bin does not exist."
+  //
+  // Chromium is not a library. It is a 67MB brotli-compressed browser in
+  // `@sparticuz/chromium/bin`, which the package unpacks to /tmp at runtime
+  // and then launches. Webpack does not know that: it saw an `import`, bundled
+  // the JavaScript into the route, and left the browser behind. The code then
+  // looked for the browser beside itself and found nothing — so every PDF fell
+  // back to HTML, which is what the appointee was being shown.
+  //
+  // TWO THINGS ARE NEEDED, AND ONE ALONE DOES NOTHING.
+  //
+  //   serverComponentsExternalPackages  stops webpack relocating the package,
+  //                                     so `require` resolves to the real one
+  //                                     in node_modules at runtime.
+  //   outputFileTracingIncludes         puts the .br files in the deployment.
+  //                                     Tracing follows `require` calls; the
+  //                                     browser is read by a computed path, so
+  //                                     nothing points at it and it is dropped.
+  //
+  // MEASURED, NOT REASONED ABOUT. Before this, the route's `.nft.json` listed
+  // 373 files and NOT ONE of them was from @sparticuz. After it, the four
+  // archives in bin/ are there. `scripts/check-pdf-tracing.mjs` reads that
+  // manifest after every build and fails if they go missing again — this is
+  // not the kind of breakage that shows up until somebody downloads a letter.
+  // -------------------------------------------------------------------------
+  experimental: {
+    serverComponentsExternalPackages: ['@sparticuz/chromium', 'puppeteer-core'],
+    // The key is the route, relative to the app directory. Both routes that
+    // make a PDF are named: the officer's copy and the appointee's own.
+    outputFileTracingIncludes: {
+      '/api/appointments/letter': ['./node_modules/@sparticuz/chromium/bin/**'],
+      '/api/appointments/accept/letter': ['./node_modules/@sparticuz/chromium/bin/**'],
+    },
+  },
   images: {
     // Serve modern formats and cache optimized variants aggressively.
     formats: ['image/avif', 'image/webp'],
