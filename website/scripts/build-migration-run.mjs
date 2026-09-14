@@ -259,6 +259,9 @@ const MARKERS = {
   // download window. No earlier migration has one: the ordinary three days are
   // computed, so this column exists only for the exception.
   '080': 'appointments.appointee_download_until',
+  // A column the pay-free view did not carry until 081, which is the whole
+  // reason the screen could not load for an HR officer.
+  '081': 'appointments_without_pay.terms',
 };
 
 /** The SQL that answers "is this one here?", for each of the three forms. */

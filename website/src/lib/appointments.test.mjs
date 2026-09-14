@@ -16,7 +16,7 @@
 // ---------------------------------------------------------------------------
 
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, readFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 let failures = 0;
@@ -220,8 +220,9 @@ console.log('\nWhat the letter prints for money, and for probation\n');
 console.log('\nThe database holds the same rules, not only this file\n');
 
 {
+  const migrations = join(here, '../../docs/migrations');
   const sql = readFileSync(
-    join(here, '../../docs/migrations/041_appointments_and_the_letters_that_issue_from_them.sql'),
+    join(migrations, '041_appointments_and_the_letters_that_issue_from_them.sql'),
     'utf8');
 
   check('the drafter cannot authorise, in the database',
@@ -239,14 +240,43 @@ console.log('\nThe database holds the same rules, not only this file\n');
     /appointment_letters_one_current_idx/.test(sql), true);
 
   // THE SALARY IS NOT ORDINARY INSTITUTIONAL INFORMATION.
-  check('there is a view without the pay',
-    /create or replace view appointments_without_pay/.test(sql), true);
-  const view = /create or replace view appointments_without_pay([\s\S]*?)from appointments;/
-    .exec(sql)?.[1] ?? '';
+  //
+  // 081 WIDENED THIS VIEW, so reading 041 alone no longer tells you what the
+  // database ends up with. A later migration is exactly where the figure would
+  // creep back in — somebody adds the six columns a screen is missing and takes
+  // the salary along with them — so every definition is read, in migration
+  // order, and the LAST one is the one held to the rule.
+  // NUMBERED MIGRATIONS ONLY. The built bundles sit in the same directory and
+  // are copies of these; counting them would check the same text four times
+  // over and put a bundle last where the newest migration belongs.
+  const definitions = readdirSync(migrations)
+    .filter((f) => /^\d{3}_.*\.sql$/.test(f))
+    .sort()
+    .flatMap((f) => {
+      const body = /create (?:or replace )?view appointments_without_pay([\s\S]*?)from appointments;/
+        .exec(readFileSync(join(migrations, f), 'utf8'))?.[1];
+      return body ? [{ file: f, body }] : [];
+    });
+
+  check('there is a view without the pay', definitions.length > 0, true);
+  check('…and 041 is where it starts', definitions[0]?.file.startsWith('041'), true);
+
+  // The definition that stands is the last one written, not the first.
+  const view = definitions[definitions.length - 1]?.body ?? '';
   check('…and it genuinely leaves the pay out',
     /salary_amount|salary_currency|salary_period/.test(view.replace(/salary_amount is not null/, '')),
     false);
   check('…while still saying that a salary exists', /is_paid/.test(view), true);
+
+  // A VIEW A LATER MIGRATION WIDENS MUST BE DROPPED IN BOTH, NEVER REPLACED IN
+  // ONE. `create or replace view` may only append columns, so a replace that
+  // meets a drop-and-create further down the bundle fails on the run after the
+  // one that worked. This cost the University a re-run; it is a check now.
+  for (const d of definitions) {
+    check(`${d.file.slice(0, 3)} drops the view before creating it`,
+      new RegExp(`drop view if exists appointments_without_pay;[\\s\\S]{0,400}create view appointments_without_pay`)
+        .test(readFileSync(join(migrations, d.file), 'utf8')), true);
+  }
 
   // The vocabulary the code uses is the vocabulary the column accepts.
   for (const t of A.EMPLOYMENT_TYPES) {

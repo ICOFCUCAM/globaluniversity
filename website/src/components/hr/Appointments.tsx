@@ -97,9 +97,16 @@ const POSTS = 'id, job_code, title, family, unit_name, reports_to, duty_station,
 // A SINGLE STRING LITERAL. Concatenation makes supabase-js collapse the
 // inferred type to GenericStringError[], silently.
 // eslint-disable-next-line max-len
-const COLUMNS = 'id, full_name, position_title, unit_name, employment_type, start_date, end_date, effective_date, probation_months, place_of_duty, reports_to_name, working_hours, appointing_authority, authority_decided_on, terms, status, drafted_by, authorized_by, issued_at';
+const COLUMNS = 'id, full_name, email, phone, postal_address, position_title, position_id, unit_name, faculty, employment_type, start_date, end_date, effective_date, probation_months, place_of_duty, reports_to_name, working_hours, appointing_authority, authority_decided_on, terms, status, drafted_by, authorized_by, issued_at';
 
-type Row = Appointment & { id: string; issued_at?: string | null };
+type Row = Appointment & {
+  id: string;
+  issued_at?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  faculty?: string | null;
+  position_id?: string | null;
+};
 
 // ---------------------------------------------------------------------------
 // A LABELLED FIELD — AND WHY IT LIVES OUT HERE.
@@ -164,6 +171,16 @@ export default function Appointments() {
   const [lastPdf, setLastPdf] = useState<{ url: string; filename: string } | null>(null);
   /** Why the Superadministrator is reopening an appointee's download window. */
   const [releaseReason, setReleaseReason] = useState('');
+  /**
+   * The draft being corrected, or null.
+   *
+   * THE ROW ITSELF, not an id. The form is filled from it, and holding the row
+   * means the form can open with what is actually on the record rather than
+   * fetching it again and briefly showing an empty form.
+   */
+  const [editing, setEditing] = useState<Row | null>(null);
+  /** The outcome and reason chosen for closing each appointment, by id. */
+  const [closing, setClosing] = useState<Record<string, { outcome: string; reason: string }>>({});
   const [creating, setCreating] = useState(false);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<{ tone: 'ok' | 'bad'; text: string } | null>(null);
@@ -422,16 +439,22 @@ export default function Appointments() {
   }
 
 
-  if (creating) {
+  if (creating || editing) {
     return (
       <NewAppointment
+        // THE SAME FORM, FILLED. A second form for editing would be a second
+        // place for every rule about what an appointment needs, and the two
+        // would disagree the first time one was touched.
+        existing={editing}
         maySetPay={maySeePay}
         maySoleAuthority={maySoleAuthority}
         busy={busy}
         notice={notice}
-        onCancel={() => setCreating(false)}
+        onCancel={() => { setCreating(false); setEditing(null); }}
         onSave={async (payload, alsoApprove) => {
-          const r = await act({ action: 'draft', ...payload });
+          const r = editing
+            ? await act({ action: 'edit', id: editing.id, ...payload })
+            : await act({ action: 'draft', ...payload });
           if (!r) return;
           // ---------------------------------------------------------------
           // TWO CALLS, AND THE ORDER MATTERS IF THE SECOND FAILS.
@@ -443,10 +466,12 @@ export default function Appointments() {
           // Nothing the officer typed is lost, which is the whole reason the
           // draft is not held back until the approval succeeds.
           // ---------------------------------------------------------------
-          if (alsoApprove && r.id) {
-            await act({ action: 'decide', id: r.id, decision: 'approve' });
+          const id = (r.id as string | undefined) ?? editing?.id;
+          if (alsoApprove && id) {
+            await act({ action: 'decide', id, decision: 'approve' });
           }
           setCreating(false);
+          setEditing(null);
         }}
       />
     );
@@ -674,6 +699,32 @@ export default function Appointments() {
                   </>
                 )}
 
+                {/* ---------------------------------------------------------
+                    CORRECTING A DRAFT.
+
+                    The University: "can an appointment be re edited and sent.
+                    or deleted if it was wrong?"
+
+                    `canEdit` has permitted it since the route was written —
+                    a draft is editable, and the route has an `edit` action —
+                    and NO SCREEN EVER OFFERED IT. An appointment with a
+                    mistyped name or the wrong start date could be created and
+                    submitted, and never corrected. The only remedy was to
+                    leave the wrong one sitting there and make another.
+
+                    ONLY WHILE IT IS A DRAFT, which is the rule and not a
+                    limitation of this button: once a second officer has
+                    approved it, editing in place would mean they approved one
+                    thing and another went out. After issue the answer is an
+                    amendment, which supersedes the letter and keeps both.
+                    --------------------------------------------------------- */}
+                {a.status === 'draft' && mayDraft && (
+                  <button disabled={busy} className={BTN_GHOST}
+                    onClick={() => setEditing(a)}>
+                    <Wand2 size={14} /> Edit this draft
+                  </button>
+                )}
+
                 {a.status === 'draft' && mayDraft && !blocked(missing) && (
                   <button disabled={busy} className={BTN_SECONDARY}
                     onClick={() => void act({ action: 'submit', id: a.id })}>
@@ -840,6 +891,65 @@ export default function Appointments() {
                     </button>
                   </>
                 )}
+
+                {/* ---------------------------------------------------------
+                    CLOSING ONE THAT WAS WRONG — AND WHY THERE IS NO DELETE.
+
+                    The University: "or deleted if it was wrong?"
+
+                    There is no delete anywhere in this system and there should
+                    not be. An appointment letter commits the University to
+                    paying somebody; one that could vanish means the University
+                    can never answer "did we appoint this person and then
+                    remove the evidence". `close` is the answer, it has been in
+                    the route since it was written, and nothing called it.
+
+                    THREE OUTCOMES, NOT ONE, because they are three different
+                    facts and the record keeps them apart: the appointee said
+                    no, the University took it back, or it ran its course. A
+                    single "cancel" would lose which.
+
+                    AND A REASON IS REQUIRED. An appointment that closes with
+                    no explanation is the thing the register exists to prevent.
+                    --------------------------------------------------------- */}
+                {mayApprove && !['declined', 'withdrawn', 'ended'].includes(String(a.status)) && (
+                  <>
+                    <select value={closing[a.id]?.outcome ?? ''}
+                      onChange={(e) => setClosing((c) => ({
+                        ...c,
+                        [a.id]: { outcome: e.target.value, reason: c[a.id]?.reason ?? '' },
+                      }))}
+                      className={`${INPUT} w-56 text-xs`}>
+                      <option value="">Close this appointment…</option>
+                      <option value="declined">The appointee declined it</option>
+                      <option value="withdrawn">The University withdraws it</option>
+                      <option value="ended">It has run its course</option>
+                    </select>
+
+                    {closing[a.id]?.outcome && (
+                      <>
+                        <input value={closing[a.id]?.reason ?? ''}
+                          onChange={(e) => setClosing((c) => ({
+                            ...c,
+                            [a.id]: { outcome: c[a.id].outcome, reason: e.target.value },
+                          }))}
+                          placeholder="Why — this goes on the record"
+                          className={`${INPUT} w-64 text-xs`} />
+                        <button
+                          disabled={busy || (closing[a.id]?.reason ?? '').trim().length < 12}
+                          className={BTN_SECONDARY}
+                          onClick={() => void act({
+                            action: 'close',
+                            id: a.id,
+                            outcome: closing[a.id].outcome,
+                            reason: closing[a.id].reason,
+                          })}>
+                          <X size={14} /> Close it
+                        </button>
+                      </>
+                    )}
+                  </>
+                )}
               </div>
             </article>
           );
@@ -855,7 +965,7 @@ export default function Appointments() {
 // ---------------------------------------------------------------------------
 
 function NewAppointment({
-  maySetPay, maySoleAuthority, busy, notice, onCancel, onSave,
+  existing, maySetPay, maySoleAuthority, busy, notice, onCancel, onSave,
 }: {
   maySetPay: boolean;
   /**
@@ -869,15 +979,46 @@ function NewAppointment({
   notice: { tone: 'ok' | 'bad'; text: string } | null;
   onCancel: () => void;
   onSave: (payload: Record<string, unknown>, alsoApprove: boolean) => void;
+  /**
+   * A draft being corrected, or absent when this is a new appointment.
+   *
+   * ONE FORM FOR BOTH. Everything this form knows about what an appointment
+   * needs — which fields block a letter, what the post picker fills, how the
+   * conditions arrive — would have to be written a second time in a separate
+   * editor, and the two would disagree the first time either was touched.
+   */
+  existing?: Row | null;
 }) {
-  const [f, setF] = useState({
-    fullName: '', email: '', phone: '', postalAddress: '',
-    positionId: '', positionTitle: '', unitName: '', faculty: '',
-    employmentType: 'permanent',
-    startDate: '', endDate: '', effectiveDate: '', probationMonths: '',
-    placeOfDuty: '', reportsToName: '', workingHours: '', terms: '',
-    salaryAmount: '', salaryCurrency: DEFAULT_CURRENCY, salaryPeriod: DEFAULT_PERIOD,
-    appointingAuthority: '', authorityDecidedOn: '',
+  // FILLED FROM THE RECORD WHERE THERE IS ONE. `useState`'s initialiser runs
+  // once, which is what this needs: the officer's typing must not be reset by
+  // a re-render carrying the same `existing` row.
+  const [f, setF] = useState(() => {
+    const e = existing ?? null;
+    const str = (v: unknown) => (v === null || v === undefined ? '' : String(v));
+    return {
+      fullName: str(e?.full_name),
+      email: str((e as Record<string, unknown> | null)?.email),
+      phone: str((e as Record<string, unknown> | null)?.phone),
+      postalAddress: str(e?.postal_address),
+      positionId: str((e as Record<string, unknown> | null)?.position_id),
+      positionTitle: str(e?.position_title),
+      unitName: str(e?.unit_name),
+      faculty: str((e as Record<string, unknown> | null)?.faculty),
+      employmentType: str(e?.employment_type) || 'permanent',
+      startDate: str(e?.start_date),
+      endDate: str(e?.end_date),
+      effectiveDate: str(e?.effective_date),
+      probationMonths: str(e?.probation_months),
+      placeOfDuty: str(e?.place_of_duty),
+      reportsToName: str(e?.reports_to_name),
+      workingHours: str(e?.working_hours),
+      terms: str(e?.terms),
+      salaryAmount: str(e?.salary_amount),
+      salaryCurrency: str(e?.salary_currency) || DEFAULT_CURRENCY,
+      salaryPeriod: str(e?.salary_period) || DEFAULT_PERIOD,
+      appointingAuthority: str(e?.appointing_authority),
+      authorityDecidedOn: str(e?.authority_decided_on),
+    };
   });
 
   const [posts, setPosts] = useState<Post[] | null>(null);
@@ -1083,7 +1224,7 @@ function NewAppointment({
     <div className="max-w-3xl space-y-6">
       <header>
         <h1 className="font-heading text-2xl font-bold text-[#422e59] dark:text-[#e9e2f2]">
-          New appointment
+          {existing ? 'Correct this draft' : 'New appointment'}
         </h1>
         <p className="mt-1 text-sm text-[#6b6076] dark:text-[#9c93ad]">
           Saved as a draft. Somebody other than you approves it, and only then is a letter
@@ -1468,7 +1609,9 @@ function NewAppointment({
             // then thought better of is not an allowance of zero.
             allowances: allowances.filter((a) => Number(a.amount ?? 0) > 0),
           }, false)}>
-          {busy ? <><Loader2 size={15} className="animate-spin" /> Saving…</> : 'Save as draft'}
+          {busy
+            ? <><Loader2 size={15} className="animate-spin" /> Saving…</>
+            : (existing ? 'Save the correction' : 'Save as draft')}
         </button>
 
         {maySoleAuthority && (

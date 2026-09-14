@@ -785,6 +785,20 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
     table: 'appointments',
     column: 'appointee_download_until',
   },
+  {
+    file: '081_what_an_hr_officer_may_see_and_correct.sql',
+    what: 'THE DRAFT & SUBMIT SCREEN LOADS FOR AN HR OFFICER. It did not: 056\u2019s pay-free '
+      + 'view carries twenty-five columns and the screen asks for thirty-one, and PostgREST '
+      + 'refuses the whole query over a column a view does not have \u2014 so for every role '
+      + 'without set-remuneration the register came back EMPTY, which reads as a University '
+      + 'that has never appointed anybody. The view now carries the six particulars it was '
+      + 'missing (terms, working hours, appointing authority and its date, postal address, '
+      + 'faculty) and the post, so a draft can also be corrected. NOT ONE OF THEM IS PAY \u2014 '
+      + 'the three salary columns are still absent and `is_paid` still says only whether there '
+      + 'is a figure.',
+    table: 'appointments_without_pay',
+    column: 'terms',
+  },
 ];
 
 /** What a probe came back as. */

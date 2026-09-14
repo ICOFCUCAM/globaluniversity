@@ -2593,7 +2593,15 @@ create policy appointment_events_read on appointment_events
 -- without the money. The columns themselves stay restricted to the roles that
 -- actually set pay.
 
-create or replace view appointments_without_pay
+-- DROPPED FIRST, NOT REPLACED. 081 widens this view with six columns placed
+-- BESIDE the ones they belong with rather than appended in a tail — and
+-- `create or replace view` may only append. Without this drop, a second run of
+-- the whole bundle reaches 041 with 081's wider view already in place and
+-- fails with "cannot drop columns from view". A view that a later migration
+-- widens must be dropped and created in BOTH, never replaced in one.
+drop view if exists appointments_without_pay;
+
+create view appointments_without_pay
 with (security_invoker = true) as
 select id, person_id, lecturer_id, full_name, email, phone,
        position_title, department_id, unit_name, employment_type,

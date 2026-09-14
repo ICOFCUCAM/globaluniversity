@@ -39,7 +39,7 @@ import { can, type Capability } from '@/lib/roles';
 import type { UserRole } from '@/lib/types';
 import {
   isEmploymentType, missingFrom, blocked, canEdit, canSubmit, canAuthorize,
-  canAuthorizeAlone, soleAuthorityOffice,
+  canAuthorizeAlone, soleAuthorityOffice, initiatingOffice,
   canRequestAmendment, canClose, MIN_AMENDMENT_REASON, MIN_CLOSURE_REASON, MIN_RETURN_REASON,
   DEFAULT_CURRENCY, DEFAULT_PERIOD,
   payColumns,
@@ -209,14 +209,40 @@ export async function POST(request: Request) {
           + 'be edited — what was approved is what is issued. To change an issued appointment, '
           + 'request an amendment.');
       }
+      // AND FILLED IN ON AN EDIT WHERE IT IS MISSING, so a draft created
+      // before this was fixed can still be corrected and submitted rather than
+      // being stuck refusing an executive post for ever.
       const { error } = await admin.from('appointments')
-        .update({ ...fields, ...pay, updated_at: new Date().toISOString() })
+        .update({
+          ...fields,
+          ...pay,
+          ...(previous.initiated_by_office ? {} : {
+            initiated_by_office: initiatingOffice(caller.role as string | null),
+          }),
+          updated_at: new Date().toISOString(),
+        })
         .eq('id', previous.id as string);
       if (error) return bad(`not-saved: ${error.message}`, 500);
       id = previous.id as string;
     } else {
+      // THE OFFICE THAT IS ACTING, NAMED AT THE MOMENT OF DRAFTING.
+      //
+      // This was missing, and 056 refused the Vice-Chancellor an appointment
+      // she was entitled to make: its rule reads `initiated_by_office`, the
+      // column was null on every new draft, and "the unnamed office" may not
+      // appoint to an executive post. Correct rule, absent fact.
+      //
+      // NULL WHERE THE ROLE HAS NO APPOINTING OFFICE, which is not a gap —
+      // that is exactly the case 056 exists to refuse, and it can only refuse
+      // it if the truth is recorded.
       const { data, error } = await admin.from('appointments')
-        .insert({ ...fields, ...pay, drafted_by: caller.id, status: 'draft' })
+        .insert({
+          ...fields,
+          ...pay,
+          drafted_by: caller.id,
+          status: 'draft',
+          initiated_by_office: initiatingOffice(caller.role as string | null),
+        })
         .select('id').single();
       if (error || !data) return bad(`not-saved: ${error?.message ?? 'no row'}`, 500);
       id = data.id as string;

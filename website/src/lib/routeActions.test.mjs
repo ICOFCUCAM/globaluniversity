@@ -81,10 +81,14 @@ const REACHED_ANOTHER_WAY = {
 //
 // These are REAL GAPS. The route works, the rules are enforced, and there is
 // no button anywhere — the same fault that dead-ended the appointment letter,
-// standing open in nineteen other places. Finance cannot assess a student's
+// standing open in eighteen other places. Finance cannot assess a student's
 // fees, waive one, cancel one, grant or refuse a clearance; nobody can edit a
 // fee schedule or a fee item after creating it; a correspondence letter cannot
-// be withdrawn; an appointment cannot be closed.
+// be withdrawn.
+//
+// `appointments close` WAS ON THIS LIST and is not any more. The Appointments
+// screen now carries the control, so the entry came off — which is the whole
+// point of the list refusing a stale one.
 //
 // THEY ARE LISTED SO THEY CANNOT BE FORGOTTEN, and the test still reports every
 // one of them on every run. What it refuses is a NEW one appearing, or a listed
@@ -101,7 +105,6 @@ const NO_SCREEN_YET = [
   'admin/document-template retire',
   'admin/signature enable',
   'announcements variants',
-  'appointments close',
   'correspondence withdraw',
   'finance/fees assess',
   'finance/fees cancel',

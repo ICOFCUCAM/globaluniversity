@@ -266,6 +266,15 @@ select * from (
                       and column_name = 'appointee_download_until')
                  then 'YES' else 'NO' end as landed,
          'appointments.appointee_download_until' as what_it_creates
+  union all
+  select '081' as migration, '081_what_an_hr_officer_may_see_and_correct.sql' as file,
+         case when exists (
+                   select 1 from information_schema.columns
+                    where table_schema = 'public'
+                      and table_name = 'appointments_without_pay'
+                      and column_name = 'terms')
+                 then 'YES' else 'NO' end as landed,
+         'appointments_without_pay.terms' as what_it_creates
 ) as landed_report
  order by migration;
 

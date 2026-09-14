@@ -1378,3 +1378,61 @@ export function payColumns(body: {
     },
   };
 }
+
+// ---------------------------------------------------------------------------
+// WHICH OFFICE IS MAKING THIS APPOINTMENT.
+//
+// ---------------------------------------------------------------------------
+// THE BUG THIS EXISTS FOR
+// ---------------------------------------------------------------------------
+//
+// The Vice-Chancellor drafted an appointment to the Director of Academic
+// Affairs and the database refused it:
+//
+//   Director of Academic Affairs is an executive office of the University. An
+//   appointment to it is the appointing authority's to make — the
+//   Vice-Chancellor or the Chancellor — and cannot be initiated by the UNNAMED
+//   office.
+//
+// 056's rule was right and the Vice-Chancellor was entitled. The fault was the
+// last two words: `initiated_by_office` was NEVER SET WHEN A DRAFT WAS
+// CREATED. It was written only on the approve path, and only when somebody
+// approved their own draft — so at the moment of drafting, every appointment in
+// this system claimed to come from nowhere, and 056 quite correctly refused an
+// executive appointment from nowhere.
+//
+// 056's own comment says why it reads a column rather than the caller's role:
+// the route writes with the service key, which carries no role claim. It is
+// the ROUTE's job to state which office is acting, and the route was not
+// doing it.
+//
+// ---------------------------------------------------------------------------
+// AN OFFICE, NOT A ROLE
+// ---------------------------------------------------------------------------
+//
+// 045 named six: hr, vice-chancellor, chancellor, registrar, academic-office,
+// system. Several roles sit behind one office — an HR officer and an HR
+// administrator both act as `hr` — because what the record needs to say is
+// WHICH OFFICE COMMITTED THE UNIVERSITY, not which job title the person held.
+//
+// NULL WHERE THERE IS NO OFFICE, and that is not a gap. A role with no
+// appointing office has no business initiating an appointment to an executive
+// post, and returning null is what lets 056 say so.
+// ---------------------------------------------------------------------------
+
+export function initiatingOffice(role: string | null | undefined): string | null {
+  switch (role) {
+    case 'vice-chancellor': return 'vice-chancellor';
+    case 'chancellor': return 'chancellor';
+    // NOT AN OFFICE OF THE UNIVERSITY, and recorded as what it is rather than
+    // borrowed from an office that did not act — the same reasoning
+    // `soleAuthorityOffice` already applies.
+    case 'superadmin':
+    case 'admin': return 'system';
+    case 'registrar': return 'registrar';
+    case 'hr-officer':
+    case 'hr-administrator': return 'hr';
+    case 'academic-office': return 'academic-office';
+    default: return null;
+  }
+}

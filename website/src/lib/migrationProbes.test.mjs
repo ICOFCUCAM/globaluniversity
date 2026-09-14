@@ -80,7 +80,33 @@ for (const probe of MIGRATION_PROBES) {
     const adds = statements.some((s) =>
       new RegExp(`add column if not exists\\s+${probe.column}\\b`, 'i').test(s))
       // A column added in the CREATE TABLE of the same migration counts too.
-      || new RegExp(`create table if not exists ${probe.table}[\\s\\S]*?\\b${probe.column}\\b`, 'i').test(sql);
+      || new RegExp(`create table if not exists ${probe.table}[\\s\\S]*?\\b${probe.column}\\b`, 'i').test(sql)
+      // ---------------------------------------------------------------
+      // AND A COLUMN A VIEW GAINS BY BEING REBUILT.
+      //
+      // This check knew two ways a column can arrive — `add column` and a
+      // `create table` — and a third has always existed: a view recreated
+      // with a wider select. 081 widens `appointments_without_pay`, and the
+      // test reported that it does not add a column it plainly adds.
+      //
+      // A false failure here is the dangerous kind: the next person makes
+      // it pass by weakening the rule, and then it guards nothing.
+      //
+      // SCOPED TO THE VIEW'S OWN STATEMENT, from `create view <name>` to the
+      // `from` that ends its select, so a column named in a different view
+      // in the same migration does not count.
+      || (() => {
+        // COMMENTS STRIPPED FIRST, and this file has now been caught by that
+        // more than once. The select carries "-- NEW. The post from the
+        // register", and the word `from` inside that comment ended the match
+        // three columns early — so the check reported a column missing from a
+        // view that plainly has it.
+        const bare = sql.replace(/--.*$/gm, '');
+        const view = new RegExp(
+          `create (?:or replace )?view\\s+${probe.table}\\b[\\s\\S]*?\\bfrom\\b`, 'i',
+        ).exec(bare);
+        return Boolean(view) && new RegExp(`\\b${probe.column}\\b`, 'i').test(view[0]);
+      })();
     check(`${probe.file} adds ${probe.table}.${probe.column}`, adds, true);
   } else {
     // A VIEW COUNTS. The probe reads through PostgREST, which serves a view
