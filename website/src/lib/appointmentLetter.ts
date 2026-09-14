@@ -55,6 +55,9 @@ import {
 // the Director of Academic Affairs' are the same document with different things
 // to say, and what differs is a register rather than a branch.
 import { registerFor, conductFor } from './appointmentRegisters';
+// THE SAME RENDERER THE STANDALONE JOB DESCRIPTION USES. Not a second one: see
+// the note on `jobDescription` in AppointmentLetterInput for why that matters.
+import { jobDescriptionSections, JD_CLAUSE_STYLES } from './jobDescriptionDocument';
 
 /**
  * The job-description sections whose clauses are printed in the letter.
@@ -214,28 +217,55 @@ export interface LetterInput {
   /**
    * The job description this appointment is made against.
    *
-   * REFERENCED, NOT REPRINTED. The University asked the letter to carry a
-   * "reference to attached Job Description" — the JD is its own institutional
-   * record with its own version and its own approval, and inlining it would
-   * make the letter say something the JD could later contradict.
+   * CARRIED, NOT MERELY REFERENCED — AND THAT IS A CHANGE.
+   *
+   * This once said "referenced, not reprinted": the letter named the job
+   * description, said it "accompanies this letter", listed it under Attachments
+   * — and nothing accompanied it. The University: "the letter does not have the
+   * other pages like job description."
+   *
+   * They are right, and the earlier reasoning was answering a different
+   * question. The fear was of the University stating a grant of authority in
+   * two documents that could later disagree. Two documents rendering the SAME
+   * clauses through the SAME function — `jobDescriptionSections` — cannot
+   * disagree; what each shows is settled by the rows it was given, and both are
+   * given the resolved rows of `position_job_description` at a named version.
+   * A letter that promises an attachment and travels without it is the worse
+   * failure, because its recipient believes a document was withheld.
+   *
+   * So the complete job description is annexed to the letter at the version in
+   * force on the day, and the annex says which version that is.
    */
   jobDescription?: {
     code?: string | null;
     title?: string | null;
     version?: number | null;
+    /** Why the post exists — the JD's own first section, never inherited. */
+    purpose?: string | null;
+    /** The family it inherits from, printed so a reader knows what it inherits. */
+    family?: string | null;
+    /** The unit the post sits in, and who it answers to. */
+    unit?: string | null;
+    reportsTo?: string | null;
+    /** The day the version being annexed came into force. */
+    activatedOn?: string | null;
     /**
-     * The job description's own duty clauses, printed under "Principal Areas
-     * of Responsibility".
+     * The job description's clauses.
      *
-     * DUTIES ONLY, AND THE OMISSION IS THE POINT. `may-authorize`,
-     * `may-recommend` and `must-obtain-approval` are NOT printed here, however
-     * available they are. They are the three sections that say what the holder
-     * may commit the University to, and reprinting them in a letter would mean
-     * the University had stated a grant of authority in two documents that can
-     * later disagree. The letter names the job description; the job
-     * description says what the office may do.
+     * ALL OF THEM, in full, for the annex. The duty sections are ALSO printed
+     * in the body of the letter under "Principal Areas of Responsibility" —
+     * that is a summary of what the appointee is being asked to do, and the
+     * annex is the document itself.
+     *
+     * THE AUTHORITY SECTIONS REACH THE ANNEX AND NOT THE BODY. `may-authorize`,
+     * `may-recommend` and `must-obtain-approval` say what the holder may commit
+     * the University to. They belong in the job description, which is now bound
+     * into the letter, and not restated in the letter's own prose where they
+     * would be a second wording of the same grant.
      */
-    clauses?: { section: string; ordinal: number; body: string }[] | null;
+    clauses?: {
+      section: string; ordinal: number; body: string; source?: string | null;
+    }[] | null;
   } | null;
   /** Where the conditions of service are set out. */
   termsReference?: string | null;
@@ -464,6 +494,16 @@ ${rows.filter(([, v]) => v).map(([k, v]) =>
 
   if (reg.status) add(reg.status.heading, paras(reg.status.paragraphs));
 
+  // ---- Is there a job description to annex, or only a name? ---------------
+  //
+  // COMPUTED HERE BECAUSE THE LETTER'S OWN PROSE DEPENDS ON IT. What the letter
+  // may say about the job description — "annexed to this letter" or "not yet in
+  // force" — is settled by whether there are clauses to print, and the section
+  // that says it is written before the annex is built.
+  const jd = input.jobDescription;
+  const jdClauses = jd?.clauses ?? [];
+  const jdAnnexed = Boolean(jd?.code && jdClauses.length > 0);
+
   // ---- The duties, from the job description and from nowhere else ---------
   const dutyClauses = (input.jobDescription?.clauses ?? [])
     .filter((c) => DUTY_SECTIONS.includes(c.section))
@@ -478,7 +518,7 @@ ${dutyClauses.map((c) => `  <li>${escape(c.body)}</li>`).join('\n')}
 </ul>${input.jobDescription?.code ? `
 <p>The detailed scope of authority, duties, reporting relationships and performance
 expectations is set out in the Job Description and Terms of Reference for ${escape(title)},
-which accompanies this letter and forms an integral part of your appointment.</p>` : ''}`);
+annexed to this letter and forming an integral part of your appointment.</p>` : ''}`);
   }
 
   add(reg.accountability.heading, paras(reg.accountability.paragraphs(reportsTo)));
@@ -547,16 +587,22 @@ appointment is ${escape(String(input.noticeMonths))} month${
 <p>The applicable Conditions of Service shall govern matters relating to resignation,
 termination, disciplinary action and other cessation of appointment.</p>`);
 
-  if (input.jobDescription?.code) {
+  if (jd?.code) {
     // REFERENCED BY CODE AND VERSION. "See the attached job description" is
     // useless in five years; "ACA-DAA, version 1" names the document the
     // University can still produce.
-    add('Job Description and Terms of Reference',
-      `<p>Your appointment is accompanied by a Job Description and Terms of Reference for
-${escape(input.jobDescription.title ?? input.jobDescription.code)} (${
-  escape(input.jobDescription.code)}${
-  input.jobDescription.version ? `, version ${input.jobDescription.version}` : ''}).</p>
-<p>That document sets out the detailed:</p>
+    //
+    // AND IT SAYS WHERE THE DOCUMENT IS. This section used to say the job
+    // description "accompanies this letter" whether or not anything did. When
+    // no version is in force for the post, nothing can accompany it — and the
+    // honest sentence is the one that says so, because an appointee told a
+    // document exists will ask for it.
+    add('Job Description and Terms of Reference', jdAnnexed
+      ? `<p>Your appointment is made against the Job Description and Terms of Reference for
+${escape(jd.title ?? jd.code)} (${escape(jd.code)}${
+  jd.version ? `, version ${jd.version}` : ''}), which is annexed to this letter in full and
+forms an integral part of your appointment.</p>
+<p>That annex sets out the detailed:</p>
 <ul>
   <li>purpose of the position;</li>
   <li>duties and responsibilities;</li>
@@ -568,7 +614,15 @@ ${reg.carriesDelegatedAuthority ? '  <li>delegated authority;</li>\n' : ''}\
   <li>accountability requirements.</li>
 </ul>
 <p>The Job Description and Terms of Reference forms part of the official appointment
-record.</p>`);
+record. It may be amended by the University after consultation with the post-holder; an amended
+job description is issued as a new version, and the version annexed to this letter remains the
+version in force at the date of your appointment.</p>`
+      : `<p>The post of ${escape(jd.title ?? jd.code)} is recorded by the University under post
+code ${escape(jd.code)}. The Job Description and Terms of Reference for the post is not yet in
+force, and none is annexed to this letter.</p>
+<p>The University will issue the Job Description and Terms of Reference to you separately once
+it has been approved, and it will then form part of the official appointment record. Your duties
+in the meantime are those set out in this letter.</p>`);
   }
 
   // ---------------------------------------------------------------------
@@ -605,11 +659,58 @@ record.</p>`);
   const onPageOne = sections.filter((s) => PAGE_ONE_HEADINGS.includes(s.heading));
   const annex = sections.filter((s) => !PAGE_ONE_HEADINGS.includes(s.heading));
 
+  // ---------------------------------------------------------------------
+  // THE JOB DESCRIPTION, BOUND IN.
+  //
+  // The University: "the letter does not have the other pages like job
+  // description." It did not, and it had been saying it did — "accompanies
+  // this letter", "forms part of the official appointment record", listed
+  // under Attachments — while carrying nothing. A letter that names an
+  // attachment is a promise.
+  //
+  // It is now annexed in full: every section of the resolved job description,
+  // rendered by the same function as the standalone document, at the version
+  // in force on the day, named on its own first line so that a reader in five
+  // years knows which version they are holding.
+  // ---------------------------------------------------------------------
+  const jdRows: [string, string | null][] = jdAnnexed ? [
+    ['Post', jd?.title ?? jd?.code ?? null],
+    ['Post code', jd?.code ?? null],
+    ['Family', jd?.family ?? null],
+    ['Unit', jd?.unit ?? null],
+    ['Reports to', jd?.reportsTo ?? null],
+    ['Version', jd?.version ? String(jd.version) : null],
+    ['In force from', jd?.activatedOn ? longDate(jd.activatedOn) : null],
+  ] : [];
+
+  const jdAnnex = jdAnnexed ? `
+<div class="annex">
+<h2>Job Description and Terms of Reference</h2>
+<p class="annexnote">This job description forms part of the letter of appointment
+${escape(printedReference(input.reference))} and is to be read with it. It is the version in
+force at the date of this appointment${
+  jd?.version ? `, version ${escape(String(jd.version))}` : ''}; an amended job description is
+issued as a new version and the version annexed here remains on the record.</p>
+
+<table>
+${jdRows.filter(([, v]) => v).map(([k, v]) =>
+    `  <tr><th>${escape(k)}</th><td>${escape(v as string)}</td></tr>`).join('\n')}
+</table>
+
+${jd?.purpose ? `<h3>Purpose of the Post</h3>
+<p class="purpose">${escape(jd.purpose)}</p>` : ''}
+
+${jobDescriptionSections(jdClauses as never)}
+</div>` : '';
+
   const attachments = [
-    input.jobDescription?.code
+    // NAMED FOR WHERE IT ACTUALLY IS. Annexed when it is annexed; and when
+    // there is no job description in force for the post, the letter says that
+    // rather than promising a document nobody can produce.
+    jdAnnexed
       ? `Job description and terms of reference — ${
-        input.jobDescription.title ?? input.jobDescription.code} (${input.jobDescription.code}${
-        input.jobDescription.version ? `, version ${input.jobDescription.version}` : ''})`
+        jd?.title ?? jd?.code} (${jd?.code}${
+        jd?.version ? `, version ${jd.version}` : ''}), annexed to this letter`
       : null,
     input.termsReference ? `Conditions of service — ${input.termsReference}` : null,
     // ALWAYS PRESENT, because the letter above tells the appointee to use it.
@@ -623,7 +724,7 @@ record.</p>`);
     html: `<!doctype html>
 <meta charset="utf-8">
 <title>Appointment Letter ${escape(printedReference(input.reference))}</title>
-<style>${documentStyles()}${LETTER_STYLES}</style>
+<style>${documentStyles()}${LETTER_STYLES}${JD_CLAUSE_STYLES}</style>
 
 ${letterhead('Office of the Vice-Chancellor')}
 ${input.isDraft ? `
@@ -721,6 +822,7 @@ that reference and the verification code printed on the first page, or in writin
 University. The completed acceptance is retained as part of your official University personnel
 and appointment record.</p>
 </div>` : ''}
+${jdAnnex}
 ${runningFooter(printedReference(input.reference), DOCUMENT_FAMILIES.appointment.label)}
 `,
   };

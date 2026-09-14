@@ -37,14 +37,23 @@
 // copy in their file. That is the whole point of versioning it.
 //
 // ---------------------------------------------------------------------------
-// AND IT PRINTS THE THREE SECTIONS THE LETTER WILL NOT
+// AND IT PRINTS THE THREE SECTIONS THE LETTER'S OWN PROSE WILL NOT
 // ---------------------------------------------------------------------------
 //
-// `may-authorize`, `may-recommend` and `must-obtain-approval` are omitted from
-// the appointment letter on purpose — they are grants of authority, and the
-// University should state them in one document rather than two that can drift.
-// THIS is that document. They are printed here, under their own headings,
-// because a job description that leaves them out is a list of tasks.
+// `may-authorize`, `may-recommend` and `must-obtain-approval` are grants of
+// authority, and the University should state them in one document rather than
+// two that can drift. THIS is that document. They are printed here, under their
+// own headings, because a job description that leaves them out is a list of
+// tasks.
+//
+// THE LETTER NOW ANNEXES THIS DOCUMENT rather than referring to one, because it
+// had been naming an attachment it did not carry — the University: "the letter
+// does not have the other pages like job description." That is not a second
+// statement of the grant: the annex is built by `jobDescriptionSections` below,
+// the same function this document uses, from the same resolved rows. What the
+// letter still must never do is restate them in ITS OWN WORDS, and
+// `appointmentLetter.ts` filters them out of "Principal Areas of
+// Responsibility" for that reason.
 // ---------------------------------------------------------------------------
 
 import { UNIVERSITY } from './constants';
@@ -135,6 +144,54 @@ const STYLES = `
 `;
 
 /**
+ * The clauses of a job description, grouped under their section headings.
+ *
+ * ONE RENDERER, TWO DOCUMENTS. This is used by the standalone job description
+ * below AND by the annex the appointment letter carries. It has to be, because
+ * the reason the letter never carried the job description was a fear of exactly
+ * that: "two documents that can disagree about what somebody was entitled to
+ * decide". Two documents rendering the SAME clauses through the SAME function
+ * cannot disagree — what each shows is settled by the rows it was given, and
+ * both are given the resolved rows of `position_job_description`.
+ *
+ * IN THE DOCUMENT'S OWN ORDER. `order()` is the same function the screen uses,
+ * so the printed document and the screen cannot disagree about what comes first
+ * either.
+ */
+export function jobDescriptionSections(clauses: JdClause[]): string {
+  const grouped = new Map<string, JdClause[]>();
+  for (const c of order(clauses as never) as unknown as JdClause[]) {
+    const list = grouped.get(c.section) ?? [];
+    list.push(c);
+    grouped.set(c.section, list);
+  }
+
+  const sectionsInOrder: [string, JdClause[]][] = [];
+  grouped.forEach((list, section) => sectionsInOrder.push([section, list]));
+
+  return sectionsInOrder.map(([section, list]) => {
+    const label = SECTION_LABELS[section as JdSection] ?? section;
+    return `<h3>${escape(label)}</h3>
+<ol class="clauses">
+${list.map((c: JdClause) => `  <li>${escape(c.body)}${
+      // SAID ON THE PAGE. A clause inherited from the family applies to every
+      // post in it, and changing it changes all of them — which whoever is
+      // reading this document to decide whether to argue with a clause needs
+      // to know before they start.
+      c.source === 'family' ? ' <span class="inherited">(from the family profile)</span>' : ''
+    }</li>`).join('\n')}
+</ol>`;
+  }).join('\n\n');
+}
+
+/**
+ * The styling the clause list needs, so a document that borrows
+ * `jobDescriptionSections` can borrow the CSS with it instead of retyping it
+ * and drifting.
+ */
+export const JD_CLAUSE_STYLES = STYLES;
+
+/**
  * The document.
  *
  * A DRAFT SAYS IT IS A DRAFT, IN A BOX, AT THE TOP. 048 will not let an
@@ -159,32 +216,7 @@ export async function jobDescriptionHtml(
 
   const inForce = input.status === 'active';
 
-  // GROUPED BY SECTION, IN THE DOCUMENT'S OWN ORDER. `order()` is the same
-  // function the screen uses, so the printed document and the screen cannot
-  // disagree about what comes first.
-  const grouped = new Map<string, JdClause[]>();
-  for (const c of order(input.clauses as never) as unknown as JdClause[]) {
-    const list = grouped.get(c.section) ?? [];
-    list.push(c);
-    grouped.set(c.section, list);
-  }
-
-  const sectionsInOrder: [string, JdClause[]][] = [];
-  grouped.forEach((clauses, section) => sectionsInOrder.push([section, clauses]));
-
-  const body = sectionsInOrder.map(([section, clauses]) => {
-    const label = SECTION_LABELS[section as JdSection] ?? section;
-    return `<h3>${escape(label)}</h3>
-<ol class="clauses">
-${clauses.map((c: JdClause) => `  <li>${escape(c.body)}${
-      // SAID ON THE PAGE. A clause inherited from the family applies to every
-      // post in it, and changing it changes all of them — which whoever is
-      // reading this document to decide whether to argue with a clause needs
-      // to know before they start.
-      c.source === 'family' ? ' <span class="inherited">(from the family profile)</span>' : ''
-    }</li>`).join('\n')}
-</ol>`;
-  }).join('\n\n');
+  const body = jobDescriptionSections(input.clauses);
 
   const rows: [string, string | null][] = [
     ['Post', input.title],

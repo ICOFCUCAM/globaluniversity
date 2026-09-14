@@ -262,26 +262,29 @@ export async function POST(request: Request) {
       .maybeSingle();
     const tpl = template as Row | null;
 
-    // THE JOB DESCRIPTION IS REFERENCED, AND ITS DUTIES ARE PRINTED.
+    // THE JOB DESCRIPTION IS ANNEXED TO THE LETTER, IN FULL.
     //
-    // It remains its own record with its own version and its own approval. What
-    // changed is that the letter now prints the DUTY clauses under "Principal
-    // Areas of Responsibility" — the University asked for a letter that says
-    // what the post actually does rather than one generic paragraph for every
-    // office.
+    // The University: "the letter does not have the other pages like job
+    // description." It did not. The letter named the document, said it
+    // accompanied the letter, listed it under Attachments — and carried
+    // nothing, because the job description was a separate record produced by a
+    // separate route that nothing bound to the letter.
     //
-    // THE THREE AUTHORITY SECTIONS ARE NOT PASSED ON. `appointmentLetter.ts`
-    // filters them out as well, so this is two locks on the same door: the
-    // letter must never restate `may-authorize`, `may-recommend` or
-    // `must-obtain-approval`, because the University would then have stated a
-    // grant of authority in two documents that can drift apart.
+    // So EVERY section is passed now, the authority sections among them. They
+    // reach the annex — which IS the job description, rendered by the same
+    // function as the standalone document — and `appointmentLetter.ts` still
+    // keeps them out of the letter's own prose, where a second wording of the
+    // same grant of authority is what the old rule was really guarding against.
     //
     // THE FAMILY COMES FROM THE POST, and it selects the register of wording —
     // a Dean's letter, a Lecturer's and the Director of Academic Affairs' are
     // the same document with different things to say.
     let jobDescription: {
       code?: string; title?: string; version?: number;
-      clauses?: { section: string; ordinal: number; body: string }[];
+      purpose?: string | null; family?: string | null;
+      unit?: string | null; reportsTo?: string | null;
+      activatedOn?: string | null;
+      clauses?: { section: string; ordinal: number; body: string; source?: string | null }[];
     } | null = null;
     let family: string | null = null;
     let precedence: string | null = null;
@@ -292,11 +295,7 @@ export async function POST(request: Request) {
       const { data: post } = await admin.from('positions')
         .select('job_code, title, family, precedence, standing, executive_level')
         .eq('id', appointment.position_id as string).maybeSingle();
-      const { data: profile } = await admin.from('position_profiles')
-        .select('id, version').eq('position_id', appointment.position_id as string)
-        .eq('status', 'active').maybeSingle();
       const po = post as Row | null;
-      const pr = profile as Row | null;
 
       if (po) {
         family = (po.family as string | null) ?? null;
@@ -306,23 +305,60 @@ export async function POST(request: Request) {
         standing = (po.standing as string | null) ?? null;
         executiveLevel = (po.executive_level as string | null) ?? null;
 
-        let clauses: { section: string; ordinal: number; body: string }[] | undefined;
-        if (pr?.id) {
-          // THE RESOLVED DOCUMENT, not the post's own rows. 048's
-          // `position_job_description` view applies the inheritance rule: the
-          // family's clause stands unless this post restated that section.
-          const { data: rows } = await admin.from('position_job_description')
-            .select('section, ordinal, body')
-            .eq('position_id', appointment.position_id as string)
-            .order('ordinal');
-          clauses = (rows ?? []) as { section: string; ordinal: number; body: string }[];
+        // THE RESOLVED DOCUMENT, ASKED FOR UNCONDITIONALLY.
+        //
+        // This used to run only `if (pr?.id)` — only where the POST had an
+        // active profile of its own. That is not how job descriptions work
+        // here: 048 seeds EIGHT FAMILY profiles and most posts carry no profile
+        // of their own at all, inheriting the family's wording through
+        // `position_job_description`. So for every such post the query was
+        // skipped, no clauses reached the letter, and the letter printed
+        // neither the duties nor an annex — while still naming a job
+        // description and saying it accompanied the letter.
+        //
+        // It would have kept doing that AFTER the University activated the
+        // eight profiles, which is the part that mattered: the activation would
+        // have appeared to do nothing at all.
+        //
+        // The view already answers the whole question — it returns rows only
+        // from an ACTIVE profile, the post's own where there is one and the
+        // family's otherwise — so there is nothing to gate on.
+        const { data: rows } = await admin.from('position_job_description')
+          .select('section, ordinal, body, source')
+          .eq('position_id', appointment.position_id as string)
+          .order('ordinal');
+        const clauses = (rows ?? []) as {
+          section: string; ordinal: number; body: string; source?: string | null;
+        }[];
+
+        // WHICH PROFILE SUPPLIED THEM, for the version and the date in force.
+        // The post's own if it has one; otherwise the family's, which is the
+        // document actually being annexed.
+        const { data: own } = await admin.from('position_profiles')
+          .select('id, version, job_purpose, activated_at')
+          .eq('position_id', appointment.position_id as string)
+          .eq('status', 'active').maybeSingle();
+        let pr = own as Row | null;
+        if (!pr && family) {
+          const { data: fam } = await admin.from('position_profiles')
+            .select('id, version, job_purpose, activated_at')
+            .eq('family', family).is('position_id', null)
+            .eq('status', 'active').maybeSingle();
+          pr = fam as Row | null;
         }
 
         jobDescription = {
           code: po.job_code as string,
           title: po.title as string,
-          ...(pr ? { version: pr.version as number } : {}),
-          ...(clauses && clauses.length > 0 ? { clauses } : {}),
+          family: (po.family as string | null) ?? null,
+          unit: (appointment.unit_name as string | null) ?? null,
+          reportsTo: (appointment.reports_to_name as string | null) ?? null,
+          ...(pr ? {
+            version: pr.version as number,
+            purpose: (pr.job_purpose as string | null) ?? null,
+            activatedOn: (pr.activated_at as string | null)?.slice(0, 10) ?? null,
+          } : {}),
+          ...(clauses.length > 0 ? { clauses } : {}),
         };
       }
     }

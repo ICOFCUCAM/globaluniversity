@@ -154,15 +154,54 @@ async function letterFor(family, overrides = {}) {
   return out.html;
 }
 
+// ---------------------------------------------------------------------------
+// A LETTER NEVER RESTATES WHAT THE JOB DESCRIPTION MAY AUTHORISE.
+//
+// THE RULE IS THE SAME; WHERE IT APPLIES HAS MOVED, AND THE REASON IS WORTH
+// WRITING DOWN.
+//
+// This used to assert that `may-authorize`, `may-recommend` and
+// `must-obtain-approval` appeared NOWHERE in the letter's HTML. What it was
+// protecting was stated plainly at the time: the University must not state a
+// grant of authority in two documents that can later disagree about what
+// somebody was entitled to decide.
+//
+// The letter now ANNEXES the job description rather than referring to one. It
+// had been naming the document, saying it accompanied the letter, listing it
+// under Attachments — and carrying nothing; the University said so ("the letter
+// does not have the other pages like job description").
+//
+// Carrying the document is not a second statement of the grant. It is the same
+// clauses, rendered by the same function, from the same resolved rows, at a
+// named version. What would still be a second statement — and is still refused
+// here — is the letter's OWN PROSE restating them in its own words, which is
+// what "Principal Areas of Responsibility" would do if it stopped filtering.
+//
+// So the assertion is now made on the letter up to the annex, and the annex is
+// asserted to carry them. Both halves matter: a change that quietly dropped the
+// authority sections from the annexed job description would make the University
+// annex an incomplete document.
+// ---------------------------------------------------------------------------
 console.log('\nA letter never restates what the job description may authorise\n');
+
+/** Everything before the annexed job description: the letter in its own words. */
+const lettersOwnWords = (html) =>
+  html.split('<h2>Job Description and Terms of Reference</h2>')[0];
 
 for (const family of P.POSITION_FAMILIES) {
   const html = await letterFor(family);
   // ONE ASSERTION PER FAMILY, because a leak that only happens for one of them
   // is exactly the kind that ships.
-  check(`${family}: no authority clause leaks into the letter`,
-    ['ZZAUTH', 'ZZRECO', 'ZZAPPR'].filter((m) => html.includes(m)), []);
-  check(`${family}: but the duties do appear`, html.includes('ZZDUTY'), true);
+  check(`${family}: no authority clause leaks into the letter's own words`,
+    ['ZZAUTH', 'ZZRECO', 'ZZAPPR'].filter((m) => lettersOwnWords(html).includes(m)), []);
+  check(`${family}: but the duties do appear`,
+    lettersOwnWords(html).includes('ZZDUTY'), true);
+  // AND THE ANNEXED DOCUMENT IS COMPLETE. The three authority sections are the
+  // point of a job description — "may recommend" and "may authorise" are the
+  // difference between advice and a commitment of the University — so an annex
+  // without them would be an extract presented as the document.
+  check(`${family}: and the annexed job description carries them`,
+    ['ZZAUTH', 'ZZRECO', 'ZZAPPR'].filter((m) => !html.includes(m)), []);
 }
 
 // ---------------------------------------------------------------------------

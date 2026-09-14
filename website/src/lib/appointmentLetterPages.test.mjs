@@ -43,7 +43,7 @@
 // ---------------------------------------------------------------------------
 
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 let failures = 0;
@@ -142,7 +142,21 @@ const letter = await appointmentLetterHtml({
     { kind: 'transport', amount: 150, currency: 'USD', period: 'month' },
     { kind: 'research', amount: 1200, currency: 'USD', period: 'year' },
   ],
-  jobDescription: { code: 'ACS-LEC', title: 'Lecturer', version: 2 },
+  // WITH ITS CLAUSES, because a job description in force has clauses and the
+  // letter now annexes it. A fixture naming a version with nothing under it is
+  // a state the route cannot produce — a version exists only where a profile is
+  // active, and an active profile has clauses — and measuring it would measure
+  // a letter nobody receives.
+  jobDescription: {
+    code: 'ACS-LEC', title: 'Lecturer', version: 2, family: 'academic-staff',
+    unit: 'Faculty of Theology', reportsTo: 'The Dean', activatedOn: '2026-06-01',
+    purpose: 'To teach, examine and supervise within the Faculty of Theology.',
+    clauses: [
+      { section: 'key-responsibilities', ordinal: 1, body: 'Teach the courses allocated each semester.', source: 'family' },
+      { section: 'academic', ordinal: 2, body: 'Set and mark examinations to the published scale.', source: 'family' },
+      { section: 'qualifications', ordinal: 3, body: 'A Master’s degree in the discipline taught.', source: 'family' },
+    ],
+  },
   termsReference: 'the University\u2019s conditions of service in force from time to time',
   appointment,
   reference: 'APT-2026-0042',
@@ -255,11 +269,38 @@ check('the last page carries a real part of the letter, not a stray line',
 // forty clauses would run this to six pages without anybody deciding to. Four
 // is where it stops being a letter.
 //
+// THE CEILING IS ON THE LETTER, NOT ON THE ANNEXED JOB DESCRIPTION. The letter
+// now carries the job description in full, because it had been promising a
+// document it did not carry. That annex is as long as the University's own job
+// description is — forty clauses is a long job description, not a bloated
+// letter — so measuring the whole file against four pages would make the
+// University's own thoroughness fail a test about the letter's shape.
+//
+// So the ceiling is measured on the letter WITHOUT the annex, which is the
+// thing the number was ever about.
+//
 // THE REAL GUARD IS THE ONE ABOVE, and it did not change: whatever the page
 // count, the last page must carry a real part of the letter rather than a QR
 // code on a blank sheet.
 // ---------------------------------------------------------------------------
-check('a full letter runs to no more than four pages', pages <= 4, true);
+const lettersPages = await (async () => {
+  await page.evaluate(() => {
+    document.querySelectorAll('.annex').forEach((el) => {
+      if (el.querySelector('h2')?.textContent?.includes('Job Description')) el.remove();
+    });
+  });
+  const bare = await page.pdf({ format: 'A4', printBackground: true });
+  const n = (bare.toString('latin1').match(/\/Type\s*\/Page[^s]/g) ?? []).length;
+  // PUT IT BACK. Everything measured after this point expects the whole
+  // document, and a test that quietly measured a different one would be the
+  // subtlest kind of wrong.
+  await page.setContent(readFileSync(file, 'utf8'), { waitUntil: 'load' });
+  return n;
+})();
+
+console.log(`      ${lettersPages} page(s) without the annexed job description`);
+check('the letter itself runs to no more than four pages', lettersPages <= 4, true);
+check('…and the job description is annexed beyond them', pages > lettersPages, true);
 
 // THE ONE THAT WOULD ACTUALLY EMBARRASS THE UNIVERSITY. A final page carrying
 // nothing but the signature line and the seal is a page that looks like a
