@@ -53,6 +53,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { authedPost } from '@/lib/authedFetch';
 import { BTN_PRIMARY, BTN_GHOST, INPUT, LABEL } from '@/lib/portalTheme';
+import SignaturePad from './SignaturePad';
 import {
   Loader2, CheckCircle2, AlertTriangle, PenLine, Upload, ShieldCheck,
 } from 'lucide-react';
@@ -426,6 +427,12 @@ export default function SignatureSpecimen({
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [image, setImage] = useState<string | null>(null);
+  // SIGN IT OR UPLOAD IT. Signing is the default because it is the better of
+  // the two by a distance: there is no paper to photograph, so none of the
+  // faults that came out of photographing paper can happen. Uploading stays
+  // because an officer may already have a scan they are content with, or may be
+  // on a machine with no touchscreen and a mouse they cannot sign with.
+  const [how, setHow] = useState<'draw' | 'upload'>('draw');
   const [name, setName] = useState(defaultName ?? '');
   const [role, setRole] = useState(defaultRole ?? '');
   const [message, setMessage] = useState<{ tone: 'ok' | 'bad'; text: string } | null>(null);
@@ -578,6 +585,34 @@ export default function SignatureSpecimen({
           </div>
         </div>
 
+        <div className="flex gap-2">
+          <button type="button"
+            className={how === 'draw' ? BTN_PRIMARY : BTN_GHOST}
+            onClick={() => { setHow('draw'); setImage(null); setMessage(null); }}>
+            <PenLine size={14} /> Sign on the screen
+          </button>
+          <button type="button"
+            className={how === 'upload' ? BTN_PRIMARY : BTN_GHOST}
+            onClick={() => { setHow('upload'); setImage(null); setMessage(null); }}>
+            <Upload size={14} /> Upload an image
+          </button>
+        </div>
+
+        {how === 'draw' ? (
+          <div>
+            <SignaturePad disabled={busy} onDone={(uri) => {
+              setImage(uri);
+              setMessage(uri
+                ? { tone: 'ok', text: 'That is your signature as it will print. Store it below, '
+                    + 'or sign again if you would rather.' }
+                : null);
+            }} />
+            <p className="mt-1 text-xs text-[#6b6076] dark:text-[#9c93ad]">
+              Sign as you would on paper. A stylus or a finger on a touchscreen gives the best
+              result; a mouse will work. Nothing is kept until you store it.
+            </p>
+          </div>
+        ) : (
         <div>
           <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" hidden
             onChange={(e) => {
@@ -589,10 +624,12 @@ export default function SignatureSpecimen({
             <Upload size={14} /> {image ? 'Choose a different image' : 'Choose an image'}
           </button>
           <p className="mt-1 text-xs text-[#6b6076] dark:text-[#9c93ad]">
-            Sign on white paper, photograph or scan it, and crop to the signature. PNG keeps the
-            strokes clean; a JPEG puts a grey halo round every one of them.
+            Sign on white paper, photograph or scan it. The paper is removed and the image
+            trimmed to the signature, so it does not have to be cropped perfectly — but PNG keeps
+            the strokes clean where a JPEG puts a grey halo round every one of them.
           </p>
         </div>
+        )}
 
         {image && (
           <div className="rounded-xl border border-[#ece7de] bg-white p-4 dark:border-[#2e2637]">
