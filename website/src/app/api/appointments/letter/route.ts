@@ -606,12 +606,47 @@ export async function POST(request: Request) {
     const appointment = await loadAppointment(body.id);
     if (!appointment) return bad('appointment-not-found', 404);
 
-    const letter = await currentLetter(appointment.id as string);
+    // -----------------------------------------------------------------------
+    // ISSUING PRODUCES THE LETTER IF THERE IS NOT ONE. IT USED TO REFUSE.
+    //
+    // The workflow dead-ended here. `issue` required an archived letter, only
+    // `generate` makes one, and NO SCREEN HAS EVER CALLED `generate` — so an
+    // approved appointment could never be issued at all. The University got:
+    //
+    //   No letter has been generated for this appointment. 047 refuses an
+    //   appointment to be marked issued with no document behind it.
+    //
+    // A true sentence about a state they had no way out of. The comment on the
+    // screen's own button says this was fixed once — "an appointment system
+    // whose central document cannot be produced is a list of intentions" — and
+    // it was fixed one step short.
+    //
+    // WHY GENERATING HERE DOES NOT COLLAPSE THE TWO ACTS. The separation was
+    // there so the letter could be READ before anybody was appointed, and
+    // `preview` already does that: it renders the same document from the same
+    // record and persists nothing — no reference, no row, no seal. So the
+    // reading still happens before the deciding. What generate adds is the
+    // archived document and its reference, and 047's rule is precisely that an
+    // issue must have one. Producing it as part of issuing satisfies that rule
+    // rather than working around it.
+    //
+    // `generate` stays as its own action for a caller that wants the reference
+    // allocated first.
+    // -----------------------------------------------------------------------
+    let letter = await currentLetter(appointment.id as string);
+
     if (!letter) {
-      return bad('no-letter', 409,
-        'No letter has been generated for this appointment. 047 refuses an appointment to be '
-        + 'marked issued with no document behind it — an appointee holding nothing while the '
-        + 'register says a letter went out.');
+      if (!appointment.authorized_by || !appointment.authorized_at) {
+        return bad('not-approved', 409,
+          'This appointment has not been approved, so there is nothing to issue. Approval and '
+          + 'issue are two acts by two people, and this is the second one asking for the '
+          + 'first.');
+      }
+
+      const made = await generateInto(appointment, 1, null);
+      if ('error' in made) return made.error;
+      if (!('letter' in made)) return bad('not-archived', 500);
+      letter = made.letter;
     }
 
     // ALREADY ISSUED: this becomes a re-send, not a second issue. The
