@@ -366,8 +366,19 @@ console.log('\nGuarded routes are called with a token, not a cookie\n');
 // Three screens shipped doing this, and each drew its whole interface before
 // saying "Error: no-token", which reads as a database fault and is not one.
 // ---------------------------------------------------------------------------
+// COMMENTS STRIPPED FIRST, and this file has now been caught by that twice.
+// `authedFetch.ts` EXPLAINS this fault in its own header — it has to name the
+// thing it refuses — and naming it made the test report the one file in the
+// codebase that gets this right as the one getting it wrong.
+//
+// The same trap took the nav audit and the coverage extractor earlier: a rule
+// that reads source as text must read the CODE, not the prose about the code.
+const withoutComments = (text) => text
+  .replace(/\/\*[\s\S]*?\*\//g, '')
+  .replace(/^[ \t]*\/\/.*$/gm, '');
+
 const cookieCallers = callers.filter((f) => {
-  const text = readFileSync(f, 'utf8');
+  const text = withoutComments(readFileSync(f, 'utf8'));
   return text.includes("credentials: 'include'") && text.includes('/api/');
 }).map((f) => f.slice(src.length + 1));
 

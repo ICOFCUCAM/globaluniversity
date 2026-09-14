@@ -91,3 +91,71 @@ export async function authedPost(
 ): Promise<ApiResult> {
   return authedFetch(url, { method: 'POST', body: JSON.stringify(payload) });
 }
+
+// ---------------------------------------------------------------------------
+// AND THE ONE THAT COMES BACK AS A FILE
+// ---------------------------------------------------------------------------
+//
+// A PDF is bytes, not `{ ok, detail }`, so `authedFetch` cannot carry it — it
+// parses the body as JSON and a PDF is not JSON.
+//
+// THE TOKEN IS WHY THIS EXISTS AT ALL. The obvious way to open a PDF is to
+// point a tab at its address, and this system cannot: every route sits behind
+// `guard()` reading `Authorization: Bearer …`, a tab navigation carries no
+// such header, and `reachability.test.mjs` refuses any screen that navigates
+// the browser to an /api/ address. So the bytes are fetched WITH the token and
+// turned into a `blob:` URL, which a tab can be pointed at — the browser's own
+// PDF viewer opens it, with its own print and download buttons.
+//
+// A ROUTE THAT REFUSES STILL ANSWERS IN JSON, and this tells the two apart by
+// the content type rather than by guessing, so a refusal reaches the screen as
+// a sentence instead of a tab full of `{"ok":false}`.
+
+export type AuthedFile =
+  | { ok: true; blob: Blob; filename: string | null }
+  | { ok: false; error: string; detail?: string };
+
+/** POST a JSON body to a guarded route and take the response as a file. */
+export async function authedFile(
+  url: string, payload: Record<string, unknown>,
+): Promise<AuthedFile> {
+  try {
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token;
+    if (!token) {
+      return { ok: false, error: 'no-token', detail: 'You are not signed in any more.' };
+    }
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', authorization: `Bearer ${token}` },
+      body: JSON.stringify(payload),
+    });
+
+    const type = response.headers.get('content-type') ?? '';
+    if (type.includes('application/json')) {
+      const body = await response.json().catch(() => null) as ApiResult | null;
+      return {
+        ok: false,
+        error: String(body?.error ?? `http-${response.status}`),
+        detail: body?.detail as string | undefined,
+      };
+    }
+    if (!response.ok) {
+      return { ok: false, error: `http-${response.status}` };
+    }
+
+    // THE NAME THE SERVER CHOSE. `content-disposition` carries the reference,
+    // so a saved file is called IGUC-HR-APT-2026-0001.pdf and not `download`.
+    const disposition = response.headers.get('content-disposition') ?? '';
+    const named = /filename="([^"]+)"/.exec(disposition);
+
+    return { ok: true, blob: await response.blob(), filename: named ? named[1] : null };
+  } catch (e) {
+    return {
+      ok: false,
+      error: 'unreachable',
+      detail: `The server could not be reached: ${e instanceof Error ? e.message : String(e)}`,
+    };
+  }
+}

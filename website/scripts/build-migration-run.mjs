@@ -255,6 +255,10 @@ const MARKERS = {
   // both vocabularies are rewritten wholesale, so a column is the cleaner
   // thing to point at.
   '079': 'correspondence.recipient_phone',
+  // The column that records a Superadministrator reopening an appointee's
+  // download window. No earlier migration has one: the ordinary three days are
+  // computed, so this column exists only for the exception.
+  '080': 'appointments.appointee_download_until',
 };
 
 /** The SQL that answers "is this one here?", for each of the three forms. */

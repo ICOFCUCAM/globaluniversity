@@ -94,6 +94,8 @@ function AcceptInner() {
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
   const [answered, setAnswered] = useState<{ decision: string; detail?: string } | null>(null);
+  const [collecting, setCollecting] = useState(false);
+  const [collectProblem, setCollectProblem] = useState<string | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
 
   const look = useCallback(async (ref: string, c: string) => {
@@ -164,6 +166,64 @@ function AcceptInner() {
     }
   };
 
+  /**
+   * Collect the accepted letter as a PDF.
+   *
+   * FETCHED WITH THE REFERENCE AND CODE ALREADY ON THIS PAGE, not by navigating
+   * to an address. That keeps the verification code out of a new tab's address
+   * bar and out of the browser's history, and it lets a refusal — an offer not
+   * yet accepted, a code that does not match — arrive as a sentence rather than
+   * a tab full of JSON.
+   */
+  const collect = async (purpose: 'read' | 'download' = 'download') => {
+    setCollecting(true);
+    setCollectProblem(null);
+    // THE TAB IS CLAIMED ON THE CLICK for a read, because a browser blocks a
+    // window opened after an await. A download needs no tab.
+    const tab = purpose === 'read' ? window.open('', '_blank') : null;
+    try {
+      const r = await fetch('/api/appointments/accept/letter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reference: reference.trim().toUpperCase(), code: code.trim(), purpose,
+        }),
+      });
+
+      if (!r.ok || (r.headers.get('content-type') ?? '').includes('application/json')) {
+        tab?.close();
+        const j = await r.json().catch(() => null);
+        setCollectProblem(j?.detail ?? j?.error
+          ?? 'Your letter could not be prepared just now. Please try again shortly.');
+        return;
+      }
+
+      const blob = await r.blob();
+      const named = /filename="([^"]+)"/.exec(r.headers.get('content-disposition') ?? '');
+      const url = URL.createObjectURL(blob);
+
+      if (purpose === 'read') {
+        if (tab) tab.location.href = url; else window.open(url, '_blank', 'noopener');
+      } else {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = named ? named[1] : 'letter-of-appointment.pdf';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }
+      // REVOKED AFTER A BEAT. Revoking immediately can cancel the download, or
+      // blank the tab, before the browser has finished reading the blob.
+      setTimeout(() => URL.revokeObjectURL(url), 120_000);
+    } catch {
+      tab?.close();
+      setCollectProblem('The University could not be reached. Nothing has changed about your '
+        + 'appointment — please try again shortly.');
+    } finally {
+      setCollecting(false);
+    }
+  };
+
   const field = 'w-full rounded-lg border border-brand-sand px-3 py-2.5 text-sm '
     + 'text-brand-purple focus:border-brand-gold focus:outline-none';
 
@@ -196,6 +256,50 @@ function AcceptInner() {
                 : 'Your acceptance has been recorded'}
           </p>
           <p className="mt-2 text-sm leading-relaxed text-brand-ink">{answered.detail}</p>
+
+          {/* --------------------------------------------------------------
+              AND THE DOOR THAT OPENS ON ACCEPTANCE.
+
+              The University: "an accepted letter must open a door next for the
+              appointee to download the pdf a4 version".
+
+              Until now the appointee's only copy was an email attachment.
+              Somebody who accepted and later needed the letter for a bank, a
+              landlord or an embassy had to write and ask for it again.
+
+              SHOWN ONLY ONCE ACCEPTED. An offer not yet answered is still an
+              offer, and a declined one is over — the route refuses both, and
+              this simply does not offer what the route would refuse.
+              -------------------------------------------------------------- */}
+          {answered.decision !== 'declined' && (
+            <div className="mt-4 rounded-xl border border-emerald-300 bg-white p-4">
+              <p className="font-heading text-sm font-semibold text-brand-purple">
+                Your letter of appointment
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-brand-muted">
+                The signed and sealed copy, as A4, exactly as the University issued it.
+                <strong className="text-brand-ink"> Download it within three days.</strong> After
+                that this link closes and a copy has to be released by the University.
+              </p>
+              <button
+                type="button"
+                onClick={() => void collect()}
+                disabled={collecting}
+                className="mt-3 rounded-lg bg-brand-purple px-5 py-2.5 font-heading text-sm
+                           font-semibold text-white transition hover:bg-brand-purple-dark
+                           disabled:opacity-40"
+              >
+                {collecting ? 'Preparing your PDF…' : 'Download my letter (PDF, A4)'}
+              </button>
+              {collectProblem && (
+                <p className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs
+                              leading-relaxed text-amber-900">
+                  {collectProblem}
+                </p>
+              )}
+            </div>
+          )}
+
           <p className="mt-3 text-xs leading-relaxed text-brand-muted">
             Keep your letter. It carries the reference and the verification code, and either can
             be checked at any time.
@@ -228,12 +332,49 @@ function AcceptInner() {
                     </div>
                   ))}
               </dl>
-              {/* THE SALARY IS NOT HERE ON PURPOSE, and saying so is better
-                  than leaving them wondering whether it was forgotten. */}
-              <p className="mt-3 border-t border-brand-sand pt-2 text-xs leading-relaxed text-brand-muted">
-                The remuneration and the full terms are on the letter itself. They are not shown
-                on this page, which is reached by a link that may sit in an inbox.
-              </p>
+              {/* ------------------------------------------------------------
+                  READ IT BEFORE YOU DECIDE.
+
+                  The University asked whether the old wording made sense, and
+                  it did not. This panel told the appointee that the terms and
+                  the remuneration were "on the letter itself" and gave them no
+                  way to see the letter — asking somebody to agree to terms
+                  while pointing at a document that was somewhere else.
+
+                  NOBODY SHOULD BE ASKED TO ACCEPT WHAT THEY CANNOT READ. So the
+                  full letter opens from here, before either button is pressed,
+                  and the record notes that they opened it.
+
+                  THE SALARY IS STILL NOT PRINTED ON THIS PAGE, and that part
+                  was right: this page is reached by a link that may sit in an
+                  inbox or be opened on a shared machine. Opening the letter is
+                  a deliberate click, not something a passer-by reads over a
+                  shoulder.
+                  ------------------------------------------------------------ */}
+              <div className="mt-3 border-t border-brand-sand pt-3">
+                <button
+                  type="button"
+                  onClick={() => void collect('read')}
+                  disabled={collecting}
+                  className="rounded-lg border border-brand-purple px-4 py-2 font-heading
+                             text-sm font-semibold text-brand-purple transition
+                             hover:bg-brand-purple hover:text-white disabled:opacity-40"
+                >
+                  {collecting ? 'Opening the letter…' : 'Read the full letter first'}
+                </button>
+                <p className="mt-2 text-xs leading-relaxed text-brand-muted">
+                  Opens your letter of appointment — the remuneration, the conditions and
+                  everything you are being asked to agree to. Read it before you accept or
+                  decline. It is not shown on this page itself, which is reached by a link that
+                  may sit in an inbox.
+                </p>
+                {collectProblem && (
+                  <p className="mt-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs
+                                leading-relaxed text-amber-900">
+                    {collectProblem}
+                  </p>
+                )}
+              </div>
 
               {offer.alreadyAnswered && (
                 <p className="mt-3 rounded-lg bg-brand-cream px-3 py-2 text-sm text-brand-ink">
@@ -241,6 +382,40 @@ function AcceptInner() {
                     ? 'accepted' : 'declined'} this appointment. Contact the University if that
                   was not what you intended.
                 </p>
+              )}
+
+              {/* THE SAME DOOR, FOR SOMEBODY COMING BACK.
+                  The panel above only appears in the moment of answering. An
+                  appointee returning a month later — because a bank has asked
+                  for the letter — arrives here instead, and needs the copy
+                  just as much. */}
+              {offer.alreadyAnswered?.decision === 'accepted' && (
+                <div className="mt-3 rounded-xl border border-emerald-300 bg-emerald-50 p-4">
+                  <p className="font-heading text-sm font-semibold text-brand-purple">
+                    Your letter of appointment
+                  </p>
+                  <p className="mt-1 text-xs leading-relaxed text-brand-muted">
+                    The signed and sealed copy, as A4, exactly as the University issued it.
+                    Available for three days from the date you accepted; after that the
+                    University releases a copy on request.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => void collect()}
+                    disabled={collecting}
+                    className="mt-3 rounded-lg bg-brand-purple px-5 py-2.5 font-heading text-sm
+                               font-semibold text-white transition hover:bg-brand-purple-dark
+                               disabled:opacity-40"
+                  >
+                    {collecting ? 'Preparing your PDF…' : 'Download my letter (PDF, A4)'}
+                  </button>
+                  {collectProblem && (
+                    <p className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3
+                                  text-xs leading-relaxed text-amber-900">
+                      {collectProblem}
+                    </p>
+                  )}
+                </div>
               )}
             </div>
           )}

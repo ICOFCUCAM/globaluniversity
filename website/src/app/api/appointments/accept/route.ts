@@ -40,8 +40,12 @@
 import { NextResponse } from 'next/server';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { supabaseUrl as SUPABASE_URL } from '@/lib/supabase';
-import { sealAppointment } from '@/lib/appointmentLetter';
 import { printedReference } from '@/lib/appointments';
+// LIFTED OUT OF THIS FILE, not copied. A second route now hands the appointee
+// the PDF of the letter they accepted, and it must apply the identical check —
+// two copies of "is this really the appointee" drift, and the one that drifts
+// is the one that eventually accepts a wrong code.
+import { letterFor } from '@/lib/acceptanceCheck';
 import { UNIVERSITY } from '@/lib/constants';
 
 export const runtime = 'nodejs';
@@ -79,47 +83,6 @@ function client(): Db | null {
  * check that also proves the archived row still describes the same appointment
  * — a stored code compared to itself proves only that a string was copied.
  */
-async function letterFor(admin: Db, reference: string, code: string) {
-  const { data: letter } = await admin
-    .from('appointment_letters')
-    // eslint-disable-next-line max-len
-    .select('id, appointment_id, reference, version, issued_on, seal_code, sealed, superseded_at')
-    .eq('reference', reference)
-    .maybeSingle();
-  if (!letter) return { error: 'no-such-letter' as const };
-
-  const l = letter as Row;
-  if (l.superseded_at) return { error: 'superseded' as const, letter: l };
-
-  const { data: appointment } = await admin
-    .from('appointments')
-    // eslint-disable-next-line max-len
-    .select('id, full_name, position_title, unit_name, faculty, start_date, issued_at, status, email')
-    .eq('id', l.appointment_id as string)
-    .maybeSingle();
-  if (!appointment) return { error: 'no-such-appointment' as const };
-
-  const a = appointment as Row;
-  if (!a.issued_at) return { error: 'not-issued' as const };
-
-  const presented = code.trim().toUpperCase();
-  let expected = String(l.seal_code ?? '');
-  try {
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? `https://${UNIVERSITY.website}`;
-    expected = sealAppointment(
-      a, reference, String(l.issued_on), siteUrl,
-    ).code;
-  } catch {
-    // The signing secret is not configured. Fall back to the archived code —
-    // which is weaker and is why `sealed` is reported back to the caller.
-  }
-
-  if (!expected || presented !== expected.toUpperCase()) {
-    return { error: 'wrong-code' as const };
-  }
-  return { letter: l, appointment: a };
-}
-
 // ===========================================================================
 // GET — what am I being asked to accept?
 // ===========================================================================

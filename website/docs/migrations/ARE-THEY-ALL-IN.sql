@@ -257,6 +257,15 @@ select * from (
                       and column_name = 'recipient_phone')
                  then 'YES' else 'NO' end as landed,
          'correspondence.recipient_phone' as what_it_creates
+  union all
+  select '080' as migration, '080_the_appointees_three_days.sql' as file,
+         case when exists (
+                   select 1 from information_schema.columns
+                    where table_schema = 'public'
+                      and table_name = 'appointments'
+                      and column_name = 'appointee_download_until')
+                 then 'YES' else 'NO' end as landed,
+         'appointments.appointee_download_until' as what_it_creates
 ) as landed_report
  order by migration;
 

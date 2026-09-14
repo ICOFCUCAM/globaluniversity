@@ -110,6 +110,22 @@ export const SETTINGS: Setting[] = [
     area: 'database',
   },
 
+  // --- Producing a PDF ------------------------------------------------------
+  {
+    name: 'CHROMIUM_PATH',
+    importance: 'optional',
+    purpose: 'The path to a Chromium binary, for rendering a letter to PDF. Set it only where '
+      + 'the machine already has a browser — a developer’s machine, a container that bundles '
+      + 'one. On Vercel it is left unset and the serverless Chromium pack is used instead.',
+    ifAbsent: 'Nothing is lost on a normal deployment: the serverless pack is the default path '
+      + 'and is what production uses. Where NEITHER is available the letter is still issued, '
+      + 'still archived and still opens — as HTML, which prints to the identical A4 document '
+      + 'through the browser’s own dialogue — and the email carries the HTML copy instead of '
+      + 'the PDF. Losing the PDF never means losing the letter.',
+    public: false,
+    area: 'credentials',
+  },
+
   // --- The credential system ----------------------------------------------
   {
     name: 'CREDENTIAL_SECRET',

@@ -38,6 +38,7 @@ import {
   Plus, Loader2, Send, Clock, Save, UserPlus, AlertTriangle, Eye, MessageCircle, Wand2,
 } from 'lucide-react';
 import { draftFor, unfilledPrompts } from '@/lib/correspondenceDrafts';
+import { writeDocument } from '@/lib/openDocument';
 import { UNIVERSITY } from '@/lib/constants';
 import {
   LETTER_KINDS, KIND_LABELS, OFFICES, OFFICE_LABELS, STATE_LABELS,
@@ -120,14 +121,6 @@ export default function CorrespondenceCenter() {
   };
 
   /**
-   * Hand an issued letter to the officer's own WhatsApp.
-   *
-   * THE TAB IS CLAIMED BEFORE THE AWAIT. A browser blocks `window.open` that
-   * is not the direct consequence of a click, and awaiting the route is
-   * exactly what breaks that chain — so the tab is opened while the click is
-   * still the reason it is happening, and pointed at the address afterwards.
-   */
-  /**
    * Open the archived, sealed copy of an issued letter.
    *
    * THE TAB IS CLAIMED BEFORE THE AWAIT, for the reason the WhatsApp handover
@@ -138,7 +131,13 @@ export default function CorrespondenceCenter() {
     const tab = window.open('', '_blank');
     const j = await post({ action: 'archived', id }, 'archived');
     if (j && typeof j.html === 'string') {
-      if (tab) { tab.document.write(j.html); tab.document.close(); return; }
+      const opened = writeDocument(tab, {
+        html: j.html,
+        reference: j.reference as string | undefined,
+        sealed: j.sealed as boolean | undefined,
+        verifyUrl: `https://${UNIVERSITY.website}/verify`,
+      });
+      if (opened) return;
       setMessage({
         kind: 'bad',
         text: 'The letter could not open — your browser blocked the new window. Allow pop-ups '
@@ -149,6 +148,11 @@ export default function CorrespondenceCenter() {
     tab?.close();
   };
 
+  /**
+   * Hand an issued letter to the officer's own WhatsApp.
+   *
+   * THE TAB IS CLAIMED BEFORE THE AWAIT, for the reason above.
+   */
   const sendByWhatsApp = async (id: string) => {
     const tab = window.open('', '_blank');
     const j = await post({ action: 'whatsapp', id }, 'whatsapp');

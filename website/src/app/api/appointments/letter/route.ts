@@ -59,6 +59,8 @@ import type { Capability } from '@/lib/roles';
 import {
   whatsappNumber, whyNotWhatsApp, whatsappUrl, appointmentMessage,
 } from '@/lib/whatsapp';
+import { renderPdf, pdfFilename } from '@/lib/renderPdf';
+import { APPOINTEE_WINDOW_DAYS } from '@/lib/acceptanceCheck';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -82,6 +84,12 @@ const CAPABILITY: Record<string, Capability> = {
   // people, and the same content — an officer who may render the letter may
   // certainly open the one that was actually sent.
   archived: 'draft-appointment' as Capability,
+  // The same document, as a PDF. Same people, same content.
+  pdf: 'draft-appointment' as Capability,
+  // GATED ON THE ROLE INSIDE THE HANDLER, not here. The capability map decides
+  // who may reach the route; the University's rule for this one is narrower
+  // than any capability and is applied where it can be stated in words.
+  release: 'issue-appointment-letter' as Capability,
   generate: 'draft-appointment' as Capability,
   issue: 'issue-appointment-letter' as Capability,
   email: 'issue-appointment-letter' as Capability,
@@ -487,11 +495,37 @@ export async function POST(request: Request) {
         UNIVERSITY.name,
       ].join('\n'),
       html: letter.html as string,
-      attachments: [{
-        filename: `${letter.reference}.html`,
-        content: letter.html as string,
-        contentType: 'text/html; charset=utf-8',
-      }],
+      // -------------------------------------------------------------------
+      // A PDF, NOT AN .html FILE.
+      //
+      // The University: "how come letters approved cannot be produced in pdf
+      // and ready to be sent through email". Every appointment letter this
+      // system has ever sent went out as a web page attachment — which many
+      // mail clients will not preview at all, which looks improvised, and
+      // which nobody can hand to a bank.
+      //
+      // AND THE HTML STAYS AS A SECOND ATTACHMENT when the PDF could not be
+      // made. Falling back to what was always sent is not a regression; an
+      // appointee receiving nothing because Chromium would not start would
+      // be.
+      // -------------------------------------------------------------------
+      attachments: await (async () => {
+        const name = pdfFilename(printedReference(letter.reference as string));
+        try {
+          const pdf = await renderPdf(letter.html as string);
+          return [{
+            filename: name,
+            content: pdf,
+            contentType: 'application/pdf',
+          }];
+        } catch {
+          return [{
+            filename: `${letter.reference}.html`,
+            content: letter.html as string,
+            contentType: 'text/html; charset=utf-8',
+          }];
+        }
+      })(),
     });
 
     const attempts = Number(letter.attempts ?? 0) + 1;
@@ -716,6 +750,119 @@ export async function POST(request: Request) {
       attempts: Number(letter.attempts ?? 0) + 1,
       ...(result.sent ? {} : { detail: result.detail ?? result.reason }),
     });
+  }
+
+  // =========================================================================
+  // RELEASE — give the appointee a fresh three days, on the Superadministrator
+  // =========================================================================
+  //
+  // The University: "the download link must expire after 3days. after 3 days,
+  // only the superadmin can extract that same letter."
+  //
+  // The door closes by itself three days after the appointee accepts. This is
+  // the only thing that reopens it, and 080 records who did and when — because
+  // a door that reopens with nobody's name against it is worse than one that
+  // stays shut.
+  //
+  // NOT A CAPABILITY, THE ROLE ITSELF. Every other authority in this system is
+  // a capability so it can be delegated; this one the University named as the
+  // Superadministrator's, and writing it as a capability would let it be given
+  // away, which is the opposite of what was asked for.
+  if (action === 'release') {
+    if (String(caller.role) !== 'superadmin') {
+      return bad('not-the-superadministrator', 403,
+        'Only the Superadministrator can release an appointee’s letter again after their three '
+        + 'days have passed. That is the University’s own rule for this door.');
+    }
+
+    const appointment = await loadAppointment(body.id);
+    if (!appointment) return bad('appointment-not-found', 404);
+
+    const reason = String(body.reason ?? '').trim();
+    if (reason.length < 10) {
+      return bad('release-needs-a-reason', 400,
+        'Say why the letter is being released again — who asked, and what for. It is the only '
+        + 'record of why this door was reopened.');
+    }
+
+    const now = new Date();
+    const until = new Date(now.getTime() + APPOINTEE_WINDOW_DAYS * 86_400_000);
+
+    const { error } = await admin.from('appointments').update({
+      appointee_download_until: until.toISOString(),
+      appointee_download_granted_by: caller.id,
+      appointee_download_granted_at: now.toISOString(),
+      updated_at: now.toISOString(),
+    }).eq('id', appointment.id as string);
+    if (error) {
+      return bad('not-released', 500, /appointments_download_grant_is_complete/.test(error.message)
+        ? 'A window cannot be opened without recording who opened it. Migration 080 may not '
+          + 'have been run on this database.'
+        : error.message);
+    }
+
+    await record(appointment.id as string, 'ADMINISTRATIVE_OVERRIDE', null, null,
+      `Released the appointee’s letter for a further ${APPOINTEE_WINDOW_DAYS} days: ${reason}`,
+      { until: until.toISOString(), reason });
+
+    return NextResponse.json({
+      ok: true,
+      until: until.toISOString(),
+      detail: `${appointment.full_name} can download their letter again until `
+        + `${until.toISOString().slice(0, 10)}, using the same link and verification code as `
+        + 'before. Your name and your reason are on the record against this.',
+    });
+  }
+
+  // =========================================================================
+  // PDF — the archived letter as a document, A4, ready to open or send
+  // =========================================================================
+  //
+  // "The letter ready to be open should open as pdf from the browser and
+  // download as pdf … it must be open in a4."
+  //
+  // RETURNS THE BYTES, NOT JSON. The screen fetches this with its bearer token,
+  // makes a blob URL of the response and points a tab at it — so the browser's
+  // own PDF viewer opens it, with its own print and download buttons, and the
+  // route stays behind `guard()` like every other. Navigating a tab straight at
+  // a guarded address would mean a request with no Authorization header, which
+  // this system deliberately does not do.
+  //
+  // A FAILURE ANSWERS IN JSON so the caller can tell the two apart and fall
+  // back to the HTML copy, which is always there.
+  if (action === 'pdf') {
+    const appointment = await loadAppointment(body.id);
+    if (!appointment) return bad('appointment-not-found', 404);
+
+    const letter = await currentLetter(appointment.id as string);
+    if (!letter) {
+      return bad('no-letter', 409,
+        'No letter has been archived for this appointment yet.');
+    }
+
+    try {
+      const pdf = await renderPdf(letter.html as string);
+      await record(appointment.id as string, 'LETTER_DOWNLOADED', null, null,
+        String(letter.reference), { version: letter.version, format: 'pdf' });
+
+      return new NextResponse(new Uint8Array(pdf), {
+        status: 200,
+        headers: {
+          'content-type': 'application/pdf',
+          // `inline` so a tab shows it rather than dropping it in Downloads.
+          // The viewer's own save button then names it from this filename.
+          'content-disposition':
+            `inline; filename="${pdfFilename(printedReference(letter.reference as string))}"`,
+          'cache-control': 'no-store',
+        },
+      });
+    } catch (e) {
+      return bad('pdf-not-rendered', 503,
+        'The PDF could not be produced on this deployment: '
+        + `${e instanceof Error ? e.message : String(e)}. `
+        + 'The letter itself is safe — open it and use your browser’s Print, choosing '
+        + '"Save as PDF", which produces the same A4 document.');
+    }
   }
 
   // =========================================================================

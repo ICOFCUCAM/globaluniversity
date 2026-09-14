@@ -773,6 +773,18 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
     table: 'correspondence',
     column: 'recipient_phone',
   },
+  {
+    file: '080_the_appointees_three_days.sql',
+    what: 'AN APPOINTEE\u2019S DOWNLOAD LINK BECOMES A WINDOW. The University\u2019s ruling: '
+      + 'the link expires three days after they accept, and after that only the '
+      + 'Superadministrator can release the letter again. The three days are COMPUTED from the '
+      + 'acceptance already on record \u2014 no column, because a stored expiry would be a '
+      + 'second copy of a fact already known. What this adds is the three columns that record a '
+      + 'Superadministrator granting a FRESH window: until when, by whom, and why. Nothing is '
+      + 'closed by running it; every letter already issued is untouched.',
+    table: 'appointments',
+    column: 'appointee_download_until',
+  },
 ];
 
 /** What a probe came back as. */

@@ -29,7 +29,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { authedPost } from '@/lib/authedFetch';
+import { authedPost, authedFile } from '@/lib/authedFetch';
 import { useAuth } from '@/contexts/AuthContext';
 import { can } from '@/lib/roles';
 import { BTN_PRIMARY, BTN_SECONDARY, BTN_GHOST, INPUT, LABEL, FOCUS } from '@/lib/portalTheme';
@@ -51,6 +51,7 @@ import {
   CONDITION_COLUMNS, renderConditions, countConditions, type ConditionClause,
 } from '@/lib/appointmentConditions';
 import { UNIVERSITY } from '@/lib/constants';
+import { writeDocument } from '@/lib/openDocument';
 
 /**
  * A post from the register, for the picker.
@@ -154,6 +155,15 @@ export default function Appointments() {
     .includes(String(user?.role));
 
   const [rows, setRows] = useState<Row[] | null>(null);
+  /**
+   * The PDF most recently opened, kept so it can be saved under its own name.
+   *
+   * NOT REVOKED ON EVERY CHANGE. A blob URL the tab is still showing must stay
+   * alive; revoking it would blank the viewer the officer is reading.
+   */
+  const [lastPdf, setLastPdf] = useState<{ url: string; filename: string } | null>(null);
+  /** Why the Superadministrator is reopening an appointee's download window. */
+  const [releaseReason, setReleaseReason] = useState('');
   const [creating, setCreating] = useState(false);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<{ tone: 'ok' | 'bad'; text: string } | null>(null);
@@ -253,8 +263,11 @@ export default function Appointments() {
       });
       return;
     }
-    w.document.write(out.html);
-    w.document.close();
+    // THE PREVIEW IS PRINTABLE TOO — it is the same A4 document, and an
+    // officer reading it before approval often wants it on paper. The bar
+    // says nothing about a seal, because a preview has none and its own page
+    // says so across the top.
+    writeDocument(w, { html: out.html });
   }
 
   /**
@@ -273,6 +286,33 @@ export default function Appointments() {
     setNotice(null);
     const w = window.open('', '_blank');
 
+    // -------------------------------------------------------------------
+    // THE PDF FIRST. The University asked for the letter to "open as pdf
+    // from the browser and download as pdf", in A4, and that is what this
+    // is: the archived document rendered by Chromium against its own
+    // `@page { size: A4 }` stylesheet, handed to the tab as a blob so the
+    // browser's PDF viewer opens it with its own print and save buttons.
+    //
+    // FALLING BACK TO THE HTML IS NOT A FAILURE. A deployment without the
+    // Chromium pack, or a cold start that ran out of memory, still has the
+    // letter — and the HTML copy prints to the identical A4 document
+    // through the browser's own dialogue. Losing the PDF must never mean
+    // losing access to the letter.
+    // -------------------------------------------------------------------
+    const asPdf = await authedFile('/api/appointments/letter', { action: 'pdf', id });
+    if (asPdf.ok) {
+      setBusy(false);
+      const url = URL.createObjectURL(asPdf.blob);
+      if (w) w.location.href = url; else window.open(url, '_blank', 'noopener');
+      setLastPdf({ url, filename: asPdf.filename ?? 'letter.pdf' });
+      setNotice({
+        tone: 'ok',
+        text: 'Opened as a PDF, A4. Use the viewer’s own download button to save it, or '
+          + '“Download the PDF” here.',
+      });
+      return;
+    }
+
     const out = await authedPost('/api/appointments/letter', { action: 'archived', id });
     setBusy(false);
 
@@ -286,7 +326,17 @@ export default function Appointments() {
       return;
     }
 
-    if (!w) {
+    // THE LETTER, WITH A WAY TO PRINT IT OR KEEP A PDF. The document has been
+    // typeset for A4 since it was written; nothing had ever offered to print
+    // it, so it opened in a bare tab that gave no sign it was finished.
+    const opened = writeDocument(w, {
+      html: out.html,
+      reference: (out.printed as string | undefined) ?? (out.reference as string | undefined),
+      sealed: out.sealed as boolean | undefined,
+      verifyUrl: `https://${UNIVERSITY.website}/verify`,
+    });
+
+    if (!opened) {
       setNotice({
         tone: 'bad',
         text: 'The letter could not open — your browser blocked the new window. Allow pop-ups '
@@ -295,12 +345,50 @@ export default function Appointments() {
       return;
     }
 
-    w.document.write(out.html);
-    w.document.close();
     setNotice({
       tone: 'ok',
-      text: (out.detail as string | undefined) ?? 'Opened.',
+      text: `${(out.detail as string | undefined) ?? 'Opened.'} `
+        + `A PDF could not be produced on this deployment (${asPdf.error}), so this is the `
+        + 'HTML copy — press Print and choose "Save as PDF" for the same A4 document.',
     });
+  }
+
+  /**
+   * Save the PDF that is already in the browser, under its own name.
+   *
+   * AN ANCHOR, NOT A SECOND FETCH. The bytes are already here as a blob; the
+   * `download` attribute is the only way to control the filename, so a saved
+   * letter is called IGUC-HR-APT-2026-0001.pdf rather than a random string.
+   */
+  function downloadPdf() {
+    if (!lastPdf) return;
+    const a = document.createElement('a');
+    a.href = lastPdf.url;
+    a.download = lastPdf.filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  /**
+   * Let the appointee download their letter again, for a further three days.
+   *
+   * THE SUPERADMINISTRATOR'S ACT AND NOBODY ELSE'S. The route refuses any other
+   * role in words; this only draws the button for the one the University named.
+   */
+  async function release(id: string) {
+    setBusy(true);
+    setNotice(null);
+    const out = await authedPost('/api/appointments/letter', {
+      action: 'release', id, reason: releaseReason,
+    });
+    setBusy(false);
+    setNotice({
+      tone: out.ok ? 'ok' : 'bad',
+      text: (out.detail as string | undefined)
+        ?? String(out.error ?? 'That did not work.'),
+    });
+    if (out.ok) setReleaseReason('');
   }
 
   async function act(payload: Record<string, unknown>) {
@@ -543,8 +631,47 @@ export default function Appointments() {
                 {a.issued_at && mayDraft && (
                   <button disabled={busy} className={BTN_SECONDARY}
                     onClick={() => void archived(a.id)}>
-                    <FileText size={14} /> Open the issued letter
+                    <FileText size={14} /> Open the issued letter (PDF)
                   </button>
+                )}
+
+                {/* SAVE IT UNDER ITS OWN NAME. The viewer's own download
+                    button works, but names the file from the blob; this one
+                    calls it IGUC-HR-APT-2026-0001.pdf, which is what somebody
+                    filing it needs. Only shown once a PDF is actually in the
+                    browser, so it never promises something that is not there. */}
+                {a.issued_at && mayDraft && lastPdf && (
+                  <button disabled={busy} className={BTN_GHOST}
+                    onClick={downloadPdf}>
+                    <FileText size={14} /> Download the PDF
+                  </button>
+                )}
+
+                {/* ------------------------------------------------------
+                    RELEASING THE APPOINTEE'S COPY AGAIN.
+
+                    Their own link closes three days after they accept.
+                    After that, the University's rule is that only the
+                    Superadministrator can let a copy out — so this is the
+                    only door that reopens it, and 080 records who opened it
+                    and why.
+
+                    SHOWN ONLY TO THE SUPERADMINISTRATOR, because the route
+                    refuses everybody else and a button that always refuses
+                    is a button that teaches people to ignore refusals.
+                    ------------------------------------------------------ */}
+                {a.issued_at && String(user?.role) === 'superadmin' && (
+                  <>
+                    <input value={releaseReason}
+                      onChange={(e) => setReleaseReason(e.target.value)}
+                      placeholder="Who asked for the letter, and what for"
+                      className={`${INPUT} w-72 text-xs`} />
+                    <button disabled={busy || releaseReason.trim().length < 10}
+                      className={BTN_GHOST}
+                      onClick={() => void release(a.id)}>
+                      <Send size={14} /> Release their copy for 3 more days
+                    </button>
+                  </>
                 )}
 
                 {a.status === 'draft' && mayDraft && !blocked(missing) && (
