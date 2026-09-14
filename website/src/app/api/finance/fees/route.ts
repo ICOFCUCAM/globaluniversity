@@ -69,7 +69,17 @@ const SCHEDULE_ACTIONS = ['schedule-add', 'schedule-set', 'schedule-publish',
   'schedule-withdraw', 'item-add', 'item-set', 'item-remove'];
 const INVOICE_ACTIONS = ['assess', 'waive', 'cancel'];
 const CLEARANCE_ACTIONS = ['clear', 'refuse', 'revoke'];
-const ACTIONS = [...SCHEDULE_ACTIONS, ...INVOICE_ACTIONS, ...CLEARANCE_ACTIONS];
+// ---------------------------------------------------------------------------
+// RECORDING A PAYMENT, WHICH USED TO HAPPEN IN THE BROWSER.
+//
+// `FeeModule.tsx` inserted straight into `payments` with the publishable key
+// and made up its own receipt number from `Date.now()`. Two things were wrong
+// with that and 088 closes both: the table is no longer writable from a
+// session, and the reference is reserved by the database.
+// ---------------------------------------------------------------------------
+const PAYMENT_ACTIONS = ['receipt'];
+const ACTIONS = [...SCHEDULE_ACTIONS, ...INVOICE_ACTIONS, ...CLEARANCE_ACTIONS,
+  ...PAYMENT_ACTIONS];
 
 const CURRENCIES = ['FCFA', 'USD', 'EUR', 'GBP', 'NGN'];
 const CATEGORIES = ['tuition', 'registration', 'examination', 'books', 'housing',
@@ -97,7 +107,8 @@ export async function POST(request: Request) {
   const capability: Capability = (
     SCHEDULE_ACTIONS.includes(action) ? 'set-fee-schedule'
       : INVOICE_ACTIONS.includes(action) ? 'generate-invoice'
-        : 'confirm-financial-clearance'
+        : PAYMENT_ACTIONS.includes(action) ? 'verify-payment'
+          : 'confirm-financial-clearance'
   ) as Capability;
 
   const g = await guard(request, capability);
@@ -509,6 +520,58 @@ export async function POST(request: Request) {
       entityId: id, performedBy: caller.id, details: { reason },
     });
     return NextResponse.json({ ok: true });
+  }
+
+  // =========================================================================
+  // TAKING A PAYMENT
+  // =========================================================================
+  if (action === 'receipt') {
+    const studentId = String(body.studentId ?? '').trim();
+    const amount = Number(body.amount);
+    const currency = String(body.currency ?? '').trim();
+    const purpose = String(body.purpose ?? '').trim();
+    const method = String(body.method ?? '').trim() || null;
+
+    if (!studentId) return bad('no-student', 400, 'A receipt is made out to somebody.');
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return bad('bad-amount', 400, 'A payment is an amount above zero.');
+    }
+    if (!CURRENCIES.includes(currency)) {
+      return bad('bad-currency', 400, `They are: ${CURRENCIES.join(', ')}.`);
+    }
+    if (!purpose) return bad('no-purpose', 400, 'Say what the money is for.');
+
+    // THE REFERENCE IS THE DATABASE'S TO GIVE. 088's counter is incremented
+    // inside the statement that reads it, so two officers taking money in the
+    // same moment cannot be handed the same number — which `Date.now()` in the
+    // browser could not promise, against a UNIQUE column.
+    const { data: ref, error: refError } = await admin
+      .rpc('reserve_receipt_number', { p_year: new Date().getUTCFullYear() });
+    if (refError || !ref) {
+      return bad('no-reference', 503, refError?.message
+        ?? 'No receipt number could be reserved, so nothing was recorded.');
+    }
+
+    const { data: row, error } = await admin.from('payments').insert({
+      student_id: studentId,
+      reference: ref as string,
+      amount,
+      currency,
+      purpose,
+      method,
+      received_by: caller.id,
+    }).select('id, reference').single();
+
+    // A PAYMENT THAT FAILED TO RECORD MUST NEVER LOOK RECORDED. The officer
+    // has the student in front of them and has taken the money.
+    if (error) return bad('not-recorded', 409, error.message);
+
+    await audit(admin, {
+      action: 'payment-recorded', entityType: 'payment',
+      entityId: row.id, performedBy: caller.id,
+      details: { reference: row.reference, amount, currency, purpose },
+    });
+    return NextResponse.json({ ok: true, reference: row.reference });
   }
 
   // Unreachable: every action in ACTIONS is handled above. Kept so that adding

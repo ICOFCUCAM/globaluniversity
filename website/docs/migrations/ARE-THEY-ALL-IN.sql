@@ -309,6 +309,10 @@ select * from (
                       and column_name = 'unlocks_after')
                  then 'YES' else 'NO' end as landed,
          'course_modules.unlocks_after' as what_it_creates
+  union all
+  select '088' as migration, '088_the_doors_the_audit_found.sql' as file,
+         case when to_regclass('public.receipt_counters') is not null then 'YES' else 'NO' end as landed,
+         'receipt_counters' as what_it_creates
 ) as landed_report
  order by migration;
 

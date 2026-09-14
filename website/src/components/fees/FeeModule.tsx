@@ -5,6 +5,7 @@
 // provisioned. Receipt payload is a data-URL JSON for printing.
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { authedPost } from '@/lib/authedFetch';
 import { Banknote, Plus, Printer } from 'lucide-react';
 
 interface Receipt {
@@ -59,14 +60,28 @@ export default function FeeModule() {
     load();
   }, []);
 
+  // -------------------------------------------------------------------------
+  // THROUGH THE ROUTE, NOT STRAIGHT INTO THE TABLE.
+  //
+  // This used to insert into `payments` with the publishable key and invent
+  // its own receipt number from `Date.now()`. Two faults, and 088 closes both.
+  //
+  // THE KEY IS PUBLIC. It ships in the JavaScript of every page, so a browser
+  // that can write a receipt is a receipt anybody can write for themselves,
+  // from the console, for any amount — and Finance is the first gate of the
+  // University's admissions workflow.
+  //
+  // AND THE REFERENCE WAS THE CLIENT'S TO CHOOSE, against a UNIQUE column. Two
+  // officers taking money in the same millisecond collided, and the insert
+  // failed after the cash had been handed over — the exact thing the error
+  // branch below exists to warn about. The database now reserves it.
+  // -------------------------------------------------------------------------
   async function record(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
-    const student = students.find((s) => s.id === form.student_id);
-    const no = `RCPT-${Date.now().toString(36).toUpperCase()}`;
-    const { error } = await supabase.from('payments').insert({
-      student_id: form.student_id || null,
-      reference: no,
+    const res = await authedPost('/api/finance/fees', {
+      action: 'receipt',
+      studentId: form.student_id,
       amount: Number(form.amount),
       currency: form.currency,
       purpose: form.purpose,
@@ -74,11 +89,12 @@ export default function FeeModule() {
     });
 
     setBusy(false);
-    if (error) {
+    if (!res.ok) {
       // A payment that failed to record must never look recorded. The finance
       // officer has the student in front of them and has taken the money.
       setRecordError(
-        `Not recorded: ${error.message}. The payment has NOT been saved — do not issue a receipt.`,
+        `Not recorded: ${res.detail ?? res.error}. The payment has NOT been saved — `
+        + 'do not issue a receipt.',
       );
       return;
     }

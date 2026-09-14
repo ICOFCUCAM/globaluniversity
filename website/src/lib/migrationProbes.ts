@@ -885,6 +885,19 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
       + 'table read is withdrawn and replaced by a view with no such column in it.',
     table: 'my_module_progress',
   },
+  {
+    file: '088_the_doors_the_audit_found.sql',
+    what: 'RUN THIS ONE FIRST. THREE OPEN DOORS, EACH DEMONSTRATED AGAINST A REAL DATABASE. '
+      + '(1) Five finance tables had row-level security NOT ENABLED while the PUBLISHABLE key '
+      + '\u2014 the one in the JavaScript of every page \u2014 held SELECT, INSERT, UPDATE and '
+      + 'DELETE: anyone could read every payment, forge a receipt for any sum, alter one, or '
+      + 'delete it. Finance is the first gate of admissions. (2) Any signed-in STUDENT could '
+      + 'read the examination question bank out of the old JSON store, with the index of the '
+      + 'correct option beside each question. (3) Every lecturer\u2019s email, telephone number '
+      + 'and ACCOUNT ID were published to the anonymous public. Also gives receipt numbers to '
+      + 'the database, which the browser was inventing from Date.now() against a unique column.',
+    table: 'receipt_counters',
+  },
 ];
 
 /** What a probe came back as. */
