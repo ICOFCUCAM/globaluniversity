@@ -78,6 +78,10 @@ const CAPABILITY: Record<string, Capability> = {
   // which is the whole point — the reading happens before the deciding.
   // ---------------------------------------------------------------------
   preview: 'draft-appointment' as Capability,
+  // READING WHAT WAS ISSUED IS NOT A HIGHER ACT THAN PREVIEWING IT. The same
+  // people, and the same content — an officer who may render the letter may
+  // certainly open the one that was actually sent.
+  archived: 'draft-appointment' as Capability,
   generate: 'draft-appointment' as Capability,
   issue: 'issue-appointment-letter' as Capability,
   email: 'issue-appointment-letter' as Capability,
@@ -711,6 +715,73 @@ export async function POST(request: Request) {
       delivery: result.sent ? 'sent' : 'failed',
       attempts: Number(letter.attempts ?? 0) + 1,
       ...(result.sent ? {} : { detail: result.detail ?? result.reason }),
+    });
+  }
+
+  // =========================================================================
+  // ARCHIVED — open the letter that was actually issued
+  // =========================================================================
+  //
+  // THE DOCUMENT THE UNIVERSITY ISSUED, AND NOTHING COULD OPEN IT.
+  //
+  // "How can I open the final copy of the letter saved and with all seals and
+  // complete?" — and the answer was that there was no way. `preview` renders a
+  // FRESH DRAFT from the current record: no reference, no seal, and the word
+  // DRAFT across it. The issued letter sat in `appointment_letters.html`,
+  // sealed and archived, with no route returning it and no button asking.
+  //
+  // WHY THAT MATTERS MORE THAN IT SOUNDS. 044 archives the exact bytes so the
+  // University can answer "what did the letter actually say" years later —
+  // that is the whole point of storing the HTML rather than re-rendering it.
+  // A preview re-rendered today from a record edited since would show
+  // something the appointee never received, and it would look authoritative.
+  // The archived copy is the only honest answer to that question.
+  //
+  // AND OPENING IT IS RECORDED. 042's vocabulary has carried 'LETTER_VIEWED'
+  // since it was written and nothing had ever emitted it. Who looked at an
+  // issued letter, and when, belongs in its history.
+  if (action === 'archived') {
+    const appointment = await loadAppointment(body.id);
+    if (!appointment) return bad('appointment-not-found', 404);
+
+    const letter = await currentLetter(appointment.id as string);
+    if (!letter) {
+      return bad('no-letter', 409,
+        'No letter has been archived for this appointment yet. Issue it and the sealed copy is '
+        + 'kept here permanently.');
+    }
+
+    await record(appointment.id as string, 'LETTER_VIEWED', null, null,
+      String(letter.reference), { version: letter.version });
+
+    return NextResponse.json({
+      ok: true,
+      html: letter.html,
+      reference: letter.reference,
+      printed: printedReference(letter.reference as string),
+      version: letter.version,
+      sealed: letter.sealed,
+      sealCode: letter.seal_code,
+      issuedOn: letter.issued_on,
+      contentHash: letter.content_hash,
+      issued: !!appointment.issued_at,
+      // AND IT SAYS WHETHER THE COPY IS SEALED, because "with all seals and
+      // complete" is the actual question. A letter generated while
+      // CREDENTIAL_SECRET was unset is archived UNSEALED and its own footer
+      // says so — which is honest on the page and easy to miss, so the screen
+      // says it too rather than leaving the University to read the small
+      // print of every letter.
+      detail: (appointment.issued_at
+        ? `The archived copy of ${printedReference(letter.reference as string)} — the exact `
+          + 'document that was issued, not a fresh rendering of the record.'
+        : `Version ${letter.version} is generated and archived but NOT YET ISSUED. This is the `
+          + 'document that would go out.')
+        + (letter.sealed
+          ? ' It carries the University’s verification seal and its code can be checked at '
+            + `${UNIVERSITY.website}/verify.`
+          : ' IT CARRIES NO VERIFICATION SEAL — it was generated while the University’s signing '
+            + 'secret (CREDENTIAL_SECRET) was not configured, so nobody can check it against '
+            + '/verify. Set the secret and re-issue to get a sealed copy.'),
     });
   }
 

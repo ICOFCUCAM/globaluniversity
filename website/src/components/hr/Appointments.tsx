@@ -257,6 +257,52 @@ export default function Appointments() {
     w.document.close();
   }
 
+  /**
+   * Open the letter that was actually issued — sealed, referenced, archived.
+   *
+   * THE TAB IS CLAIMED BEFORE THE AWAIT, like the WhatsApp handover: a browser
+   * blocks `window.open` that is not the direct consequence of a click, and
+   * awaiting the route is what breaks that chain.
+   *
+   * AND IT IS WRITTEN, NOT `document.write`-d INTO A BLANK TAB ONLY. Same as
+   * the preview, because the archived HTML carries its own print stylesheet —
+   * opening it is how somebody prints it or saves it as a PDF.
+   */
+  async function archived(id: string) {
+    setBusy(true);
+    setNotice(null);
+    const w = window.open('', '_blank');
+
+    const out = await authedPost('/api/appointments/letter', { action: 'archived', id });
+    setBusy(false);
+
+    if (!out.ok || typeof out.html !== 'string') {
+      w?.close();
+      setNotice({
+        tone: 'bad',
+        text: (out.detail as string | undefined)
+          ?? String(out.error ?? 'The archived letter could not be opened.'),
+      });
+      return;
+    }
+
+    if (!w) {
+      setNotice({
+        tone: 'bad',
+        text: 'The letter could not open — your browser blocked the new window. Allow pop-ups '
+          + 'for this site and press it again.',
+      });
+      return;
+    }
+
+    w.document.write(out.html);
+    w.document.close();
+    setNotice({
+      tone: 'ok',
+      text: (out.detail as string | undefined) ?? 'Opened.',
+    });
+  }
+
   async function act(payload: Record<string, unknown>) {
     setBusy(true);
     setNotice(null);
@@ -473,6 +519,31 @@ export default function Appointments() {
                   <button disabled={busy} className={BTN_GHOST}
                     onClick={() => void preview(a.id)}>
                     <Eye size={14} /> Preview the letter
+                  </button>
+                )}
+
+                {/* ------------------------------------------------------
+                    AND THE ONE THAT WAS ACTUALLY ISSUED.
+
+                    The University: "how can i open the final copy of the
+                    letter saved and with all seals and complete".
+
+                    There was no way. Preview renders a FRESH DRAFT from the
+                    current record — no reference, no seal, DRAFT across the
+                    top. The issued letter sat archived with nothing asking
+                    for it.
+
+                    THE TWO ARE NOT INTERCHANGEABLE, which is why this is a
+                    second button and not a cleverer first one. 044 stores
+                    the exact bytes so the University can say years later what
+                    the letter actually said; a preview re-rendered from a
+                    record edited since would show something the appointee
+                    never received, and would look authoritative doing it.
+                    ------------------------------------------------------ */}
+                {a.issued_at && mayDraft && (
+                  <button disabled={busy} className={BTN_SECONDARY}
+                    onClick={() => void archived(a.id)}>
+                    <FileText size={14} /> Open the issued letter
                   </button>
                 )}
 

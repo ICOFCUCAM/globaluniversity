@@ -127,6 +127,28 @@ export default function CorrespondenceCenter() {
    * exactly what breaks that chain — so the tab is opened while the click is
    * still the reason it is happening, and pointed at the address afterwards.
    */
+  /**
+   * Open the archived, sealed copy of an issued letter.
+   *
+   * THE TAB IS CLAIMED BEFORE THE AWAIT, for the reason the WhatsApp handover
+   * gives: a browser blocks `window.open` that is not the direct consequence
+   * of a click, and awaiting the route breaks that chain.
+   */
+  const openIssued = async (id: string) => {
+    const tab = window.open('', '_blank');
+    const j = await post({ action: 'archived', id }, 'archived');
+    if (j && typeof j.html === 'string') {
+      if (tab) { tab.document.write(j.html); tab.document.close(); return; }
+      setMessage({
+        kind: 'bad',
+        text: 'The letter could not open — your browser blocked the new window. Allow pop-ups '
+          + 'for this site and press it again.',
+      });
+      return;
+    }
+    tab?.close();
+  };
+
   const sendByWhatsApp = async (id: string) => {
     const tab = window.open('', '_blank');
     const j = await post({ action: 'whatsapp', id }, 'whatsapp');
@@ -632,6 +654,20 @@ export default function CorrespondenceCenter() {
                       it — never the letter's text, which would put the
                       University's correspondence into a chat history it does
                       not control. */}
+                  {/* THE LETTER THAT WAS ACTUALLY SENT. The composer's Preview
+                      re-renders the draft in the page; this is the archived,
+                      sealed, referenced document — the only honest answer to
+                      "what did we send the ministry". */}
+                  {r.status === 'issued' && (
+                    <button
+                      type="button" className={`${BTN_SECONDARY} ${FOCUS}`}
+                      disabled={busy !== null}
+                      onClick={() => void openIssued(r.id)}
+                    >
+                      <Eye size={14} /> Open the issued letter
+                    </button>
+                  )}
+
                   {r.status === 'issued' && mayIssue && (
                     <button
                       type="button" className={`${BTN_SECONDARY} ${FOCUS}`}

@@ -63,6 +63,8 @@ const CAPABILITY: Record<string, Capability> = {
   return: 'authorize-correspondence' as Capability,
   withdraw: 'authorize-correspondence' as Capability,
   issue: 'issue-correspondence' as Capability,
+  // READING WHAT WAS SENT IS NOT A HIGHER ACT THAN COMPOSING IT.
+  archived: 'compose-correspondence' as Capability,
   // SENDING IT BY WHATSAPP IS SENDING IT. Same authority as issuing: the
   // office that may put the University's letter in front of a ministry
   // decides how it travels.
@@ -629,6 +631,51 @@ export async function POST(request: Request) {
     if (error) return bad(`not-withdrawn: ${error.message}`, 500);
     await record(row.id as string, 'WITHDRAWN', row.status as string, 'withdrawn', reason);
     return NextResponse.json({ ok: true, status: 'withdrawn' });
+  }
+
+  // =========================================================================
+  // ARCHIVED — open the letter that was actually issued
+  // =========================================================================
+  //
+  // The same gap the appointment letter had, and the University would have
+  // reached it next: the composer's Preview re-renders the draft in the page,
+  // and the ISSUED letter — sealed, referenced, archived under 045 — had
+  // nothing that would open it.
+  //
+  // THE ARCHIVED BYTES, NOT A FRESH RENDERING. A letter to a ministry is the
+  // University speaking formally; "what did we actually send them" must be
+  // answerable from the record and not from re-running the generator over a
+  // row that may have been edited since.
+  if (action === 'archived') {
+    const row = await load(body.id);
+    if (!row) return bad('letter-not-found', 404);
+
+    const { data: letter } = await admin.from('correspondence_letters')
+      .select('id, reference, version, issued_on, html, sealed, seal_code, content_hash')
+      .eq('correspondence_id', row.id as string)
+      .is('superseded_at', null)
+      .order('version', { ascending: false }).limit(1).maybeSingle();
+
+    const archived = letter as Row | null;
+    if (!archived) {
+      return bad('no-letter', 409,
+        'No letter has been archived for this correspondence yet. Issue it and the sealed copy '
+        + 'is kept here permanently.');
+    }
+
+    await record(row.id as string, 'LETTER_GENERATED', null, null,
+      `Opened ${String(archived.reference)}`, { version: archived.version, viewed: true });
+
+    return NextResponse.json({
+      ok: true,
+      html: archived.html,
+      reference: archived.reference,
+      version: archived.version,
+      sealed: archived.sealed,
+      issuedOn: archived.issued_on,
+      detail: `The archived copy of ${String(archived.reference)} — the exact document that was `
+        + 'issued, not a fresh rendering of the record.',
+    });
   }
 
   // =========================================================================
