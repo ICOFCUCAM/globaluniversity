@@ -179,10 +179,21 @@ export function documentStyles(): string {
      above the line; that is what this margin is. Where a signature is already
      reproduced, that room is exactly what makes it float. */
   .sign .line { border-top: 1px solid #1c1720; width: 62mm; margin-top: 16px; }
-  /* A REPRODUCED SIGNATURE SITS ON THE RULE. Bounded in both directions: an
-     oversized specimen would push the seal panel onto a second page, which is
-     the failure the page-count tests exist to catch. */
-  .sign .sig { display: block; max-height: 18mm; max-width: 62mm; margin-bottom: -6px; }
+  /* ----------------------------------------------------------------------
+     A REPRODUCED SIGNATURE IS PRINTED AT A STATED HEIGHT.
+     ----------------------------------------------------------------------
+     A max-height only CAPS. It never enlarges — so a signature cropped
+     tightly, or photographed at low resolution, printed as a small mark
+     stranded beside a 62mm rule. The University: "the signature is too small
+     and does not fit to the line."
+     A fixed height makes every signature print the same size on the page
+     whatever the source image was, which is what a specimen signature is for.
+     The auto width keeps the proportions; a max-width still bounds a very wide
+     one, because an oversized specimen would push the seal panel onto a second
+     page — the failure the page-count tests exist to catch.
+     ---------------------------------------------------------------------- */
+  .sign .sig { display: block; height: 15mm; width: auto; max-width: 62mm;
+               object-fit: contain; object-position: left bottom; margin-bottom: -6px; }
   /* ----------------------------------------------------------------------
      AND IT DID NOT SIT ON IT. MEASURED.
      ----------------------------------------------------------------------

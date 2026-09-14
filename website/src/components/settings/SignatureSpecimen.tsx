@@ -319,7 +319,87 @@ function prepare(file: File): Promise<{ dataUri: string; bytes: number }> {
         return;
       }
       ctx.drawImage(img, 0, 0, w, h);
-      const dataUri = canvas.toDataURL('image/png');
+
+      // ---------------------------------------------------------------
+      // THE PAPER IS NOT PART OF THE SIGNATURE.
+      //
+      // The University uploaded a signature and it came out on the letter
+      // as a small mark inside a WHITE BOX, sitting beside the rule instead
+      // of on it — because the image was stored exactly as it arrived. A
+      // signature is photographed or scanned on paper, so what arrives is a
+      // rectangle of white with a little ink somewhere in the middle, and
+      // the white is opaque: it covers the rule it is supposed to cross.
+      //
+      // So the paper is made transparent, ON A RAMP rather than a cliff. A
+      // hard threshold would leave every stroke with a hard jagged edge
+      // where the anti-aliased pixels were cut off; the ramp keeps the soft
+      // edge of a pen line.
+      // ---------------------------------------------------------------
+      const data = ctx.getImageData(0, 0, w, h);
+      const px = data.data;
+      // Above PAPER it is paper; below INK it is certainly a stroke. Between
+      // them the pixel keeps a share of its opacity.
+      const PAPER = 238;
+      const INK = 170;
+      let minX = w; let minY = h; let maxX = -1; let maxY = -1;
+
+      for (let y = 0; y < h; y += 1) {
+        for (let x = 0; x < w; x += 1) {
+          const i = ((y * w) + x) * 4;
+          // Perceived lightness. A blue ballpoint is darker than its red
+          // channel alone suggests, and a plain average loses it.
+          const lum = (0.299 * px[i]) + (0.587 * px[i + 1]) + (0.114 * px[i + 2]);
+          let alpha = px[i + 3];
+          if (lum >= PAPER) alpha = 0;
+          else if (lum > INK) alpha = Math.round(alpha * ((PAPER - lum) / (PAPER - INK)));
+          px[i + 3] = alpha;
+          if (alpha > 24) {
+            if (x < minX) minX = x;
+            if (x > maxX) maxX = x;
+            if (y < minY) minY = y;
+            if (y > maxY) maxY = y;
+          }
+        }
+      }
+
+      if (maxX < 0) {
+        reject(new Error('There is no signature in that image — every pixel is as light as '
+          + 'paper. Photograph the signature in good light, or scan it, and try again.'));
+        return;
+      }
+
+      ctx.putImageData(data, 0, 0);
+
+      // ---------------------------------------------------------------
+      // AND THEN CROPPED TO THE INK.
+      //
+      // "The signature is too small." It was: the mark occupied a fraction
+      // of a mostly-empty rectangle, and the stylesheet scales the
+      // RECTANGLE to fit the rule — so the more paper somebody
+      // photographed, the smaller their signature printed. Cropping to the
+      // ink makes the printed size depend on the signature rather than on
+      // how the photograph was framed.
+      //
+      // A THIN MARGIN IS KEPT so the strokes are not clipped flush.
+      // ---------------------------------------------------------------
+      const pad = Math.max(2, Math.round((maxX - minX) * 0.02));
+      const cx = Math.max(0, minX - pad);
+      const cy = Math.max(0, minY - pad);
+      const cw = Math.min(w - cx, (maxX - minX) + 1 + (pad * 2));
+      const ch = Math.min(h - cy, (maxY - minY) + 1 + (pad * 2));
+
+      const trimmed = document.createElement('canvas');
+      trimmed.width = cw;
+      trimmed.height = ch;
+      const tctx = trimmed.getContext('2d');
+      if (!tctx) {
+        reject(new Error('This browser would not open a canvas, so the image could not be '
+          + 'prepared.'));
+        return;
+      }
+      tctx.drawImage(canvas, cx, cy, cw, ch, 0, 0, cw, ch);
+
+      const dataUri = trimmed.toDataURL('image/png');
       const bytes = Math.round((dataUri.length - dataUri.indexOf(',') - 1) * 0.75);
       if (bytes > MAX_BYTES) {
         reject(new Error(

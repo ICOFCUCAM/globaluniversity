@@ -519,9 +519,16 @@ console.log('\nThe reproduced signature crosses the rule, as a pen does\n');
 {
   // A MARK THAT BELONGS TO NOBODY. A stroke across a transparent box — enough
   // for the geometry, and not a specimen of any officer's real signature.
+  //
+  // SMALL ON PURPOSE, AND THAT IS THE WHOLE POINT OF THE FIXTURE. 112×28 is
+  // about what a cropped signature comes to once the paper around it is thrown
+  // away. A generous 300×90 mark passed this test while the stylesheet was
+  // still only CAPPING the size, because at that aspect ratio it filled the
+  // rule by accident — so the fixture vouched for a letter the University was
+  // not receiving. Their signature arrived small and printed small.
   const mark = 'data:image/svg+xml;base64,' + Buffer.from(
-    '<svg xmlns="http://www.w3.org/2000/svg" width="300" height="90">'
-    + '<path d="M10 70 C 80 10, 150 80, 290 30" fill="none" stroke="#12203f" stroke-width="6"/>'
+    '<svg xmlns="http://www.w3.org/2000/svg" width="112" height="28">'
+    + '<path d="M4 22 C 30 4, 56 26, 108 10" fill="none" stroke="#12203f" stroke-width="3"/>'
     + '</svg>').toString('base64');
 
   const signed = await appointmentLetterHtml({
@@ -541,6 +548,9 @@ console.log('\nThe reproduced signature crosses the rule, as a pen does\n');
     const name = box(document.querySelector('.sign p strong'));
     return {
       hasImage: Boolean(img),
+      width: img ? Math.round(img.width) : 0,
+      rule: rule ? Math.round(rule.width) : 0,
+      leftAligned: img && rule ? Math.abs(img.left - rule.left) < 2 : null,
       overlap: img && rule ? Math.round(img.bottom - rule.top) : null,
       nameBelow: name && rule ? name.top > rule.top : null,
       imageHeight: img ? Math.round(img.height) : null,
@@ -549,6 +559,14 @@ console.log('\nThe reproduced signature crosses the rule, as a pen does\n');
   await p.close();
 
   check('the signature is drawn at all', geom.hasImage, true);
+  // IT REACHES ACROSS THE RULE. The stylesheet fits the IMAGE to the line, and
+  // it used to only CAP the size — so a signature that arrived small printed
+  // small, stranded at the left end of a 62mm rule with nothing on the rest of
+  // it. "The signature is too small and does not fit to the line."
+  console.log(`      ${geom.width}px of signature on a ${geom.rule}px rule`);
+  check('…at a size that reaches across the rule', geom.width >= geom.rule * 0.5, true);
+  check('…without running past the end of it', geom.width <= geom.rule, true);
+  check('…starting at the same margin as the rule', geom.leftAligned, true);
   console.log(`      it crosses the rule by ${geom.overlap}px`);
   // CROSSES IT, rather than floating above or swallowing it. Below 1 and it is
   // hovering; much past the image's own height and the rule would be lost
