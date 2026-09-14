@@ -862,6 +862,17 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
       + 'decorative. Marking happens on the server against a table the student cannot read.',
     table: 'activity_answer_key',
   },
+  {
+    file: '086_live_classes_attendance_search_and_the_tutor.sql',
+    what: 'THE TIMETABLE AND THE LMS BECOME ONE THING. A live class in a course IS the '
+      + 'timetabled class rather than a copy of it, so the two cannot disagree about when it '
+      + 'is, and Join class opens the section\u2019s own meeting link. A student sees their '
+      + 'attendance as a figure (late counts as attended, excused is excluded), searches every '
+      + 'word of their courses including audio transcripts \u2014 and only their courses. And '
+      + 'the Course AI Tutor gets a conversation whose every answer cites a REAL lesson by '
+      + 'foreign key, whose refusals are recorded, and which the lecturer cannot read.',
+    table: 'tutor_citations',
+  },
 ];
 
 /** What a probe came back as. */

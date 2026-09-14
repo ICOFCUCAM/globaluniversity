@@ -296,6 +296,10 @@ select * from (
   select '085' as migration, '085_assignments_quizzes_and_the_answer_key.sql' as file,
          case when to_regclass('public.activity_answer_key') is not null then 'YES' else 'NO' end as landed,
          'activity_answer_key' as what_it_creates
+  union all
+  select '086' as migration, '086_live_classes_attendance_search_and_the_tutor.sql' as file,
+         case when to_regclass('public.tutor_citations') is not null then 'YES' else 'NO' end as landed,
+         'tutor_citations' as what_it_creates
 ) as landed_report
  order by migration;
 

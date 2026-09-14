@@ -269,6 +269,7 @@ const MARKERS = {
   // NOT `course_activities`, which reads as though the migration were about
   // having assignments. The answer key is the thing 085 is really for.
   '085': 'activity_answer_key',
+  '086': 'tutor_citations',
 };
 
 /** The SQL that answers "is this one here?", for each of the three forms. */
