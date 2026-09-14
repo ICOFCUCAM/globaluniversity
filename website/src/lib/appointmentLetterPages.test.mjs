@@ -379,10 +379,20 @@ console.log('\nThe seal panel is at the foot, where a reader looks for it\n');
   const tail = await page.evaluate(() => {
     const seal = document.querySelector('.seal');
     const att = document.querySelector('.attachments');
+    const annex = document.querySelector('.annex');
+    const box = (el) => (el
+      ? {
+        top: Math.round(el.getBoundingClientRect().top + window.scrollY),
+        bottom: Math.round(el.getBoundingClientRect().bottom + window.scrollY),
+      }
+      : { top: -1, bottom: -1 });
     return {
-      sealBottom: seal ? Math.round(seal.getBoundingClientRect().bottom) : -1,
-      attTop: att ? Math.round(att.getBoundingClientRect().top) : -1,
-      attBottom: att ? Math.round(att.getBoundingClientRect().bottom) : -1,
+      sealBottom: box(seal).bottom,
+      attTop: box(att).top,
+      attBottom: box(att).bottom,
+      annexTop: box(annex).top,
+      sigBottom: box(document.querySelector('.sign')).bottom,
+      hasAnnex: !!annex,
     };
   });
 
@@ -403,8 +413,35 @@ console.log('\nThe seal panel is at the foot, where a reader looks for it\n');
   const qrMm = (88 / 3.7795) / qrModules;
   console.log(`      QR: ${qrModules} modules, ${qrMm.toFixed(2)}mm each`);
   check('the letter’s own QR is coarse enough to scan', qrMm >= 0.5, true);
-  check('and the manifest is the last thing on the document',
-    tail.attBottom >= measured.height - 40, true);
+  // ---------------------------------------------------------------------
+  // PAGE ONE IS THE APPOINTMENT, AND THE ANNEX IS EVERYTHING ELSE.
+  //
+  // The University: "endeavor for the letter, signature and seal to enter the
+  // first page. That is the appointment. Page two then can carry job
+  // descriptions and other things as seen in the letter."
+  //
+  // This used to assert that the manifest was the LAST THING ON THE DOCUMENT,
+  // which encoded the old shape: one continuous flow with the signature
+  // arriving on page three. It is now the last thing on PAGE ONE, and the
+  // annex follows it on a page of its own.
+  //
+  // MEASURED AGAINST THE PRINTABLE HEIGHT, not against the flow. A signature
+  // 20px past the bottom of page one is on page two, and only this number
+  // knows that.
+  // ---------------------------------------------------------------------
+  check('the manifest is the last thing on page one',
+    tail.hasAnnex ? tail.annexTop >= tail.attBottom : tail.attBottom >= measured.height - 40,
+    true);
+
+  if (tail.hasAnnex) {
+    const onPageOne = (px) => px > 0 && px <= A4_PRINTABLE_HEIGHT;
+    console.log(`      page one ends at ${tail.attBottom}px of ${A4_PRINTABLE_HEIGHT}px`);
+
+    check('the signature is on page one', onPageOne(tail.sigBottom), true);
+    check('the seal is on page one', onPageOne(tail.sealBottom), true);
+    check('and everything before the annex fits on page one',
+      onPageOne(tail.attBottom), true);
+  }
 }
 
 await browser.close();

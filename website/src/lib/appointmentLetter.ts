@@ -120,6 +120,63 @@ const LETTER_STYLES = `
   .draftmark { border: 2px solid #a07c12; background: #fdf6e3; color: #6b5410;
                padding: 8px 11px; margin: 10px 0 4px; font-size: 9.5pt;
                line-height: 1.45; break-inside: avoid; page-break-inside: avoid; }
+
+  /* ---------------------------------------------------------------------
+     THE ANNEX STARTS A PAGE, AND SAYS WHAT IT IS.
+
+     "break-before: always" is what puts the appointment and its signature
+     alone on page one. Both spellings are given, because "page-break-before"
+     is what older print engines read and "break-before" is what current do —
+     and a letter that prints correctly in Chromium and wrongly on the
+     Registrar's office printer has not been fixed.
+     --------------------------------------------------------------------- */
+  /* ---------------------------------------------------------------------
+     AND PAGE ONE IS TIGHTENED SO IT FITS, RATHER THAN SHORTENED.
+
+     With a full record — an address, a standing paragraph, ten rows of
+     particulars — page one measured 1096px against a printable 1032px. Sixty
+     pixels over, which puts the signature on page two and defeats the whole
+     arrangement.
+
+     NOTHING IS REMOVED TO GET THERE. The letter says everything it said
+     before; the closing paragraphs, the table rows and the manifest are set
+     a little closer together. A letter of appointment is a formal document
+     and it should breathe, so this is a trim and not a squeeze — and
+     appointmentLetterPages.test.mjs measures the result against the real
+     printable height on every run rather than trusting that it still fits.
+     --------------------------------------------------------------------- */
+  .closing p { margin: 5px 0; }
+  .closing table th, .closing table td { padding-top: 2px; padding-bottom: 2px; }
+  table th, table td { padding-top: 2px; padding-bottom: 2px; }
+  /* The manifest sits close under the seal. It is a list of what travels with
+     the letter, not a section of it, and it is the last thing that has to fit
+     on page one. */
+  .attachments { margin-top: 5px; }
+  .attachments p { margin: 0 0 1px; }
+  .attachments ol { margin: 0; }
+  .attachments li { margin-bottom: 1px; }
+  .subject { margin-top: 10px; }
+  /* The heading above the particulars: still clearly a heading, closer to the
+     table it heads. */
+  h3 { margin-top: 12px; }
+  /* The rule the signature sits on, and the space above the block. Reduced
+     together so the signature keeps its own breathing room and only the gap
+     before it shrinks. */
+  .sign { margin-top: 8px; }
+  .sign .line { margin-top: 12px; }
+  /* The body of page one. The annex restores the ordinary 6px below, because
+     it has a whole page and should read at the University's normal spacing. */
+  p { margin: 5px 0; }
+
+  .annex { break-before: always; page-break-before: always; }
+  /* The annex has a whole page; it keeps the ordinary spacing. */
+  .annex p { margin: 6px 0; }
+  .annex h3 { margin-top: 16px; }
+  .annex table th, .annex table td { padding-top: 3px; padding-bottom: 3px; }
+  .annex h2 { font: bold 12pt/1.3 Georgia, 'Times New Roman', serif; color: #3b2a52;
+              margin: 0 0 2px; text-align: center; letter-spacing: .02em; }
+  .annexnote { margin: 0 0 12px; text-align: center; font-size: 8.5pt; color: #6b6076;
+               border-bottom: 1px solid #d8cfe4; padding-bottom: 8px; }
 `;
 
 export interface LetterInput {
@@ -521,6 +578,33 @@ record.</p>`);
   // whose recipient believes two documents were withheld. Each line here is
   // conditional on the thing it names actually being part of this appointment.
   // ---------------------------------------------------------------------
+  // ---------------------------------------------------------------------
+  // PAGE ONE IS THE APPOINTMENT. EVERYTHING ELSE IS THE ANNEX.
+  //
+  // The University: "endeavor for the letter, signature and seal to enter the
+  // first page. That is the appointment. Page two then can carry job
+  // descriptions and other things as seen in the letter."
+  //
+  // It is the right instruction and it was not how the letter was built. The
+  // document ran as one continuous flow — details, duties, remuneration,
+  // conduct, conditions, performance, confidentiality, termination,
+  // acceptance, and only then the signature — so the signature landed on page
+  // three. A letter whose first page does not carry the appointment or the
+  // signature is a letter nobody can take in at a glance, and the page a
+  // registrar or a bank photocopies is the wrong one.
+  //
+  // SO PAGE ONE CARRIES WHAT MAKES THE APPOINTMENT: who, to what post, from
+  // when, on what particulars — the table — and the signature and the seal
+  // beneath it. The terms and the duties follow as a headed annex that says
+  // on its face that it is part of the same letter, and the numbering runs on
+  // unbroken so a clause cited by number still means one thing.
+  //
+  // NOTHING IS REMOVED. Every section the letter carried it still carries.
+  // ---------------------------------------------------------------------
+  const PAGE_ONE_HEADINGS = ['Appointment Details'];
+  const onPageOne = sections.filter((s) => PAGE_ONE_HEADINGS.includes(s.heading));
+  const annex = sections.filter((s) => !PAGE_ONE_HEADINGS.includes(s.heading));
+
   const attachments = [
     input.jobDescription?.code
       ? `Job description and terms of reference — ${
@@ -576,23 +660,12 @@ ${input.standing ? `
   + `officer responsible for the functions of that office, under the authority and direction of `
   + `${reportsTo}.`)}</p>` : ''}
 
-${sections.map((s, i) => `<h3>${i + 1}. ${escape(s.heading)}</h3>\n${s.html}`).join('\n\n')}
-
-${a.terms ? `<h3>${sections.length + 1}. Further Terms</h3>\n<p class="terms">${escape(a.terms)}</p>` : ''}
-
-${authority}
-
-<h3>${sections.length + (a.terms ? 2 : 1)}. Acceptance of Appointment</h3>
-<p>Please confirm your acceptance of this appointment. Your acceptance should clearly identify
-the appointment reference:</p>
-<p class="subject">${escape(printedReference(input.reference))}</p>
-<p>You may complete the acceptance electronically at ${escape(UNIVERSITY.website)}/accept using
-that reference and the verification code printed below, or in writing to the University. The
-completed acceptance is retained as part of your official University personnel and appointment
-record.</p>
+${onPageOne.map((s, i) => `<h3>${i + 1}. ${escape(s.heading)}</h3>\n${s.html}`).join('\n\n')}
+${annex.length > 0 || a.terms ? `
+<p>The conditions of this appointment, your responsibilities and the arrangements for your
+acceptance are set out in the pages that follow, which form part of this letter.</p>` : ''}
 
 <div class="closing">
-<h3>${sections.length + (a.terms ? 3 : 2)}. Final Statement</h3>
 ${paras(reg.closing(title, UNIVERSITY.name))}
 <p>Please accept our congratulations on your appointment and our best wishes as you assume the
 responsibilities of the office.</p>
@@ -625,6 +698,29 @@ ${attachments.map((t) => `    <li>${escape(t)}</li>`).join('\n')}
   </ol>
 </div>` : ''}
 </div>
+${annex.length > 0 || a.terms ? `
+<div class="annex">
+<h2>Conditions of this Appointment</h2>
+<p class="annexnote">This annex forms part of the letter of appointment
+${escape(printedReference(input.reference))} and is to be read with it.</p>
+
+${annex.map((s, i) => `<h3>${onPageOne.length + i + 1}. ${escape(s.heading)}</h3>\n${s.html}`)
+    .join('\n\n')}
+
+${a.terms ? `<h3>${onPageOne.length + annex.length + 1}. Further Terms</h3>
+<p class="terms">${escape(a.terms)}</p>` : ''}
+
+${authority}
+
+<h3>${onPageOne.length + annex.length + (a.terms ? 2 : 1)}. Acceptance of Appointment</h3>
+<p>Please confirm your acceptance of this appointment. Your acceptance should clearly identify
+the appointment reference:</p>
+<p class="subject">${escape(printedReference(input.reference))}</p>
+<p>You may complete the acceptance electronically at ${escape(UNIVERSITY.website)}/accept using
+that reference and the verification code printed on the first page, or in writing to the
+University. The completed acceptance is retained as part of your official University personnel
+and appointment record.</p>
+</div>` : ''}
 ${runningFooter(printedReference(input.reference), DOCUMENT_FAMILIES.appointment.label)}
 `,
   };
