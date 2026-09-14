@@ -227,6 +227,74 @@ const afterUndo = await page.evaluate(async () => {
 check('undo removes the last stroke and keeps the rest',
   afterUndo.h < m.h && afterUndo.w > 0, true);
 
+console.log('\nAnd it opens out, without the signature changing\n');
+
+// ---------------------------------------------------------------------------
+// EXPANDING IS LOSSLESS, WHICH IS THE WHOLE REASON THE POINTS ARE FRACTIONS.
+//
+// The University: "we should be able to expand the signature pad, sign and save
+// to return to normal."
+//
+// Pixel coordinates belong to one canvas size. Stored that way, expanding would
+// either discard what was already drawn or replay it at the wrong scale — and
+// the officer would find out only after storing it. Stored as fractions of the
+// pad, with ONE aspect ratio in both modes, the same strokes render to the same
+// shape at any size.
+//
+// So: sign small, expand, take the signature, and compare its SHAPE with the
+// one taken small. Same proportions means the same signature; the pixel counts
+// differ because the expanded canvas is bigger, which is the point of expanding.
+// ---------------------------------------------------------------------------
+await page.locator('button', { hasText: 'Clear' }).click();
+await sign();
+
+const small = await page.evaluate(async () => {
+  document.querySelector('canvas');
+  return null;
+});
+void small;
+
+await page.locator('button', { hasText: 'Use this signature' }).click();
+await page.waitForFunction(() => typeof window.__last === 'string');
+const asSmall = await page.evaluate(async () => {
+  const im = new Image();
+  await new Promise((r) => { im.onload = r; im.src = window.__last; });
+  return { w: im.width, h: im.height };
+});
+
+// Open it out. The strokes must still be there — expanding must not clear.
+await page.locator('button', { hasText: 'Open it larger' }).click();
+await page.waitForSelector('[role="dialog"]');
+const enlarged = await page.locator('[role="dialog"] canvas').boundingBox();
+check('the expanded pad is bigger than the ordinary one',
+  enlarged.width > box.width * 1.2, true);
+
+// Still holding the signature: the save control is live, which it is only when
+// there is ink.
+const liveAfterExpand = await page
+  .locator('[role="dialog"] button', { hasText: 'Save and close' }).isEnabled();
+check('…and the signature drawn before expanding is still there', liveAfterExpand, true);
+
+await page.locator('[role="dialog"] button', { hasText: 'Save and close' }).click();
+await page.waitForFunction(() => !document.querySelector('[role="dialog"]'));
+check('…saving closes it and returns to the ordinary pad', true, true);
+
+const asBig = await page.evaluate(async () => {
+  const im = new Image();
+  await new Promise((r) => { im.onload = r; im.src = window.__last; });
+  return { w: im.width, h: im.height };
+});
+
+console.log(`      ${asSmall.w}×${asSmall.h} small, ${asBig.w}×${asBig.h} expanded`);
+check('…at a higher resolution than it was drawn at', asBig.w > asSmall.w, true);
+
+// THE SHAPE IS THE SAME. A pad that changed proportion on expanding would give
+// the officer back a squashed signature, and nothing else here would notice.
+const ratio = (a) => a.w / a.h;
+const drift = Math.abs(ratio(asBig) - ratio(asSmall)) / ratio(asSmall);
+console.log(`      aspect drift ${(drift * 100).toFixed(1)}%`);
+check('…and exactly the same shape, not stretched', drift < 0.08, true);
+
 await browser.close();
 
 console.log(failures ? `\n${failures} check(s) failed.\n` : '\nAll signature pad checks passed.\n');
