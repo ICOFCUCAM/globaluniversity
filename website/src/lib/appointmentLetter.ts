@@ -148,6 +148,40 @@ const LETTER_STYLES = `
      appointmentLetterPages.test.mjs measures the result against the real
      printable height on every run rather than trusting that it still fits.
      --------------------------------------------------------------------- */
+  /* ---------------------------------------------------------------------
+     THE VERIFICATION BLOCK SITS BESIDE THE SIGNATURE, NOT BELOW IT.
+
+     The University: "the signature part must fit one page with qr code."
+
+     Measured on a full record, page one came to 1059px against a printable
+     1032 and the QR fell onto page two. The letterhead, the particulars and
+     the prose were all carrying their own weight — there was no honest fat
+     left to trim, and page one had already been tightened once for this.
+
+     What there WAS, was 470 pixels of empty page to the right of the signature
+     block, which is 62mm wide on a 705px page, while the seal panel sat
+     underneath it using another 94px of height. Standing them side by side
+     costs nothing, reads the way an official letter reads — the signature, and
+     the means of checking it, together at the foot — and gives page one back
+     the whole height of the seal panel.
+
+     IT STACKS AGAIN WHEN THERE IS NO ROOM. Under about 620px of width the two
+     go back to one above the other, which is what a narrow print area or a
+     phone preview needs.
+     --------------------------------------------------------------------- */
+  .signfoot { display: flex; gap: 18px; align-items: flex-start;
+              break-inside: avoid; page-break-inside: avoid; }
+  .signfoot .sign { flex: 0 0 auto; }
+  /* The panel takes the space the signature does not, and its own top rule is
+     dropped: it is no longer a band across the foot of the letter but a column
+     beside the signature, and a rule there would cut the pair in half. */
+  .signfoot .seal { flex: 1 1 auto; margin-top: 26px; border-top: 0; padding-top: 0;
+                    align-items: flex-start; }
+  @media (max-width: 620px) {
+    .signfoot { display: block; }
+    .signfoot .seal { margin-top: 6px; border-top: 1px solid #e6e0ee; padding-top: 5px; }
+  }
+
   .closing p { margin: 5px 0; }
   .closing table th, .closing table td { padding-top: 2px; padding-bottom: 2px; }
   table th, table td { padding-top: 2px; padding-bottom: 2px; }
@@ -771,6 +805,7 @@ ${paras(reg.closing(title, UNIVERSITY.name))}
 <p>Please accept our congratulations on your appointment and our best wishes as you assume the
 responsibilities of the office.</p>
 
+<div class="signfoot">
 ${signatureBlock({
   // THE AUTHORITY IS STATED ON THE PAGE, not inferred from whose name is at the
   // foot. A reader of this letter in five years needs to know it was made by the
@@ -791,14 +826,36 @@ ${signatureBlock({
 })}
 
 ${await sealPanel(seal, printedReference(input.reference), input.version, input.siteUrl)}
+</div>
+</div>
 
-${attachments.length > 0 ? `<div class="attachments">
+${/* ---------------------------------------------------------------------
+     THE MANIFEST IS OUTSIDE THE CLOSING BLOCK, AND THAT IS WHAT KEEPS THE
+     SIGNATURE ON PAGE ONE.
+
+     The University: "the signature part must fit one page with qr code."
+
+     It did not. Their letter put the closing, the signature, the seal and the
+     QR on page TWO, leaving page one half empty below the table — because
+     `.closing` carries `break-inside: avoid`, so it moves as one block, and
+     the block was 399px against 407px of room. Rebuilt here to the same
+     particulars it measured 1023px of a printable 1032: NINE PIXELS. That is
+     luck, not a design, and one more row of particulars spends it.
+
+     Page one had already been tightened once for this, and tightening it again
+     would buy another handful of pixels and the same fault a month later. So
+     the manifest — 68px, a list of what travels with the letter rather than
+     part of the letter — comes out of the block. It still sits under the seal
+     where it always has, on page one whenever there is room; when there is
+     not, IT is what moves, and the signature and the QR stay where the
+     University put them. That takes the margin from 9px to 82px: four more
+     rows of particulars before anything has to give.
+  */ ''}${attachments.length > 0 ? `<div class="attachments">
   <p><strong>Attachments</strong></p>
   <ol>
 ${attachments.map((t) => `    <li>${escape(t)}</li>`).join('\n')}
   </ol>
 </div>` : ''}
-</div>
 ${annex.length > 0 || a.terms ? `
 <div class="annex">
 <h2>Conditions of this Appointment</h2>

@@ -204,6 +204,7 @@ const measured = await page.evaluate(() => {
     height: Math.ceil(body.getBoundingClientRect().height),
     width: Math.ceil(body.getBoundingClientRect().width),
     signTop: sign ? Math.round(sign.getBoundingClientRect().top) : -1,
+    signBottom: sign ? Math.round(sign.getBoundingClientRect().bottom) : -1,
     sealTop: seal ? Math.round(seal.getBoundingClientRect().top) : -1,
     sealBottom: seal ? Math.round(seal.getBoundingClientRect().bottom) : -1,
     closingTop: closing ? Math.round(closing.getBoundingClientRect().top) : -1,
@@ -330,6 +331,22 @@ check('…and the job description is annexed beyond them', pages > lettersPages,
   check('and the seal is bound with it',
     measured.sealTop >= measured.closingTop
       && measured.sealBottom <= measured.closingTop + measured.closingHeight + 1, true);
+
+  // AND THE SEAL STANDS BESIDE THE SIGNATURE, NOT UNDER IT.
+  //
+  // "The signature part must fit one page with qr code." On a full record it
+  // did not: page one came to 1059px against a printable 1032 and the QR fell
+  // to page two. There was no honest fat left in the letterhead, the
+  // particulars or the prose — but there were 470 pixels of empty page beside
+  // a 62mm-wide signature block, with the seal panel stacked underneath using
+  // another 94px of height.
+  //
+  // Side by side is worth the whole height of the panel, and it is measured
+  // here as an overlap of their vertical ranges rather than by reading the CSS:
+  // a stylesheet that said `display: flex` and a container that had gone back
+  // to block would read identically in the source.
+  check('the seal stands beside the signature rather than under it',
+    measured.sealTop < measured.signBottom - 10, true);
 }
 
 console.log('\nAnd it is the width of the page, not wider\n');
@@ -475,25 +492,39 @@ console.log('\nThe seal panel is at the foot, where a reader looks for it\n');
   //
   // This used to assert that the manifest was the LAST THING ON THE DOCUMENT,
   // which encoded the old shape: one continuous flow with the signature
-  // arriving on page three. It is now the last thing on PAGE ONE, and the
-  // annex follows it on a page of its own.
+  // arriving on page three. Then it was the last thing on PAGE ONE — which
+  // encoded a second shape, and cost the University the thing they actually
+  // asked for.
+  //
+  // WHAT MATTERS IS THE SIGNATURE AND THE QR, and the manifest is what gives
+  // way. `.closing` moves as one block, so when page one was 27px too full the
+  // whole foot of the letter — closing, signature, seal, QR — went to page two
+  // and left page one half empty below the table. The manifest is now outside
+  // that block: a list of what travels with the letter rather than part of it,
+  // so it is what moves when something has to, and the signature and the seal
+  // stay where the University put them.
   //
   // MEASURED AGAINST THE PRINTABLE HEIGHT, not against the flow. A signature
   // 20px past the bottom of page one is on page two, and only this number
   // knows that.
   // ---------------------------------------------------------------------
-  check('the manifest is the last thing on page one',
-    tail.hasAnnex ? tail.annexTop >= tail.attBottom : tail.attBottom >= measured.height - 40,
-    true);
+  check('the manifest comes after the seal', tail.attTop >= tail.sealBottom, true);
 
   if (tail.hasAnnex) {
     const onPageOne = (px) => px > 0 && px <= A4_PRINTABLE_HEIGHT;
-    console.log(`      page one ends at ${tail.attBottom}px of ${A4_PRINTABLE_HEIGHT}px`);
+    console.log(`      the seal ends at ${tail.sealBottom}px of ${A4_PRINTABLE_HEIGHT}px`
+      + ` — ${A4_PRINTABLE_HEIGHT - tail.sealBottom}px to spare`);
 
     check('the signature is on page one', onPageOne(tail.sigBottom), true);
-    check('the seal is on page one', onPageOne(tail.sealBottom), true);
-    check('and everything before the annex fits on page one',
-      onPageOne(tail.attBottom), true);
+    check('the seal and its QR are on page one', onPageOne(tail.sealBottom), true);
+
+    // NOT BY A HAIR. It fitted by NINE PIXELS before this was measured, which
+    // is how the University's own letter came to break: their record had one
+    // more line in it than the fixture did. A margin this size survives a
+    // longer address, another row of particulars, a longer post title.
+    console.log(`      page one has ${A4_PRINTABLE_HEIGHT - tail.sealBottom}px of room below the seal`);
+    check('…with room to spare, rather than by a hair',
+      A4_PRINTABLE_HEIGHT - tail.sealBottom >= 80, true);
   }
 }
 
