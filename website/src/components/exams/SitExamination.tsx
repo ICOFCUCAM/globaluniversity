@@ -147,16 +147,26 @@ export default function SitExamination() {
   // -------------------------------------------------------------------------
   // THE PAPER.
   //
-  // Fetched once the checks have passed, and again on reconnection — the route
-  // returns the SAME arrangement every time, because it was recorded on the
-  // session the first time it was built.
+  // RELEASED BY A POST, and that changed here because a GET must not create an
+  // official academic record. The route used to build the paper on a read, so a
+  // link prefetcher, a retried request or a browser restoring tabs could have
+  // built and FROZEN a candidate's paper — 016 makes the column set-once —
+  // without the candidate ever opening the page.
+  //
+  // Posting again is safe and returns the same arrangement, so a reconnection
+  // or a move to another device shows the paper the candidate already has.
   // -------------------------------------------------------------------------
   useEffect(() => {
     if (!sessionId || !['ready', 'in_progress', 'paused'].includes(state) || paper) return;
     void (async () => {
       const { data: session } = await supabase.auth.getSession();
-      const res = await fetch(`/api/exam/questions?sessionId=${sessionId}`, {
-        headers: { authorization: `Bearer ${session.session?.access_token ?? ''}` },
+      const res = await fetch('/api/exam/questions', {
+        method: 'POST',
+        headers: {
+          authorization: `Bearer ${session.session?.access_token ?? ''}`,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({ sessionId }),
       });
       const out = await res.json().catch(() => null);
       if (out?.ok) { setPaper(out.paper); setPaperError(null); }

@@ -272,6 +272,7 @@ const MARKERS = {
   '086': 'tutor_citations',
   '087': 'course_modules.unlocks_after',
   '088': 'receipt_counters',
+  '089': 'question_bank_items',
 };
 
 /** The SQL that answers "is this one here?", for each of the three forms. */

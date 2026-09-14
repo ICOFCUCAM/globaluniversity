@@ -1,7 +1,30 @@
 // ---------------------------------------------------------------------------
 // DELIVERING THE PAPER TO ONE CANDIDATE.
 //
-// GET ?sessionId=…  -> the questions, in this candidate's order, without the key
+// POST { sessionId }   -> releases the paper: builds it from the bank, records
+//                         it on the session, returns it. Idempotent.
+// GET  ?sessionId=…    -> reads the recorded paper back. Writes nothing.
+//
+// ---------------------------------------------------------------------------
+// WHY THIS IS TWO VERBS AND USED TO BE ONE
+// ---------------------------------------------------------------------------
+//
+// The GET built the paper, wrote it to `exam_sessions` and recorded an
+// examination event. That is a read creating official academic state, and the
+// University ruled against it:
+//
+//   "A browser, proxy, crawler or prefetcher should never accidentally create
+//    an official academic record simply because it requested a page."
+//
+// Which is not hypothetical. A link prefetcher, a retried request after a
+// dropped connection, a scanner following a URL out of a log, or a browser
+// restoring tabs would each have built and FROZEN a candidate's paper — and
+// migration 016 makes the column set-once, so the paper built by the crawler is
+// the paper the candidate sits. The candidate need never have opened the page.
+//
+// So releasing is a POST and reading is a GET, which is also what makes the
+// audit trail honest: `question_viewed` is now recorded when a paper is
+// actually released to a candidate, not when something requested a URL.
 //
 // ---------------------------------------------------------------------------
 // THE PAPER IS BUILT ONCE AND THEN READ
@@ -85,9 +108,82 @@ export async function GET(request: Request) {
     }, { status: 409 });
   }
 
-  // Already built: read it back.
+  // READ IT BACK, AND THAT IS ALL A GET DOES.
   if (row.paper) {
-    return NextResponse.json({ ok: true, paper: forCandidate(row.paper as DeliveredPaper), fresh: false });
+    return NextResponse.json({ ok: true, paper: forCandidate(row.paper as DeliveredPaper) });
+  }
+
+  // NOT YET RELEASED. A GET will not release it — see the note at the top of
+  // this file. The screen posts to release, then reads.
+  return NextResponse.json({
+    ok: false,
+    error: 'not-released',
+    detail: 'The paper has not been released yet.',
+  }, { status: 409 });
+}
+
+
+// ===========================================================================
+// RELEASING THE PAPER — THE MUTATION
+// ===========================================================================
+//
+// IDEMPOTENT ON PURPOSE. A candidate who reconnects, refreshes, or moves to a
+// phone posts again and gets the same arrangement back, because the first call
+// recorded it and 016 makes the column set-once. So a retry is safe, which is
+// the property a POST needs here far more than it needs to fail on a second
+// call.
+export async function POST(request: Request) {
+  const g = await guard(request, 'sit-examination');
+  if (!g.ok) return NextResponse.json({ ok: false, error: g.error }, { status: g.status });
+  const { admin, caller } = g;
+
+  let body: Record<string, unknown>;
+  try { body = await request.json(); } catch { body = {}; }
+  const sessionId = String(body.sessionId ?? '');
+  if (!sessionId) return NextResponse.json({ ok: false, error: 'no-session' }, { status: 400 });
+
+  const { data, error } = await admin
+    .from('exam_sessions')
+    .select('id, status, paper, students(auth_user_id), examinations(id, course_code, total_marks, randomise_questions, randomise_options)')
+    .eq('id', sessionId)
+    .maybeSingle();
+
+  const row = data as Record<string, any> | null;
+
+  if (error) {
+    return NextResponse.json({
+      ok: false,
+      error: 'unreadable',
+      detail: error.message.includes('paper')
+        ? 'Run docs/migrations/016_examination_papers.sql.'
+        : error.message,
+    }, { status: 500 });
+  }
+  if (!row) return NextResponse.json({ ok: false, error: 'not-found' }, { status: 404 });
+
+  // THE CANDIDATE'S OWN SITTING. Every student holds 'sit-examination'.
+  if (row.students?.auth_user_id !== caller.id) {
+    return NextResponse.json({
+      ok: false, error: 'not-yours', detail: 'That is not your examination.',
+    }, { status: 403 });
+  }
+
+  // A PAPER IS NOT RELEASED BEFORE THE CHECKS ARE DONE. Delivering it at
+  // 'created' would let a candidate read the questions, close the tab, and come
+  // back an hour later having prepared — with the clock never having started.
+  if (!['ready', 'in_progress', 'paused', 'submitted'].includes(row.status)) {
+    return NextResponse.json({
+      ok: false,
+      error: 'not-ready',
+      detail: 'The paper is released once the pre-examination checks have passed.',
+    }, { status: 409 });
+  }
+
+  // ALREADY RELEASED: hand back the same one. This is what makes the retry safe.
+  if (row.paper) {
+    return NextResponse.json({
+      ok: true, paper: forCandidate(row.paper as DeliveredPaper), fresh: false,
+    });
   }
 
   // -------------------------------------------------------------------------

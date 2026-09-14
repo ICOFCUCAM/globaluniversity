@@ -313,6 +313,10 @@ select * from (
   select '088' as migration, '088_the_doors_the_audit_found.sql' as file,
          case when to_regclass('public.receipt_counters') is not null then 'YES' else 'NO' end as landed,
          'receipt_counters' as what_it_creates
+  union all
+  select '089' as migration, '089_the_question_bank_is_for_authors.sql' as file,
+         case when to_regclass('public.question_bank_items') is not null then 'YES' else 'NO' end as landed,
+         'question_bank_items' as what_it_creates
 ) as landed_report
  order by migration;
 

@@ -898,6 +898,20 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
       + 'the database, which the browser was inventing from Date.now() against a unique column.',
     table: 'receipt_counters',
   },
+  {
+    file: '089_the_question_bank_is_for_authors.sql',
+    what: 'THE QUESTION BANK BECOMES AN AUTHORING REPOSITORY, which is the University\u2019s '
+      + 'permanent rule after 088: \u201cStudents should only receive an assessment projection '
+      + 'containing the questions they\u2019re supposed to answer, without answer keys or '
+      + 'instructor-only metadata.\u201d A banked question used to be one JSON blob with the '
+      + 'answer inside it, so any rule admitting the question admitted the answer. Now the '
+      + 'prompt, the options and the key are three tables, the bank is scoped to a course by a '
+      + 'foreign key so a lecturer authors only in courses they teach, and NO student policy '
+      + 'admits any of it \u2014 questions leave only through a projection with no column for '
+      + 'an answer. NOTHING IS COPIED: the existing bank stays where it is until the screen is '
+      + 'moved across.',
+    table: 'question_bank_items',
+  },
 ];
 
 /** What a probe came back as. */
