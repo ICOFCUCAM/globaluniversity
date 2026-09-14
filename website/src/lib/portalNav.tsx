@@ -10,6 +10,7 @@
 import React from 'react';
 import type { ViewType, UserRole } from './types';
 import { can, type Capability } from './roles';
+import { isRuled, scopeOf, type Resource, type Action } from './grants';
 import { showsAtStage } from './studentJourney';
 import {
   UserCheck,
@@ -48,6 +49,36 @@ export interface MenuItem {
    * decides whether the door opens.
    */
   capability?: Capability;
+  /**
+   * The resource this entry is about.
+   *
+   * ---------------------------------------------------------------------
+   * "THEN THE SIDEBAR AUTOMATICALLY KNOWS WHETHER SOMETHING SHOULD BE
+   * DISPLAYED."
+   * ---------------------------------------------------------------------
+   *
+   * Where a role has been ruled on in resource/action/scope terms — see
+   * `grants.ts` — this is the ONLY thing consulted. The role list and the
+   * capability are skipped entirely, because the grant already says both: it
+   * names the resource, what may be done to it, and how much of it.
+   *
+   * Where a role has not been ruled on yet, the role list and the capability
+   * decide as before. That is what lets the University rule one office at a
+   * time instead of all twenty-three at once.
+   */
+  resource?: Resource;
+  /**
+   * What this entry does to that resource.
+   *
+   * RESOURCE ALONE IS NOT ENOUGH, and the first version of this proved it: a
+   * lecturer holds `courses/view:own-courses`, so an entry naming only the
+   * resource let them straight back into the Course catalogue — the very
+   * screen the University's ruling exists to keep them out of.
+   *
+   * The catalogue entry is `courses` + `manage`; "My courses" is `courses` +
+   * `view`. Same resource, different act, and the ruling is about the act.
+   */
+  action?: Action;
 }
 
 export interface MenuGroup {
@@ -235,6 +266,8 @@ export const menuGroups: MenuGroup[] = [
       // the ones they teach.
       {
         id: 'courses',
+        resource: 'courses',
+        action: 'manage',
         label: 'Course catalogue',
         icon: <BookOpen size={18} />,
         roles: ACADEMIC,
@@ -242,6 +275,8 @@ export const menuGroups: MenuGroup[] = [
       },
       {
         id: 'my-courses',
+        resource: 'courses',
+        action: 'view',
         label: 'My courses',
         icon: <BookOpen size={18} />,
         roles: ACADEMIC,
@@ -339,6 +374,8 @@ export const menuGroups: MenuGroup[] = [
       // the way to entering a mark.
       {
         id: 'my-students',
+        resource: 'students',
+        action: 'view',
         label: 'My students',
         icon: <Users size={18} />,
         roles: ['lecturer', 'dean', 'hod', 'programme-coordinator'],
@@ -351,6 +388,8 @@ export const menuGroups: MenuGroup[] = [
       // neither. The screen enforces the draft; this decides who gets in.
       {
         id: 'exams',
+        resource: 'question-papers',
+        action: 'create-draft',
         label: 'Question papers',
         icon: <PenTool size={18} />,
         roles: ALL,
@@ -380,12 +419,21 @@ export const menuGroups: MenuGroup[] = [
       },
       {
         id: 'questionbank',
+        resource: 'question-bank',
+        action: 'manage',
         label: 'Question bank',
         icon: <PenTool size={18} />,
         roles: ['superadmin', 'admin', 'lecturer'],
         capability: 'manage-question-bank',
       },
-      { id: 'gradebook', label: 'Grade book', icon: <ClipboardList size={18} />, roles: ['superadmin', 'admin', 'lecturer'] },
+      {
+        id: 'gradebook',
+        label: 'Grade book',
+        icon: <ClipboardList size={18} />,
+        roles: ['superadmin', 'admin', 'lecturer'],
+        resource: 'grades',
+        action: 'manage',
+      },
     ],
   },
   {
@@ -455,7 +503,14 @@ export const menuGroups: MenuGroup[] = [
       //
       // Reading a notice is not composing one. The University's ruling is
       // "create university announcements: no", and that is already true.
-      { id: 'announcements', label: 'Announcements', icon: <ClipboardList size={18} />, roles: EVERYONE },
+      {
+        id: 'announcements',
+        label: 'Announcements',
+        icon: <ClipboardList size={18} />,
+        roles: EVERYONE,
+        resource: 'announcements',
+        action: 'view',
+      },
       { id: 'forum', label: 'Discussion forum', icon: <ClipboardList size={18} />, roles: EVERYONE },
       // The University talking about itself. An administrator's job, so it sits
       // with the other outward-facing screens rather than under System — the
@@ -533,6 +588,8 @@ export const menuGroups: MenuGroup[] = [
       { id: 'analytics', label: 'Institutional analytics', icon: <BarChart3 size={18} />, roles: ['superadmin', 'admin', 'chancellor', 'vice-chancellor', 'registrar', 'finance-director', 'dean'] },
       {
         id: 'insights',
+        resource: 'early-warning',
+        action: 'manage',
         label: 'Student early warning',
         icon: <TrendingUp size={18} />,
         roles: ['superadmin', 'admin', 'lecturer'],
@@ -603,7 +660,15 @@ export const menuGroups: MenuGroup[] = [
       // was opened for somebody — their number, their post, the letter they
       // signed — and was invisible to the one person it is about, because
       // Appointments and Correspondence are gated to the offices.
-      { id: 'my-record', label: 'My record', icon: <IdCard size={18} />, roles: STAFF, capability: 'view-own-staff-record' },
+      {
+        id: 'my-record',
+        label: 'My record',
+        icon: <IdCard size={18} />,
+        roles: STAFF,
+        capability: 'view-own-staff-record',
+        resource: 'staff-record',
+        action: 'view',
+      },
       { id: 'settings', label: 'Settings', icon: <Settings size={18} />, roles: EVERYONE },
     ],
   },
@@ -736,9 +801,23 @@ export function groupsFor(
   return source
     .map((g) => ({
       ...g,
-      items: g.items.filter((i) => i.roles.includes(role)
-        // AND THE CAPABILITY, WHERE ONE IS NAMED. See MenuItem.capability.
-        && (!i.capability || can(role, i.capability))
+      items: g.items.filter((i) => (
+        // ---------------------------------------------------------------
+        // THE GRANT DECIDES, WHERE THERE IS ONE.
+        //
+        // A ruled role's entries are chosen by what it may reach, not by a
+        // role list somebody maintained separately. That is the whole point:
+        // one answer, read by the sidebar, the page and the route alike,
+        // instead of three that drift.
+        //
+        // An entry with no `resource` is still role-gated for a ruled role —
+        // the Dashboard, Settings, the discussion forum: things everybody has
+        // that are nobody's resource.
+        // ---------------------------------------------------------------
+        isRuled(role) && i.resource && i.action
+          ? scopeOf(role, i.resource, i.action) !== null
+          : i.roles.includes(role) && (!i.capability || can(role, i.capability))
+      )
         && (role !== 'student' || !stage || showsAtStage(stage, i.id))),
     }))
     .filter((g) => g.items.length > 0);
