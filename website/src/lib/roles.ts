@@ -142,9 +142,11 @@ export const OPERATIONAL_CAPABILITIES = [
   // at once — it is the single most consequential button in the academic
   // section, and it is not a teaching act.
   //
-  // `build-timetable` is held by every lecturer; `manage-courses` by every
-  // programme coordinator. Neither should be able to declare that the
-  // University is now in 2027/2028. The academic year is a fact about the
+  // `manage-courses` is held by every programme coordinator, and the academic
+  // year is not theirs to move either. (This comment used to say
+  // "`build-timetable` is held by every lecturer". It is not, and never was —
+  // the lecturer array below does not contain it. A lecturer reaches the
+  // Attendance screen through `take-attendance` instead.) The academic year is a fact about the
   // RECORD, so it sits with the Registry.
   // ---------------------------------------------------------------------
   'manage-academic-calendar',

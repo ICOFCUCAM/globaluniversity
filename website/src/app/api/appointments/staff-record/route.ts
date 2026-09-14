@@ -251,6 +251,15 @@ export async function POST(request: Request) {
       + 'finish the job rather than creating a second one.');
   }
 
+  // ---- AND THE APPOINTMENT LEARNS WHO THEY ARE --------------------------
+  //
+  // 041's read policy on `appointment_letters` lets the appointee read their
+  // own letter when `appointments.person_id` is their account. Until the record
+  // is opened there IS no account, so the column is empty and the letter is
+  // unreadable by the one person it is about. Setting it here is what lets a
+  // lecturer open their own letter of appointment from their own screen.
+  await admin.from('appointments').update({ person_id: authUserId }).eq('id', id);
+
   // The teaching record, where there is one, is what 042's column names.
   if (lecturerId) {
     await admin.from('appointments')

@@ -12,7 +12,7 @@ import type { ViewType, UserRole } from './types';
 import { showsAtStage } from './studentJourney';
 import {
   UserCheck,
-  LayoutDashboard, Users, GraduationCap, BookOpen, ClipboardList,
+  LayoutDashboard, Users, GraduationCap, BookOpen, ClipboardList, IdCard,
   FileText, Award, Monitor, PenTool, FolderOpen, BarChart3,
   Settings, Shield, BookMarked, Wallet, Stamp, UserCog, Inbox,
   ClipboardCheck, Share2, BadgeCheck, Video, Eye, CalendarClock, TrendingUp,
@@ -80,6 +80,22 @@ const EVERYONE: UserRole[] = [
 const ACADEMIC: UserRole[] = [
   'superadmin', 'admin', 'chancellor', 'vice-chancellor', 'registrar',
   'dean', 'hod', 'programme-coordinator', 'academic-office', 'lecturer', 'student',
+];
+
+/**
+ * Everybody the University employs.
+ *
+ * NOT `EVERYONE`, which includes applicants and students. This is the list for
+ * the two entries a member of staff has about THEMSELVES — their own record and
+ * their own roll — and a student on either would be a mistake of a different
+ * kind.
+ */
+const STAFF: UserRole[] = [
+  'superadmin', 'admin', 'chancellor', 'vice-chancellor', 'registrar',
+  'finance-director', 'finance', 'admissions-officer', 'dean', 'hod',
+  'programme-coordinator', 'academic-office', 'lecturer', 'library-staff',
+  'student-affairs', 'hr-officer', 'hr-administrator', 'exam-officer',
+  'examiner', 'invigilator', 'moderator',
 ];
 
 /** Retained for the entries that genuinely are staff-and-students only. */
@@ -272,6 +288,17 @@ export const menuGroups: MenuGroup[] = [
     title: 'Teaching',
     items: [
       { id: 'lecturers', label: 'Lecturers', icon: <GraduationCap size={18} />, roles: ['superadmin', 'admin'] },
+      // A CAPABILITY THAT HAD NO DOOR. Every lecturer holds
+      // `view-registered-students` and not one screen they could open was
+      // gated on it — the three that test it all leave `lecturer` out of their
+      // role lists, so the roll was visible only incidentally, per course, on
+      // the way to entering a mark.
+      {
+        id: 'my-students',
+        label: 'My students',
+        icon: <Users size={18} />,
+        roles: ['lecturer', 'dean', 'hod', 'programme-coordinator'],
+      },
       { id: 'assignments', label: 'Assignments', icon: <ClipboardList size={18} />, roles: ALL },
       { id: 'exams', label: 'Question papers', icon: <PenTool size={18} />, roles: ALL },
       // THE LIVE EXAMINATION SYSTEM. Three screens because they are three
@@ -496,6 +523,11 @@ export const menuGroups: MenuGroup[] = [
         icon: <BadgeCheck size={18} />,
         roles: ['superadmin', 'vice-chancellor', 'registrar', 'academic-office'],
       },
+      // WHAT THE UNIVERSITY HOLDS ABOUT THE PERSON READING IT. A staff record
+      // was opened for somebody — their number, their post, the letter they
+      // signed — and was invisible to the one person it is about, because
+      // Appointments and Correspondence are gated to the offices.
+      { id: 'my-record', label: 'My record', icon: <IdCard size={18} />, roles: STAFF },
       { id: 'settings', label: 'Settings', icon: <Settings size={18} />, roles: EVERYONE },
     ],
   },

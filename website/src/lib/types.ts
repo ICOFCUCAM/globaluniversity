@@ -259,6 +259,12 @@ export interface TranscriptCourse {
 }
 
 export type ViewType =
+  // WHAT THE UNIVERSITY HOLDS ABOUT THE PERSON READING IT, and the roll for
+  // the courses they teach. A staff record was opened for somebody and was
+  // invisible to them; `view-registered-students` was held by every lecturer
+  // with no screen gated on it.
+  | 'my-record'
+  | 'my-students'
   // Superadministrator only. See src/lib/roles.ts — SYSTEM_CAPABILITIES.
   | 'accounts'
   | 'studio'

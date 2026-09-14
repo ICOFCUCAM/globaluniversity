@@ -75,6 +75,8 @@ import StudentRequestQueue from './services/StudentRequestQueue';
 import AnalyticsDashboard from './analytics/AnalyticsDashboard';
 import InsightsModule from './insights/InsightsModule';
 import SettingsPage from './settings/SettingsPage';
+import MyRecord from './staff/MyRecord';
+import MyStudents from './staff/MyStudents';
 import AuditLogs from './audit/AuditLogs';
 import ScreenBoundary from './ScreenBoundary';
 import AccountManagement from './accounts/AccountManagement';
@@ -376,6 +378,13 @@ export default function AppLayout() {
         return <AnalyticsDashboard />;
       case 'insights':
         return <InsightsModule />;
+      // WHAT THE UNIVERSITY HOLDS ABOUT THE PERSON READING IT, and the roll
+      // for the courses they teach. Both were capabilities or records that
+      // existed with nothing to open them.
+      case 'my-record':
+        return <MyRecord />;
+      case 'my-students':
+        return <MyStudents />;
       case 'settings':
         return <SettingsPage />;
       case 'audit':
