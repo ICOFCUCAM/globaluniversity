@@ -275,6 +275,10 @@ select * from (
                       and column_name = 'terms')
                  then 'YES' else 'NO' end as landed,
          'appointments_without_pay.terms' as what_it_creates
+  union all
+  select '082' as migration, '082_the_staff_register.sql' as file,
+         case when to_regclass('public.staff_records') is not null then 'YES' else 'NO' end as landed,
+         'staff_records' as what_it_creates
 ) as landed_report
  order by migration;
 

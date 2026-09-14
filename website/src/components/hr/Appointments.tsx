@@ -52,6 +52,7 @@ import {
 } from '@/lib/appointmentConditions';
 import { UNIVERSITY } from '@/lib/constants';
 import { writeDocument } from '@/lib/openDocument';
+import AwaitingStaffRecord from './AwaitingStaffRecord';
 
 /**
  * A post from the register, for the picker.
@@ -499,6 +500,13 @@ export default function Appointments() {
           </button>
         )}
       </header>
+
+      {/* THE LAST STEP OF THE SENTENCE ABOVE. "…and the staff account follows"
+          was a description of something nothing did: an appointee accepted, and
+          somebody retyped their particulars into a different form. This is the
+          list of who is waiting and the button that reads it all from the
+          appointment. It renders nothing when nobody is waiting. */}
+      <AwaitingStaffRecord />
 
       {notice && (
         <p className={`rounded-xl px-4 py-3 text-sm ${notice.tone === 'ok'

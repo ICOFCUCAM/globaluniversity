@@ -137,6 +137,10 @@ const READ_ONLY_BY_DESIGN = {
   correspondence_verification: 'A view.',
   document_template_coverage: 'A view.',
   position_job_description: 'A view: the resolved job description.',
+  appointments_awaiting_staff_record: 'A view: appointees who have accepted and are not yet on '
+    + 'the staff register. Written through `staff_records`, which is what opening a record '
+    + 'inserts into — this only subtracts one from the other so the screen asks one question '
+    + 'rather than two.',
   position_default_conditions: 'A view: the conditions of appointment in force for a post — '
     + 'its own active set where it has one, its family\'s everywhere else, section by '
     + 'section. Written through `appointment_condition_sets` and '

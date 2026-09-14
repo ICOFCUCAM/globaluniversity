@@ -262,6 +262,7 @@ const MARKERS = {
   // A column the pay-free view did not carry until 081, which is the whole
   // reason the screen could not load for an HR officer.
   '081': 'appointments_without_pay.terms',
+  '082': 'staff_records',
 };
 
 /** The SQL that answers "is this one here?", for each of the three forms. */

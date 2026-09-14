@@ -799,6 +799,20 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
     table: 'appointments_without_pay',
     column: 'terms',
   },
+  {
+    file: '082_the_staff_register.sql',
+    what: 'THE UNIVERSITY GETS A STAFF REGISTER, and every appointee a staff number. It had '
+      + 'neither: `lecturers` is the only staff table and it is teaching-shaped, and the '
+      + 'ICOFSTF number is derived from it \u2014 so a Dean, a Director of Academic Affairs or a '
+      + 'Finance Officer appointed by this University received an account and NO STAFF NUMBER. '
+      + 'It also joins an appointment to the person it appointed, which nothing did: an '
+      + 'appointee accepted, and somebody RETYPED their name, email and department into a '
+      + 'separate form. A staff record cannot be opened before the appointee has accepted, and '
+      + 'one appointment cannot open two. NOTHING IS OPENED BY RUNNING THIS \u2014 an officer '
+      + 'opens each one, and `appointments_awaiting_staff_record` says who is waiting.',
+    table: 'staff_records',
+    column: 'staff_number',
+  },
 ];
 
 /** What a probe came back as. */

@@ -470,6 +470,17 @@ export const SYSTEM_CAPABILITIES = [
   // Who exists, and who may act
   'assign-roles',
   'create-staff-account',
+  // ---------------------------------------------------------------------
+  // OPENING A STAFF RECORD IS NOT CREATING AN ACCOUNT FROM NOTHING.
+  //
+  // `create-staff-account` is the Superadministrator typing somebody into
+  // existence: there is no application, no queue and no prior act. THIS is the
+  // consequence of an appointment the University has already approved, issued
+  // and had accepted — every particular is read from that record and nothing is
+  // typed. So it is a different act, held by different offices: the University
+  // named the Academic Office, the Registrar and the Vice-Chancellor.
+  // ---------------------------------------------------------------------
+  'open-staff-record',
   'suspend-account',
   'reinstate-account',
   'reset-user-password',
@@ -623,7 +634,10 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // than a separate HR approval layer, because it puts the two halves in
   // different offices rather than in two desks of the same one.
   // ---------------------------------------------------------------------
-  'vice-chancellor': ['view-executive-dashboard', 'view-all-faculties', 'view-institutional-finance', 'view-admitted-students', 'monitor-progress', 'department-reports', 'approve-credential-design',
+  'vice-chancellor': [
+    // The University named this office to open a staff record from an
+    // accepted appointment.
+    'open-staff-record','view-executive-dashboard', 'view-all-faculties', 'view-institutional-finance', 'view-admitted-students', 'monitor-progress', 'department-reports', 'approve-credential-design',
     // ---------------------------------------------------------------------
     // THE VICE-CHANCELLOR CAN DO THEIR OWN WORK.
     //
@@ -810,6 +824,9 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // The Registry answers most of what a student asks: enrolment
   // confirmations, cards, leave, deferment, a change of programme.
   registrar: [
+    // The University named this office to open a staff record from an
+    // accepted appointment.
+    'open-staff-record',
     'handle-student-request',
     // Retained: the Registrar's own approve route still holds this, and the
     // university may want a single-office fallback if the Admissions Office is
@@ -850,6 +867,9 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // The Academic Office answers the academic ones — a programme change, a
   // course withdrawal, an appeal.
   'academic-office': [
+    // The University named this office to open a staff record from an
+    // accepted appointment.
+    'open-staff-record',
     'handle-student-request',
     'assign-lecturers', 'build-timetable', 'manage-courses',
     'approve-credential-design', 'recompute-gpa',
