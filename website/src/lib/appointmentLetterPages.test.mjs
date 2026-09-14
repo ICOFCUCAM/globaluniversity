@@ -497,6 +497,86 @@ console.log('\nThe seal panel is at the foot, where a reader looks for it\n');
   }
 }
 
+// ---------------------------------------------------------------------------
+// A REPRODUCED SIGNATURE SITS ON THE RULE, AND IT DID NOT.
+// ---------------------------------------------------------------------------
+//
+// `officialDocument.ts` has carried the comment "A REPRODUCED SIGNATURE SITS ON
+// THE RULE" since the day it was written, and the document did not do it.
+// Rendered at A4 and read with getBoundingClientRect, the image's bottom edge
+// was SIX PIXELS ABOVE the line: -6px on the image never had a chance against
+// the +16px the rule carries to leave room for a pen.
+//
+// A signature hovering above its own line is the visual signature of a pasted
+// image, which is the one impression a letter of appointment must not give. A
+// pen crosses the line.
+//
+// A COMMENT IS NOT A MEASUREMENT, which is the whole lesson: the claim was in
+// the file for months, read by everybody who touched it, and false.
+// ---------------------------------------------------------------------------
+console.log('\nThe reproduced signature crosses the rule, as a pen does\n');
+
+{
+  // A MARK THAT BELONGS TO NOBODY. A stroke across a transparent box — enough
+  // for the geometry, and not a specimen of any officer's real signature.
+  const mark = 'data:image/svg+xml;base64,' + Buffer.from(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="300" height="90">'
+    + '<path d="M10 70 C 80 10, 150 80, 290 30" fill="none" stroke="#12203f" stroke-width="6"/>'
+    + '</svg>').toString('base64');
+
+  const signed = await appointmentLetterHtml({
+    appointment, reference: 'APT-2026-0043', issuedOn: '2026-09-12', version: 1,
+    signatoryName: 'A Specimen Signatory', signatoryRole: 'Vice Chancellor',
+    signatureImage: mark, siteUrl: 'https://example.test',
+  });
+
+  const p = await browser.newPage({ viewport: { width: 794, height: 1123 } });
+  await p.setContent(signed.html, { waitUntil: 'load' });
+  await p.evaluate(() => document.fonts?.ready);
+
+  const geom = await p.evaluate(() => {
+    const box = (el) => (el ? el.getBoundingClientRect() : null);
+    const img = box(document.querySelector('.sign img.sig'));
+    const rule = box(document.querySelector('.sign .line'));
+    const name = box(document.querySelector('.sign p strong'));
+    return {
+      hasImage: Boolean(img),
+      overlap: img && rule ? Math.round(img.bottom - rule.top) : null,
+      nameBelow: name && rule ? name.top > rule.top : null,
+      imageHeight: img ? Math.round(img.height) : null,
+    };
+  });
+  await p.close();
+
+  check('the signature is drawn at all', geom.hasImage, true);
+  console.log(`      it crosses the rule by ${geom.overlap}px`);
+  // CROSSES IT, rather than floating above or swallowing it. Below 1 and it is
+  // hovering; much past the image's own height and the rule would be lost
+  // inside the mark instead of under it.
+  check('…and crosses the rule rather than floating above it', geom.overlap >= 6, true);
+  check('…without the rule disappearing into it', geom.overlap < 24, true);
+  check('…and the name is still beneath the rule', geom.nameBelow, true);
+
+  // AND THE UNSIGNED LETTER KEEPS ITS ROOM. The 16px above the rule is the
+  // space an officer signs into by hand; closing it everywhere would give every
+  // hand-signed letter a cramped line with nowhere to sign.
+  const q = await browser.newPage({ viewport: { width: 794, height: 1123 } });
+  await q.setContent(readFileSync(file, 'utf8'), { waitUntil: 'load' });
+  const unsigned = await q.evaluate(() => {
+    const sign = document.querySelector('.sign');
+    const rule = document.querySelector('.sign .line');
+    return {
+      classed: sign ? sign.className : '',
+      ruleGap: rule ? parseInt(getComputedStyle(rule).marginTop, 10) : null,
+    };
+  });
+  await q.close();
+
+  check('an unsigned letter is not marked as signed',
+    unsigned.classed.includes('signed'), false);
+  check('…and keeps the space above the rule for a pen', unsigned.ruleGap >= 12, true);
+}
+
 await browser.close();
 
 console.log(failures === 0 ? '\nAll letter page checks passed.' : `\n${failures} check(s) failed.`);

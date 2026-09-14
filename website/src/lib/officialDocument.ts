@@ -175,11 +175,30 @@ export function documentStyles(): string {
   .closing { break-inside: avoid; page-break-inside: avoid; }
   .sign { margin-top: 12px; break-inside: avoid; page-break-inside: avoid; }
   .byauthority { letter-spacing: .1em; font-size: 9pt; font-weight: bold; margin-bottom: 10px; }
+  /* THE RULE'S 16px OF AIR IS FOR A PEN. An officer signing by hand needs room
+     above the line; that is what this margin is. Where a signature is already
+     reproduced, that room is exactly what makes it float. */
   .sign .line { border-top: 1px solid #1c1720; width: 62mm; margin-top: 16px; }
   /* A REPRODUCED SIGNATURE SITS ON THE RULE. Bounded in both directions: an
      oversized specimen would push the seal panel onto a second page, which is
      the failure the page-count tests exist to catch. */
   .sign .sig { display: block; max-height: 18mm; max-width: 62mm; margin-bottom: -6px; }
+  /* ----------------------------------------------------------------------
+     AND IT DID NOT SIT ON IT. MEASURED.
+     ----------------------------------------------------------------------
+     The comment above has said "sits on the rule" since it was written, and
+     the document did not do it: rendered at A4 and read with
+     getBoundingClientRect, the image's bottom edge was SIX PIXELS ABOVE the
+     line. -6px on the image never had a chance against +16px on the rule.
+     A signature hovering above its line is the visual signature of a pasted
+     image, which is the one impression a letter of appointment must not give.
+     A pen crosses the line; so does this now.
+     WHY A CLASS AND NOT A BLANKET RULE. With no image the 16px is the space
+     somebody signs into by hand, and removing it everywhere would give the
+     hand-signed letters a cramped line with nowhere to sign.
+     ---------------------------------------------------------------------- */
+  .sign.signed .line { margin-top: 0; }
+  .sign.signed .sig { margin-bottom: -11px; }
   .sign .authorised { font-size: 8.5pt; color: #5c5366; margin-top: 4px; }
   /* A rich-text body is markup, not pre-wrapped text, so it must NOT inherit
      white-space: pre-wrap — the editor's own newlines would double every gap. */
@@ -302,7 +321,12 @@ export interface Signature {
 }
 
 export function signatureBlock(s: Signature): string {
-  return `<div class="sign">
+  // `signed` ONLY WHERE THERE IS A SIGNATURE TO PLACE. It closes the gap the
+  // rule leaves for a pen, and a letter waiting to be signed by hand still
+  // needs that gap. Computed from the same condition that decides whether the
+  // image is drawn at all, so the two cannot disagree.
+  const reproduced = Boolean(s.image && s.image.startsWith('data:image/'));
+  return `<div class="sign${reproduced ? ' signed' : ''}">
   ${s.byAuthorityOf
     ? `<p class="byauthority">BY AUTHORITY OF ${escape(s.byAuthorityOf.toUpperCase())}</p>`
     : ''}
@@ -313,7 +337,7 @@ export function signatureBlock(s: Signature): string {
   // schedule of duties is a document that has been made out of a template
   // without being read.
   s.closing === '' ? '' : `<p>${escape(s.closing ?? 'Yours sincerely,')}</p>`}
-  ${s.image && s.image.startsWith('data:image/')
+  ${reproduced
     // THE RULE IS DRAWN EITHER WAY. A reproduced signature sits ON it, not
     // instead of it: a document with an image and no line looks like a picture
     // of a letter, and one with a line and no image is a letter waiting to be

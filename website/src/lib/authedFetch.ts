@@ -32,6 +32,71 @@ export interface ApiResult {
   [key: string]: unknown;
 }
 
+// ---------------------------------------------------------------------------
+// AND THE SECOND THING THAT WENT WRONG HERE: `invalid-token`
+// ---------------------------------------------------------------------------
+//
+// The Vice-Chancellor opened Draft & submit, signed in, name in the sidebar,
+// and the screen said:
+//
+//     invalid-token
+//
+// Not a database fault and not a permission: the ACCESS TOKEN HAD EXPIRED.
+// `getSession()` hands back whatever is in storage without checking whether it
+// is still good, and supabase-js only refreshes on a timer that does not run
+// while a tab is in the background. A tab left open — and this University works
+// with twenty of them — wakes up holding a token Supabase will not accept, and
+// the first call made from it is refused before the refresh timer ever fires.
+//
+// TWO THINGS FIX IT, and neither alone is enough:
+//
+//   1. REFRESH BEFORE SENDING when the token is at or near its expiry. Cheap,
+//      and it removes the race for every call that is about to make one.
+//   2. REFRESH AND RETRY ONCE when the route refuses anyway. The clock can be
+//      wrong, the token can be revoked server-side, and the window between
+//      check and send is real.
+//
+// AND `invalid-token` NEVER REACHES AN OFFICER AGAIN. If the retry fails too,
+// the session is genuinely gone and the screen says so in words that tell them
+// what to do — the same apology this file's header is about.
+// ---------------------------------------------------------------------------
+
+/** Refresh with this much of the token's life left, in seconds. */
+const REFRESH_WITHIN = 60;
+
+/** The route refusals that mean "your session, not your permissions". */
+const STALE = new Set(['invalid-token', 'no-token']);
+
+const SESSION_GONE = {
+  ok: false as const,
+  error: 'not-signed-in',
+  detail: 'Your session has expired. Sign in again and try once more — nothing was sent.',
+};
+
+/**
+ * An access token that is good now, rather than one that was good once.
+ *
+ * `force` skips the expiry check and refreshes outright, which is what the
+ * retry needs: the token looked fine and the server disagreed.
+ */
+async function freshToken(force = false): Promise<string | null> {
+  const { data } = await supabase.auth.getSession();
+  const session = data.session;
+  if (!session) return null;
+
+  const expiresAt = session.expires_at ?? 0;
+  const secondsLeft = expiresAt - Math.floor(Date.now() / 1000);
+
+  if (!force && secondsLeft > REFRESH_WITHIN) return session.access_token;
+
+  // REFRESH FAILING IS NOT AN ERROR TO REPORT AS ONE. It means the refresh
+  // token is spent too, and the officer is signed out — which the caller turns
+  // into a sentence rather than a code.
+  const { data: refreshed, error } = await supabase.auth.refreshSession();
+  if (error || !refreshed.session) return null;
+  return refreshed.session.access_token;
+}
+
 /**
  * Fetch a route that sits behind `guard()`.
  *
@@ -46,21 +111,7 @@ export interface ApiResult {
 export async function authedFetch(
   url: string, init: RequestInit = {},
 ): Promise<ApiResult> {
-  const { data } = await supabase.auth.getSession();
-  const token = data.session?.access_token;
-
-  if (!token) {
-    // SAID IN THE SCREEN'S OWN WORDS, not as `no-token`. The officer is signed
-    // out or their session has expired, and "no-token" sends them to look at
-    // the database.
-    return {
-      ok: false,
-      error: 'not-signed-in',
-      detail: 'Your session has expired. Sign in again and try once more — nothing was sent.',
-    };
-  }
-
-  try {
+  const send = async (token: string): Promise<ApiResult> => {
     const response = await fetch(url, {
       ...init,
       headers: {
@@ -76,6 +127,30 @@ export async function authedFetch(
       error: `http-${response.status}`,
       detail: 'The server answered with something that was not a result.',
     };
+  };
+
+  try {
+    const token = await freshToken();
+    // SAID IN THE SCREEN'S OWN WORDS, not as `no-token`. The officer is signed
+    // out or their session has expired, and "no-token" sends them to look at
+    // the database.
+    if (!token) return SESSION_GONE;
+
+    const first = await send(token);
+    if (!first.ok && STALE.has(String(first.error))) {
+      // ONE RETRY, WITH A FORCED REFRESH. The token passed the expiry check and
+      // the server refused it anyway — a wrong clock, a revoked session, or the
+      // gap between checking and sending. Trying twice costs a round trip;
+      // showing `invalid-token` to the Vice-Chancellor costs an afternoon.
+      const second = await freshToken(true);
+      if (!second) return SESSION_GONE;
+      const retried = await send(second);
+      // STILL REFUSED MEANS THE SESSION IS GONE. Whatever the route called it,
+      // the officer needs the sentence, not the code.
+      if (!retried.ok && STALE.has(String(retried.error))) return SESSION_GONE;
+      return retried;
+    }
+    return first;
   } catch (e) {
     return {
       ok: false,
@@ -119,13 +194,10 @@ export type AuthedFile =
 export async function authedFile(
   url: string, payload: Record<string, unknown>,
 ): Promise<AuthedFile> {
-  try {
-    const { data } = await supabase.auth.getSession();
-    const token = data.session?.access_token;
-    if (!token) {
-      return { ok: false, error: 'no-token', detail: 'You are not signed in any more.' };
-    }
-
+  // THE SAME EXPIRY HANDLING AS `authedFetch`. A stale token refuses a PDF
+  // exactly as readily as it refuses a register, and an officer who has just
+  // been told their letter could not be opened will not think "my session".
+  const send = async (token: string): Promise<AuthedFile> => {
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', authorization: `Bearer ${token}` },
@@ -151,6 +223,21 @@ export async function authedFile(
     const named = /filename="([^"]+)"/.exec(disposition);
 
     return { ok: true, blob: await response.blob(), filename: named ? named[1] : null };
+  };
+
+  try {
+    const token = await freshToken();
+    if (!token) return SESSION_GONE;
+
+    const first = await send(token);
+    if (!first.ok && STALE.has(String(first.error))) {
+      const second = await freshToken(true);
+      if (!second) return SESSION_GONE;
+      const retried = await send(second);
+      if (!retried.ok && STALE.has(String(retried.error))) return SESSION_GONE;
+      return retried;
+    }
+    return first;
   } catch (e) {
     return {
       ok: false,
