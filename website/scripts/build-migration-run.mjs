@@ -263,6 +263,8 @@ const MARKERS = {
   // reason the screen could not load for an HR officer.
   '081': 'appointments_without_pay.terms',
   '082': 'staff_records',
+  // NOT `students`, which 001 created. What 083 changes is who may read it.
+  '083': 'policydef:students_staff_read:teaches_this_student',
 };
 
 /** The SQL that answers "is this one here?", for each of the three forms. */
@@ -296,6 +298,29 @@ function landedTest(marker) {
     return `case when to_regclass('public.${name}') is null then 'NO'
                  when position('${needle.replace(/'/g, "''")}' in
                                pg_get_viewdef('public.${name}'::regclass)) > 0
+                 then 'YES' else 'NO' end`;
+  }
+  // ---------------------------------------------------------------------
+  // A POLICY'S OWN PREDICATE, for a migration that only NARROWS one.
+  //
+  // 083 creates no table, no column and no view. It creates a function and
+  // rewrites `students_staff_read` with it, and `to_regclass` would report
+  // `students` — which has been there since 001 — as proof that 083 landed.
+  // That is a false YES about a migration that closes a hole in the student
+  // register, which is the worst kind this table can print.
+  //
+  // `pg_get_expr(polqual, polrelid)` renders the predicate the database is
+  // ACTUALLY ENFORCING, so the needle must be a phrase the new policy has and
+  // the old one did not.
+  // ---------------------------------------------------------------------
+  if (marker.startsWith('policydef:')) {
+    const [, name, ...rest] = marker.split(':');
+    const needle = rest.join(':');
+    return `case when exists (
+                   select 1 from pg_policy p
+                    where p.polname = '${name}'
+                      and position('${needle.replace(/'/g, "''")}' in
+                                   pg_get_expr(p.polqual, p.polrelid)) > 0)
                  then 'YES' else 'NO' end`;
   }
   if (marker.startsWith('rows:')) {

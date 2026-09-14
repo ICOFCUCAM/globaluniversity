@@ -206,6 +206,14 @@ export async function GET(request: Request) {
       });
       continue;
     }
+    // A FUNCTION IS PROBED BY CALLING IT. 083 creates no table and no column,
+    // and the alternative was reporting a migration that closes a hole in the
+    // student register as "unverifiable, check by hand".
+    if (probe.rpc) {
+      const { error } = await admin.rpc(probe.rpc, probe.rpcArgs ?? {});
+      migrations.push({ file: probe.file, what: probe.what, state: stateFromError(error) });
+      continue;
+    }
     const { error } = await admin
       .from(probe.table!)
       .select(probe.column ?? 'id', { count: 'exact', head: true })

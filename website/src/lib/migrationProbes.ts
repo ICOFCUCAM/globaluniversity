@@ -48,6 +48,23 @@ export interface MigrationProbe {
   /** Absent when the table itself is the marker. */
   column?: string;
   /**
+   * A function the migration creates, called instead of reading a table.
+   *
+   * WHY THIS WAS ADDED. 083 creates no table and no column — it creates a
+   * function and narrows a policy with it — so the only classification
+   * available was `cannotSee`, "unverifiable, check by hand". That is a fair
+   * answer about a migration that widens a CHECK constraint and a poor one
+   * about a migration that closes a hole: until 083 runs, every lecturer
+   * account reads the whole student register, and a readiness panel shrugging
+   * at that is the panel failing at the one job it has.
+   *
+   * PostgREST serves a function as an endpoint, so a missing one comes back
+   * naming itself exactly as a missing table does.
+   */
+  rpc?: string;
+  /** What to call `rpc` with. A probe never means anything by its arguments. */
+  rpcArgs?: Record<string, unknown>;
+  /**
    * Set where nothing the application can read changes.
    *
    * The value is the check to run by hand. These migrations are reported as
@@ -813,6 +830,18 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
     table: 'staff_records',
     column: 'staff_number',
   },
+  {
+    file: '083_a_lecturer_sees_their_own_students.sql',
+    what: 'A LECTURER STOPS BEING ABLE TO READ EVERY STUDENT THE UNIVERSITY HAS. '
+      + '`students_staff_read` named twelve roles and `lecturer` was one of them, so any '
+      + 'lecturer account could read the whole register from a browser — every student’s '
+      + 'name, matriculation number, programme and status, taught by them or not. The screen '
+      + 'asked only for their own roll, but a screen is a convenience and a policy is the rule. '
+      + 'After this a lecturer reads only the students registered on courses they teach, and '
+      + 'the Registrar, Admissions, Finance and the faculties read the register as before.',
+    rpc: 'teaches_this_student',
+    rpcArgs: { the_student: '00000000-0000-0000-0000-000000000000' },
+  },
 ];
 
 /** What a probe came back as. */
@@ -835,6 +864,9 @@ export function stateFromError(
   // PostgREST reports a missing column on a select as a schema-cache miss
   // (PGRST204) or in the message text, depending on version.
   if (code === 'PGRST204' || code === 'PGRST205') return 'outstanding';
+  // 42883 is an undefined function; PGRST202 is the same thing reported by
+  // PostgREST, which serves a function as an endpoint and so cannot find it.
+  if (code === '42883' || code === 'PGRST202') return 'outstanding';
   if (/does not exist|could not find/i.test(error.message ?? '')) return 'outstanding';
   return 'unknown';
 }

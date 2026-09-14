@@ -55,7 +55,30 @@ for (const probe of MIGRATION_PROBES) {
   // at the foot of this file instead.
   if (probe.cannotSee) continue;
   const sql = read(probe.file);
-  if (probe.column) {
+  if (probe.rpc) {
+    // -----------------------------------------------------------------------
+    // A FUNCTION PROBE, WHICH 083 NEEDED AND NOTHING BEFORE IT DID.
+    //
+    // COMMENTS STRIPPED FIRST, and this file has been caught by that twice
+    // already. 083 names `teaches_this_student` in eight comments explaining
+    // why it exists, so a bare substring search would pass on a migration that
+    // discussed the function at length and never created it.
+    // -----------------------------------------------------------------------
+    const bare = sql.replace(/--.*$/gm, '');
+    check(`${probe.file} creates ${probe.rpc}()`,
+      new RegExp(`create (?:or replace )?function\\s+${probe.rpc}\\s*\\(`, 'i').test(bare), true);
+    // AND THE ARGUMENTS IT IS CALLED WITH ARE THE ONES IT TAKES. A probe
+    // passing `student_id` to a function whose parameter is `the_student` gets
+    // "function not found" from PostgREST and reports a migration that HAS run
+    // as outstanding — sending the University to the SQL editor for nothing.
+    for (const arg of Object.keys(probe.rpcArgs ?? {})) {
+      const sig = new RegExp(
+        `create (?:or replace )?function\\s+${probe.rpc}\\s*\\(([\\s\\S]*?)\\)`, 'i',
+      ).exec(bare);
+      check(`…and takes the argument '${arg}' the probe passes it`,
+        Boolean(sig) && new RegExp(`\\b${arg}\\b`).test(sig[1]), true);
+    }
+  } else if (probe.column) {
     // ---------------------------------------------------------------------
     // THE WHOLE STATEMENT, NOT A WINDOW OF EIGHTY CHARACTERS.
     //
