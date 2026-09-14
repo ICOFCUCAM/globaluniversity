@@ -130,12 +130,38 @@ export default function SettingsPage() {
     ...(can(user?.role, 'connect-own-social') || can(user?.role, 'connect-university-social')
       ? [{ id: 'social', label: 'Connected social accounts', icon: <Share2 size={16} /> }]
       : []),
-    // MY SIGNATURE. Offered to whoever may issue a letter, because it is
-    // their own signature and nobody else's business. 049 built the table, both
-    // letter routes read it, and until now nothing could put one in — so the
-    // reading code ran against a table that could only be empty.
-    ...(can(user?.role, 'issue-appointment-letter') || can(user?.role, 'issue-correspondence')
-      ? [{ id: 'signature', label: 'My signature', icon: <PenLine size={16} /> }]
+    // ---------------------------------------------------------------------
+    // SIGNATURES. Two different people need this tab, and it was offered to
+    // only one of them.
+    //
+    // Storing your own specimen belongs to whoever may issue a letter — it is
+    // their signature and nobody else's business. But a specimen arrives
+    // SWITCHED OFF and 049 will not let anybody switch on their own, so a
+    // second officer has to. That officer holds `approve-credential-design`:
+    // the Registrar, the Academic Office, the Vice-Chancellor.
+    //
+    // AND NEITHER THE REGISTRAR NOR THE ACADEMIC OFFICE COULD SEE THIS TAB.
+    // Gated on the issuing capabilities alone, the two offices the University
+    // appointed to make this decision had nowhere to make it — so the
+    // Vice-Chancellor's own signature could be enabled by the Superadministrator
+    // and by nobody else, which is not what the capability model says.
+    //
+    // The same fault as the `social` tab above it, four lines up, for the same
+    // reason: a tab gated on one of the two capabilities that lead to it.
+    // ---------------------------------------------------------------------
+    ...(can(user?.role, 'issue-appointment-letter')
+      || can(user?.role, 'issue-correspondence')
+      || can(user?.role, 'approve-credential-design')
+      ? [{
+        id: 'signature',
+        // NAMED FOR WHAT THE READER CAN DO THERE. An officer who may only
+        // decide about other people's signatures has no "my signature" to
+        // manage, and a tab promising one is a tab they open once.
+        label: can(user?.role, 'issue-appointment-letter')
+          || can(user?.role, 'issue-correspondence')
+          ? 'My signature' : 'Signatures',
+        icon: <PenLine size={16} />,
+      }]
       : []),
     { id: 'grading', label: 'Grading Scale', icon: <Database size={16} /> },
     // WHAT THIS DEPLOYMENT IS ACTUALLY CONFIGURED TO DO. Almost every variable

@@ -130,5 +130,68 @@ check('…and asks for the authority before it will',
 check('the screen refuses to offer you your own',
   /isMine \?/.test(screen), true);
 
+console.log('\nAnd the officers who may enable one can reach the screen\n');
+
+// ---------------------------------------------------------------------------
+// A CAPABILITY THAT LEADS TO A TAB NOBODY HOLDING IT CAN OPEN.
+//
+// `enable` needs `approve-credential-design` — the Registrar, the Academic
+// Office, the Vice-Chancellor. The tab holding the control was offered only to
+// roles that may ISSUE a letter, which is the Vice-Chancellor and the
+// Chancellor. So of the three offices the University appointed to make this
+// decision, two could not see the screen at all, and the third may not decide
+// about their own. The Vice-Chancellor's signature could be switched on by the
+// Superadministrator and by nobody else.
+//
+// NOT AN ABSTRACTION. This is exactly the fault the `social` tab four lines
+// above it already carried, and its comment says so — gated on one of the two
+// capabilities that lead to it, with the Superadministrator holding both so
+// nothing looked wrong.
+// ---------------------------------------------------------------------------
+const roles = readFileSync(join(here, 'roles.ts'), 'utf8');
+const settings = decomment(
+  readFileSync(join(here, '../components/settings/SettingsPage.tsx'), 'utf8'));
+
+const holdersOf = (capability) => {
+  const out = [];
+  for (const m of roles.matchAll(/'?([a-z-]+)'?:\s*\[([^\]]*)\]/g)) {
+    if (m[2].includes(capability)) out.push(m[1]);
+  }
+  return out;
+};
+
+// The tab's own condition, read out of the screen rather than restated here.
+const gate = /id: 'signature'[\s\S]{0,400}?\}\]/.exec(settings)
+  ? /\.\.\.\(([\s\S]*?)\?\s*\[\{\s*\n?\s*id: 'signature'/.exec(settings)?.[1] ?? ''
+  : '';
+
+check('the signature tab is offered on a stated condition', gate.length > 0, true);
+check('…which includes the capability that may enable one',
+  gate.includes('approve-credential-design'), true);
+check('…as well as the ones that may store their own',
+  gate.includes('issue-appointment-letter') && gate.includes('issue-correspondence'), true);
+
+// AND SAID AS A FACT ABOUT THE ROLES, not about the text. If a future role
+// gains the capability, it must still be able to open the screen.
+const deciders = holdersOf('approve-credential-design');
+check('at least one office may decide about a signature', deciders.length > 0, true);
+const shutOut = deciders.filter((r) => !gate.includes('approve-credential-design'));
+check('…and not one of them is shut out of the screen', shutOut, []);
+
+// THE REGISTRAR IS THE POINT OF THE CHECK. Named, because a generic assertion
+// over a list that happened to be empty would pass while saying nothing.
+check('the Registrar may decide about a signature',
+  deciders.includes('registrar'), true);
+check('…and does not hold the capability to issue an appointment letter',
+  holdersOf('issue-appointment-letter').includes('registrar'), false);
+
+// The screen must not then show them a form they cannot use.
+const specimen = decomment(
+  readFileSync(join(here, '../components/settings/SignatureSpecimen.tsx'), 'utf8'));
+check('a decider who may not store one is not shown the form',
+  /mayStore && \(/.test(specimen), true);
+check('…and a refusal on `mine` is not shown to them as a fault',
+  /not-permitted[\s\S]{0,120}setMayStore\(false\)/.test(specimen), true);
+
 console.log(failures ? `\n${failures} check(s) failed.\n` : '\nAll signatory checks passed.\n');
 process.exit(failures ? 1 : 0);

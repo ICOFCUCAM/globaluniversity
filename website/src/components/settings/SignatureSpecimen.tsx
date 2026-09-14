@@ -318,6 +318,14 @@ export default function SignatureSpecimen({
   const [name, setName] = useState(defaultName ?? '');
   const [role, setRole] = useState(defaultRole ?? '');
   const [message, setMessage] = useState<{ tone: 'ok' | 'bad'; text: string } | null>(null);
+  // WHETHER THIS OFFICER HAS A SIGNATURE OF THEIR OWN TO MANAGE.
+  //
+  // The Registrar and the Academic Office reach this screen to decide about
+  // OTHER people's specimens; they may not issue a letter, so they may not
+  // store one either, and `mine` refuses them. That refusal is the ordinary
+  // case for them, not a fault — showing it as a red banner would tell an
+  // officer something is broken at the moment they arrive to do their job.
+  const [mayStore, setMayStore] = useState(true);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
@@ -325,6 +333,10 @@ export default function SignatureSpecimen({
     const out = await authedPost('/api/admin/signature', { action: 'mine' });
     setLoading(false);
     if (!out.ok) {
+      if (String(out.error ?? '').startsWith('not-permitted')) {
+        setMayStore(false);
+        return;
+      }
       setMessage({
         tone: 'bad',
         text: (out.detail as string | undefined) ?? String(out.error ?? 'That could not be read.'),
@@ -368,6 +380,10 @@ export default function SignatureSpecimen({
 
   return (
     <div className="space-y-5">
+      {/* THE OWN-SIGNATURE HALF, for an officer who issues letters. Hidden
+          entirely from the Registrar and the Academic Office, who come here to
+          decide about somebody else's and have none of their own to keep. */}
+      {mayStore && (
       <div>
         <h3 className="flex items-center gap-2 font-heading text-lg font-bold text-[#422e59] dark:text-[#e4dcf0]">
           <PenLine size={18} /> My signature
@@ -378,6 +394,7 @@ export default function SignatureSpecimen({
           client that blocks images and on a document opened offline.
         </p>
       </div>
+      )}
 
       {message && (
         <div role="status" className={`rounded-xl p-3 text-sm ${
@@ -390,6 +407,8 @@ export default function SignatureSpecimen({
         </div>
       )}
 
+      {mayStore && (
+      <>
       {/* WHERE IT STANDS. Three states and they are genuinely different: not
           stored, stored but off, and in force. The middle one is the one an
           officer needs explaining, because they have done everything they can
@@ -495,6 +514,9 @@ export default function SignatureSpecimen({
           </p>
         )}
       </div>
+
+      </>
+      )}
 
       {/* THE HALF THAT WAS MISSING. Storing a signature was never enough: until
           somebody switches it on, every letter prints an empty rule. This
