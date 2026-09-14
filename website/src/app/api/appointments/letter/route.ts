@@ -55,7 +55,7 @@ import {
   letterReference, printedReference, missingFrom, blocked, ACTION_TEMPLATE,
   MIN_AMENDMENT_REASON, type AppointmentEvent, type AppointmentAction, type Allowance,
 } from '@/lib/appointments';
-import type { Capability } from '@/lib/roles';
+import { roleLabels, type Capability } from '@/lib/roles';
 import {
   whatsappNumber, whyNotWhatsApp, whatsappUrl, appointmentMessage,
 } from '@/lib/whatsapp';
@@ -370,6 +370,53 @@ export async function POST(request: Request) {
       .eq('owner_id', caller.id).eq('enabled', true).is('revoked_at', null).maybeSingle();
     const sig = spec as Row | null;
 
+    // -----------------------------------------------------------------------
+    // WHO SIGNED IT, AND IN WHAT OFFICE.
+    //
+    // The University sent a letter of appointment signed:
+    //
+    //     vc@iguc.net
+    //     Registrar
+    //
+    // Both lines were wrong, and both came from a fallback written here.
+    //
+    // AN EMAIL ADDRESS IS NOT A NAME. `caller.email` was the last resort while
+    // `caller.fullName` — the signer's actual name, already loaded on every
+    // request — was never consulted. A letter of appointment is shown to a
+    // bank, an embassy and a ministry; the name on it is the name of the person
+    // who made the appointment.
+    //
+    // AND 'Registrar' WAS HARD-CODED. It was printed under the Vice-Chancellor's
+    // own signature, on a letter headed BY AUTHORITY OF THE VICE-CHANCELLOR —
+    // so the document stated an office its signer does not hold. The caller's
+    // own role says what office they hold, and nothing has to be guessed.
+    //
+    // NEITHER FALLS BACK TO NOTHING. A letter that cannot say who signed it is
+    // refused below rather than issued with a blank or an address, because an
+    // unsigned letter of appointment that looks signed is worse than no letter.
+    // -----------------------------------------------------------------------
+    const signatoryName = String(
+      body.signatoryName ?? sig?.owner_name ?? caller.fullName ?? '').trim();
+    const signatoryRole = String(
+      body.signatoryRole ?? sig?.owner_role ?? roleLabels[caller.role] ?? '').trim();
+
+    if (!signatoryName || signatoryName.includes('@')) {
+      return {
+        error: bad('cannot-sign', 400,
+          'The University has no name recorded for you, so this letter would be signed by an email '
+          + 'address. Record your full name on your account, or enable a signature specimen, and '
+          + 'generate the letter again.'),
+      };
+    }
+    if (!signatoryRole) {
+      return {
+        error: bad('cannot-sign', 400,
+          'The University has no office recorded for you, so this letter would state no office '
+          + 'beneath the signature. Record your role, or enable a signature specimen, and generate '
+          + 'the letter again.'),
+      };
+    }
+
     let generated;
     try {
       generated = await appointmentLetterHtml({
@@ -378,8 +425,8 @@ export async function POST(request: Request) {
         issuedOn,
         version,
         isDraft: preview,
-        signatoryName: String(body.signatoryName ?? sig?.owner_name ?? caller.email ?? ''),
-        signatoryRole: String(body.signatoryRole ?? sig?.owner_role ?? 'Registrar'),
+        signatoryName,
+        signatoryRole,
         siteUrl,
         signatureImage: (sig?.image as string | undefined) ?? null,
         authorizedOn: (appointment.authorized_at as string | null)?.slice(0, 10) ?? null,
@@ -415,8 +462,8 @@ export async function POST(request: Request) {
       sealed: !!generated.seal,
       seal_code: generated.seal?.code ?? null,
       to_email: (appointment.email as string | null) ?? null,
-      signatory_name: String(body.signatoryName ?? sig?.owner_name ?? caller.email ?? ''),
-      signatory_role: String(body.signatoryRole ?? sig?.owner_role ?? 'Registrar'),
+      signatory_name: signatoryName,
+      signatory_role: signatoryRole,
       signature_mode: sig?.image ? 'specimen' : 'typed',
       signature_specimen_id: sig?.image ? sig.id : null,
       authorized_on: (appointment.authorized_at as string | null)?.slice(0, 10) ?? null,

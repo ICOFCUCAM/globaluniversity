@@ -78,6 +78,11 @@ const MAX_SIGNATURE_BYTES = 200_000;
 const CAPABILITY: Record<string, Capability> = {
   store: 'issue-appointment-letter' as Capability,
   mine: 'issue-appointment-letter' as Capability,
+  // SEEING WHOSE SPECIMENS EXIST IS THE SAME ACT AS DECIDING ABOUT THEM. The
+  // list is only useful to the office that may switch one on, and it names
+  // officers and whether their signature is in force — which is not a roster
+  // for general circulation.
+  list: 'approve-credential-design' as Capability,
   enable: 'approve-credential-design' as Capability,
   revoke: 'approve-credential-design' as Capability,
 };
@@ -195,6 +200,41 @@ export async function POST(request: Request) {
           + 'needs approving before it appears on anything.'
         : 'Stored, and switched off. It appears on nothing until somebody other than you '
           + 'enables it — you cannot enable your own.',
+    });
+  }
+
+  // =========================================================================
+  // LIST — whose specimens exist, and which of them are actually in force
+  // =========================================================================
+  //
+  // WITHOUT THIS THERE WAS NO WAY TO SWITCH ONE ON. `enable` has existed since
+  // 049 and nothing in the system called it: a specimen could be stored and
+  // never enabled, so EVERY letter the University has ever issued printed a
+  // blank rule where the signature belongs. The officer who may enable one had
+  // no way to find out that anybody was waiting.
+  //
+  // THE IMAGE IS NOT RETURNED, for the same reason `mine` does not return it. A
+  // screen deciding whether a signature may be reproduced does not need to hold
+  // the signature to decide.
+  if (action === 'list') {
+    const { data } = await admin.from('signature_specimens')
+      // A SINGLE STRING LITERAL. Concatenation collapses the supabase-js row
+      // type to GenericStringError[], silently and with no error at the call
+      // site — the same trap the appointment route carries a warning about.
+      // eslint-disable-next-line max-len
+      .select('owner_id, owner_name, owner_role, enabled, enabled_at, authority, revoked_at, revoked_reason, updated_at')
+      .order('owner_name');
+
+    const rows = (data ?? []) as Row[];
+    return NextResponse.json({
+      ok: true,
+      specimens: rows.map((r) => ({
+        ...r,
+        // SAID BY THE SERVER, so a screen cannot get the rule wrong. 049 will
+        // not let anybody switch on their own, and a button that looks live and
+        // then refuses is worse than one that explains itself.
+        isMine: r.owner_id === caller.id,
+      })),
     });
   }
 

@@ -28,9 +28,26 @@
 // again in plainer words — because a specimen signature is a standing authority
 // to reproduce your signature on documents you may never see.
 //
-// SHOW YOU SOMEBODY ELSE'S. The row is readable only by its owner and by the
-// service role that prints the letter. There is no screen anywhere that lists
-// the University's signatures, and there should not be.
+// SHOW YOU SOMEBODY ELSE'S IMAGE. The image is never returned by any action
+// here, not even to the officer who decides whether it may be used. Deciding
+// that a signature may be reproduced does not require holding it.
+//
+// ---------------------------------------------------------------------------
+// AND WHY EVERY LETTER PRINTED A BLANK RULE UNTIL NOW
+// ---------------------------------------------------------------------------
+//
+// The University sent an appointment letter with an empty signature line, and
+// asked why. The answer was the second half of the same fault this file was
+// written to fix: `store` existed and `enable` did not — no screen anywhere
+// called it. A specimen could be stored and could never be switched on, so the
+// table filled with signatures that no letter could use, and the officer who
+// holds the authority to enable one had no way to learn that anybody was
+// waiting.
+//
+// The panel below is that screen. It lists who has stored a specimen and
+// whether it is in force, and lets the office that approves the University's
+// documents switch one on — never their own, and never without saying on what
+// authority.
 // ---------------------------------------------------------------------------
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -53,6 +70,189 @@ interface Stored {
   authority?: string | null;
   revoked_at?: string | null;
   revoked_reason?: string | null;
+}
+
+interface Specimen {
+  owner_id: string;
+  owner_name?: string | null;
+  owner_role?: string | null;
+  enabled?: boolean;
+  enabled_at?: string | null;
+  authority?: string | null;
+  revoked_at?: string | null;
+  revoked_reason?: string | null;
+  isMine?: boolean;
+}
+
+/** 049's floor on the stated grounds, repeated here so the button can wait. */
+const MIN_AUTHORITY = 20;
+const MIN_REASON = 12;
+
+/**
+ * The second pair of eyes.
+ *
+ * DECLARED AT MODULE SCOPE, like everything else in this codebase that renders.
+ * A component declared inside another is a new function on every render, React
+ * remounts it, and the box you are typing into loses focus after one character.
+ * That cost the University a morning on the appointments screen.
+ *
+ * IT HIDES ITSELF WHERE IT DOES NOT APPLY. The screen does not know the
+ * caller's capabilities, so it asks; `list` refuses anybody who may not decide
+ * about a signature, and a refusal renders nothing rather than an error. An
+ * officer storing their own signature should not be told about a panel they
+ * cannot use.
+ */
+function SpecimensAwaiting() {
+  const [rows, setRows] = useState<Specimen[] | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [authority, setAuthority] = useState<Record<string, string>>({});
+  const [reason, setReason] = useState<Record<string, string>>({});
+  const [note, setNote] = useState<{ tone: 'ok' | 'bad'; text: string } | null>(null);
+
+  const load = useCallback(async () => {
+    const out = await authedPost('/api/admin/signature', { action: 'list' });
+    // NOT PERMITTED IS NOT AN ERROR HERE. It is the ordinary case for most of
+    // the people who open this screen.
+    if (!out.ok) { setRows([]); return; }
+    setRows((out.specimens ?? []) as Specimen[]);
+  }, []);
+
+  useEffect(() => { void load(); }, [load]);
+
+  async function act(ownerId: string, action: 'enable' | 'revoke') {
+    setBusy(ownerId);
+    setNote(null);
+    const out = await authedPost('/api/admin/signature', {
+      action,
+      ownerId,
+      ...(action === 'enable'
+        ? { authority: authority[ownerId] ?? '' }
+        : { reason: reason[ownerId] ?? '' }),
+    });
+    setBusy(null);
+    setNote({
+      tone: out.ok ? 'ok' : 'bad',
+      text: (out.detail as string | undefined) ?? String(out.error ?? 'That did not work.'),
+    });
+    if (out.ok) {
+      setAuthority((a) => ({ ...a, [ownerId]: '' }));
+      setReason((r) => ({ ...r, [ownerId]: '' }));
+      void load();
+    }
+  }
+
+  if (rows === null || rows.length === 0) return null;
+
+  return (
+    <div className="space-y-4 border-t border-[#ece7de] pt-6 dark:border-[#2e2637]">
+      <div>
+        <h3 className="flex items-center gap-2 font-heading text-lg font-bold text-[#422e59] dark:text-[#e4dcf0]">
+          <ShieldCheck size={18} /> Signatures of the University
+        </h3>
+        <p className="mt-1 text-sm text-[#6b6076] dark:text-[#9c93ad]">
+          A stored signature appears on nothing until it is switched on here. Until somebody does,
+          every letter that officer issues prints an empty rule.
+        </p>
+      </div>
+
+      {note && (
+        <div role="status" className={`rounded-xl p-3 text-sm ${
+          note.tone === 'ok'
+            ? 'border border-emerald-600/30 bg-emerald-600/10 text-emerald-900 dark:text-emerald-200'
+            : 'border border-red-600/30 bg-red-600/10 text-red-900 dark:text-red-200'
+        }`}
+        >
+          {note.text}
+        </div>
+      )}
+
+      <ul className="space-y-3">
+        {rows.map((s) => (
+          <li key={s.owner_id}
+            className="rounded-xl border border-[#ece7de] p-4 dark:border-[#2e2637]">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <p className="font-medium text-[#422e59] dark:text-[#e4dcf0]">
+                {s.owner_name || 'An officer'}
+                {s.owner_role ? <span className="font-normal text-[#6b6076] dark:text-[#9c93ad]">{` — ${s.owner_role}`}</span> : null}
+              </p>
+              {s.enabled ? (
+                <span className="flex items-center gap-1 text-sm text-emerald-800 dark:text-emerald-300">
+                  <CheckCircle2 size={14} /> In force
+                  {s.enabled_at ? ` since ${String(s.enabled_at).slice(0, 10)}` : ''}
+                </span>
+              ) : (
+                <span className="flex items-center gap-1 text-sm text-[#a07c12]">
+                  <AlertTriangle size={14} /> Not in force
+                </span>
+              )}
+            </div>
+
+            {s.enabled && s.authority && (
+              <p className="mt-1 text-xs text-[#6b6076] dark:text-[#9c93ad]">
+                On the authority of: {s.authority}
+              </p>
+            )}
+            {!s.enabled && s.revoked_at && (
+              <p className="mt-1 text-xs text-[#6b6076] dark:text-[#9c93ad]">
+                Withdrawn on {String(s.revoked_at).slice(0, 10)}
+                {s.revoked_reason ? `: ${s.revoked_reason}` : ''}
+              </p>
+            )}
+
+            {/* NOT YOUR OWN. Said here rather than discovered by pressing a
+                button — 049 refuses it in the database and the route refuses it
+                again, and a control that looks live and then explains itself is
+                a control that wasted somebody's time. */}
+            {s.isMine ? (
+              <p className="mt-2 text-xs text-[#6b6076] dark:text-[#9c93ad]">
+                This is yours. You cannot switch on your own — it is a standing permission to
+                reproduce your signature on documents you may never see.
+              </p>
+            ) : s.enabled ? (
+              <div className="mt-3 space-y-2">
+                <label htmlFor={`rev-${s.owner_id}`} className={LABEL}>
+                  Withdraw it, and say why
+                </label>
+                <input id={`rev-${s.owner_id}`} className={INPUT}
+                  value={reason[s.owner_id] ?? ''}
+                  onChange={(e) => setReason((r) => ({ ...r, [s.owner_id]: e.target.value }))}
+                  placeholder="e.g. Left the University on 30 September" />
+                <button type="button" className={BTN_GHOST}
+                  disabled={busy === s.owner_id || (reason[s.owner_id] ?? '').trim().length < MIN_REASON}
+                  onClick={() => void act(s.owner_id, 'revoke')}>
+                  {busy === s.owner_id ? <Loader2 size={14} className="animate-spin" /> : null}
+                  Withdraw
+                </button>
+              </div>
+            ) : (
+              <div className="mt-3 space-y-2">
+                <label htmlFor={`auth-${s.owner_id}`} className={LABEL}>
+                  On what authority — a minute, a decision, an instruction
+                </label>
+                <input id={`auth-${s.owner_id}`} className={INPUT}
+                  value={authority[s.owner_id] ?? ''}
+                  onChange={(e) => setAuthority((a) => ({ ...a, [s.owner_id]: e.target.value }))}
+                  placeholder="e.g. Minute 12 of Council, 3 September 2026" />
+                <p className="text-xs text-[#6b6076] dark:text-[#9c93ad]">
+                  A standing permission nobody explained is one nobody can withdraw with
+                  confidence later.
+                </p>
+                <button type="button" className={BTN_PRIMARY}
+                  disabled={busy === s.owner_id
+                    || (authority[s.owner_id] ?? '').trim().length < MIN_AUTHORITY}
+                  onClick={() => void act(s.owner_id, 'enable')}>
+                  {busy === s.owner_id
+                    ? <Loader2 size={14} className="animate-spin" />
+                    : <ShieldCheck size={14} />}
+                  Switch it on
+                </button>
+              </div>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 }
 
 /**
@@ -295,6 +495,11 @@ export default function SignatureSpecimen({
           </p>
         )}
       </div>
+
+      {/* THE HALF THAT WAS MISSING. Storing a signature was never enough: until
+          somebody switches it on, every letter prints an empty rule. This
+          renders nothing for an officer who may not make that decision. */}
+      <SpecimensAwaiting />
     </div>
   );
 }
