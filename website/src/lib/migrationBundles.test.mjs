@@ -44,6 +44,24 @@ function check(label, actual, expected) {
 
 const here = new URL('.', import.meta.url).pathname;
 const migrations = join(here, '../../docs/migrations');
+// ---------------------------------------------------------------------------
+// THE PARTS ARE DISCOVERED, NOT LISTED.
+//
+// This file named RUN-PART-1 to RUN-PART-4 in three places, and when PART-4
+// outgrew the editor and had to be split, two of those three would have gone
+// on checking four files and reporting a clean sweep. A test that enumerates
+// what it guards stops guarding whatever is added next — which is the same
+// fault this file exists to catch in the bundles themselves.
+// ---------------------------------------------------------------------------
+const PART_FILES = readdirSync(migrations)
+  .filter((f) => /^RUN-PART-\d+\.sql$/.test(f))
+  .sort((a, b) => Number(a.match(/\d+/)[0]) - Number(b.match(/\d+/)[0]));
+
+if (PART_FILES.length < 2) {
+  console.error('FAIL  there are no RUN-PART files to check at all');
+  process.exit(1);
+}
+
 const SOCKET = '/var/tmp/pgtest/sock';
 
 // ---------------------------------------------------------------------------
@@ -73,7 +91,7 @@ console.log('\nAnd the bundles end with the table rather than with a proof nobod
 
 {
   for (const bundle of ['RUN-OUTSTANDING.sql', 'RUN-ALL.sql',
-    'RUN-PART-1.sql', 'RUN-PART-2.sql', 'RUN-PART-3.sql', 'RUN-PART-4.sql']) {
+    ...PART_FILES]) {
     const sql = readFileSync(join(migrations, bundle), 'utf8');
     check(`${bundle} closes with the landed report`,
       /DID IT LAND\?/.test(sql), true);
@@ -149,7 +167,7 @@ console.log('\nAnd the four parts add up to exactly the outstanding bundle\n');
       .matchAll(/select '(\d{3})' as migration/g)].map((m) => m[1]);
 
   const whole = numbersIn('RUN-OUTSTANDING.sql');
-  const parts = [1, 2, 3, 4].map((n) => numbersIn(`RUN-PART-${n}.sql`));
+  const parts = PART_FILES.map((f) => numbersIn(f));
   const joined = parts.flat();
 
   check('every migration in RUN-OUTSTANDING is in exactly one part, in order',
@@ -167,9 +185,9 @@ console.log('\nAnd the four parts add up to exactly the outstanding bundle\n');
   // real threshold is, and leaves room for several more migrations before a
   // part has to be split again.
   const LIMIT = 400_000;
-  for (const n of [1, 2, 3, 4]) {
-    const size = readFileSync(join(migrations, `RUN-PART-${n}.sql`), 'utf8').length;
-    check(`RUN-PART-${n} is small enough for the SQL editor (${size} bytes)`,
+  for (const f of PART_FILES) {
+    const size = readFileSync(join(migrations, f), 'utf8').length;
+    check(`${f.replace('.sql', '')} is small enough for the SQL editor (${size} bytes)`,
       size < LIMIT, true);
   }
 }

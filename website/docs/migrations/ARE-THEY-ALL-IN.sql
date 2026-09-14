@@ -300,6 +300,15 @@ select * from (
   select '086' as migration, '086_live_classes_attendance_search_and_the_tutor.sql' as file,
          case when to_regclass('public.tutor_citations') is not null then 'YES' else 'NO' end as landed,
          'tutor_citations' as what_it_creates
+  union all
+  select '087' as migration, '087_progress_without_surveillance.sql' as file,
+         case when exists (
+                   select 1 from information_schema.columns
+                    where table_schema = 'public'
+                      and table_name = 'course_modules'
+                      and column_name = 'unlocks_after')
+                 then 'YES' else 'NO' end as landed,
+         'course_modules.unlocks_after' as what_it_creates
 ) as landed_report
  order by migration;
 

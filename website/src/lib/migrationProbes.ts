@@ -873,6 +873,18 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
       + 'foreign key, whose refusals are recorded, and which the lecturer cannot read.',
     table: 'tutor_citations',
   },
+  {
+    file: '087_progress_without_surveillance.sql',
+    what: 'PROGRESS THAT COUNTS WORK DONE RATHER THAN FILES OPENED \u2014 a lesson merely '
+      + 'opened does not move the bar, nor does an unsubmitted draft. Modules unlock in order, '
+      + 'and a locked one stays visible while its lessons do not. Students get highlights; the '
+      + 'tutor defaults to Study Mode; search reaches discussions, assignments and '
+      + 'announcements. AND IT CLOSES A DOOR: a lecturer could read `lesson_progress` whole, '
+      + 'which carries seconds_spent and a timestamp for every lesson a student opened. The '
+      + 'University ruled against personal analytics and no policy can hide a column, so the '
+      + 'table read is withdrawn and replaced by a view with no such column in it.',
+    table: 'my_module_progress',
+  },
 ];
 
 /** What a probe came back as. */
