@@ -102,14 +102,29 @@ const REACHED_ANOTHER_WAY = {
 // one still being listed after it has been wired up — a stale entry is how a
 // real orphan hides behind a tidy list.
 const NO_SCREEN_YET = [
+  // ---------------------------------------------------------------------
+  // THE FOUR BELOW MARKED * WERE FOUND THE DAY THIS TEST LEARNED ABOUT
+  // ROUTES.
+  //
+  // While the comparison was route-blind, each was masked by an action of the
+  // same NAME reachable on some other route: a screen sending 'set' to the
+  // rooms route reported `academic/offerings set` as wired, and so on. They
+  // are not new gaps. They are gaps that have been open the whole time and
+  // could not be seen — which is exactly what this list exists to prevent, and
+  // the reason the flat name match had to go.
+  // ---------------------------------------------------------------------
+  'academic/curriculum move',              // *
   'academic/curriculum reprice',
   'academic/graduation revise',
   'academic/offerings reschedule',
+  'academic/offerings set',                // *
   'academic/structure programme-status',
   'admin/appointment-conditions forkPost',
   'admin/appointment-conditions preamble',
   'admin/capability-grant grant',
+  'admin/capability-grant mine',           // *
   'admin/document-template retire',
+  'admin/job-description fork',            // *
   'announcements variants',
   'correspondence withdraw',
   'finance/fees assess',
@@ -164,9 +179,35 @@ const screens = [
   ...walk(join(root, 'src', 'app'), '.tsx'),
 ];
 
-const sent = new Set();
+// ---------------------------------------------------------------------------
+// ATTRIBUTED TO A ROUTE WHERE THAT CAN BE TOLD, AND NOT ONLY NAMED.
+//
+// This used to be one flat Set of action NAMES, compared route-blind:
+// `sent.has(action)`. So an action called 'retire' sent to ANY route reported
+// every other route's 'retire' as wired — and the failure was worse than a
+// false pass, because the test then instructed the reader to delete the
+// NO_SCREEN_YET entry for a gap that was still wide open. "A stale entry is how
+// a real orphan hides behind a tidy list", and a route-blind match manufactures
+// stale entries.
+//
+// It surfaced when the Question Bank screen gained `retire` in September 2026
+// and `admin/document-template retire` — which no screen sends — was reported
+// as closed.
+//
+// SO: a file naming exactly one `/api/...` route has its actions attributed to
+// that route. A file naming several (or none) contributes to the loose set, as
+// before, because there is no honest way to tell which action went where.
+// ---------------------------------------------------------------------------
+const sent = new Set();                 // the loose set: attribution impossible
+const sentByRoute = new Map();          // route -> Set(actions)
+
 for (const file of screens) {
   const src = decomment(readFileSync(file, 'utf8'));
+
+  const routesNamed = new Set();
+  for (const m of src.matchAll(/['"`]\/api\/([a-z0-9/-]+)['"`]/g)) routesNamed.add(m[1]);
+  const only = routesNamed.size === 1 ? [...routesNamed][0] : null;
+  const here = new Set();
   // `action:` followed by ANY expression, and every string in it counts.
   //
   // A PLAIN `action: 'x'` MATCH WAS NOT ENOUGH. The appointment form writes
@@ -175,14 +216,21 @@ for (const file of screens) {
   // looked like an action no screen sent. Two lines of context, because these
   // are sometimes wrapped.
   for (const m of src.matchAll(/\baction:\s*([^\n]*(?:\n[^\n]*)?)/g)) {
-    for (const s of m[1].matchAll(/'([a-zA-Z][\w-]*)'/g)) sent.add(s[1]);
+    for (const s of m[1].matchAll(/'([a-zA-Z][\w-]*)'/g)) here.add(s[1]);
   }
   // A helper called with the action as its first argument — `letter('issue',`,
   // `act('activate',` — which is how several screens spell it.
-  for (const m of src.matchAll(/\b[a-z]\w*\(\s*'([a-zA-Z][\w-]*)'\s*,/g)) sent.add(m[1]);
+  for (const m of src.matchAll(/\b[a-z]\w*\(\s*'([a-zA-Z][\w-]*)'\s*,/g)) here.add(m[1]);
   // A union type of actions passed through, e.g. 'issue' | 'email' | 'whatsapp'
   for (const m of src.matchAll(/'([a-zA-Z][\w-]*)'(?:\s*\|\s*'[a-zA-Z][\w-]*')+/g)) {
-    for (const s of m[0].matchAll(/'([a-zA-Z][\w-]*)'/g)) sent.add(s[1]);
+    for (const s of m[0].matchAll(/'([a-zA-Z][\w-]*)'/g)) here.add(s[1]);
+  }
+
+  if (only) {
+    if (!sentByRoute.has(only)) sentByRoute.set(only, new Set());
+    for (const a of here) sentByRoute.get(only).add(a);
+  } else {
+    for (const a of here) sent.add(a);
   }
 }
 
@@ -194,6 +242,9 @@ for (const [route, actions] of [...accepted].sort()) {
   for (const action of [...actions].sort()) {
     checked += 1;
     const key = `${route} ${action}`;
+    if (sentByRoute.get(route)?.has(action)) continue;
+    // A SCREEN WE COULD NOT ATTRIBUTE. Still counts, or the test would report
+    // every action sent from a file that talks to two routes.
     if (sent.has(action)) continue;
     if (key in REACHED_ANOTHER_WAY) continue;
     orphans.push(key);
@@ -227,7 +278,12 @@ for (const key of NO_SCREEN_YET) {
   if (!accepted.has(route) || !accepted.get(route).has(action)) {
     fail(`NO_SCREEN_YET names '${action}' on '${route}', which the route no longer accepts. `
       + 'Remove the entry.');
-  } else if (sent.has(action)) {
+  } else if (sentByRoute.get(route)?.has(action) || sent.has(action)) {
+    // ROUTE-AWARE, LIKE THE COMPARISON ABOVE. Left on the flat set, this half
+    // of the register went the other way: it demanded the removal of an entry
+    // for a gap that was still open, because some OTHER route had an action of
+    // the same name. That is how the check started instructing the reader to
+    // delete a true entry — the failure that set all of this off.
     fail(`NO_SCREEN_YET still names '${action}' on '${route}', but a screen now sends it. `
       + 'Remove the entry — the gap is closed.');
   }

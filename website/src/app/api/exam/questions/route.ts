@@ -191,20 +191,99 @@ export async function POST(request: Request) {
   // -------------------------------------------------------------------------
   const exam = row.examinations ?? {};
 
-  const { data: bankRows } = await admin
-    .from('module_records')
-    .select('id, body')
-    .eq('module', 'exams')
-    .eq('kind', 'exam-question');
+  // -------------------------------------------------------------------------
+  // WHERE THE QUESTIONS COME FROM
+  // -------------------------------------------------------------------------
+  //
+  // 089'S BANK FIRST, and the legacy JSON store only if that course has nothing
+  // in it yet.
+  //
+  // THE FALLBACK IS DELIBERATE AND TEMPORARY. Switching outright would empty
+  // the paper for every course whose questions have not been moved across —
+  // and the failure would land on a candidate sitting an examination, which is
+  // the worst possible place to discover a migration is half done. So the new
+  // bank wins wherever it has been filled, and the old one keeps working until
+  // it has.
+  //
+  // AND IT IS RECORDED RATHER THAN SILENT. A fallback nobody can see is a
+  // fallback that becomes permanent: the event below says which source built
+  // this paper, so the University can tell at a glance which courses still have
+  // questions in the old store.
+  let source = 'question_bank';
+  let bank: BankQuestion[] = [];
 
-  const bank: BankQuestion[] = (bankRows ?? [])
-    .map((r: Record<string, any>) => ({ id: String(r.id), ...(r.body ?? {}) }))
-    // Only this course's questions when the paper names one. A bank shared
-    // across the University would otherwise hand a theology candidate the IT
-    // paper.
-    .filter((q: BankQuestion & { course?: string }) =>
-      !exam.course_code || !q.course || q.course === exam.course_code)
-    .filter((q) => typeof q.text === 'string' && q.text.trim().length > 0);
+  if (exam.course_code) {
+    const { data: course } = await admin
+      .from('courses').select('id').eq('code', exam.course_code).maybeSingle();
+
+    if (course?.id) {
+      const { data: projected } = await admin
+        .rpc('question_bank_for_paper', { the_course: course.id });
+
+      // ONE ROW PER OPTION comes back, so the rows are folded into questions.
+      // The projection carries no answer — `is_correct` is not a column it has
+      // — so the key is read separately, here, on the server, and never leaves
+      // it: `forCandidate()` strips it from the response.
+      // AN ARRAY AND AN INDEX, not a Map's iterator: the build target here is
+      // below es2015, so spreading `map.values()` does not compile.
+      const items: (BankQuestion & { optionIds: string[] })[] = [];
+      const byItem = new Map<string, BankQuestion & { optionIds: string[] }>();
+      for (const row of (projected ?? []) as Record<string, any>[]) {
+        let q = byItem.get(row.item_id);
+        if (!q) {
+          q = {
+            id: String(row.item_id),
+            text: String(row.prompt ?? ''),
+            options: [],
+            marks: row.points === null ? undefined : Number(row.points),
+            optionIds: [],
+          };
+          byItem.set(row.item_id, q);
+          items.push(q);
+        }
+        if (row.option_id) {
+          q.options!.push(String(row.label ?? ''));
+          q.optionIds.push(String(row.option_id));
+        }
+      }
+
+      if (items.length > 0) {
+        const { data: keyRows } = await admin
+          .from('question_bank_key')
+          .select('item_id, option_id, is_correct')
+          .in('item_id', items.map((q) => q.id))
+          .eq('is_correct', true);
+
+        const correctOf = new Map<string, string>();
+        for (const k of (keyRows ?? []) as Record<string, any>[]) {
+          if (k.option_id) correctOf.set(String(k.item_id), String(k.option_id));
+        }
+
+        bank = items.map(({ optionIds, ...q }) => {
+          const at = optionIds.indexOf(correctOf.get(q.id) ?? '');
+          return { ...q, answer: at < 0 ? undefined : at };
+        }).filter((q) => q.text.trim().length > 0);
+      }
+    }
+  }
+
+  if (bank.length === 0) {
+    source = 'module_records';
+    const { data: bankRows } = await admin
+      .from('module_records')
+      .select('id, body')
+      .eq('module', 'exams')
+      .eq('kind', 'exam-question');
+
+    bank = (bankRows ?? [])
+      .map((r: Record<string, any>) => ({ id: String(r.id), ...(r.body ?? {}) }))
+      // Only this course's questions when the paper names one. A bank shared
+      // across the University would otherwise hand a theology candidate the IT
+      // paper.
+      .filter((q: BankQuestion & { course?: string }) =>
+        !exam.course_code || !q.course || q.course === exam.course_code)
+      .filter((q: BankQuestion) => typeof q.text === 'string' && q.text.trim().length > 0);
+  }
 
   if (bank.length === 0) {
     // SAID PLAINLY, TO THE PERSON WHO CAN DO NOTHING ABOUT IT. A candidate
@@ -251,7 +330,7 @@ export async function POST(request: Request) {
     kind: 'question_viewed',
     source: 'system',
     severity: 'info',
-    detail: { built: paper.questions.length, total_marks: paper.totalMarks },
+    detail: { built: paper.questions.length, total_marks: paper.totalMarks, source },
   });
 
   return NextResponse.json({ ok: true, paper: forCandidate(paper), fresh: true });
