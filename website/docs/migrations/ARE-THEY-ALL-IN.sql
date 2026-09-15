@@ -339,6 +339,10 @@ select * from (
   select '092' as migration, '092_a_lecture_and_what_is_made_from_it.sql' as file,
          case when to_regclass('public.lecture_artefacts') is not null then 'YES' else 'NO' end as landed,
          'lecture_artefacts' as what_it_creates
+  union all
+  select '093' as migration, '093_what_is_published_becomes_a_lesson.sql' as file,
+         case when to_regclass('public.study_aids') is not null then 'YES' else 'NO' end as landed,
+         'study_aids' as what_it_creates
 ) as landed_report
  order by migration;
 

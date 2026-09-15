@@ -957,6 +957,20 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
       + 'on the board. Say the word and it is one policy.',
     table: 'lecture_artefacts',
   },
+  {
+    file: '093_what_is_published_becomes_a_lesson.sql',
+    what: 'PUBLISHING A LECTURE ARTEFACT NOW WRITES A LESSON \u2014 into the module the lecturer '
+      + 'put the lecture in, in the same `course_lessons` table 084 created, read by the same '
+      + 'policy and shown by the same screens, so the Learning Hub displays what the Studio '
+      + 'produced without knowing the Studio is there. Only on publish: ready and approved write '
+      + 'nothing. Withdrawing HIDES the lesson rather than deleting it, because a student\u2019s '
+      + 'notes, bookmarks and progress point at that row. Also brings the study material, the '
+      + 'queue, the model\u2019s costs and a personal inbox. ONE THING CLOSES, AND IT IS SMALL: '
+      + 'a student cannot set their own working language \u2014 the Registry does, with a reason '
+      + 'recorded \u2014 because a mid-term switch means being examined on material you have not '
+      + 'been reading. The VOICE and the SPEED stay the student\u2019s own.',
+    table: 'study_aids',
+  },
 ];
 
 /** What a probe came back as. */
