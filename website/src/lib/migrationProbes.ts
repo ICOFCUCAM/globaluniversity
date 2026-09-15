@@ -971,6 +971,21 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
       + 'been reading. The VOICE and the SPEED stay the student\u2019s own.',
     table: 'study_aids',
   },
+  {
+    file: '094_live_delivery_is_not_publication.sql',
+    what: 'LIVE TRANSLATED DELIVERY, and the one place a student reads unapproved words on '
+      + 'purpose. 092 and 093 rest on the rule that a student reads what the lecturer approved '
+      + 'and published; a live class is the exception and not a loophole \u2014 a student in '
+      + 'Brazil in a lecture given in English is AT the event, and what the carried text gives '
+      + 'them is what an interpreter in the room would, who does not wait for the morning to be '
+      + 'reviewed. NONE OF IT EVER BECOMES THE MASTER: the reviewed account is the artefact '
+      + 'pipeline, and nothing here turns into one by sitting still. A REFUSAL CANNOT BE STORED '
+      + 'WITHOUT ITS REASON \u2014 a check constraint, not a convention \u2014 because a gap a '
+      + 'student cannot account for is one they fill themselves, usually by assuming they missed '
+      + 'something. And when a language fails the fallback is the FLOOR, not silence: silence is '
+      + 'indistinguishable from their own connection dropping.',
+    table: 'live_carried',
+  },
 ];
 
 /** What a probe came back as. */

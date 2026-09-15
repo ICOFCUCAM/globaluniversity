@@ -128,6 +128,18 @@ tables would mean the Studio's screens quietly escape that ruling.
 `lecture_id` and the Studio's events. The surveillance ruling then covers the
 Studio for free, which is the whole argument for merging.
 
+> **Corrected when 093 was written, by measuring rather than planning.**
+> `lesson_progress.lesson_id` is NOT NULL, and once a published artefact *is* a
+> `course_lessons` row, the Studio's progress is progress on that lesson.
+> **Nothing was added to `lesson_progress` at all** — no `lecture_id`, no new
+> events. The merge is cleaner than this paragraph expected.
+>
+> The cost, stated rather than discovered later: material in somebody's
+> **personal** library has no lesson and so no progress record. That is the
+> right answer anyway — there is no cohort, no lecturer and nobody to report
+> to, and a personal library that tracked its owner would be surveillance with
+> an audience of one.
+
 ---
 
 ## Merging the two predicates fixes a latent fault, rather than just tidying
@@ -165,3 +177,30 @@ works instead of the one that was never run.
   stays where it is until the University's own process — renumber, bundle,
   prove twice, prove again against `as-the-university-has-it.sql`, add a probe,
   hand it over — has been done.
+
+---
+
+## Where the schema stands
+
+**Done.** All 22 vendored tables are accounted for, across three migrations:
+
+| | |
+|---|---|
+| **092** | `lectures`, `lecture_artefacts`, `artefact_versions`, `lecture_knowledge` — and the ownership line: an office reads published material, never a draft, and cannot delete a recording |
+| **093** | `study_aids`, `study_aid_attempts`, `study_recalls`, `processing_jobs`, `ai_run_costs`, `ai_usage`, `notifications`, six columns on `profiles` — and **publishing writes a `course_lessons` row**, so the Learning Hub shows what the Studio made |
+| **094** | `live_sessions`, `live_segments`, `live_carried` — live delivery, which is the one place a student reads unapproved words on purpose |
+
+Merged into what the University already had, and so never created: `ls_readings`
+→ `course_lessons`, `ls_assignments` → `course_activities`, `ls_submissions` →
+`activity_submissions`, `ls_progress` → `lesson_progress`, `ls_audit` →
+`audit_logs`, `ls_certificates` → the credential machinery, `ls_settings` →
+`institutional_settings`, `ls_profiles` → `profiles`, and both predicates →
+084's.
+
+**The one open question is still open**, and it is a ruling, not a defect:
+092's header asks whether an office of the University — the Superadministrator
+included — should be able to read a lecturer's unpublished draft. It currently
+cannot, following `ownership.ts`. Changing it is one policy.
+
+**What has NOT been done:** none of this is reachable from any screen, and
+`getStore()` still returns the in-memory store on every call. That is Phase 3.

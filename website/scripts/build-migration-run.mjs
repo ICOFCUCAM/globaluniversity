@@ -280,6 +280,7 @@ const MARKERS = {
   '091': 'norights:anon',
   '092': 'lecture_artefacts',
   '093': 'study_aids',
+  '094': 'live_carried',
 };
 
 /** The SQL that answers "is this one here?", for each of the three forms. */

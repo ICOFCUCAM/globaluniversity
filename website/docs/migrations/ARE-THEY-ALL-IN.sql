@@ -343,6 +343,10 @@ select * from (
   select '093' as migration, '093_what_is_published_becomes_a_lesson.sql' as file,
          case when to_regclass('public.study_aids') is not null then 'YES' else 'NO' end as landed,
          'study_aids' as what_it_creates
+  union all
+  select '094' as migration, '094_live_delivery_is_not_publication.sql' as file,
+         case when to_regclass('public.live_carried') is not null then 'YES' else 'NO' end as landed,
+         'live_carried' as what_it_creates
 ) as landed_report
  order by migration;
 
