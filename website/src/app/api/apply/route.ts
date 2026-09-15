@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { send, mailConfigured } from '@/lib/mailer';
 import { UNIVERSITY } from '@/lib/constants';
-import { supabase } from '@/lib/supabase';
+import { adminClient } from '@/lib/adminAuth';
 
 export const runtime = 'nodejs';
 
@@ -76,6 +76,34 @@ const MAX_ATTACHMENT_BYTES = 4 * 1024 * 1024; // Vercel request body limit is ~4
  * and promote it to "active" on approval.
  */
 async function recordApplicant(form: FormData, appNo: string): Promise<boolean> {
+  // ---------------------------------------------------------------------
+  // THE SERVICE KEY, AND IT SHOULD ALWAYS HAVE BEEN.
+  //
+  // This inserted with the PUBLISHABLE key — the one that ships in the
+  // browser — from inside a server route. It worked only because `anon` held
+  // INSERT on every table in the schema, which is precisely the grant
+  // migration 091 took away after the audit found that the same right let the
+  // public TRUNCATE the University's database.
+  //
+  // So 091 broke this form, and the check that was supposed to catch it looked
+  // at the wrong thing: it asked which INSERT POLICIES name `anon` (none do)
+  // and confirmed the form posts to a server route (it does) — and never asked
+  // which CLIENT that route holds. A route on the server using the browser's
+  // key is not a server-side write; it is a browser write with extra steps.
+  //
+  // An applicant has no account and never will until they are admitted, so
+  // intake is a server operation by nature. The service key is the correct
+  // answer here and would have been before 091.
+  // ---------------------------------------------------------------------
+  const supabase = adminClient();
+  if (!supabase) {
+    // SAID PLAINLY RATHER THAN SWALLOWED. An application that was not recorded
+    // must never look recorded — somebody has filled in a long form and is
+    // owed the truth about whether it arrived.
+    console.error('apply: no service-role key, so the application was not recorded');
+    return false;
+  }
+
   const year = new Date().getFullYear();
   const get = (k: string) => String(form.get(k) ?? '').trim() || null;
   const summary = FIELDS.map(([name, label]) => `${label}: ${get(name) ?? '—'}`).join('\n');
