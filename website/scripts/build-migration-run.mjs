@@ -278,6 +278,7 @@ const MARKERS = {
   // or row to look for. The honest question is the one the migration exists to
   // answer: can the publishable key still write?
   '091': 'norights:anon',
+  '092': 'lecture_artefacts',
 };
 
 /** The SQL that answers "is this one here?", for each of the three forms. */

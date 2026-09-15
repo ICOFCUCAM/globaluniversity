@@ -943,6 +943,20 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
       + "and privilege_type in ('INSERT','UPDATE','DELETE','TRUNCATE') group by 1;  "
       + "-- anon must not appear at all, and authenticated must not show TRUNCATE",
   },
+  {
+    file: '092_a_lecture_and_what_is_made_from_it.sql',
+    what: 'THE LECTURE STUDIO ARRIVES IN THE ACADEMIC DOMAIN. A lecture is a TAUGHT EVENT \u2014 '
+      + 'delivered on a date, recorded \u2014 and is not a `course_lessons` row, which is '
+      + 'published content one lecture produces several of. Everything the pipeline makes from '
+      + 'it (transcript, corrected text, notes, teaching script, audio, revision) is a '
+      + '`lecture_artefacts` row with a state the lecturer moves. NOTHING CLOSES AND NO '
+      + 'EXISTING ROW MOVES: every table is new. THE ONE RULING TO SEE BEFORE RUNNING IT \u2014 '
+      + 'an office of the University, the Superadministrator included, may read PUBLISHED '
+      + 'material and may NOT read a lecturer\u2019s draft or delete their recording. That is '
+      + 'the platform\u2019s founding line: the University opens the room, the lecturer writes '
+      + 'on the board. Say the word and it is one policy.',
+    table: 'lecture_artefacts',
+  },
 ];
 
 /** What a probe came back as. */
