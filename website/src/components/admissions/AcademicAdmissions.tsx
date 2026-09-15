@@ -148,6 +148,8 @@ interface Draft {
 export default function AcademicAdmissions({ role }: { role?: UserRole }) {
   const [rows, setRows] = useState<Application[] | null>(null);
   const [decided, setDecided] = useState<Application[] | null>(null);
+  /** The record whose issuance is about to be resumed, awaiting confirmation. */
+  const [issuing, setIssuing] = useState<Application | null>(null);
   // Resending resets the applicant's password, so it is confirmed rather than
   // done on one click. The old one stops working the moment it happens.
   const [resending, setResending] = useState<Application | null>(null);
@@ -694,6 +696,33 @@ export default function AcademicAdmissions({ role }: { role?: UserRole }) {
                       {['admission_issued', 'enrolled', 'approved', 'conditional']
                         .includes(a.status ?? '') ? (
                         <div className="flex justify-end gap-2">
+                          {/* ---------------------------------------------
+                              THE DOOR THAT WAS NOT HERE.
+
+                              `RESUMABLE_FROM` has named `approved` since 026 —
+                              "those applications must still be recoverable from
+                              the desk rather than by hand in the SQL editor" —
+                              and the route accepts a retry from it. But the
+                              retry was only ever offered on a QUEUE row, and a
+                              decided record is not in the queue. So an
+                              admission approved and never issued had no button
+                              anywhere in the system: not here, where it is
+                              listed as decided, and not on the Enrolment desk,
+                              which lists `admission_issued` and cannot see it.
+
+                              The University found it the only way left: by
+                              looking for the button, not finding one, and
+                              asking. A capability with no door is the fault
+                              this codebase keeps turning up.
+                              --------------------------------------------- */}
+                          {canRetryIssuance(a.status) && (
+                            <button
+                              onClick={() => { setIssuing(a); }}
+                              className={`${BTN_PRIMARY} px-3 py-1.5 text-xs`}
+                            >
+                              Issue admission
+                            </button>
+                          )}
                           <button
                             onClick={() => void viewLetter(a)}
                             className={`${BTN_SECONDARY} px-3 py-1.5 text-xs`}
@@ -736,6 +765,63 @@ export default function AcademicAdmissions({ role }: { role?: UserRole }) {
       {/* Resending is confirmed, because it has a consequence the wording of a
           button cannot carry on its own: the applicant's current password
           stops working the moment it happens. */}
+      {/* ---------------------------------------------------------------
+          RESUMING AN ISSUANCE, AND WHAT IT COSTS THE APPLICANT.
+
+          The retry re-runs the issuance under the decision that already
+          exists. The student NUMBER is kept — "a student that already carries
+          a number keeps it" — but the account's password is reset, because the
+          covering email prints a fresh temporary one and sending an account
+          the email does not match would be worse than not sending it.
+
+          So this is confirmed rather than done on a click, in the same terms
+          the Resend panel uses. An officer who does not know the password will
+          change is an officer who breaks a student's sign-in by tidying up a
+          record.
+          --------------------------------------------------------------- */}
+      {issuing && (
+        <Card>
+          <CardHeader
+            title={`Issue the admission of ${[issuing.first_name, issuing.last_name].filter(Boolean).join(' ')}`}
+            subtitle={issuing.email ?? 'no email on this record'}
+          />
+          <div className="space-y-3 p-5">
+            <p className={TEXT.body}>
+              The decision was taken on{' '}
+              {issuing.decided_at
+                ? new Date(issuing.decided_at).toLocaleDateString('en-GB',
+                  { day: 'numeric', month: 'long', year: 'numeric' })
+                : 'a date not recorded'}{' '}
+              and is not taken again. This completes what follows from it: the student number,
+              the account, the letter and the package. Only then does the Registrar&rsquo;s
+              Enrolment desk see them.
+            </p>
+            <div className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              <AlertTriangle size={16} className="mt-0.5 flex-shrink-0" />
+              <span>
+                <strong>A new temporary password is set and emailed.</strong> If{' '}
+                {issuing.first_name ?? 'this applicant'} can already sign in,{' '}
+                <strong>the password they have now will stop working.</strong> Any student
+                number already on the record is kept.
+              </span>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                className={BTN_PRIMARY}
+                disabled={busy}
+                onClick={() => { const a = issuing; setIssuing(null); void submit(true, a); }}
+              >
+                {busy ? 'Issuing…' : 'Issue it'}
+              </button>
+              <button type="button" className={BTN_SECONDARY} onClick={() => setIssuing(null)}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {resending && (
         <Card>
           <CardHeader

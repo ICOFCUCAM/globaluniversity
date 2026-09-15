@@ -82,16 +82,41 @@ check('and no answer just echoes the state name back', echoed, []);
 // --- 3. THE TWO THE UNIVERSITY ACTUALLY HIT --------------------------------
 //
 // `approved` is where an applicant sits when the Head of Academic Affairs has
-// admitted them and the issuance has not been run — no letter, no student
-// number, no account. That is almost certainly where the missing person was
-// both times, and the sentence has to say what is absent rather than just
-// "approved".
+// admitted them and the issuance has not completed. That is where the missing
+// person was all three times, and the sentence has to say more than "approved".
+//
+// ---------------------------------------------------------------------------
+// AND IT MUST NOT SAY WHAT THIS TEST USED TO DEMAND
+// ---------------------------------------------------------------------------
+//
+// The assertion here was
+//
+//     /no letter[\s\S]*no student number[\s\S]*no account/
+//
+// which pinned the message to a flat claim that the record has none of the
+// three. `approved` is ALSO where a partly-completed issuance comes to rest,
+// and where every admission taken before the issuance states existed still
+// sits — so a record here may have a number and an account already.
+//
+// The University hit it: the Enrolment desk printed "no student number" beside
+// a student whose own row, two columns to the left, showed ICOF202600001. They
+// then went looking for an enrolment button, on the strength of a sentence that
+// was wrong. A test that pins an untrue sentence in place is worse than no test
+// — it defends the defect.
+//
+// So the requirement is now: name the office, say the issuance has not
+// completed, name the control that finishes it, and DO NOT claim to know what
+// the record already has.
 {
   const approved = W.whereItStands('approved');
   check('an admitted-but-not-issued applicant names the office holding it',
     approved.office, 'Office of Academic Affairs');
-  check('…and says what they do not yet have',
-    /no letter[\s\S]*no student number[\s\S]*no account/.test(approved.waitingFor), true);
+  check('…and says the issuance has not completed',
+    /issuance has not completed/i.test(approved.waitingFor), true);
+  check('…and names the control that finishes it',
+    /issue admission/i.test(approved.waitingFor), true);
+  check('…and does NOT claim the record has no student number',
+    /no student number/i.test(approved.waitingFor), false);
 
   const failed = W.whereItStands('admission_processing_failed');
   check('a half-finished issuance says it can be retried',

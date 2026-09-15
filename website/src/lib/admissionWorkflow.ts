@@ -904,14 +904,34 @@ const WHERE: Record<string, WhereItStands> = {
   ready_for_academic_review: { office: 'Office of Academic Affairs', waitingFor: 'Awaiting the academic decision' },
   returned: { office: 'Admissions Office', waitingFor: 'Sent back for correction' },
   // ---- Decided, and the issuance that has to follow ---------------------
+  // ---------------------------------------------------------------------
+  // SAID CAREFULLY, BECAUSE THE FIRST VERSION SAID SOMETHING UNTRUE.
+  //
+  // This read "there is no letter, no student number and no account" — stated
+  // flatly, as a property of the status. It is not. `approved` is also where a
+  // partly-completed issuance comes to rest, and where every admission taken
+  // before the issuance states existed still sits, so a record here may
+  // perfectly well have a number and an account already.
+  //
+  // The University found it the hard way: the Enrolment desk printed this
+  // sentence beside a student whose OWN ROW, two columns to the left, showed
+  // ICOF202600001. A screen that contradicts itself in one line is worse than
+  // one that says less, because the reader believes the sentence and goes
+  // looking in the wrong place — which is exactly what happened.
+  //
+  // So it now says what is certainly true (the issuance has not completed, and
+  // the Enrolment desk cannot see them until it does) and does not claim to
+  // know how far it got.
+  // ---------------------------------------------------------------------
   approved: {
     office: 'Office of Academic Affairs',
-    waitingFor: 'Admitted — the admission has not been issued yet, so there is no letter, '
-      + 'no student number and no account',
+    waitingFor: 'Admitted — the issuance has not completed, so this record has not reached the '
+      + 'Registrar. Finish it with “Issue admission” on the Admissions approval desk',
   },
   conditional: {
     office: 'Office of Academic Affairs',
-    waitingFor: 'Admitted with conditions — not yet issued',
+    waitingFor: 'Admitted with conditions — the issuance has not completed. Finish it with '
+      + '“Issue admission” on the Admissions approval desk',
   },
   admission_processing: { office: 'Office of Academic Affairs', waitingFor: 'Issuance under way' },
   admission_processing_failed: {
