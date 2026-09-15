@@ -218,7 +218,19 @@ console.log('\nAnd what it cannot see, it says so about\n');
       // 060 SEEDS ROWS into tables 057 created — same reason as 052 and 058.
       '060_the_schools_and_programmes.sql',
       '061_a_version_for_every_programme.sql',
-    ]);
+          // ---------------------------------------------------------------
+      // 091 CREATES NOTHING. It TAKES RIGHTS AWAY — the publishable key's
+      // INSERT, UPDATE, DELETE and TRUNCATE across 172 relations, and every
+      // signed-in session's TRUNCATE.
+      //
+      // So there is genuinely nothing for the probe to read, and that is the
+      // right answer rather than a gap: the question this migration settles is
+      // not "did a table appear" but "can the public key still write", which is
+      // a grant and not a row. The check to run by hand is one query and it is
+      // on the entry.
+      // ---------------------------------------------------------------
+      '091_the_public_key_cannot_destroy_the_university.sql',
+]);
   check('…and carries the check to run by hand',
     blind.every((p) => /select|pg_constraint/i.test(p.cannotSee)), true);
 }

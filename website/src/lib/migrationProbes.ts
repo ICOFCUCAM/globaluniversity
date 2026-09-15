@@ -912,6 +912,37 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
       + 'moved across.',
     table: 'question_bank_items',
   },
+  {
+    file: '090_a_password_the_university_never_knew.sql',
+    what: 'MAKES TRUE A PROMISE THE ADMISSION PACKAGE HAS BEEN MAKING ALL ALONG \u2014 "you will '
+      + 'be required to set a new password on first sign-in". Nothing recorded whether a '
+      + 'password had ever been changed and nothing required it, so the temporary one the '
+      + 'system generated and emailed stayed valid indefinitely. `profiles.password_set_at` is '
+      + 'NULL for every existing account, which is the honest state, and the account holder '
+      + 'CANNOT write it \u2014 a column-level revoke, because a policy is row-level and cannot '
+      + 'protect one column. An office can see who is still on an issued password; a student '
+      + 'cannot read that list.',
+    table: 'profiles',
+    column: 'password_set_at',
+  },
+  {
+    file: '091_the_public_key_cannot_destroy_the_university.sql',
+    what: 'RUN THIS FIRST. The publishable key \u2014 in the JavaScript of every page \u2014 '
+      + 'held INSERT, UPDATE, DELETE and TRUNCATE on 172 relations, and so did every signed-in '
+      + 'student. ROW-LEVEL SECURITY DOES NOT STOP TRUNCATE: no policy is consulted, so all 129 '
+      + 'of them are bypassed by one statement. `truncate profiles cascade` was run as the '
+      + 'anonymous public and took profiles, admission decisions, every credential ever issued '
+      + 'and the audit log with it. The public key now writes nothing; a session loses TRUNCATE '
+      + 'only, keeping the INSERT/UPDATE/DELETE the portal depends on.',
+    // NOTHING IS CREATED, so there is nothing to read. The check is by hand
+    // and it is one query — which is the right shape for this migration
+    // anyway: the question is not "did a table appear" but "can the public key
+    // still write", and that is exactly what this asks.
+    cannotSee: "select grantee, count(*) from information_schema.role_table_grants "
+      + "where table_schema = 'public' and grantee in ('anon', 'authenticated') "
+      + "and privilege_type in ('INSERT','UPDATE','DELETE','TRUNCATE') group by 1;  "
+      + "-- anon must not appear at all, and authenticated must not show TRUNCATE",
+  },
 ];
 
 /** What a probe came back as. */

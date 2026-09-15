@@ -273,6 +273,11 @@ const MARKERS = {
   '087': 'course_modules.unlocks_after',
   '088': 'receipt_counters',
   '089': 'question_bank_items',
+  '090': 'profiles.password_set_at',
+  // 091 CREATES NOTHING — it TAKES RIGHTS AWAY, so there is no relation, column
+  // or row to look for. The honest question is the one the migration exists to
+  // answer: can the publishable key still write?
+  '091': 'norights:anon',
 };
 
 /** The SQL that answers "is this one here?", for each of the three forms. */
@@ -321,6 +326,22 @@ function landedTest(marker) {
   // ACTUALLY ENFORCING, so the needle must be a phrase the new policy has and
   // the old one did not.
   // ---------------------------------------------------------------------
+  // ---------------------------------------------------------------------
+  // A RIGHT THAT SHOULD NO LONGER EXIST.
+  //
+  // For a migration that revokes rather than creates. Everything else in this
+  // table asks "is the thing there"; this asks "is the thing GONE", which is
+  // the only honest way to report a migration whose whole content is a revoke.
+  // ---------------------------------------------------------------------
+  if (marker.startsWith('norights:')) {
+    const [, role] = marker.split(':');
+    return `case when not exists (
+                   select 1 from information_schema.role_table_grants
+                    where table_schema = 'public'
+                      and grantee = '${role}'
+                      and privilege_type in ('INSERT', 'UPDATE', 'DELETE', 'TRUNCATE'))
+                 then 'YES' else 'NO' end`;
+  }
   if (marker.startsWith('policydef:')) {
     const [, name, ...rest] = marker.split(':');
     const needle = rest.join(':');

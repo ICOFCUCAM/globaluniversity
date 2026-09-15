@@ -317,6 +317,24 @@ select * from (
   select '089' as migration, '089_the_question_bank_is_for_authors.sql' as file,
          case when to_regclass('public.question_bank_items') is not null then 'YES' else 'NO' end as landed,
          'question_bank_items' as what_it_creates
+  union all
+  select '090' as migration, '090_a_password_the_university_never_knew.sql' as file,
+         case when exists (
+                   select 1 from information_schema.columns
+                    where table_schema = 'public'
+                      and table_name = 'profiles'
+                      and column_name = 'password_set_at')
+                 then 'YES' else 'NO' end as landed,
+         'profiles.password_set_at' as what_it_creates
+  union all
+  select '091' as migration, '091_the_public_key_cannot_destroy_the_university.sql' as file,
+         case when not exists (
+                   select 1 from information_schema.role_table_grants
+                    where table_schema = 'public'
+                      and grantee = 'anon'
+                      and privilege_type in ('INSERT', 'UPDATE', 'DELETE', 'TRUNCATE'))
+                 then 'YES' else 'NO' end as landed,
+         'norights:anon' as what_it_creates
 ) as landed_report
  order by migration;
 
