@@ -10,7 +10,7 @@
 import React from 'react';
 import type { ViewType, UserRole } from './types';
 import { can, type Capability } from './roles';
-import { isRuled, scopeOf, type Resource, type Action } from './grants';
+import { grantDecides, scopeOf, type Resource, type Action } from './grants';
 import { showsAtStage } from './studentJourney';
 import {
   UserCheck,
@@ -814,7 +814,23 @@ export function groupsFor(
         // the Dashboard, Settings, the discussion forum: things everybody has
         // that are nobody's resource.
         // ---------------------------------------------------------------
-        isRuled(role) && i.resource && i.action
+        // ---------------------------------------------------------------
+        // THE GRANT DECIDES WHERE THERE IS ONE; OTHERWISE THE CAPABILITY DOES.
+        //
+        // This read `isRuled(role)` — is this role in the grant table AT ALL —
+        // which was right while the lecturer was the only role in it and would
+        // have been wrong the moment a second arrived. The University's
+        // September 2026 examples give a Dean ONE triple (students/view on
+        // their own faculty). Treated as a complete tree it takes a Dean's
+        // sidebar from 20 items to 18 — measured, not guessed — and the number
+        // grows with every entry that gains a resource and an action.
+        //
+        // `grantDecides` is true when there is a ruling to apply — and for
+        // every resource/action of a role whose tree is complete, because
+        // there the silence IS the ruling. The lecturer keeps being refused
+        // the Course catalogue; a Dean keeps everything nobody has ruled on.
+        // ---------------------------------------------------------------
+        i.resource && i.action && grantDecides(role, i.resource, i.action)
           ? scopeOf(role, i.resource, i.action) !== null
           : i.roles.includes(role) && (!i.capability || can(role, i.capability))
       )

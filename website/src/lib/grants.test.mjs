@@ -138,25 +138,83 @@ const nav = readFileSync(join(here, 'portalNav.tsx'), 'utf8')
   .replace(/\/\*[\s\S]*?\*\//g, '').replace(/^[ \t]*\/\/.*$/gm, '');
 check('the filter matches on resource AND action',
   /scopeOf\(role, i\.resource, i\.action\) !== null/.test(nav), true);
-check('…and a ruled role does not fall back to the role list',
-  /isRuled\(role\) && i\.resource && i\.action/.test(nav), true);
+// AND THE GRANT IS CONSULTED PER RESOURCE AND ACTION, not per role. This
+// pinned `isRuled(role) && …` — is this role in the table at all — which was
+// right while the lecturer was alone in it, and would have taken the portal
+// away from every Dean the moment a second role arrived holding one triple.
+check('…and the grant is consulted per resource and action, not per role',
+  /i\.resource && i\.action && grantDecides\(role, i\.resource, i\.action\)/.test(nav), true);
+check('…so a role with a partial tree keeps what nobody has ruled on',
+  /isRuled\(role\) &&/.test(nav), false);
 
-// --- A ROLE NOBODY HAS RULED ON IS UNTOUCHED ------------------------------
+// ---------------------------------------------------------------------------
+// THE FIVE THE UNIVERSITY WROTE OUT, September 2026
 //
-// The migration is deliberately one office at a time: rewriting 111
-// capabilities across 23 roles without a ruling on each would mean inventing
-// the University's own arrangements.
-check('a lecturer has been ruled on', G.isRuled('lecturer'), true);
-for (const role of ['dean', 'registrar', 'finance', 'student']) {
-  check(`${role} has not, and still sees a portal`,
-    G.isRuled(role) === false && ids(role).length > 3, true);
+//   Dean      → view students          → students → view → own faculty
+//   Registrar → manage academic records → students → manage → university
+//   Student   → view academic record   → academic record → view → self
+//   VC        → issue appointment      → appointments → issue → institution
+//   Finance Officer → Fees → university-wide financial scope
+// ---------------------------------------------------------------------------
+const RULED = [
+  ['dean', 'students', 'view', 'own-faculty'],
+  ['registrar', 'students', 'manage', 'university'],
+  ['student', 'academic-record', 'view', 'self'],
+  ['vice-chancellor', 'appointments', 'issue', 'university'],
+  ['finance', 'fees', 'manage', 'university'],
+];
+for (const [role, resource, action, scope] of RULED) {
+  check(`${role}: ${resource} → ${action}:${scope}`,
+    G.scopeOf(role, resource, action), scope);
+}
+
+// --- AND NOT ONE LINE MORE ------------------------------------------------
+//
+// Exactly one triple was given for each, so exactly one is recorded. Filling
+// in the obvious rest — a Dean surely also views courses — is the one thing
+// this model must never do: a guess written here is indistinguishable from a
+// ruling to whoever reads it next year.
+for (const [role] of RULED) {
+  check(`${role} holds exactly the one triple the University wrote`,
+    G.grantsFor(role).length, 1);
+}
+
+// --- A PARTIAL TREE IS NOT A COMPLETE ONE ---------------------------------
+//
+// THE TRAP THIS SECTION EXISTS FOR. The sidebar used to ask `isRuled(role)` —
+// is this role in the table at all — and refuse every resource/action absent
+// from it. That was right while the lecturer was alone in the table. With a
+// Dean holding ONE triple it silently removes two of their twenty menu items
+// (measured by building the nav both ways), and more as entries gain a
+// resource and an action.
+check('the lecturer’s tree is the whole of what they may do', G.isComplete('lecturer'), true);
+for (const [role] of RULED) {
+  check(`${role}’s tree is what has been ruled SO FAR, not the whole of it`,
+    G.isComplete(role), false);
+}
+
+// So: the grant decides where there is one, and the capability matrix decides
+// everywhere else.
+check('a ruling decides where one exists',
+  G.grantDecides('dean', 'students', 'view'), true);
+check('…and does NOT decide where the University has not ruled',
+  G.grantDecides('dean', 'courses', 'view'), false);
+check('…while for a complete tree, silence is itself the ruling',
+  G.grantDecides('lecturer', 'courses', 'manage'), true);
+
+// --- AND THE PORTAL DID NOT SHRINK ----------------------------------------
+//
+// The behavioural half of the same point, and the one that would actually be
+// noticed: a Dean who could suddenly see three menu items.
+for (const [role] of RULED) {
+  check(`${role} still sees a portal`, ids(role).length > 3, true);
 }
 
 // --- THE VOCABULARY IS CLOSED ---------------------------------------------
 //
 // A grant naming a resource, action or scope nobody declared would be a rule
 // that reads correctly and matches nothing.
-for (const role of ['lecturer']) {
+for (const role of ['lecturer', 'dean', 'registrar', 'student', 'vice-chancellor', 'finance']) {
   for (const g of G.grantsFor(role)) {
     check(`${role}: '${g.resource}' is a declared resource`,
       G.RESOURCES.includes(g.resource), true);

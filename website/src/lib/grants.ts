@@ -59,6 +59,20 @@ import type { UserRole } from './types';
  */
 export const RESOURCES = [
   'courses',
+  // ---- NAMED IN THE UNIVERSITY'S OWN EXAMPLES, September 2026 ----------
+  //
+  //   Registrar → manage academic records → students → manage → university
+  //   Student   → view academic record    → academic record → view → self
+  //   VC        → issue appointment       → appointments → issue → institution
+  //   Finance Officer → Fees → university-wide financial scope
+  //
+  // `academic-record` is deliberately NOT `students`: the University wrote
+  // both, on the same list, for different roles. A Registrar manages the
+  // student register; a student views their own academic record. Collapsing
+  // them would grant one of those two something nobody granted.
+  'academic-record',
+  'appointments',
+  'fees',
   'question-bank',
   'question-papers',
   'students',
@@ -81,6 +95,8 @@ export type Resource = (typeof RESOURCES)[number];
  */
 export const ACTIONS = [
   'view',
+  /** The University's word for a Vice-Chancellor and an appointment. */
+  'issue',
   'create-draft',
   'create',
   'manage',
@@ -179,13 +195,102 @@ const LECTURER: Grant[] = [
  * for the resources named, so it goes in when the University has said what it
  * should hold — not when somebody guesses.
  */
+// ---------------------------------------------------------------------------
+// THE FIVE THE UNIVERSITY WROTE OUT, AND NOT ONE LINE MORE
+// ---------------------------------------------------------------------------
+//
+// Given as examples under "AUTHORIZATION ARCHITECTURE", September 2026:
+//
+//     Dean      → view students          → students → view → own faculty
+//     Registrar → manage academic records → students → manage → university
+//     Student   → view academic record   → academic record → view → self
+//     VC        → issue appointment      → appointments → issue → institution
+//     Finance Officer → Fees → university-wide financial scope
+//
+// EACH IS EXACTLY ONE TRIPLE, because exactly one was given. The temptation is
+// to fill in the rest — a Dean surely also views courses, a Registrar surely
+// manages enrolments — and that is the one thing this file must never do. What
+// a Dean may do beyond this is not yet ruled, and a guess written here would be
+// indistinguishable from a ruling when somebody reads it next year.
+//
+// SO THESE ARE PARTIAL, AND THE LECTURER'S IS NOT. See `COMPLETE` below: for a
+// role with a complete tree the absence of a grant is a REFUSAL; for a role
+// with a partial one it means "not ruled on yet", and the capability matrix
+// answers as it did before.
+//
+// MEASURED RATHER THAN ASSERTED: treating the Dean's one line as complete
+// takes their sidebar from 20 items to 18 today. Two screens, silently, for
+// every Dean in the University — and the number grows with every menu entry
+// that gains a `resource` and an `action`, because those are the only ones the
+// grant is consulted for. Small today, and the wrong direction.
+// ---------------------------------------------------------------------------
+const DEAN: Grant[] = [
+  { resource: 'students', action: 'view', scope: 'own-faculty' },
+];
+
+const REGISTRAR: Grant[] = [
+  { resource: 'students', action: 'manage', scope: 'university' },
+];
+
+const STUDENT: Grant[] = [
+  { resource: 'academic-record', action: 'view', scope: 'self' },
+];
+
+// 'institution' IS THE UNIVERSITY'S WORD and 'university' is the scope this
+// vocabulary already had. They are the same extent here — the whole of the
+// institution — so a second name for it was not added: two words for one reach
+// is how `assign-lecturers` and `assign-lecturers-to-courses` came to exist,
+// with nothing enforcing either. If the University means something WIDER than
+// the University by "institution", this is the line to correct.
+const VICE_CHANCELLOR: Grant[] = [
+  { resource: 'appointments', action: 'issue', scope: 'university' },
+];
+
+const FINANCE: Grant[] = [
+  { resource: 'fees', action: 'manage', scope: 'university' },
+];
+
 const GRANTS: Partial<Record<UserRole, Grant[]>> = {
   lecturer: LECTURER,
+  dean: DEAN,
+  registrar: REGISTRAR,
+  student: STUDENT,
+  'vice-chancellor': VICE_CHANCELLOR,
+  finance: FINANCE,
 };
 
-/** Whether this role has been ruled on in resource/action/scope terms yet. */
+/**
+ * Roles whose grant tree is the WHOLE of what they may do.
+ *
+ * For these, no grant means refused. For every other role in `GRANTS` the tree
+ * is what the University has ruled SO FAR, and anything absent falls back to
+ * the capability matrix — which is the honest reading of one line written on a
+ * list headed "Examples".
+ */
+const COMPLETE: ReadonlySet<UserRole> = new Set<UserRole>(['lecturer']);
+
+/** Is this role's tree exhaustive, so that silence means refusal? */
+export function isComplete(role: UserRole | null | undefined): boolean {
+  return Boolean(role && COMPLETE.has(role));
+}
+
+/** Whether this role has been ruled on in resource/action/scope terms at all. */
 export function isRuled(role: UserRole | null | undefined): boolean {
   return Boolean(role && GRANTS[role]);
+}
+
+/**
+ * Whether the grant model is the authority for this role on this exact
+ * resource and action — as opposed to the capability matrix.
+ *
+ * TRUE WHEN THERE IS A RULING TO APPLY, and true for every resource/action of
+ * a role whose tree is complete, because there silence is itself the ruling.
+ */
+export function grantDecides(
+  role: UserRole | null | undefined, resource: Resource, action: Action,
+): boolean {
+  if (isComplete(role)) return true;
+  return scopeOf(role, resource, action) !== null;
 }
 
 export function grantsFor(role: UserRole | null | undefined): Grant[] {
