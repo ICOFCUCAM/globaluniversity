@@ -27,6 +27,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import NeedsAttention from './NeedsAttention';
 import { useAuth } from '@/contexts/AuthContext';
 import CommandCentrePanel from './CommandCentrePanel';
 import PortalMasthead, {
@@ -197,6 +198,13 @@ export default function AdminDashboard({ onNavigate }: { onNavigate?: (v: ViewTy
               );
             })}
       </div>
+
+      {/* ABOVE THE COMMAND CENTRE, DELIBERATELY. What is stuck and what was
+          never set up is the most actionable thing on this page, and a panel
+          people have to scroll past two others to reach is a panel they read
+          on the day somebody tells them to. It renders nothing when there is
+          nothing waiting. */}
+      <NeedsAttention onNavigate={onNavigate} />
 
       {/* THE UNIVERSITY COMMAND CENTRE — point 11.
           Shown only to the offices that can act on either half. An

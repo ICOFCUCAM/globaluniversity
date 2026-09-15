@@ -129,6 +129,11 @@ console.log('\nNo table is read by code that nothing can write to\n');
 // ---------------------------------------------------------------------------
 const READ_ONLY_BY_DESIGN = {
   // Views. Nothing writes to a view.
+  accounts_on_a_temporary_password: 'A view over `profiles.password_set_at` — accounts still '
+    + 'on the password the University generated and emailed. It is written by changing a '
+    + 'password, which /api/account/password does with the service key: 090 revokes that '
+    + 'column from every browser session at the COLUMN level, because the whole point is that '
+    + 'the gate cannot be skipped by stamping the date without changing anything.',
   appointment_letter_verification: 'A view.',
   appointment_letters_unverifiable: 'A view, for an operator with SQL.',
   appointments_awaiting_acceptance: 'A view.',

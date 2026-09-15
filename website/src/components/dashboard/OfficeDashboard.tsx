@@ -23,6 +23,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import NeedsAttention from './NeedsAttention';
 import { useAuth } from '@/contexts/AuthContext';
 import PortalMasthead from '@/components/portal/PortalMasthead';
 import { roleLabels } from '@/lib/roles';
@@ -205,6 +206,10 @@ export default function OfficeDashboard({ onNavigate }: { onNavigate?: (v: ViewT
               />
             ))}
       </div>
+
+      {/* WHAT IS WAITING ON SOMEBODY, above the shortcuts and below the
+          counters. A count says how many; this says what to do. */}
+      <NeedsAttention onNavigate={onNavigate} />
 
       <Card>
         <div className="border-b border-[#f0ece4] px-5 py-4 dark:border-[#2a2333]">
