@@ -83,10 +83,12 @@ export default function AdminDashboard({ onNavigate }: { onNavigate?: (v: ViewTy
         students, applicants, awaitingRegistrar, awaitingFinance,
         lecturers, courses, departments, pendingResults, recentRows,
       ] = await Promise.all([
-        // See the note on the same count in OfficeDashboard. A student is
-        // somebody the Registrar has enrolled, and `student_status` is where
-        // that is now recorded.
-        count('students', (q: any) => q.not('student_status', 'is', null)),
+        // THE SAME QUESTION THE ENROLMENT DESK ASKS. See the fuller note on
+        // this count in OfficeDashboard: `student_status` is set by 037's
+        // one-time backfill and by nothing else, so counting it froze this
+        // tile on the day that migration ran. Two screens using the word
+        // "enrolled" must count the same people.
+        count('students', (q: any) => q.eq('status', 'enrolled')),
         count('students', (q: any) => q.eq('status', 'applicant')),
         count('students', (q: any) => q.in('status', ['fee_paid', 'documents_required'])),
         count('students', (q: any) => q.eq('status', 'applicant').eq('payment_status', 'pending')),
@@ -127,7 +129,7 @@ export default function AdminDashboard({ onNavigate }: { onNavigate?: (v: ViewTy
   const go = (v: ViewType) => () => onNavigate?.(v);
 
   const tiles: Array<{ label: string; value: number; icon: React.ReactNode; hint: string; view?: ViewType }> = [
-    { label: 'Enrolled students', value: counts.students, icon: <Users size={16} />, hint: 'Admitted, conditional or active', view: 'students' },
+    { label: 'Enrolled students', value: counts.students, icon: <Users size={16} />, hint: 'Took up the place', view: 'students' },
     { label: 'Open applications', value: counts.applicants, icon: <Inbox size={16} />, hint: 'Submitted, not yet decided', view: 'admissions-registrar' },
     { label: 'Awaiting the Registrar', value: counts.awaitingRegistrar, icon: <Stamp size={16} />, hint: 'Fee verified, decision due', view: 'admissions-registrar' },
     { label: 'Awaiting Finance', value: counts.awaitingFinance, icon: <Wallet size={16} />, hint: 'Payment not yet registered', view: 'admissions-finance' },

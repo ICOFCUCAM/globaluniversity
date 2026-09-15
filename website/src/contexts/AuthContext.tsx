@@ -16,6 +16,13 @@ interface Profile {
   // Set by the Superadministrator. Null means active.
   suspended_at?: string | null;
   suspension_reason?: string | null;
+  /**
+   * When this person last chose their own password. NULL means never — the
+   * account is still on the temporary one the University generated and emailed,
+   * and the portal shows nothing but the change-password screen until it is
+   * set. See migration 090; no session can write it.
+   */
+  password_set_at?: string | null;
 }
 
 /**
@@ -51,7 +58,7 @@ interface AuthContextType {
   session: Session | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<{ error: string | null }>;
+  login: (identifier: string, password: string) => Promise<{ error: string | null }>;
   logout: () => Promise<void>;
   switchRole: (role: UserRole) => void;
   demoLogin: (role: UserRole) => void;
@@ -338,12 +345,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [fetchProfile, profileToAuthUser]);
 
-  // Real email/password login
-  const login = useCallback(async (email: string, password: string): Promise<{ error: string | null }> => {
+  // -------------------------------------------------------------------------
+  // SIGNING IN WITH AN EMAIL ADDRESS OR A STUDENT NUMBER.
+  //
+  // The admission package has always told students "Username: ICOF202600001",
+  // and this box was an email field that rejected it — the University saying
+  // one thing in writing and accepting another on screen.
+  //
+  // AN EMAIL ADDRESS STILL GOES STRAIGHT TO SUPABASE, unchanged. A student
+  // number goes to `/api/auth/sign-in`, which resolves it and completes the
+  // sign-in server-side, because a lookup endpoint that answered "what email
+  // belongs to ICOF202600001?" would be a directory of every student's personal
+  // address — the numbers are sequential and walking them is trivial.
+  // -------------------------------------------------------------------------
+  const login = useCallback(async (identifier: string, password: string): Promise<{ error: string | null }> => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      
+
+      let data; let error;
+      if (identifier.includes('@')) {
+        ({ data, error } = await supabase.auth.signInWithPassword({
+          email: identifier, password,
+        }));
+      } else {
+        const res = await fetch('/api/auth/sign-in', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ identifier: identifier.trim(), password }),
+        });
+        const out = await res.json().catch(() => null);
+        if (!out?.ok) {
+          setIsLoading(false);
+          return { error: out?.error ?? 'That student number or password is not right.' };
+        }
+        // THE SESSION IS ADOPTED HERE. The route proved the password against
+        // Supabase and handed back the tokens; this is what puts them in the
+        // browser so every later request carries them.
+        ({ data, error } = await supabase.auth.setSession({
+          access_token: out.access_token,
+          refresh_token: out.refresh_token,
+        }));
+      }
+
       if (error) {
         setIsLoading(false);
         return { error: error.message };

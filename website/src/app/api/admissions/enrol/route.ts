@@ -142,6 +142,23 @@ export async function POST(request: Request) {
     status: 'enrolled',
     enrolled_at: new Date().toISOString(),
     enrolled_by: caller.id,
+    // ---------------------------------------------------------------
+    // AND THE ACADEMIC RECORD BEGINS HERE.
+    //
+    // `student_status` is 037's column — the standing an enrolled student
+    // holds: active, on probation, withdrawn, expelled. Nothing had ever set
+    // it except 037's own one-time backfill, so every student enrolled since
+    // that migration ran has carried NULL, and anything counting or filtering
+    // on it has been reading a frozen picture of the day 037 landed.
+    //
+    // The University found it the way these things are always found: the
+    // Dashboard said "Enrolled students 1" while the Enrolment desk said 2,
+    // on the same afternoon, about the same two people.
+    //
+    // Taking up a place is exactly when a person becomes a student in good
+    // standing, so this is where it belongs.
+    // ---------------------------------------------------------------
+    student_status: 'active',
   }).eq('id', body.applicationId);
   if (error) {
     return NextResponse.json({ ok: false, error: `not-enrolled: ${error.message}` }, { status: 500 });

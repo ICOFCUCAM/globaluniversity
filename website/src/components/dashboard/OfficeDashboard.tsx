@@ -47,7 +47,7 @@ interface OfficeConfig {
 
 const EXECUTIVE: OfficeConfig = {
   metrics: [
-    { key: 'enrolled', label: 'Enrolled students', hint: 'Admitted, conditional or active', icon: <Users size={16} /> },
+    { key: 'enrolled', label: 'Enrolled students', hint: 'Took up the place', icon: <Users size={16} /> },
     { key: 'admitted', label: 'Admitted this cycle', hint: 'Offers made', icon: <GraduationCap size={16} /> },
     { key: 'lecturers', label: 'Lecturers', hint: 'On the teaching register', icon: <GraduationCap size={16} /> },
     { key: 'courses', label: 'Courses', hint: 'In the catalogue', icon: <BookOpen size={16} /> },
@@ -63,7 +63,7 @@ const EXECUTIVE: OfficeConfig = {
 
 const FACULTY: OfficeConfig = {
   metrics: [
-    { key: 'enrolled', label: 'Enrolled students', hint: 'Across the university', icon: <Users size={16} /> },
+    { key: 'enrolled', label: 'Enrolled students', hint: 'Took up the place', icon: <Users size={16} /> },
     { key: 'courses', label: 'Courses', hint: 'In the catalogue', icon: <BookOpen size={16} /> },
     { key: 'lecturers', label: 'Lecturers', hint: 'On the teaching register', icon: <GraduationCap size={16} /> },
     { key: 'resultsDraft', label: 'Results in draft', hint: 'Entered, not yet approved', icon: <ClipboardList size={16} /> },
@@ -81,7 +81,7 @@ const FACULTY: OfficeConfig = {
 const ADMISSIONS_SUPPORT: OfficeConfig = {
   metrics: [
     { key: 'openApplications', label: 'Open applications', hint: 'Submitted, not yet decided', icon: <Inbox size={16} /> },
-    { key: 'enrolled', label: 'Enrolled students', hint: 'Admitted, conditional or active', icon: <Users size={16} /> },
+    { key: 'enrolled', label: 'Enrolled students', hint: 'Took up the place', icon: <Users size={16} /> },
   ],
   links: [
     { label: 'Students', view: 'students', icon: <Users size={15} /> },
@@ -93,7 +93,7 @@ const ADMISSIONS_SUPPORT: OfficeConfig = {
 
 const SERVICES: OfficeConfig = {
   metrics: [
-    { key: 'enrolled', label: 'Enrolled students', hint: 'Admitted, conditional or active', icon: <Users size={16} /> },
+    { key: 'enrolled', label: 'Enrolled students', hint: 'Took up the place', icon: <Users size={16} /> },
     { key: 'departments', label: 'Departments', hint: 'Across all faculties', icon: <Building2 size={16} /> },
   ],
   links: [
@@ -137,11 +137,26 @@ export default function OfficeDashboard({ onNavigate }: { onNavigate?: (v: ViewT
         return build ? build(base) : base;
       };
       const [enrolled, admitted, lecturers, courses, departments, resultsDraft, open] = await Promise.all([
-        // ONE QUESTION, ONE COLUMN. This listed four values — two admission
-        // outcomes, an enrolment and a student word — and called the total
-        // "enrolled". An applicant holding an offer is not enrolled; that is
-        // what the offer is. 037 gave the question a column to be asked of.
-        head('students', (q) => q.not('student_status', 'is', null)),
+        // ---------------------------------------------------------------
+        // THE SAME QUESTION THE ENROLMENT DESK ASKS, IN THE SAME WORDS.
+        //
+        // This has now been wrong twice. First it totalled four values — two
+        // admission outcomes, an enrolment and a student word — and called the
+        // result "enrolled"; an applicant holding an offer is not enrolled,
+        // that is what an offer is.
+        //
+        // The correction reached for `student_status is not null`, which was
+        // worse in a way nobody could see: that column is set by 037's ONE-TIME
+        // BACKFILL and by nothing else, so it counted whoever existed the day
+        // 037 ran and would never count anybody again. The tile would have sat
+        // at its number while the University enrolled hundreds.
+        //
+        // The Enrolment desk asks `status = 'enrolled'`. Two screens using the
+        // same word must count the same people, or the University has two
+        // answers and will quote whichever it saw last — the rule already
+        // applied to the attendance percentage and to course progress.
+        // ---------------------------------------------------------------
+        head('students', (q) => q.eq('status', 'enrolled')),
         head('students', (q) => q.eq('status', 'approved')),
         head('lecturers'),
         head('courses'),

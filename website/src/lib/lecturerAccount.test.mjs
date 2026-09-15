@@ -174,6 +174,19 @@ const MAY = [
   // portalCoverage caught it: enforced nowhere, and a duplicate name for
   // something that already worked.
   ['announce to their own course', 'publish-course-material'],
+  // ---------------------------------------------------------------------
+  // NOT A TEACHING POWER, AND NOT FROM THE UNIVERSITY'S TABLE.
+  //
+  // `change-own-password` is held by every role without exception — it is what
+  // an account holder does to their own account, not something an office
+  // grants a lecturer. It is listed here because the count below is the whole
+  // of what a lecturer holds, so a capability absent from this list reads as
+  // one that was slipped in.
+  //
+  // The alternative was to subtract it from the count, which hides it. This
+  // way the number moved by one, deliberately, with the reason beside it.
+  // ---------------------------------------------------------------------
+  ['change their own password, as every account may', 'change-own-password'],
 ];
 
 const MAY_NOT = [

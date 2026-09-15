@@ -361,6 +361,20 @@ export const OPERATIONAL_CAPABILITIES = [
   // another faculty's papers.
   // ---------------------------------------------------------------------
   /** Read their own staff record, their post and the letter they signed. */
+  /**
+   * Replace the password on your own account.
+   *
+   * HELD BY EVERY ROLE, WITHOUT EXCEPTION, and it is the only capability in
+   * this list of which that is true. It is not an office's power — it is the
+   * thing an account holder does to the account, and a role that could not do
+   * it would be a role permanently on a password the University generated and
+   * emailed.
+   *
+   * It is a capability at all so that `/api/account/password` can be guarded
+   * the same way every other route is, rather than being the one route that
+   * resolves a token by hand.
+   */
+  'change-own-password',
   'view-own-staff-record',
   /** See the catalogue entry for a course they teach. VIEW, never edit. */
   'view-own-courses',
@@ -645,6 +659,7 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // administrator by forgetting to list it here — and, more importantly, so a
   // capability added to SYSTEM_CAPABILITIES is withheld automatically.
   admin: [
+    'change-own-password',
     // EVERY MEMBER OF STAFF HAS A RECORD, and every one of them was unable
     // to read it. See `view-own-staff-record` in the capability list.
     'view-own-staff-record',...OPERATIONAL_CAPABILITIES],
@@ -658,6 +673,7 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // the appointment capabilities, because the appointing authority is one
   // office and naming two would make "who appoints here" a question.
   chancellor: [
+    'change-own-password',
     // EVERY MEMBER OF STAFF HAS A RECORD, and every one of them was unable
     // to read it. See `view-own-staff-record` in the capability list.
     'view-own-staff-record','view-executive-dashboard', 'view-all-faculties', 'view-institutional-finance', 'view-admitted-students', 'monitor-progress',
@@ -691,6 +707,7 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // different offices rather than in two desks of the same one.
   // ---------------------------------------------------------------------
   'vice-chancellor': [
+    'change-own-password',
     // EVERY MEMBER OF STAFF HAS A RECORD, and every one of them was unable
     // to read it. See `view-own-staff-record` in the capability list.
     'view-own-staff-record',
@@ -773,6 +790,7 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // the acts: a Registrar or a Dean still holds none of them.
   // ---------------------------------------------------------------------
   'finance-director': [
+    'change-own-password',
     // EVERY MEMBER OF STAFF HAS A RECORD, and every one of them was unable
     // to read it. See `view-own-staff-record` in the capability list.
     'view-own-staff-record','handle-student-request', 'verify-payment', 'approve-refund', 'generate-invoice', 'manage-student-accounts', 'view-institutional-finance', 'confirm-financial-clearance', 'set-fee-schedule'],
@@ -781,10 +799,12 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // is consistent and the spread defensible. Cannot enter a mark and cannot
   // publish one.
   hod: [
+    'change-own-password',
     // EVERY MEMBER OF STAFF HAS A RECORD, and every one of them was unable
     // to read it. See `view-own-staff-record` in the capability list.
     'view-own-staff-record','assign-lecturers-to-courses', 'approve-course-allocation', 'monitor-teaching', 'department-reports', 'view-registered-students', 'view-admitted-students', 'moderate-results', 'publish-course-material'],
   'programme-coordinator': [
+    'change-own-password',
     // EVERY MEMBER OF STAFF HAS A RECORD, and every one of them was unable
     // to read it. See `view-own-staff-record` in the capability list.
     'view-own-staff-record','monitor-teaching', 'department-reports', 'view-registered-students', 'manage-courses'],
@@ -799,6 +819,7 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // — 'assign-programme' and 'create-student-record' stay with the Registrar,
   // so an application cannot enter this queue except through that office.
   'admissions-officer': [
+    'change-own-password',
     // EVERY MEMBER OF STAFF HAS A RECORD, and every one of them was unable
     // to read it. See `view-own-staff-record` in the capability list.
     'view-own-staff-record',
@@ -826,6 +847,7 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // authority is the Vice-Chancellor, so 'issue-appointment-letter' is absent
   // from both HR roles and present on exactly one office.
   'hr-officer': [
+    'change-own-password',
     // EVERY MEMBER OF STAFF HAS A RECORD, and every one of them was unable
     // to read it. See `view-own-staff-record` in the capability list.
     'view-own-staff-record',
@@ -833,6 +855,7 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   ],
 
   'hr-administrator': [
+    'change-own-password',
     // EVERY MEMBER OF STAFF HAS A RECORD, and every one of them was unable
     // to read it. See `view-own-staff-record` in the capability list.
     'view-own-staff-record',
@@ -873,6 +896,7 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // system carries it.
   // ---------------------------------------------------------------------
   'library-staff': [
+    'change-own-password',
     // EVERY MEMBER OF STAFF HAS A RECORD, and every one of them was unable
     // to read it. See `view-own-staff-record` in the capability list.
     'view-own-staff-record','manage-library', 'view-registered-students'],
@@ -892,16 +916,19 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // named and unenforced, because they describe work this system does not do
   // and pretending otherwise is how a capability comes to mean nothing.
   'student-affairs': [
+    'change-own-password',
     // EVERY MEMBER OF STAFF HAS A RECORD, and every one of them was unable
     // to read it. See `view-own-staff-record` in the capability list.
     'view-own-staff-record','manage-hostel', 'manage-student-welfare', 'handle-student-request',
     'view-registered-students'],
 
-  applicant: ['apply', 'upload-documents', 'track-application'],
+  applicant: [
+    'change-own-password','apply', 'upload-documents', 'track-application'],
 
   // Cannot admit students. 'admit-student' is absent, and that absence is the
   // control — not a comment, not a UI condition.
   finance: [
+    'change-own-password',
     // EVERY MEMBER OF STAFF HAS A RECORD, and every one of them was unable
     // to read it. See `view-own-staff-record` in the capability list.
     'view-own-staff-record','verify-payment', 'approve-refund', 'generate-invoice', 'manage-student-accounts'],
@@ -910,6 +937,7 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // The Registry answers most of what a student asks: enrolment
   // confirmations, cards, leave, deferment, a change of programme.
   registrar: [
+    'change-own-password',
     // EVERY MEMBER OF STAFF HAS A RECORD, and every one of them was unable
     // to read it. See `view-own-staff-record` in the capability list.
     'view-own-staff-record',
@@ -956,6 +984,7 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // The Academic Office answers the academic ones — a programme change, a
   // course withdrawal, an appeal.
   'academic-office': [
+    'change-own-password',
     // EVERY MEMBER OF STAFF HAS A RECORD, and every one of them was unable
     // to read it. See `view-own-staff-record` in the capability list.
     'view-own-staff-record',
@@ -1002,6 +1031,7 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
 
   // Approves moderated marks on behalf of the faculty. Third of four.
   dean: [
+    'change-own-password',
     // EVERY MEMBER OF STAFF HAS A RECORD, and every one of them was unable
     // to read it. See `view-own-staff-record` in the capability list.
     'view-own-staff-record','view-admitted-students', 'approve-transfers', 'monitor-progress', 'approve-results'],
@@ -1010,6 +1040,7 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // even their own. 'moderate-results' and everything after it are absent, and
   // that absence is the first link of the chain.
   lecturer: [
+    'change-own-password',
     // ---------------------------------------------------------------------
     // THE UNIVERSITY'S OWN LIST, SEPTEMBER 2026, AND NOTHING BESIDE IT.
     //
@@ -1051,6 +1082,7 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // sitting that has gone wrong. DOES NOT MARK and cannot find misconduct —
   // the office that arranges an examination must not also grade it.
   'exam-officer': [
+    'change-own-password',
     // EVERY MEMBER OF STAFF HAS A RECORD, and every one of them was unable
     // to read it. See `view-own-staff-record` in the capability list.
     'view-own-staff-record',
@@ -1064,6 +1096,7 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // is a determination about a student's academic record rather than an
   // observation about a sitting.
   examiner: [
+    'change-own-password',
     // EVERY MEMBER OF STAFF HAS A RECORD, and every one of them was unable
     // to read it. See `view-own-staff-record` in the capability list.
     'view-own-staff-record',
@@ -1077,6 +1110,7 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // cannot terminate a sitting and cannot decide that what they saw was
   // cheating. Their observation is evidence; somebody else weighs it.
   invigilator: [
+    'change-own-password',
     // EVERY MEMBER OF STAFF HAS A RECORD, and every one of them was unable
     // to read it. See `view-own-staff-record` in the capability list.
     'view-own-staff-record','proctor-examination', 'record-exam-incident'],
@@ -1085,6 +1119,7 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // the University said a human must make. Cannot enter a first mark, and
   // migration 015 refuses to let anyone moderate their own marking.
   moderator: [
+    'change-own-password',
     // EVERY MEMBER OF STAFF HAS A RECORD, and every one of them was unable
     // to read it. See `view-own-staff-record` in the capability list.
     'view-own-staff-record',
@@ -1093,6 +1128,7 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   ],
 
   student: [
+    'change-own-password',
     'register-courses',
     'pay-fees',
     'sit-examination',
