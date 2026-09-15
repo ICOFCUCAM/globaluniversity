@@ -489,8 +489,24 @@ export const DECISION_CHECKS = {
   'override-reason-required': 'You are acting under administrative override, so a written reason '
     + 'of at least twenty characters is required. Open the application with Review and give the '
     + 'reason in the box beneath the decision.',
+  // ---------------------------------------------------------------------
+  // SAYS WHERE TO GO, AND THE FIRST VERSION DID NOT.
+  //
+  // It ended "It has to be decided rather than retried" — true, and the next
+  // question is always "then where is the box to record the decision?" There
+  // is no answer on the screen: a decided record is not in the queue, and the
+  // decision panel only opens from a queue row. This names the one control
+  // that puts it back there.
+  //
+  // A record reaches this state by being admitted before `admission_decisions`
+  // existed, so the status says approved and the decision the route needs to
+  // resume under was never written down.
+  // ---------------------------------------------------------------------
   'no-decision-to-resume': 'There is no recorded academic decision for this application, so an '
-    + 'issuance cannot be resumed. It has to be decided rather than retried.',
+    + 'issuance cannot be resumed — the record was admitted before decisions were kept, and the '
+    + 'decision the issuance would run under was never written down. Press Re-evaluate on this '
+    + 'row and give a reason: that returns it to “Applications awaiting decision”, where Review '
+    + 'opens the decision box. Deciding it there records the decision AND issues it.',
   'nothing-to-retry': 'This application is not part-way through issuance, so there is nothing to '
     + 'retry.',
   'reopen-needs-a-reason': 'Looking at a decision again needs a written reason of at least twenty '
