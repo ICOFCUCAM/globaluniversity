@@ -3811,6 +3811,17 @@ export const ENFORCED: EnforcedRules[] = [
       "…and with one recorded, the account opens",
       "…and they drop off the list the moment they can sign in"
     ]
+  },
+  {
+    "migration": "105",
+    "file": "105_the_vice_chancellor_can_see_the_university.sql",
+    "rules": [
+      "the Vice-Chancellor can read the student register",
+      "…and so can the Chancellor, who holds view-admitted-students",
+      "…and neither of them can create a student record",
+      "a Librarian still reads none",
+      "…and a lecturer still reads only the students they teach"
+    ]
   }
 ];
 
@@ -3818,5 +3829,5 @@ export const COUNTS = {
   roles: 25,
   capabilities: 129,
   migrations: 0,
-  provedRules: 121,
+  provedRules: 126,
 };

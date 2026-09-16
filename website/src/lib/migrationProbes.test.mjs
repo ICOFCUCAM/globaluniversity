@@ -205,6 +205,18 @@ console.log('\nAnd what it cannot see, it says so about\n');
   // appearing quietly. 026 seeds two rows into an existing table and 028
   // replaces a function; the probe mechanism checks for tables and columns and
   // cannot see either kind.
+  //
+  // 105 IS THE NEWEST, AND IT IS THE HARDEST KIND TO PROBE. It rewrites one
+  // SELECT policy on `students` so that the Vice-Chancellor and the Chancellor
+  // can read the register at all. Nothing is created, so `table` would report
+  // `students` — there since 001 — as proof that 105 landed; and the probe runs
+  // with the SERVICE key, which no policy binds, so reading a row proves
+  // nothing about what a signed-in Vice-Chancellor sees.
+  //
+  // That is exactly the fault 105 fixes, one level up: a read that comes back
+  // empty because of a policy looks identical to one that comes back empty
+  // because there is nothing there. So it says "check by hand" and gives the
+  // query, rather than vouching for something it cannot look at.
   check('the migrations nothing can be read from are named as unverifiable',
     blind.map((p) => p.file),
     [
@@ -246,6 +258,7 @@ console.log('\nAnd what it cannot see, it says so about\n');
       // on the entry.
       // ---------------------------------------------------------------
       '091_the_public_key_cannot_destroy_the_university.sql',
+    '105_the_vice_chancellor_can_see_the_university.sql',
 ]);
   check('…and carries the check to run by hand',
     blind.every((p) => /select|pg_constraint/i.test(p.cannotSee)), true);

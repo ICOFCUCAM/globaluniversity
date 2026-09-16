@@ -394,6 +394,15 @@ select * from (
   select '104' as migration, '104_a_staff_record_is_not_an_account.sql' as file,
          case when to_regclass('public.staff_records_awaiting_an_account') is not null then 'YES' else 'NO' end as landed,
          'staff_records_awaiting_an_account' as what_it_creates
+  union all
+  select '105' as migration, '105_the_vice_chancellor_can_see_the_university.sql' as file,
+         case when exists (
+                   select 1 from pg_policy p
+                    where p.polname = 'students_staff_read'
+                      and position('vice-chancellor' in
+                                   pg_get_expr(p.polqual, p.polrelid)) > 0)
+                 then 'YES' else 'NO' end as landed,
+         'policydef:students_staff_read:vice-chancellor' as what_it_creates
 ) as landed_report
  order by migration;
 

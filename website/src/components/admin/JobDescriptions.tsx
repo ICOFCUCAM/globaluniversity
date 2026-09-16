@@ -59,7 +59,10 @@ export default function JobDescriptions() {
   const [posts, setPosts] = useState<Position[]>([]);
   const [profiles, setProfiles] = useState<PositionProfile[]>([]);
   const [clauses, setClauses] = useState<ClauseRow[]>([]);
-  const [open, setOpen] = useState<PositionFamily | null>(null);
+  // THE KEY OF THE OPEN ROW, not a family. A row is now either a family or a
+  // single post's own job description, so the identifier has to be able to name
+  // both — `family:executive` or `post:<profile id>`.
+  const [open, setOpen] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [note, setNote] = useState<{ kind: 'ok' | 'bad'; text: string } | null>(null);
   const [adding, setAdding] = useState<JdSection | null>(null);
@@ -150,6 +153,70 @@ export default function JobDescriptions() {
   const drafts = useMemo(
     () => profiles.filter((p) => p.status === 'draft').length, [profiles]);
 
+  // ---------------------------------------------------------------------
+  // WHAT THIS SCREEN DRAWS A ROW FOR.
+  //
+  // ---------------------------------------------------------------------
+  // THE FAULT THIS WAS WRITTEN AFTER
+  // ---------------------------------------------------------------------
+  //
+  // The University read the banner — "3 job descriptions waiting to be read
+  // and approved" — against a list in which every row said IN FORCE, and
+  // asked what there was to verify. Nothing, on that screen: the banner
+  // counted EVERY draft profile and the list iterated POSITION_FAMILIES,
+  // so two kinds of draft could be counted and never drawn.
+  //
+  //   A POST'S OWN JOB DESCRIPTION had no row at all, ever. The route has
+  //   supported one since it was written — `fork` creates it, and purpose,
+  //   clause, remove and activate all handle `position_id` — and this
+  //   screen fetched that column only to EXCLUDE it. 103 seeded two, for
+  //   the National Rector and the National Financial Secretary, and both
+  //   were invisible the moment they existed.
+  //
+  //   A FAMILY THE DATABASE HAS AND THE BUILD DOES NOT. 103 added
+  //   `national` as a ninth family. The migration lands the moment the
+  //   University runs it; POSITION_FAMILIES only changes when the site is
+  //   redeployed. Between those two moments the family's draft was counted
+  //   by the banner and drawn by nothing.
+  //
+  // So the rows now come from what is THERE — every family the code knows,
+  // every family the posts or the profiles mention, and every post that has
+  // a job description of its own — rather than from a constant compiled
+  // into the page.
+  // ---------------------------------------------------------------------
+  const entries = useMemo(() => {
+    const families = [...new Set([
+      ...POSITION_FAMILIES as readonly string[],
+      ...posts.map((p) => p.family).filter(Boolean) as string[],
+      ...profiles.filter((p) => !p.position_id).map((p) => p.family).filter(Boolean) as string[],
+    ])];
+
+    const familyRows = families.map((family) => ({
+      key: `family:${family}`,
+      label: (FAMILY_LABELS as Record<string, string>)[family] ?? family,
+      profile: familyProfile(family),
+      posts: posts.filter((p) => p.family === family),
+      ofAPost: false,
+    }));
+
+    // A POST'S OWN, BENEATH ITS FAMILY'S. Superseded versions are left out for
+    // the same reason a family's are: what is in force and what is waiting.
+    const postRows = profiles
+      .filter((p) => p.position_id && p.status !== 'superseded')
+      .map((p) => {
+        const post = posts.find((q) => String(q.id) === String(p.position_id));
+        return {
+          key: `post:${p.id}`,
+          label: `${post?.title ?? 'A post'} — its own`,
+          profile: p,
+          posts: post ? [post] : [],
+          ofAPost: true,
+        };
+      });
+
+    return [...familyRows, ...postRows];
+  }, [posts, profiles, familyProfile]);
+
   if (!mayEdit) {
     return (
       <div className="p-6 text-sm text-gray-600">
@@ -164,9 +231,13 @@ export default function JobDescriptions() {
       <header>
         <h1 className="text-xl font-semibold text-gray-900">Job Descriptions</h1>
         <p className="text-sm text-gray-600">
-          {posts.length} posts, {POSITION_FAMILIES.length} families. A post&rsquo;s job
-          description is its family&rsquo;s clauses plus anything the post states for itself —
-          so editing a family changes every post in it.
+          {posts.length} posts, {entries.filter((e) => !e.ofAPost).length} families. A
+          post&rsquo;s job description is its family&rsquo;s clauses plus anything the post
+          states for itself — so editing a family changes every post in it.
+          {/* COUNTED FROM THE ROWS BELOW, not from POSITION_FAMILIES. The
+              constant is what this build was compiled with; the rows are what
+              the University's database actually holds, and 103 added a family
+              between the two. */}
         </p>
       </header>
 
@@ -189,17 +260,28 @@ export default function JobDescriptions() {
             {drafts} job description{drafts === 1 ? '' : 's'} waiting to be read and approved
           </p>
           <p className="mt-1 text-sm text-amber-900">
-            Migration 048 wrote a first draft of each. It is a starting point, not the
+            Migration 048 wrote a first draft of each family, and 103 wrote one for the
+            national family and for each of its two posts. A draft is a starting point, not the
             University&rsquo;s policy — read it, edit what should change, and activate it. A
             draft cannot be attached to an appointment.
+          </p>
+          {/* NAMED, NOT JUST COUNTED. A banner saying "3 waiting" above a list
+              where every row reads IN FORCE tells the University to go and read
+              something without saying which — which is exactly how this screen
+              was found to be drawing fewer rows than it was counting. */}
+          <p className="mt-1 text-sm text-amber-900">
+            Waiting:{' '}
+            {entries.filter((e) => e.profile?.status === 'draft')
+              .map((e) => e.label).join(' · ') || '—'}
           </p>
         </div>
       )}
 
-      {POSITION_FAMILIES.map((family) => {
-        const profile = familyProfile(family);
+      {entries.map((entry) => {
+        const family = entry.key;
+        const profile = entry.profile;
         const own = clausesOf(profile?.id);
-        const inFamily = posts.filter((p) => p.family === family);
+        const inFamily = entry.posts;
         const isOpen = open === family;
         const objections = profile ? objectionsToProfile(profile, own) : [];
 
@@ -216,9 +298,11 @@ export default function JobDescriptions() {
               }}
             >
               <div className="min-w-[14rem] flex-1">
-                <p className="font-medium text-gray-900">{FAMILY_LABELS[family]}</p>
+                <p className="font-medium text-gray-900">{entry.label}</p>
                 <p className="text-xs text-gray-500">
-                  {inFamily.length} post{inFamily.length === 1 ? '' : 's'} ·{' '}
+                  {entry.ofAPost
+                    ? 'this post only'
+                    : `${inFamily.length} post${inFamily.length === 1 ? '' : 's'}`} ·{' '}
                   {profile
                     ? <>version {profile.version} ·{' '}
                       <span className={profile.status === 'active'

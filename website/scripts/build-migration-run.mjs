@@ -294,6 +294,14 @@ const MARKERS = {
   // posts missing, and it is the POSTS the University came looking for.
   '103': "rows:positions:job_code in ('NAT-REC','NAT-FIN','EXE-CHAN')",
   '104': 'staff_records_awaiting_an_account',
+  // 105 CREATES NO RELATION EITHER. It widens one SELECT policy, so the
+  // policy's own USING clause is what says it landed: `def:` reads
+  // constraints, and a policy needs its own look.
+  // THE POLICY'S OWN PREDICATE, the form 083 already uses. 105 creates no
+  // table, column or view: it rewrites one SELECT policy. Asking
+  // `to_regclass('students')` would report YES on a database where 105 has
+  // never run, because `students` has been there since 001.
+  '105': 'policydef:students_staff_read:vice-chancellor',
 };
 
 /** The SQL that answers "is this one here?", for each of the three forms. */

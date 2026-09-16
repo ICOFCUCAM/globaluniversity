@@ -1197,6 +1197,33 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
       + 'record, account or appointment is touched.',
     table: 'staff_records_awaiting_an_account',
   },
+  {
+    file: '105_the_vice_chancellor_can_see_the_university.sql',
+    what:
+      'THE VICE-CHANCELLOR CAN READ THE STUDENT REGISTER. They could not, and neither could '
+      + 'the Chancellor: `students_staff_read` named eleven roles and not those two, so both '
+      + 'offices read ZERO students on every screen \u2014 the dashboard\u2019s enrolled and '
+      + 'admitted tiles, the Students screen, and the \u201cneeds attention\u201d panel that '
+      + 'reasons from those counts. The University found it the only way anybody finds this: '
+      + 'the Vice-Chancellor looked at their own dashboard and asked why enrolment was not '
+      + 'registered. A COUNT OF ZERO AND A REFUSAL LOOK IDENTICAL, and `courses` is publicly '
+      + 'readable, so 77 courses sat in the same row of tiles and made the screen look like a '
+      + 'working report of an empty University. The Chancellor holds '
+      + '`view-admitted-students`, whose entire content is reading the rows the policy '
+      + 'withheld. READING IS NOT ADMITTING and nothing here changes that: neither office '
+      + 'holds admit-student or verify-payment, this is a SELECT policy, and the migration\u2019s '
+      + 'own proof watches the Vice-Chancellor being refused when they try to create a '
+      + 'student. Nobody loses a row, and no student record is touched.',
+    // The policy is what changed, so the probe reads a student rather than a
+    // table: on a database where 105 has not run, a signed-in Vice-Chancellor
+    // gets an empty result and no error, which is the whole fault in miniature.
+    // `rpc` and `table` cannot express that, so this is the honest answer.
+    cannotSee:
+      'Sign in as the Vice-Chancellor and open the Dashboard. If Enrolled students reads 0 '
+      + 'while the Registrar\u2019s Students screen shows people, 105 has not run. Or ask the '
+      + 'database directly: select policyname from pg_policies where tablename = \'students\' '
+      + 'and qual like \'%vice-chancellor%\';',
+  },
 ];
 
 /** What a probe came back as. */
