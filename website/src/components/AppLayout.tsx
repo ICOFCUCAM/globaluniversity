@@ -66,6 +66,7 @@ import AnnouncementModule from './announcements/AnnouncementModule';
 import AppointmentDashboard from './hr/AppointmentDashboard';
 import Appointments from './hr/Appointments';
 import CorrespondenceCenter from './correspondence/CorrespondenceCenter';
+import Publications from './publications/Publications';
 import DocumentTemplates from './admin/DocumentTemplates';
 import JobDescriptions from './admin/JobDescriptions';
 import AppointmentConditions from './hr/AppointmentConditions';
@@ -342,6 +343,8 @@ export default function AppLayout() {
         return <Appointments />;
       case 'correspondence':
         return <CorrespondenceCenter />;
+      case 'publications':
+        return <Publications />;
       case 'document-templates':
         return <DocumentTemplates />;
       case 'job-descriptions':

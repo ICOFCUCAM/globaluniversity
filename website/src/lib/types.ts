@@ -302,6 +302,8 @@ export type ViewType =
   | 'appointments'
   | 'appointments-board'
   | 'correspondence'
+  // THE BOOKS THE UNIVERSITY SENDS OUT, as against the letters it writes.
+  | 'publications'
   | 'document-templates'
   | 'job-descriptions'
   | 'appointment-conditions'

@@ -627,6 +627,22 @@ export const menuGroups: MenuGroup[] = [
         roles: ['superadmin', 'admin', 'chancellor', 'vice-chancellor', 'registrar',
           'hr-administrator'],
       },
+      // ---- THE BOOKS, WHICH ARE NOT LETTERS ------------------------------
+      //
+      // Beside Correspondence because both are the University speaking outward
+      // from this office, and separate from it because they are not the same
+      // act. A letter is written to one person and issued once; a publication
+      // is the University's standing statement, the same for everybody, sent
+      // again and again.
+      //
+      // Filing the prospectus under Correspondence would have meant composing
+      // a fresh forty-chapter letter every time somebody asked for it.
+      {
+        id: 'publications',
+        label: 'Publications',
+        icon: <BookMarked size={18} />,
+        roles: ['superadmin', 'admin', 'chancellor', 'vice-chancellor', 'registrar'],
+      },
     ],
   },
   {

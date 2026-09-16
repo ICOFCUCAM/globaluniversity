@@ -155,14 +155,54 @@ const callableAs = (path) => new RegExp(
     .join('/'),
 );
 
+// ---------------------------------------------------------------------------
+// NOT EVERY ROUTE HANDLER LIVES UNDER /api/, AND THE SPLIT IS NOT COSMETIC.
+// ---------------------------------------------------------------------------
+//
+// This file assumed they all did, and built each route's path by cutting at
+// '/api/'. The first handler outside it — `/publications/[slug]`, where the
+// Vice-Chancellor's prospectus is read — produced a path of
+// "e/user/globaluniversity/website/src/app/publications/[slug]", because
+// indexOf returned -1 and the slice began one character into the absolute
+// filename. It was then reported as unreachable, which was true of the mangled
+// string and false of the route.
+//
+// The two kinds are genuinely different and are checked differently:
+//
+//   AN /api/ ROUTE is guarded and reached by `fetch` with a bearer token.
+//   A PUBLIC ROUTE is reached by NAVIGATION — an href, a window.open — which
+//   is precisely why it must not be guarded, and why this file elsewhere
+//   refuses any screen that navigates to an /api/ address.
+//
+// Both still have to be reachable from something. Neither is exempted.
+// ---------------------------------------------------------------------------
+const apiRoutes = routes.filter((f) => f.includes('/app/api/'));
+const pageRoutes = routes.filter((f) => !f.includes('/app/api/'));
+
 const uncalled = [];
-for (const route of routes) {
+for (const route of apiRoutes) {
   const path = route.slice(route.indexOf('/api/') + 5).replace('/route.ts', '');
   if (NOT_CALLED_FROM_A_SCREEN[path]) continue;
   if (!callableAs(path).test(callerText)) uncalled.push(path);
 }
 
 check('no route is unreachable from every screen', uncalled, []);
+
+// The same dynamic-segment rule, against the whole public path rather than
+// against what follows '/api/'.
+const linkableAs = (path) => new RegExp(
+  path.split('/').map((segment) => {
+    if (/^\[\.\.\..+\]$/.test(segment)) return '[^\'"`\\s]+';
+    if (/^\[.+\]$/.test(segment)) return '[^/\'"`\\s]+';
+    return segment.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }).join('/'),
+);
+
+const unlinked = pageRoutes
+  .map((f) => f.slice(`${src}/app`.length).replace('/route.ts', ''))
+  .filter((path) => !linkableAs(path).test(callerText));
+
+check('no public page is reachable from nowhere', unlinked, []);
 
 // ---------------------------------------------------------------------------
 console.log('\nNo table is read by code that nothing can write to\n');
