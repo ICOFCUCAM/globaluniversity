@@ -243,6 +243,31 @@ export interface Lecture {
   createdAt: string;
   /** What was uploaded, so the dashboard can say "74 min lecture". */
   sourceMinutes?: number;
+
+  /**
+   * WHERE THE SUBMISSION HAS GOT TO.
+   *
+   * The University's ruling of 16 September 2026 put a stop between submitting
+   * a lecture and running a model on it:
+   *
+   *     Lecturer submits → Administration reviews → AI transforms
+   *
+   *   draft      the lecturer is still working; nothing may run
+   *   submitted  waiting for an office
+   *   accepted   a model may now run on it
+   *   returned   sent back, with a note the lecturer reads
+   *
+   * A PERSONAL LECTURE IS NEVER REVIEWED. No cohort, no University money,
+   * nobody to answer to — 095 skips it entirely.
+   *
+   * Optional here because a store that predates 095 will not carry it, and a
+   * screen reading `undefined` must show "not submitted" rather than crash.
+   */
+  reviewState?: 'draft' | 'submitted' | 'accepted' | 'returned';
+  submittedAt?: string;
+  reviewedAt?: string;
+  /** Why it came back. Compulsory in the database when it did. */
+  reviewNote?: string;
 }
 
 /**

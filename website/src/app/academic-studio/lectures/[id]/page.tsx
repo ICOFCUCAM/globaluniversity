@@ -9,6 +9,7 @@ import { can } from '@/academic/lib/capabilities';
 import { voicesFor } from '@/academic/lib/voice/voices';
 import { settingsOf } from '@/academic/lib/access/accessibility';
 import { LectureWorkspace } from '@/academic/components/LectureWorkspace';
+import { SubmissionBanner } from '@/academic/components/SubmissionBanner';
 import { LectureCompanion } from '@/academic/components/LectureCompanion';
 import { Empty, PageHeader } from '@/academic/components/ui';
 
@@ -98,6 +99,25 @@ export default async function LecturePage({ params }: { params: { id: string } }
         title={lecture.title}
         subtitle={lecture.abstract}
       />
+
+      {/* WHERE IT HAS GOT TO. Above the workspace because it governs the
+          workspace: while this says "draft", every Generate button below will
+          refuse, and a person needs to read the reason before they press the
+          thing that gives it.
+
+          NOT SHOWN TO A STUDENT. A student never submits and never waits for
+          this decision; the course material simply is not there yet, which the
+          empty state above already says in their words. */}
+      {!student && (
+        <SubmissionBanner
+          lectureId={lecture.id}
+          state={lecture.reviewState}
+          submittedAt={lecture.submittedAt}
+          reviewNote={lecture.reviewNote}
+          isOwner={lecture.ownerId === actor.id}
+          personal={lecture.context === 'personal'}
+        />
+      )}
 
       <LectureWorkspace
         lecture={lecture}
