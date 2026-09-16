@@ -221,6 +221,17 @@ const READ_ONLY_BY_DESIGN = {
     + 'password, which /api/account/password does with the service key: 090 revokes that '
     + 'column from every browser session at the COLUMN level, because the whole point is that '
     + 'the gate cannot be skipped by stamping the date without changing anything.',
+  transcript_audit: 'A view over `transcript_issues`, `transcript_deliveries` and the '
+    + 'validation requests \u2014 every transcript the University has generated, who generated '
+    + 'it, by which path, and whether it was afterwards sent. NOTHING WRITES TO IT AND NOTHING '
+    + 'CAN: 100 refuses every UPDATE and DELETE on the rows underneath with a trigger AND writes '
+    + 'no update or delete policy, so a client never reaches the trigger. The generations are '
+    + 'written by /api/credential/transcript at the moment the document is rendered. '
+    + '`security_invoker`, so the two offices see everything and everybody else sees their own.',
+  certificate_audit: 'A view over `credentials_issued`, `credential_audit_events` and the '
+    + 'reissue requests \u2014 \u00a77 of the certificate ruling. The certificates are written '
+    + 'by /api/credential/issue and the reissue authorisations by /api/certificate/reissue; the '
+    + 'audit events are append-only by 013\u2019s own trigger.',
   national_purse: 'A view over `revenue_allocations` and `national_expenses` \u2014 what a '
     + 'nation was allocated, less what it has authorised. A view for the reason 098 gives about '
     + 'the ledger: a stored balance is a balance that can disagree with the rows under it. The '

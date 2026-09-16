@@ -51,8 +51,15 @@
 //                Designing and approving are different people, by design.
 //   Register     the Authority amends and revokes; the Registrar reaches it to
 //                print and email. The screen decides which it draws.
-//   Specimens    anyone who can reach this screen. There is nothing in a
-//                specimen to protect — that is the point of a specimen.
+//   Specimens    the Vice-Chancellor and the Superadministrator, and nobody
+//                else. THIS LINE USED TO READ "anyone who can reach this
+//                screen. There is nothing in a specimen to protect — that is
+//                the point of a specimen." The University overruled it on
+//                16 September 2026, and the reasoning it replaced was wrong
+//                about what a specimen is: it protects no graduate's data,
+//                true, but it IS the certificate design — the layout, the
+//                security features and the wording, shown to whoever opens
+//                it. See migration 101.
 // ---------------------------------------------------------------------------
 
 import React from 'react';
@@ -68,6 +75,8 @@ import TranscriptGenerator from '@/components/transcript/TranscriptGenerator';
 import ManualTranscript from '@/components/transcript/ManualTranscript';
 import TranscriptRequestQueue from '@/components/credentials/TranscriptRequestQueue';
 import SigningStatus from '@/components/credentials/SigningStatus';
+import TranscriptExceptions from '@/components/credentials/TranscriptExceptions';
+import CertificateReissue from '@/components/credentials/CertificateReissue';
 import { PageHeader } from '@/components/ui/portal';
 import { FOCUS } from '@/lib/portalTheme';
 
@@ -95,6 +104,11 @@ export default function CredentialsWorkspace({ role }: { role?: UserRole }) {
 
   // Whoever may put the University's name on a document for a named person.
   const mayIssue = can(actualRole, 'issue-credential');
+
+  // The certificate design, the specimen book and the security configuration
+  // are one restricted asset under the University's ruling of 16 September
+  // 2026, and this is the only question asked about it on this screen.
+  const maySeeTheDesign = can(actualRole, 'view-certificate-template');
 
   const areas: Area[] = React.useMemo(() => {
     const list: Area[] = [];
@@ -135,23 +149,59 @@ export default function CredentialsWorkspace({ role }: { role?: UserRole }) {
           : 'Designs submitted for the University’s approval. You are one of the three offices that must sign before a design can be published.',
       });
     }
-    list.push({
-      id: 'specimens',
-      label: 'Specimens',
-      icon: <BookOpen size={15} />,
-      blurb: 'One certificate per level the University confers, in the wording each level requires.',
-    });
+    // -------------------------------------------------------------------
+    // THE SPECIMEN BOOK IS NO LONGER ANYBODY'S.
+    //
+    // This tab used to be pushed unconditionally, on the reasoning written at
+    // the head of this file: "anyone who can reach this screen. There is
+    // nothing in a specimen to protect — that is the point of a specimen."
+    //
+    // THE UNIVERSITY HAS OVERRULED THAT, and the reason is not that a
+    // specimen leaks a graduate's data — it does not, and never did. It is
+    // that the specimen IS the certificate design:
+    //
+    //   "The official ICOF certificate template, certificate sample,
+    //    certificate security configuration and associated institutional
+    //    design assets are restricted university resources. Access shall be
+    //    limited exclusively to the Vice-Chancellor and SuperAdmin."
+    //
+    // A specimen of the certificate shows its layout, its security features
+    // and its wording to anybody who opens it, which is exactly what a
+    // forger needs and exactly what the ruling withdraws. The Registrar and
+    // the Academic Office reached this book yesterday and do not today.
+    //
+    // AND HIDING THE TAB IS THE COURTESY, NOT THE CONTROL — "simply hiding a
+    // button is not sufficient" — so 101 refuses the certificate design in
+    // the database as well, to this screen's own session.
+    // -------------------------------------------------------------------
+    if (maySeeTheDesign) {
+      list.push({
+        id: 'specimens',
+        label: 'Specimens',
+        icon: <BookOpen size={15} />,
+        blurb: 'One certificate per level the University confers, in the wording each level '
+          + 'requires. Restricted to the Vice-Chancellor and the Superadministrator.',
+      });
+    }
     return list;
-  }, [mayIssue, mayDesign, mayApprove, mayRegister]);
+  }, [mayIssue, mayDesign, mayApprove, mayRegister, maySeeTheDesign]);
 
-  // Land on the area this role is most likely to have come for: the register if
-  // they hold it, otherwise their own work, otherwise the specimen book.
-  const [area, setArea] = React.useState<AreaId>(areas[0]?.id ?? 'specimens');
+  // Land on the area this role is most likely to have come for: the register
+  // if they hold it, otherwise their own work.
+  //
+  // `?? 'specimens'` USED TO BE THE FALLBACK HERE, IN BOTH PLACES, and it was
+  // harmless only while every role could open the specimen book. Now that the
+  // book is the Vice-Chancellor's and the Superadministrator's, a role with no
+  // areas at all would have been handed the one thing the ruling withdraws —
+  // by a default written when there was nothing to default into.
+  //
+  // `null` is the honest fallback: no area, so nothing is drawn.
+  const [area, setArea] = React.useState<AreaId | null>(areas[0]?.id ?? null);
 
   // A role change mid-session — the demo role switcher does exactly this —
   // could otherwise leave the shell showing an area the new role may not use.
   React.useEffect(() => {
-    if (!areas.some((a) => a.id === area)) setArea(areas[0]?.id ?? 'specimens');
+    if (!areas.some((a) => a.id === area)) setArea(areas[0]?.id ?? null);
   }, [areas, area]);
 
   const current = areas.find((a) => a.id === area);
@@ -197,6 +247,12 @@ export default function CredentialsWorkspace({ role }: { role?: UserRole }) {
               an office can be held to. */}
           <TranscriptRequestQueue />
 
+          {/* §7. WHERE THE OFFICER IS WHEN THEY NEED IT. An officer who has
+              just searched the register for a student and not found them is
+              standing here; sending them to another screen to put the case is
+              how a case ends up in an email instead. */}
+          <TranscriptExceptions />
+
           <CertificateGenerator embedded />
           {/* THE TRANSCRIPT IS THE OTHER HALF OF ISSUING, and it was nowhere
               near this screen. It is the document employers and other
@@ -224,6 +280,10 @@ export default function CredentialsWorkspace({ role }: { role?: UserRole }) {
       )}
       {area === 'register' && (
         <div className="space-y-6">
+          {/* §10. Beside the register because that is where a graduate's
+              certificate is found, and a replacement is always a replacement
+              OF something. */}
+          <CertificateReissue />
           {/* SIGNING IS OPTIONAL AND FAILS SILENTLY BY DESIGN, which is right —
               and which means an operator who set the key wrongly gets a
               registry that looks entirely normal and signs nothing. The state
@@ -233,7 +293,11 @@ export default function CredentialsWorkspace({ role }: { role?: UserRole }) {
         </div>
       )}
       {area === 'design' && <CredentialStudio embedded />}
-      {area === 'specimens' && <SpecimenGallery />}
+      {/* THE CAPABILITY IS ASKED AGAIN HERE. `area` can only be 'specimens'
+          when the tab was built, and building the tab already asked — but the
+          two are far enough apart in this file that a later edit can separate
+          them, and this is the restricted asset. */}
+      {area === 'specimens' && maySeeTheDesign && <SpecimenGallery />}
     </div>
   );
 }

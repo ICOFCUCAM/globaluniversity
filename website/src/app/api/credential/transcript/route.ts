@@ -43,7 +43,43 @@ import {
 import { buildTranscript, canIssueTranscript, creditsEarned } from '@/lib/transcript';
 import { can } from '@/lib/roles';
 import { signContentHashWith, type SecretDb } from '@/lib/documentSignature';
+import { activeCredentialDesign } from '@/lib/activeCredentialDesign';
+import { transcriptDocumentHtml } from '@/lib/transcriptDocumentHtml';
+import { masterFromCredential } from '@/lib/transcriptMaster';
 import { UNIVERSITY } from '@/lib/constants';
+
+/**
+ * The generation's own reference, §9's "generated document identifier".
+ *
+ * DERIVED FROM THE CREDENTIAL rather than counted separately, so the two can
+ * be laid side by side and neither needs a sequence of its own. The credential
+ * id is unique, so this is; 100 checks the shape.
+ */
+function transcriptReference(credentialId: string): string {
+  const year = new Date().getFullYear();
+  // The last digits of the credential id, padded — a number that identifies
+  // this generation among this year's, which is all the reference has to do.
+  const digits = (credentialId.replace(/\D/g, '') || String(Date.now())).slice(-8);
+  return `TRN-${year}-${digits.padStart(4, '0')}`;
+}
+
+/**
+ * §9's "IP/session information, where appropriate".
+ *
+ * WHAT THE EDGE ACTUALLY SAW, and no more. A forwarded-for header is whatever
+ * the last proxy wrote and is recorded as a claim rather than as a fact, which
+ * is why the column is a jsonb of named headers and not a column called
+ * `ip_address` that would read as though the University had established one.
+ */
+function sessionInfo(request: Request): Record<string, string> {
+  const pick = ['x-forwarded-for', 'x-real-ip', 'user-agent'];
+  const out: Record<string, string> = {};
+  for (const h of pick) {
+    const v = request.headers.get(h);
+    if (v) out[h] = v.slice(0, 400);
+  }
+  return out;
+}
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? process.env.SITE_URL ?? UNIVERSITY.website;
 
@@ -183,7 +219,9 @@ export async function POST(request: Request) {
       // selecting it would print "In progress" on a graduate's transcript.
       + 'student_status, date_of_birth, place_of_birth, gender, nationality, address, '
       + 'campus, mode_of_study, specialization, admitted_on, completed_on, academic_standing, '
-      + 'admission_year, expected_graduation')
+      // 097 attached a student to a National Administration. The generation
+      // record carries it so the transcript audit can be read by nation.
+      + 'admission_year, expected_graduation, administration_id')
     .eq('id', body.studentId)
     .maybeSingle();
   if (readErr) {
@@ -345,6 +383,85 @@ export async function POST(request: Request) {
     }, { status: 500 });
   }
 
+  // §12 — THE DOCUMENT IS RENDERED NOW, NOT WHEN SOMEBODY ASKS TO EMAIL IT.
+  //
+  // "The email should use the generated official document — not a manually
+  // uploaded file." So the bytes are made once, here, and every later act —
+  // preview, download, print, email — opens this same column. The design comes
+  // from the engine, server-side, which is what lets 101 close it to the
+  // officer holding the button.
+  const design = await activeCredentialDesign(admin, 'transcript');
+  const documentHtml = registered?.id
+    ? await transcriptDocumentHtml({
+      design,
+      data: masterFromCredential({
+        credential_id: credentialId,
+        holder_name: holderName,
+        programme: student.program ?? null,
+        award: facts.award,
+        classification: transcript.classification,
+        issued_at: new Date().toISOString(),
+        facts: {
+          ...awardFields(facts),
+          holder_surname: student.last_name ?? '',
+          holder_first_names: student.first_name ?? '',
+          holder_middle_name: student.middle_name ?? '',
+          cgpa: transcript.cgpa,
+          credits_attempted: transcript.totalCredits,
+          credits_earned: earned,
+          years: transcript.years,
+        },
+      } as never),
+    })
+    : '';
+
+  // -------------------------------------------------------------------------
+  // §9 — THE GENERATION RECORD.
+  //
+  // "Every transcript generation must create an immutable audit record." The
+  // register row above says what was ISSUED; this says what was GENERATED, by
+  // whom, in which office, from which academic record, as which version.
+  //
+  // IT IS WRITTEN HERE AND NOWHERE ELSE, in the route that actually renders
+  // the document, because a generation record produced by a second path is a
+  // second answer to "was a transcript generated".
+  //
+  // A FAILURE HERE IS NOT FATAL AND THAT IS DELIBERATE. The credential is
+  // already on the register and already signed; refusing now would leave a
+  // sealed transcript the University had issued and a caller told it had not
+  // been. The failure is reported instead, and 100's own refusals — no student,
+  // no approved validation — have already run before this point, because the
+  // insert is what they run on.
+  const { data: generation, error: genErr } = await admin.from('transcript_issues').insert({
+    // The reference the University quotes when asking what happened. Derived
+    // from the credential so the two can be put side by side, and unique
+    // because `credential_id` is.
+    document_reference: transcriptReference(credentialId),
+    student_id: student.id,
+    student_number: student.student_number ?? student.matric_no,
+    student_name: holderName,
+    programme: student.program ?? null,
+    administration_id: student.administration_id ?? null,
+    // §9 "Academic record used", and §6's "Source Academic Record".
+    academic_record: {
+      cgpa: transcript.cgpa,
+      classification: transcript.classification,
+      credits_attempted: transcript.totalCredits,
+      credits_earned: earned,
+      years: transcript.years,
+      omitted,
+    },
+    academic_record_ref: hash,
+    issued_by: caller.id,
+    // §9 "Officer's role", stored rather than joined: a Registrar who later
+    // becomes a Dean did not generate this as a Dean.
+    issued_role: caller.role,
+    // §9 "IP/session information, where appropriate".
+    session_info: sessionInfo(request),
+    html: documentHtml,
+    // The version is the database's to count — see 100. Nothing is sent.
+  }).select('id, version, document_reference, issued_at').maybeSingle();
+
   const auditErr = await audit(admin, {
     action: 'credential.issued',
     entityType: 'credential',
@@ -353,6 +470,9 @@ export async function POST(request: Request) {
     details: {
       kind: 'transcript',
       student_id: student.id,
+      transcript_issue_id: generation?.id ?? null,
+      transcript_version: generation?.version ?? null,
+      generation_recorded: !genErr,
       hash,
       cgpa: transcript.cgpa,
       classification: transcript.classification,

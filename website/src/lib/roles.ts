@@ -666,9 +666,72 @@ export const SYSTEM_CAPABILITIES = [
   'reinstate-account',
   'reset-user-password',
   'impersonate-user',
+  // -------------------------------------------------------------------------
+  // THE TRANSCRIPT RULING OF 16 SEPTEMBER 2026.
+  //
+  // SYSTEM CAPABILITIES, AND THE TEST IS WHY. These began in
+  // OPERATIONAL_CAPABILITIES, which `admin` takes WHOLE by spread — so the
+  // System Administrator silently acquired the power to permit a transcript
+  // for somebody who is not in the student register, which the University
+  // limited to two offices. `superadmin` holds 'all' and `admin` holds no
+  // system capability, so this is the shelf that means what it says.
+  //
+  // And they belong here on their own merits: this list is the powers that let
+  // a holder rewrite the rules rather than work within them, and admitting a
+  // transcript for a person the register does not contain is exactly that.
+  // -------------------------------------------------------------------------
+  /**
+   * Permit the exception: a transcript for somebody the register does not hold.
+   *
+   * DELIBERATELY NOT `issue-credential`. The Registrar has that one and is
+   * precisely the officer this validation checks; an exception approvable by
+   * the office asking for it is not an exception.
+   *
+   * It permits, and permits nothing else. 100 refuses an approval by whoever
+   * raised the request, refuses one by anybody who is not the Vice-Chancellor
+   * or the Superadministrator, and ties the approval to the one student it
+   * named — and a validation request carries no academic information at all,
+   * so there is no form here on which a transcript could be written.
+   */
+  'validate-transcript-exception',
+  /**
+   * Read every transcript ever generated, by anybody.
+   *
+   * "The Vice-Chancellor and SuperAdmin shall have continuous access to the
+   * transcript audit record." Everybody else's view is the floor 100's
+   * row-level security gives them — what they generated, their nation's, their
+   * own — and needs no capability, because it is not a power.
+   */
+  'view-transcript-audit',
   // What the university's awards look like and whether they stand
   'design-credentials',
   'publish-credential-template',
+  // -------------------------------------------------------------------------
+  // CERTIFICATE TEMPLATE CONFIDENTIALITY — the University's ruling of
+  // 16 September 2026.
+  //
+  //   "No Registrar, Director of Academic Affairs, National Rector, National
+  //    Administration, lecturer, student or other university office shall have
+  //    access to the certificate template or certificate sample through the
+  //    ordinary university system."
+  //
+  // SEPARATE FROM `design-credentials` BECAUSE LOOKING IS NOT CHANGING. The
+  // Vice-Chancellor must see the design in order to approve it and must not be
+  // able to redraw it; the Superadministrator does both. One capability for
+  // both acts would have made the first impossible without granting the
+  // second.
+  //
+  // This is also the capability 056 lends out under the ruling's own §4
+  // exception — an express, expiring grant from one of those two offices — and
+  // 101 checks in the database that the grant came from one of them. A screen
+  // asking `can(role, …)` sees only the role, so the grant is the database's
+  // answer and this is the role's.
+  'view-certificate-template',
+  // AUTHORISING A REPLACEMENT IS NOT SEEING THE DESIGN, and the two came
+  // within one function of being the same thing. An officer lent the design
+  // under §4 has been lent one power. §10: "The system must never allow
+  // someone to simply generate unlimited copies."
+  'authorise-certificate-reissue',
   /**
    * Publishing a design the three approving offices have not signed.
    *
@@ -836,6 +899,33 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
     // The University named this office to open a staff record from an
     // accepted appointment.
     'open-staff-record','view-executive-dashboard', 'view-all-faculties', 'view-institutional-finance', 'view-admitted-students', 'monitor-progress', 'department-reports', 'approve-credential-design',
+    // ---------------------------------------------------------------------
+    // THE UNIVERSITY'S RULING OF 16 SEPTEMBER 2026, AND IT TOOK FOUR
+    // CAPABILITIES AWAY FROM NOBODY AND GAVE FOUR TO THIS OFFICE.
+    //
+    //   "The Vice-Chancellor and SuperAdmin shall each possess independent
+    //    authority to generate and issue official ICOF student transcripts.
+    //    Neither requires authorization from the other."
+    //
+    // THE VICE-CHANCELLOR DID NOT HOLD `issue-credential`. They could approve
+    // a credential design and not issue a credential, so "VC → verify →
+    // generate → issue" was a sentence the matrix made impossible. That is
+    // the gap this closes, and it is the whole of what the ruling asked for
+    // on the transcript side.
+    'issue-credential',
+    'forward-credential',
+    'validate-transcript-exception',
+    'view-transcript-audit',
+    // ---------------------------------------------------------------------
+    // AND THE CERTIFICATE, WHICH IS THE OPPOSITE DIRECTION.
+    //
+    // `view-certificate-template` is LOOKING, not redrawing: the
+    // Superadministrator keeps `design-credentials` alone. An office that
+    // must approve a design has to be able to see it, and this office already
+    // holds `approve-credential-design` — which, until now, it held without
+    // any way to look at what it was approving.
+    'view-certificate-template',
+    'authorise-certificate-reissue',
     // ---------------------------------------------------------------------
     // THE VICE-CHANCELLOR CAN DO THEIR OWN WORK.
     //

@@ -92,6 +92,7 @@ import SocialCommandCentre from './social/SocialCommandCentre';
 // The Studio and the Authority are now reached through the workspace that
 // composes them, so neither is imported here.
 import CredentialsWorkspace from './credentials/CredentialsWorkspace';
+import TranscriptAudit from './credentials/TranscriptAudit';
 import SitExamination from './exams/SitExamination';
 import ExaminerConsole from './exams/ExaminerConsole';
 import ExaminationOffice from './exams/ExaminationOffice';
@@ -428,6 +429,11 @@ export default function AppLayout() {
       case 'studio':
       case 'credential-authority':
         return <CredentialsWorkspace role={user?.role} />;
+      // THE SCREEN REFUSES FROM THE INSIDE TOO. This mapping has no capability
+      // check — none of them do — and `AdminDashboard` has a history of
+      // linking straight to a view and bypassing the sidebar's gating.
+      case 'transcript-audit':
+        return <TranscriptAudit />;
       case 'sit-examination':
         return <SitExamination />;
       case 'examiner-console':

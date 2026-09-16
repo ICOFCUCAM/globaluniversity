@@ -19,18 +19,31 @@
 // That is what this is.
 //
 // ---------------------------------------------------------------------------
-// THEY ARE DESIGNED TO BE SHOWN, WHICH IS WHY THEY ARE DISARMED
+// THEY ARE DISARMED, AND THAT IS NOT THE SAME AS UNRESTRICTED
 // ---------------------------------------------------------------------------
 //
-// A specimen exists to be printed, emailed and put in front of a committee, so
-// it will end up outside this system. It carries SPECIMEN across the face, a
-// credential number that reads NOT AN ISSUED CREDENTIAL, an invented holder,
-// and no entry in the register — so /verify returns nothing for it. See
-// src/lib/specimens.ts.
+// A specimen carries SPECIMEN across the face, a credential number that reads
+// NOT AN ISSUED CREDENTIAL, an invented holder, and no entry in the register —
+// so /verify returns nothing for it. See src/lib/specimens.ts. That is what
+// makes it safe to put in front of a committee: nobody can pass one off as a
+// conferred degree.
+//
+// IT IS NOT WHAT MAKES IT SAFE TO SHOW TO ANYBODY. The University ruled on
+// 16 September 2026 that the certificate sample is a restricted institutional
+// security asset, limited to the Vice-Chancellor and the Superadministrator,
+// and the reason is the part a disarmed specimen still carries: the layout,
+// the security features and the wording of the University's certificate.
+//
+// This screen used to be reachable by the Registrar and the Academic Office.
+// It refuses from the inside now, and the workspace no longer draws the tab,
+// and 101 refuses the design in the database — three refusals, because "simply
+// hiding a button is not sufficient" was the University's own sentence.
 // ---------------------------------------------------------------------------
 
 import React from 'react';
-import { Printer, ChevronDown } from 'lucide-react';
+import { Printer, ChevronDown, ShieldAlert } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { can } from '@/lib/roles';
 import CertificateDocument from '@/components/certificate/CertificateDocument';
 import { DEFAULT_CERTIFICATE_DESIGN } from '@/lib/credentialTemplate';
 import type { CredentialDesign } from '@/lib/credentialTemplate';
@@ -46,6 +59,7 @@ import { SECTION_SUB, CARD, FOCUS, BTN_SECONDARY, EYEBROW } from '@/lib/portalTh
  * an authoritative-looking picture of a document the University does not issue.
  */
 export default function SpecimenGallery({ design }: { design?: CredentialDesign }) {
+  const { user } = useAuth();
   const active = design ?? DEFAULT_CERTIFICATE_DESIGN;
 
   // One at a time, or all five. Default to one — five A4 landscape sheets at
@@ -54,6 +68,26 @@ export default function SpecimenGallery({ design }: { design?: CredentialDesign 
   const [openId, setOpenId] = React.useState<string | null>(SPECIMENS[2].id); // the bachelor's
   const [trueSize, setTrueSize] = React.useState(false);
   const scale = trueSize ? 1 : 0.5;
+
+  // THE REFUSAL FROM THE INSIDE. Hooks run first, unconditionally, because a
+  // component that returns before its hooks have run breaks the next render.
+  if (!can(user?.role, 'view-certificate-template')) {
+    return (
+      <div className={`${CARD} p-5`}>
+        <p className="flex items-start gap-2 text-sm text-[#6b6076] dark:text-[#9c93ad]">
+          <ShieldAlert size={16} className="mt-0.5 flex-shrink-0 text-[#a3283f]" />
+          <span>
+            <strong className="text-[#422e59] dark:text-[#e4dcf0]">
+              The certificate sample is a restricted institutional asset.
+            </strong>{' '}
+            Access is limited to the Vice-Chancellor and the Superadministrator. Verifying a
+            student&rsquo;s academic eligibility, approving their award and issuing their
+            certificate do not carry access to the certificate design.
+          </span>
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5">

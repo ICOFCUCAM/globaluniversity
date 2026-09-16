@@ -434,6 +434,11 @@ export type ViewType =
   // subject was worse than one.
   | 'credentials'
   | 'credential-authority'
+  // THE TRANSCRIPT AUDIT, and it is its own entry rather than a tab inside
+  // Credentials because the University asked for a "dedicated TRANSCRIPT
+  // AUDIT screen" and because the two offices that read it are not the four
+  // that reach the Credentials workspace.
+  | 'transcript-audit'
   // The Digital Examination & Proctoring System. See migration 015.
   //
   // 'exams' is the EXISTING module and is left alone — it is the question bank

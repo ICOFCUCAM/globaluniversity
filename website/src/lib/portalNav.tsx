@@ -18,7 +18,7 @@ import {
   FileText, Award, Monitor, PenTool, FolderOpen, BarChart3,
   Settings, Shield, ShieldCheck, BookMarked, Wallet, Stamp, UserCog, Inbox,
   ClipboardCheck, Share2, BadgeCheck, Video, Eye, CalendarClock, TrendingUp,
-  CalendarDays, MapPin, Building2, Receipt, ScrollText, Globe2, Landmark,
+  CalendarDays, MapPin, Building2, Receipt, ScrollText, Globe2, Landmark,  FileSearch,
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -735,6 +735,28 @@ export const menuGroups: MenuGroup[] = [
         label: 'Credentials',
         icon: <BadgeCheck size={18} />,
         roles: ['superadmin', 'vice-chancellor', 'registrar', 'academic-office'],
+      },
+      // ---------------------------------------------------------------
+      // EVERY TRANSCRIPT THE UNIVERSITY HAS EVER GENERATED.
+      //
+      //   "The Vice-Chancellor and SuperAdmin shall have continuous access
+      //    to the transcript audit record."
+      //
+      // A SEPARATE ENTRY RATHER THAN A TAB INSIDE CREDENTIALS, because the
+      // four roles that reach Credentials are not the two that read this,
+      // and a tab visible to four roles and usable by two is a tab that
+      // teaches people the screen is broken.
+      //
+      // The capability is what decides; the role list is the same two
+      // spelled out, so that adding a role to one without the other shows
+      // up as a contradiction rather than as a quiet widening.
+      // ---------------------------------------------------------------
+      {
+        id: 'transcript-audit',
+        label: 'Transcript audit',
+        icon: <FileSearch size={18} />,
+        roles: ['superadmin', 'vice-chancellor'],
+        capability: 'view-transcript-audit',
       },
       // WHAT THE UNIVERSITY HOLDS ABOUT THE PERSON READING IT. A staff record
       // was opened for somebody — their number, their post, the letter they
