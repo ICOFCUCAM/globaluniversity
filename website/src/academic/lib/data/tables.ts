@@ -59,6 +59,22 @@ export const TABLES = {
   liveSegments:      'live_segments',
   liveCarried:       'live_carried',
 
+  // ---- 096: the course library --------------------------------------------
+  //
+  // THIS ONE MOVED CAMP. The reconciliation put `ls_readings` in the merge
+  // list, to fold into `course_lessons` where kind = 'reading' — which was
+  // right at the time, because 084's lesson already carried author, publisher,
+  // ISBN and DOI.
+  //
+  // The University then ruled, on 16 September 2026, that an e-book is a
+  // first-class course resource with a cover, a licence, and READING and
+  // DOWNLOADING as separate rights. None of that fits a lesson, and a lesson
+  // that grew a licence column would be two ideas in one table. So 096 gives
+  // it its own, and `readings` comes off the not-yet-mapped list because it is
+  // now mapped.
+  resources:         'course_resources',
+  library:           'my_course_library',
+
   // ---- The University's, read as they are ---------------------------------
   schools:           'schools',
   departments:       'departments',
@@ -92,7 +108,6 @@ export type TableKey = keyof typeof TABLES;
  */
 export const MERGED_NOT_YET_MAPPED = {
   progress:     { into: 'lesson_progress',      was: 'ls_progress' },
-  readings:     { into: 'course_lessons',       was: 'ls_readings' },
   assignments:  { into: 'course_activities',    was: 'ls_assignments' },
   submissions:  { into: 'activity_submissions', was: 'ls_submissions' },
   audit:        { into: 'audit_logs',           was: 'ls_audit' },

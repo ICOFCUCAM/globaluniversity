@@ -23,28 +23,61 @@ const lecturer = { id: 'person-lecturer', role: 'lecturer' };
 const student = { id: 'person-student', role: 'student' };
 const registry = { id: 'person-registry', role: 'registry' };
 
-t.section('The reading list is the lecturer’s, exactly as they wrote it');
+t.section('The course library, and the two rights a publisher grants separately');
 {
   const store = fresh();
+
+  // WIDENED BY A RULING. This used to set a citation and a note. The
+  // University's ruling of 16 September 2026 made an e-book a first-class
+  // course resource — title, author, publisher, licence, and READING and
+  // DOWNLOADING as separate rights — so the test asks about those instead.
   const reading = await S.setReading(store, lecturer, 'course-biol101', {
     kind: 'chapter',
-    citation: 'Alberts et al., Molecular Biology of the Cell, 6th ed., ch. 14.',
-    note: 'Sections 14.1 and 14.2 only.',
+    title: 'Molecular Biology of the Cell, 6th ed., ch. 14',
+    author: 'Alberts et al.',
+    description: 'Sections 14.1 and 14.2 only.',
+    url: 'https://library.example.test/alberts/14',
+    requirement: 'required',
   });
-  t.check('it is kept verbatim', reading.citation,
-    'Alberts et al., Molecular Biology of the Cell, 6th ed., ch. 14.');
-  t.check('…unpublished until they say so', reading.published, false);
-  t.check('…and a student sees nothing yet',
+  t.check('the title is kept as they wrote it', reading.title,
+    'Molecular Biology of the Cell, 6th ed., ch. 14');
+  t.check('…and the author with it', reading.author, 'Alberts et al.');
+  t.check('…it is required, because they said so', reading.requirement, 'required');
+
+  // THE DEFAULT THAT MATTERS. A new resource may be read and NOT downloaded:
+  // a book wrongly marked read-only is a complaint, one wrongly marked
+  // downloadable is a licence breach that cannot be recalled.
+  t.check('a new resource may be read', reading.mayRead, true);
+  t.check('…and may NOT be downloaded until somebody says so', reading.mayDownload, false);
+
+  t.check('…and is unpublished until they say so', reading.visible, false);
+  t.check('…so a student sees nothing yet',
     (await S.readingFor(store, student, 'course-biol101')).length, 0);
 
-  await S.setReading(store, lecturer, 'course-biol101', { ...reading, published: true });
+  await S.setReading(store, lecturer, 'course-biol101', { ...reading, visible: true });
   t.check('once published, they do',
     (await S.readingFor(store, student, 'course-biol101')).length, 1);
 
-  await t.refuses('a student cannot set the reading',
-    () => S.setReading(store, student, 'course-biol101', { kind: 'link', citation: 'My blog' }));
+  // AND AN ORDINARY EDIT DOES NOT REASSERT A LICENCE DECISION. A librarian
+  // fixing a description must not silently re-state rights they did not set.
+  const edited = await S.setReading(store, lecturer, 'course-biol101', {
+    ...reading, visible: true, description: 'Sections 14.1 to 14.3.',
+  });
+  t.check('editing a description leaves the download right alone',
+    edited.mayDownload, false);
+
+  // A RESOURCE MUST LEAD SOMEWHERE. 096 refuses one with neither a link nor a
+  // file; this is that refusal in words rather than as a constraint name.
+  await t.refuses('a resource with nowhere to go is refused',
+    () => S.setReading(store, lecturer, 'course-biol101',
+      { kind: 'ebook', title: 'A title and nowhere to go' }));
+
+  await t.refuses('a student cannot build the library',
+    () => S.setReading(store, student, 'course-biol101',
+      { kind: 'link', title: 'My blog', url: 'https://example.test' }));
   await t.refuses('nor can the registry',
-    () => S.setReading(store, registry, 'course-biol101', { kind: 'link', citation: 'A handbook' }));
+    () => S.setReading(store, registry, 'course-biol101',
+      { kind: 'link', title: 'A handbook', url: 'https://example.test' }));
 }
 
 t.section('Setting work, handing it in, and what a due date decides');

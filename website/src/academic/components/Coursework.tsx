@@ -63,21 +63,69 @@ export function Coursework({
         ) : readings.map((reading) => (
           <Card key={reading.id} className="px-5 py-4">
             <p className="text-[11px] uppercase tracking-wide text-studio-ink-faint">
-              {lectureLabel(reading.lectureId)} · {reading.kind}
-              {reading.required ? ' · essential' : ' · if you have time'}
-              {teaching && !reading.published ? ' · not published' : ''}
+              {reading.kind}
+              {reading.requirement === 'required' ? ' · required' : ' · recommended'}
+              {teaching && !reading.visible ? ' · not published' : ''}
             </p>
             <p className="mt-1 flex items-start gap-2 font-medium">
               <BookMarked size={15} className="mt-0.5 shrink-0 text-studio-ink-faint" />
-              {reading.url
-                ? <a href={reading.url} className="text-studio-brand hover:underline" target="_blank" rel="noreferrer">{reading.citation}</a>
-                : reading.citation}
+              <span>
+                {reading.title}
+                {reading.author && <span className="font-normal text-studio-ink-soft"> — {reading.author}</span>}
+              </span>
             </p>
-            {reading.note && <p className="mt-1 text-sm text-studio-ink-soft">{reading.note}</p>}
-            {teaching && !reading.published && (
+            {(reading.publisher || reading.publishedYear) && (
+              <p className="mt-0.5 text-xs text-studio-ink-faint">
+                {[reading.publisher, reading.publishedYear].filter(Boolean).join(', ')}
+                {reading.isbn && ` · ISBN ${reading.isbn}`}
+              </p>
+            )}
+            {reading.description && (
+              <p className="mt-1 text-sm text-studio-ink-soft">{reading.description}</p>
+            )}
+
+            {/* ----------------------------------------------------------------
+                TWO RIGHTS, TWO BUTTONS, AND THE ABSENCE OF ONE IS INFORMATION.
+
+                The University, 16 September 2026: "don't assume every ebook is
+                downloadable. Some publishers only permit reading through a
+                licensed platform."
+
+                So a resource that may be read and not downloaded shows READ
+                and says why the other is missing. Silently offering nothing,
+                or offering a download that fails, both teach a student that
+                the library is broken rather than that the licence is narrow.
+                ---------------------------------------------------------------- */}
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              {reading.mayRead && reading.url && (
+                <a
+                  href={reading.url} target="_blank" rel="noreferrer"
+                  className="rounded border border-studio-page-line px-2.5 py-1 text-xs text-studio-brand hover:border-studio-brand/40"
+                >
+                  Read
+                </a>
+              )}
+              {reading.mayDownload && reading.filePath ? (
+                <a
+                  href={`/api/studio/media/${reading.filePath}`}
+                  className="rounded border border-studio-page-line px-2.5 py-1 text-xs text-studio-brand hover:border-studio-brand/40"
+                >
+                  Download
+                </a>
+              ) : (
+                <span className="text-[11px] text-studio-ink-faint">
+                  Read online only — this title is licensed to be read here and not copied.
+                </span>
+              )}
+            </div>
+
+            {reading.licence && teaching && (
+              <p className="mt-1 text-[11px] text-studio-ink-faint">Licence: {reading.licence}</p>
+            )}
+            {teaching && !reading.visible && (
               <button
                 type="button" disabled={busy}
-                onClick={() => send({ ...reading, action: 'set-reading', courseId, published: true })}
+                onClick={() => send({ ...reading, action: 'set-reading', courseId, visible: true })}
                 className="mt-2 rounded border border-studio-page-line px-2.5 py-1 text-xs text-studio-ink-soft"
               >
                 Publish to the cohort

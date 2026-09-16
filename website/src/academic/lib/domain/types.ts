@@ -522,22 +522,56 @@ export type Register = 'plain' | 'university';
  * no source artefact, no approval chain and no master: a reading is published
  * or it is not.
  */
+/**
+ * ONE ITEM IN A COURSE'S LIBRARY.
+ *
+ * WIDENED BY A RULING RATHER THAN BY A PREFERENCE. This used to be a citation,
+ * a link and a `required` boolean — a reading list. The University's ruling of
+ * 16 September 2026:
+ *
+ *     "Don't treat an ebook merely as an arbitrary link buried in notes…
+ *      For each ebook/resource, store: Title, Author, Description, Cover,
+ *      URL/file, Resource type, Required / recommended, Access restrictions,
+ *      Copyright/licensing information, Course, Module/topic."
+ *
+ * AND THE TWO RIGHTS ARE THE POINT OF IT. `mayRead` and `mayDownload` are
+ * separate because publishers licence them separately — see 096, where they
+ * are separate columns, `mayDownload` defaults to false, and only the
+ * Superadministrator and the System Administrator may change either.
+ */
 export interface Reading {
   id: string;
   courseId: string;
-  /** Attached to one lecture, or to the course as a whole. */
-  lectureId?: string;
-  kind: 'book' | 'chapter' | 'article' | 'link' | 'document';
-  /** The citation exactly as the lecturer gave it. Never reformatted. */
-  citation: string;
+  /** Which module or topic, where the Library has said. */
+  moduleId?: string;
+  kind: 'ebook' | 'article' | 'chapter' | 'document' | 'link' | 'video' | 'audio';
+  title: string;
+  author?: string;
+  description?: string;
+  publisher?: string;
+  publishedYear?: number;
+  isbn?: string;
+  doi?: string;
+  coverUrl?: string;
+  /** A licensed platform's address. */
   url?: string;
-  /** Why they set it, in their words. */
-  note?: string;
-  /** Essential, or worth reading if there is time. */
-  required: boolean;
+  /**
+   * The University's own copy.
+   *
+   * NULL WHEN IT MAY NOT BE DOWNLOADED, and that is the licence rather than an
+   * oversight: `my_course_library` withholds the path from a reader who may
+   * only read online, because row-level security cannot hide one column of a
+   * row it has to admit.
+   */
+  filePath?: string;
+  requirement: 'required' | 'recommended';
+  mayRead: boolean;
+  mayDownload: boolean;
+  /** What the licence actually says, for whoever answers the publisher. */
+  licence?: string;
   addedBy: string;
   addedAt: string;
-  published: boolean;
+  visible: boolean;
 }
 
 /** ---- Assignments, which a person marks --------------------------------- */

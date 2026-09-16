@@ -428,8 +428,44 @@ export function createSupabaseStore(options: SupabaseStoreOptions): Store {
     async certificateByCode() { return notYetMapped('certificates'); },
     async saveCertificate() { return notYetMapped('certificates'); },
 
-    async readings() { return notYetMapped('readings'); },
-    async saveReading() { return notYetMapped('readings'); },
+    // ---- THE COURSE LIBRARY ---------------------------------------------
+    //
+    // READ THROUGH THE VIEW, NOT THE TABLE. `my_course_library` withholds
+    // `file_path` from a reader who may not download — the row still comes
+    // back, because they may read it online, and only the path is missing.
+    // Reading `course_resources` directly here would hand the storage path of
+    // a licensed book to every enrolled student.
+    async readings(courseId) {
+      return (await rows(TABLES.library, (q) => q.eq('course_id', courseId)
+        .order('requirement').order('title'))) as unknown as Reading[];
+    },
+    async saveReading(reading) {
+      // THE TWO RIGHTS ARE NOT WRITTEN FROM HERE. 096 refuses anybody but the
+      // Superadministrator and the System Administrator, and sending them on
+      // every save would make an ordinary edit fail for a librarian who
+      // changed a description. They are set on their own, through their own
+      // route, by the office that carries the licence.
+      await upsert(TABLES.resources, {
+        id: reading.id,
+        courseId: reading.courseId,
+        moduleId: reading.moduleId,
+        kind: reading.kind,
+        title: reading.title,
+        author: reading.author,
+        description: reading.description,
+        publisher: reading.publisher,
+        publishedYear: reading.publishedYear,
+        isbn: reading.isbn,
+        doi: reading.doi,
+        coverUrl: reading.coverUrl,
+        url: reading.url,
+        requirement: reading.requirement,
+        licence: reading.licence,
+        visible: reading.visible,
+        addedBy: reading.addedBy,
+      });
+      return reading;
+    },
 
     async assignments() { return notYetMapped('assignments'); },
     async assignment() { return notYetMapped('assignments'); },

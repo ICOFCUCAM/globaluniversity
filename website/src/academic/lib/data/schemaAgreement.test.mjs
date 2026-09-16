@@ -218,7 +218,23 @@ check('every column the adapter filters or writes exists', missingColumns, []);
 // compiles, runs, and reads nothing.
 // ---------------------------------------------------------------------------
 const merged = [...tablesSrc.matchAll(/^\s{2}([a-z]+):\s*\{ into:/gm)].map((m) => m[1]);
-check('the unmapped merges are named', merged.length, 6);
+
+// FIVE, DOWN FROM SIX, AND THE ONE THAT LEFT DID SO BY BEING FINISHED.
+//
+// `readings` was to fold into `course_lessons` where kind = 'reading', which
+// was right when the reconciliation was written: 084's lesson already carried
+// author, publisher, ISBN and DOI.
+//
+// The University then ruled, on 16 September 2026, that an e-book is a
+// first-class course resource with a cover, a licence, and READING and
+// DOWNLOADING as separate rights. None of that fits a lesson. 096 gives it its
+// own table and the adapter reads it, so it is no longer unmapped.
+//
+// THE NUMBER IS PINNED ON PURPOSE. It came down because work was done; it must
+// not come down because somebody deleted a line they found inconvenient, and a
+// count that moves silently would not tell the difference.
+check('five merges are still unmapped, and named', merged.length, 5);
+check('…and readings is no longer one of them', merged.includes('readings'), false);
 
 for (const key of merged) {
   const refuses = new RegExp(String.raw`notYetMapped\('${key}'\)`).test(adapterSrc);

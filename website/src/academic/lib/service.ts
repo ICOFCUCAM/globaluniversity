@@ -1665,31 +1665,68 @@ export async function answerCard(
 
 export async function setReading(
   store: Store, actor: Actor, courseId: string,
-  input: { id?: string; lectureId?: string; kind: Reading['kind']; citation: string; url?: string; note?: string; required?: boolean; published?: boolean },
+  input: {
+    id?: string; moduleId?: string; kind: Reading['kind']; title: string;
+    author?: string; description?: string; publisher?: string; publishedYear?: number;
+    isbn?: string; doi?: string; coverUrl?: string; url?: string;
+    requirement?: Reading['requirement']; licence?: string; visible?: boolean;
+  },
 ): Promise<Reading> {
   const where = await scene(store, courseId, actor.id);
   const onCourse = where.course.lecturerIds.includes(actor.id);
   if (!onCourse || !can(actor.role, 'set-reading')) {
-    throw new Refused('The reading is set by the people who teach the course.');
+    throw new Refused('The course library is built by the people who teach the course, and by '
+      + 'the Library.');
   }
-  if (!input.citation.trim()) throw new Refused('A reading needs a citation.');
+  if (!input.title.trim()) throw new Refused('A resource needs a title.');
 
   const existing = input.id ? (await store.readings(courseId)).find((r) => r.id === input.id) : undefined;
+
+  // A RESOURCE MUST LEAD SOMEWHERE. 096 refuses one with neither a URL nor a
+  // file, and saying so here means the person hears it in words rather than as
+  // a constraint name.
+  const url = input.url?.trim() || undefined;
+  if (!url && !existing?.filePath) {
+    throw new Refused('A resource needs somewhere to go — a link to the platform it is read on, '
+      + 'or a file uploaded to the University.');
+  }
+
   return store.saveReading({
     id: existing?.id ?? randomUUID(),
     courseId,
-    lectureId: input.lectureId,
+    moduleId: input.moduleId ?? existing?.moduleId,
     kind: input.kind,
-    // THE CITATION AS THEY WROTE IT. Not reformatted into a house style, not
-    // "corrected" into another referencing convention: a lecturer's reading
-    // list is theirs, and the platform has no view about APA.
-    citation: input.citation.trim(),
-    url: input.url?.trim() || undefined,
-    note: input.note?.trim() || undefined,
-    required: input.required ?? true,
+    // THE TITLE AND THE AUTHOR AS THEY WROTE THEM. Not reformatted into a
+    // house style, not "corrected" into another referencing convention: a
+    // reading list is the course's, and this platform has no view about APA.
+    title: input.title.trim(),
+    author: input.author?.trim() || undefined,
+    description: input.description?.trim() || undefined,
+    publisher: input.publisher?.trim() || undefined,
+    publishedYear: input.publishedYear,
+    isbn: input.isbn?.trim() || undefined,
+    doi: input.doi?.trim() || undefined,
+    coverUrl: input.coverUrl?.trim() || undefined,
+    url,
+    filePath: existing?.filePath,
+    requirement: input.requirement ?? existing?.requirement ?? 'recommended',
+    licence: input.licence?.trim() || existing?.licence,
+
+    // ---- THE TWO RIGHTS ARE NOT SET HERE --------------------------------
+    //
+    // Whatever the resource already carries, unchanged. 096 refuses anybody
+    // but the Superadministrator and the System Administrator to move either,
+    // and a librarian editing a description must not silently reassert a
+    // licence decision they did not make.
+    //
+    // A NEW RESOURCE ARRIVES READ-ONLY, which is the migration's default and
+    // repeated here so this file does not read as though it chose otherwise.
+    mayRead: existing?.mayRead ?? true,
+    mayDownload: existing?.mayDownload ?? false,
+
     addedBy: existing?.addedBy ?? actor.id,
     addedAt: existing?.addedAt ?? now(),
-    published: input.published ?? existing?.published ?? false,
+    visible: input.visible ?? existing?.visible ?? false,
   });
 }
 
@@ -1698,7 +1735,7 @@ export async function readingFor(store: Store, actor: Actor, courseId: string): 
   const teaching = where.course.lecturerIds.includes(actor.id);
   const readings = await store.readings(courseId);
   // A student sees what was published, as with everything else here.
-  return teaching ? readings : readings.filter((r) => r.published);
+  return teaching ? readings : readings.filter((r) => r.visible);
 }
 
 export async function setAssignment(
