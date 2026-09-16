@@ -523,6 +523,38 @@ function styles(): string {
   .signoff .who { font-size: 12pt; color: ${PURPLE_DEEP}; margin: 0; }
   .signoff .what { font-size: 9.5pt; color: ${QUIET}; margin: 1px 0 0; }
 
+  /* -------------------------------------------------------------------
+     A FIGURE.
+
+     Drawn, never photographed: the University asked for "graphs and drawings
+     etc. dont include picture", and everything in here is line art in the
+     same ink as the headings.
+
+     break-inside: avoid is the rule that matters. A diagram split across a
+     fold is not a diagram, and these are tall enough that the browser will
+     try it unless told not to.
+
+     The SVG is given width 100% and height auto, so it sets to the text
+     block whatever the page is; the viewBox does the rest.
+     ------------------------------------------------------------------- */
+  .figure {
+    margin: 18px 0 20px; padding: 0;
+    break-inside: avoid; page-break-inside: avoid;
+  }
+  .figure-title {
+    margin: 0 0 8px; font-size: 8.5pt; letter-spacing: .16em; text-transform: uppercase;
+    color: ${PURPLE}; font-family: Georgia, serif;
+  }
+  .figure-art {
+    border-top: 1px solid ${RULE}; border-bottom: 1px solid ${RULE};
+    padding: 14px 0 12px;
+  }
+  .figure-art svg { display: block; width: 100%; height: auto; }
+  .figure figcaption {
+    margin: 7px 0 0; font-size: 9pt; line-height: 1.45; color: ${QUIET};
+    font-style: italic;
+  }
+
   /* ---- THE CONTENTS --------------------------------------------------- */
   /* -------------------------------------------------------------------
      TWO COLUMNS, AND THE REASON IS A MEASUREMENT.
@@ -767,6 +799,19 @@ function renderBlock(b: Block): string {
       // the next heading; printed literally that is a question with no space
       // under it, which on paper is an oversight rather than a design.
       return `<p class="instruction">${escape(b.text)}</p><div class="writein"></div>`;
+
+    case 'figure':
+      // THE SVG IS WRITTEN IN UNESCAPED, AND THAT IS THE WHOLE POINT. It is
+      // markup this repository generated in handbookFigures.ts; nothing a user
+      // supplies ever reaches this field, and escaping it would print the
+      // source of a drawing instead of the drawing.
+      //
+      // The caption is escaped, because it is prose.
+      return `<figure class="figure">
+    <p class="figure-title">${escape(b.title)}</p>
+    <div class="figure-art">${b.svg}</div>
+    ${b.caption ? `<figcaption>${escape(b.caption)}</figcaption>` : ''}
+  </figure>`;
   }
 }
 
@@ -1002,8 +1047,12 @@ export interface BookOptions {
 export function renderBook(book: Book, options: BookOptions = {}): string {
   const pages: string[] = [
     cover(book), viceChancellorsMessage(book), foreword(book), contents(book),
-    plates(book),
   ];
+  // THE PLATE PAGE IS THE BOOK'S TO ASK FOR. It used to be inserted here
+  // unconditionally, which put three graduation photographs into the System
+  // Handbook — a book the University asked to carry drawings and no
+  // pictures. A prospectus wants them; a handbook does not.
+  if (book.plates) pages.push(plates(book));
 
   for (const part of book.parts) {
     pages.push(divider(part));

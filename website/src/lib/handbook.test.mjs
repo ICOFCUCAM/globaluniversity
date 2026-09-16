@@ -251,6 +251,49 @@ check('…and that file says it is awaiting his approval',
   /DRAFT COPY AWAITING PROF MEYEMBI'S APPROVAL/i.test(vcFile), true);
 
 // ---------------------------------------------------------------------------
+// 7b. GRAPHS AND DRAWINGS, AND NO PICTURES
+//
+//   "it should have graphs and drawings etc. dont include picture."
+//
+// Two instructions, and both are checkable. The second one caught a real
+// fault: `plates()` was inserted into EVERY book unconditionally, so the
+// handbook opened with three photographs of the 2024 graduation before Part I.
+// ---------------------------------------------------------------------------
+
+const figureCount = (rendered.match(/<figure class="figure">/g) ?? []).length;
+check('the handbook is illustrated', figureCount >= 15, true);
+
+check('…every figure is drawn, as SVG in the page',
+  (rendered.match(/<svg /g) ?? []).length, figureCount);
+
+// THE CREST IS NOT A PICTURE. It is the University's own mark, on the cover
+// and in the colophon, and it is the only raster this book carries. Anything
+// beyond those two is a photograph that has crept back in.
+const imgs = rendered.match(/<img[^>]*>/g) ?? [];
+check('…and the only images are the crest',
+  imgs.filter((t) => !/class="crest"/.test(t)).length, 0);
+check('…which appears twice and no more', imgs.length, 2);
+
+// AND THE PROSPECTUS KEEPS ITS PLATES. Making the plate page opt-in must not
+// have quietly taken it away from the book that wants it.
+const prospectus = PUBLICATIONS.find((p) => p.slug === 'national-rector');
+const prospectusHtml = renderBook(prospectus.book,
+  { toolbar: false, sourceUrl: 'https://x.test/p/national-rector' });
+check('…while the prospectus still carries its photographs',
+  (prospectusHtml.match(/<img[^>]*>/g) ?? []).length > 2, true);
+
+// NO COLOUR PANELS ON AN INNER PAGE. The University ruled "only the front page
+// is color. the rest should not be like first page", so the figures are ink on
+// white: the University's purple, its greys and its gold, and nothing else.
+const PERMITTED = new Set(['#422e59', '#2f2040', '#5c5366', '#cbbede', '#f6f3fa',
+  '#b08d2e', '#fff', 'none']);
+const figureInk = [...rendered.matchAll(/(?:fill|stroke)="([^"]+)"/g)]
+  .map((m) => m[1].toLowerCase())
+  .filter((c) => c.startsWith('#') || c === 'none');
+const strange = [...new Set(figureInk.filter((c) => !PERMITTED.has(c)))];
+check('…and the figures are drawn in the University’s own ink', strange, []);
+
+// ---------------------------------------------------------------------------
 // 8. AND IT SETS ON THE PAGE
 //
 // Measured, not reasoned about. 105 chapters broke the contents page the first
@@ -277,11 +320,21 @@ const measured = await page.evaluate(() => {
         .filter((e) => e.getBoundingClientRect().right > right + 0.5).length
       : -1,
     sheets: sheets.length,
+    tallFigures: [...document.querySelectorAll('.figure')]
+      .map((f) => ({
+        t: f.querySelector('.figure-title')?.textContent?.trim() ?? '?',
+        h: Math.round(f.getBoundingClientRect().height),
+      }))
+      .filter((f) => f.h > window.innerHeight - 60)
+      .map((f) => f.t),
   };
 });
 await browser.close();
 
 check('the printed page does not scroll sideways', measured.overflow, false);
+// A FIGURE TALLER THAN A PAGE CANNOT BE KEPT WHOLE, whatever break-inside
+// says, so the browser splits it and the drawing arrives in two halves.
+check('…and no figure is too tall to sit on one page', measured.tallFigures, []);
 check('…and no contents entry runs off the edge', measured.contentsRowsPastTheEdge, 0);
 check('…and it is a whole book', measured.sheets > 60, true);
 

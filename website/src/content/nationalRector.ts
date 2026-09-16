@@ -133,6 +133,32 @@ export interface Numbered {
   items: { n: number; title: string; text?: string }[];
 }
 
+/**
+ * A drawn figure: a diagram or a chart, as SVG written into the page.
+ *
+ * ---------------------------------------------------------------------------
+ * NOT A PICTURE
+ * ---------------------------------------------------------------------------
+ *
+ * The University asked for the System Handbook to have "graphs and drawings
+ * etc. dont include picture", and the two halves of that are different things.
+ * A PHOTOGRAPH is a plate — see `plates()` in prospectus.ts, which draws them
+ * only for a book that asks. A FIGURE is this: line art, generated, carrying no
+ * raster data at all.
+ *
+ * The svg is trusted markup produced by `handbookFigures.ts` and is written
+ * into the page unescaped, which is the whole point of it. Nothing a user
+ * supplies ever reaches this field.
+ */
+export interface Figure {
+  kind: 'figure';
+  /** Printed above the drawing, in the same voice as a heading. */
+  title: string;
+  /** One line under it. Also the figure's accessible description. */
+  caption?: string;
+  svg: string;
+}
+
 /** Lines on a form that a person writes on. */
 export interface Fields { kind: 'fields'; items: string[] }
 
@@ -141,7 +167,7 @@ export interface Instruction { kind: 'instruction'; text: string }
 
 export type Block =
   | Paragraph | Lead | Heading | Bullets | Definitions | Flow | Equation
-  | Panel | Tree | Network | Numbered | Fields | Instruction;
+  | Panel | Tree | Network | Numbered | Fields | Instruction | Figure;
 
 export interface Chapter {
   /** 'ONE', 'TWENTY-TWO' — the University numbered them in words. */
@@ -159,6 +185,19 @@ export interface Part {
 
 export interface Book {
   institution: string;
+  /**
+   * Whether the book carries the plate page of photographs.
+   *
+   * OPT-IN, AND IT DID NOT USED TO BE. `plates()` was inserted into every book
+   * unconditionally, so the System Handbook — which the University asked
+   * to have "graphs and drawings etc. dont include picture" — opened with
+   * three photographs of the 2024 graduation before Part I.
+   *
+   * The prospectus wants them: it is sent to somebody deciding whether this is
+   * a real university, and a conferral is the answer. A handbook is read by
+   * people who already work here, and a plate page in it is decoration.
+   */
+  plates?: boolean;
   title: string;
   subtitle: string;
   /**
@@ -197,6 +236,9 @@ const instruction = (text: string): Instruction => ({ kind: 'instruction', text 
 
 export const NATIONAL_RECTOR: Book = {
   institution: 'ICOF Global University',
+  // THE PROSPECTUS KEEPS ITS PLATES. It goes to somebody deciding whether this
+  // is a real university, and a conferral answers that faster than a chapter.
+  plates: true,
   title: 'The National Rector',
   subtitle: 'A Global University. A National Academic Community. Your Leadership.',
 

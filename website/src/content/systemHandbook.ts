@@ -65,6 +65,13 @@ import {
   type RoleProfile,
 } from './handbookFromTheSystem';
 import { UNIVERSITY } from '@/lib/constants';
+import {
+  figureHierarchy, figureCentreAndNation, figureCapabilityChart, figureSeparation,
+  figureAdmissions, figureResultChain, figureTranscriptPaths, figureMoneyFlow,
+  figurePurse, figureStudio, figureNations, figureAccessControl,
+  figureRestrictedMatrix, figureCertificateGate, figureVersions,
+  figureStudentJourney, figureLecturerCycle, figureStudentTerm,
+} from '@/lib/handbookFigures';
 
 const p = (text: string): Block => ({ kind: 'p', text });
 const lead = (text: string): Block => ({ kind: 'lead', text });
@@ -72,6 +79,17 @@ const h = (text: string): Block => ({ kind: 'h', text });
 const bullets = (...items: string[]): Block => ({ kind: 'bullets', items });
 const defs = (...items: { term: string; text: string }[]): Block => ({ kind: 'defs', items });
 const flow = (...steps: string[]): Block => ({ kind: 'flow', steps });
+
+/**
+ * A drawn figure.
+ *
+ * DRAWN WHEN THIS MODULE LOADS, from the same generated data Part II and Part
+ * VIII are built from — so a chart of what each office holds cannot
+ * disagree with the list of what each office holds three pages earlier. That is
+ * the whole reason the figures are code rather than files.
+ */
+const figure = (title: string, svgMarkup: string, caption?: string): Block =>
+  ({ kind: 'figure', title, svg: svgMarkup, caption });
 
 const ch = (ordinal: string, title: string, ...blocks: Block[]): Chapter =>
   ({ ordinal, title, blocks });
@@ -220,7 +238,11 @@ const PART_I: Part = {
         + 'ones. They are not in the hierarchy because they do not rank against it: the '
         + 'SuperAdmin holds the University’s own authority over the system itself — '
         + 'who exists, who may act, and what a credential looks like — and the System '
-        + 'Administrator runs it day to day without holding any of those.')),
+        + 'Administrator runs it day to day without holding any of those.'),
+      figure('Figure 1 · The hierarchy', figureHierarchy(),
+        'Read down the page for precedence and across for authority. They are not the '
+        + 'same measure: an office high in the hierarchy may deliberately hold few '
+        + 'capabilities, and several do.')),
 
     ch('FOUR', 'Global and national administration',
       lead('One University, operating through National Administrations, each led by a '
@@ -244,7 +266,10 @@ const PART_I: Part = {
         + 'to a nation carries that nation, and a Rector reading the student register is '
         + 'answered with their own country’s students — by the database, before any '
         + 'screen is involved. A page nobody remembered to guard therefore cannot leak another '
-        + 'country’s data.')),
+        + 'country’s data.'),
+      figure('Figure 2 · The centre and the nation', figureCentreAndNation(),
+        'The dividing line is drawn in the database. Everything on the left is the '
+        + 'University’s and is not a nation’s to vary.')),
 
     ch('FIVE', 'System architecture and principles',
       lead('Five principles decide how every control in this handbook is built. They are '
@@ -343,7 +368,13 @@ const PART_II: Part = {
       p('The SuperAdmin holds every capability there is and is treated in Part VIII, with the '
         + 'restricted functions it exists for. The System Administrator holds every '
         + 'operational capability and no system one — it runs the University’s work '
-        + 'and cannot change the University’s rules.')),
+        + 'and cannot change the University’s rules.'),
+      figure('Figure 3 · What each office holds', figureCapabilityChart(),
+        'Counted from the capability matrix itself. The chart and the lists in the '
+        + 'chapters that follow are drawn from one source, so they cannot disagree.'),
+      figure('Figure 4 · One act, two people', figureSeparation(),
+        'The separation of duties, as the system enforces it. In every row the second act '
+        + 'is refused to whoever performed the first.')),
 
     office('SEVEN', 'vice-chancellor', [
       lead('The University’s chief academic and executive officer, and one of the two '
@@ -502,7 +533,10 @@ const PART_III: Part = {
       p('Every step is recorded with the officer who took it. An application is never '
         + 'deleted by an ordinary office — only the SuperAdmin may — because the '
         + 'record that somebody applied is a fact about the University, and declining is not '
-        + 'the same as never having received it.')),
+        + 'the same as never having received it.'),
+      figure('Figure 5 · The admissions pipeline', figureAdmissions(),
+        'By the office that acts at each step. Finance is a gate on the academic decision '
+        + 'and never an authority over it.')),
 
     ch('TWENTY', 'Student records',
       lead('One student, one record, and the register is the University’s answer to '
@@ -585,7 +619,10 @@ const PART_III: Part = {
         + 'in front of a student on the University’s authority.'),
       p('Only approved and published results reach a transcript. Where results are still in '
         + 'the chain, a transcript generated today says so to the officer generating it '
-        + '— it does not silently omit them.')),
+        + '— it does not silently omit them.'),
+      figure('Figure 6 · A mark becomes a result', figureResultChain(),
+        'No single person can put a mark in front of a student on the '
+        + 'University’s authority.')),
 
     ch('TWENTY-EIGHT', 'Academic decisions',
       lead('Progression, standing, and the decisions a faculty takes about a student.'),
@@ -625,7 +662,10 @@ const PART_III: Part = {
         + 'office. Generating again never replaces: the second transcript for a student is '
         + 'version two and the first one stays, because an academic record changes over time '
         + 'and the question to be answered later is what was generated, from what record, by '
-        + 'whom and when. Part VIII gives the controls in full.')),
+        + 'whom and when. Part VIII gives the controls in full.'),
+      figure('Figure 7 · Transcript versions', figureVersions(),
+        'Three transcripts for one student, each generated from the record as it stood '
+        + 'that day, and all three still on the register.')),
 
     ch('THIRTY-ONE', 'Certificates',
       lead('The University’s most protected document, and the one fewest offices may '
@@ -642,7 +682,11 @@ const PART_III: Part = {
       p('A replacement certificate requires a request, a reason and an authorisation from one '
         + 'of those two offices, and one authorisation permits exactly one replacement. The '
         + 'University cannot generate unlimited copies of a certificate and neither can '
-        + 'anybody else.')),
+        + 'anybody else.'),
+      figure('Figure 8 · The certificate design is a restricted resource',
+        figureCertificateGate(),
+        'Refused in the database rather than hidden on a screen. Administering a '
+        + 'student’s record does not carry access to the institutional design.')),
   ],
 };
 
@@ -696,7 +740,10 @@ const PART_IV: Part = {
         + 'so both stay on the record.'),
       p('With no agreement in force, the whole of a payment stays with the centre and the '
         + 'allocation records why. A nation cannot receive anything before the University has '
-        + 'approved the agreement saying what it receives.')),
+        + 'approved the agreement saying what it receives.'),
+      figure('Figure 9 · Where a payment goes', figureMoneyFlow(),
+        'The split is written the moment the payment lands, by the database. The ledger '
+        + 'is a record of what happened rather than an opinion formed afterwards.')),
 
     ch('THIRTY-SIX', 'Payments',
       lead('Money the University has actually received, recorded once.'),
@@ -721,7 +768,10 @@ const PART_IV: Part = {
         + 'is a balance that can disagree with them and a derived one cannot.'),
       p('The national purse is the clearest case. What a nation has been allocated, less what '
         + 'it has authorised, equals what is available — computed from the allocations '
-        + 'and the expenses themselves.')),
+        + 'and the expenses themselves.'),
+      figure('Figure 10 · The national purse', figurePurse(),
+        'Drawn to illustrate the arithmetic, not a nation’s actual position. Every '
+        + 'figure in the live purse is computed from the rows underneath it.')),
 
     ch('THIRTY-NINE', 'Staff payments',
       lead('What the University pays the people who work for it.'),
@@ -792,7 +842,10 @@ const PART_V: Part = {
         + 'accepted.'),
       p('Everything a model produces is derived text and is marked as such. It is the '
         + 'lecturer’s lecture that is authoritative; the derived text is a convenience '
-        + 'built from it, correctable by the person whose lecture it is.')),
+        + 'built from it, correctable by the person whose lecture it is.'),
+      figure('Figure 11 · The Academic Studio', figureStudio(),
+        'Submitting and generating are two acts. Nothing is produced from a lecture the '
+        + 'University has not accepted.')),
 
     ch('FORTY-FIVE', 'Multilingual learning',
       lead('One lecture, many languages, and the AI does not silently rewrite the '
@@ -865,7 +918,10 @@ const PART_VI: Part = {
         + 'operates under and the appointment its Rector holds, and refuses whoever creates it '
         + 'to be its own Rector.'),
       p('One administration per country, and one administration per Rector. Both are '
-        + 'enforced by the database rather than by a policy somebody remembers.')),
+        + 'enforced by the database rather than by a policy somebody remembers.'),
+      figure('Figure 12 · One University, many administrations', figureNations(),
+        'Each administration is named for its country in the University’s own '
+        + 'register. The four things inside every one of them are drawn once, beneath.')),
 
     ch('FIFTY-TWO', 'National staff',
       lead('The Rector recommends. The University verifies and appoints.'),
@@ -1004,7 +1060,9 @@ const PART_VII: Part = {
         + 'yours. A screen promising "your own record" names the person rather than relying on '
         + 'the policy to have meant that — a lesson learned from a screen that showed the '
         + 'SuperAdmin somebody else’s staff record, because the policy admitted the whole '
-        + 'register and the screen asked for one row without saying whose.')),
+        + 'register and the screen asked for one row without saying whose.'),
+      figure('Figure 13 · The three questions', figureAccessControl(),
+        'Asked in this order on every request. The third is not the second asked again.')),
   ],
 };
 
@@ -1034,7 +1092,10 @@ const PART_VIII: Part = {
       p('The Vice-Chancellor and the SuperAdmin hold these independently. Neither requires '
         + 'the other’s authorisation to exercise one, and both act under their own '
         + 'identity — the audit never records that "the system" did something, because '
-        + 'the system is not an officer of this University.')),
+        + 'the system is not an officer of this University.'),
+      figure('Figure 14 · Who holds the restricted functions', figureRestrictedMatrix(),
+        'Read out of the capability matrix when this handbook was built. A restriction '
+        + 'that is lifted disappears from this table on the next build.')),
 
     ch('SIXTY-EIGHT', 'Transcript authority',
       lead('The Vice-Chancellor and the SuperAdmin each hold independent authority to '
@@ -1056,7 +1117,10 @@ const PART_VIII: Part = {
         + 'records that one of the two offices has looked at the case and permits the '
         + 'exception, and it covers the one student number it named.'),
       p('There is no dual approval for an ordinary transcript and there is not meant to be. '
-        + 'The audit trail is the control.')),
+        + 'The audit trail is the control.'),
+      figure('Figure 15 · The two transcript paths', figureTranscriptPaths(),
+        'The exceptional path does not produce a transcript. It produces permission for '
+        + 'one, covering the single student number it named.')),
 
     ch('SIXTY-NINE', 'Certificate security',
       lead('The certificate template, sample, security configuration and associated design '
@@ -1141,7 +1205,10 @@ const PART_IX: Part = {
         + 'is still the generated one until you do.'),
       p('Everything in the portal is scoped to you. You see your own record, your own '
         + 'results, your own fees and your own documents, and the database enforces that '
-        + 'rather than the screen.')),
+        + 'rather than the screen.'),
+      figure('Figure 16 · Your journey', figureStudentJourney(),
+        'Every stop is an act by a named office, recorded against the officer who took '
+        + 'it.')),
 
     ch('SEVENTY-FOUR', 'Application',
       lead('Before there is a student there is an applicant.'),
@@ -1400,7 +1467,13 @@ const PART_XI: Part = {
         + 'you do them, naming the screen you are on.'),
       p('Where a step will not work for you, the reason is almost always in Part II — '
         + 'your office does not hold that capability — or in Part X, which lists what the '
-        + 'messages mean.')),
+        + 'messages mean.'),
+      figure('Figure 17 · The lecturer’s cycle', figureLecturerCycle(),
+        'Six steps, repeated each course and each term, every one of them scoped to your '
+        + 'own courses.'),
+      figure('Figure 18 · The student’s term', figureStudentTerm(),
+        'The order matters: clearance opens registration, and registration opens the '
+        + 'rest.')),
 
     // ---- LECTURERS -------------------------------------------------------
 
