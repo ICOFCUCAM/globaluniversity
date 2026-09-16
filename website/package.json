@@ -125,7 +125,8 @@
     "test:studio": "npm run studio:suite && npm run studio:capabilities && npm run studio:ownership && npm run studio:pipeline && npm run studio:knowledge && npm run studio:tutor && npm run studio:jobs && npm run studio:service && npm run studio:prompts && npm run studio:roles && npm run studio:terminology && npm run studio:words && npm run studio:offline && npm run studio:constitution && npm run studio:i18n && npm run studio:voice && npm run studio:quiz && npm run studio:flashcards && npm run studio:progress && npm run studio:repetition && npm run studio:access && npm run studio:audit && npm run studio:live && npm run studio:certificate && npm run studio:coursework && npm run studio:usage && npm run studio:limits && npm run studio:storage && npm run studio:objectstore && npm run studio:vendors && npm run studio:bench && npm run studio:ui && npm run studio:store && npm run studio:session && npm run studio:schema && npm run studio:rolemap && npm run studio:permissions && npm run studio:belongs",
     "studio:permissions": "node src/academic/lib/studioPermissions.test.mjs",
     "studio:belongs": "node src/academic/lib/studioBelongsHere.test.mjs",
-    "test:myrow": "node src/lib/myRecordIsMine.test.mjs"
+    "test:myrow": "node src/lib/myRecordIsMine.test.mjs",
+    "map": "node scripts/build-programme-map.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
