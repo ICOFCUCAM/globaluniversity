@@ -69,6 +69,8 @@ import CorrespondenceCenter from './correspondence/CorrespondenceCenter';
 import Publications from './publications/Publications';
 import NationalAdministrations from './national/NationalAdministrations';
 import NationalRectorate from './national/NationalRectorate';
+import NationalStaff from './national/NationalStaff';
+import NationalFinance from './national/NationalFinance';
 import DocumentTemplates from './admin/DocumentTemplates';
 import JobDescriptions from './admin/JobDescriptions';
 import AppointmentConditions from './hr/AppointmentConditions';
@@ -351,6 +353,10 @@ export default function AppLayout() {
         return <NationalAdministrations />;
       case 'national-rectorate':
         return <NationalRectorate />;
+      case 'national-staff':
+        return <NationalStaff />;
+      case 'national-finance':
+        return <NationalFinance />;
       case 'document-templates':
         return <DocumentTemplates />;
       case 'job-descriptions':

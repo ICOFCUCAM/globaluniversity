@@ -237,47 +237,75 @@ create trigger national_administrations_touch
 -- would require a nation for every student the University has ever admitted,
 -- and there is no true answer to give.
 --
--- ADDED INSIDE A GUARD because not every deployment has every table — a
--- database landed from 001 upward has them all, but a column added to a table
--- that is not there stops the whole file, and the University runs these in a
--- SQL editor where a failure halfway is the worst outcome.
+-- WRITTEN OUT, ONE STATEMENT PER TABLE, AND NOT GENERATED IN A LOOP.
+--
+-- The first version of this did it inside a `do` block with `execute format`,
+-- guarded by a check that the table existed. It worked — the columns landed and
+-- the proof passed — and it was still wrong, because NOTHING READING THE SQL
+-- COULD SEE THE COLUMNS. `schemaContract.test.mjs` parses these files to check
+-- that every column the application selects actually exists, and it reported
+-- `profiles.administration_id` as a column the migrations do not define. It was
+-- right about what it could see.
+--
+-- The guard was defensive about nothing, too: every table below is created by
+-- an earlier migration in this same sequence, so on any database that has
+-- reached 097 all seven are there.
+--
+-- A schema a reader cannot read is a schema a tool cannot check.
 
-do $$
-declare
-  t text;
-begin
-  foreach t in array array[
-    -- WHO THE NATION RECRUITED AND TEACHES. An application and a student are
-    -- one row in this schema at two stages (037), so this single column
-    -- carries both "recruited by" and "enrolled through".
-    'students',
-    -- WHOSE ACCOUNT BELONGS TO THE NATION. The Rector's own, the Financial
-    -- Secretary's, and every national officer's. This is what
-    -- `my_administration()` reads for somebody who is not the Rector.
-    'profiles',
-    -- WHOM THE NATION RECOMMENDED. The appointment is still the University's
-    -- to make — 041 is untouched — but the nation it was made for is recorded.
-    'appointments',
-    'staff_records',
-    -- WHAT THE NATION TOOK AND WHAT IT CHARGED.
-    'payments',
-    'student_fee_assessments',
-    -- WHAT THE NATION WROTE. A Rector's letters are the University speaking in
-    -- that country.
-    'correspondence'
-  ] loop
-    if exists (select 1 from information_schema.tables
-               where table_schema = 'public' and table_name = t) then
-      execute format(
-        'alter table %I add column if not exists administration_id uuid '
-        'references national_administrations (id) on delete restrict', t);
-      execute format(
-        'create index if not exists %I on %I (administration_id) '
-        'where administration_id is not null',
-        t || '_administration_idx', t);
-    end if;
-  end loop;
-end $$;
+-- WHO THE NATION RECRUITED AND TEACHES. An application and a student are one
+-- row in this schema at two stages (037), so this single column carries both
+-- "recruited by" and "enrolled through".
+alter table students
+  add column if not exists administration_id uuid
+  references national_administrations (id) on delete restrict;
+
+-- WHOSE ACCOUNT BELONGS TO THE NATION. The Rector's own, the Financial
+-- Secretary's, and every national officer's. This is what `my_administration()`
+-- reads for somebody who is not the Rector.
+alter table profiles
+  add column if not exists administration_id uuid
+  references national_administrations (id) on delete restrict;
+
+-- WHOM THE NATION RECOMMENDED. The appointment is still the University's to
+-- make — 041 is untouched — but the nation it was made for is recorded.
+alter table appointments
+  add column if not exists administration_id uuid
+  references national_administrations (id) on delete restrict;
+
+alter table staff_records
+  add column if not exists administration_id uuid
+  references national_administrations (id) on delete restrict;
+
+-- WHAT THE NATION TOOK AND WHAT IT CHARGED.
+alter table payments
+  add column if not exists administration_id uuid
+  references national_administrations (id) on delete restrict;
+
+alter table student_fee_assessments
+  add column if not exists administration_id uuid
+  references national_administrations (id) on delete restrict;
+
+-- WHAT THE NATION WROTE. A Rector's letters are the University speaking in
+-- that country.
+alter table correspondence
+  add column if not exists administration_id uuid
+  references national_administrations (id) on delete restrict;
+
+create index if not exists students_administration_idx
+  on students (administration_id) where administration_id is not null;
+create index if not exists profiles_administration_idx
+  on profiles (administration_id) where administration_id is not null;
+create index if not exists appointments_administration_idx
+  on appointments (administration_id) where administration_id is not null;
+create index if not exists staff_records_administration_idx
+  on staff_records (administration_id) where administration_id is not null;
+create index if not exists payments_administration_idx
+  on payments (administration_id) where administration_id is not null;
+create index if not exists student_fee_assessments_administration_idx
+  on student_fee_assessments (administration_id) where administration_id is not null;
+create index if not exists correspondence_administration_idx
+  on correspondence (administration_id) where administration_id is not null;
 
 
 -- ===========================================================================

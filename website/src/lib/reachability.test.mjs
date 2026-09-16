@@ -221,6 +221,10 @@ const READ_ONLY_BY_DESIGN = {
     + 'password, which /api/account/password does with the service key: 090 revokes that '
     + 'column from every browser session at the COLUMN level, because the whole point is that '
     + 'the gate cannot be skipped by stamping the date without changing anything.',
+  national_purse: 'A view over `revenue_allocations` and `national_expenses` \u2014 what a '
+    + 'nation was allocated, less what it has authorised. A view for the reason 098 gives about '
+    + 'the ledger: a stored balance is a balance that can disagree with the rows under it. The '
+    + 'expenses it subtracts are written through /api/national/expense.',
   national_ledger: 'A view over `revenue_allocations`, and it is a view rather than a table '
     + 'for the reason 098 gives: a running total that is STORED is a running total that can '
     + 'disagree with the rows under it. This one cannot, because it is the rows. Nothing writes '

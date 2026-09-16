@@ -368,6 +368,10 @@ select * from (
   select '098' as migration, '098_what_the_nation_keeps.sql' as file,
          case when to_regclass('public.revenue_allocations') is not null then 'YES' else 'NO' end as landed,
          'revenue_allocations' as what_it_creates
+  union all
+  select '099' as migration, '099_recommending_and_spending.sql' as file,
+         case when to_regclass('public.national_expenses') is not null then 'YES' else 'NO' end as landed,
+         'national_expenses' as what_it_creates
 ) as landed_report
  order by migration;
 

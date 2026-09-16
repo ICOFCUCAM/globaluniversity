@@ -1055,6 +1055,23 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
       + 'already here has no administration and stays the centre\u2019s.',
     table: 'revenue_allocations',
   },
+  {
+    file: '099_recommending_and_spending.sql',
+    what:
+      'A NATIONAL RECTOR CAN RECOMMEND SOMEBODY FOR A POST, and that is all a recommendation is '
+      + '\u2014 it creates no appointment and binds the University to nothing. HR drafts from it '
+      + 'and the Vice-Chancellor approves, which is three people. It is NOT a draft appointment: '
+      + '041 refuses an approval by whoever DRAFTED it, so making the Rector the drafter would '
+      + 'spend the University\u2019s separation on the wrong person. A Rector cannot decide '
+      + 'their own recommendation, and declining one requires a reason the Rector can read. '
+      + 'AN ADMINISTRATION CAN RECORD WHAT IT SPENDS under the programme\u2019s two-level '
+      + 'governance: the Financial Secretary RECORDS, the Rector AUTHORISES, and neither may do '
+      + 'both. AND A DOOR CLOSES \u2014 authorised expenses in a currency may not exceed what '
+      + '098 allocated the nation in that same currency, so a nation with no revenue agreement '
+      + 'has kept nothing and can authorise nothing. `national_purse` reports kept, authorised '
+      + 'and available from the rows themselves rather than from a stored balance.',
+    table: 'national_expenses',
+  },
 ];
 
 /** What a probe came back as. */

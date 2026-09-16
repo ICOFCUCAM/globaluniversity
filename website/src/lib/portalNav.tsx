@@ -785,6 +785,25 @@ export const menuGroups: MenuGroup[] = [
         roles: ['superadmin', 'national-rector', 'national-financial-secretary'],
       },
       {
+        // THE RECOMMENDATION QUEUE, seen from both chairs. A Rector sees the
+        // people they have put forward; HR sees the same rows as work to do.
+        // One list, because two screens over one table is two places to change.
+        id: 'national-staff',
+        label: 'National staff',
+        icon: <UserCheck size={18} />,
+        roles: ['superadmin', 'admin', 'vice-chancellor', 'registrar',
+          'hr-officer', 'hr-administrator', 'national-rector'],
+      },
+      {
+        // THE PURSE. Both national offices, for the reason the screen gives:
+        // one records and one authorises, and neither may do both.
+        id: 'national-finance',
+        label: 'National finance',
+        icon: <Receipt size={18} />,
+        roles: ['superadmin', 'finance-director', 'national-rector',
+          'national-financial-secretary'],
+      },
+      {
         id: 'national-administrations',
         label: 'National Administrations',
         icon: <Globe2 size={18} />,

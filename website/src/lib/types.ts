@@ -328,6 +328,8 @@ export type ViewType =
   // THE NATIONS. The register is the centre's; the rectorate is the Rector's own.
   | 'national-administrations'
   | 'national-rectorate'
+  | 'national-staff'
+  | 'national-finance'
   | 'document-templates'
   | 'job-descriptions'
   | 'appointment-conditions'

@@ -355,23 +355,6 @@ const NOT_ENFORCED = {
   'monitor-teaching': 'Descriptive, as above.',
 
   // ---- granted, with nothing behind it ----------------------------------
-  // ---- THE TWO NATIONAL CAPABILITIES WITH NO SCREEN YET ----------------
-  //
-  // Both were declared with the National Rector programme (097/098) and both
-  // are genuinely unenforced. Named here rather than quietly enforced
-  // somewhere convenient, because the point of this list is that the
-  // difference between "deliberate" and "forgotten" is written down.
-  'recommend-national-staff': 'NO DOOR YET. A National Rector may recommend somebody for a '
-    + 'national post and there is no screen that does it. The appointment machinery it would '
-    + 'feed is complete \u2014 `appointments`, `positions`, `position_profiles`, and 041\u2019s '
-    + 'refusal of an approval by the drafter \u2014 so this is a form and a route on top of it, '
-    + 'not a system. Until then a Rector recommends by writing to HR, which is what the '
-    + 'programme describes anyway.',
-  'administer-national-finance': 'NO DOOR YET. The National Financial Secretary reconciles a '
-    + 'nation\u2019s money, and the only national finance surface is the read-only ledger on the '
-    + 'Rectorate screen. 098 computes every allocation in the database, so what is missing is '
-    + 'the reconciliation screen \u2014 receipts, expenses, staff payments \u2014 and not the '
-    + 'figures it would show.',
   'approve-refund': 'NO DOOR. The Finance Director may approve a refund and there is no refund '
     + 'anywhere in this system — no request, no screen, no table.',
   'assign-programme': 'NO DOOR. Attaching a student to a curriculum is done by the Registry in '
