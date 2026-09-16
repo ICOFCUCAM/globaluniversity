@@ -3799,6 +3799,18 @@ export const ENFORCED: EnforcedRules[] = [
       "every post in the register still has conditions of appointment and a place of duty, the three new ones included",
       "…and a National Rector is not posted to the central campus"
     ]
+  },
+  {
+    "migration": "104",
+    "file": "104_a_staff_record_is_not_an_account.sql",
+    "rules": [
+      "a person can be on the staff register before their address is known",
+      "…and is listed as awaiting an account, and as not yet ready for one",
+      "an account cannot be opened on a record with no email address",
+      "…and neither blank nor whitespace passes for one",
+      "…and with one recorded, the account opens",
+      "…and they drop off the list the moment they can sign in"
+    ]
   }
 ];
 
@@ -3806,5 +3818,5 @@ export const COUNTS = {
   roles: 25,
   capabilities: 129,
   migrations: 0,
-  provedRules: 115,
+  provedRules: 121,
 };

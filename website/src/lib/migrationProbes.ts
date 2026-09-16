@@ -1177,6 +1177,26 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
     table: 'positions',
     match: { column: 'job_code', value: 'NAT-REC' },
   },
+  {
+    file: '104_a_staff_record_is_not_an_account.sql',
+    what:
+      'A STAFF RECORD AND A STAFF ACCOUNT BECOME TWO STAGES. The University read the list and '
+      + 'asked why an accepted appointment offered \u201cOpen the staff record\u201d when there '
+      + 'was no record to open \u2014 the button DID create one, and \u201copen a staff '
+      + 'record\u201d is not what the words say to anybody who has not read 082. Under that one '
+      + 'label a single click issued a staff number, wrote the register row, created a login and '
+      + 'opened a teaching record. They are now Create staff record and Create staff account, '
+      + 'and the state between them \u2014 on the register, cannot yet sign in \u2014 has a '
+      + 'list of its own for the first time. AND THE EMAIL HAS A DOOR. The list used to say '
+      + '\u201cNo email recorded \u2014 correct the appointment first\u201d beside a disabled '
+      + 'button and offered nothing to correct it with; the address is now supplied on the '
+      + 'create form and written to the STAFF RECORD, never back onto an appointment that was '
+      + 'already issued, accepted and signed. AN ACCOUNT CAN NO LONGER BE OPENED ON A RECORD '
+      + 'WITH NO ADDRESS \u2014 refused by a trigger, so it holds against the service key too, '
+      + 'and blank and whitespace are refused with it. NOTHING ALREADY DONE IS UNDONE: no staff '
+      + 'record, account or appointment is touched.',
+    table: 'staff_records_awaiting_an_account',
+  },
 ];
 
 /** What a probe came back as. */

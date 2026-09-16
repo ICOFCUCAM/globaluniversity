@@ -165,8 +165,17 @@ check('…and not from the lecturers table',
 check('a register row is written for every appointee',
   /from\('staff_records'\)\.insert/.test(route), true);
 // The teaching record is conditional; the register row is not.
+//
+// MATCHED ON `TEACHES.includes` RATHER THAN ON THE WHOLE `if`. 104 gave the
+// condition a second clause — `!lecturerId &&`, so that reopening an account
+// finds the teaching record instead of writing a second one — and an assertion
+// pinned to the exact old text failed a change that strengthened what it was
+// guarding. What has to stay true is that the teaching record is behind
+// TEACHES and the register row is not.
 check('…while the teaching record is only for those who teach',
-  /if \(TEACHES\.includes/.test(route), true);
+  /TEACHES\.includes/.test(route), true);
+check('…and the register row is behind no such condition',
+  /TEACHES[\s\S]{0,400}from\('staff_records'\)\.insert/.test(route), false);
 
 // --- NOTHING IS RETYPED ----------------------------------------------------
 //

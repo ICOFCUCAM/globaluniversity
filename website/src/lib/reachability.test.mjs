@@ -232,6 +232,14 @@ const READ_ONLY_BY_DESIGN = {
     + 'reissue requests \u2014 \u00a77 of the certificate ruling. The certificates are written '
     + 'by /api/credential/issue and the reissue authorisations by /api/certificate/reissue; the '
     + 'audit events are append-only by 013\u2019s own trigger.',
+  staff_records_awaiting_an_account: 'A view over `staff_records` \u2014 people on the staff '
+    + 'register who cannot yet sign in. The second of the University\u2019s three stages '
+    + '(appointment, staff record, staff account), and it had no list before 104 because the '
+    + 'record and the account were opened in one act. The rows are written by '
+    + '/api/appointments/staff-record and they leave the view when that same route opens the '
+    + 'account. `ready` says whether an email address is recorded, because a record waiting on '
+    + 'a decision and one waiting on a fact somebody has to go and get look identical in a list '
+    + 'that does not say so.',
   refund_audit: 'A view over `refund_requests`, `payments`, `students` and the profiles of '
     + 'everybody who touched it \u2014 every refund the University has considered, what was '
     + 'determined and on whose reasoning. The requests are written by /api/finance/refund. '

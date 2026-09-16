@@ -293,6 +293,7 @@ const MARKERS = {
   // the widened family constraint: the constraint could be there with the
   // posts missing, and it is the POSTS the University came looking for.
   '103': "rows:positions:job_code in ('NAT-REC','NAT-FIN','EXE-CHAN')",
+  '104': 'staff_records_awaiting_an_account',
 };
 
 /** The SQL that answers "is this one here?", for each of the three forms. */

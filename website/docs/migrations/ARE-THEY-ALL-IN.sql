@@ -390,6 +390,10 @@ select * from (
                  when exists (select 1 from positions where job_code in ('NAT-REC','NAT-FIN','EXE-CHAN')) then 'YES'
                  else 'NO' end as landed,
          'rows:positions:job_code in (''NAT-REC'',''NAT-FIN'',''EXE-CHAN'')' as what_it_creates
+  union all
+  select '104' as migration, '104_a_staff_record_is_not_an_account.sql' as file,
+         case when to_regclass('public.staff_records_awaiting_an_account') is not null then 'YES' else 'NO' end as landed,
+         'staff_records_awaiting_an_account' as what_it_creates
 ) as landed_report
  order by migration;
 
