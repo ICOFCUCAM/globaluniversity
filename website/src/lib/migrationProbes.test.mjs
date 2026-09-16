@@ -259,6 +259,9 @@ console.log('\nAnd what it cannot see, it says so about\n');
       // ---------------------------------------------------------------
       '091_the_public_key_cannot_destroy_the_university.sql',
     '105_the_vice_chancellor_can_see_the_university.sql',
+    // 106'S CONTENT IS A DELETION. Every probe form above asks "is it there";
+    // asking that about two rows a migration removes reports NO for ever.
+    '106_the_self_test_is_not_two_students.sql',
 ]);
   check('…and carries the check to run by hand',
     blind.every((p) => /select|pg_constraint/i.test(p.cannotSee)), true);

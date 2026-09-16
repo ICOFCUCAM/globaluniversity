@@ -3822,6 +3822,18 @@ export const ENFORCED: EnforcedRules[] = [
       "a Librarian still reads none",
       "…and a lecturer still reads only the students they teach"
     ]
+  },
+  {
+    "migration": "106",
+    "file": "106_the_self_test_is_not_two_students.sql",
+    "rules": [
+      "% self-test account(s) removed from the accounts list",
+      "neither self-test identity appears as an account any more",
+      "…and carries no role, so a session as one holds nothing",
+      "the self-test examination record is untouched, as 015 requires",
+      "…and the identities its incidents and marks name are still there",
+      "deleting the identity itself is refused by the evidence that names it"
+    ]
   }
 ];
 
@@ -3829,5 +3841,5 @@ export const COUNTS = {
   roles: 25,
   capabilities: 129,
   migrations: 0,
-  provedRules: 126,
+  provedRules: 132,
 };

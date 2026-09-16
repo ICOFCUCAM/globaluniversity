@@ -1224,6 +1224,32 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
       + 'database directly: select policyname from pg_policies where tablename = \'students\' '
       + 'and qual like \'%vice-chancellor%\';',
   },
+  {
+    file: '106_the_self_test_is_not_two_students.sql',
+    what:
+      'TWO PEOPLE WHO DO NOT EXIST COME OFF THE ACCOUNTS LIST. 015\u2019s self-test needs '
+      + 'somebody to raise an examination incident, decide a finding and enter a mark, so it '
+      + 'creates two identities \u2014 AND IT DOES NOT ROLL BACK. Every migration from about '
+      + '040 onwards ends by throwing its own proof away; 015 predates that convention and '
+      + 'commits. So the University has carried selftest-proctor-015@iguc.net and '
+      + 'selftest-marker-015@iguc.net as active STUDENT accounts ever since, student being '
+      + 'what `on_auth_user_created` defaults to when nobody chooses. 106 removes their '
+      + 'profiles, which takes them off Accounts and out of every list of people. THE '
+      + '`auth.users` ROWS AND THE EXAMINATION RECORD STAY, and that is not a compromise: '
+      + 'three foreign keys point at those identities with ON DELETE RESTRICT because they '
+      + 'raised an incident, decided a finding and entered a mark, and 015 makes exam events '
+      + 'append-only. An incident whose author has been erased is an incident nobody raised, '
+      + 'and that rule is not being disabled to tidy a list. Neither identity could ever sign '
+      + 'in \u2014 015 writes an id and an email and no password \u2014 and with no profile '
+      + 'there is no role either.',
+    // A DELETION CANNOT BE PROBED BY LOOKING FOR SOMETHING. Every probe above
+    // asks "is it there"; this one's whole content is that two rows are not.
+    // The mechanism has no way to say that, so it says so rather than guessing.
+    cannotSee:
+      'Open Accounts and search for "selftest". If either selftest-proctor-015@iguc.net or '
+      + 'selftest-marker-015@iguc.net is still listed, 106 has not run. Or ask the database: '
+      + 'select email from profiles where email like \'selftest-%25-015@iguc.net\';',
+  },
 ];
 
 /** What a probe came back as. */

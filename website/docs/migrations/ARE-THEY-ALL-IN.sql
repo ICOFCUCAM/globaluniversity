@@ -403,6 +403,12 @@ select * from (
                                    pg_get_expr(p.polqual, p.polrelid)) > 0)
                  then 'YES' else 'NO' end as landed,
          'policydef:students_staff_read:vice-chancellor' as what_it_creates
+  union all
+  select '106' as migration, '106_the_self_test_is_not_two_students.sql' as file,
+         case when to_regclass('public.profiles') is null then 'NO'
+                 when not exists (select 1 from profiles where email in ('selftest-proctor-015@iguc.net','selftest-marker-015@iguc.net'))
+                 then 'YES' else 'NO' end as landed,
+         'norows:profiles:email in (''selftest-proctor-015@iguc.net'',''selftest-marker-015@iguc.net'')' as what_it_creates
 ) as landed_report
  order by migration;
 

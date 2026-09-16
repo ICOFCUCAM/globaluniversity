@@ -302,6 +302,9 @@ const MARKERS = {
   // `to_regclass('students')` would report YES on a database where 105 has
   // never run, because `students` has been there since 001.
   '105': 'policydef:students_staff_read:vice-chancellor',
+  // 106 REMOVES TWO ROWS, so the report asks whether they are gone. See
+  // `norows:` in landedTest.
+  '106': "norows:profiles:email in ('selftest-proctor-015@iguc.net','selftest-marker-015@iguc.net')",
 };
 
 /** The SQL that answers "is this one here?", for each of the three forms. */
@@ -357,6 +360,21 @@ function landedTest(marker) {
   // table asks "is the thing there"; this asks "is the thing GONE", which is
   // the only honest way to report a migration whose whole content is a revoke.
   // ---------------------------------------------------------------------
+  // ---------------------------------------------------------------------
+  // ROWS THAT SHOULD NO LONGER BE THERE.
+  //
+  // The same shape as `norights:` below and for the same reason: 106's whole
+  // content is a deletion — two self-test identities off the accounts list —
+  // and every other form in this table asks "is the thing there". Asking that
+  // about a migration that removes something reports NO for ever.
+  // ---------------------------------------------------------------------
+  if (marker.startsWith('norows:')) {
+    const [, table, ...rest] = marker.split(':');
+    const predicate = rest.join(':');
+    return `case when to_regclass('public.${table}') is null then 'NO'
+                 when not exists (select 1 from ${table} where ${predicate})
+                 then 'YES' else 'NO' end`;
+  }
   if (marker.startsWith('norights:')) {
     const [, role] = marker.split(':');
     return `case when not exists (
