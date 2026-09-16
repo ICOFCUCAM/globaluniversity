@@ -140,3 +140,63 @@ export const VICE_CHANCELLORS_MESSAGE: Signed = {
   close: 'If, having read this, you already know the name of the first colleague you would '
     + 'call — then this letter has found the person it was written for. Write to me.',
 };
+
+
+// ---------------------------------------------------------------------------
+// AND THE HANDBOOK'S FOREWORD, UNDER THE SAME RULE.
+//
+// The System Handbook opens over the Vice-Chancellor's name, because a document
+// that tells every office in the University what it may and may not do is not
+// the software's statement about itself — it is the University's statement, and
+// it has to be signed by somebody who can make it.
+//
+// SO THIS IS DRAFT COPY AWAITING PROF MEYEMBI'S APPROVAL, exactly as the
+// message above it is. It is in this file rather than in `systemHandbook.ts`
+// for that reason and no other: this file is where the things drafted FOR him
+// live, and keeping the line between "the University wrote this" and "this was
+// drafted for the University" in one place is what stops it being forgotten.
+//
+// `handbook.test.mjs` counts these words separately for the same reason.
+// ---------------------------------------------------------------------------
+
+export const HANDBOOK_FOREWORD: Signed = {
+  name: 'Prof Chamayah Meyembi',
+  role: 'Vice-Chancellor',
+  email: 'vc@iguc.net',
+  office: 'Office of the Vice-Chancellor',
+  title: 'On the authority of this handbook',
+
+  paragraphs: [
+    'A university runs on people knowing what they may do. Not what they are able to do — what '
+    + 'they may. The distance between those two is where institutions lose themselves, and it '
+    + 'is usually not lost in a single dramatic act. It is lost in a hundred small ones by '
+    + 'people who meant well and did not know.',
+
+    'This handbook closes that distance. It states what every office in this University may do, '
+    + 'what it may not, and where the line between the two is drawn — and it does not state it '
+    + 'from memory. The parts that describe authority are read out of the system itself every '
+    + 'time this document is rebuilt. If a permission moves, this handbook says so on its next '
+    + 'printing, whether or not anybody remembered to amend it.',
+
+    'That matters more than it may appear. A handbook that describes a system it has drifted '
+    + 'away from is worse than no handbook, because it is quoted. An officer holding a document '
+    + 'with the Vice-Chancellor’s name on the front is entitled to assume it is true, and I am '
+    + 'not willing to sign one that relies on somebody having remembered.',
+
+    'You will find that several offices in this University are deliberately prevented from '
+    + 'doing things they could easily be trusted with. The Registrar cannot see the certificate '
+    + 'design. The officer who records an expense cannot authorise it. The person who drafts an '
+    + 'appointment cannot approve it. None of these is a comment on the people holding those '
+    + 'offices. They are what allows us to say, of any document this University has issued, '
+    + 'that more than one person stood behind it — and to say it about a document issued five '
+    + 'years ago by people who have since left.',
+
+    'Read Part Two before you act in an office you are new to, and Part Eight before you tell '
+    + 'anybody what the system will and will not permit. If something here is wrong, it is '
+    + 'either wrong in the system too, in which case tell me, or it is written rather than '
+    + 'read, in which case tell me and we will correct it.',
+  ],
+
+  close: 'Nobility, Professionalism and Godliness — and the first of those begins with knowing '
+    + 'the limits of your own office, and keeping them when nobody is looking.',
+};

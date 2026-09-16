@@ -53,6 +53,7 @@
 // ---------------------------------------------------------------------------
 
 import { NATIONAL_RECTOR, chaptersInOrder, type Book } from '@/content/nationalRector';
+import { SYSTEM_HANDBOOK } from '@/content/systemHandbook';
 import { UNIVERSITY } from './constants';
 
 export interface Publication {
@@ -61,8 +62,15 @@ export interface Publication {
   /** For the shelf. The book carries its own title for the cover. */
   title: string;
   subtitle: string;
-  /** What kind of document this is, in the University's own vocabulary. */
-  kind: 'Prospectus';
+  /**
+   * What kind of document this is, in the University's own vocabulary.
+   *
+   * A HANDBOOK IS NOT A PROSPECTUS AND THE SHELF SAYS SO. A prospectus goes to
+   * strangers deciding whether to join; a handbook goes to the people already
+   * here, and an officer choosing what to forward needs to see the difference
+   * before they open it rather than after.
+   */
+  kind: 'Prospectus' | 'Handbook';
   /** Who it is written for — the first thing an officer choosing what to send needs. */
   audience: string;
   /** What it covers, for somebody who has not read it. */
@@ -86,6 +94,23 @@ export const PUBLICATIONS: Publication[] = [
       + 'qualified candidates may apply. The application form is at the end.',
     filename: 'ICOF-Global-University-The-National-Rector.html',
     book: NATIONAL_RECTOR,
+  },
+  {
+    slug: 'system-handbook',
+    title: 'System Handbook',
+    subtitle: 'The authoritative operational reference for the ICOF Global University '
+      + 'digital system',
+    kind: 'Handbook',
+    audience: 'Every authorized user of the system \u2014 the executive offices, the Registry, '
+      + 'the academic offices, National Administrations, lecturers and students.',
+    summary: 'The institutional reference and the system user guide in one binding: what the '
+      + 'University is, every role and what it may and may not do, academic and financial '
+      + 'administration, teaching and learning, National Administrations, digital operations, '
+      + 'the restricted institutional functions, the student handbook, troubleshooting, and '
+      + 'step-by-step instructions for lecturers and students. The parts describing authority '
+      + 'are generated from the system itself.',
+    filename: 'ICOF-Global-University-System-Handbook.html',
+    book: SYSTEM_HANDBOOK,
   },
 ];
 

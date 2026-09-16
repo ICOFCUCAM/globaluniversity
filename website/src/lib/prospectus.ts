@@ -547,9 +547,33 @@ function styles(): string {
     display: flex; gap: 8px; align-items: baseline; margin: 3px 0; font-size: 10.5pt;
     break-inside: avoid; page-break-inside: avoid;
   }
-  .toc .row .no { flex: 0 0 26px; color: #8a8194; font-size: 9.5pt; }
-  .toc .row .name { flex: 0 0 auto; }
-  .toc .row .dots { flex: 1 1 auto; border-bottom: 1px dotted #cbbede; height: .55em; }
+  /* -------------------------------------------------------------------
+     AND THE ROW HAS TO SHRINK, WHICH IT COULD NOT.
+
+     Measured on the System Handbook, whose contents runs to 105 chapters:
+     the page scrolled to 646px against 643. The cause was two things that
+     only appear in a book this long.
+
+     A title set to flex 0 0 auto means "never shrink", and one like
+     "The rules the system has been watched to enforce" is 278px against a
+     column of about 300 — so with a 26px number and a gap it left the
+     column. A flex item also will not shrink below its intrinsic width
+     without min-width set to 0, so the two are needed together.
+
+     AND NO BACKTICKS IN THIS COMMENT. It is inside the CSS template
+     literal, and a backtick here ends the literal and breaks the build.
+     That is now the fourth time; the warning on styles() says so.
+
+     And 26px was cut for two digits. A hundred and five chapters need
+     three, and the number wrapping under itself is what pushed the first
+     rows over.
+     ------------------------------------------------------------------- */
+  .toc .row .no { flex: 0 0 34px; color: #8a8194; font-size: 9.5pt; }
+  .toc .row .name { flex: 0 1 auto; min-width: 0; overflow-wrap: anywhere; }
+  .toc .row .dots {
+    flex: 1 1 auto; min-width: 8px;
+    border-bottom: 1px dotted #cbbede; height: .55em;
+  }
 
   /* ---- THE COLOPHON --------------------------------------------------- */
   .colophon { text-align: center; }
@@ -753,6 +777,31 @@ const blocks = (list: Block[]): string => list.map(renderBlock).join('\n');
 // 3. THE PAGES
 // ---------------------------------------------------------------------------
 
+/**
+ * The cover.
+ *
+ * ---------------------------------------------------------------------------
+ * THE SEAT, NOT THE STREET — AND THE EXPLANATION IS HERE, NOT IN THE HTML
+ * ---------------------------------------------------------------------------
+ *
+ * The cover carried the University's street address and they removed it on
+ * 16 September 2026. They were right, and constants.ts had already written the
+ * reasoning down for a different document: the campus address belongs on
+ * correspondence, "where it is what the reader actually needs", while a
+ * document that travels across borders should "name the institution behind the
+ * holder rather than one of the places it teaches". This book is emailed to
+ * somebody who has never heard of Buea and is deciding whether ICOF is a real
+ * institution; a junction in one town answers a question they were not asking.
+ *
+ * THAT PARAGRAPH USED TO BE AN HTML COMMENT INSIDE THE COVER, quoting the
+ * address it was explaining the removal of — so every copy the
+ * Vice-Chancellor forwarded carried the string in its source, which is not
+ * what "removed" means. The handbook test caught it by searching the rendered
+ * document rather than the visible text.
+ *
+ * So the foot prints the headquarters, the website and the University's
+ * address for correspondence, and nothing else.
+ */
 function cover(book: Book): string {
   return `<section class="sheet cover">
   <div>
@@ -766,23 +815,6 @@ function cover(book: Book): string {
     <p class="subtitle">${escape(book.subtitle)}</p>
   </div>
   <div class="foot">
-    <!-- ----------------------------------------------------------------
-         THE SEAT, NOT THE STREET.
-
-         The cover carried "Opposite Bulu Blind Junction, Buea-Cameroon" and
-         the University removed it on 16 September 2026.
-
-         They were right, and constants.ts had already written down the
-         reasoning for a different document (no backticks in this comment: the
-         whole page is a template literal, and a pair of them here would end it
-         mid-sentence). The campus address belongs on
-         correspondence, "where it is what the reader actually needs", while a
-         document that travels across borders should "name the institution
-         behind the holder rather than one of the places it teaches". This
-         prospectus is emailed to a professor who has never heard of Buea and
-         is deciding whether ICOF is a real institution. A junction in one town
-         answers a question they were not asking.
-         ---------------------------------------------------------------- -->
     <p>${escape(UNIVERSITY.headquarters)}</p>
     <p>${escape(UNIVERSITY.website)} · ${escape(UNIVERSITY.email)}</p>
   </div>
