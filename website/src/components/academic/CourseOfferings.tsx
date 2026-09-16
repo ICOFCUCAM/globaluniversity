@@ -109,7 +109,20 @@ const hhmm = (t: string | null) => (t ? t.slice(0, 5) : '');
 
 export default function CourseOfferings() {
   const { user } = useAuth();
-  const mayEdit = can(user?.role, 'manage-courses');
+  // THE CANONICAL ALLOCATION PERMISSION, and this screen is where it is spent.
+  //
+  // This read `manage-courses` — the CATALOGUE permission, which is what BIS
+  // 220 *is*. The University drew the distinction itself: "separate Course from
+  // Course Offering from Class from Student Registration." Who teaches it this
+  // year is a different act from what it is, and until 16 September 2026 the
+  // four names for that act — `assign-lecturers`,
+  // `assign-lecturers-to-courses`, `approve-course-allocation` and
+  // `manage-course-offerings` — were held by four sets of offices and consulted
+  // by nothing at all. Three were retired and the fourth was declared.
+  //
+  // Everyone who could edit here before still can: the Programme Coordinator
+  // and the Academic Office were granted the survivor for that reason.
+  const mayEdit = can(user?.role, 'manage-course-offerings');
 
   const [years, setYears] = useState<Year[]>([]);
   // Whether the calendar has ANSWERED, as against being empty. See the

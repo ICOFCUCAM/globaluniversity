@@ -45,10 +45,30 @@ import { canEnrol, canWithdraw, officeFor, MIN_WITHDRAW_REASON } from '@/lib/adm
 export const runtime = 'nodejs';
 
 export async function POST(request: Request) {
-  // The Registrar's. Enrolment is the Registrar completing the student's
-  // academic record, and it is deliberately NOT 'decide-admission': nothing
-  // here is an academic judgement.
-  const g = await guard(request, 'create-student-record');
+  // ---------------------------------------------------------------------
+  // THE REGISTRAR'S, AND IT IS `assign-programme`.
+  //
+  // This guarded on `create-student-record`, and `assign-programme` was one of
+  // the capabilities the audit listed as NO DOOR — "attaching a student to a
+  // curriculum is done by the Registry in the Enrolment screen without
+  // checking this, and there is no screen that does."
+  //
+  // The door was here the whole time. Nobody in this system picks a programme
+  // for an applicant — the applicant names one and the decision route admits
+  // to it or refuses — so the act `assign-programme` describes is not a choice
+  // made at a desk. It is THIS moment: an issued admission becomes a student
+  // on a curriculum, `student_status` goes to 'active', and from here the mark
+  // sheet, the credit total, the graduation audit and the transcript all read
+  // that attachment as fact.
+  //
+  // It is deliberately NOT 'decide-admission': nothing here is an academic
+  // judgement. And nothing is withdrawn by the change — the Enrolment screen
+  // is offered to the Superadministrator, the System Administrator and the
+  // Registrar, and all three hold this. (The HR Administrator holds
+  // `create-student-record` and has never been offered this screen; enrolling
+  // a student is not HR's act.)
+  // ---------------------------------------------------------------------
+  const g = await guard(request, 'assign-programme');
   if (!g.ok) return NextResponse.json({ ok: false, error: g.error }, { status: g.status });
   const { caller } = g;
 

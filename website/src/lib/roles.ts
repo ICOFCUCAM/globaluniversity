@@ -138,7 +138,32 @@ export const OPERATIONAL_CAPABILITIES = [
   'assign-programme',
   'create-student-record',
   // Academic office
-  'assign-lecturers',
+  //
+  // ---------------------------------------------------------------------
+  // ALLOCATING A LECTURER TO A COURSE. One name, and it is new.
+  //
+  // There were THREE names for this act — `assign-lecturers`,
+  // `assign-lecturers-to-courses` and `approve-course-allocation` — and the
+  // University retired all three on 16 September 2026, keeping
+  // `manage-course-offerings` as the canonical one.
+  //
+  // WHICH DID NOT EXIST. The audit said the Offerings screen "guards on
+  // `manage-course-offerings` instead", and it does not and never did: that
+  // string appeared nowhere in this file, nowhere in any component, and only
+  // in the sentence of the audit note that asserted it. The screen guards on
+  // `manage-courses`. So the count was wrong in the direction that matters —
+  // not three empty names beside one real one, but FOUR names for allocating
+  // a lecturer, none of which any code consulted.
+  //
+  // `can('superadmin', <anything>)` is true, because the Superadministrator
+  // holds 'all'. That is why probing the matrix for this name answered yes and
+  // the compiler answered no. A capability check against an undeclared name is
+  // not a weak guard; it is a guard that refuses everyone except the office
+  // that needs no guard.
+  //
+  // It is declared here, and the Offerings screen checks it.
+  // ---------------------------------------------------------------------
+  'manage-course-offerings',
   'build-timetable',
   'manage-courses',
   // ---------------------------------------------------------------------
@@ -440,8 +465,12 @@ export const OPERATIONAL_CAPABILITIES = [
   'view-all-faculties',
   'view-institutional-finance',
   // Department
-  'assign-lecturers-to-courses',
-  'approve-course-allocation',
+  //
+  // `assign-lecturers-to-courses` and `approve-course-allocation` were the
+  // department's two of the three retired allocation names. See the note at
+  // `manage-course-offerings` above. The Head of Department now holds that
+  // one, which — unlike the three — is checked by the screen that does the
+  // work.
   'monitor-teaching',
   'department-reports',
   // Admissions / library / student affairs
@@ -456,7 +485,13 @@ export const OPERATIONAL_CAPABILITIES = [
   'pay-fees',
   'view-results',
   'download-transcript',
-  'message-lecturers',
+  // `message-lecturers` IS RETIRED, and deliberately not replaced.
+  //
+  // There is no direct messaging in this system and the University ruled on
+  // 16 September 2026 that none is to be built: the course forum is the
+  // official channel for lecturer-student academic communication. A messaging
+  // feature built merely to make a permission true would be the second of two
+  // competing channels, which is the thing being avoided.
   'access-lms',
   // ---------------------------------------------------------------------
   // PUTTING MATERIAL ON A COURSE, which is not the same as reading it.
@@ -662,10 +697,19 @@ export const SYSTEM_CAPABILITIES = [
   // named the Academic Office, the Registrar and the Vice-Chancellor.
   // ---------------------------------------------------------------------
   'open-staff-record',
+  // SUSPENDING AND REINSTATING ARE ONE ACT ON ONE ROUTE. `reinstate-account`
+  // was a second word for it: /api/admin/suspend does both, guarded by this
+  // one, and Account management draws the button either way. Retired as a
+  // duplicate on 16 September 2026.
   'suspend-account',
-  'reinstate-account',
+  // Kept, and not built. A self-serve reset by email exists on the sign-in
+  // screen, so no account is lost for want of this; an administrator-driven
+  // reset is a convenience the University will ask for if it wants one.
   'reset-user-password',
-  'impersonate-user',
+  // `impersonate-user` IS RETIRED. It was declared and never built, and the
+  // University's disposition of 16 September 2026 is to retire rather than
+  // keep a power of that weight sitting in the vocabulary waiting for
+  // somebody to implement it.
   // -------------------------------------------------------------------------
   // THE TRANSCRIPT RULING OF 16 SEPTEMBER 2026.
   //
@@ -1014,12 +1058,22 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
     'change-own-password',
     // EVERY MEMBER OF STAFF HAS A RECORD, and every one of them was unable
     // to read it. See `view-own-staff-record` in the capability list.
-    'view-own-staff-record','assign-lecturers-to-courses', 'approve-course-allocation', 'monitor-teaching', 'department-reports', 'view-registered-students', 'view-admitted-students', 'moderate-results', 'publish-course-material'],
+    // See the Academic Office above: the canonical allocation permission, so
+    // that a Head of Department can do what their two retired names said.
+    'view-own-staff-record','manage-course-offerings', 'monitor-teaching', 'department-reports', 'view-registered-students', 'view-admitted-students', 'moderate-results', 'publish-course-material'],
   'programme-coordinator': [
     'change-own-password',
     // EVERY MEMBER OF STAFF HAS A RECORD, and every one of them was unable
     // to read it. See `view-own-staff-record` in the capability list.
-    'view-own-staff-record','monitor-teaching', 'department-reports', 'view-registered-students', 'manage-courses'],
+    // `manage-course-offerings` IS HERE SO THAT NOTHING IS TAKEN AWAY.
+    //
+    // The Offerings screen used to open its editing on `manage-courses`, which
+    // this office holds — so a Programme Coordinator could already allocate a
+    // lecturer, without holding any of the four names for it. Moving the guard
+    // onto the canonical name would have withdrawn that silently, which is the
+    // exact fault the University warned against when it retired the other
+    // three. What they could do, they can still do.
+    'view-own-staff-record','monitor-teaching', 'department-reports', 'view-registered-students', 'manage-courses', 'manage-course-offerings'],
 
   // The Admissions Office makes the final assessment and admits.
   //
@@ -1279,7 +1333,16 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
     // accepted appointment.
     'open-staff-record',
     'handle-student-request',
-    'assign-lecturers', 'build-timetable', 'manage-courses',
+    // `manage-course-offerings` IS HERE BECAUSE THE MERGE WOULD OTHERWISE HAVE
+    // TAKEN SOMETHING AWAY. This office held `assign-lecturers`, which was
+    // never enforced anywhere — nor was the name that was supposed to be the
+    // real one. Allocating a lecturer was in practice reachable by whoever
+    // held `manage-courses`, which this office also holds, so nothing changes
+    // for it today; what changes is that the name it holds now means the act.
+    //
+    // Retiring the three without granting the survivor would have withdrawn an
+    // authority from the Head of Department and called it tidying.
+    'manage-course-offerings', 'build-timetable', 'manage-courses',
     'approve-credential-design', 'recompute-gpa',
     // THE ACADEMIC ADMISSION DECISION. This office signs page 1 of the
     // admission letter, so it is the office that takes the decision the
@@ -1449,7 +1512,6 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
     'sit-examination',
     'view-results',
     'download-transcript',
-    'message-lecturers',
     'access-lms',
   ],
 };

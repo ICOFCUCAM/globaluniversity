@@ -4,7 +4,7 @@ Generated on 16 September 2026 by `npm run audit`. Nothing in it is written by h
 every figure is read from the repository, so this document can be produced
 again at any time and will describe the system as it is then.
 
-**209 tables and views · 102 migrations · 25 roles · 134 capabilities · 598 source files.**
+**209 tables and views · 102 migrations · 25 roles · 129 capabilities · 598 source files.**
 
 ---
 
@@ -70,30 +70,23 @@ question was last asked, and re-reading them confirms it: every one is a valid
 domain object, and the two in capitals are machinery this repository built and
 left no way to reach.
 
-### 24 capabilities are checked nowhere
+### 17 capabilities are checked nowhere
 
 A capability that no route and no screen asks for is a permission the University
 grants and cannot exercise. Granting one to a new role would change nothing.
 
 - `apply`
-- `approve-course-allocation`
 - `approve-refund`
 - `approve-transfers`
-- `assign-lecturers`
-- `assign-lecturers-to-courses`
 - `assign-proctor`
-- `assign-programme`
 - `download-transcript`
 - `export-data`
-- `impersonate-user`
 - `maintenance-mode`
 - `manage-academic-session`
 - `manage-hostel`
 - `manage-student-welfare`
-- `message-lecturers`
 - `monitor-teaching`
 - `pay-fees`
-- `reinstate-account`
 - `reset-user-password`
 - `upload-documents`
 - `view-all-faculties`
@@ -115,9 +108,9 @@ same, because the role still holds capabilities it therefore cannot exercise her
 ### The Academic Studio is a second application inside this one
 
 `src/academic` holds 87 files, including its own capability list.
-28 capabilities exist there and not in `roles.ts`:
+29 capabilities exist there and not in `roles.ts`:
 
-`manage-faculties`, `manage-enrolment`, `manage-people`, `upload-source-material`, `run-transformation`, `correct-derived-text`, `approve-artefact`, `publish-to-students`, `withdraw-own-material`, `export-own-material`, `request-translation`, `approve-translation`, `set-reading`, `set-assignment`, `mark-assignment`, `submit-assignment`, `issue-certificate`, `view-engagement`, `study-published-material`, `ask-course-ai`, `set-working-language`, `authorise-own-voice`, `registry`, `coordinator`, `lecturer`, `assistant`, `translation-reviewer`, `student`
+`manage-faculties`, `assign-lecturers`, `manage-enrolment`, `manage-people`, `upload-source-material`, `run-transformation`, `correct-derived-text`, `approve-artefact`, `publish-to-students`, `withdraw-own-material`, `export-own-material`, `request-translation`, `approve-translation`, `set-reading`, `set-assignment`, `mark-assignment`, `submit-assignment`, `issue-certificate`, `view-engagement`, `study-published-material`, `ask-course-ai`, `set-working-language`, `authorise-own-voice`, `registry`, `coordinator`, `lecturer`, `assistant`, `translation-reviewer`, `student`
 
 Two capability vocabularies means a permission can be granted in one and be
 unknown to the other. The System Handbook reads both, which is a workaround and

@@ -357,23 +357,38 @@ const NOT_ENFORCED = {
   // ---- granted, with nothing behind it ----------------------------------
   'approve-refund': 'NO DOOR. The Finance Director may approve a refund and there is no refund '
     + 'anywhere in this system — no request, no screen, no table.',
-  'assign-programme': 'NO DOOR. Attaching a student to a curriculum is done by the Registry in '
-    + 'the Enrolment screen without checking this, and there is no screen that does.',
-  'assign-lecturers': 'NO DOOR. Course allocation happens on the Offerings screen, which guards '
-    + 'on `manage-course-offerings` instead. This name and that one are the same act.',
-  'assign-lecturers-to-courses': 'NO DOOR, and a duplicate of the line above. Two capability '
-    + 'names for one act is how a grant comes to mean nothing.',
-  'approve-course-allocation': 'NO DOOR. Nothing approves an allocation; the Offerings screen '
-    + 'assigns a lecturer and that is the end of it.',
-  'approve-transfers': 'NO DOOR. `transfer_credits` exists as a table and no screen reads or '
-    + 'writes it.',
-  'assign-proctor': 'NO DOOR. `examination_officers` exists and nothing reads it.',
+  // `assign-programme` HAS COME OFF THIS LIST. The note said the Enrolment
+  // screen attached a student to a curriculum "without checking this, and
+  // there is no screen that does" — the second half was the mistake. Nothing
+  // in this system picks a programme FOR an applicant; the applicant names one
+  // and the decision route admits to it. The act this name describes is
+  // enrolment itself, and /api/admissions/enrol now guards on it.
+  //
+  // The three allocation names — `assign-lecturers`,
+  // `assign-lecturers-to-courses` and `approve-course-allocation` — are gone
+  // from this list because the University retired them on 16 September 2026.
+  // The note here claimed the Offerings screen "guards on
+  // `manage-course-offerings` instead", AND IT DID NOT: that name was declared
+  // nowhere at all, so the count was four empty names, not three beside a real
+  // one. `can('superadmin', <anything>)` answers true, which is what hid it.
+  // The survivor is declared now and the Offerings screen checks it.
+  'approve-transfers': 'NO DOOR YET. `transfer_credits` exists as a table and no screen reads '
+    + 'or writes it. The University ruled on 16 September 2026 that ICOF accepts transfer '
+    + 'credit, so this is work outstanding rather than a name to retire.',
+  'assign-proctor': 'NO DOOR YET, and kept deliberately. The University ruled on 16 September '
+    + '2026 that proctoring is to be built and `examination_officers` connected to the '
+    + 'examination workflow rather than removed.',
   'manage-hostel': 'Named, not enforced, and deliberately so: hostel allocation is not work this '
     + 'system does. Student Affairs\u2019 actual work here is the request queue.',
   'manage-student-welfare': 'The same. A welfare case system is its own thing; what reaches this '
     + 'system is a student ASKING for something, and that is `handle-student-request`.',
-  'message-lecturers': 'NO DOOR. There is no messaging in this system; the forum is the only '
-    + 'place anybody writes to anybody.',
+  // `message-lecturers` IS RETIRED AND NOT REPLACED. The University ruled on
+  // 16 September 2026 that the course forum is the official channel for
+  // lecturer–student academic communication and that no direct messaging is to
+  // be built — so this is the one exemption that was answered by deleting the
+  // name rather than by building the door. A feature built to satisfy a
+  // permission would have given the University two competing channels.
+  //
   // THIS NOTE USED TO READ "NO DOOR. Accounts can be suspended and nothing
   // lifts one", AND IT WAS WRONG. Account management has a Reinstate button
   // and /api/admin/suspend does both acts. What is true is narrower and is a
@@ -382,9 +397,10 @@ const NOT_ENFORCED = {
   // It was nearly reported to the University as a fault. A note in an
   // exemption list is a claim like any other, and this one had stopped being
   // checked by anything.
-  'reinstate-account': 'Superseded. Suspending and reinstating are one act on one route, '
-    + 'guarded by `suspend-account`; AccountManagement draws the button either way. This '
-    + 'name is a second word for a power that is built and enforced.',
+  // `reinstate-account` IS RETIRED. Suspending and reinstating are one act on
+  // one route, guarded by `suspend-account`; AccountManagement draws the
+  // button either way. It was a second word for a power that is built and
+  // enforced, and the University retired it on 16 September 2026.
   // ALSO CORRECTED. The first clause is true — nothing resets another
   // person's password — but the implication was false: the sign-in screen
   // offers resetPasswordForEmail, so an account whose owner forgets the
@@ -394,8 +410,9 @@ const NOT_ENFORCED = {
     + 'self-serve reset by email, so no account is lost for want of this. An '
     + 'administrator-driven reset would be a convenience and is the University’s to ask '
     + 'for.',
-  'impersonate-user': 'NO DOOR, and the only one on this list that is better left that way '
-    + 'until somebody asks for it.',
+  // `impersonate-user` IS RETIRED. It was the one name on this list better
+  // left with no door, and the University retired it rather than leave a
+  // standing grant to sign in as somebody else waiting for a screen.
   'manage-academic-session': 'Superseded. The academic calendar screen guards on '
     + '`manage-academic-calendar`, which is the same power under the name that got built.',
   'maintenance-mode': 'NO DOOR.',

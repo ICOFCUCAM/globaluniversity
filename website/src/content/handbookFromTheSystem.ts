@@ -53,7 +53,7 @@ export const ROLE_PROFILES: RoleProfile[] = [
       "request-documents",
       "assign-programme",
       "create-student-record",
-      "assign-lecturers",
+      "manage-course-offerings",
       "build-timetable",
       "manage-courses",
       "manage-academic-calendar",
@@ -114,8 +114,6 @@ export const ROLE_PROFILES: RoleProfile[] = [
       "view-executive-dashboard",
       "view-all-faculties",
       "view-institutional-finance",
-      "assign-lecturers-to-courses",
-      "approve-course-allocation",
       "monitor-teaching",
       "department-reports",
       "process-applications",
@@ -128,7 +126,6 @@ export const ROLE_PROFILES: RoleProfile[] = [
       "pay-fees",
       "view-results",
       "download-transcript",
-      "message-lecturers",
       "access-lms",
       "publish-course-material",
       "studio-submit-lecture",
@@ -153,9 +150,7 @@ export const ROLE_PROFILES: RoleProfile[] = [
       "create-staff-account",
       "open-staff-record",
       "suspend-account",
-      "reinstate-account",
       "reset-user-password",
-      "impersonate-user",
       "validate-transcript-exception",
       "view-transcript-audit",
       "design-credentials",
@@ -275,6 +270,7 @@ export const ROLE_PROFILES: RoleProfile[] = [
           "Credentials",
           "Transcript",
           "Transcript audit",
+          "Certificate audit",
           "My record",
           "Settings",
           "National Rectorate",
@@ -304,7 +300,7 @@ export const ROLE_PROFILES: RoleProfile[] = [
       "request-documents",
       "assign-programme",
       "create-student-record",
-      "assign-lecturers",
+      "manage-course-offerings",
       "build-timetable",
       "manage-courses",
       "manage-academic-calendar",
@@ -365,8 +361,6 @@ export const ROLE_PROFILES: RoleProfile[] = [
       "view-executive-dashboard",
       "view-all-faculties",
       "view-institutional-finance",
-      "assign-lecturers-to-courses",
-      "approve-course-allocation",
       "monitor-teaching",
       "department-reports",
       "process-applications",
@@ -379,7 +373,6 @@ export const ROLE_PROFILES: RoleProfile[] = [
       "pay-fees",
       "view-results",
       "download-transcript",
-      "message-lecturers",
       "access-lms",
       "publish-course-material",
       "studio-submit-lecture",
@@ -722,6 +715,7 @@ export const ROLE_PROFILES: RoleProfile[] = [
           "Credentials",
           "Transcript",
           "Transcript audit",
+          "Certificate audit",
           "My record",
           "Settings",
           "National staff",
@@ -993,9 +987,7 @@ export const ROLE_PROFILES: RoleProfile[] = [
       "view-own-staff-record"
     ],
     "withheld": [
-      "approve-course-allocation",
       "approve-refund",
-      "assign-lecturers-to-courses",
       "authorize-correspondence",
       "compose-correspondence",
       "confirm-financial-clearance",
@@ -1004,6 +996,7 @@ export const ROLE_PROFILES: RoleProfile[] = [
       "handle-student-request",
       "issue-correspondence",
       "lead-national-administration",
+      "manage-course-offerings",
       "manage-courses",
       "manage-student-accounts",
       "moderate-results",
@@ -1079,13 +1072,12 @@ export const ROLE_PROFILES: RoleProfile[] = [
     "label": "Head of Department",
     "rank": 7,
     "capabilities": [
+      "manage-course-offerings",
       "moderate-results",
       "view-admitted-students",
       "view-registered-students",
       "change-own-password",
       "view-own-staff-record",
-      "assign-lecturers-to-courses",
-      "approve-course-allocation",
       "monitor-teaching",
       "department-reports",
       "publish-course-material"
@@ -1165,6 +1157,7 @@ export const ROLE_PROFILES: RoleProfile[] = [
     "label": "Programme Coordinator",
     "rank": 8,
     "capabilities": [
+      "manage-course-offerings",
       "manage-courses",
       "view-registered-students",
       "change-own-password",
@@ -1173,10 +1166,8 @@ export const ROLE_PROFILES: RoleProfile[] = [
       "department-reports"
     ],
     "withheld": [
-      "approve-course-allocation",
       "approve-results",
       "approve-transfers",
-      "assign-lecturers-to-courses",
       "assign-proctor",
       "control-exam-session",
       "determine-misconduct",
@@ -1590,7 +1581,6 @@ export const ROLE_PROFILES: RoleProfile[] = [
       "manage-hostel",
       "manage-library",
       "manage-student-welfare",
-      "message-lecturers",
       "pay-fees",
       "prepare-correspondence",
       "register-courses",
@@ -1650,7 +1640,6 @@ export const ROLE_PROFILES: RoleProfile[] = [
       "handle-student-request",
       "manage-hostel",
       "manage-student-welfare",
-      "message-lecturers",
       "pay-fees",
       "register-courses",
       "sit-examination",
@@ -1709,12 +1698,10 @@ export const ROLE_PROFILES: RoleProfile[] = [
     ],
     "withheld": [
       "admit-student",
-      "approve-course-allocation",
       "approve-credential-design",
       "approve-refund",
       "approve-results",
       "approve-transfers",
-      "assign-lecturers-to-courses",
       "assign-programme",
       "confer-award",
       "confirm-financial-clearance",
@@ -1727,6 +1714,7 @@ export const ROLE_PROFILES: RoleProfile[] = [
       "issue-credential",
       "manage-academic-calendar",
       "manage-academic-structure",
+      "manage-course-offerings",
       "manage-student-accounts",
       "moderate-results",
       "monitor-progress",
@@ -1836,7 +1824,6 @@ export const ROLE_PROFILES: RoleProfile[] = [
       "pay-fees",
       "view-results",
       "download-transcript",
-      "message-lecturers",
       "access-lms"
     ],
     "withheld": [
@@ -1927,7 +1914,6 @@ export const ROLE_PROFILES: RoleProfile[] = [
       "create-student-record",
       "download-transcript",
       "draft-appointment",
-      "message-lecturers",
       "pay-fees",
       "prepare-correspondence",
       "register-courses",
@@ -1947,7 +1933,7 @@ export const ROLE_PROFILES: RoleProfile[] = [
       "decide-admission",
       "reject-application",
       "request-documents",
-      "assign-lecturers",
+      "manage-course-offerings",
       "build-timetable",
       "manage-courses",
       "manage-academic-structure",
@@ -2088,9 +2074,8 @@ export const ROLE_PROFILES: RoleProfile[] = [
     ],
     "withheld": [
       "access-lms",
-      "approve-course-allocation",
-      "assign-lecturers-to-courses",
       "determine-misconduct",
+      "manage-course-offerings",
       "manage-courses",
       "mark-examination",
       "moderate-examination",
@@ -2282,6 +2267,7 @@ export const ROLE_PROFILES: RoleProfile[] = [
       "assign-proctor",
       "control-exam-session",
       "draft-question-paper",
+      "manage-course-offerings",
       "manage-courses",
       "manage-question-bank",
       "mark-examination",
@@ -2388,14 +2374,6 @@ export const CAPABILITY_HOLDERS: { capability: string; roles: string[] }[] =
     ]
   },
   {
-    "capability": "approve-course-allocation",
-    "roles": [
-      "superadmin",
-      "admin",
-      "hod"
-    ]
-  },
-  {
     "capability": "approve-credential-design",
     "roles": [
       "superadmin",
@@ -2434,22 +2412,6 @@ export const CAPABILITY_HOLDERS: { capability: string; roles: string[] }[] =
       "superadmin",
       "admin",
       "dean"
-    ]
-  },
-  {
-    "capability": "assign-lecturers",
-    "roles": [
-      "superadmin",
-      "admin",
-      "academic-office"
-    ]
-  },
-  {
-    "capability": "assign-lecturers-to-courses",
-    "roles": [
-      "superadmin",
-      "admin",
-      "hod"
     ]
   },
   {
@@ -2761,12 +2723,6 @@ export const CAPABILITY_HOLDERS: { capability: string; roles: string[] }[] =
     ]
   },
   {
-    "capability": "impersonate-user",
-    "roles": [
-      "superadmin"
-    ]
-  },
-  {
     "capability": "issue-appointment-letter",
     "roles": [
       "superadmin",
@@ -2832,6 +2788,16 @@ export const CAPABILITY_HOLDERS: { capability: string; roles: string[] }[] =
     ]
   },
   {
+    "capability": "manage-course-offerings",
+    "roles": [
+      "superadmin",
+      "admin",
+      "hod",
+      "programme-coordinator",
+      "academic-office"
+    ]
+  },
+  {
     "capability": "manage-courses",
     "roles": [
       "superadmin",
@@ -2887,14 +2853,6 @@ export const CAPABILITY_HOLDERS: { capability: string; roles: string[] }[] =
       "superadmin",
       "admin",
       "examiner"
-    ]
-  },
-  {
-    "capability": "message-lecturers",
-    "roles": [
-      "superadmin",
-      "admin",
-      "student"
     ]
   },
   {
@@ -3070,12 +3028,6 @@ export const CAPABILITY_HOLDERS: { capability: string; roles: string[] }[] =
       "superadmin",
       "admin",
       "student"
-    ]
-  },
-  {
-    "capability": "reinstate-account",
-    "roles": [
-      "superadmin"
     ]
   },
   {
@@ -3493,12 +3445,10 @@ export const RESTRICTED_TO_THE_TWO: string[] = [
   "erase-announcement",
   "export-data",
   "grant-studio-permission",
-  "impersonate-user",
   "maintenance-mode",
   "manage-academic-session",
   "publish-credential-template",
   "publish-without-senate",
-  "reinstate-account",
   "reset-user-password",
   "revoke-credential",
   "suspend-account",
@@ -3810,7 +3760,7 @@ export const ENFORCED: EnforcedRules[] = [
 
 export const COUNTS = {
   roles: 25,
-  capabilities: 134,
+  capabilities: 129,
   migrations: 0,
   provedRules: 87,
 };

@@ -106,6 +106,42 @@ it is holding it.
 - The Head of Academic Affairs takes the academic admission decision and signs
   page 1 of the letter. Finance is a gate, not an authority.
 
+### The policy decisions of 16 September 2026
+
+- **Fee refunds: YES, and eligibility is a date.** A refund is permitted where
+  the student's studies **have not yet started**, or they **have not resumed**
+  for the applicable period. Once studies have commenced or resumed the
+  eligibility period has passed, unless an authorised exceptional policy
+  applies. Submitting a request never refunds anybody: it is
+  request → review → decision → refund.
+  **The original payment is never modified or deleted.** A refund is a
+  transaction *related to* that payment. A financial record that can be edited
+  is not a record.
+
+- **Credit transfer: YES.** ICOF accepts transfer credits from other
+  institutions, and `transfer_credits` becomes a real workflow rather than
+  being retired. Approved credits join the authoritative academic record and
+  must reach programme progress, credit totals, graduation eligibility and the
+  transcript. **They stay distinguishable from courses completed at ICOF** —
+  that distinction is the point, not a detail.
+
+- **There is no direct messaging, and none is to be built.** The course forum
+  is the official channel for lecturer–student academic communication.
+  `message-lecturers` is retired, and a messaging feature must not be built
+  merely to satisfy a permission. Two competing channels is the thing being
+  avoided.
+
+- **`assign-proctor` is kept, not retired,** and becomes functional when
+  proctoring is built. `examination_officers` is connected to the examination
+  workflow rather than removed.
+
+- **Retired permissions:** `assign-lecturers`,
+  `assign-lecturers-to-courses`, `approve-course-allocation`,
+  `message-lecturers`, `impersonate-user`, `reinstate-account`. Where a
+  permission is retired as a duplicate, THE SURVIVING NAME MUST BE HELD BY THE
+  OFFICES THAT DID THE WORK — otherwise the merge quietly withdraws an
+  authority instead of tidying a name.
+
 ## Running things
 
 - `npm test` runs every suite; `npm run build` must compile before any commit.
