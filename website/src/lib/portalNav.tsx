@@ -320,6 +320,24 @@ export const menuGroups: MenuGroup[] = [
         roles: ACADEMIC,
         capability: 'access-lms',
       },
+      // ---- THE QUEUE THAT STOP CREATED ------------------------------------
+      //
+      // 095 refuses every transformation on a lecture the University has not
+      // accepted. Without a screen that is not a review, it is an outage: a
+      // lecturer submits and waits for a decision nobody can see they are
+      // waiting for.
+      //
+      // IT SITS IN ACADEMIC AND NOT IN SETTINGS, unlike Studio Control. Studio
+      // Control is administration — who may do what. This is academic work: an
+      // office deciding that a lecture is worth the University's money to
+      // process, several times a week.
+      {
+        id: 'studio-submissions',
+        label: 'Submissions',
+        icon: <Inbox size={18} />,
+        roles: ACADEMIC,
+        capability: 'publish-course-material',
+      },
       // COURSES IS THE CATALOGUE. THIS IS THE TERM.
       //
       // Two entries because they are two things, which is the distinction the

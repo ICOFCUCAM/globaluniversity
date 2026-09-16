@@ -267,6 +267,9 @@ export type ViewType =
   // do what. A door onto capability_grants, which 056 built and which has
   // never had one.
   | 'studio-control'
+  // The administration's queue: 095 stops every transformation until an
+  // office accepts the submission, and this is where they do it.
+  | 'studio-submissions'
 
   // WHAT THE UNIVERSITY HOLDS ABOUT THE PERSON READING IT, and the roll for
   // the courses they teach. A staff record was opened for somebody and was

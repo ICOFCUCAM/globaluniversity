@@ -181,6 +181,11 @@ const READ_ONLY_BY_DESIGN = {
     + 'password, which /api/account/password does with the service key: 090 revokes that '
     + 'column from every browser session at the COLUMN level, because the whole point is that '
     + 'the gate cannot be skipped by stamping the date without changing anything.',
+  submissions_for_review: 'A view over `lectures`, and the columns it LEAVES OUT are the point '
+    + 'of it: 095 gives an office which course, whose lecture, how long the recording is and how '
+    + 'long it has waited, and NO BODY COLUMN — because 092 says an office does not read a '
+    + 'lecturer\u2019s unpublished draft. It is written by deciding, which /api/studio/'
+    + 'submissions does against `lectures` itself.',
   appointment_letter_verification: 'A view.',
   appointment_letters_unverifiable: 'A view, for an operator with SQL.',
   appointments_awaiting_acceptance: 'A view.',

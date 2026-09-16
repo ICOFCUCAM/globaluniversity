@@ -55,6 +55,7 @@ import CertificateGenerator from './certificate/CertificateGenerator';
 import MyCredentials from './credentials/MyCredentials';
 import LMSModule from './lms/LMSModule';
 import StudioControl from './admin/StudioControl';
+import StudioSubmissions from './admin/StudioSubmissions';
 import ExamModule from './exams/ExamModule';
 import QuestionBank from './exams/QuestionBank';
 import DocumentManagement from './documents/DocumentManagement';
@@ -325,6 +326,8 @@ export default function AppLayout() {
         return <CourseShelf />;
       case 'studio-control':
         return <StudioControl />;
+      case 'studio-submissions':
+        return <StudioSubmissions />;
       case 'exams':
         return <ExamModule />;
       case 'questionbank':
