@@ -53,6 +53,11 @@
 import { UNIVERSITY } from './constants';
 import { CREST_DATA_URI } from './crest';
 import { escape, PAGE } from './officialDocument';
+// GENERATED, FROM THE PHOTOGRAPHS THE UNIVERSITY NAMED. All three are from the
+// 2024 graduation — "add photogragh but those from 2021 to 26" — and were
+// chosen by reading the files' dates rather than by looking at them and
+// guessing. See scripts/build-prospectus-images.mjs.
+import { CONGREGATION_PLATE, HOODING_PLATE, CONFERRAL_PLATE } from './prospectusImages';
 import {
   type Block, type Book, type Chapter, type Part, chaptersInOrder,
 } from '@/content/nationalRector';
@@ -100,10 +105,12 @@ function styles(): string {
   return `
   @page { size: A4; margin: ${MARGIN_TOP_MM}mm ${MARGIN_SIDE_MM}mm; }
 
-  /* THE COVER AND THE PART DIVIDERS ARE PRINTED IN COLOUR ON PURPOSE, and a
-     browser drops background colour from a printout unless it is told not to.
-     Without this the cover prints as black text on white with the crest
-     floating in the middle of it, which is not a cover. */
+  /* THE COVER IS PRINTED IN COLOUR ON PURPOSE — and it is the only page that
+     is, on the University's ruling. A browser drops background colour from a
+     printout unless it is told not to, and without this the cover prints as
+     black text on white with the crest floating in the middle of it, which is
+     not a cover. The part dividers used to need this too; they are on paper
+     now and no longer do. */
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
   html { background: #efecf4; }
@@ -170,23 +177,70 @@ function styles(): string {
      sheet at these margins is 643px and the line wants about 560 — so the
      measure was the only thing standing between it and one clean line. */
   .cover .subtitle { font-size: 13pt; line-height: 1.5; color: #e4dcee; margin: 0 auto; max-width: 94%; }
+  /* -------------------------------------------------------------------
+     NO PHOTOGRAPH ON THE COVER. The University's ruling of 16 September 2026:
+     "do not put image on first page."
+
+     It carried a band of the 2024 academic body across its foot for about an
+     hour. The photographs stay in the book — they are on the plate page after
+     the contents — and the cover is the crest, the name, the motto, the title
+     and the strapline on the University's purple, which is what it was.
+
+     prospectus.test.mjs holds it: the cover has no image on it but the crest,
+     which is the University's own mark and not a picture of anybody.
+     ------------------------------------------------------------------- */
   .cover .foot { font-size: 9pt; letter-spacing: .08em; color: #b8a9cb; }
   .cover .foot p { margin: 3px 0; }
 
-  /* ---- A PART DIVIDER ----------------------------------------------- */
+  /* ---- THE PLATE PAGE ------------------------------------------------
+     Three photographs of one occasion, on paper. Not a coloured page — the
+     University's ruling is that only the cover is — so the pictures sit on
+     white with air around them, which is how a book sets a plate anyway.
+     ------------------------------------------------------------------- */
+  .plates { display: flex; flex-direction: column; justify-content: center; }
+  .plates .wide { width: 100%; border-radius: 3px; display: block; }
+  .plates .pair { display: flex; gap: 12px; margin-top: 12px; }
+  .plates .pair img { width: 50%; border-radius: 3px; display: block; }
+  .plates .caption {
+    margin: 14px 0 0; text-align: center; font-size: 9pt; letter-spacing: .14em;
+    text-transform: uppercase; color: ${QUIET};
+  }
+
+  /* -------------------------------------------------------------------
+     A PART DIVIDER — ON PAPER, NOT ON COLOUR.
+
+     The University, 16 September 2026: "only the front page is color. the rest
+     should not be like first page."
+
+     These fourteen pages were full-bleed purple, the same treatment as the
+     cover, and they were wrong twice over. A cover is the cover BECAUSE it is
+     the only page that looks like that; fifteen pages in the same livery make
+     the cover one of a set. And a candidate printing the prospectus was being
+     asked to flood fourteen sheets of A4 with solid ink to read four lines on
+     each of them.
+
+     WHAT MAKES A DIVIDER A DIVIDER IS THE SPACE, NOT THE INK. The page is
+     nearly empty, the type is centred and vertically centred, and rules sit
+     above and below the title block. Turning onto one still tells you the book
+     has changed movement.
+     ------------------------------------------------------------------- */
   .divider {
-    background: ${PURPLE};
-    color: #fff;
     display: flex; flex-direction: column; justify-content: center; text-align: center;
   }
+  .divider .inner {
+    border-top: 1px solid ${RULE}; border-bottom: 1px solid ${RULE};
+    padding: 34px 0 30px;
+  }
   .divider .part-no {
-    font-size: 11pt; letter-spacing: .32em; text-transform: uppercase; color: #e9c14a;
+    font-size: 10.5pt; letter-spacing: .32em; text-transform: uppercase; color: ${PURPLE};
     margin: 0 0 14px;
   }
-  .divider h2 { font-size: 28pt; font-weight: normal; margin: 0; line-height: 1.2; }
-  .divider .rule { width: 64px; height: 2px; background: rgba(233,193,74,.6); margin: 24px auto 0; }
-  .divider ol { list-style: none; padding: 0; margin: 20px 0 0; font-size: 10.5pt; color: #ded4ec; }
-  .divider ol li { margin: 4px 0; }
+  .divider h2 {
+    font-size: 27pt; font-weight: normal; margin: 0; line-height: 1.22; color: ${PURPLE_DEEP};
+  }
+  .divider .rule { width: 64px; height: 2px; background: #e9c14a; margin: 22px auto 20px; }
+  .divider ol { list-style: none; padding: 0; margin: 0; font-size: 10.5pt; color: ${QUIET}; }
+  .divider ol li { margin: 5px 0; }
 
   /* ---- A PLAIN PAGE'S RUNNING HEAD ---------------------------------- */
   .runhead {
@@ -702,9 +756,38 @@ function contents(book: Book): string {
 </section>`;
 }
 
+// ---------------------------------------------------------------------------
+// THE PLATE PAGE.
+// ---------------------------------------------------------------------------
+//
+// Three photographs of the 2024 graduation, between the contents and Part I.
+// The conferral, the hooding and the academic procession — three moments of the
+// one act a university exists to perform, which is the argument the forty
+// chapters after it are making in prose.
+//
+// ONE CAPTION, NOT THREE. Every word printed in this book that the University
+// did not write has to be defended in `prospectus.test.mjs`, and three
+// descriptive captions would be three sentences of mine narrating their
+// photographs. The single line says what the plate is and takes its year from
+// the University's own folder name, which is the same evidence the photographs
+// were selected on.
+
+function plates(book: Book): string {
+  return `<section class="sheet plates">
+  <div>
+    <img class="wide" src="${CONGREGATION_PLATE}" alt="">
+    <div class="pair">
+      <img src="${HOODING_PLATE}" alt="">
+      <img src="${CONFERRAL_PLATE}" alt="">
+    </div>
+    <p class="caption">${escape(book.institution)} · Graduation, 2024</p>
+  </div>
+</section>`;
+}
+
 function divider(part: Part): string {
   return `<section class="sheet divider">
-  <div>
+  <div class="inner">
     <p class="part-no">Part ${escape(part.ordinal)}</p>
     <h2>${escape(part.title)}</h2>
     <div class="rule"></div>
@@ -774,6 +857,7 @@ export interface BookOptions {
 export function renderBook(book: Book, options: BookOptions = {}): string {
   const pages: string[] = [
     cover(book), viceChancellorsMessage(book), foreword(book), contents(book),
+    plates(book),
   ];
 
   for (const part of book.parts) {

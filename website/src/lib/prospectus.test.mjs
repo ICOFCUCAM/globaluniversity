@@ -32,7 +32,7 @@
 // ---------------------------------------------------------------------------
 
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -182,6 +182,10 @@ const PRESS_WORDS = new Set([
   // letter itself is his; these two say where the reader is.
   'A message from the Vice-Chancellor',
   'From the Vice-Chancellor',
+  // The plate page's single caption. Its year is the University's own folder
+  // name, `public/images/graduation-2024`, which is the same evidence the
+  // photographs were selected on — see the photograph check further down.
+  'Graduation, 2024',
 ]);
 const PRESS_PATTERNS = [
   /^Chapter [A-Z-]+$/,          // Chapter TWENTY-TWO
@@ -228,6 +232,19 @@ const screen = await page.evaluate(() => {
     })),
     toolbarPresent: Boolean(toolbar),
     title: document.title,
+    // WHAT IS PICTURED ON THE COVER. Both kinds: an <img>, reported by its
+    // class, and any element whose computed style paints a background image.
+    coverImages: (() => {
+      const cover = document.querySelector('.cover');
+      if (!cover) return ['no-cover'];
+      const out = [...cover.querySelectorAll('img')].map((i) => i.className || 'img');
+      for (const el of [cover, ...cover.querySelectorAll('*')]) {
+        if (getComputedStyle(el).backgroundImage !== 'none') {
+          out.push(`background:${el.className || el.tagName.toLowerCase()}`);
+        }
+      }
+      return out;
+    })(),
     // EVERY PIECE OF TEXT ON THE PAGE, node by node. innerText would join a
     // heading to the paragraph under it and a run of words could then trace to
     // neither source while looking like it traced to both.
@@ -252,6 +269,7 @@ console.log('\nNothing the University wrote was lost on the way into the book\n'
 // chapter title, as do the final section and the colophon. Forty chapters plus
 // those five.
 const FRONT_MATTER_TITLES = 3;   // the letter, the foreword, the contents
+const PLATE_PAGES = 1;           // the photographs, between the contents and Part I
 const BACK_MATTER_TITLES = 2;    // the application form, the closing page
 
 check('every chapter has a page of its own',
@@ -266,9 +284,10 @@ check('there is a cover', screen.covers, 1);
 check('every part has a divider', screen.dividers, book.parts.length);
 check('the sheets add up',
   screen.sheets,
-  // cover + the Vice-Chancellor's letter + foreword + contents
+  // cover + the Vice-Chancellor's letter + foreword + contents + the plate page
   // + one divider per part + one per chapter + the final section + the colophon.
-  1 + FRONT_MATTER_TITLES + book.parts.length + chapters.length + BACK_MATTER_TITLES);
+  1 + FRONT_MATTER_TITLES + PLATE_PAGES + book.parts.length + chapters.length
+    + BACK_MATTER_TITLES);
 
 // THE CONTENTS PAGE IS CHECKED AGAINST THE BOOK, not against a second list.
 // A contents page that disagrees with the book is worse than none, because a
@@ -385,6 +404,52 @@ check('…at the Vice-Chancellor’s own address',
 
 
 
+console.log('\nEvery photograph in it is one the University named, from the years they named\n');
+
+// ---------------------------------------------------------------------------
+// THE UNIVERSITY'S TWO RULINGS ABOUT THE PICTURES, BOTH HELD HERE.
+// ---------------------------------------------------------------------------
+//
+//   "some of those pictures are not good. so make sure i recommend before
+//    using"
+//   "add photogragh but those from 2021 to 26"
+//
+// So a photograph gets into this book only by being named on the command line
+// to `build-prospectus-images.mjs`, and only if its own file can be dated
+// inside that window. Both are checked against the GENERATED file's header,
+// which records the exact command that produced it — so a plate added later
+// from an undated or older photograph fails here rather than going out in a
+// prospectus.
+//
+// The 2008 ceremony shots are the reason the second ruling exists: two of the
+// University's graduation photographs carry a camera's burned-in "01/01/2008"
+// across the corner.
+const platesSource = readFileSync(join(here, 'prospectusImages.ts'), 'utf8');
+const plateFiles = [...platesSource.matchAll(/From (\S+) — re-encoded/g)].map((m) => m[1]);
+
+check('there are photographs in the book', plateFiles.length > 0, true);
+check('every one of them is a real file in the University’s own library',
+  plateFiles.filter((f) => !existsSync(join(here, '../..', f))), []);
+
+// THE YEAR COMES FROM THE PATH, which is where the University put it. Nothing
+// here infers a date from a photograph's contents.
+const OLDEST = 2021;
+const NEWEST = 2026;
+const outOfWindow = plateFiles.filter((f) => {
+  const year = Number(/(20\d{2})/.exec(f)?.[1] ?? 0);
+  return !(year >= OLDEST && year <= NEWEST);
+});
+check(`…and datable between ${OLDEST} and ${NEWEST}`, outOfWindow, []);
+
+// AND THE BOOK IS STILL SMALL ENOUGH TO EMAIL. Base64 inflates a photograph by
+// a third and this document is an attachment; a prospectus that bounces off the
+// recipient's mail server is not a prospectus. Some servers refuse above 10 MB
+// and many corporate ones above 5.
+const attachedKb = Math.round(attached.length / 1024);
+console.log(`      the attached copy is ${attachedKb} KB`);
+check('the copy that gets emailed is small enough to arrive', attachedKb < 3000, true);
+
+
 console.log('\nThe cover no longer carries the campus street address\n');
 
 // THE UNIVERSITY'S INSTRUCTION OF 16 SEPTEMBER 2026, held by a test because a
@@ -438,6 +503,15 @@ const printed = await page.evaluate(() => {
   const foot = document.querySelector('.pagefoot');
   const toolbar = document.querySelector('.toolbar');
   return {
+    // EVERY SHEET'S GROUND, so the check below counts rather than spot-checks.
+    // A page is "flooded" when its own background is painted; a white or
+    // transparent sheet prints as paper.
+    floodedSheets: [...document.querySelectorAll('.sheet')].map((s, i) => {
+      const bg = getComputedStyle(s).backgroundColor;
+      const clear = bg === 'rgba(0, 0, 0, 0)' || bg === 'transparent'
+        || bg === 'rgb(255, 255, 255)';
+      return clear ? null : `${i}:${s.className.replace('sheet', '').trim() || 'page'}`;
+    }).filter(Boolean),
     coverBackground: cover ? getComputedStyle(cover).backgroundColor : 'absent',
     coverColour: cover ? getComputedStyle(cover).color : 'absent',
     footPosition: foot ? getComputedStyle(foot).position : 'absent',
@@ -456,6 +530,57 @@ const printed = await page.evaluate(() => {
 // A COVER THAT PRINTS WHITE IS NOT A COVER. Browsers drop background colour
 // from a printout unless the document says otherwise, and the crest would then
 // float in the middle of a blank sheet.
+// ---------------------------------------------------------------------------
+// THE COVER IS THE ONLY PAGE IN COLOUR.
+// ---------------------------------------------------------------------------
+//
+// The University's instruction of 16 September 2026: "only the front page is
+// color. the rest should not be like first page."
+//
+// Fourteen part dividers were full-bleed purple — the cover's own livery,
+// fifteen times, which stops the cover being the cover and asks anybody
+// printing the prospectus to flood fourteen sheets of A4 with solid ink.
+//
+// COUNTED, NOT SPOT-CHECKED. "Is the divider white?" would pass while some
+// other page quietly acquired a ground; this asks how many pages in the whole
+// book are painted, and the answer has to be one.
+check('the cover is the only page in colour', printed.floodedSheets, ['0:cover']);
+
+// ---------------------------------------------------------------------------
+// AND THERE IS NO PHOTOGRAPH ON IT.
+// ---------------------------------------------------------------------------
+//
+// The University, 16 September 2026: "do not put image on first page."
+//
+// The cover carried a band of the 2024 academic body across its foot. It is the
+// crest, the name, the motto, the title and the strapline again — and the
+// photographs are on the plate page, where they were also approved to be.
+//
+// CHECKED FOR A BACKGROUND IMAGE AS WELL AS FOR AN <img>, because the band was
+// neither: it was a div with `background-image`, and a check that only counted
+// <img> elements would have passed the whole time it was there.
+check('no photograph on the cover', screen.coverImages, ['crest']);
+
+// AND THE CHECK ABOVE WOULD NOTICE ONE. A background image is painted back onto
+// the cover and the same extraction is run again — because "no photograph
+// found" is exactly what a detector that looks in the wrong place also reports.
+const caught = await page.evaluate(() => {
+  const style = document.createElement('style');
+  style.textContent = '.cover .foot { background-image: '
+    + 'url("data:image/gif;base64,R0lGODlhAQABAAAAACw=") }';
+  document.head.appendChild(style);
+  const cover = document.querySelector('.cover');
+  const out = [...cover.querySelectorAll('img')].map((i) => i.className || 'img');
+  for (const el of [cover, ...cover.querySelectorAll('*')]) {
+    if (getComputedStyle(el).backgroundImage !== 'none') {
+      out.push(`background:${el.className || el.tagName.toLowerCase()}`);
+    }
+  }
+  style.remove();
+  return out;
+});
+check('…and it would catch one put back', caught, ['crest', 'background:foot']);
+
 check('the cover keeps its colour under print',
   printed.coverBackground !== 'rgba(0, 0, 0, 0)' && printed.coverBackground !== 'rgb(255, 255, 255)',
   true);

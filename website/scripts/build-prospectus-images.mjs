@@ -132,7 +132,11 @@ for (const plate of plates) {
     // 0.82 keeps a portrait clean at print size; a wider plate can go lower
     // because it is drawn smaller than it is encoded.
     return canvas.toDataURL('image/jpeg', width > 800 ? 0.7 : 0.86);
-  }, { ...plate, png });
+  // `source` IS PASSED EXPLICITLY. Spreading the plate sends name, path and
+  // width and NOT the data URI, which is built here — the browser then set
+  // img.src to undefined and reported "the source image cannot be decoded",
+  // which reads like a corrupt file and was a missing argument.
+  }, { source, width: plate.width, png });
 
   const kb = Math.round((uri.length * 3) / 4 / 1024);
   console.log(`${plate.name.padEnd(16)} ${String((bytes.length / 1024) | 0).padStart(5)} KB `
