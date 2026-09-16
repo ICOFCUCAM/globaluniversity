@@ -1072,6 +1072,48 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
       + 'and available from the rows themselves rather than from a stored balance.',
     table: 'national_expenses',
   },
+  {
+    file: '100_the_transcript_is_issued_to_a_student_we_have.sql',
+    what:
+      'A DOOR CLOSES. AN OFFICIAL TRANSCRIPT CAN NO LONGER BE RECORDED FOR SOMEBODY WHO IS NOT '
+      + 'A STUDENT ROW — by anybody, including the Superadministrator. The ordinary path '
+      + 'needs the student; the only other way in is a validation request APPROVED BY THE '
+      + 'VICE-CHANCELLOR OR THE SUPERADMINISTRATOR, and that approval covers the one student it '
+      + 'was given for. A validation request carries NO academic information, so approving one '
+      + 'creates no transcript and no student: the exception is permission to proceed, never a '
+      + 'form to type a transcript on. EVERY GENERATION IS WRITTEN DOWN AND CANNOT BE UNWRITTEN '
+      + '— not edited, not back-dated, not deleted, by any office. GENERATING AGAIN NEVER '
+      + 'REPLACES: the second transcript for a student is version 2 and the first one stays, '
+      + 'because an academic record changes and the question to answer later is what was '
+      + 'generated, from what record, by whom and when. The version is counted by the database, '
+      + 'so a caller cannot ask for version 1 twice. A send is recorded and only its outcome '
+      + 'may change afterwards — the recipient of a sent transcript is settled. The '
+      + 'Vice-Chancellor and the Superadministrator read every generation ever made; a lecturer '
+      + 'reads none. A transcript names the OFFICE that issued it and never “system”, '
+      + 'and a National Rector is not one of those offices.',
+    table: 'transcript_issues',
+  },
+  {
+    file: '101_the_certificate_design_is_not_everybodys.sql',
+    what:
+      'A DOOR CLOSES ON THE CERTIFICATE DESIGN. It has been readable by the Superadministrator, '
+      + 'the System Administrator, the Registrar, the Academic Office and the Vice-Chancellor; '
+      + 'from now on the CERTIFICATE design is the Vice-Chancellor’s and the '
+      + 'Superadministrator’s alone, refused in the DATABASE rather than hidden on a '
+      + 'screen. The Registrar’s certificate screen will stop drawing a preview, which is '
+      + 'the ruling working. ISSUING IS UNAFFECTED: the engine reads the design server-side, '
+      + 'which is the point — the officer asks for a certificate and never sees what it is '
+      + 'made from. ONLY THE CERTIFICATE: the transcript design is untouched, or closing one '
+      + 'would have broken the other. An express, expiring authorisation from one of those two '
+      + 'offices can lend the design to somebody else — and lending the design is NOT '
+      + 'authority to authorise a replacement certificate. A REPLACEMENT IS AUTHORISED, NEVER '
+      + 'REPEATED: one certificate has at most one live authorisation to replace it. AND TWO '
+      + 'THINGS THE UNIVERSITY COULD NOT SEE BECOME VISIBLE — `credential_audit_events` '
+      + 'has had row-level security on and NO POLICY since 013, so the immutable trail was '
+      + 'readable by nobody, and `credentials_issued` has never admitted the Vice-Chancellor at '
+      + 'all. Both are fixed, additively.',
+    table: 'certificate_reissue_requests',
+  },
 ];
 
 /** What a probe came back as. */

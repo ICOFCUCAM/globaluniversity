@@ -286,6 +286,7 @@ const MARKERS = {
   '097': 'national_administrations',
   '098': 'revenue_allocations',
   '099': 'national_expenses',
+  '100': 'transcript_issues', '101': 'certificate_reissue_requests',
 };
 
 /** The SQL that answers "is this one here?", for each of the three forms. */

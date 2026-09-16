@@ -372,6 +372,14 @@ select * from (
   select '099' as migration, '099_recommending_and_spending.sql' as file,
          case when to_regclass('public.national_expenses') is not null then 'YES' else 'NO' end as landed,
          'national_expenses' as what_it_creates
+  union all
+  select '100' as migration, '100_the_transcript_is_issued_to_a_student_we_have.sql' as file,
+         case when to_regclass('public.transcript_issues') is not null then 'YES' else 'NO' end as landed,
+         'transcript_issues' as what_it_creates
+  union all
+  select '101' as migration, '101_the_certificate_design_is_not_everybodys.sql' as file,
+         case when to_regclass('public.certificate_reissue_requests') is not null then 'YES' else 'NO' end as landed,
+         'certificate_reissue_requests' as what_it_creates
 ) as landed_report
  order by migration;
 
