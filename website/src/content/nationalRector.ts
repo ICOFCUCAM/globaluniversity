@@ -85,12 +85,46 @@ export interface Tree {
   branches: { label: string; children?: string[] }[];
 }
 
-/** The National Rectors network: one university over many administrations. */
+/**
+ * The National Rectors network: one university over many administrations.
+ *
+ * ---------------------------------------------------------------------------
+ * THE ADMINISTRATIONS ARE NAMED, AND THE NAMES ARE THE UNIVERSITY'S OWN
+ * ---------------------------------------------------------------------------
+ *
+ * They were not. The figure drew three boxes all reading "National
+ * Administration", which the University stopped on 16 September 2026: "why
+ * three national administration in three places. is it not suppose to be
+ * different?"
+ *
+ * It is. A network of identical unnamed nodes is not a network, it is one node
+ * drawn three times — and the answer was already in this book. Chapter Seven
+ * lists the University's own examples:
+ *
+ *     ICOF Global University — National Administration of Uganda
+ *     ICOF Global University — National Administration of Cameroon
+ *     ICOF Global University — National Administration of Nigeria
+ *
+ * Those three, in that order, are what the figure names. Nothing is invented:
+ * the countries are the University's, from ten chapters earlier, and a reader
+ * who has come this far has already met them as examples.
+ *
+ * ---------------------------------------------------------------------------
+ * AND `under` IS SAID ONCE
+ * ---------------------------------------------------------------------------
+ *
+ * Rectors, Students, Faculty and Finance sit inside every one of them, so the
+ * press draws them once in a band beneath — not once per column, which is the
+ * other thing the University stopped: "even the information are all same which
+ * is bad."
+ */
 export interface Network {
   kind: 'network';
   root: string;
-  column: { title: string; under: string[] };
-  columns: number;
+  /** Each administration, named. Never the same label twice. */
+  administrations: string[];
+  /** What every one of them contains. Drawn once, under all of them. */
+  under: string[];
 }
 
 /** A numbered question with the University's own gloss under it. */
@@ -902,11 +936,13 @@ export const NATIONAL_RECTOR: Book = {
             {
               kind: 'network',
               root: 'ICOF Global University',
-              column: {
-                title: 'National Administration',
-                under: ['Rectors', 'Students', 'Faculty', 'Finance'],
-              },
-              columns: 3,
+              // THE THREE THE UNIVERSITY NAMED IN CHAPTER SEVEN, in its order.
+              administrations: [
+                'National Administration of Uganda',
+                'National Administration of Cameroon',
+                'National Administration of Nigeria',
+              ],
+              under: ['Rectors', 'Students', 'Faculty', 'Finance'],
             },
             p('The National Rector network creates institutional communication across countries.'),
             p('National leaders can participate in global university meetings, academic '

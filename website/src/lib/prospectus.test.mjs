@@ -331,6 +331,91 @@ check('every word of the University’s text reached the page',
   whatIsMissing(screen.texts).slice(0, 5), []);
 
 
+console.log('\nThe Rectors network figure is joined up, and says each thing once\n');
+
+// ---------------------------------------------------------------------------
+// MEASURED ON THE PRINTED PAGE, AT THE PRINTED WIDTH.
+// ---------------------------------------------------------------------------
+//
+// The first version of this took the figure's geometry from the 794px page
+// above and reported all three administrations at the same centre. That was
+// true of what it measured and told us something far worse than a misaligned
+// tick: the stylesheet's phone query was `max-width: 860px` with no `screen
+// and`, so it MATCHED THE PRINTED PAGE — whose text block is 643px — and the
+// dashboard's four columns and this figure's three administrations were being
+// printed stacked, in the phone layout, on A4.
+//
+// No screenshot would have shown it. Every picture of this book was taken in a
+// 1000px window, where the query does not match.
+const figurePage = await browser.newPage({
+  viewport: { width: BOOK_PRINTABLE.width, height: BOOK_PRINTABLE.height },
+});
+await figurePage.goto(`file://${readingFile}`);
+await figurePage.emulateMedia({ media: 'print' });
+const net = await figurePage.evaluate(() => {
+  const n = document.querySelector('.network');
+  if (!n) return null;
+  const mid = (e) => {
+    const r = e.getBoundingClientRect();
+    return Math.round(r.left + (r.width / 2));
+  };
+  const panel = document.querySelector('.panel .panel-body');
+  return {
+    boxes: [...n.querySelectorAll('.node')].map(mid),
+    labels: [...n.querySelectorAll('.node')].map((e) => e.textContent.trim()),
+    railTicks: [...n.querySelectorAll('.rail .tick')].map(mid),
+    dropTicks: [...n.querySelectorAll('.drop .tick')].map(mid),
+    stem: mid(n.querySelector('.stem')),
+    bands: [...n.querySelectorAll('.band')].map((b) => b.textContent.trim()),
+    // THE DASHBOARD, WHICH THE SAME BUG WAS STACKING.
+    panelLaidOut: panel ? getComputedStyle(panel).display : 'absent',
+    panelColumnTops: [...document.querySelectorAll('.panel .col')]
+      .map((c) => Math.round(c.getBoundingClientRect().top)),
+  };
+});
+await figurePage.close();
+
+check('the dashboard prints as columns, not stacked', net.panelLaidOut, 'flex');
+check('…with its four columns side by side',
+  new Set(net.panelColumnTops).size, 1);
+
+// ---------------------------------------------------------------------------
+// TWO FAULTS THE UNIVERSITY FOUND IN THIS FIGURE, BOTH HELD HERE.
+// ---------------------------------------------------------------------------
+//
+// "this is not ok" — the bar over the three administrations dropped at each
+// END only, so the middle one was joined to nothing, and the two drops sat a
+// few pixels inboard of the boxes because the inset was computed as half a
+// column with the gaps between columns forgotten.
+//
+// "even the information are all same which is bad" — each of the three carried
+// its own copy of Rectors / Students / Faculty / Finance, so the figure printed
+// the same four words three times.
+//
+// A drawing that nearly lines up is the kind of thing nobody fixes because
+// nobody can quite say what is wrong with it, so it is measured: every
+// connector must land on the centre of the box it connects.
+check('there is a network figure to measure', Boolean(net && net.boxes.length), true);
+check('every administration has a connector from the University above it',
+  net.railTicks, net.boxes);
+check('…and one down into what it contains', net.dropTicks, net.boxes);
+// WITHIN A PIXEL. A text block 643px wide does not divide into three columns
+// and two gaps without a remainder, so the middle column's centre and the
+// figure's own centre land a rounded pixel apart. Demanding they be identical
+// fails the drawing for arithmetic rather than for being crooked.
+check('the stem from the University is over the middle of them',
+  Math.abs(net.stem - net.boxes[Math.floor(net.boxes.length / 2)]) <= 1, true);
+
+// SAID ONCE. Counted across the whole rendered book, not just the figure — the
+// four words appear in one band and nowhere else.
+const bandWords = net.bands.join(' ');
+for (const word of ['Rectors', 'Students', 'Faculty', 'Finance']) {
+  check(`'${word}' is in the figure once, not once per column`,
+    screen.texts.filter((t) => t.includes(word) && /·/.test(t)).length, 1);
+  check(`…and the band carries it`, bandWords.includes(word), true);
+}
+
+
 console.log('\nAnd nothing reached the page that the University did not write\n');
 
 check('nothing on the page came from anywhere but the University',

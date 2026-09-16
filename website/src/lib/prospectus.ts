@@ -101,6 +101,16 @@ const INK = '#1c1720';
 const QUIET = '#5c5366';
 const RULE = '#e6e0ee';
 
+/**
+ * The whole stylesheet, as one template literal.
+ *
+ * NO BACKTICKS ANYWHERE INSIDE IT, INCLUDING IN THE COMMENTS. A pair of them
+ * in a CSS comment ends the literal mid-sentence and the file stops compiling
+ * with an error pointing at whatever word came next — which reads as a CSS
+ * problem and is not one. It has happened three times while this book was
+ * being written: around constants.ts, around --edge, and around width: 50%.
+ * `officialDocument.ts` carries the same warning for the same reason.
+ */
 function styles(): string {
   return `
   @page { size: A4; margin: ${MARGIN_TOP_MM}mm ${MARGIN_SIDE_MM}mm; }
@@ -200,7 +210,21 @@ function styles(): string {
   .plates { display: flex; flex-direction: column; justify-content: center; }
   .plates .wide { width: 100%; border-radius: 3px; display: block; }
   .plates .pair { display: flex; gap: 12px; margin-top: 12px; }
-  .plates .pair img { width: 50%; border-radius: 3px; display: block; }
+  /* -------------------------------------------------------------------
+     50% MINUS HALF THE GAP, AND min-width: 0.
+
+     At a plain 50% the two plates plus the 12px between them came to 12px
+     more than the page, and they could not shrink to fit: a flex item's
+     default min-width of auto resolves to an image's INTRINSIC width, and
+     these are 640px plates in a 643px text block. So the right-hand one ran
+     off the edge of the printed page, taking a third of itself with it.
+
+     Invisible at any width above about 900px, which is every window this book
+     was ever screenshotted in.
+     ------------------------------------------------------------------- */
+  .plates .pair img {
+    width: calc(50% - 6px); min-width: 0; border-radius: 3px; display: block;
+  }
   .plates .caption {
     margin: 14px 0 0; text-align: center; font-size: 9pt; letter-spacing: .14em;
     text-transform: uppercase; color: ${QUIET};
@@ -369,33 +393,83 @@ function styles(): string {
     padding: 7px 22px; font-size: 10.5pt; letter-spacing: .12em; text-transform: uppercase;
   }
   .network .stem { width: 1px; height: 14px; background: #d6cce4; margin: 0 auto; }
+
   /* -------------------------------------------------------------------
-     THE BRACKET THAT REACHES THE COLUMNS EITHER SIDE.
+     THE RAIL, AND WHY IT IS NOT A BORDERED BOX.
 
-     Without it the stem dropped from the University straight into the middle
-     administration and the two outer ones hung unconnected — which draws the
-     opposite of what the figure says. The University's own sketch had a line
-     across.
+     It was: a div with a top, left and right border, inset from each side by
+     "half a column". That is what the University rejected, and it was wrong in
+     two ways at once.
 
-     The insets are half a column, set by the renderer from the number of
-     columns, so the bracket ends over the centre of the first and last one
-     however many there are.
+     THE MIDDLE ADMINISTRATION HAD NO CONNECTOR AT ALL. Three boxes, a bar over
+     them, and a drop at each END only — so the figure drew the University as
+     joined to the outer two and not to the one in the middle, which is the
+     opposite of what the chapter says.
+
+     AND THE DROPS DID NOT LAND ON THE BOXES. "Half a column" is only half a
+     column when there are no gaps between them. With 12px between three
+     columns each column is (100% - 24px) / 3 wide, so its centre is at
+     (100% - 24px) / 6 — not at 100% / 6. The ends sat a few pixels inboard of
+     where the boxes actually are, which reads as a drawing that does not quite
+     line up.
+
+     So the rail is now laid out by the SAME flex rule as the columns
+     underneath it. Each column gets a tick at its own centre, whatever the
+     widths work out to, and the horizontal bar runs from the first centre to
+     the last — both computed by the renderer from the column count and this
+     gap. Nothing is estimated.
      ------------------------------------------------------------------- */
-  .network .spread {
-    height: 14px; border-top: 1px solid #d6cce4;
-    border-left: 1px solid #d6cce4; border-right: 1px solid #d6cce4;
+  .network .rail { position: relative; height: 16px; display: flex; gap: 12px; }
+  /* --edge is set inline by the renderer: half a column, gaps included. (No
+     backticks in this comment — the whole stylesheet is a template literal.) */
+  .network .rail::before {
+    content: ''; position: absolute; top: 0; height: 1px; background: #d6cce4;
+    left: var(--edge); right: var(--edge);
   }
-  .network .cols { display: flex; gap: 12px; justify-content: center; }
+  .network .rail .tick { flex: 1 1 0; position: relative; }
+  .network .rail .tick::before {
+    content: ''; position: absolute; left: 50%; top: 0; bottom: 0;
+    width: 1px; background: #d6cce4;
+  }
+
+  .network .cols { display: flex; gap: 12px; }
   .network .node {
     flex: 1 1 0; border: 1px solid #d6cce4; border-radius: 4px; background: #f8f6fb;
-    padding: 10px 8px;
+    padding: 9px 8px;
+    font-size: 8.5pt; letter-spacing: .08em; text-transform: uppercase; color: ${PURPLE_DEEP};
   }
-  .network .node .t {
-    font-size: 9pt; letter-spacing: .08em; text-transform: uppercase; color: ${PURPLE_DEEP};
+
+  /* -------------------------------------------------------------------
+     THE BAND, AND WHY THE FOUR WORDS ARE NOT PRINTED THREE TIMES.
+
+     The University, 16 September 2026: "even the information are all same
+     which is bad."
+
+     They were right. Each of the three administrations carried its own list —
+     Rectors, Students, Faculty, Finance — so the figure printed the same four
+     words three times and told a reader nothing on the second and third
+     reading of them. It looked like a diagram assembled by copy and paste,
+     which in effect it was.
+
+     The list is one band now, under all three, reached by a tick from each.
+     Three columns descending into one shared band says "every one of these
+     contains this" — which is what the repetition was trying to say and what
+     the University's own sketch meant — in a quarter of the ink.
+
+     NOTHING WAS ADDED TO SAY IT. No caption, no "within each". The connectors
+     carry the meaning, so the figure still contains only the University's own
+     words.
+     ------------------------------------------------------------------- */
+  .network .drop { position: relative; height: 12px; display: flex; gap: 12px; }
+  .network .drop .tick { flex: 1 1 0; position: relative; }
+  .network .drop .tick::before {
+    content: ''; position: absolute; left: 50%; top: 0; bottom: 0;
+    width: 1px; background: #d6cce4;
   }
-  .network .node ul { margin: 6px 0 0; padding: 0; list-style: none; font-size: 9.5pt;
-    color: ${QUIET}; }
-  .network .node li { margin: 2px 0; }
+  .network .band {
+    border: 1px solid #d6cce4; border-radius: 4px; background: #f8f6fb;
+    padding: 9px 10px; font-size: 10pt; color: ${QUIET}; letter-spacing: .02em;
+  }
 
   /* ---- THE FORM ------------------------------------------------------ */
   .fields { margin: 12px 0 18px; }
@@ -519,14 +593,40 @@ function styles(): string {
   .toolbar a:hover, .toolbar button:hover { background: rgba(255,255,255,.22); }
   .toolbar .hint { color: #cfc4de; font-size: 12px; }
 
-  @media (max-width: 860px) {
+  /* -------------------------------------------------------------------
+     A PHONE, AND ONLY A PHONE.
+
+     "screen and" IS LOAD-BEARING AND WAS MISSING. Under print the sheet's own
+     width collapses to auto and the page's width is the A4 text block — 643px
+     — which is under 860, so a bare max-width query MATCHES THE PRINTED PAGE.
+     The dashboard's four columns and the Rectors network's three
+     administrations were therefore being printed stacked one above another,
+     in the phone layout, on A4.
+
+     Nobody would have seen it from a screenshot: every picture of this book
+     was taken in a 1000px window, where the query does not match. It surfaced
+     because a measurement of the network figure at the printed width reported
+     all three administrations at the same centre.
+     ------------------------------------------------------------------- */
+  @media screen and (max-width: 860px) {
     .sheet { width: auto; max-width: 100%; margin: 12px 8px; padding: 22px 18px; min-height: 0; }
     .cover h1 { font-size: 30pt; }
     .panel .panel-body { display: block; }
     .panel .col { border-left: 0; border-top: 1px solid ${RULE}; }
     .panel .col:first-child { border-top: 0; }
+
+    /* THE FIGURE STACKS, SO ITS CONNECTORS MUST TOO. The rail and the drops
+       were laid out across three columns whatever the columns were doing, so
+       a phone showed a three-way bracket over one stacked box. One centred
+       line says the same thing when everything is in a single file. */
     .network .cols { display: block; }
     .network .node { margin: 8px 0; }
+    .network .rail::before, .network .rail .tick, .network .drop .tick { display: none; }
+    .network .rail, .network .drop { display: block; height: 12px; }
+    .network .rail::after, .network .drop::after {
+      content: ''; display: block; width: 1px; height: 100%; margin: 0 auto;
+      background: #d6cce4;
+    }
   }
 `;
 }
@@ -595,20 +695,33 @@ function renderBlock(b: Block): string {
 </div>`;
 
     case 'network': {
-      // THE SAME COLUMN, DRAWN THE NUMBER OF TIMES THE UNIVERSITY DREW IT.
-      // Three identical administrations under one university is the point of
-      // the figure: it is not three different countries, it is the shape
-      // repeating. Naming three countries here would be inventing them.
-      const col = `<div class="node">
-    <div class="t">${escape(b.column.title)}</div>
-    <ul>${b.column.under.map((u) => `<li>${escape(u)}</li>`).join('')}</ul>
-  </div>`;
-      const inset = (100 / (b.columns * 2)).toFixed(2);
+      // EACH ADMINISTRATION IS NAMED, AND NO NAME APPEARS TWICE. The content
+      // file carries the University's own three examples and says where they
+      // came from.
+      //
+      // WHAT THEY NO LONGER EACH CARRY is the list of what is inside them.
+      // See the stylesheet: it is one band under all of them.
+      const columns = b.administrations.length;
+      const nodes = b.administrations
+        .map((a) => `<div class="node">${escape(a)}</div>`).join('');
+      // WHERE THE FIRST AND LAST COLUMN'S CENTRES ACTUALLY ARE.
+      //
+      // Not 100%/(2n) — that is only right when the columns touch. With `gap`
+      // between n columns each one is (100% - (n-1)·gap)/n wide, so its centre
+      // sits half of that from its own edge. The bar is drawn between those two
+      // points and the ticks are placed by the same flex rule as the columns,
+      // so the drawing lines up at any column count rather than nearly lining
+      // up at three.
+      const GAP = 12;
+      const half = `calc((100% - ${(columns - 1) * GAP}px) / ${columns * 2})`;
+      const ticks = '<span class="tick"></span>'.repeat(columns);
       return `<div class="network">
   <div class="root">${escape(b.root)}</div>
   <div class="stem"></div>
-  <div class="spread" style="margin: 0 ${inset}%"></div>
-  <div class="cols">${col.repeat(b.columns)}</div>
+  <div class="rail" style="--edge: ${half}">${ticks}</div>
+  <div class="cols">${nodes}</div>
+  <div class="drop">${ticks}</div>
+  <div class="band">${b.under.map(escape).join(' · ')}</div>
 </div>`;
     }
 
