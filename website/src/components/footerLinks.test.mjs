@@ -77,7 +77,15 @@ const contentSlugs = new Set([...pagesTs.matchAll(/slug: '([a-z0-9-]+)'/g)].map(
  * serves all four.
  */
 function resolves(href) {
-  const parts = href.replace(/^\//, '').split(/[/#?]/).filter(Boolean);
+  // THE QUERY IS STRIPPED, NOT SPLIT ON. This used to split the href on
+  // [/#?] together, which turned `/portal?to=student` into the two segments
+  // `portal` and `to=student` and then looked for a folder called
+  // "to=student" — reporting four perfectly good links as 404s the day the
+  // Portals menu started saying which portal it meant.
+  //
+  // A query string is not a path segment. Neither is a fragment.
+  const path = href.split(/[?#]/)[0];
+  const parts = path.replace(/^\//, '').split('/').filter(Boolean);
   if (!parts.length) return existsSync(join(app, 'page.tsx'));
 
   // ONE SEGMENT IS DECIDED HERE AND NOT BY THE WALK BELOW, because src/app has

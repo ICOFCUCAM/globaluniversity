@@ -18,6 +18,7 @@ import AdmissionsOffice from './admissions/AdmissionsOffice';
 import AcademicAdmissions from './admissions/AcademicAdmissions';
 import { isEnrolledRole } from '@/lib/roles';
 import { labelForView } from '@/lib/portalNav';
+import { intentFromSearch, resolveIntent } from '@/lib/portalIntent';
 import { JourneyProvider } from '@/contexts/JourneyContext';
 import { GradingProvider } from '@/contexts/GradingContext';
 import MyProgramme from './student/MyProgramme';
@@ -104,6 +105,36 @@ export default function AppLayout() {
   // specification is explicit that no application forms live in this system.
   const { isAuthenticated, user } = useAuth();
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
+  // ---------------------------------------------------------------------
+  // WHICH PORTAL THEY CAME THROUGH.
+  //
+  // The public site offers five portals and four of them used to be the
+  // same address, landing everybody on the dashboard. The link now carries
+  // an intent and this is where it is honoured — AFTER sign-in, because
+  // until somebody has signed in there is nobody to resolve it for.
+  //
+  // Read once, then forgotten. If it stayed, every re-render would drag the
+  // person back to where they arrived and the sidebar would stop working.
+  // ---------------------------------------------------------------------
+  const [intent, setIntent] = useState<string | null>(null);
+  const [landingNote, setLandingNote] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') setIntent(intentFromSearch(window.location.search));
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated || !user?.role || !intent) return;
+    const { view, note } = resolveIntent(intent, user.role);
+    setCurrentView(view);
+    setLandingNote(note);
+    // Spent. The address bar is tidied too, so a refresh or a shared link does
+    // not send somebody back to a screen they have since navigated away from.
+    setIntent(null);
+    if (typeof window !== 'undefined' && window.history?.replaceState) {
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [isAuthenticated, user?.role, intent]);
   // -------------------------------------------------------------------------
   // WHICH CURRICULUM THE BUILDER IS ON.
   //
@@ -512,6 +543,26 @@ export default function AppLayout() {
         <div className="p-4 sm:p-6">
           {/* Keyed on the view so moving to another screen resets the boundary
               rather than leaving the last failure on display. */}
+          {/* WHY YOU ARE HERE AND NOT WHERE YOU ASKED FOR.
+              Shown once, dismissible, and only when a portal link could not be
+              honoured — somebody who followed "Administration" and holds no
+              administrative screen is owed the sentence rather than a
+              dashboard that looks like the link was broken. */}
+          {landingNote && (
+            <div
+              role="status"
+              className="mb-5 flex items-start gap-3 rounded-lg border border-[#ded6c8] bg-[#f8f6fb] px-4 py-3 text-sm text-[#422e59] dark:border-[#3d3349] dark:bg-[#2a2233] dark:text-[#e4dcf0]"
+            >
+              <span className="flex-1">{landingNote}</span>
+              <button
+                type="button"
+                onClick={() => setLandingNote(null)}
+                className="flex-shrink-0 text-xs uppercase tracking-wide text-[#6b6076] hover:underline"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
           <ScreenBoundary key={currentView} screen={labelForView(currentView, user?.role)}>
             {renderView()}
           </ScreenBoundary>

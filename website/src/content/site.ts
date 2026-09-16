@@ -64,12 +64,29 @@ export const site = {
   // Every portal entry resolves inside this site. The legacy cPanel apps
   // (Chamilo LMS, ownCloud, RosarioSIS, transcript service) are reachable at
   // legacy.iguc.net once that subdomain is pointed at the old server.
+  // -------------------------------------------------------------------
+  // FIVE ENTRIES, AND FOUR OF THEM USED TO BE THE SAME ADDRESS.
+  //
+  // `/portal` four times over, and the portal always opened on the
+  // dashboard — so the menu promised five destinations, delivered two,
+  // and discarded the one thing the visitor had just said, which is what
+  // they came to do.
+  //
+  // Each now carries an INTENT the portal resolves after sign-in, against
+  // the role of whoever signed in. There is still one sign-in, because a
+  // link cannot know who you are; what it can do is state a request, and
+  // identity decides whether the request can be met. See portalIntent.ts.
+  //
+  // The application is the exception and correctly so: an applicant is not
+  // a portal user at all, and sending them to a staff-and-student sign-in
+  // would refuse them after they had typed a password.
+  // -------------------------------------------------------------------
   portals: [
-    { label: 'Student Portal (Registration & Transcripts)', href: '/portal' },
+    { label: 'Student Portal (Registration & Transcripts)', href: '/portal?to=student' },
     { label: 'Online Application', href: '/apply' },
-    { label: 'E-Learning (LMS)', href: '/portal' },
-    { label: 'Administration', href: '/portal' },
-    { label: 'Transcripts', href: '/portal' },
+    { label: 'E-Learning (LMS)', href: '/portal?to=lms' },
+    { label: 'Administration', href: '/portal?to=administration' },
+    { label: 'Transcripts', href: '/portal?to=transcripts' },
   ],
   // Navigation: five top-level entries, each opening a grouped mega-menu.
   // Kept deliberately short — a crowded bar reads as a small institution.

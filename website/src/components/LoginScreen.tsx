@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { UNIVERSITY, IMAGES } from '@/lib/constants';
 import { Aurora, Grain, LightShaft, Seam } from './Atmosphere';
 import type { UserRole } from '@/lib/types';
+import { intentFromSearch, PORTAL_INTENTS } from '@/lib/portalIntent';
 import {
   Shield, ShieldCheck, Users, GraduationCap, BookOpen, Award, Globe,
   Monitor, BarChart3, FileText, Lock, Mail,
@@ -20,6 +21,15 @@ export default function LoginScreen() {
   // continue to read naturally, and so that reinstating a sign-up route later
   // is a deliberate change rather than a one-character edit.
   const mode: 'login' | 'signup' = 'login';
+
+  // Which portal the visitor followed, if any. Read from the address once, on
+  // the client, because the portal page is client-rendered.
+  const [asked, setAsked] = React.useState<string | null>(null);
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const intent = intentFromSearch(window.location.search);
+    setAsked(intent ? PORTAL_INTENTS[intent].label : null);
+  }, []);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -302,10 +312,30 @@ export default function LoginScreen() {
                   is a single line beneath the form, where a misdirected visitor
                   will look for it and nobody else has to read it. */}
 
+              {/* ---------------------------------------------------------
+                  THE PORTAL THEY ASKED FOR, NAMED BEFORE THEY TYPE ANYTHING.
+
+                  The public site offers five portals into one sign-in. That is
+                  right — a link cannot know who you are, so there is one
+                  door and identity decides the destination — but a person
+                  who clicked "Transcripts" and arrives at an unlabelled
+                  "Welcome back" has no way to tell whether the link worked.
+
+                  Saying it back is the whole fix. It promises nothing about
+                  access: where the portal cannot honour the request after
+                  sign-in, it says so then.
+                  --------------------------------------------------------- */}
               <div className="mb-6">
+                {asked && (
+                  <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#b08d2e]">
+                    {asked}
+                  </p>
+                )}
                 <h3 className="font-heading text-xl font-bold text-[#422e59]">Welcome back</h3>
                 <p className="mt-1 text-xs text-[#6b6076] dark:text-[#9c93ad]">
-                  Sign in to your account to continue
+                  {asked
+                    ? 'One sign-in serves every portal. You are taken to your own area.'
+                    : 'Sign in to your account to continue'}
                 </p>
               </div>
 
