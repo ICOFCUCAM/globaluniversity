@@ -232,7 +232,8 @@ export const ROLE_PROFILES: RoleProfile[] = [
           "Documents",
           "Student services",
           "Fees & receipts",
-          "Fee schedules"
+          "Fee schedules",
+          "Refunds"
         ]
       },
       {
@@ -461,7 +462,8 @@ export const ROLE_PROFILES: RoleProfile[] = [
           "Documents",
           "Student services",
           "Fees & receipts",
-          "Fee schedules"
+          "Fee schedules",
+          "Refunds"
         ]
       },
       {
@@ -948,7 +950,8 @@ export const ROLE_PROFILES: RoleProfile[] = [
         "items": [
           "Student services",
           "Fees & receipts",
-          "Fee schedules"
+          "Fee schedules",
+          "Refunds"
         ]
       },
       {
@@ -1379,7 +1382,8 @@ export const ROLE_PROFILES: RoleProfile[] = [
       {
         "title": "Records",
         "items": [
-          "Fees & receipts"
+          "Fees & receipts",
+          "Refunds"
         ]
       },
       {
@@ -3755,6 +3759,27 @@ export const ENFORCED: EnforcedRules[] = [
       "the Vice-Chancellor can read the certificate audit trail at last",
       "the audit distinguishes a replacement from an ordinary issue"
     ]
+  },
+  {
+    "migration": "102",
+    "file": "102_a_refund_is_not_an_edit.sql",
+    "rules": [
+      "a payment cannot be edited, not even by the owner of the table",
+      "…and cannot be deleted either",
+      "the determination is computed from the payment and the enrolment date, and a form cannot supply it",
+      "where the published schedule and the 16 September decision disagree, the request says so on its face",
+      "…and the University can read every such case in one view",
+      "a request cannot jump from submitted to paid",
+      "an approval above the determination is refused",
+      "…and allowed where an exceptional policy is named and authorised",
+      "the determination cannot be rewritten after the answer is known",
+      "no cash or cheque refund is accepted",
+      "a paid refund is finished; a further refund is a further request",
+      "only one refund per student per month is considered",
+      "a student whose studies never started is refunded in full, and the two rules agree",
+      "a lecturer reads no refund at all",
+      "…and the Finance Director reads all of them"
+    ]
   }
 ];
 
@@ -3762,5 +3787,5 @@ export const COUNTS = {
   roles: 25,
   capabilities: 129,
   migrations: 0,
-  provedRules: 87,
+  provedRules: 102,
 };

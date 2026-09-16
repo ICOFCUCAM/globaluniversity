@@ -380,6 +380,10 @@ select * from (
   select '101' as migration, '101_the_certificate_design_is_not_everybodys.sql' as file,
          case when to_regclass('public.certificate_reissue_requests') is not null then 'YES' else 'NO' end as landed,
          'certificate_reissue_requests' as what_it_creates
+  union all
+  select '102' as migration, '102_a_refund_is_not_an_edit.sql' as file,
+         case when to_regclass('public.refund_requests') is not null then 'YES' else 'NO' end as landed,
+         'refund_requests' as what_it_creates
 ) as landed_report
  order by migration;
 

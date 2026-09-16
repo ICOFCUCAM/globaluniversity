@@ -355,8 +355,10 @@ const NOT_ENFORCED = {
   'monitor-teaching': 'Descriptive, as above.',
 
   // ---- granted, with nothing behind it ----------------------------------
-  'approve-refund': 'NO DOOR. The Finance Director may approve a refund and there is no refund '
-    + 'anywhere in this system — no request, no screen, no table.',
+  // `approve-refund` HAS COME OFF THIS LIST. It was first on it — "the Finance
+  // Director may approve a refund and there is no refund anywhere in this
+  // system, no request, no screen, no table" — and 102 built the table, the
+  // Refunds screen the door, and /api/finance/refund the guard that spends it.
   // `assign-programme` HAS COME OFF THIS LIST. The note said the Enrolment
   // screen attached a student to a curriculum "without checking this, and
   // there is no screen that does" — the second half was the mistake. Nothing

@@ -142,6 +142,27 @@ it is holding it.
   OFFICES THAT DID THE WORK — otherwise the merge quietly withdraws an
   authority instead of tidying a name.
 
+### Two questions 102 raised and did not answer
+
+Both are recorded on every refund request and listed in a view, so they can be
+settled with the cases in front of them rather than in the abstract.
+
+- **The refund schedule and the refund policy disagree.** The Student Fees
+  Guide, published on /academic-regulations, refunds 100% within 7 days of
+  enrolment, then 75%, 50% and 25% out to 90 days. The decision of 16 September
+  2026 refunds nothing once studies have commenced. Between day 1 and day 90
+  they give different answers to the same question, and both are the
+  University's own words. 102 computes both, takes the **lower**, and allows
+  the higher only through a named and authorised exceptional policy.
+  `refund_requests_where_the_rules_disagree` lists every such case.
+
+- **A refunded payment may already have been shared with a nation.** 098 splits
+  a tuition payment at the moment it is received and makes that allocation
+  unrewritable. Refunding it returns money the centre no longer wholly holds.
+  Nothing reverses the allocation — that would be the system deciding a nation
+  owes back a share it was told it had kept.
+  `refunds_that_touch_a_nations_share` lists them.
+
 ## Running things
 
 - `npm test` runs every suite; `npm run build` must compile before any commit.

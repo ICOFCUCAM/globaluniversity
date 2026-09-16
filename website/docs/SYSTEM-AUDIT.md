@@ -4,7 +4,7 @@ Generated on 16 September 2026 by `npm run audit`. Nothing in it is written by h
 every figure is read from the repository, so this document can be produced
 again at any time and will describe the system as it is then.
 
-**209 tables and views · 102 migrations · 25 roles · 129 capabilities · 598 source files.**
+**213 tables and views · 103 migrations · 25 roles · 129 capabilities · 600 source files.**
 
 ---
 
@@ -14,8 +14,8 @@ again at any time and will describe the system as it is then.
 their Supabase project, so every statement below about the database describes
 what the REPOSITORY defines, not what is live.
 
-102 migrations exist. 7 bundles are prepared for
-running: RUN-PART-1.sql, RUN-PART-2.sql, RUN-PART-3.sql, RUN-PART-4.sql, RUN-PART-5.sql, RUN-PART-6.sql, RUN-PART-7.sql.
+103 migrations exist. 8 bundles are prepared for
+running: RUN-PART-1.sql, RUN-PART-2.sql, RUN-PART-3.sql, RUN-PART-4.sql, RUN-PART-5.sql, RUN-PART-6.sql, RUN-PART-7.sql, RUN-PART-8.sql.
 
 This matters more than any other line in this document. Every screen, route and
 rule described below assumes tables that may not exist yet, and a system whose
@@ -36,7 +36,7 @@ Until one of them is run, everything below is an audit of the plans.
 
 ## 1. No door — machinery nothing can reach
 
-### 37 tables and views are named nowhere in the application
+### 38 tables and views are named nowhere in the application
 
 Each was created by a migration, is protected by row-level security, and is read
 by no screen and no route. Grouped by the migration that created them, because
@@ -64,19 +64,19 @@ the groups have different answers.
 | 086 | `course_content_search`, `my_attendance`, `my_next_classes` | The Course Learning Hub — a student’s own classes, attendance and search. |
 | 087 | `course_progress_for_teaching`, `my_course_progress` | The Course Learning Hub — progress, for a student and for whoever teaches them. |
 | 088 | `lecturer_directory` | The lecturer directory. |
+| 102 | `refunds_that_touch_a_nations_share` | A helper view nothing has needed yet. |
 
 **None of these should be deleted.** The University ruled on that when the
 question was last asked, and re-reading them confirms it: every one is a valid
 domain object, and the two in capitals are machinery this repository built and
 left no way to reach.
 
-### 17 capabilities are checked nowhere
+### 16 capabilities are checked nowhere
 
 A capability that no route and no screen asks for is a permission the University
 grants and cannot exercise. Granting one to a new role would change nothing.
 
 - `apply`
-- `approve-refund`
 - `approve-transfers`
 - `assign-proctor`
 - `download-transcript`

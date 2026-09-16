@@ -1114,6 +1114,29 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
       + 'all. Both are fixed, additively.',
     table: 'certificate_reissue_requests',
   },
+  {
+    file: '102_a_refund_is_not_an_edit.sql',
+    what:
+      'A PAYMENT CAN NO LONGER BE CHANGED OR DELETED BY ANYBODY — not by Finance, not by the '
+      + 'Superadministrator, and not by the service key the server writes with, which no policy '
+      + 'binds. `payments` has had SELECT and INSERT policies since 010 and no UPDATE or DELETE '
+      + 'policy, so a signed-in office was already refused and the server key was not; from now '
+      + 'a trigger refuses both. NOTHING IN THE APPLICATION EDITS A PAYMENT, so this closes a '
+      + 'door standing open rather than one anybody was walking through. AND `approve-refund` '
+      + 'STOPS BEING A NAME FOR NOTHING: request → review → decision → refund, walked by the '
+      + 'database rather than by a screen, so submitting can never refund anybody. THE '
+      + 'ELIGIBILITY DETERMINATION IS THE DATABASE’S, computed from the payment and the '
+      + 'enrolment date and not supplied by any form — and it is TWO answers, because the '
+      + 'refund schedule published in the Student Fees Guide and the University’s decision of '
+      + '16 September 2026 disagree between day 1 and day 90. The LOWER stands unless an '
+      + 'exceptional policy is named and authorised, and '
+      + '`refund_requests_where_the_rules_disagree` lists every case so the University can '
+      + 'settle which rule governs. The published rules that are not in question are enforced '
+      + 'rather than described: no cash or cheque refund, one refund per student per month, and '
+      + 'money back only to the student’s, parent’s or sponsor’s account. NOTHING IS SEEDED AND '
+      + 'NO MONEY MOVES.',
+    table: 'refund_requests',
+  },
 ];
 
 /** What a probe came back as. */

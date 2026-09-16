@@ -232,6 +232,25 @@ const READ_ONLY_BY_DESIGN = {
     + 'reissue requests \u2014 \u00a77 of the certificate ruling. The certificates are written '
     + 'by /api/credential/issue and the reissue authorisations by /api/certificate/reissue; the '
     + 'audit events are append-only by 013\u2019s own trigger.',
+  refund_audit: 'A view over `refund_requests`, `payments`, `students` and the profiles of '
+    + 'everybody who touched it \u2014 every refund the University has considered, what was '
+    + 'determined and on whose reasoning. The requests are written by /api/finance/refund. '
+    + 'The payment side of it is not written by anything AND CANNOT BE: 102 refuses every '
+    + 'UPDATE and DELETE on `payments` with a trigger, for every office and for the service '
+    + 'key, because the University ruled that a financial record which can be edited is not a '
+    + 'record. `security_invoker`, so a student sees their own refund and Finance sees all of '
+    + 'them.',
+  refund_requests_where_the_rules_disagree: 'A view over `refund_requests`, listing the cases '
+    + 'where the refund schedule published in the Student Fees Guide and the University\u2019s '
+    + 'decision of 16 September 2026 give different answers. Nothing writes to it because it '
+    + 'is a question, not a record: it exists so the University can settle which rule governs '
+    + 'with the cases in front of it.',
+  refunds_that_touch_a_nations_share: 'A view over `refund_requests` and '
+    + '`national_administrations`. 098 shares a tuition payment with a National Administration '
+    + 'at the moment it is received and makes that allocation unrewritable; refunding such a '
+    + 'payment returns money the centre no longer wholly holds. Nothing reverses it '
+    + 'automatically \u2014 that would be the system deciding a nation owes back a share it was '
+    + 'told it had kept \u2014 so this lists them for the University to rule on.',
   national_purse: 'A view over `revenue_allocations` and `national_expenses` \u2014 what a '
     + 'nation was allocated, less what it has authorised. A view for the reason 098 gives about '
     + 'the ledger: a stored balance is a balance that can disagree with the rows under it. The '

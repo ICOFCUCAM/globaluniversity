@@ -19,6 +19,7 @@ import {
   Settings, Shield, ShieldCheck, BookMarked, Wallet, Stamp, UserCog, Inbox,
   ClipboardCheck, Share2, BadgeCheck, Video, Eye, CalendarClock, TrendingUp,
   CalendarDays, MapPin, Building2, Receipt, ScrollText, Globe2, Landmark,  FileSearch,
+  Undo2,
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -553,6 +554,20 @@ export const menuGroups: MenuGroup[] = [
         label: 'Fee schedules',
         icon: <Receipt size={18} />,
         roles: ['superadmin', 'admin', 'finance-director'],
+      },
+      // AND MONEY GOING BACK, which had no entry because it had no screen and
+      // no table. `approve-refund` has been granted to the Finance Director
+      // and the Finance Officer against a system with no refund in it at all.
+      //
+      // BOTH OFFICES ARE HERE AND THEY DO DIFFERENT THINGS. Recording a
+      // request is `manage-student-accounts`; deciding one is
+      // `approve-refund`, and the screen draws the controls each office holds
+      // rather than offering both to everybody.
+      {
+        id: 'refunds',
+        label: 'Refunds',
+        icon: <Undo2 size={18} />,
+        roles: ['superadmin', 'admin', 'finance', 'finance-director'],
       },
     ],
   },
