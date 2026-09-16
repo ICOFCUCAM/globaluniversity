@@ -282,6 +282,7 @@ const MARKERS = {
   '093': 'study_aids',
   '094': 'live_carried',
   '095': 'lectures.review_state',
+  '096': 'course_resources',
 };
 
 /** The SQL that answers "is this one here?", for each of the three forms. */

@@ -11,9 +11,32 @@
   --page: 246 247 249;
   --page-card: 255 255 255;
   --page-line: 227 230 236;
-  --brand: 31 77 122;
-  --brand-dark: 22 58 92;
-  --brand-tint: 234 241 248;
+  /* ---------------------------------------------------------------------
+     THE UNIVERSITY'S OWN COLOURS, NOT THE STUDIO'S.
+
+     The University, 16 September 2026: "opening the studio make one feel it
+     is another site with different names. can you make it follow the same
+     feelings like the others."
+
+     They were right, and this was the largest single cause of it. The Studio
+     arrived with its own blue (31 77 122) because it was its own product;
+     inside the University's portal that reads as somebody else's software
+     bolted on.
+
+     These are the University's purple family, from tailwind.config.ts:
+       brand.purple       #422e59
+       brand.purple-dark  #322244
+       a light wash of the same hue for tints.
+
+     CHANGED HERE AND NOWHERE ELSE, which is the whole reason the palette was
+     built out of variables rather than hex: six values move and every one of
+     the 639 `bg-studio-brand`-style classes in the Studio changes with them.
+     The high-contrast block below still overrides them for anybody who needs
+     it, exactly as before.
+     --------------------------------------------------------------------- */
+  --brand: 66 46 89;
+  --brand-dark: 50 34 68;
+  --brand-tint: 244 242 250;
   --ok: 31 122 77;
   --warn: 154 107 18;
   --bad: 163 50 50;

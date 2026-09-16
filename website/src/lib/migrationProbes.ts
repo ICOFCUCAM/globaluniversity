@@ -1001,6 +1001,21 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
     table: 'lectures',
     column: 'review_state',
   },
+  {
+    file: '096_the_course_library.sql',
+    what: 'A COURSE GETS A LIBRARY, with READING and DOWNLOADING as SEPARATE RIGHTS. The '
+      + 'University\u2019s ruling of 16 September 2026: \u201cdon\u2019t assume every ebook is '
+      + 'downloadable. Some publishers only permit reading through a licensed platform.\u201d So '
+      + 'two columns, not one flag \u2014 and `may_download` DEFAULTS TO FALSE, because a book '
+      + 'wrongly marked read-only is a complaint and a one-click fix, while a book wrongly marked '
+      + 'downloadable is a licence breach that cannot be recalled once a cohort has the file. '
+      + 'THE RIGHTS ARE NOT THE LIBRARY\u2019S TO SET: the Superadministrator and the System '
+      + 'Administrator decide, enforced by a trigger because this is a question about two COLUMNS '
+      + 'of a row the Library is otherwise entitled to edit. And a reader who may not download is '
+      + 'not handed the file path at all \u2014 `my_course_library` nulls it, rather than hiding '
+      + 'the row they still need in order to read online. Nothing closes.',
+    table: 'course_resources',
+  },
 ];
 
 /** What a probe came back as. */

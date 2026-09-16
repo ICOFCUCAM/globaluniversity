@@ -356,6 +356,10 @@ select * from (
                       and column_name = 'review_state')
                  then 'YES' else 'NO' end as landed,
          'lectures.review_state' as what_it_creates
+  union all
+  select '096' as migration, '096_the_course_library.sql' as file,
+         case when to_regclass('public.course_resources') is not null then 'YES' else 'NO' end as landed,
+         'course_resources' as what_it_creates
 ) as landed_report
  order by migration;
 
