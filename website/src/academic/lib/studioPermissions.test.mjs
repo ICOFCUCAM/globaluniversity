@@ -212,6 +212,45 @@ check('…and it names the twenty-character minimum the database enforces',
   /20 characters/.test(screen), true);
 
 // ---------------------------------------------------------------------------
+// THE PADLOCKS ARE DRAWN, AND SOMETHING ACTUALLY FEEDS THEM
+// ---------------------------------------------------------------------------
+//
+// The University: "The locked functions are visible but unavailable… 🔒
+// Generate 15-minute Audio / Permission required."
+//
+// Two halves, and the second is the one that quietly fails. A component that
+// CAN draw a padlock, receiving a prop nothing ever passes, renders every
+// button unlocked for ever — and looks completely correct in the source. This
+// codebase has met that shape repeatedly: a rule written and never consulted.
+//
+// So both are checked: the workspace locks on the prop, AND the page computes
+// it from the real grants and hands it down.
+// ---------------------------------------------------------------------------
+console.log('\nA locked function is shown, not hidden\n');
+
+const workspace = strip(readFileSync(
+  join(root, 'src', 'academic', 'components', 'LectureWorkspace.tsx'), 'utf8'));
+
+check('the workspace takes the permission map', /permitted[?]?:/.test(workspace), true);
+check('…and a missing entry locks rather than opens',
+  /permitted\[stage\.kind\] \? !permitted\[stage\.kind\]\.allowed : false/.test(workspace), true);
+check('…and the button is disabled when locked', /disabled=\{[^}]*locked\}/.test(workspace), true);
+check('…and says Permission required rather than going blank',
+  /Permission required/.test(workspace), true);
+
+// LOCKED AND BLOCKED MUST NOT BE THE SAME WORD. "The transcript must be
+// approved first" told to somebody who may not generate audio AT ALL sends
+// them to approve the transcript and be refused again.
+check('locked and blocked are different states',
+  /const locked = /.test(workspace) && /const blocked = /.test(workspace), true);
+
+const lecturePage = strip(readFileSync(
+  join(root, 'src', 'app', 'academic-studio', 'lectures', '[id]', 'page.tsx'), 'utf8'));
+check('the page resolves the real grants', /studioActsFor\(/.test(lecturePage), true);
+check('…maps them onto the pipeline stages', /CAPABILITY_FOR_STAGE/.test(lecturePage), true);
+check('…and hands the result to the workspace', /permitted=\{permitted\}/.test(lecturePage), true);
+
+// ---------------------------------------------------------------------------
 // AND THE ONE THAT MATTERS MOST, BY NAME
 //
 // The whole ruling turns on this: a lecturer may submit without being able to

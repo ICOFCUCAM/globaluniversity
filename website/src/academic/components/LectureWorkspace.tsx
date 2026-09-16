@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Check, Languages, Loader2, Pencil, Play, RotateCw, Send, Undo2 } from 'lucide-react';
+import { Check, Languages, Loader2, Lock, Pencil, Play, RotateCw, Send, Undo2 } from 'lucide-react';
 import type { Artefact, ArtefactKind, Lecture } from '@/academic/lib/domain/types';
 import { MODES, PERSONAS, type AudioMode, type Persona } from '@/academic/lib/ai/audioModes';
 import { REVISION_LABEL, type RevisionKind } from '@/academic/lib/ai/prompts';
@@ -28,6 +28,7 @@ export function LectureWorkspace({
   lecture, stages, artefacts: initial, canEdit, student,
   originalLanguage, offeredLanguages, canTranslate, canApproveTranslation,
   workingLanguage, voices, voicePreference, audioSpeed, captions,
+  permitted = {},
 }: {
   lecture: Lecture;
   stages: Stage[];
@@ -38,6 +39,20 @@ export function LectureWorkspace({
   offeredLanguages: string[];
   canTranslate: boolean;
   canApproveTranslation: boolean;
+  /**
+   * WHAT THIS ACCOUNT HAS BEEN ALLOWED TO ASK A MODEL FOR, by artefact kind.
+   *
+   * The University's ruling of 16 September 2026: "The locked functions are
+   * visible but unavailable… This is better than hiding everything because the
+   * lecturer understands what the Studio is capable of, while the university
+   * retains control over who can execute potentially expensive or sensitive
+   * operations."
+   *
+   * So a missing entry LOCKS the button rather than removing it. Defaulting to
+   * an empty object is deliberate: a caller that forgets to pass this gets
+   * everything locked, not everything open.
+   */
+  permitted?: Record<string, { allowed: boolean; label: string }>;
   /** The student's own, from their learning profile. Locked for them. */
   workingLanguage?: string;
   voices: VoiceOfferView[];
@@ -248,6 +263,17 @@ export function LectureWorkspace({
               || (stage.requiresApprovedSource && source?.state === 'ready')
               || wordsUnchecked
             : false;
+          // LOCKED IS NOT BLOCKED, and the screen must not conflate them.
+          //
+          // BLOCKED is about the WORK: the thing this stage is made from is not
+          // ready yet, and waiting fixes it.
+          // LOCKED is about the PERSON: the University has not given this
+          // account permission, and no amount of waiting changes that.
+          //
+          // A lecturer told "the transcript must be approved first" when the
+          // real answer is "you may not generate audio at all" would go and
+          // approve the transcript, press again, and be refused again.
+          const locked = permitted[stage.kind] ? !permitted[stage.kind].allowed : false;
 
           return (
             <div
@@ -308,17 +334,36 @@ export function LectureWorkspace({
                       onClick={() => (approved && !asking
                         ? setConfirming(stage.kind)
                         : run(stage.kind, approved))}
-                      disabled={busy !== null || blocked}
+                      disabled={busy !== null || blocked || locked}
                       className={`mt-2 inline-flex items-center gap-1.5 rounded border px-2 py-1 text-[11px] disabled:opacity-40 ${
                         asking ? 'border-red-300 bg-red-50 text-studio-bad' : 'border-studio-page-line bg-white text-studio-ink-soft hover:border-studio-brand/40'
                       }`}
-                      title={wordsUnchecked
-                        ? 'Check the words of the script first — a spoken mistake cannot be seen'
-                        : blocked ? `${stages.find((s) => s.kind === stage.from)?.label} must be approved first` : ''}
+                      title={locked
+                        ? 'Permission required — your account has not been granted this'
+                        : wordsUnchecked
+                          ? 'Check the words of the script first — a spoken mistake cannot be seen'
+                          : blocked ? `${stages.find((s) => s.kind === stage.from)?.label} must be approved first` : ''}
                     >
-                      {busy === stage.kind ? <Loader2 size={12} className="animate-spin" /> : artefact ? <RotateCw size={12} /> : <Play size={12} />}
-                      {asking ? 'Yes — replace it' : artefact ? 'Regenerate' : 'Generate'}
+                      {locked ? <Lock size={12} />
+                        : busy === stage.kind ? <Loader2 size={12} className="animate-spin" />
+                          : artefact ? <RotateCw size={12} /> : <Play size={12} />}
+                      {locked ? 'Permission required'
+                        : asking ? 'Yes — replace it' : artefact ? 'Regenerate' : 'Generate'}
                     </button>
+                    {/*
+                      THE PADLOCK SAYS WHAT IT IS AND WHO CAN OPEN IT.
+                      A disabled button with no explanation teaches a lecturer
+                      that the Studio is broken. This says the Studio can do it
+                      and their account has not been given it, which is the
+                      true thing and the actionable one.
+                    */}
+                    {locked && (
+                      <p className="mt-1 text-[11px] text-studio-ink-faint">
+                        The Studio can do this. Your account has not been granted it — the
+                        Vice-Chancellor or the Superadministrator can authorise it, with a reason
+                        and an end date recorded.
+                      </p>
+                    )}
                     {asking && (
                       <p className="mt-1 text-[11px] text-studio-bad">
                         {artefact?.state === 'published'

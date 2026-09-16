@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getStore } from '@/academic/lib/data';
 import { currentActor } from '@/academic/lib/session';
+import { CAPABILITY_FOR_STAGE, studioActsFor } from '@/academic/lib/studioPermissions';
 import { STAGES } from '@/academic/lib/pipeline/stages';
 import { mayAct } from '@/academic/lib/domain/ownership';
 import { can } from '@/academic/lib/capabilities';
@@ -30,7 +31,8 @@ export default async function LecturePage({ params }: { params: { id: string } }
   // see; it asks the same function the API asks.
   const visible = all.filter((a) => mayAct(actor, 'read', a, scene).allowed);
   if (!visible.length && actor.role === 'student') {
-    return (
+  
+  return (
       <div className="px-6 py-10 md:px-8">
         <Empty
           title="Nothing published from this lecture yet"
@@ -43,6 +45,22 @@ export default async function LecturePage({ params }: { params: { id: string } }
   const canEdit = all.some((a) => mayAct(actor, 'edit', a, scene).allowed)
     || lecture.ownerId === actor.id;
   const student = actor.role === 'student';
+
+  // ---- WHAT THIS ACCOUNT MAY ASK A MODEL FOR ----------------------------
+  //
+  // Computed HERE and handed down, because resolving a grant reads the service
+  // key and a client component must never hold one.
+  //
+  // A STUDENT IS NOT ASKED ABOUT. They see no generate buttons at all, so
+  // querying grants for them would be a database round trip to decide the
+  // colour of something that is not drawn.
+  const acts = student ? [] : await studioActsFor(actor.id);
+  const byCapability = new Map(acts.map((a) => [a.capability, a]));
+  const permitted: Record<string, { allowed: boolean; label: string }> = {};
+  for (const [kind, capability] of Object.entries(CAPABILITY_FOR_STAGE)) {
+    const act = byCapability.get(capability);
+    if (act) permitted[kind] = { allowed: act.allowed, label: act.label };
+  }
 
   // ---- WHAT THIS LECTURE MAY BE SPOKEN IN --------------------------------
   //
@@ -83,6 +101,7 @@ export default async function LecturePage({ params }: { params: { id: string } }
 
       <LectureWorkspace
         lecture={lecture}
+        permitted={permitted}
         stages={STAGES.map((s) => ({
           kind: s.kind, label: s.label, purpose: s.purpose, from: s.from,
           requiresApprovedSource: s.requiresApprovedSource, studentFacing: s.studentFacing,
