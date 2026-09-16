@@ -204,8 +204,32 @@ console.log('\nEvery screen the portal can name, it can also draw\n');
 
 const app = read(join(src, 'components/AppLayout.tsx'));
 const routed = new Set([...app.matchAll(/case '([a-z0-9-]+)':/g)].map((m) => m[1]));
-const notRouted = VIEWS.filter((v) => !routed.has(v));
-check('every ViewType has a case in AppLayout', notRouted, []);
+
+// ---------------------------------------------------------------------------
+// UNLESS IT IS A REAL URL.
+//
+// Every entry in the portal selects a module inside AppLayout's switch, with
+// one exception: the Academic Studio is a tree of server-rendered routes with
+// its own layout and its own session, so the sidebar NAVIGATES to it. There is
+// no case to write and there should not be one.
+//
+// The exemption is READ OUT OF portalNav rather than listed here, so it covers
+// exactly the entries that actually carry an `href` — and the day somebody
+// gives an entry an href and no destination, or takes the href away and
+// forgets the case, this still fails.
+// ---------------------------------------------------------------------------
+const nav = read(join(src, 'lib/portalNav.tsx'));
+const navigatesAway = new Set(
+  [...nav.matchAll(/id:\s*'([a-z0-9-]+)',?[\s\S]{0,200}?href:\s*'([^']+)'/g)].map((m) => m[1]),
+);
+check('an entry that navigates away has somewhere to navigate to',
+  [...navigatesAway].filter((id) => {
+    const m = new RegExp(`id:\\s*'${id}'[\\s\\S]{0,200}?href:\\s*'([^']+)'`).exec(nav);
+    return !m || !m[1].startsWith('/');
+  }), []);
+
+const notRouted = VIEWS.filter((v) => !routed.has(v) && !navigatesAway.has(v));
+check('every ViewType has a case in AppLayout, or an href instead', notRouted, []);
 
 /**
  * Screens with no menu entry of their own, and why.
@@ -271,8 +295,27 @@ const everythingElse = (() => {
   const walk = (d) => {
     for (const e of readdirSync(d, { withFileTypes: true })) {
       const p = join(d, e.name);
-      if (e.isDirectory()) walk(p);
-      else if (/\.(ts|tsx)$/.test(e.name) && !p.endsWith('lib/roles.ts')) text += read(p);
+      // ---- THE ACADEMIC STUDIO HAS ITS OWN CAPABILITY VOCABULARY --------
+      //
+      // `src/academic/lib/capabilities.ts` lists six roles and their acts
+      // inside a lecture's material. It is a DIFFERENT SYSTEM from
+      // `src/lib/roles.ts`, which lists the University's twenty-three roles —
+      // and some words appear in both.
+      //
+      // `assign-lecturers` is one. This scan read the Studio's file, found the
+      // string, and reported the University's capability as enforced when
+      // nothing in the portal enforces it. A false "this is covered" is worse
+      // than a gap on this particular report, because the whole point of it is
+      // to name capabilities nobody checks.
+      //
+      // The two vocabularies are kept apart rather than merged: the Studio's
+      // are about one lecture, the University's about the institution, and
+      // flattening them would make every Studio act grantable from the
+      // portal's role editor.
+      if (e.isDirectory()) {
+        if (p.endsWith('/src/academic')) continue;
+        walk(p);
+      } else if (/\.(ts|tsx)$/.test(e.name) && !p.endsWith('lib/roles.ts')) text += read(p);
     }
   };
   walk(src);
@@ -296,7 +339,6 @@ const NOT_ENFORCED = {
   'view-results': 'Enforced by `my_results`, which filters on auth.uid() in the database.',
   'download-transcript': 'Enforced by `claim_transcript_download`, which checks ownership and '
     + 'the remaining allowance itself.',
-  'access-lms': 'Enforced by `my_courses`, which filters on auth.uid().',
   'view-all-faculties': 'Descriptive. What an office SEES is decided by the menu and by the '
     + 'row-level policies, not by a check on this name.',
   'view-institutional-finance': 'Descriptive, as above.',

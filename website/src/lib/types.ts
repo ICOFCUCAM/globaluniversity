@@ -259,6 +259,11 @@ export interface TranscriptCourse {
 }
 
 export type ViewType =
+  // THE ACADEMIC STUDIO. A ViewType because the sidebar is typed on this union
+  // and an entry has to be a member of it; it is the one entry that LEAVES the
+  // portal shell rather than selecting a module, so it also carries an `href`.
+  | 'academic-studio'
+
   // WHAT THE UNIVERSITY HOLDS ABOUT THE PERSON READING IT, and the roll for
   // the courses they teach. A staff record was opened for somebody and was
   // invisible to them; `view-registered-students` was held by every lecturer

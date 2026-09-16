@@ -122,7 +122,14 @@ export default function Sidebar({
                 return (
                   <li key={item.id}>
                     <button
-                      onClick={() => onViewChange(item.id)}
+                      // ONE ENTRY LEAVES THE PORTAL. The Academic Studio is a
+                      // tree of real routes, not a module in AppLayout's
+                      // switch, so it is navigated to. Everything else selects
+                      // a module exactly as before.
+                      onClick={() => {
+                        if (item.href) window.location.href = item.href;
+                        else onViewChange(item.id);
+                      }}
                       aria-current={active ? 'page' : undefined}
                       title={collapsed ? item.label : undefined}
                       className={`relative flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${FOCUS} ${

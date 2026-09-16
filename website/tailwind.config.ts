@@ -6,6 +6,13 @@ import typography from '@tailwindcss/typography';
 // deep purple #422e59, gold #f7dc79, cream #f7f5ed, sand #f7e6b4
 // The hsl(var(--...)) tokens power the integrated student portal (/portal),
 // whose components use the shadcn/ui design system.
+/**
+ * The Academic Studio's palette is variables, not hex, so that high contrast is
+ * a swap of six values in src/academic/studio.css rather than a second
+ * stylesheet somebody has to remember to keep in step.
+ */
+const studioToken = (name: string) => `rgb(var(--${name}) / <alpha-value>)`;
+
 const config: Config = {
   darkMode: ['class'],
   content: ['./src/**/*.{ts,tsx}'],
@@ -17,6 +24,35 @@ const config: Config = {
     },
     extend: {
       colors: {
+        // ---- THE ACADEMIC STUDIO'S OWN PALETTE ---------------------------
+        //
+        // Namespaced `studio-*`, and not merged into the University's scale,
+        // for two reasons that are both about not breaking something.
+        //
+        // FIRST, `brand` COLLIDED. The Studio arrived with its own
+        // `brand.DEFAULT/dark/tint`; this file's `brand` is the University's
+        // actual purple and gold, which are an institutional fact. One of the
+        // two would have silently won, and a University whose brand colour
+        // changed because an AI feature was installed is not an integration.
+        //
+        // SECOND, THEY ARE DIFFERENT KINDS OF PALETTE. These six are CSS
+        // VARIABLES, so the Studio's high-contrast mode is a swap of six
+        // values rather than a second stylesheet — see
+        // src/academic/lib/access/accessibility.ts. The University's are fixed
+        // hexes. Flattening them together would make high contrast either
+        // impossible or accidentally global.
+        'studio-ink': {
+          DEFAULT: studioToken('ink'), soft: studioToken('ink-soft'), faint: studioToken('ink-faint'),
+        },
+        'studio-page': {
+          DEFAULT: studioToken('page'), card: studioToken('page-card'), line: studioToken('page-line'),
+        },
+        'studio-brand': {
+          DEFAULT: studioToken('brand'), dark: studioToken('brand-dark'), tint: studioToken('brand-tint'),
+        },
+        'studio-ok': studioToken('ok'),
+        'studio-warn': studioToken('warn'),
+        'studio-bad': studioToken('bad'),
         brand: {
           purple: '#422e59',
           'purple-dark': '#322244',

@@ -27,6 +27,15 @@ export interface MenuItem {
   icon: React.ReactNode;
   roles: UserRole[];
   /**
+   * A real URL, for the one entry that is not a module.
+   *
+   * Every other item in this file selects a module inside AppLayout's switch.
+   * The Academic Studio is a tree of server-rendered routes with its own
+   * layout and its own session, so it is navigated to rather than switched to.
+   * When this is set the sidebar follows it and never calls `onViewChange`.
+   */
+  href?: string;
+  /**
    * The capability this entry needs, where a role list is not the whole story.
    *
    * ---------------------------------------------------------------------
@@ -281,6 +290,35 @@ export const menuGroups: MenuGroup[] = [
         icon: <BookOpen size={18} />,
         roles: ACADEMIC,
         capability: 'view-own-courses',
+      },
+      // ---- THE ACADEMIC STUDIO --------------------------------------------
+      //
+      // The gateway into the AI learning environment: lecturers teach, AI
+      // transforms, students learn. Positioned here, immediately after "My
+      // courses", because that is the order of the work — these are your
+      // courses, and this is what you do inside them.
+      //
+      // IT IS NOT CALLED "ACADEMIC CAMPUS", and the reason is a ruling the
+      // University already gave: delivery is `Campus`, `Online`, or
+      // `Online / Campus` — those exact words. "Campus" therefore already
+      // means a place a class physically meets. Using it for the ONLINE AI
+      // environment would put two meanings of one word on the same screens,
+      // and the one a student trusts would be whichever they read first.
+      //
+      // IT LEAVES THE PORTAL SHELL, which nothing else in this file does.
+      // Every other entry is a module rendered inside AppLayout's switch; the
+      // Studio is a tree of real routes with its own layout, its own session
+      // and its own server components. Rewriting thirty-eight pages into the
+      // switch would be a rewrite, not an integration — and it would still be
+      // the same app, the same deployment, the same database and the same
+      // sign-in, which is what "one system" actually means.
+      {
+        id: 'academic-studio',
+        href: '/academic-studio',
+        label: 'Academic Studio',
+        icon: <GraduationCap size={18} />,
+        roles: ACADEMIC,
+        capability: 'access-lms',
       },
       // COURSES IS THE CATALOGUE. THIS IS THE TERM.
       //
@@ -728,6 +766,12 @@ export const STUDENT_GROUPS: MenuGroup[] = [
       // reading for, with their own progress through it.
       { id: 'my-programme', label: 'My programme', icon: <GraduationCap size={18} />, roles: ['student'] },
       { id: 'lms', label: 'My courses', icon: <BookOpen size={18} />, roles: ['student'] },
+      // THE SAME DOOR, FOR THE PEOPLE IT IS FOR. A student reaches the Studio
+      // as a reader: published notes, the fifteen-minute audio, the revision
+      // set and the Course AI. Same entry, same place in the list, because a
+      // lecturer and a student describing it to each other should be talking
+      // about the same thing.
+      { id: 'academic-studio', href: '/academic-studio', label: 'Academic Studio', icon: <GraduationCap size={18} />, roles: ['student'], capability: 'access-lms' },
       { id: 'course-registration', label: 'Course registration', icon: <ClipboardList size={18} />, roles: ['student'] },
       { id: 'timetable', label: 'My timetable', icon: <CalendarDays size={18} />, roles: ['student'] },
       { id: 'my-calendar', label: 'Academic calendar', icon: <CalendarClock size={18} />, roles: ['student'] },

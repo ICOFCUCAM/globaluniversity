@@ -231,9 +231,30 @@ for (const db of candidates) {
 }
 
 if (!ran) {
-  console.error('FAIL  no prepared database was reachable, so scenarios A–F were NOT '
-    + 'performed. Build one: create a database, load docs/migrations/tests/supabase-stub.sql, '
-    + 'then docs/migrations/RUN-ALL.sql.');
+  // ---- WHICH OF THE TWO CAUSES IT ACTUALLY IS -----------------------------
+  //
+  // `existsSync(SOCKET)` above tests for the socket DIRECTORY, which survives
+  // the server stopping. So a harness that has simply gone down got past that
+  // check, found no candidate database, and was told to BUILD ONE — advice
+  // that is wrong, takes twenty minutes, and leaves the real cause untouched.
+  //
+  // That happened three times in one week of work on the migrations. Asking
+  // the harness whether it is listening costs one query and gives the right
+  // instruction.
+  let listening = false;
+  try { query('postgres', 'select 1'); listening = true; } catch { /* reported now */ }
+
+  if (!listening) {
+    console.error('FAIL  the Postgres harness is not running, so scenarios A–F were NOT '
+      + 'performed. The socket DIRECTORY at /var/tmp/pgtest/sock exists either way, which is '
+      + 'why this is not caught above. Start it:\n'
+      + '  su pgtest -c "/usr/lib/postgresql/16/bin/pg_ctl -D /var/tmp/pgtest/data '
+      + '-l /var/tmp/pgtest/pg.log -o \'-k /var/tmp/pgtest/sock -h \'\'\' -w start"');
+  } else {
+    console.error('FAIL  the harness is running but holds no database with the migrations in '
+      + 'it, so scenarios A–F were NOT performed. Build one: create a database, load '
+      + 'docs/migrations/tests/supabase-stub.sql, then docs/migrations/RUN-ALL.sql.');
+  }
   process.exit(1);
 }
 

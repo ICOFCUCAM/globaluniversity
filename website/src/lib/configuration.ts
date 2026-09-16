@@ -61,7 +61,7 @@ export interface Setting {
    */
   dangerIfSet?: string;
   /** Which group it belongs to on the report. */
-  area: 'database' | 'credentials' | 'mail' | 'proctoring' | 'social' | 'site' | 'ai';
+  area: 'database' | 'credentials' | 'mail' | 'proctoring' | 'social' | 'site' | 'ai' | 'studio';
 }
 
 export const SETTINGS: Setting[] = [
@@ -301,10 +301,20 @@ export const SETTINGS: Setting[] = [
   // --- The assistant --------------------------------------------------------
   {
     name: 'ANTHROPIC_API_KEY',
-    importance: 'optional',
-    purpose: 'The assistant feature in the portal. NOTHING TO DO WITH CREDENTIALS — no document '
-      + 'is created, signed or verified by a model.',
-    ifAbsent: 'The assistant is unavailable. Every other part of the system is unaffected.',
+    // RAISED FROM `optional` WHEN THE ACADEMIC STUDIO ARRIVED. One key, two
+    // uses, and the second is not a convenience: without it no lecture is ever
+    // transformed. A second row was written for the Studio and then removed —
+    // two rows for one variable is the fault this whole integration has been
+    // closing, and a reader setting one and not the other would be setting the
+    // same thing twice.
+    importance: 'recommended',
+    purpose: 'Two things. The assistant feature in the portal, and the Academic Studio\u2019s '
+      + 'transformation of a lecture into corrected text, notes, a teaching script and revision '
+      + 'material. NOTHING TO DO WITH CREDENTIALS \u2014 no document is created, signed or '
+      + 'verified by a model.',
+    ifAbsent: 'The assistant is unavailable, and the Studio transforms nothing with a model: its '
+      + 'offline processor stands in and STAMPS every artefact, so nobody approves machine prose '
+      + 'believing a machine wrote it. Records, results and credentials are unaffected.',
     public: false,
     area: 'ai',
   },
@@ -313,6 +323,279 @@ export const SETTINGS: Setting[] = [
     importance: 'optional',
     purpose: 'Which model the social-post assistant drafts with.',
     ifAbsent: 'A sensible default is used. Set it only to pin a particular model.',
+    public: false,
+    area: 'ai',
+  },
+
+  // -------------------------------------------------------------------------
+  // THE ACADEMIC STUDIO
+  //
+  // Twenty-seven variables arrived with it and NOT ONE was on this report,
+  // which is exactly what configuration.test.mjs exists to catch, and did.
+  //
+  // NONE IS MARKED `required`, deliberately. On this report `required` means
+  // the University does not operate — no sign-in, no records. The Studio is an
+  // addition: without it admissions, results and credentials are untouched.
+  // Marking its variables required would have made the whole institution read
+  // as inoperable because an AI feature was unconfigured, and a report that
+  // cries wolf is one people stop reading.
+  //
+  // The severity lives in `ifAbsent`, which is what that field is for.
+  // -------------------------------------------------------------------------
+  {
+    name: 'ACADEMIC_STORE',
+    importance: 'recommended',
+    purpose: 'Which store the Academic Studio reads: `supabase` for the University\u2019s own database, '
+      + '`memory` for the built-in demonstration.',
+    ifAbsent: 'THE STUDIO SERVES THE DEMONSTRATION COURSE TO EVERYBODY \u2014 invented lectures, under '
+      + 'the University\u2019s name, with no error anywhere. If you read one row on this page, '
+      + 'read this one.',
+    public: false,
+    area: 'studio',
+  },
+  {
+    name: 'ACADEMIC_SESSION_MODE',
+    importance: 'recommended',
+    purpose: 'How the Studio learns who is asking: `supabase` behind the portal\u2019s own sign-in, '
+      + '`header` behind another host\u2019s, `demo` for the switcher.',
+    ifAbsent: 'The Studio falls back to the DEMONSTRATION SWITCHER, where whoever opens it chooses whose '
+      + 'eyes to look through \u2014 a lecturer\u2019s included.',
+    public: false,
+    area: 'studio',
+  },
+  {
+    name: 'SUPABASE_JWT_SECRET',
+    importance: 'recommended',
+    purpose: 'Verifies the access token a signed-in person presents to the Studio.',
+    ifAbsent: 'The Studio cannot verify a session and refuses every request. It does NOT wave people '
+      + 'through; that refusal is deliberate.',
+    public: false,
+    minLength: 20,
+    area: 'studio',
+  },
+  {
+    name: 'ACADEMIC_UNIVERSITY_NAME',
+    importance: 'recommended',
+    purpose: 'The institution\u2019s name, as it appears on the Studio\u2019s screens.',
+    ifAbsent: 'Every Studio page refuses to render rather than showing a name this system made up under '
+      + 'the University\u2019s letterhead.',
+    public: false,
+    area: 'studio',
+  },
+  {
+    name: 'ACADEMIC_UNIVERSITY_SHORT_NAME',
+    importance: 'recommended',
+    purpose: 'The short form of the institution\u2019s name.',
+    ifAbsent: 'As above \u2014 the Studio refuses rather than inventing one.',
+    public: false,
+    area: 'studio',
+  },
+  {
+    name: 'ACADEMIC_UNIVERSITY_ID',
+    importance: 'recommended',
+    purpose: 'The institution\u2019s identifier inside the Studio.',
+    ifAbsent: 'As above \u2014 the Studio refuses rather than inventing one.',
+    public: false,
+    area: 'studio',
+  },
+  {
+    name: 'ACADEMIC_AI_MODEL',
+    importance: 'optional',
+    purpose: 'Which Claude model the Studio\u2019s transformation runs on.',
+    ifAbsent: 'The Studio uses its own default model. Transformation still happens; which '
+      + 'model did it is recorded on every artefact either way.',
+    public: false,
+    area: 'ai',
+  },
+  {
+    name: 'ANTHROPIC_AUTH_TOKEN',
+    importance: 'optional',
+    purpose: 'An alternative to ANTHROPIC_API_KEY where a gateway issues tokens.',
+    ifAbsent: 'Nothing, unless the deployment uses a gateway instead of a key.',
+    public: false,
+    area: 'ai',
+  },
+  {
+    name: 'ACADEMIC_TRANSCRIBER',
+    importance: 'recommended',
+    purpose: 'Which service turns a recording into words. THERE IS NO DEFAULT VENDOR.',
+    ifAbsent: 'A lecturer can upload a recording and nothing ever comes out of it. The Studio says so '
+      + 'rather than failing obscurely, but no audio is transcribed.',
+    public: false,
+    area: 'studio',
+  },
+  {
+    name: 'ACADEMIC_TRANSCRIBER_KEY',
+    importance: 'recommended',
+    purpose: 'The transcription service\u2019s key.',
+    ifAbsent: 'As above \u2014 no recording is transcribed.',
+    public: false,
+    minLength: 8,
+    area: 'studio',
+  },
+  {
+    name: 'ACADEMIC_TRANSCRIBER_MODEL',
+    importance: 'optional',
+    purpose: 'Which transcription model to ask for.',
+    ifAbsent: 'The service\u2019s own default is used.',
+    public: false,
+    area: 'studio',
+  },
+  {
+    name: 'ACADEMIC_SPEECH',
+    importance: 'recommended',
+    purpose: 'Which service reads a lesson aloud. THERE IS NO DEFAULT VENDOR.',
+    ifAbsent: 'No fifteen-minute audio lesson is produced, in any language. The written material is '
+      + 'unaffected.',
+    public: false,
+    area: 'studio',
+  },
+  {
+    name: 'ACADEMIC_SPEECH_KEY',
+    importance: 'recommended',
+    purpose: 'The speech service\u2019s key.',
+    ifAbsent: 'As above \u2014 no audio is produced.',
+    public: false,
+    minLength: 8,
+    area: 'studio',
+  },
+  {
+    name: 'ACADEMIC_SPEECH_MODEL',
+    importance: 'optional',
+    purpose: 'Which speech model to ask for.',
+    ifAbsent: 'The service\u2019s own default is used.',
+    public: false,
+    area: 'studio',
+  },
+  {
+    name: 'ACADEMIC_S3_BUCKET',
+    importance: 'recommended',
+    purpose: 'Where recordings and generated audio are stored.',
+    ifAbsent: 'Media is written to local disk, which a serverless deployment discards between requests \u2014 '
+      + 'so a recording uploaded today may be gone tomorrow.',
+    public: false,
+    area: 'studio',
+  },
+  {
+    name: 'ACADEMIC_S3_ENDPOINT',
+    importance: 'recommended',
+    purpose: 'The object store\u2019s endpoint.',
+    ifAbsent: 'As above \u2014 media falls back to local disk.',
+    public: false,
+    area: 'studio',
+  },
+  {
+    name: 'ACADEMIC_S3_KEY_ID',
+    importance: 'recommended',
+    purpose: 'The object store\u2019s access key id.',
+    ifAbsent: 'As above \u2014 media falls back to local disk.',
+    public: false,
+    minLength: 8,
+    area: 'studio',
+  },
+  {
+    name: 'ACADEMIC_S3_SECRET',
+    importance: 'recommended',
+    purpose: 'The object store\u2019s secret.',
+    ifAbsent: 'As above \u2014 media falls back to local disk.',
+    public: false,
+    minLength: 8,
+    area: 'studio',
+  },
+  {
+    name: 'ACADEMIC_S3_REGION',
+    importance: 'optional',
+    purpose: 'The object store\u2019s region.',
+    ifAbsent: 'A default is used; some providers require it.',
+    public: false,
+    area: 'studio',
+  },
+  {
+    name: 'ACADEMIC_S3_PATH_STYLE',
+    importance: 'optional',
+    purpose: 'Use path-style URLs, which some S3-compatible providers require.',
+    ifAbsent: 'Virtual-host style is used.',
+    public: false,
+    area: 'studio',
+  },
+  {
+    name: 'ACADEMIC_MEDIA_DIR',
+    importance: 'optional',
+    purpose: 'Where media goes when no object store is configured.',
+    ifAbsent: 'A directory under the working tree is used.',
+    public: false,
+    area: 'studio',
+  },
+  {
+    name: 'ACADEMIC_DATA_DIR',
+    importance: 'optional',
+    purpose: 'Where the DEMONSTRATION store persists between restarts.',
+    ifAbsent: 'The demonstration resets on every restart. Irrelevant when ACADEMIC_STORE=supabase.',
+    public: false,
+    area: 'studio',
+  },
+  {
+    name: 'ACADEMIC_SESSION_SECRET',
+    importance: 'optional',
+    purpose: 'Signs the identity a host passes across, when ACADEMIC_SESSION_MODE=header.',
+    ifAbsent: 'Header mode refuses every request. Irrelevant in supabase or demo mode.',
+    public: false,
+    minLength: 20,
+    area: 'studio',
+  },
+  {
+    name: 'ACADEMIC_LIVE',
+    importance: 'optional',
+    purpose: 'Enables live translated delivery of a class.',
+    ifAbsent: 'Live sessions are unavailable. Recorded lectures are unaffected.',
+    public: false,
+    area: 'studio',
+  },
+  {
+    name: 'OPENAI_API_KEY',
+    importance: 'optional',
+    purpose: 'An alternative transformation vendor, behind the same interface.',
+    ifAbsent: 'Nothing, unless the deployment chooses it over Claude.',
+    public: false,
+    area: 'ai',
+  },
+  {
+    name: 'OPENAI_ENDPOINT',
+    importance: 'optional',
+    purpose: 'That vendor\u2019s endpoint.',
+    ifAbsent: 'Its default is used.',
+    public: false,
+    area: 'ai',
+  },
+  {
+    name: 'OPENAI_MODEL',
+    importance: 'optional',
+    purpose: 'Which of its models to ask for.',
+    ifAbsent: 'Its default is used.',
+    public: false,
+    area: 'ai',
+  },
+  {
+    name: 'GEMINI_API_KEY',
+    importance: 'optional',
+    purpose: 'An alternative transformation vendor, behind the same interface.',
+    ifAbsent: 'Nothing, unless the deployment chooses it.',
+    public: false,
+    area: 'ai',
+  },
+  {
+    name: 'GEMINI_ENDPOINT',
+    importance: 'optional',
+    purpose: 'That vendor\u2019s endpoint.',
+    ifAbsent: 'Its default is used.',
+    public: false,
+    area: 'ai',
+  },
+  {
+    name: 'GEMINI_MODEL',
+    importance: 'optional',
+    purpose: 'Which of its models to ask for.',
+    ifAbsent: 'Its default is used.',
     public: false,
     area: 'ai',
   },

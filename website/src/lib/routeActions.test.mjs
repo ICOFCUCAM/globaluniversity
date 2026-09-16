@@ -126,6 +126,13 @@ const NO_SCREEN_YET = [
   'admin/document-template retire',
   'admin/job-description fork',            // *
   'announcements variants',
+  // INHERITED FROM THE ACADEMIC STUDIO, AND DEAD TWICE OVER. Nothing sends it,
+  // and if something did the store would refuse: `certificates` is one of the
+  // six merges that throw rather than guess, because the University already
+  // issues credentials through `documents`, `document_templates` and the
+  // second-pair-of-eyes rule on activation. A course-completion certificate
+  // belongs in THAT, not a second register with its own verification code.
+  'studio/certificates check',
   'correspondence withdraw',
   'finance/fees assess',
   'finance/fees cancel',
@@ -177,6 +184,12 @@ for (const file of routes) {
 const screens = [
   ...walk(join(root, 'src', 'components'), '.tsx'),
   ...walk(join(root, 'src', 'app'), '.tsx'),
+  // THE ACADEMIC STUDIO'S SCREENS ARE SCREENS. They live under src/academic
+  // rather than src/components because the Studio keeps its own tree, and
+  // leaving them out reported `answer-card` and `sit-quiz` as sent by nothing
+  // while FlashcardDeck.tsx and QuizRunner.tsx were sending both. A false
+  // "nothing calls this" is how a real orphan gets lost in the noise.
+  ...walk(join(root, 'src', 'academic', 'components'), '.tsx'),
 ];
 
 // ---------------------------------------------------------------------------

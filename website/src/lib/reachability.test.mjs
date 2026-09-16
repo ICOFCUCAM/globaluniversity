@@ -106,13 +106,60 @@ const NOT_CALLED_FROM_A_SCREEN = {
   'results/recompute': 'Called by the results screen through its own inline fetch.',
   'document/archived': 'Reads an archived document by reference; reached from a link, not a '
     + 'button.',
+  // AN ORPHAN, AND SAID SO PLAINLY RATHER THAN DRESSED UP AS AN EXEMPTION.
+  //
+  // NOTHING CALLS THIS. It arrived with the Academic Studio, whose own suite
+  // never checked reachability, so it had been an orphan there too and nobody
+  // had a way to notice. It is kept rather than deleted because the machinery
+  // behind it is real and tested — src/academic/lib/credential/certificate.ts
+  // and its suite — and deleting it would throw that away.
+  //
+  // It also could not work today if something did call it: `certificates` is
+  // one of the six merges that refuse rather than guess, because the
+  // University already issues credentials through `documents`,
+  // `document_templates` and the second-pair-of-eyes rule on activation. A
+  // course-completion certificate has to go through THAT, not a second
+  // register with its own verification code.
+  //
+  // So this line is not "we know about that one". It is: this route is dead
+  // until the certificate merge is written, and then it needs a screen.
+  'studio/certificates': 'NOT REACHABLE. An orphan inherited from the Academic Studio, kept for '
+    + 'the tested machinery behind it, and refused by the store until the certificate merge into '
+    + 'the University\u2019s own credential system is written.',
 };
+
+// ---------------------------------------------------------------------------
+// A DYNAMIC SEGMENT IS NEVER WRITTEN OUT BY ITS CALLER.
+//
+// This matched on the literal path, which is right for `/api/exam/mark` and
+// useless for `/api/studio/artefacts/[id]/translate` — no screen contains that
+// string. A screen writes `/api/studio/artefacts/${artefact.id}/translate`.
+//
+// The gap was invisible until the Academic Studio arrived, because until then
+// this University had NO dynamic API routes at all. It reported eleven of them
+// as reachable from nothing, every one of which is called from a screen.
+//
+// So `[id]` becomes "one segment, however it was written" and `[...key]`
+// becomes "the rest of the path". A route with no caller is still reported —
+// the check has been widened, not weakened, and removing a caller still fails
+// it.
+// ---------------------------------------------------------------------------
+const callableAs = (path) => new RegExp(
+  '/api/' + path
+    .split('/')
+    .map((segment) => {
+      if (/^\[\.\.\..+\]$/.test(segment)) return '[^\'"`\\s]+';
+      if (/^\[.+\]$/.test(segment)) return '[^/\'"`\\s]+';
+      return segment.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    })
+    .join('/'),
+);
 
 const uncalled = [];
 for (const route of routes) {
   const path = route.slice(route.indexOf('/api/') + 5).replace('/route.ts', '');
   if (NOT_CALLED_FROM_A_SCREEN[path]) continue;
-  if (!callerText.includes(`/api/${path}`)) uncalled.push(path);
+  if (!callableAs(path).test(callerText)) uncalled.push(path);
 }
 
 check('no route is unreachable from every screen', uncalled, []);
