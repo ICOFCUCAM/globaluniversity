@@ -163,6 +163,27 @@ const MAY = [
   ['view their own courses', 'view-own-courses'],
   ['create course materials', 'publish-course-material'],
   ['reach the learning space', 'access-lms'],
+  // ---------------------------------------------------------------------
+  // THE ACADEMIC STUDIO, RULED 16 SEPTEMBER 2026.
+  //
+  // "Lecturer workflow: a lecturer should be able to submit — type lecture
+  // notes directly, upload prepared notes, upload an audio lecture, record a
+  // lecture, upload lecture video… But submission does not automatically mean
+  // AI processing."
+  //
+  // FIVE ADDED, AND WHAT IS ABSENT IS THE POINT OF THEM. Not one
+  // `studio-ai-*` capability is here: running a model costs the University
+  // money and puts a synthesised voice in front of a cohort, so it is granted
+  // by name through capability_grants, with a reason and an end date.
+  //
+  // `studio-manage-ebooks` is absent too, for a different reason: the
+  // University ruled that the Course Library exists, not that a lecturer
+  // curates it.
+  ['write a lecture into the Studio', 'studio-submit-lecture'],
+  ['upload prepared notes, audio or video', 'studio-upload-lecture'],
+  ['record a lecture', 'studio-record-lecture'],
+  ['approve what the Studio made of their lecture', 'studio-approve-content'],
+  ['replace their own recording', 'studio-replace-content'],
   ['write question-bank items', 'manage-question-bank'],
   ['draft a question paper', 'draft-question-paper'],
   ['enter grades', 'upload-grades'],

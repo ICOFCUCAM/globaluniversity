@@ -312,10 +312,20 @@ const everythingElse = (() => {
       // are about one lecture, the University's about the institution, and
       // flattening them would make every Studio act grantable from the
       // portal's role editor.
-      if (e.isDirectory()) {
-        if (p.endsWith('/src/academic')) continue;
-        walk(p);
-      } else if (/\.(ts|tsx)$/.test(e.name) && !p.endsWith('lib/roles.ts')) text += read(p);
+      if (e.isDirectory()) walk(p);
+      else if (/\.(ts|tsx)$/.test(e.name)
+        && !p.endsWith('lib/roles.ts')
+        // THE STUDIO'S OWN VOCABULARY FILE, AND ONLY THAT FILE.
+        //
+        // The first attempt at this excluded the whole of src/academic, which
+        // stopped the false positive and created a worse one in the other
+        // direction: the Studio's ROUTES enforce the University's `studio-*`
+        // capabilities for real, and excluding the tree reported six of them
+        // as checked nowhere while they were being checked on every request.
+        //
+        // One file is the problem — the one that happens to use some of the
+        // same words for a different vocabulary — so one file is excluded.
+        && !p.endsWith('academic/lib/capabilities.ts')) text += read(p);
     }
   };
   walk(src);

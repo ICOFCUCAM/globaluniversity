@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { mayRunStudioAct } from '@/academic/lib/studioPermissions';
+import type { Capability } from '@/lib/roles';
 import { getQueue, getStore } from '@/academic/lib/data';
 import { engine } from '@/academic/lib/ai/engine';
 import { currentActor } from '@/academic/lib/session';
@@ -19,6 +21,23 @@ export async function POST(request: Request) {
   const actor = await currentActor();
   const store = getStore();
   const body = await request.json();
+  // ---- THE UNIVERSITY'S PERMISSION, NOT ONLY THE OWNER'S RIGHT ----------
+  //
+  // `ownership.ts` decides whose material this is; this decides whether the
+  // University is willing to have the act performed at all. The ruling of
+  // 16 September 2026 separated submitting from generating, and both halves
+  // of it have to be asked on the request, not only drawn on the screen.
+  // A TYPED LECTURE AND AN UPLOADED RECORDING ARE DIFFERENT ACTS. The
+  // University lists 'Write lecture' and 'Upload audio' as separate rows,
+  // and they are: one costs nothing and one puts a file on the University's
+  // storage that something will later be asked to transcribe.
+  const may = await mayRunStudioAct(actor.id, (body.transcript ? 'studio-submit-lecture' : 'studio-upload-lecture') as Capability);
+  if (!may.allowed) {
+    return NextResponse.json({
+      error: may.reason, needsPermission: may.needsPermission === true,
+    }, { status: 403 });
+  }
+
 
   try {
     const lecture = await addLecture(store, actor, body.courseId, {

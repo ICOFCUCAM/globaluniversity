@@ -444,6 +444,76 @@ export const OPERATIONAL_CAPABILITIES = [
   // Theology course.
   // ---------------------------------------------------------------------
   'publish-course-material',
+
+  // =====================================================================
+  // THE ACADEMIC STUDIO — SUBMITTING IS NOT GENERATING
+  // =====================================================================
+  //
+  // The University's ruling of 16 September 2026:
+  //
+  //     "Submission does not automatically mean AI processing… Each
+  //      capability should be its own permission, rather than having one
+  //      broad permission called 'AI Access.'"
+  //
+  // WHY THIS IS NOT ONE CAPABILITY. The Academic Studio arrived with a
+  // single `run-transformation` in its own vocabulary, held by every
+  // lecturer. That conflates three unlike things: typing a lecture into a
+  // box, which costs nothing and is plainly the lecturer's; transcribing an
+  // hour of audio, which costs money; and generating a fifteen-minute audio
+  // lesson in nine languages, which costs considerably more and puts a
+  // synthesised voice in front of a cohort.
+  //
+  // A university that cannot say "this lecturer may transcribe but not
+  // generate audio" has to answer the question with a yes or a no to all of
+  // it, and the safe answer to all of it is no.
+  //
+  // WHAT THIS DOES NOT CHANGE: who owns the material. 092 stands — the
+  // lecturer owns what they taught, an office cannot read their draft, and
+  // an office cannot delete their recording. AUTHORSHIP STAYS WITH THE
+  // LECTURER; EXECUTION BECOMES THE UNIVERSITY'S. Spending the University's
+  // money on a model is not an author's right.
+  //
+  // AND THEY ARE GRANTABLE. `capability_grants` — 056 — already does exactly
+  // what the University described for this: a named person, a named
+  // capability, a reason of at least twenty characters, a compulsory expiry,
+  // no edits, no deletes, and revocation as a new dated fact. Nothing new
+  // had to be built to govern these; see /api/admin/capability-grant.
+  // ---------------------------------------------------------------------
+
+  // ---- SUBMITTING. The lecturer's own work, and held by default. --------
+  'studio-submit-lecture',
+  'studio-upload-lecture',
+  'studio-record-lecture',
+
+  // ---- ASKING A MODEL TO DO SOMETHING. Granted, not assumed. -----------
+  //
+  // NOT held by `lecturer` in the matrix below. That is the ruling, and it is
+  // the one line of this block a reader should not skim: a lecturer submits,
+  // and somebody with authority decides whether a model runs.
+  'studio-ai-transcribe',
+  'studio-ai-refine',
+  'studio-ai-translate',
+  'studio-ai-generate-audio',
+  'studio-ai-generate-revision',
+  'studio-ai-generate-quiz',
+
+  // ---- STANDING BEHIND IT ----------------------------------------------
+  //
+  // Approval is the lecturer's and only the lecturer's — it is the act 092
+  // enforces in the database, where nothing reaches `published` without
+  // first being `approved` by a named person.
+  //
+  // THERE IS NO `studio-publish-content`. Publishing a lecture's material to
+  // a cohort is `publish-course-material`, which already exists and which
+  // the lecturer already holds — and since 093 the two are literally the
+  // same act, because publishing an artefact writes a `course_lessons` row.
+  // A second capability for one act is how two answers to one question get
+  // written down.
+  'studio-approve-content',
+  'studio-replace-content',
+
+  // ---- THE COURSE LIBRARY ----------------------------------------------
+  'studio-manage-ebooks',
   // ---------------------------------------------------------------------
   // RECORDING A CONFERRAL — the end of the chain.
   //
@@ -533,6 +603,24 @@ export const SYSTEM_CAPABILITIES = [
   'erase-announcement',
   // Who exists, and who may act
   'assign-roles',
+  // ---------------------------------------------------------------------
+  // GRANTING A STUDIO PERMISSION, WITHOUT GRANTING EVERYTHING ELSE.
+  //
+  // The University: "The VC should be able to authorize a lecturer without
+  // requiring the Superadmin to manually intervene every time."
+  //
+  // The obvious way to do that is to give the Vice-Chancellor `assign-roles`,
+  // and it would be wrong: that capability governs changing what an account
+  // IS. The ruling asks for authority over the Studio's permissions, not over
+  // the University's role assignments, and a permission system that can only
+  // widen in blunt steps is how offices end up holding what nobody meant to
+  // give them.
+  //
+  // So this is narrower by construction: it authorises granting `studio-*`
+  // and nothing else. /api/admin/capability-grant enforces that the
+  // capability being granted actually starts with `studio-`.
+  // ---------------------------------------------------------------------
+  'grant-studio-permission',
   'create-staff-account',
   // ---------------------------------------------------------------------
   // OPENING A STAFF RECORD IS NOT CREATING AN ACCOUNT FROM NOTHING.
@@ -708,6 +796,11 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // ---------------------------------------------------------------------
   'vice-chancellor': [
     'change-own-password',
+    // THE UNIVERSITY'S RULING: the Vice-Chancellor authorises a lecturer
+    // without the Superadministrator being fetched every time. Narrow by
+    // construction — this grants `studio-*` and nothing else, and does not
+    // carry `assign-roles`, which would be authority over what an account IS.
+    'grant-studio-permission',
     // EVERY MEMBER OF STAFF HAS A RECORD, and every one of them was unable
     // to read it. See `view-own-staff-record` in the capability list.
     'view-own-staff-record',
@@ -897,6 +990,11 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // ---------------------------------------------------------------------
   'library-staff': [
     'change-own-password',
+    // THE COURSE LIBRARY IS THE LIBRARY'S. Required and recommended reading,
+    // what may be read online, what may be downloaded, and under whose
+    // licence — that is librarianship, and this office already does it for
+    // everything else the University holds.
+    'studio-manage-ebooks',
     // EVERY MEMBER OF STAFF HAS A RECORD, and every one of them was unable
     // to read it. See `view-own-staff-record` in the capability list.
     'view-own-staff-record','manage-library', 'view-registered-students'],
@@ -985,6 +1083,22 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // course withdrawal, an appeal.
   'academic-office': [
     'change-own-password',
+    // ---------------------------------------------------------------------
+    // THE ACADEMIC STUDIO. This office is the "Academic administration" of
+    // the University's Studio Control sketch, which shows it ticked against
+    // every AI row — so it holds them by role rather than by grant.
+    //
+    // It does NOT hold `studio-approve-content`. Approving is standing behind
+    // the words academically, and 092 refuses to let anyone but the owner do
+    // it. An office that could approve a lecturer's material would be an
+    // office that could put words in their mouth.
+    'studio-ai-transcribe',
+    'studio-ai-refine',
+    'studio-ai-translate',
+    'studio-ai-generate-audio',
+    'studio-ai-generate-revision',
+    'studio-ai-generate-quiz',
+    'studio-manage-ebooks',
     // EVERY MEMBER OF STAFF HAS A RECORD, and every one of them was unable
     // to read it. See `view-own-staff-record` in the capability list.
     'view-own-staff-record',
@@ -1041,6 +1155,34 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // that absence is the first link of the chain.
   lecturer: [
     'change-own-password',
+    // ---------------------------------------------------------------------
+    // THE ACADEMIC STUDIO, AND WHAT IS DELIBERATELY ABSENT FROM IT.
+    //
+    // A lecturer SUBMITS — types a lecture, uploads notes or audio, records
+    // one, replaces a recording — and APPROVES what comes back, which is the
+    // act nothing else in this system may do on their behalf.
+    //
+    // NOT ONE `studio-ai-*` CAPABILITY IS HERE, and that absence is the
+    // University's ruling of 16 September 2026 rather than an oversight:
+    // "submission does not automatically mean AI processing". Running a model
+    // costs the University money and puts a synthesised voice in front of a
+    // cohort. A lecturer who needs it is GRANTED it, by name, with a reason
+    // and an expiry, through capability_grants.
+    //
+    // Publishing is `publish-course-material`, further down this same list,
+    // which the lecturer has always held.
+    'studio-submit-lecture',
+    'studio-upload-lecture',
+    'studio-record-lecture',
+    'studio-approve-content',
+    'studio-replace-content',
+    // `studio-manage-ebooks` IS DELIBERATELY NOT HERE. The University ruled on
+    // 16 September 2026 that e-books become first-class course resources; it
+    // did NOT say who curates them. The Library and the Academic Office hold
+    // it because that is plainly their work. Handing it to every lecturer
+    // would be this system deciding a question of academic administration
+    // nobody asked it to decide — and a lecturer who needs it can be granted
+    // it by name, like any other.
     // ---------------------------------------------------------------------
     // THE UNIVERSITY'S OWN LIST, SEPTEMBER 2026, AND NOTHING BESIDE IT.
     //

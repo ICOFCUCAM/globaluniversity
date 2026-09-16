@@ -91,14 +91,40 @@ export async function POST(request: Request) {
       `Not a grant action. They are: ${Object.keys(CAPABILITY).join(', ')}.`);
   }
 
-  const g = await guard(request, capability);
+  // ---------------------------------------------------------------------
+  // A SECOND, NARROWER AUTHORITY — AND ONLY OVER `studio-*`.
+  //
+  // The University's ruling of 16 September 2026: "The VC should be able to
+  // authorize a lecturer without requiring the Superadmin to manually
+  // intervene every time."
+  //
+  // The lazy way to do that is to hand the Vice-Chancellor `assign-roles`,
+  // which governs changing what an account IS. The ruling asked for authority
+  // over the Studio's permissions, so that is what this gives: a caller
+  // holding `grant-studio-permission` may grant, revoke and list — but the
+  // capability in question must actually begin `studio-`.
+  //
+  // THE CHECK IS ON THE CAPABILITY BEING GRANTED, NOT ON THE CALLER'S ROLE.
+  // Reading the role would mean this file holding a second opinion about who
+  // the Vice-Chancellor is; reading the target means the narrowing holds for
+  // whoever is given `grant-studio-permission` next.
+  const studioOnly = (action === 'grant' || action === 'revoke' || action === 'list')
+    && String(body.capability ?? '').startsWith('studio-');
+
+  let g = await guard(request, capability);
+  if (!g.ok && studioOnly) {
+    const narrower = await guard(request, 'grant-studio-permission' as Capability);
+    if (narrower.ok) g = narrower;
+  }
   if (!g.ok) {
     return NextResponse.json({
       ok: false,
       error: g.error,
       detail: action === 'grant' || action === 'revoke'
         ? 'Handing somebody a capability their office does not carry is a change to what that '
-          + 'account is, and is held by the same authority that changes a role.'
+          + 'account is, and is held by the same authority that changes a role. The '
+          + 'Vice-Chancellor holds `grant-studio-permission`, which is the same act narrowed to '
+          + 'the Academic Studio — and it only answers for capabilities beginning `studio-`.'
         : undefined,
     }, { status: g.status });
   }

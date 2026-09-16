@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { mayRunStudioAct } from '@/academic/lib/studioPermissions';
+import type { Capability } from '@/lib/roles';
 import { getStore } from '@/academic/lib/data';
 import { currentActor } from '@/academic/lib/session';
 import { storage, Unsupported } from '@/academic/lib/storage/storage';
@@ -14,6 +16,19 @@ export const maxDuration = 60;
 export async function POST(request: Request) {
   const actor = await currentActor();
   const store = getStore();
+  // ---- THE UNIVERSITY'S PERMISSION, NOT ONLY THE OWNER'S RIGHT ----------
+  //
+  // `ownership.ts` decides whose material this is; this decides whether the
+  // University is willing to have the act performed at all. The ruling of
+  // 16 September 2026 separated submitting from generating, and both halves
+  // of it have to be asked on the request, not only drawn on the screen.
+  const may = await mayRunStudioAct(actor.id, 'studio-upload-lecture' as Capability);
+  if (!may.allowed) {
+    return NextResponse.json({
+      error: may.reason, needsPermission: may.needsPermission === true,
+    }, { status: 403 });
+  }
+
 
   try {
     const form = await request.formData();
