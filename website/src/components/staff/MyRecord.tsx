@@ -83,10 +83,39 @@ export default function MyRecord() {
   const [note, setNote] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    // THEIR OWN ROW, BY ROW-LEVEL SECURITY. No filter is written here: 082's
-    // policy is what decides, and a filter in the screen would be a second
-    // answer to the same question.
-    const { data } = await supabase.from('staff_records').select(RECORD).maybeSingle();
+    // -------------------------------------------------------------------
+    // THEIR OWN ROW, BY NAME.
+    //
+    // THIS SCREEN SHOWED THE SUPERADMINISTRATOR SOMEBODY ELSE'S RECORD, and
+    // the note that used to stand here is why. It said: "No filter is written
+    // here: 082's policy is what decides, and a filter in the screen would be
+    // a second answer to the same question."
+    //
+    // That is true of a lecturer, and false of every office that may read the
+    // whole staff register. 082's policy begins "your own record, always" and
+    // then goes on to admit the Superadministrator, the System Administrator
+    // and HR to ALL of them — correctly, because somebody has to maintain the
+    // register. So for those offices the unfiltered query returns the whole
+    // table and `maybeSingle()` hands back whichever row is there.
+    //
+    // The University signed in as `superadmin@iguc.net` and My record showed
+    // Prof Aaron Ndenka's staff number, his post, and a button to open HIS
+    // letter of appointment. One staff record existed, so there was no error
+    // to notice — and with a second record it would have started failing
+    // instead, which is a different bad day.
+    //
+    // A "MY" SCREEN NAMES THE PERSON. Row-level security is a floor, not an
+    // identity: it says who MAY read a row, never which row is yours.
+    // `myRecordIsMine.test.mjs` holds this.
+    // -------------------------------------------------------------------
+    const { data: session } = await supabase.auth.getUser();
+    const me = session?.user?.id;
+    if (!me) { setRecord(null); return; }
+
+    const { data } = await supabase.from('staff_records')
+      .select(RECORD)
+      .eq('auth_user_id', me)
+      .maybeSingle();
     const r = (data ?? null) as Record | null;
     setRecord(r);
 
