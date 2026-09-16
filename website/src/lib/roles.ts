@@ -26,6 +26,10 @@ export const HIERARCHY: UserRole[] = [
   'vice-chancellor',
   'registrar',
   'finance-director',
+  // THE NATIONAL RECTOR. Below the central offices — the University's academic
+  // authority is not theirs — and above a Dean, because a Rector leads an
+  // administration and a Dean leads a faculty within one.
+  'national-rector',
   'dean',
   'hod',
   'programme-coordinator',
@@ -38,6 +42,10 @@ export const HIERARCHY: UserRole[] = [
   'lecturer',
   'invigilator',
   'finance',
+  // Beside Finance, not beside the Rector: the programme's whole point is that
+  // the money is administered by somebody who is not the person leading the
+  // administration.
+  'national-financial-secretary',
   'admissions-officer',
   'library-staff',
   'student-affairs',
@@ -244,6 +252,27 @@ export const OPERATIONAL_CAPABILITIES = [
   // database refuses them to authorise what they prepared even if somebody
   // later grants them the capability by mistake.
   // ---------------------------------------------------------------------
+  // ---------------------------------------------------------------------
+  // THE NATIONAL ADMINISTRATIONS.
+  //
+  // ESTABLISHING ONE IS AN INSTITUTIONAL ACT and sits with the
+  // Superadministrator and the Vice-Chancellor. It commits the University's
+  // name in a country, and 097 refuses to record one as established without
+  // the agreement it operates under and the appointment its Rector holds.
+  'establish-national-administration',
+  // The Rector's own. Reading their nation, and nothing outside it — the
+  // scoping is 097's row-level security, not this capability.
+  'lead-national-administration',
+  'view-national-students',
+  // RECOMMEND, NOT APPOINT. The programme is explicit: "The National Rector
+  // recommends. ICOF University verifies and appoints." 041 already refuses an
+  // approval by whoever drafted it, so this capability deliberately stops
+  // short of 'draft-appointment'.
+  'recommend-national-staff',
+  // TWO CAPABILITIES, NOT ONE, for the same reason the offices are two. The
+  // Rector sees what the nation took; the Financial Secretary reconciles it.
+  'view-national-finance',
+  'administer-national-finance',
   'compose-correspondence',
   'prepare-correspondence',
   'authorize-correspondence',
@@ -988,6 +1017,60 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // suggest the office has no such duty; enforcing it would suggest this
   // system carries it.
   // ---------------------------------------------------------------------
+  // =======================================================================
+  // THE NATIONAL RECTOR.
+  // =======================================================================
+  //
+  // WHAT THIS OFFICE DOES NOT HOLD IS THE POINT OF THE LIST.
+  //
+  // No 'decide-admission'. No 'issue-credential'. No 'approve-results'. No
+  // 'manage-academic-structure'. The programme says so in as many words — "The
+  // National Rector does not become an independent registrar, degree-awarding
+  // authority or academic authority outside ICOF's statutes and regulations" —
+  // and a capability list is where that sentence either holds or quietly does
+  // not.
+  //
+  // AND NO TEACHING CAPABILITY EITHER, which looks like an omission and is
+  // not. A Rector teaches "where appropriately qualified": that is a condition,
+  // and a condition is a grant. `capability_grants` (056) gives it with an
+  // expiry, an audit trail and a named grantor — which is what the University
+  // asked for when it ruled on Studio permissions, and it applies here
+  // unchanged.
+  //
+  // WHAT SCOPES IT is 097's row-level security, not anything in this file.
+  // `view-national-students` opens the screen; the database decides which
+  // students are on it.
+  'national-rector': [
+    'change-own-password',
+    'view-own-staff-record',
+    'lead-national-administration',
+    'view-national-students',
+    'recommend-national-staff',
+    'view-national-finance',
+    // The University speaking in that country. 045 still refuses a letter
+    // authorised by whoever prepared it.
+    'compose-correspondence',
+    'authorize-correspondence',
+    'issue-correspondence',
+    // Reading the course catalogue and the registered students of their own
+    // nation — both already scoped by the database.
+    'view-registered-students',
+  ],
+  // =======================================================================
+  // THE NATIONAL FINANCIAL SECRETARY.
+  // =======================================================================
+  //
+  // Reconciles the nation's money and cannot set what anybody is charged:
+  // 'set-fee-schedule' is the Vice-Chancellor's and stays there. The
+  // programme's "two-level financial governance" is exactly this — national
+  // operational responsibility, central authority over the figures.
+  'national-financial-secretary': [
+    'change-own-password',
+    'view-own-staff-record',
+    'administer-national-finance',
+    'view-national-finance',
+    'view-national-students',
+  ],
   'library-staff': [
     'change-own-password',
     // THE COURSE LIBRARY IS THE LIBRARY'S. Required and recommended reading,
@@ -1313,6 +1396,8 @@ export const roleLabels: Record<UserRole, string> = {
   'admissions-officer': 'Admissions Officer',
   'hr-officer': 'HR Officer',
   'hr-administrator': 'HR Administrator',
+  'national-rector': 'National Rector',
+  'national-financial-secretary': 'National Financial Secretary',
   'library-staff': 'Library Staff',
   'student-affairs': 'Student Affairs',
   applicant: 'Applicant',

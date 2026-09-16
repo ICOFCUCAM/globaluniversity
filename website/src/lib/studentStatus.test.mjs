@@ -164,7 +164,37 @@ console.log('\nNothing still reads a student word out of the admission column\n'
 
   check('the scan is looking at something', found.length > 0, true);
 
+  // ---------------------------------------------------------------------
+  // AND IT HAS TO BE ABOUT STUDENTS.
+  // ---------------------------------------------------------------------
+  //
+  // `suspended` is not a word only students have. A National Administration is
+  // suspended too (097), and the route that suspends one wrote
+  // `patch.status = 'suspended'` against `national_administrations` — which
+  // this scan reported as a student query, because it was matching the WORD
+  // and not the TABLE.
+  //
+  // So a file is only an offender if it actually QUERIES the students table.
+  // "Mentions the word students" was the first attempt and was not enough: the
+  // same route says "a nation's students, staff and money" in a sentence
+  // explaining itself to an officer, and prose is not a query.
+  //
+  // COMMENTS ARE STRIPPED FIRST for the same reason — this repository explains
+  // itself at length, and a paragraph describing the bug this test catches
+  // must not be reported as the bug.
+  const decomment = (t) => t
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .replace(/(^|[^:])\/\/.*$/gm, '$1 ');
+
+  const queriesStudents = (file) => {
+    try {
+      const text = decomment(readFileSync(file, 'utf8'));
+      return /from\(\s*['"`]students['"`]|\bstudents\.status\b/.test(text);
+    } catch { return true; }  // unreadable: report it rather than excuse it
+  };
+
   const offenders = found
+    .filter(queriesStudents)
     .map((f) => f.replace(srcDir, 'src'))
     // The vocabulary itself and the tests that describe it are allowed to say
     // the words; a file that USES them against `students.status` is not.
@@ -173,6 +203,24 @@ console.log('\nNothing still reads a student word out of the admission column\n'
 
   check('no screen or route filters students on a status word that moved',
     offenders, []);
+
+  // AND THE NARROWING DID NOT SWALLOW THE THING IT IS FOR. A file that queries
+  // students on a moved word matches both halves; one that only says the word
+  // matches neither. Checked against text rather than against the repository,
+  // so it keeps meaning something on the day there is genuinely nothing to
+  // find.
+  const wouldCatch = (text) =>
+    /status['"]?\s*[=:,)\]]*\s*['"](graduated|suspended)['"]/.test(text)
+    && /from\(\s*['"`]students['"`]|\bstudents\.status\b/.test(decomment(text));
+  check('…and a real one would still be caught',
+    wouldCatch("supabase.from('students').eq('status', 'graduated')"), true);
+  check('…while an administration being suspended is not a student query',
+    wouldCatch("supabase.from('national_administrations').update({ status: 'suspended' })"),
+    false);
+  // AND PROSE ABOUT STUDENTS IS NOT A QUERY ABOUT STUDENTS. This is the case
+  // that broke the first narrowing.
+  check('…nor is a comment that happens to say both words',
+    wouldCatch("// a nation's students\npatch.status = 'suspended'"), false);
 }
 
 console.log(failures === 0 ? '\nAll student status checks passed.' : `\n${failures} check(s) failed.`);

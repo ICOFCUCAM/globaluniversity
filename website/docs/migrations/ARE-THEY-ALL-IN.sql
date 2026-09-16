@@ -360,6 +360,14 @@ select * from (
   select '096' as migration, '096_the_course_library.sql' as file,
          case when to_regclass('public.course_resources') is not null then 'YES' else 'NO' end as landed,
          'course_resources' as what_it_creates
+  union all
+  select '097' as migration, '097_a_nation_the_university_can_see.sql' as file,
+         case when to_regclass('public.national_administrations') is not null then 'YES' else 'NO' end as landed,
+         'national_administrations' as what_it_creates
+  union all
+  select '098' as migration, '098_what_the_nation_keeps.sql' as file,
+         case when to_regclass('public.revenue_allocations') is not null then 'YES' else 'NO' end as landed,
+         'revenue_allocations' as what_it_creates
 ) as landed_report
  order by migration;
 

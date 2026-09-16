@@ -47,6 +47,27 @@ export type UserRole =
   // ---------------------------------------------------------------------
   | 'hr-officer'
   | 'hr-administrator'
+  // ---------------------------------------------------------------------
+  // THE TWO NATIONAL OFFICES.
+  //
+  // A National Rector holds THIS UNIVERSITY'S authority within one nation —
+  // an officer of ICOF, not an agent of it and not a franchisee. Which nation
+  // is a row in `national_administrations` (097), not a property of the role:
+  // the role says what kind of authority, the register says where.
+  //
+  // The Financial Secretary is separate rather than being `finance` with a
+  // nation attached, because the programme asks for financial authority to be
+  // separated from the Rector's — and two people cannot be separated while
+  // they share a role. It is the same reasoning that split the two HR offices
+  // above.
+  //
+  // NEITHER IS AN ACADEMIC ROLE. A Rector who also teaches is granted the
+  // teaching capabilities through `capability_grants` (056) — governed, and
+  // with an expiry — because the programme makes it conditional: "where
+  // appropriately qualified". A condition is a grant, not a role.
+  // ---------------------------------------------------------------------
+  | 'national-rector'
+  | 'national-financial-secretary'
   | 'student'
   | 'applicant'
   // Retained: 'academic-office' is used by the timetable and course-allocation
@@ -304,6 +325,9 @@ export type ViewType =
   | 'correspondence'
   // THE BOOKS THE UNIVERSITY SENDS OUT, as against the letters it writes.
   | 'publications'
+  // THE NATIONS. The register is the centre's; the rectorate is the Rector's own.
+  | 'national-administrations'
+  | 'national-rectorate'
   | 'document-templates'
   | 'job-descriptions'
   | 'appointment-conditions'

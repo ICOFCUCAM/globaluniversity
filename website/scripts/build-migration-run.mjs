@@ -283,6 +283,8 @@ const MARKERS = {
   '094': 'live_carried',
   '095': 'lectures.review_state',
   '096': 'course_resources',
+  '097': 'national_administrations',
+  '098': 'revenue_allocations',
 };
 
 /** The SQL that answers "is this one here?", for each of the three forms. */

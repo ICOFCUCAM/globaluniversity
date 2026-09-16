@@ -1016,6 +1016,45 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
       + 'the row they still need in order to read online. Nothing closes.',
     table: 'course_resources',
   },
+  {
+    file: '097_a_nation_the_university_can_see.sql',
+    what:
+      'NATIONAL ADMINISTRATIONS BECOME A THING THE DATABASE KNOWS ABOUT, and the register is '
+      + 'created EMPTY \u2014 this runs nothing into it. An administration cannot be marked '
+      + '`established` without two things: the agreement it operates under and the appointment '
+      + 'its Rector holds, because a National Rector\u2019s authority reaches a nation\u2019s '
+      + 'students, staff and money, and 047 already refuses an appointment issued with no '
+      + 'document behind it. WHOEVER CREATES AN ADMINISTRATION MAY NOT BE ITS RECTOR \u2014 041 '
+      + 'for appointments and 045 for letters, applied to the act that hands a person a country. '
+      + 'Seven tables gain a nullable `administration_id` and every existing row keeps a null, so '
+      + 'nothing that works today changes: a null means the centre administers it. A NATIONAL '
+      + 'RECTOR READS THEIR OWN NATION AND NO OTHER, enforced in row-level security rather than '
+      + 'in a screen \u2014 put it in the screens and it holds until somebody adds an export and '
+      + 'forgets. Moving a record between nations is the centre\u2019s act, refused by a trigger '
+      + 'because that is a question about a COLUMN of a row a national officer may otherwise '
+      + 'edit. Two roles exist that did not: national-rector and national-financial-secretary. '
+      + 'No degree authority, no admission decision, no credential issuance \u2014 none of them '
+      + 'is granted here.',
+    table: 'national_administrations',
+  },
+  {
+    file: '098_what_the_nation_keeps.sql',
+    what:
+      'A DOOR CLOSES. From the moment this runs every payment that names a National '
+      + 'Administration is split the instant it is recorded \u2014 and WITH NO AGREEMENT IN '
+      + 'FORCE THE WHOLE OF IT STAYS WITH THE CENTRE. A nation cannot receive a cent before the '
+      + 'University has approved the agreement saying what it receives, and the allocation '
+      + 'records why rather than reading as a silent 0%. REGISTRATION IS NEVER SHARED whatever '
+      + 'any agreement says \u2014 the programme allocates it to the centre and a 70% agreement '
+      + 'does not touch it. THE MONEY ADDS UP OR THE ROW DOES NOT EXIST: `to_centre + to_nation '
+      + '= gross` is a CHECK, not a convention, and an allocation is never edited afterwards \u2014 '
+      + 'a correction is a reversal and a new row, so both stay on the record. The split is a '
+      + 'TRIGGER rather than a route, because money reaches this database by more doors than one '
+      + 'and a rule living in a route governs one of them. A Rector cannot approve the agreement '
+      + 'that pays their own administration. Nothing is allocated retrospectively: every payment '
+      + 'already here has no administration and stays the centre\u2019s.',
+    table: 'revenue_allocations',
+  },
 ];
 
 /** What a probe came back as. */

@@ -221,6 +221,12 @@ const READ_ONLY_BY_DESIGN = {
     + 'password, which /api/account/password does with the service key: 090 revokes that '
     + 'column from every browser session at the COLUMN level, because the whole point is that '
     + 'the gate cannot be skipped by stamping the date without changing anything.',
+  national_ledger: 'A view over `revenue_allocations`, and it is a view rather than a table '
+    + 'for the reason 098 gives: a running total that is STORED is a running total that can '
+    + 'disagree with the rows under it. This one cannot, because it is the rows. Nothing writes '
+    + 'to it and nothing should \u2014 the allocations are written by a trigger when a payment '
+    + 'lands, and `an_allocation_is_never_rewritten` refuses to let anybody change one '
+    + 'afterwards.',
   submissions_for_review: 'A view over `lectures`, and the columns it LEAVES OUT are the point '
     + 'of it: 095 gives an office which course, whose lecture, how long the recording is and how '
     + 'long it has waited, and NO BODY COLUMN — because 092 says an office does not read a '

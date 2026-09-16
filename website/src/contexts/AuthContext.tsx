@@ -88,6 +88,24 @@ const demoUsers: Record<UserRole, AuthUser> = {
     role: 'hr-administrator',
     avatar: '',
   },
+  // THE TWO NATIONAL OFFICES. Demo accounts with no administration attached —
+  // which is the truthful demo state, because 097 creates the register empty
+  // and a Rector of nowhere sees nothing. The screens say so rather than
+  // showing another nation's rows.
+  'national-rector': {
+    id: 'demo-national-rector',
+    name: 'Demo National Rector',
+    email: 'rector@iguc.net',
+    role: 'national-rector',
+    avatar: '',
+  },
+  'national-financial-secretary': {
+    id: 'demo-national-financial-secretary',
+    name: 'Demo National Financial Secretary',
+    email: 'nationalfinance@iguc.net',
+    role: 'national-financial-secretary',
+    avatar: '',
+  },
   'exam-officer': {
     id: 'demo-exam-officer',
     name: 'Demo Examination Officer',

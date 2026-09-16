@@ -67,6 +67,8 @@ import AppointmentDashboard from './hr/AppointmentDashboard';
 import Appointments from './hr/Appointments';
 import CorrespondenceCenter from './correspondence/CorrespondenceCenter';
 import Publications from './publications/Publications';
+import NationalAdministrations from './national/NationalAdministrations';
+import NationalRectorate from './national/NationalRectorate';
 import DocumentTemplates from './admin/DocumentTemplates';
 import JobDescriptions from './admin/JobDescriptions';
 import AppointmentConditions from './hr/AppointmentConditions';
@@ -345,6 +347,10 @@ export default function AppLayout() {
         return <CorrespondenceCenter />;
       case 'publications':
         return <Publications />;
+      case 'national-administrations':
+        return <NationalAdministrations />;
+      case 'national-rectorate':
+        return <NationalRectorate />;
       case 'document-templates':
         return <DocumentTemplates />;
       case 'job-descriptions':

@@ -18,7 +18,7 @@ import {
   FileText, Award, Monitor, PenTool, FolderOpen, BarChart3,
   Settings, Shield, ShieldCheck, BookMarked, Wallet, Stamp, UserCog, Inbox,
   ClipboardCheck, Share2, BadgeCheck, Video, Eye, CalendarClock, TrendingUp,
-  CalendarDays, MapPin, Building2, Receipt, ScrollText,
+  CalendarDays, MapPin, Building2, Receipt, ScrollText, Globe2, Landmark,
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -138,6 +138,13 @@ const EVERYONE: UserRole[] = [
   // ---------------------------------------------------------------------
   'hr-officer', 'hr-administrator',
   'exam-officer', 'examiner', 'invigilator', 'moderator',
+  // AND THE TWO NATIONAL OFFICES, ADDED WITH THE ROLES THEMSELVES. The note
+  // above records this list being short twice — four roles, then sixteen with
+  // six missing — and each time somebody signed in to a portal with one item
+  // on it and no way to change their own password. A National Rector arriving
+  // to that would conclude the University had not finished building their
+  // office, which would be a fair reading.
+  'national-rector', 'national-financial-secretary',
 ];
 
 /** Everyone whose work is teaching, studying or running a programme. */
@@ -160,6 +167,7 @@ const STAFF: UserRole[] = [
   'programme-coordinator', 'academic-office', 'lecturer', 'library-staff',
   'student-affairs', 'hr-officer', 'hr-administrator', 'exam-officer',
   'examiner', 'invigilator', 'moderator',
+  'national-rector', 'national-financial-secretary',
 ];
 
 /** Retained for the entries that genuinely are staff-and-students only. */
@@ -752,6 +760,37 @@ export const menuGroups: MenuGroup[] = [
       // the Superadministrator reaches it too, because `superadmin` is the
       // matrix's only wildcard. Naming `assign-roles` instead would have shut
       // the Vice-Chancellor out of the screen built for their ruling.
+      // ---- THE NATIONS --------------------------------------------------
+      //
+      // Beside Studio Control because it is the same pair of authorities and
+      // the same kind of act: the Superadministrator and the Vice-Chancellor
+      // deciding what somebody else may do, under a governed record.
+      //
+      // Establishing an administration commits the University's name in a
+      // country, which is why it is not the Registrar's.
+      {
+        // THE RECTOR'S OWN SCREEN. Separate from the register above: that is
+        // the centre deciding which nations exist, this is one nation being
+        // led. Two different acts, two different authorities, two entries.
+        id: 'national-rectorate',
+        label: 'National Rectorate',
+        icon: <Landmark size={18} />,
+        // ROLES ONLY, NO CAPABILITY, AND THAT IS DELIBERATE. Gating this on
+        // `lead-national-administration` would have shut the National
+        // Financial Secretary out of their own nation's screen — they
+        // administer its money, they do not lead it, and the capability says
+        // so correctly. The two offices see the same nation; what each may DO
+        // there is decided by 097's policies and by the screen, not by which
+        // of them can open it.
+        roles: ['superadmin', 'national-rector', 'national-financial-secretary'],
+      },
+      {
+        id: 'national-administrations',
+        label: 'National Administrations',
+        icon: <Globe2 size={18} />,
+        roles: ['superadmin', 'vice-chancellor'],
+        capability: 'establish-national-administration',
+      },
       {
         id: 'studio-control',
         label: 'Studio Control',
