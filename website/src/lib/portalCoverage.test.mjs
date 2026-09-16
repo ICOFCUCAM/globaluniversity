@@ -374,8 +374,26 @@ const NOT_ENFORCED = {
     + 'system is a student ASKING for something, and that is `handle-student-request`.',
   'message-lecturers': 'NO DOOR. There is no messaging in this system; the forum is the only '
     + 'place anybody writes to anybody.',
-  'reinstate-account': 'NO DOOR. Accounts can be suspended and nothing lifts one.',
-  'reset-user-password': 'NO DOOR. A user changes their own; nobody resets another’s.',
+  // THIS NOTE USED TO READ "NO DOOR. Accounts can be suspended and nothing
+  // lifts one", AND IT WAS WRONG. Account management has a Reinstate button
+  // and /api/admin/suspend does both acts. What is true is narrower and is a
+  // naming problem, not a missing screen.
+  //
+  // It was nearly reported to the University as a fault. A note in an
+  // exemption list is a claim like any other, and this one had stopped being
+  // checked by anything.
+  'reinstate-account': 'Superseded. Suspending and reinstating are one act on one route, '
+    + 'guarded by `suspend-account`; AccountManagement draws the button either way. This '
+    + 'name is a second word for a power that is built and enforced.',
+  // ALSO CORRECTED. The first clause is true — nothing resets another
+  // person's password — but the implication was false: the sign-in screen
+  // offers resetPasswordForEmail, so an account whose owner forgets the
+  // password is recovered by email rather than lost. An administrator reset
+  // would be a convenience, and the University can decide whether to have one.
+  'reset-user-password': 'Not built, and not a lockout: the sign-in screen offers a '
+    + 'self-serve reset by email, so no account is lost for want of this. An '
+    + 'administrator-driven reset would be a convenience and is the University’s to ask '
+    + 'for.',
   'impersonate-user': 'NO DOOR, and the only one on this list that is better left that way '
     + 'until somebody asks for it.',
   'manage-academic-session': 'Superseded. The academic calendar screen guards on '
