@@ -986,6 +986,21 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
       + 'indistinguishable from their own connection dropping.',
     table: 'live_carried',
   },
+  {
+    file: '095_the_university_decides_when_a_model_runs.sql',
+    what: 'A DOOR CLOSES: NO TRANSFORMATION RUNS ON A COURSE LECTURE UNTIL AN OFFICE HAS '
+      + 'ACCEPTED THE SUBMISSION. The University\u2019s ruling of 16 September 2026 puts a stop '
+      + 'between submitting and generating \u2014 lecturer submits, administration reviews, THEN '
+      + 'a model runs. Existing lectures are backfilled to `accepted`, because they were made '
+      + 'under the old rule and retrospectively refusing finished work is a punishment, not a '
+      + 'review. A PERSONAL recording is never reviewed at all. AND THE OFFICE DOES NOT READ THE '
+      + 'DRAFT: `submissions_for_review` carries whose lecture, which course, how long and how '
+      + 'long it has waited, and has NO BODY COLUMN \u2014 absent, not filtered, because '
+      + 'row-level security cannot hide a column. A lecturer submits their own and cannot accept '
+      + 'their own; a return must carry a note of at least ten characters.',
+    table: 'lectures',
+    column: 'review_state',
+  },
 ];
 
 /** What a probe came back as. */

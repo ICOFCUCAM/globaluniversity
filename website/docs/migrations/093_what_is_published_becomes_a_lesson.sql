@@ -627,6 +627,25 @@ begin
               lect_user, lect_user)
       returning id into the_lecture;
 
+    -- ---- 095 PUTS A STOP IN FRONT OF THIS ---------------------------------
+    --
+    -- This proof walks an artefact absent → queued → running → ready, and 095
+    -- refuses `queued` on a lecture the University has not accepted. So it
+    -- accepts its own submission first — GUARDED, because on a fresh database
+    -- 093 runs before 095 exists and the column is not there yet.
+    --
+    -- FOUND BY RUNNING RUN-ALL TWICE, and only by that. The first pass was
+    -- clean because 095's trigger did not exist when 093's proof ran; the
+    -- second pass, with everything landed, failed on this line. Idempotent is
+    -- a claim until the second run is clean, and this is what that rule is
+    -- for.
+    if exists (select 1 from information_schema.columns
+                where table_schema = 'public' and table_name = 'lectures'
+                  and column_name = 'review_state') then
+      execute format('update lectures set review_state = %L, reviewed_at = now() where id = %L',
+                     'accepted', the_lecture);
+    end if;
+
     -- ---- A LECTURE CANNOT SIT IN ANOTHER COURSE'S MODULE ------------------
     --
     -- A REAL SECOND MODULE, on a REAL second course. 084 learned that an

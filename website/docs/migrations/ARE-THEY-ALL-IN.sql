@@ -347,6 +347,15 @@ select * from (
   select '094' as migration, '094_live_delivery_is_not_publication.sql' as file,
          case when to_regclass('public.live_carried') is not null then 'YES' else 'NO' end as landed,
          'live_carried' as what_it_creates
+  union all
+  select '095' as migration, '095_the_university_decides_when_a_model_runs.sql' as file,
+         case when exists (
+                   select 1 from information_schema.columns
+                    where table_schema = 'public'
+                      and table_name = 'lectures'
+                      and column_name = 'review_state')
+                 then 'YES' else 'NO' end as landed,
+         'lectures.review_state' as what_it_creates
 ) as landed_report
  order by migration;
 
