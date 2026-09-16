@@ -269,6 +269,43 @@ export async function POST(request: Request) {
     detail: { to, forwarded: forwarding },
   });
 
+  // -------------------------------------------------------------------------
+  // §13 — AND THE TRANSCRIPT AUDIT LEARNS THAT IT WAS SENT.
+  //
+  //   "The VC and SuperAdmin can therefore establish not only who generated
+  //    the transcript, but also whether it was subsequently sent."
+  //
+  // The event above already records the send on the CREDENTIAL trail. This
+  // records it against the GENERATION, which is the row the transcript audit
+  // is built from — without it that screen can say who pressed the button and
+  // not whether anything left the building.
+  //
+  // NOT FATAL, AND NOT SILENT. The mail has gone; failing the response now
+  // would tell the Registrar a delivered transcript had not been delivered.
+  // The outcome is reported instead, and 100 lets the status move afterwards
+  // precisely because a mail server answers later than a request does.
+  if (credential.kind === 'transcript') {
+    const { data: generation } = await admin
+      .from('transcript_issues')
+      .select('id')
+      .eq('credential_id', credential.id)
+      .maybeSingle();
+
+    if (generation?.id) {
+      await admin.from('transcript_deliveries').insert({
+        transcript_issue_id: generation.id,
+        recipient: to,
+        sent_by: caller.id,
+        // `sent`, not `delivered`. The mail server accepted it; whether it
+        // arrived is a different fact and 100 keeps a column for it. Recording
+        // `delivered` here would be the University asserting something it has
+        // not been told.
+        status: 'sent',
+        detail: forwarding ? 'Forwarded — not the holder’s own address' : null,
+      });
+    }
+  }
+
   return NextResponse.json({
     ok: true,
     message: forwarding

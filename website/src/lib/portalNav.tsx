@@ -513,13 +513,14 @@ export const menuGroups: MenuGroup[] = [
         icon: <ClipboardCheck size={18} />,
         roles: ['superadmin', 'admin', 'registrar', 'academic-office', 'dean', 'hod', 'lecturer'],
       },
-      // SAME TREATMENT AS THE CERTIFICATE BELOW, which it should have had in
-      // the same commit. Issuing a transcript moved to Credentials → Issue;
-      // leaving staff on this entry meant they reached the identical component
-      // from two places — the precise fault that made three credential menu
-      // entries worth consolidating. A student keeps it: theirs is a view of
-      // their own record, not the screen that seals one.
-      { id: 'transcript', label: 'Transcript', icon: <FileText size={18} />, roles: ['student'] },
+      // THIS ENTRY WAS DEAD AND HAS MOVED. It read `roles: ['student']` inside
+      // `menuGroups`, which `groupsFor` never serves to a student — they get
+      // STUDENT_GROUPS, where `my-transcript` is their own. So it appeared to
+      // nobody, and the view it named was reachable only through a dashboard
+      // quick action that bypassed this file's gating entirely.
+      //
+      // `transcript` is now the Registrar's desk and is listed with the other
+      // offices, below, beside the transcript audit.
       // ISSUING MOVED TO CREDENTIALS → ISSUE. A student keeps this entry —
       // theirs is a view of their own certificate, not the screen that mints
       // one — and the staff who issue now find it beside the design, the
@@ -751,6 +752,24 @@ export const menuGroups: MenuGroup[] = [
       // spelled out, so that adding a role to one without the other shows
       // up as a contradiction rather than as a quiet widening.
       // ---------------------------------------------------------------
+      // ---------------------------------------------------------------
+      // THE TRANSCRIPT DESK.
+      //
+      // `transcript` HAS BEEN IN THIS TREE ALL ALONG with `roles: ['student']`
+      // — inside a tree students are never served, so it appeared to nobody.
+      // It was a dead entry pointing at the staff issuing screen, reachable
+      // only through a dashboard quick action.
+      //
+      // It is the offices that issue, and it is where the University's
+      // workflow lives: year → student, or number → browse, then one button.
+      // ---------------------------------------------------------------
+      {
+        id: 'transcript',
+        label: 'Transcript',
+        icon: <FileText size={18} />,
+        roles: ['superadmin', 'admin', 'vice-chancellor', 'registrar', 'academic-office'],
+        capability: 'issue-credential',
+      },
       {
         id: 'transcript-audit',
         label: 'Transcript audit',

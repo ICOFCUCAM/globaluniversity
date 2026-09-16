@@ -459,6 +459,9 @@ export async function POST(request: Request) {
     // §9 "IP/session information, where appropriate".
     session_info: sessionInfo(request),
     html: documentHtml,
+    // The register entry this generation sealed, so §13's delivery record has
+    // something to hang on: the delivery route works from the credential.
+    credential_id: registered?.id ?? null,
     // The version is the database's to count — see 100. Nothing is sent.
   }).select('id, version, document_reference, issued_at').maybeSingle();
 
@@ -513,6 +516,21 @@ export async function POST(request: Request) {
         ? `The credential was issued but the audit entry failed: ${auditErr}`
         : null,
     },
+    // §9 AND §14, RETURNED SO THE SCREEN CAN SAY THEM. "Transcript #003" is
+    // not a surprise the Registrar should first meet on the audit log, and the
+    // version is the database's — the screen cannot compute it.
+    transcriptReference: generation?.document_reference ?? null,
+    transcriptVersion: generation?.version ?? null,
+    // NOT A FAILURE OF THE ISSUE, and reported for the same reason as the
+    // audit warning above: the transcript is sealed and on the register either
+    // way, but a generation the transcript audit never heard about is exactly
+    // what §9 exists to make impossible, so nobody is told it went well.
+    generationWarning: genErr
+      ? `The transcript was issued but the generation record failed: ${genErr.message}`
+      : null,
+    // §12 — the bytes, so the screen can preview, print, download and email
+    // the document that was actually generated rather than re-render one.
+    html: documentHtml,
   });
 }
 
@@ -762,6 +780,16 @@ async function transcribe(
         ? `The credential was issued but the audit entry failed: ${auditErr}`
         : null,
     },
+    // THE TRANSCRIBED PATH HAS NO GENERATION RECORD, and that is not an
+    // oversight. 100's `transcript_issues` is the record of a transcript
+    // GENERATED FROM THE REGISTER; this path exists for a year the database
+    // never held, where the figures come from a paper register and the
+    // provenance is printed on the sheet itself. Writing one here would put a
+    // row on the transcript audit claiming an academic record was used that
+    // the University does not hold.
+    //
+    // It is `transcribe-historical-record`, the Superadministrator's alone,
+    // and `credential_audit_events` carries it.
   });
 }
 

@@ -44886,6 +44886,20 @@ create table if not exists transcript_issues (
   -- generating one for a graduate who telephoned has no request row.
   transcript_request_id uuid references transcript_requests (id) on delete set null,
 
+  -- ---- AND THE REGISTER ENTRY IT SEALED ----------------------------------
+  --
+  -- 004's `credentials_issued` row: the same act seen from the other side.
+  -- This one records that a transcript WAS GENERATED, by whom and from what;
+  -- that one records what the University ISSUED and carries the seal.
+  --
+  -- THE LINK IS WHAT MAKES §13 POSSIBLE. The delivery route works from the
+  -- register entry, so without a column joining the two there is no way to
+  -- write "this transcript was emailed" against the generation the
+  -- Vice-Chancellor is reading. Nullable, because a generation recorded
+  -- without a register entry is still a generation and losing it would be
+  -- worse than leaving the column empty.
+  credential_id         uuid references credentials_issued (id) on delete restrict,
+
   created_at            timestamptz not null default now(),
 
   constraint transcript_issue_names_a_student_or_carries_a_validation
@@ -44911,6 +44925,40 @@ create table if not exists transcript_issues (
                            'registrar', 'academic-office'))
 );
 
+-- ---------------------------------------------------------------------------
+-- AND `credential_id` IS ADDED AGAIN, EXPLICITLY.
+--
+-- `create table if not exists` DOES NOTHING WHEN THE TABLE IS THERE — not even
+-- the new column. This migration was published before the column existed, so a
+-- database that ran the earlier version has `transcript_issues` without it, and
+-- the create above would skip silently and leave the index below failing on a
+-- column that does not exist.
+--
+-- The bundle test caught exactly this by applying the new bundle to a database
+-- built from the previous commit. Every column added to an existing table in
+-- this codebase is written as its own `alter table` for the same reason — see
+-- 097, where seven of them landed inside a `do` block and nothing reading the
+-- SQL could see them.
+-- ---------------------------------------------------------------------------
+
+alter table transcript_issues
+  add column if not exists credential_id uuid;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+     where conname = 'transcript_issues_credential_id_fkey'
+       and conrelid = 'transcript_issues'::regclass) then
+    alter table transcript_issues
+      add constraint transcript_issues_credential_id_fkey
+      foreign key (credential_id) references credentials_issued (id) on delete restrict;
+  end if;
+end $$;
+
+alter table transcript_issues
+  add column if not exists academic_record_ref text;
+
 create unique index if not exists transcript_issues_student_version_idx
   on transcript_issues (student_id, version) where student_id is not null;
 
@@ -44922,6 +44970,12 @@ create index if not exists transcript_issues_officer_idx
 
 create index if not exists transcript_issues_number_idx
   on transcript_issues (student_number);
+
+-- ONE GENERATION PER REGISTER ENTRY. Without this the delivery route could
+-- find two generations for one sealed transcript and record the send against
+-- whichever came back first.
+create unique index if not exists transcript_issues_credential_idx
+  on transcript_issues (credential_id) where credential_id is not null;
 
 comment on table transcript_issues is
   'One row per official transcript generated, immutable. §9 of the University''s transcript '

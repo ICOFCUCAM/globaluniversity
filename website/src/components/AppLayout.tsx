@@ -93,6 +93,7 @@ import SocialCommandCentre from './social/SocialCommandCentre';
 // composes them, so neither is imported here.
 import CredentialsWorkspace from './credentials/CredentialsWorkspace';
 import TranscriptAudit from './credentials/TranscriptAudit';
+import TranscriptDesk from './transcript/TranscriptDesk';
 import SitExamination from './exams/SitExamination';
 import ExaminerConsole from './exams/ExaminerConsole';
 import ExaminationOffice from './exams/ExaminationOffice';
@@ -299,8 +300,21 @@ export default function AppLayout() {
         return <GradeBook />;
       case 'result-approval':
         return <ResultsApproval role={user?.role} />;
+      // ---------------------------------------------------------------
+      // THE DESK, NOT THE GENERATOR.
+      //
+      // `TranscriptGenerator` is still the screen inside Credentials → Issue,
+      // where an officer already has a graduate's file open. THIS view is the
+      // workflow the University specified: year → student, or number →
+      // browse, then one button. They are the same act reached from two
+      // different places, and the desk is the one a Registrar starts from.
+      //
+      // The generator also falls back to SPECIMEN_TRANSCRIPT when no student
+      // is chosen, which is right where it lives and wrong here: a desk whose
+      // empty state is a specimen invites somebody to print one.
+      // ---------------------------------------------------------------
       case 'transcript':
-        return <TranscriptGenerator />;
+        return <TranscriptDesk />;
       case 'certificate':
         return <CertificateGenerator />;
       case 'my-credentials':
