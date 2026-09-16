@@ -4,7 +4,7 @@ Generated on 16 September 2026 by `npm run audit`. Nothing in it is written by h
 every figure is read from the repository, so this document can be produced
 again at any time and will describe the system as it is then.
 
-**209 tables and views · 102 migrations · 25 roles · 134 capabilities · 594 source files.**
+**209 tables and views · 102 migrations · 25 roles · 134 capabilities · 598 source files.**
 
 ---
 
@@ -36,7 +36,7 @@ Until one of them is run, everything below is an audit of the plans.
 
 ## 1. No door — machinery nothing can reach
 
-### 39 tables and views are named nowhere in the application
+### 37 tables and views are named nowhere in the application
 
 Each was created by a migration, is protected by row-level security, and is read
 by no screen and no route. Grouped by the migration that created them, because
@@ -64,8 +64,6 @@ the groups have different answers.
 | 086 | `course_content_search`, `my_attendance`, `my_next_classes` | The Course Learning Hub — a student’s own classes, attendance and search. |
 | 087 | `course_progress_for_teaching`, `my_course_progress` | The Course Learning Hub — progress, for a student and for whoever teaches them. |
 | 088 | `lecturer_directory` | The lecturer directory. |
-| 098 | `national_revenue_agreements` | THE NATIONAL REVENUE AGREEMENT. Nothing in the application creates or approves one — and with no agreement in force every payment stays whole with the centre. The entire national revenue model cannot be switched on. |
-| 101 | `certificate_audit` | THE CERTIFICATE AUDIT. §7 of the certificate ruling gives the Vice-Chancellor and the SuperAdmin the complete trail; the view exists and no screen reads it. |
 
 **None of these should be deleted.** The University ruled on that when the
 question was last asked, and re-reading them confirms it: every one is a valid

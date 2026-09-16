@@ -777,6 +777,22 @@ export const menuGroups: MenuGroup[] = [
         roles: ['superadmin', 'vice-chancellor'],
         capability: 'view-transcript-audit',
       },
+      // ---------------------------------------------------------------
+      // AND ITS CERTIFICATE TWIN, WHICH HAD A VIEW AND NO DOOR.
+      //
+      // §7: "The VC and SuperAdmin can inspect the complete audit trail."
+      // 101 built certificate_audit and nothing read it \u2014 the system
+      // audit found it. Gated on the same capability as the certificate
+      // design, because the ruling treats the trail and the template as one
+      // restricted institutional asset.
+      // ---------------------------------------------------------------
+      {
+        id: 'certificate-audit',
+        label: 'Certificate audit',
+        icon: <ShieldCheck size={18} />,
+        roles: ['superadmin', 'vice-chancellor'],
+        capability: 'view-certificate-template',
+      },
       // WHAT THE UNIVERSITY HOLDS ABOUT THE PERSON READING IT. A staff record
       // was opened for somebody — their number, their post, the letter they
       // signed — and was invisible to the one person it is about, because

@@ -439,6 +439,9 @@ export type ViewType =
   // AUDIT screen" and because the two offices that read it are not the four
   // that reach the Credentials workspace.
   | 'transcript-audit'
+  // §7 of the certificate ruling. Its own entry beside the transcript audit,
+  // and held to the same two offices.
+  | 'certificate-audit'
   // The Digital Examination & Proctoring System. See migration 015.
   //
   // 'exams' is the EXISTING module and is left alone — it is the question bank

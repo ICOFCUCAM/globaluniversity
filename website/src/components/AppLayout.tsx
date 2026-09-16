@@ -94,6 +94,7 @@ import SocialCommandCentre from './social/SocialCommandCentre';
 // composes them, so neither is imported here.
 import CredentialsWorkspace from './credentials/CredentialsWorkspace';
 import TranscriptAudit from './credentials/TranscriptAudit';
+import CertificateAudit from './credentials/CertificateAudit';
 import TranscriptDesk from './transcript/TranscriptDesk';
 import SitExamination from './exams/SitExamination';
 import ExaminerConsole from './exams/ExaminerConsole';
@@ -479,6 +480,8 @@ export default function AppLayout() {
       // linking straight to a view and bypassing the sidebar's gating.
       case 'transcript-audit':
         return <TranscriptAudit />;
+      case 'certificate-audit':
+        return <CertificateAudit />;
       case 'sit-examination':
         return <SitExamination />;
       case 'examiner-console':

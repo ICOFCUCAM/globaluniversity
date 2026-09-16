@@ -30,6 +30,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import RevenueAgreements from '@/components/national/RevenueAgreements';
 import { authedPost } from '@/lib/authedFetch';
 import { useAuth } from '@/contexts/AuthContext';
 import { can, type Capability } from '@/lib/roles';
@@ -408,6 +409,19 @@ export default function NationalAdministrations() {
                       )}
                     </div>
                   )}
+
+                  {/* -----------------------------------------------------
+                      THE AGREEMENT IT OPERATES UNDER.
+
+                      Beneath the administration rather than on a screen of
+                      its own, because an agreement is always an agreement OF
+                      something \u2014 and this is the order the two acts
+                      happen in: establish the administration, then agree what
+                      it keeps.
+                      ----------------------------------------------------- */}
+                  <div className="mt-4">
+                    <RevenueAgreements administrationId={row.id} country={row.country} />
+                  </div>
                 </div>
               )}
             </li>
