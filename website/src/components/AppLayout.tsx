@@ -54,6 +54,7 @@ import TranscriptGenerator from './transcript/TranscriptGenerator';
 import CertificateGenerator from './certificate/CertificateGenerator';
 import MyCredentials from './credentials/MyCredentials';
 import LMSModule from './lms/LMSModule';
+import StudioControl from './admin/StudioControl';
 import ExamModule from './exams/ExamModule';
 import QuestionBank from './exams/QuestionBank';
 import DocumentManagement from './documents/DocumentManagement';
@@ -322,6 +323,8 @@ export default function AppLayout() {
       // 'my courses' had no answer at all. 068 gives a material a course_id.
       case 'lms':
         return <CourseShelf />;
+      case 'studio-control':
+        return <StudioControl />;
       case 'exams':
         return <ExamModule />;
       case 'questionbank':

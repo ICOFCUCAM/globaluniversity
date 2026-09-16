@@ -169,6 +169,49 @@ console.log(`\n      ${asked.size} of ${acts.length} acts are checked on the req
 for (const [c, why] of Object.entries(NOT_YET_ENFORCED)) console.log(`      not yet: ${c} — ${why.slice(0, 96)}…`);
 
 // ---------------------------------------------------------------------------
+// THE SCREEN'S LIST AND THE SERVER'S LIST ARE THE SAME LIST
+// ---------------------------------------------------------------------------
+//
+// StudioControl.tsx carries its own copy of the thirteen acts, and has to:
+// `studioPermissions.ts` reads the service key to resolve grants, so importing
+// it into a client component would pull a service-role client into the browser
+// bundle.
+//
+// A copy is fine. A copy nobody checks is how an office comes to grant a
+// permission the server has never heard of — it would appear on screen, be
+// written to capability_grants, and refuse nothing, for ever, silently.
+// ---------------------------------------------------------------------------
+console.log('\nThe screen offers exactly what the server enforces\n');
+
+const screen = strip(readFileSync(
+  join(root, 'src', 'components', 'admin', 'StudioControl.tsx'), 'utf8'));
+
+const onScreen = [...screen.matchAll(/\{ capability: '([a-z-]+)', label: '([^']+)'/g)]
+  .map((m) => m[1]).sort();
+check('the screen lists the same acts as the server',
+  onScreen, acts.map((a) => a.capability).sort());
+
+// AND EVERY ONE SAYS WHAT IT COSTS OR WHAT IT DOES. An office deciding whether
+// to hand somebody the fifteen-minute audio needs to know it is the expensive
+// one; a row that only repeats its own name tells them nothing.
+const notes = [...screen.matchAll(/note: '([^']{10,})'/g)].map((m) => m[1]);
+check('and every act explains itself to the person granting it',
+  notes.length, acts.length);
+
+// THE SCREEN CANNOT OFFER "FOREVER". 056 refuses a grant with no expiry, so a
+// form that implied one would be a button that always fails.
+// THE OPTIONS THEMSELVES, not the word anywhere on the page. The first version
+// searched for "forever" and failed on the sentence EXPLAINING that there is no
+// forever — a check that punishes the screen for saying the right thing.
+const options = [...screen.matchAll(/<option value=\{(\d+)\}>([^<]*)</g)]
+  .map((m) => ({ days: Number(m[1]), label: m[2] }));
+check('the grant form offers some lengths', options.length > 1, true);
+check('…and none of them is unlimited',
+  options.filter((o) => o.days <= 0 || /never|unlimited|forever/i.test(o.label)), []);
+check('…and it names the twenty-character minimum the database enforces',
+  /20 characters/.test(screen), true);
+
+// ---------------------------------------------------------------------------
 // AND THE ONE THAT MATTERS MOST, BY NAME
 //
 // The whole ruling turns on this: a lecturer may submit without being able to

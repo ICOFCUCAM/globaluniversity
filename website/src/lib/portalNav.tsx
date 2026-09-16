@@ -16,7 +16,7 @@ import {
   UserCheck,
   LayoutDashboard, Users, GraduationCap, BookOpen, ClipboardList, IdCard,
   FileText, Award, Monitor, PenTool, FolderOpen, BarChart3,
-  Settings, Shield, BookMarked, Wallet, Stamp, UserCog, Inbox,
+  Settings, Shield, ShieldCheck, BookMarked, Wallet, Stamp, UserCog, Inbox,
   ClipboardCheck, Share2, BadgeCheck, Video, Eye, CalendarClock, TrendingUp,
   CalendarDays, MapPin, Building2, Receipt, ScrollText,
 } from 'lucide-react';
@@ -708,6 +708,23 @@ export const menuGroups: MenuGroup[] = [
         action: 'view',
       },
       { id: 'settings', label: 'Settings', icon: <Settings size={18} />, roles: EVERYONE },
+      // ---- STUDIO CONTROL ------------------------------------------------
+      //
+      // The University asked for it at Settings → Academic Studio → Studio
+      // Control, and it sits beside Settings for that reason.
+      //
+      // BOTH AUTHORITIES OPEN IT, and the capability named here is the
+      // NARROWER one. `grant-studio-permission` is the Vice-Chancellor's;
+      // the Superadministrator reaches it too, because `superadmin` is the
+      // matrix's only wildcard. Naming `assign-roles` instead would have shut
+      // the Vice-Chancellor out of the screen built for their ruling.
+      {
+        id: 'studio-control',
+        label: 'Studio Control',
+        icon: <ShieldCheck size={18} />,
+        roles: ['superadmin', 'vice-chancellor'],
+        capability: 'grant-studio-permission',
+      },
     ],
   },
 ];

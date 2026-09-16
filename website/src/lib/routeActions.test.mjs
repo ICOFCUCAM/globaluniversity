@@ -121,7 +121,16 @@ const NO_SCREEN_YET = [
   'academic/structure programme-status',
   'admin/appointment-conditions forkPost',
   'admin/appointment-conditions preamble',
-  'admin/capability-grant grant',
+  // 'admin/capability-grant grant' AND 'revoke' AND 'list' ARE GONE FROM THIS
+  // LIST. Studio Control sends all three — the screen the University asked for
+  // on 16 September 2026, which turned out to be a door onto the grant system
+  // 056 built and nobody could reach.
+  //
+  // `mine` stays. It answers "what have I been given", and nothing asks it:
+  // Studio Control shows an OFFICE what somebody else holds, which is a
+  // different question from a lecturer seeing their own permissions. That
+  // screen is not built, and until it is, a lecturer who wants to know what
+  // they may do has to press a button and read the refusal.
   'admin/capability-grant mine',           // *
   'admin/document-template retire',
   'admin/job-description fork',            // *

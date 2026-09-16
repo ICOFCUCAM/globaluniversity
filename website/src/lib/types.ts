@@ -263,6 +263,10 @@ export type ViewType =
   // and an entry has to be a member of it; it is the one entry that LEAVES the
   // portal shell rather than selecting a module, so it also carries an `href`.
   | 'academic-studio'
+  // Settings → Academic Studio → Studio Control: who may ask a model to
+  // do what. A door onto capability_grants, which 056 built and which has
+  // never had one.
+  | 'studio-control'
 
   // WHAT THE UNIVERSITY HOLDS ABOUT THE PERSON READING IT, and the roll for
   // the courses they teach. A staff record was opened for somebody and was
