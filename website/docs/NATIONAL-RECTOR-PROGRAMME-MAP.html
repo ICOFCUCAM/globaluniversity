@@ -147,8 +147,8 @@
     <h1>National Rector &amp; National Administration Programme</h1>
     <p>The programme as written, mapped against the system as it actually stands.
        Regenerated 16 September 2026 by <code>scripts/build-programme-map.mjs</code>, which reads
-       100 migrations, 141 tables, 25 roles and
-       130 capabilities and counts each verdict from what it finds.
+       102 migrations, 145 tables, 25 roles and
+       134 capabilities and counts each verdict from what it finds.
        Nothing on this page was written by hand.</p>
   </div>
 </header>
@@ -157,7 +157,7 @@
 
   <div class="verdict">
     <h3>The finding</h3>
-    <p><b>Eight of the eleven sections are built and enforced, three are part built.</b></p>
+    <p><b>Nine of the eleven sections are built and enforced, two are part built.</b></p>
     <p>The first version of this map, a day before the work started, found six sections built
        and <i>every one of them built University-wide</i>: no <code>national_administrations</code>
        table, no <code>administration_id</code> on any row, no role scoped to a country. That was
@@ -167,8 +167,8 @@
        leak another country’s data. The money is split when it lands, by a trigger, and an
        administration cannot spend what it was not allocated.</p>
     <div class="tally">
-      <div><b>8</b><span>Built</span></div>
-      <div><b>3</b><span>Part built</span></div>
+      <div><b>9</b><span>Built</span></div>
+      <div><b>2</b><span>Part built</span></div>
       <div><b>0</b><span>Not built</span></div>
       <div><b>0</b><span>Artefacts missing</span></div>
     </div>
@@ -191,7 +191,7 @@
       <tr>
         <td class="n">2</td>
         <td class="what"><b>Recruitment &amp; enrolment</b><span>Local access, global standards</span></td>
-        <td class="status"><span class="chip part">Part built</span></td>
+        <td class="status"><span class="chip built">Built</span></td>
         <td class="ev">The admissions pipeline was already built University-wide. 097 attached a nation to a student and made the scoping a row-level rule rather than a screen’s good manners, so a forgotten page cannot leak another country’s applicants. A record may be born into a nation — that is how a Rector recruits — but only into the Rector’s own, and moving a record between nations is the University’s act.</td>
       </tr>
       <tr>
@@ -271,7 +271,7 @@
     </div>
   </div>
   <div class="sect">
-    <h4><span class="chip part">Part built</span> 2. Recruitment &amp; enrolment</h4>
+    <h4><span class="chip built">Built</span> 2. Recruitment &amp; enrolment</h4>
     <div class="body">
         <span class="pill ok" title="table">admission_openings</span>
         <span class="pill ok" title="table">admission_decisions</span>
@@ -448,7 +448,6 @@
 
   <div class="gaps">
     <ul>
-      <li><b>§2 Recruitment &amp; enrolment.</b> No admissions screen sets <code>administration_id</code>, so a student admitted today belongs to no nation and the central view is unchanged. Deliberate — nothing that works stops working — but it means the nation is currently attached by hand.</li>
       <li><b>§8 One lecture, many languages.</b> <code>request-translation</code> and <code>approve-translation</code> are enforced, but they live in the Academic Studio’s own capability list rather than in <code>roles.ts</code>. Two vocabularies means a capability can be granted in one and unknown to the other; retiring the vendored folder is what closes it.</li>
       <li><b>§10 A worldwide network.</b> The two lists of countries are not joined. A nation can be established in the register without appearing on the public map, and the map can name a country with no administration behind it. Nothing reconciles them.</li>
       <li><b>The National Rector Agreement.</b> 078’s Conditions of Appointment carry the clauses

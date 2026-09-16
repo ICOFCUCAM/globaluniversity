@@ -130,7 +130,8 @@
     "test:certsample": "node src/lib/theCertificateSampleIsRestricted.test.mjs",
     "test:transauth": "node src/lib/transcriptAuthority.test.mjs",
     "handbook": "node scripts/build-handbook.mjs",
-    "test:handbook": "node src/lib/handbook.test.mjs"
+    "test:handbook": "node src/lib/handbook.test.mjs",
+    "audit": "node scripts/build-audit.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

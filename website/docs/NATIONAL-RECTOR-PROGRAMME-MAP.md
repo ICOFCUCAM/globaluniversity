@@ -7,8 +7,8 @@ how it is integrated to the ICOF Global University System."*
 This is that map, regenerated on 16 September 2026.
 
 **Nothing in it was written by hand.** `scripts/build-programme-map.mjs` reads
-100 migrations, 141 tables, 25 roles and
-130 capabilities, looks for every artefact each section
+102 migrations, 145 tables, 25 roles and
+134 capabilities, looks for every artefact each section
 claims, and counts the verdict from what it finds. A section cannot be reported
 as built while something it depends on is absent, and it cannot go stale,
 because it is not a description — it is a query. Run the script again and the
@@ -18,7 +18,7 @@ map is true again.
 
 ## The finding
 
-**Eight of the eleven sections are built and enforced, three are part built.**
+**Nine of the eleven sections are built and enforced, two are part built.**
 
 The first version of this map, a day before the work started, found six sections
 built and every one of them built University-wide: no `national_administrations`
@@ -40,7 +40,7 @@ allocated.
 | # | In the programme | Status | What the system has |
 |---|---|---|---|
 | 1 | **The National Rector** | Built | The role sits below the central offices — the University’s academic authority is not the Rector’s — and above a Dean, because a Rector leads an administration and a Dean leads a faculty within one. Which nation is a row in the register, not a property of the role: the role says what kind of authority, the register says where. 097 refuses to record an administration as established without the agreement it operates under, and refuses whoever creates it to be its own Rector. |
-| 2 | **Recruitment & enrolment** | Part built | The admissions pipeline was already built University-wide. 097 attached a nation to a student and made the scoping a row-level rule rather than a screen’s good manners, so a forgotten page cannot leak another country’s applicants. A record may be born into a nation — that is how a Rector recruits — but only into the Rector’s own, and moving a record between nations is the University’s act. |
+| 2 | **Recruitment & enrolment** | Built | The admissions pipeline was already built University-wide. 097 attached a nation to a student and made the scoping a row-level rule rather than a screen’s good manners, so a forgotten page cannot leak another country’s applicants. A record may be born into a nation — that is how a Rector recruits — but only into the Rector’s own, and moving a record between nations is the University’s act. |
 | 3 | **Staff recommendation** | Built | “The National Rector recommends. ICOF University verifies and appoints.” The capability stops deliberately short of drafting an appointment, and 099 refuses in the database a recommendation decided by whoever made it — the same rule 041 already applied to approvals. |
 | 4 | **Tuition & revenue model** | Built | The split is written WHEN THE PAYMENT LANDS, by a trigger, not calculated by a screen when somebody asks — so the ledger is a record of what happened rather than an opinion formed later. An allocation is never rewritten, the parts must add up to the gross, and an agreement cannot be approved by the Rector it pays. |
 | 5 | **National Financial Secretary** | Built | A separate role rather than `finance` with a nation attached, because the programme asks for financial authority to be separated from the Rector’s and two people cannot be separated while they share a role. The Secretary records; the Rector authorises; neither can do both on the same expense; and an administration cannot authorise more than it was allocated. |
@@ -59,7 +59,7 @@ allocated.
 
 `national-rector`, `lead-national-administration`, `establish-national-administration`, `national_administrations`, `my_administration`, `serves_a_national_administration`, `governs_the_university`, `national_administration_creator_is_not_the_rector`, `national-administrations`, `src/components/national/NationalAdministrations.tsx`, `src/app/api/national/administration/route.ts`
 
-**2. Recruitment & enrolment** — Part built
+**2. Recruitment & enrolment** — Built
 
 `admission_openings`, `admission_decisions`, `admission_letters`, `students`, `enrollments`, `students.administration_id`, `students_national_read`, `administration_is_the_centres_to_set`, `view-national-students`
 
@@ -103,7 +103,6 @@ allocated.
 
 ## What is still open
 
-- **§2 Recruitment & enrolment.** No admissions screen sets `administration_id`, so a student admitted today belongs to no nation and the central view is unchanged. Deliberate — nothing that works stops working — but it means the nation is currently attached by hand.
 - **§8 One lecture, many languages.** `request-translation` and `approve-translation` are enforced, but they live in the Academic Studio’s own capability list rather than in `roles.ts`. Two vocabularies means a capability can be granted in one and unknown to the other; retiring the vendored folder is what closes it.
 - **§10 A worldwide network.** The two lists of countries are not joined. A nation can be established in the register without appearing on the public map, and the map can name a country with no administration behind it. Nothing reconciles them.
 
