@@ -79,9 +79,35 @@ check('at least four distinct status headings',
   new Set(statusHeadings).size >= 4, true);
 
 // THE FLAG THAT DECIDES WHETHER A LETTER TALKS ABOUT AUTHORITY.
-check('only the three leading families carry delegated authority',
+//
+// `national` IS THE FOURTH, ADDED DELIBERATELY. This check said three, and it
+// refused the ninth family rather than letting it through — which is the guard
+// working: a family arriving with this flag set is a decision somebody must
+// make on purpose, not a line in a diff.
+//
+// The decision is yes. A National Rector leads a National Administration,
+// recommends its expenditure, and holds authority over a nation's students and
+// money under 097, 098 and 099. A letter that said nothing about authority
+// would be describing a different office from the one the system grants.
+//
+// What the letter adds beside it is the LIMIT — the Rector's authority reaches
+// one nation, cannot approve the agreement that pays it, and does not reach
+// the issue of a credential. All three are refused by the database, so a
+// letter silent on them would be contradicted on the post-holder's first
+// afternoon.
+check('four families carry delegated authority, and the national one is deliberate',
   P.POSITION_FAMILIES.filter((f) => R.REGISTERS[f].carriesDelegatedAuthority).sort(),
-  ['academic-administration', 'executive', 'faculty-leadership']);
+  ['academic-administration', 'executive', 'faculty-leadership', 'national']);
+
+// AND THE LIMIT IS IN THE LETTER, not only in the database.
+const nationalAccountability = R.REGISTERS.national.accountability
+  .paragraphs('the Vice-Chancellor').join(' ');
+check('the national letter states the limit of the authority it grants',
+  /extends to the National Administration named in this letter and to no\s+other/
+    .test(nationalAccountability), true);
+check('…and that credentials are not the office’s to issue',
+  /transcripts, certificates and academic\s+records — is reserved/
+    .test(nationalAccountability), true);
 
 // AN UNKNOWN FAMILY FALLS TO THE PLAINEST REGISTER, NEVER THE GRANDEST.
 check('an unknown family gets `other`',

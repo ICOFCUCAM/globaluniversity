@@ -34,9 +34,22 @@
 // 1. THE FAMILIES
 // ---------------------------------------------------------------------------
 
+// `national` IS THE NINTH, AND IT ARRIVED LAST. 048 wrote eight families for
+// the University's central structure and 097–099 then built a national tier on
+// top of it without going back — so the National Rector had capabilities, a
+// dashboard and authority over a nation's money, and could not be appointed,
+// because the register the appointment letter is written from had never heard
+// of the office. 103 adds the family and the two posts.
+//
+// A FAMILY OF ITS OWN RATHER THAN A BORROWED ONE, because a family is how a
+// job description is inherited: a National Rector filed under `executive`
+// would take the Vice-Chancellor's family clauses, including the one requiring
+// the Vice-Chancellor's prior approval for any commitment of University funds
+// — which is not how 098 and 099 divide national money.
 export const POSITION_FAMILIES = [
   'executive', 'academic-administration', 'faculty-leadership',
-  'administration', 'student-services', 'ict', 'academic-staff', 'other',
+  'administration', 'student-services', 'ict', 'academic-staff',
+  'national', 'other',
 ] as const;
 
 export type PositionFamily = (typeof POSITION_FAMILIES)[number];
@@ -49,6 +62,7 @@ export const FAMILY_LABELS: Record<PositionFamily, string> = {
   'student-services': 'Student services',
   ict: 'ICT',
   'academic-staff': 'Academic staff',
+  national: 'National Administrations',
   other: 'Other',
 };
 

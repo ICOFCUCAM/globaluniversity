@@ -3780,6 +3780,25 @@ export const ENFORCED: EnforcedRules[] = [
       "a lecturer reads no refund at all",
       "…and the Finance Director reads all of them"
     ]
+  },
+  {
+    "migration": "103",
+    "file": "103_the_nation_has_offices_too.sql",
+    "rules": [
+      "% now admits the national family",
+      "the national family job description is seeded, as a draft",
+      "the National Rector's job description is seeded, as a draft",
+      "the National Financial Secretary's job description is seeded, as a draft",
+      "the national family has conditions of appointment, copied from the executive set the University has in force",
+      "the National Rector and the National Financial Secretary are posts",
+      "the Chancellor is a post too, inheriting the executive family's description and carrying no invented duties",
+      "…in a family of their own, not borrowed from the executive",
+      "a misspelt family is still refused",
+      "every national job description is a draft and can reach nobody",
+      "a national post inherits the University's common clauses and adds the office's own",
+      "every post in the register still has conditions of appointment and a place of duty, the three new ones included",
+      "…and a National Rector is not posted to the central campus"
+    ]
   }
 ];
 
@@ -3787,5 +3806,5 @@ export const COUNTS = {
   roles: 25,
   capabilities: 129,
   migrations: 0,
-  provedRules: 102,
+  provedRules: 115,
 };

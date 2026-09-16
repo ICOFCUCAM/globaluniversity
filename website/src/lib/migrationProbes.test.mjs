@@ -131,6 +131,22 @@ for (const probe of MIGRATION_PROBES) {
         return Boolean(view) && new RegExp(`\\b${probe.column}\\b`, 'i').test(view[0]);
       })();
     check(`${probe.file} adds ${probe.table}.${probe.column}`, adds, true);
+  } else if (probe.match) {
+    // ---------------------------------------------------------------------
+    // A SEED IS NOT A CREATION, and asking whether 103 "creates positions"
+    // would fail a probe that is doing its job.
+    //
+    // 103 creates no table, no column and no function: it puts the National
+    // Rector and the National Financial Secretary into the register 048 built.
+    // What has to be true of a match probe is the other thing — that the
+    // migration actually INSERTS the row it will later look for, or the
+    // Readiness panel reports a migration outstanding for ever.
+    // ---------------------------------------------------------------------
+    const bare = sql.replace(/--.*$/gm, '');
+    const inserts = new RegExp(`insert into ${probe.table}\\b`, 'i').test(bare);
+    check(`${probe.file} seeds into ${probe.table}`, inserts, true);
+    check(`${probe.file} seeds the row it looks for (${probe.match.value})`,
+      bare.includes(`'${probe.match.value}'`), true);
   } else {
     // A VIEW COUNTS. The probe reads through PostgREST, which serves a view
     // exactly as it serves a table — so `admission_status_coverage` is as good

@@ -384,6 +384,12 @@ select * from (
   select '102' as migration, '102_a_refund_is_not_an_edit.sql' as file,
          case when to_regclass('public.refund_requests') is not null then 'YES' else 'NO' end as landed,
          'refund_requests' as what_it_creates
+  union all
+  select '103' as migration, '103_the_nation_has_offices_too.sql' as file,
+         case when to_regclass('public.positions') is null then 'NO'
+                 when exists (select 1 from positions where job_code in ('NAT-REC','NAT-FIN','EXE-CHAN')) then 'YES'
+                 else 'NO' end as landed,
+         'rows:positions:job_code in (''NAT-REC'',''NAT-FIN'',''EXE-CHAN'')' as what_it_creates
 ) as landed_report
  order by migration;
 

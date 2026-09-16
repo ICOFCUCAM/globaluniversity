@@ -170,8 +170,17 @@ console.log('\nAnd 048 resolves it the same way\n');
   for (const s of P.JD_SECTIONS) {
     check(`the database knows the section '${s}'`, sql.includes(`'${s}'`), true);
   }
+  // THE FAMILIES ARE NOW SPREAD OVER TWO MIGRATIONS, so both are read. 048
+  // wrote the eight of the University's central structure; 103 added
+  // `national` for the tier 097–099 built, which had a role, a dashboard and
+  // authority over a nation's money and no post anybody could be appointed to.
+  //
+  // Reading only 048 would have failed this the moment a family was added
+  // anywhere else — which it just did, correctly.
+  const familySql = sql + readFileSync(
+    join(here, '../../docs/migrations/103_the_nation_has_offices_too.sql'), 'utf8');
   for (const f of P.POSITION_FAMILIES) {
-    check(`the database knows the family '${f}'`, sql.includes(`'${f}'`), true);
+    check(`the database knows the family '${f}'`, familySql.includes(`'${f}'`), true);
   }
 
   // AND EVERYTHING SEEDED IS A DRAFT. The University's instruction, and the

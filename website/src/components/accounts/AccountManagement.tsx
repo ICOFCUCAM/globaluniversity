@@ -36,13 +36,48 @@ interface AccountRow {
   created_at: string;
 }
 
-// Roles this screen offers. Students and applicants are excluded: those come
-// from the admissions pipeline, where a paid application and a Registrar
-// decision sit behind every account.
+// ---------------------------------------------------------------------------
+// ROLES THIS SCREEN OFFERS.
+//
+// Students and applicants are excluded: those come from the admissions
+// pipeline, where a paid application and a Registrar decision sit behind every
+// account. The Superadministrator is excluded because `canActOn` refuses it —
+// no role outranks the most senior one, so offering it would be offering a
+// button that always fails.
+//
+// ---------------------------------------------------------------------------
+// EIGHT ROLES WERE MISSING, AND SIX OF THEM ARE THE SAME SIX AS LAST TIME
+// ---------------------------------------------------------------------------
+//
+// The University asked whether a National Rector account could be created. It
+// could not. Nor could a National Financial Secretary, either HR office, or
+// any of the four examination offices — eight of the University's twenty-five
+// roles had capabilities, screens, a dashboard and a place in the matrix, and
+// no way to be given an account at all.
+//
+// THE ROUTE ACCEPTED THEM THE WHOLE TIME. /api/admin/staff takes any role in
+// `roleLabels` and checks `canActOn`; this list was the only refusal, and it
+// was a list nothing compared against anything.
+//
+// `portalCoverage.test.mjs` was written after a fault with the same shape —
+// "AN INVIGILATOR SAW ONE MENU ITEM… The two HR offices and all four
+// examination offices" — and it counts the NAVIGATION. Those same six roles
+// were absent from this list too, and counting one list did not count the
+// other. `accountCreation.test.mjs` now counts this one.
+// ---------------------------------------------------------------------------
 const CREATABLE: UserRole[] = [
   'admin', 'registrar', 'finance', 'finance-director', 'admissions-officer',
   'dean', 'hod', 'programme-coordinator', 'lecturer', 'academic-office',
   'library-staff', 'student-affairs', 'chancellor', 'vice-chancellor',
+  // The two HR offices.
+  'hr-officer', 'hr-administrator',
+  // The four examination offices.
+  'exam-officer', 'examiner', 'invigilator', 'moderator',
+  // AND THE NATIONAL TIER. 097 gave a National Rector authority over a
+  // nation's students and 098 over its money; 103 put both offices in the
+  // register of positions so they can be appointed by letter. This is the
+  // account that letter is for.
+  'national-rector', 'national-financial-secretary',
 ];
 
 export default function AccountManagement() {

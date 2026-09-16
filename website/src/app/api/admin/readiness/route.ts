@@ -214,6 +214,26 @@ export async function GET(request: Request) {
       migrations.push({ file: probe.file, what: probe.what, state: stateFromError(error) });
       continue;
     }
+    // A SEED IS PROBED BY LOOKING FOR THE ROW. 103 creates no table, no column
+    // and no function — it puts two offices into a register 048 built — so
+    // every check above would have called it applied on a database that has
+    // never heard of them. The University found that gap by reading a dropdown.
+    if (probe.match) {
+      const { error, count } = await admin
+        .from(probe.table!)
+        .select(probe.match.column, { count: 'exact', head: true })
+        .eq(probe.match.column, probe.match.value);
+      migrations.push({
+        file: probe.file,
+        what: probe.what,
+        // AN EMPTY MATCH IS OUTSTANDING, which is the one place a probe reasons
+        // from absence. It is safe only because the migration seeds the row
+        // unconditionally, so "not there" cannot mean "the University removed
+        // it deliberately".
+        state: error ? stateFromError(error) : ((count ?? 0) > 0 ? 'applied' : 'outstanding'),
+      });
+      continue;
+    }
     const { error } = await admin
       .from(probe.table!)
       .select(probe.column ?? 'id', { count: 'exact', head: true })

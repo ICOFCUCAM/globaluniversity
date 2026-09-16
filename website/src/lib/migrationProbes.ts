@@ -65,6 +65,24 @@ export interface MigrationProbe {
   /** What to call `rpc` with. A probe never means anything by its arguments. */
   rpcArgs?: Record<string, unknown>;
   /**
+   * A ROW the migration seeds, where the table and its columns already existed.
+   *
+   * WHY THIS WAS ADDED. 103 creates no table, no column and no function: it
+   * puts the National Rector and the National Financial Secretary into the
+   * register of positions, which 048 built. Everything above would have
+   * reported it applied on a database where the register has never heard of
+   * those offices, because `positions` is there either way.
+   *
+   * The University found that gap by opening the appointment screen and
+   * reading the dropdown. A readiness panel that cannot see a missing SEED is
+   * a panel that will let them find the next one the same way.
+   *
+   * A match that comes back EMPTY is `outstanding` — which is the one place a
+   * probe reasons from absence, and it is safe here only because the migration
+   * seeds the row unconditionally.
+   */
+  match?: { column: string; value: string };
+  /**
    * Set where nothing the application can read changes.
    *
    * The value is the check to run by hand. These migrations are reported as
@@ -1136,6 +1154,28 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
       + 'money back only to the student’s, parent’s or sponsor’s account. NOTHING IS SEEDED AND '
       + 'NO MONEY MOVES.',
     table: 'refund_requests',
+  },
+  {
+    file: '103_the_nation_has_offices_too.sql',
+    what:
+      'THE NATIONAL RECTOR CAN BE APPOINTED. 048 wrote the register of positions — the '
+      + 'forty-three posts the appointment letter is written from — and 097, 098 and 099 then '
+      + 'built a whole national tier on top of it without going back: a National Rector with '
+      + 'authority over a nation’s students and money, a National Financial Secretary beside '
+      + 'them, and NEITHER OF THEM A POST ANYBODY COULD CHOOSE. An appointment made without a '
+      + 'post falls back to the plainest wording and carries no job description, which is what '
+      + 'every National Rector appointed so far has received. A ninth family, `national`, is '
+      + 'added rather than borrowing `executive` — a family is how a job description is '
+      + 'inherited, and a Rector filed under the executive would take the Vice-Chancellor’s '
+      + 'clauses, including the one requiring the Vice-Chancellor’s prior approval for any '
+      + 'commitment of University funds, which is not how 098 and 099 divide national money. '
+      + 'THE CHANCELLOR IS ADDED TOO, found by counting: 048 wrote the Vice-Chancellor, the '
+      + 'Deputy, the Pro-Vice and the Secretary and stopped one short of the top. Every job '
+      + 'description lands as a DRAFT and can reach no appointee until somebody has read it '
+      + 'and somebody else has activated it. The Chancellor gets none at all, because the '
+      + 'University has not written one and a migration must not invent duties.',
+    table: 'positions',
+    match: { column: 'job_code', value: 'NAT-REC' },
   },
 ];
 

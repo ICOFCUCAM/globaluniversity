@@ -288,6 +288,11 @@ const MARKERS = {
   '099': 'national_expenses',
   '100': 'transcript_issues', '101': 'certificate_reissue_requests',
   '102': 'refund_requests',
+  // 103 CREATES NO RELATION — it seeds three posts into a register 048 built.
+  // `rows:` is the marker form for exactly that, and it is better than reading
+  // the widened family constraint: the constraint could be there with the
+  // posts missing, and it is the POSTS the University came looking for.
+  '103': "rows:positions:job_code in ('NAT-REC','NAT-FIN','EXE-CHAN')",
 };
 
 /** The SQL that answers "is this one here?", for each of the three forms. */

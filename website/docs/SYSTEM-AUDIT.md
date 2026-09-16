@@ -4,7 +4,7 @@ Generated on 16 September 2026 by `npm run audit`. Nothing in it is written by h
 every figure is read from the repository, so this document can be produced
 again at any time and will describe the system as it is then.
 
-**213 tables and views · 103 migrations · 25 roles · 129 capabilities · 600 source files.**
+**213 tables and views · 104 migrations · 25 roles · 129 capabilities · 600 source files.**
 
 ---
 
@@ -14,7 +14,7 @@ again at any time and will describe the system as it is then.
 their Supabase project, so every statement below about the database describes
 what the REPOSITORY defines, not what is live.
 
-103 migrations exist. 8 bundles are prepared for
+104 migrations exist. 8 bundles are prepared for
 running: RUN-PART-1.sql, RUN-PART-2.sql, RUN-PART-3.sql, RUN-PART-4.sql, RUN-PART-5.sql, RUN-PART-6.sql, RUN-PART-7.sql, RUN-PART-8.sql.
 
 This matters more than any other line in this document. Every screen, route and

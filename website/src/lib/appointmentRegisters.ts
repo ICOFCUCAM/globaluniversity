@@ -433,6 +433,84 @@ export const REGISTERS: Record<PositionFamily, LetterRegister> = {
   // nobody has classified gets a correct, modest letter rather than an
   // executive one — an unclassified post inheriting the grandest wording is
   // precisely the accident this file is built to prevent.
+  // -------------------------------------------------------------------------
+  // NATIONAL ADMINISTRATIONS.
+  //
+  // The ninth family, and the letter it needs is not any of the other eight.
+  //
+  // TypeScript is what found this: adding `national` to POSITION_FAMILIES made
+  // this record incomplete, which is the type doing the job the register was
+  // designed for. A national post falling through to `other` would have been
+  // appointed with "the duties of the post" and no mention of the nation, the
+  // Agreement, or the fact that the office is the University abroad.
+  //
+  // THE WORDING IS THE UNIVERSITY'S OWN, from `The National Rector`, chapters
+  // FOUR and FIVE: the office is "the senior representative of ICOF Global
+  // University within an approved nation", it "operates as part of the
+  // university", and it is "distinct from an ordinary recruitment
+  // representative, marketing agent or independent education provider". That
+  // last sentence is in the letter because it is the one the post-holder will
+  // be asked to prove in their own country.
+  national: {
+    subject: (t) => `Appointment as ${t}`,
+    opening: (t, u) =>
+      `I am pleased, on behalf of ${u}, to formally appoint you as ${t}.`,
+    status: {
+      heading: 'Status of the Office',
+      paragraphs: [
+        'The office is a formal position within the institutional structure of the University. '
+        + 'It is distinct from an ordinary recruitment representative, marketing agent or '
+        + 'independent education provider: the holder of this office operates as part of the '
+        + 'University.',
+        'The office is connected to the central University through institutional appointment, '
+        + 'academic governance, administrative systems, student systems, financial systems, '
+        + 'University policies, reporting structures and institutional communications.',
+        'You may represent the University in approved national settings and may use the '
+        + 'institutional designation granted to the office, and no other.',
+      ],
+    },
+    // A National Rector holds real authority over a nation's students and
+    // money, so the letter says what delegated authority means — and the
+    // paragraph below says plainly what it does not reach.
+    carriesDelegatedAuthority: true,
+    responsibilitiesHeading: 'Principal Areas of Responsibility',
+    responsibilitiesLead: () =>
+      'Without limiting the detailed duties contained in your Job Description, your '
+      + 'responsibilities shall include, within the National Administration to which you are '
+      + 'appointed:',
+    accountability: {
+      heading: 'Reporting and Accountability',
+      paragraphs: (to) => [
+        `You shall report to ${to} and shall be accountable for the effective discharge of the `
+        + 'responsibilities assigned to your office.',
+        'The National Administration operates under the National Administration Agreement in '
+        + 'force. Revenue is divided as that Agreement provides and national expenditure is '
+        + 'authorised as University policy provides; neither is varied locally.',
+        // THE LIMIT, STATED IN THE LETTER AND ENFORCED IN THE DATABASE. 097
+        // holds a Rector to their own nation and 098 refuses them the approval
+        // of the agreement that pays it. A letter silent on this would be a
+        // letter the system contradicts on the post-holder's first afternoon.
+        'Your authority extends to the National Administration named in this letter and to no '
+        + 'other. The issue of University credentials — transcripts, certificates and academic '
+        + 'records — is reserved to the offices the University has named for that purpose.',
+        'Nothing in this appointment shall be interpreted as transferring authority reserved '
+        + 'exclusively to the Vice-Chancellor or to another University authority under the '
+        + 'University’s governing instruments.',
+      ],
+    },
+    conductAdditions: [
+      'protect the reputation, standards and interests of the University within the nation, and '
+      + 'make no representation on the University’s behalf beyond the authority of the office',
+    ],
+    closing: (t, u) => [
+      `The University trusts that you will discharge the responsibilities of the office of ${t} `
+      + 'with professionalism, integrity and diligence.',
+      `We look forward to your leadership in developing the National Administration into a `
+      + `sustainable national academic community within ${u}.`,
+    ],
+  },
+
+  // -------------------------------------------------------------------------
   other: {
     subject: (t) => `Appointment as ${t}`,
     opening: (t, u) =>
