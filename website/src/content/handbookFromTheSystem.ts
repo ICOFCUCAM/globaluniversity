@@ -3794,8 +3794,6 @@ export const ENFORCED: EnforcedRules[] = [
       "the Chancellor is a post too, inheriting the executive family's description and carrying no invented duties",
       "…in a family of their own, not borrowed from the executive",
       "a misspelt family is still refused",
-      "every national job description is a draft and can reach nobody",
-      "a national post inherits the University's common clauses and adds the office's own",
       "every post in the register still has conditions of appointment and a place of duty, the three new ones included",
       "…and a National Rector is not posted to the central campus"
     ]
@@ -3827,10 +3825,10 @@ export const ENFORCED: EnforcedRules[] = [
     "migration": "106",
     "file": "106_the_self_test_is_not_two_students.sql",
     "rules": [
-      "% self-test account(s) removed from the accounts list",
+      "% self-test account(s) removed from the accounts list, and the examination register is untouched",
       "neither self-test identity appears as an account any more",
       "…and carries no role, so a session as one holds nothing",
-      "the self-test examination record is untouched, as 015 requires",
+      "the examination register was counted either side of the removal, in section 1, and did not move",
       "…and the identities its incidents and marks name are still there",
       "deleting the identity itself is refused by the evidence that names it"
     ]
@@ -3858,5 +3856,5 @@ export const COUNTS = {
   roles: 25,
   capabilities: 129,
   migrations: 0,
-  provedRules: 143,
+  provedRules: 141,
 };

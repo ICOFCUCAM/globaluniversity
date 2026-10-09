@@ -198,25 +198,45 @@ check('the Chancellor is in the register',
 check('and 103 refuses a job description for the Chancellor',
   /a job description was written for the Chancellor/.test(m103), true);
 
-// ---- NOTHING IS ACTIVATED ----------------------------------------------
+// ---- NOTHING IS ACTIVATED, AND NOTHING IS ASSERTED ABOUT WHAT THEY DID ----
 //
 // 048's rule: a job description reaches nobody until somebody has read it and
 // somebody else has activated it. 103 does not make an exception of itself, so
-// every profile it INSERTS is a draft. (Its proof activates two inside a
-// rollback, to watch the inheritance resolve; that is an update, not an
-// insert, and it is undone.)
+// every profile it INSERTS is a draft.
+//
+// THIS USED TO ALSO EXPECT TWO ACTIVATIONS — 103's proof activated what it had
+// seeded so it could watch a job description resolve. That cost the University
+// a failed migration run: once THEY activated the three, 103's own proof
+// asserted none was active and stopped the bundle dead. The activation went
+// with it, because activating a profile the University has since approved
+// overwrites the officer who approved it.
+//
+// So the count is now zero, and the draft-ness is asserted where each row is
+// made rather than re-read from the table on every future run.
 const inserts = m103.split('insert into position_profiles').slice(1)
   .map((chunk) => chunk.slice(0, chunk.indexOf(';')));
 check('103 inserts at least the three national profiles', inserts.length >= 3, true);
 check('and every one of them is a draft',
   inserts.filter((v) => !v.includes("'draft'")).length, 0);
 
-// AND THE ONLY ACTIVATION IS THE ROLLED-BACK ONE. An `update ... set status =
-// 'active'` that is not inside the proof would leave a job description live on
-// the University's database without anybody having read it.
-const activations = [...m103.matchAll(/set status = 'active'/g)].length;
-check('nothing is activated except inside the proof that rolls back',
-  activations, 2);
+check('103 activates nothing at all, not even inside a rollback',
+  (m103.match(/set status = 'active'/g) ?? []).length, 0);
+
+// AND IT ASSERTS DRAFT-NESS WHERE THE ROW IS MADE. A check at the foot of the
+// file re-reads the table for ever; a check beside the insert cannot outlive
+// the moment it is true of.
+check('…and asserts draft-ness beside the insert, not in the proof',
+  (m103.match(/was seeded as something other than a draft/g) ?? []).length, 3);
+
+// NOR DOES IT HOLD ANY OPINION ABOUT WHAT THE UNIVERSITY HAS APPROVED.
+//
+// COMMENTS STRIPPED FIRST. 103 quotes the old failure message in the note
+// explaining why it was removed, and a bare substring search cannot tell an
+// assertion from a post-mortem of one — it failed a file for describing the
+// fault it had just been cured of.
+const m103bare = m103.replace(/--.*$/gm, '');
+check('…and never asserts that a national job description is not active',
+  /national job descriptions landed ACTIVE/.test(m103bare), false);
 
 // ---------------------------------------------------------------------------
 

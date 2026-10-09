@@ -1260,6 +1260,13 @@ begin
      'force. Money is divided as that agreement provides and national expenditure is '
      'authorised as University policy provides; neither is varied locally.');
 
+  -- ASSERTED WHERE THE ROW IS MADE, not in the proof at the foot of the file.
+  -- A migration may assert what it did; it may not hold an opinion about what
+  -- the University has done since. Checked here, this cannot outlive the
+  -- moment it is true of — and the moment it is true of is this one.
+  if not exists (select 1 from position_profiles where id = pid and status = 'draft') then
+    raise exception '103 FAILED — the national family job description was seeded as something other than a draft';
+  end if;
   raise notice '103 OK  the national family job description is seeded, as a draft';
 end $$;
 
@@ -1340,6 +1347,13 @@ begin
      'is not within the office. Those are issued centrally, by the offices the University '
      'has named for them.');
 
+  -- ASSERTED WHERE THE ROW IS MADE, not in the proof at the foot of the file.
+  -- A migration may assert what it did; it may not hold an opinion about what
+  -- the University has done since. Checked here, this cannot outlive the
+  -- moment it is true of — and the moment it is true of is this one.
+  if not exists (select 1 from position_profiles where id = pid and status = 'draft') then
+    raise exception '103 FAILED — the National Rector''s job description was seeded as something other than a draft';
+  end if;
   raise notice '103 OK  the National Rector''s job description is seeded, as a draft';
 end $$;
 
@@ -1394,6 +1408,13 @@ begin
      'office, including this one. A correction is a further transaction and both stay '
      'readable.');
 
+  -- ASSERTED WHERE THE ROW IS MADE, not in the proof at the foot of the file.
+  -- A migration may assert what it did; it may not hold an opinion about what
+  -- the University has done since. Checked here, this cannot outlive the
+  -- moment it is true of — and the moment it is true of is this one.
+  if not exists (select 1 from position_profiles where id = pid and status = 'draft') then
+    raise exception '103 FAILED — the National Financial Secretary''s job description was seeded as something other than a draft';
+  end if;
   raise notice '103 OK  the National Financial Secretary''s job description is seeded, as a draft';
 end $$;
 
@@ -1532,9 +1553,7 @@ do $$
 declare
   seen      integer;
   refused   boolean;
-  pos       uuid;
   t         text;
-  activator uuid := gen_random_uuid();
 begin
   -- ---- THE POSTS ARE IN THE REGISTER -------------------------------------
   select count(*) into seen from positions where job_code in ('NAT-REC', 'NAT-FIN');
@@ -1578,59 +1597,37 @@ begin
   end if;
   raise notice '103 OK  a misspelt family is still refused';
 
-  -- ---- NOTHING IS ACTIVE -------------------------------------------------
-  select count(*) into seen
-    from position_profiles pp
-    left join positions p on p.id = pp.position_id
-   where (pp.family = 'national' or p.job_code in ('NAT-REC', 'NAT-FIN'))
-     and pp.status = 'active';
-  if seen <> 0 then
-    raise exception '103 FAILED — % national job descriptions landed ACTIVE', seen;
-  end if;
-  raise notice '103 OK  every national job description is a draft and can reach nobody';
-
-  -- ---- THE RESOLVED DESCRIPTION IS THE FAMILY'S PLUS THE POST'S ----------
+  -- ---- WHAT IS *NOT* ASSERTED HERE, AND WHY ------------------------------
   --
-  -- The inheritance is the whole point of 048's design, so it is watched
-  -- working rather than assumed. A national post must carry the University's
-  -- eight common clauses AND its own duties.
-  select id into pos from positions where job_code = 'NAT-REC';
-
-  -- Activated only inside the rollback, so the resolution can be observed at
-  -- all — `position_job_description` reads active profiles. The University's
-  -- own data is not competed for: `national` is a new family and NAT-REC a new
-  -- post, so both slots were empty before this migration created them.
+  -- THIS BLOCK USED TO CHECK THAT NO NATIONAL JOB DESCRIPTION WAS ACTIVE, AND
+  -- IT FAILED THE UNIVERSITY FOR DOING WHAT THEY WERE ASKED TO DO.
   --
-  -- AND ACTIVATION IS NOT A STATUS COLUMN. 048 holds `activated_by` and
-  -- `activated_at` to be present on any active profile, and holds the
-  -- activator to be somebody other than the author. Setting the status alone
-  -- is refused, which is the rule working; this proof is not entitled to an
-  -- exception from it, so it names an activator of its own.
-  insert into auth.users (id, email) values (activator, 'proof-103@example.invalid');
-  insert into profiles (id, email, full_name, role)
-    values (activator, 'proof-103@example.invalid', 'Proof Activator 103', 'superadmin')
-  on conflict (id) do update set role = excluded.role;
-
-  update position_profiles
-     set status = 'active', activated_by = activator, activated_at = now()
-   where family = 'national' and position_id is null;
-  update position_profiles
-     set status = 'active', activated_by = activator, activated_at = now()
-   where position_id = pos;
-
-  select count(*) into seen from position_job_description
-   where position_id = pos and section = 'key-responsibilities';
-  if seen <> 6 then
-    raise exception '103 FAILED — the Rector resolved to % duties, not the book''s six', seen;
-  end if;
-
-  select count(*) into seen from position_job_description
-   where position_id = pos and section = 'confidentiality';
-  if seen < 1 then
-    raise exception '103 FAILED — a national post inherited no confidentiality clause';
-  end if;
-  raise notice '103 OK  a national post inherits the University''s common clauses and adds '
-               'the office''s own';
+  -- 103 seeds three drafts and the handover said, correctly: "Both
+  -- descriptions are DRAFTS and must be read and activated before an
+  -- appointment can carry one." The University read them and activated them.
+  -- The next run of the bundle then stopped dead on
+  -- "103 FAILED — 3 national job descriptions landed ACTIVE".
+  --
+  -- That is the third fault class this repository has a standing rule about,
+  -- arriving for the second time: NEVER ASSERT THEIR DATA IS EMPTY. 051
+  -- checked that a document kind still had no template and failed them for
+  -- having finished the work. This checked that a job description was still a
+  -- draft and failed them for having approved it.
+  --
+  -- A migration is entitled to assert what IT did. It is not entitled to an
+  -- opinion about what the University has done since. So the draft-ness of
+  -- each profile is now asserted in the block that CREATES it, a few sections
+  -- above, where the row is unambiguously this migration's own and the check
+  -- cannot outlive the moment it is true of.
+  --
+  -- THE INHERITANCE PROOF WENT WITH IT, for the second standing reason:
+  -- NEVER WRITE TO THEIR ROWS. To observe a resolved job description the proof
+  -- had to activate one, and once the University has activated it themselves
+  -- that UPDATE sets `activated_by` on a row that is theirs — overwriting the
+  -- officer who approved it with a proof user, inside a rollback or not.
+  -- Resolution is 048's property, proved by 048 and asserted by
+  -- positions.test.mjs against the library; 103 does not need to prove it
+  -- again at that price.
 
   -- ---- 078'S INVARIANT STILL HOLDS ---------------------------------------
   --
@@ -2296,16 +2293,32 @@ end $$;
 
 do $$
 declare
-  gone integer;
+  gone   integer;
+  before integer;
+  after_ integer;
 begin
+  -- COUNTED EITHER SIDE OF THE DELETE, so what is asserted is what THIS
+  -- MIGRATION did and not what the University's database happens to contain.
+  -- An assertion of the second kind — "the self-test examination is still
+  -- there" — fails them the day they remove it themselves, and this
+  -- repository has now been bitten by that twice.
+  select count(*) into before from examinations;
+
   delete from profiles
    where id in ('00000000-0000-0000-0000-0000000000e1'::uuid,
                 '00000000-0000-0000-0000-0000000000e2'::uuid)
      and email in ('selftest-proctor-015@iguc.net', 'selftest-marker-015@iguc.net');
   get diagnostics gone = row_count;
 
+  select count(*) into after_ from examinations;
+  if after_ <> before then
+    raise exception '106 FAILED — removing two accounts changed the examination register '
+                    'from % to %', before, after_;
+  end if;
+
   if gone > 0 then
-    raise notice '106 OK  % self-test account(s) removed from the accounts list', gone;
+    raise notice '106 OK  % self-test account(s) removed from the accounts list, and the '
+                 'examination register is untouched', gone;
   else
     raise notice '106 --  the self-test accounts are already off the list; nothing to do';
   end if;
@@ -2348,21 +2361,16 @@ begin
 
   -- ---- THE EVIDENCE IS UNTOUCHED -----------------------------------------
   --
-  -- The half that matters. 015's self-test sitting is a permanent part of the
-  -- University's examination record because 015 makes it so, and this
-  -- migration must not have removed any of it while removing two rows from a
-  -- different table.
-  select count(*) into seen from examinations
-   where title = 'Installation self-test - migration 015';
-  if seen <> 1 then
-    raise exception '106 FAILED — the self-test examination is no longer there (%)', seen;
-  end if;
-
-  select count(*) into seen from exam_events;
-  if seen < 1 then
-    raise exception '106 FAILED — examination evidence was removed';
-  end if;
-  raise notice '106 OK  the self-test examination record is untouched, as 015 requires';
+  -- The half that matters, and it is asserted in SECTION 1 rather than here —
+  -- by counting the examination register either side of the delete, which is
+  -- a fact about what this migration did.
+  --
+  -- It used to be asserted here as "the self-test examination is still there",
+  -- which is a fact about the University's database and therefore not this
+  -- migration's to insist on. The day they removed it themselves, 106 would
+  -- have failed them for it.
+  raise notice '106 OK  the examination register was counted either side of the removal, in '
+               'section 1, and did not move';
 
   -- ---- AND THE PEOPLE THE EVIDENCE NAMES ARE STILL THERE ------------------
   select count(*) into seen from auth.users

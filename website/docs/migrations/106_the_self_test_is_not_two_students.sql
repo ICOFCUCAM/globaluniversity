@@ -88,16 +88,32 @@
 
 do $$
 declare
-  gone integer;
+  gone   integer;
+  before integer;
+  after_ integer;
 begin
+  -- COUNTED EITHER SIDE OF THE DELETE, so what is asserted is what THIS
+  -- MIGRATION did and not what the University's database happens to contain.
+  -- An assertion of the second kind — "the self-test examination is still
+  -- there" — fails them the day they remove it themselves, and this
+  -- repository has now been bitten by that twice.
+  select count(*) into before from examinations;
+
   delete from profiles
    where id in ('00000000-0000-0000-0000-0000000000e1'::uuid,
                 '00000000-0000-0000-0000-0000000000e2'::uuid)
      and email in ('selftest-proctor-015@iguc.net', 'selftest-marker-015@iguc.net');
   get diagnostics gone = row_count;
 
+  select count(*) into after_ from examinations;
+  if after_ <> before then
+    raise exception '106 FAILED — removing two accounts changed the examination register '
+                    'from % to %', before, after_;
+  end if;
+
   if gone > 0 then
-    raise notice '106 OK  % self-test account(s) removed from the accounts list', gone;
+    raise notice '106 OK  % self-test account(s) removed from the accounts list, and the '
+                 'examination register is untouched', gone;
   else
     raise notice '106 --  the self-test accounts are already off the list; nothing to do';
   end if;
@@ -140,21 +156,16 @@ begin
 
   -- ---- THE EVIDENCE IS UNTOUCHED -----------------------------------------
   --
-  -- The half that matters. 015's self-test sitting is a permanent part of the
-  -- University's examination record because 015 makes it so, and this
-  -- migration must not have removed any of it while removing two rows from a
-  -- different table.
-  select count(*) into seen from examinations
-   where title = 'Installation self-test - migration 015';
-  if seen <> 1 then
-    raise exception '106 FAILED — the self-test examination is no longer there (%)', seen;
-  end if;
-
-  select count(*) into seen from exam_events;
-  if seen < 1 then
-    raise exception '106 FAILED — examination evidence was removed';
-  end if;
-  raise notice '106 OK  the self-test examination record is untouched, as 015 requires';
+  -- The half that matters, and it is asserted in SECTION 1 rather than here —
+  -- by counting the examination register either side of the delete, which is
+  -- a fact about what this migration did.
+  --
+  -- It used to be asserted here as "the self-test examination is still there",
+  -- which is a fact about the University's database and therefore not this
+  -- migration's to insist on. The day they removed it themselves, 106 would
+  -- have failed them for it.
+  raise notice '106 OK  the examination register was counted either side of the removal, in '
+               'section 1, and did not move';
 
   -- ---- AND THE PEOPLE THE EVIDENCE NAMES ARE STILL THERE ------------------
   select count(*) into seen from auth.users

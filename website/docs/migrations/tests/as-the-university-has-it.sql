@@ -133,14 +133,36 @@ begin
   -- ALL EIGHT, for the same reason every template kind is activated above: a
   -- sample leaves the state a proof assumes still partly true, and the fault
   -- hides until the University finishes the job.
+  --
+  -- `national` IS THE NINTH AND IT WAS NOT HERE, which cost the University a
+  -- failed migration run. 103 seeded three national job descriptions as
+  -- drafts, the handover said to read and activate them, they did — and 103's
+  -- own proof then asserted that no national job description was active and
+  -- stopped the whole bundle dead on the next run. A fixture that does what
+  -- the University does would have caught it here instead of there.
   foreach fam in array array['executive', 'academic-administration',
                              'faculty-leadership', 'administration',
-                             'student-services', 'ict', 'academic-staff', 'other'] loop
+                             'student-services', 'ict', 'academic-staff',
+                             'national', 'other'] loop
     update position_profiles
        set status = 'active', activated_by = u1, activated_at = now()
      where family = fam and position_id is null and status = 'draft'
        and job_purpose is not null;
   end loop;
+
+  -- ---- AND THE TWO THAT BELONG TO A POST ---------------------------------
+  --
+  -- Every other job description in this schema belongs to a FAMILY. 103 is
+  -- the first migration to seed one for a single post — the National Rector
+  -- and the National Financial Secretary — so this is the first fixture that
+  -- can have one activated, and the state nothing had ever stood in.
+  update position_profiles pp
+     set status = 'active', activated_by = u1, activated_at = now()
+    from positions p
+   where p.id = pp.position_id
+     and p.job_code in ('NAT-REC', 'NAT-FIN')
+     and pp.status = 'draft'
+     and pp.job_purpose is not null;
 
   -- ---- A CERTIFICATE DESIGN THE UNIVERSITY HAS PUBLISHED ------------------
   --

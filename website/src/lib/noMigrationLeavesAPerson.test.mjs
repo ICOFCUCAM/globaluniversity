@@ -170,8 +170,17 @@ check('…which its proof watches being refused',
 
 // AND THE EVIDENCE IS ASSERTED TO SURVIVE. A migration asked to tidy a list is
 // exactly the kind that takes an examination record with it.
-check('the examination record is asserted untouched',
-  /the self-test examination record is untouched/.test(m106), true);
+//
+// ASSERTED BY COUNTING EITHER SIDE OF ITS OWN DELETE, which is where this
+// moved to. It used to read "the self-test examination is still there" — a
+// fact about the University's database rather than about what 106 did, and
+// therefore one that would have failed them the day they removed it
+// themselves. The same mistake stopped 103 dead on their live database.
+check('the examination register is counted either side of the delete',
+  /select count\(\*\) into before from examinations/.test(m106)
+  && /select count\(\*\) into after_ from examinations/.test(m106), true);
+check('\u2026and a change to it fails the migration',
+  /removing two accounts changed the examination register/.test(m106), true);
 
 // ---------------------------------------------------------------------------
 

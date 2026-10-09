@@ -64,6 +64,28 @@ it is holding it.
      the condition you want to observe (park one kind's template) instead of
      assuming it.
 
+     **IT HAPPENED AGAIN, AND IT STOPPED A MIGRATION RUN DEAD.** 103 seeded
+     three national job descriptions as drafts. The handover said, correctly,
+     "read them and activate them". The University did. The next run of the
+     bundle failed on `103 FAILED — 3 national job descriptions landed
+     ACTIVE`, because 103's proof asserted that none was active.
+
+     The rule that would have prevented both: **a migration may assert what IT
+     did; it may not hold an opinion about what the University has done
+     since.** So assert draft-ness in the block that CREATES the row, where it
+     cannot outlive the moment it is true of — never in a proof at the foot of
+     the file that re-reads the table on every future run.
+
+     The same rewrite removed 103's inheritance proof, which had to ACTIVATE a
+     profile to observe a resolved job description — and once the University
+     has activated it, that `update` sets `activated_by` on their row,
+     overwriting the officer who approved it. Resolution is 048's property and
+     `positions.test.mjs` already holds it; 103 did not need it at that price.
+
+     106 was corrected in the same pass: it asserted "the self-test
+     examination is still there", which would have failed them the day they
+     removed it. It now counts the register either side of its own delete.
+
    A sample is not enough in the fixture either: with three template kinds
    activated, 051's assertion still held and the fault stayed hidden. It
    activates **every** kind and **all eight** job descriptions for that reason.
