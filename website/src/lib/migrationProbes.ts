@@ -1294,6 +1294,31 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
       + 'destroy the record at once and now raises a request instead.',
     table: 'deletion_requests',
   },
+  {
+    file: '109_an_abandoned_application_leaves_the_register.sql',
+    what:
+      'AN APPLICATION NOBODY FINISHED LEAVES THE STUDENTS REGISTER AND THE DASHBOARD COUNTS '
+      + 'NINETY DAYS ON — never paid for, refused, withdrawn, asked for documents that '
+      + 'never came, or paid and never processed. NOTHING IS DELETED and this is not 108’s '
+      + 'deletion: no request, no approval and no thirty days, because there will be hundreds '
+      + 'of these and a register that costs an approval per row to clear is a register nobody '
+      + 'clears. It is read on `archived_applications`, which says of each one why it left, and '
+      + 'the Office of the Registrar can put one back with nobody’s approval — '
+      + 'whereupon the ninety days start again, so it does not vanish the moment the screen is '
+      + 'redrawn. NOTHING HAS TO RUN: staleness is computed from the row’s own dates, so '
+      + 'there is no nightly job to forget and no stored flag to go wrong unnoticed. AN '
+      + 'ADMITTED OR ENROLLED STUDENT IS NEVER TOUCHED AT ANY AGE, and neither is anything '
+      + 'still sitting on the University’s own desk — hiding a backlog is not '
+      + 'tidying. MONEY TAKEN FOR NOTHING IS LISTED SEPARATELY AND FOR EVER: an application '
+      + 'the fee was paid on and nobody processed appears on '
+      + '`applications_paid_and_never_processed` from the day of the payment with no age limit, '
+      + 'because a thing that leaves the screen quietly is a thing nobody answers for. IT ALSO '
+      + 'CLOSES A GAP 108 LEFT: row policies are OR’ed, and the National Rector’s '
+      + 'policy carried no erasure clause, so a record the Vice-Chancellor had approved for '
+      + 'deletion was hidden from the Registrar and plainly visible to the Rector.',
+    table: 'students',
+    column: 'restored_to_register_at',
+  },
 ];
 
 /** What a probe came back as. */

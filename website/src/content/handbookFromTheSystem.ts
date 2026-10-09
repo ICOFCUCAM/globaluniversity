@@ -117,6 +117,7 @@ export const ROLE_PROFILES: RoleProfile[] = [
       "monitor-teaching",
       "department-reports",
       "process-applications",
+      "restore-archived-application",
       "defer-admission",
       "transfer-programme",
       "manage-library",
@@ -187,7 +188,8 @@ export const ROLE_PROFILES: RoleProfile[] = [
           "Admissions Office",
           "Admissions approval",
           "Enrolment",
-          "Students"
+          "Students",
+          "Archived applications"
         ]
       },
       {
@@ -265,6 +267,7 @@ export const ROLE_PROFILES: RoleProfile[] = [
       {
         "title": "System",
         "items": [
+          "Deletions",
           "Accounts",
           "Document templates",
           "Job descriptions",
@@ -366,6 +369,7 @@ export const ROLE_PROFILES: RoleProfile[] = [
       "monitor-teaching",
       "department-reports",
       "process-applications",
+      "restore-archived-application",
       "defer-admission",
       "transfer-programme",
       "manage-library",
@@ -418,7 +422,8 @@ export const ROLE_PROFILES: RoleProfile[] = [
           "Registrar desk",
           "Admissions Office",
           "Enrolment",
-          "Students"
+          "Students",
+          "Archived applications"
         ]
       },
       {
@@ -496,6 +501,7 @@ export const ROLE_PROFILES: RoleProfile[] = [
       {
         "title": "System",
         "items": [
+          "Deletions",
           "Document templates",
           "Job descriptions",
           "Conditions of appointment",
@@ -552,6 +558,7 @@ export const ROLE_PROFILES: RoleProfile[] = [
       "recompute-gpa",
       "reject-application",
       "request-documents",
+      "restore-archived-application",
       "set-admission-openings",
       "set-remuneration",
       "transfer-programme",
@@ -665,6 +672,7 @@ export const ROLE_PROFILES: RoleProfile[] = [
       "recompute-gpa",
       "reject-application",
       "request-documents",
+      "restore-archived-application",
       "set-admission-openings",
       "set-fee-schedule",
       "transfer-programme",
@@ -675,6 +683,12 @@ export const ROLE_PROFILES: RoleProfile[] = [
         "title": "Dashboard",
         "items": [
           "Dashboard"
+        ]
+      },
+      {
+        "title": "Admissions",
+        "items": [
+          "Archived applications"
         ]
       },
       {
@@ -715,6 +729,7 @@ export const ROLE_PROFILES: RoleProfile[] = [
       {
         "title": "System",
         "items": [
+          "Deletions",
           "Document templates",
           "Job descriptions",
           "Conditions of appointment",
@@ -751,6 +766,7 @@ export const ROLE_PROFILES: RoleProfile[] = [
       "change-own-password",
       "view-own-staff-record",
       "process-applications",
+      "restore-archived-application",
       "defer-admission",
       "transfer-programme",
       "confer-award",
@@ -805,7 +821,8 @@ export const ROLE_PROFILES: RoleProfile[] = [
         "items": [
           "Registrar desk",
           "Enrolment",
-          "Students"
+          "Students",
+          "Archived applications"
         ]
       },
       {
@@ -925,6 +942,7 @@ export const ROLE_PROFILES: RoleProfile[] = [
       "recompute-gpa",
       "reject-application",
       "request-documents",
+      "restore-archived-application",
       "set-admission-openings",
       "set-remuneration",
       "transfer-programme",
@@ -1449,7 +1467,8 @@ export const ROLE_PROFILES: RoleProfile[] = [
         "title": "Admissions",
         "items": [
           "Admissions Office",
-          "Students"
+          "Students",
+          "Archived applications"
         ]
       },
       {
@@ -1736,6 +1755,7 @@ export const ROLE_PROFILES: RoleProfile[] = [
       "recompute-gpa",
       "reject-application",
       "request-documents",
+      "restore-archived-application",
       "set-admission-openings",
       "set-fee-schedule",
       "transfer-programme",
@@ -1996,6 +2016,7 @@ export const ROLE_PROFILES: RoleProfile[] = [
       "process-applications",
       "publish-announcement",
       "recommend-national-staff",
+      "restore-archived-application",
       "set-fee-schedule",
       "set-remuneration",
       "transfer-programme",
@@ -2021,7 +2042,8 @@ export const ROLE_PROFILES: RoleProfile[] = [
       {
         "title": "Admissions",
         "items": [
-          "Admissions approval"
+          "Admissions approval",
+          "Archived applications"
         ]
       },
       {
@@ -3075,6 +3097,14 @@ export const CAPABILITY_HOLDERS: { capability: string; roles: string[] }[] =
     ]
   },
   {
+    "capability": "restore-archived-application",
+    "roles": [
+      "superadmin",
+      "admin",
+      "registrar"
+    ]
+  },
+  {
     "capability": "revoke-credential",
     "roles": [
       "superadmin"
@@ -3883,12 +3913,37 @@ export const ENFORCED: EnforcedRules[] = [
       "…and that account is append-only, like every other record of a decision in this system",
       "an erased record is not restorable, and the system does not pretend otherwise"
     ]
+  },
+  {
+    "migration": "109",
+    "file": "109_an_abandoned_application_leaves_the_register.sql",
+    "rules": [
+      "a recent application stays on the register",
+      "…and one nobody paid for, two hundred days on, does not",
+      "an admitted or enrolled student is never archived, at any age",
+      "…nor is anything still sitting on the University's own desk",
+      "an abandoned application leaves the Students register and the counts",
+      "…and nothing else does",
+      "…including from the National Rector, whose policy 108 had not narrowed",
+      "…they are all readable on the archive, which is not a deletion",
+      "…each one saying why it left",
+      "…and the archive, which reads past the policy, refuses everybody else",
+      "…and nothing can be WRITTEN through it: the view is read-only, which an auto-updatable definer view is not by default",
+      "and one the University was PAID for and never processed is listed separately, with no age limit — a refusal is not",
+      "…and a refunded fee leaves it, because nothing is being held",
+      "the Registrar can bring one back, with no approval, because nothing was lost",
+      "…and an office with no admissions business is refused when it tries",
+      "…nor can a signed-in account the register has no profile for",
+      "…and the publishable key cannot so much as call it, while a signed-in office can",
+      "…while the application's own service key can, naming the officer it acted for",
+      "…and it does not vanish again the moment the screen is redrawn"
+    ]
   }
 ];
 
 export const COUNTS = {
   roles: 25,
-  capabilities: 130,
+  capabilities: 131,
   migrations: 0,
-  provedRules: 154,
+  provedRules: 173,
 };

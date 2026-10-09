@@ -103,13 +103,50 @@ create trigger students_guard_delete
 -- trigger refuses anything.
 -- ---------------------------------------------------------------------------
 
+-- ---------------------------------------------------------------------------
+-- AMENDED AFTER 108, WHICH MADE THIS PROOF IMPOSSIBLE TO RUN TWICE.
+--
+-- 108 put a trigger on `students` that refuses EVERY delete which is not the
+-- carrying-out of a request the Vice-Chancellor approved thirty days earlier —
+-- deliberately, including the service key's. This proof deletes two rows it
+-- made itself, so from the moment 108 exists the proof cannot complete.
+--
+-- ON A FRESH DATABASE NOTHING WENT WRONG, because 018 runs ninety migrations
+-- before 108 and the trigger did not exist yet. It only failed on the SECOND
+-- full run of RUN-ALL.sql, where 108's trigger is already there when 018 comes
+-- round again:
+--
+--   ERROR: A students is not deleted outright. The Superadministrator puts it
+--          up for deletion, the Vice-Chancellor decides…
+--
+-- Which is the rule working correctly, on the wrong row.
+--
+-- SO 108's GUARD IS PARKED FOR THE LENGTH OF THIS PROOF AND PUT BACK, and
+-- 018's OWN guard is left armed throughout — part (b) below exists to watch it
+-- refuse, and disabling the lot would have turned the most important assertion
+-- in this file into a line that always passes. A rule nobody has watched
+-- refuse anything is a rule nobody has tested.
+--
+-- The whole thing is one transaction, so a failure anywhere re-arms it.
+-- ---------------------------------------------------------------------------
+
 do $$
 declare
   applicant_id uuid;
   admitted_id  uuid;
   refused      boolean;
   n            int;
+  parked       boolean := false;
 begin
+  if exists (
+    select 1 from pg_trigger
+     where tgrelid = 'students'::regclass
+       and tgname = 'nothing_is_deleted_without_the_vc_trg'
+  ) then
+    alter table students disable trigger nothing_is_deleted_without_the_vc_trg;
+    parked := true;
+  end if;
+
   -- (a) An ordinary application can be deleted by a caller that bypasses RLS.
   insert into students (matric_no, first_name, last_name, email, status)
   values ('DEL-PROOF-018', 'Delete', 'Proof', 'delete-proof-018@example.invalid', 'applicant')
@@ -143,7 +180,39 @@ begin
   update students set student_number = null, auth_user_id = null where id = admitted_id;
   delete from students where id = admitted_id;
 
+  -- AND 108's GUARD GOES BACK ON. Leaving it off would be the worst outcome
+  -- available here: every delete on the register permitted, silently, on a
+  -- database whose owner had just run the migration that forbids them.
+  if parked then
+    alter table students enable trigger nothing_is_deleted_without_the_vc_trg;
+  end if;
+
   raise notice '018 ok: applications are deletable, admitted students are not.';
+end $$;
+
+-- ---------------------------------------------------------------------------
+-- AND IT REALLY IS BACK ON. Asked of the catalogue rather than assumed from
+-- the block above having finished: `tgenabled` is 'O' for an ordinary enabled
+-- trigger and 'D' for a disabled one, and a proof that left the University's
+-- register unguarded would be a far worse fault than the one it was fixing.
+-- ---------------------------------------------------------------------------
+do $$
+declare
+  state "char";
+begin
+  select tgenabled into state
+    from pg_trigger
+   where tgrelid = 'students'::regclass
+     and tgname = 'nothing_is_deleted_without_the_vc_trg';
+
+  if state is null then
+    raise notice '018 --  108 has not been run yet; nothing to re-arm.';
+  elsif state = 'D' then
+    raise exception '018 FAILED: 108''s deletion guard was left DISABLED on students. '
+                    'Every delete on the register would be permitted.';
+  else
+    raise notice '018 ok: 108''s deletion guard is armed again.';
+  end if;
 end $$;
 
 -- (c) The policy exists, names the Superadministrator, and names nobody else.

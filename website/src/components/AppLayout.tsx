@@ -81,6 +81,7 @@ import FeeModule from './fees/FeeModule';
 import FeeSchedules from './finance/FeeSchedules';
 import Refunds from '@/components/finance/Refunds';
 import Deletions from '@/components/admin/Deletions';
+import ArchivedApplications from '@/components/admissions/ArchivedApplications';
 import StudentRequestQueue from './services/StudentRequestQueue';
 import AnalyticsDashboard from './analytics/AnalyticsDashboard';
 import InsightsModule from './insights/InsightsModule';
@@ -445,6 +446,11 @@ export default function AppLayout() {
         return <Refunds />;
       case 'deletions':
         return <Deletions />;
+      // WHERE AN APPLICATION NOBODY FINISHED IS READ, ninety days on. Not a
+      // bin: 109 archives nothing and deletes nothing, it computes staleness
+      // from the row's own dates and the register stops showing it.
+      case 'archived-applications':
+        return <ArchivedApplications />;
       case 'student-request-queue':
         return <StudentRequestQueue />;
       case 'documents':

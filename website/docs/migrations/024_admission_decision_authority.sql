@@ -382,11 +382,45 @@ begin
   delete from admission_decisions where application_id = app;
   alter table admission_decisions enable trigger admission_decisions_no_change;
   alter table admission_audit_log enable trigger admission_audit_log_no_change;
-  delete from students where id = app;
+
+  -- AND 108's, FOR THE SAME REASON AND BY THE SAME MANOEUVRE. 108 refuses
+  -- every delete on the register that is not the carrying-out of a request the
+  -- Vice-Chancellor approved thirty days earlier — this proof's clean-up
+  -- included — so from the SECOND run of RUN-ALL.sql onwards the line below
+  -- cannot complete. Guarded on the trigger's existence because on a fresh
+  -- database 024 runs eighty-four migrations before 108 does. See the long
+  -- note in 018.
+  if exists (
+    select 1 from pg_trigger
+     where tgrelid = 'students'::regclass
+       and tgname = 'nothing_is_deleted_without_the_vc_trg'
+  ) then
+    alter table students disable trigger nothing_is_deleted_without_the_vc_trg;
+    delete from students where id = app;
+    alter table students enable trigger nothing_is_deleted_without_the_vc_trg;
+  else
+    delete from students where id = app;
+  end if;
   delete from student_number_counters where year = 2026 and next_value <= 3;
 
   raise notice '024 OK — a decision is recorded and cannot be rewritten, an override must say '
                'why, and two student numbers reserved in succession differ.';
+end $$;
+
+-- ---------------------------------------------------------------------------
+-- AND 108'S GUARD IS ARMED AGAIN, asked of the catalogue rather than assumed
+-- from the block above having finished. 'D' is a disabled trigger.
+-- ---------------------------------------------------------------------------
+do $$
+declare
+  state "char";
+begin
+  select tgenabled into state from pg_trigger
+   where tgrelid = 'students'::regclass
+     and tgname = 'nothing_is_deleted_without_the_vc_trg';
+  if state = 'D' then
+    raise exception '024 FAILED: 108''s deletion guard was left DISABLED on students.';
+  end if;
 end $$;
 
 

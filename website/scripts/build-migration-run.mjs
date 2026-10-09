@@ -307,6 +307,13 @@ const MARKERS = {
   '106': "norows:profiles:email in ('selftest-proctor-015@iguc.net','selftest-marker-015@iguc.net')",
   '107': 'appointment_invitations',
   '108': 'deletion_requests',
+  // NOT `archived_applications`, though 109 creates it. The view is the thing
+  // the University will LOOK at, and the column is the thing that cannot be
+  // there without the migration: a view can be dropped by a later hand, and a
+  // report reading a dropped view would send somebody to re-run SQL that is
+  // already in. The column is also what the policy depends on, so if it is
+  // there, the register is narrowed.
+  '109': 'students.restored_to_register_at',
 };
 
 /** The SQL that answers "is this one here?", for each of the three forms. */

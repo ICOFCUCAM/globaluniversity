@@ -416,6 +416,11 @@ export type ViewType =
   | 'fee-schedules'
   | 'refunds'
   | 'deletions'
+  // WHERE AN APPLICATION NOBODY FINISHED IS READ. Distinct from 'deletions'
+  // and deliberately so: 109 destroys nothing, needs nobody's approval and
+  // happens by itself. The University asked for these to be "DELETED OR REMOVE
+  // SOMEWHERE", and this is the second.
+  | 'archived-applications'
   // THE OFFICE'S SIDE OF A STUDENT'S REQUEST. 073 built the request and the
   // student's half of it; nothing could move one off 'submitted'.
   | 'student-request-queue'

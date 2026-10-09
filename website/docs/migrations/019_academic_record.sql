@@ -530,7 +530,19 @@ declare
   s_id uuid;
   ev_id uuid;
   refused boolean;
+  -- See the long note in 018: 108's deletion guard refuses every delete on the
+  -- register, including this proof's own clean-up, so from the SECOND run of
+  -- RUN-ALL.sql onwards it is parked for the length of the block and put back.
+  parked_108 boolean := false;
 begin
+  if exists (
+    select 1 from pg_trigger
+     where tgrelid = 'students'::regclass
+       and tgname = 'nothing_is_deleted_without_the_vc_trg'
+  ) then
+    alter table students disable trigger nothing_is_deleted_without_the_vc_trg;
+    parked_108 := true;
+  end if;
   -- A student to test against, removed at the end.
   insert into students (matric_no, first_name, last_name, status)
   values ('MIG019/PROOF', 'Migration', 'Proof', 'applicant')
@@ -627,10 +639,33 @@ begin
   delete from transcript_requests where student_id = s_id;
   delete from students where id = s_id;
 
+  -- AND 108's GUARD GOES BACK ON, before anything else can happen.
+  if parked_108 then
+    alter table students enable trigger nothing_is_deleted_without_the_vc_trg;
+  end if;
+
   raise notice '019 OK — standing is append-only, an accepted credit names its decider, a '
                'conferral cannot precede the Senate, a refusal states its reason, the policy '
                'cannot claim an unrecorded ruling, and study mode is a closed list.';
 end $$;
+
+-- ---------------------------------------------------------------------------
+-- AND IT REALLY IS ARMED AGAIN, asked of the catalogue rather than assumed.
+-- 'D' is a disabled trigger; leaving the register unguarded would be a worse
+-- fault than the one this parking exists to avoid.
+-- ---------------------------------------------------------------------------
+do $$
+declare
+  state "char";
+begin
+  select tgenabled into state from pg_trigger
+   where tgrelid = 'students'::regclass
+     and tgname = 'nothing_is_deleted_without_the_vc_trg';
+  if state = 'D' then
+    raise exception '019 FAILED: 108''s deletion guard was left DISABLED on students.';
+  end if;
+end $$;
+
 
 -- ---------------------------------------------------------------------------
 -- 10. WHAT THE UNIVERSITY STILL HAS TO RULE ON

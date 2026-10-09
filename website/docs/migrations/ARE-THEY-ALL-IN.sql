@@ -417,6 +417,15 @@ select * from (
   select '108' as migration, '108_nothing_is_deleted_without_the_vice_chancellor.sql' as file,
          case when to_regclass('public.deletion_requests') is not null then 'YES' else 'NO' end as landed,
          'deletion_requests' as what_it_creates
+  union all
+  select '109' as migration, '109_an_abandoned_application_leaves_the_register.sql' as file,
+         case when exists (
+                   select 1 from information_schema.columns
+                    where table_schema = 'public'
+                      and table_name = 'students'
+                      and column_name = 'restored_to_register_at')
+                 then 'YES' else 'NO' end as landed,
+         'students.restored_to_register_at' as what_it_creates
 ) as landed_report
  order by migration;
 

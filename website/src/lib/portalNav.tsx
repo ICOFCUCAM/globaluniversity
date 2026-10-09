@@ -21,6 +21,7 @@ import {
   CalendarDays, MapPin, Building2, Receipt, ScrollText, Globe2, Landmark,  FileSearch,
   Trash2,
   Undo2,
+  Archive,
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -221,6 +222,31 @@ export const menuGroups: MenuGroup[] = [
         roles: ['superadmin', 'admin', 'registrar'],
       },
       { id: 'students', label: 'Students', icon: <Users size={18} />, roles: ['superadmin', 'admin', 'registrar', 'admissions-officer', 'finance', 'finance-director', 'dean'] },
+      // ---------------------------------------------------------------------
+      // WHERE THE REGISTER'S DEAD WEIGHT WENT.
+      //
+      // 109 takes an application that nobody paid for, that was refused, that
+      // was withdrawn, whose documents never came, or that the University was
+      // paid for and never processed off the register ninety days on. It had
+      // to go somewhere readable, or "removed from the dashboard" would mean
+      // "lost".
+      //
+      // THE ROLES ARE THE VIEW'S OWN LIST, not a superset of it.
+      // `archived_applications` is deliberately not a security_invoker view —
+      // it has to read past the very policy that hides these rows — so it
+      // names the offices that may read it in its own WHERE clause. Listing a
+      // role here that the view does not name would draw an office a menu
+      // entry onto an empty screen; listing one the view names and this does
+      // not would hide a register from somebody entitled to it. They are the
+      // same six on purpose.
+      // ---------------------------------------------------------------------
+      {
+        id: 'archived-applications',
+        label: 'Archived applications',
+        icon: <Archive size={18} />,
+        roles: ['superadmin', 'admin', 'registrar', 'admissions-officer', 'academic-office',
+          'vice-chancellor'],
+      },
     ],
   },
   {

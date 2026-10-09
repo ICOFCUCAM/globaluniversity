@@ -475,6 +475,30 @@ export const OPERATIONAL_CAPABILITIES = [
   'department-reports',
   // Admissions / library / student affairs
   'process-applications',
+  // ---------------------------------------------------------------------
+  // PUTTING AN AGED-OFF APPLICATION BACK ON THE REGISTER.
+  //
+  // 109 takes an application that nobody paid for, that was refused, that was
+  // withdrawn, or that the University was paid for and never processed off the
+  // Students register ninety days on. Nothing is destroyed — it is read on the
+  // archive — and this is the right to bring one back.
+  //
+  // IT IS A CAPABILITY OF ITS OWN RATHER THAN A REUSE OF
+  // 'process-applications', which the Admissions Officer also holds. Reading
+  // the archive and writing to it are different acts: the Admissions Officer
+  // can see every aged-off application and ask for one back, and the Office of
+  // the Registrar is who returns it, because the register is the Registry's.
+  // The University's answer when asked was "it happens by itself, Registrar
+  // can restore", and this is that sentence.
+  //
+  // AND IT IS NOT 'approve-deletion'. Nothing was deleted, so there is nothing
+  // to approve and nobody to approve it: restoring needs one office, not two.
+  // 109's `restore_application()` names superadmin, admin and registrar, which
+  // is exactly who ends up holding this — the route and the database refuse
+  // the same people, rather than the screen refusing one set and the database
+  // another.
+  // ---------------------------------------------------------------------
+  'restore-archived-application',
   'defer-admission',
   'transfer-programme',
   'manage-library',
@@ -1307,6 +1331,9 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
     'create-student-record',
     'view-admitted-students',
     'process-applications',
+    // The register is the Registry's, so returning an aged-off application to
+    // it is too. See `restore-archived-application` in the capability list.
+    'restore-archived-application',
     'approve-credential-design',
     'recompute-gpa',
     // The last step: writing approved marks to the academic record. It sits
