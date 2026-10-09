@@ -15,18 +15,26 @@
 // WHAT HAS TO STAY TRUE, AND WHY EACH OF THESE IS HERE
 // ---------------------------------------------------------------------------
 //
-// 1. EVERY ROLE LANDS IN EXACTLY ONE GROUP. The three groups are a partition
-//    of the twenty-five roles, so a twenty-sixth cannot be added without this
+// 1. EVERY ROLE LANDS IN EXACTLY ONE GROUP. The groups are a partition of the
+//    twenty-five roles, so a twenty-sixth cannot be added without this
 //    file being told about it. The precedent is exact and expensive: eight
 //    roles had capabilities, screens and a dashboard and could not be given an
 //    account at all, because the list of creatable roles was a SEPARATE list
 //    that nothing compared against anything. This counts the real list.
 //
-// 2. AN APPLICANT IS COUNTED WITH THE STUDENTS AND IS NOT CALLED ONE. This
-//    system draws a hard line between an application and an admitted student
-//    — 018 refuses to delete a record once it is admitted precisely because it
-//    has stopped being an application. A screen that folded applicants into a
-//    student count would be disagreeing with the register.
+// 2. AN APPLICANT IS A GROUP OF ITS OWN. This system draws a hard line
+//    between an application and an admitted student — 018 refuses to delete a
+//    record once it is admitted precisely because it has stopped being an
+//    application. They were one group with a footnote; the University
+//    overruled that, and the footnote is now a tab.
+//
+//    AND THE YEAR BRANCH HAD TO FOLLOW THE SPLIT. `personYear` decided which
+//    register to read by asking whether the kind was 'student' — which
+//    covered applicants only while they WERE students. Splitting the tab
+//    without splitting that would have sent every applicant looking for a
+//    staff record, found none, and filed them under the year their account
+//    was opened: a plausible year from the wrong register, on a screen that
+//    said it came from the right one.
 //
 // 3. THE YEAR IS NOT `created_at`. An account opened this week for a student
 //    admitted two years ago belongs to their cohort. Getting this backwards
@@ -74,8 +82,8 @@ const bundle = (name, from) => {
 };
 
 const {
-  PERSON_KINDS, personKind, isApplicant, personYear, yearsPresent, yearLabel,
-  YEAR_BASIS_LABELS, personKindLabel,
+  PERSON_KINDS, personKind, personYear, yearsPresent, yearLabel,
+  YEAR_BASIS_LABELS, personKindLabel, readsTheAdmissionsRegister,
 } = await import(bundle('people.mjs', 'people.ts'));
 const { roleLabels } = await import(bundle('roles-people.mjs', 'roles.ts'));
 
@@ -83,10 +91,13 @@ const accounts = read('src/components/accounts/AccountManagement.tsx');
 const studio = read('src/components/admin/StudioControl.tsx');
 
 // ---------------------------------------------------------------------------
-console.log('\nThree groups, and every role in exactly one\n');
+console.log('\nFour groups, and every role in exactly one\n');
 
-check('the University named three', PERSON_KINDS.map((k) => k.kind),
-  ['lecturer', 'student', 'other']);
+check('four groups, in the order they are drawn', PERSON_KINDS.map((k) => k.kind),
+  ['lecturer', 'student', 'applicant', 'other']);
+// THE UNIVERSITY'S OWN WORD for the fourth, which is what it is called.
+check('the fourth is called what the University called it',
+  personKindLabel('other'), 'Other');
 
 const roles = Object.keys(roleLabels);
 check('the register holds twenty-five roles', roles.length, 25);
@@ -94,17 +105,18 @@ check('the register holds twenty-five roles', roles.length, 25);
 // THE PARTITION. Every role classified, each into one of the three, and the
 // three adding back up to the whole.
 const kinds = Object.fromEntries(roles.map((r) => [r, personKind(r)]));
-const unclassified = roles.filter((r) => !['lecturer', 'student', 'other'].includes(kinds[r]));
-check('every role lands in one of the three', unclassified, []);
+const known = PERSON_KINDS.map((k) => k.kind);
+const unclassified = roles.filter((r) => !known.includes(kinds[r]));
+check('every role lands in one of the four', unclassified, []);
 
-const tally = { lecturer: 0, student: 0, other: 0 };
+const tally = Object.fromEntries(known.map((k) => [k, 0]));
 for (const r of roles) tally[kinds[r]] += 1;
-check('…and the three add up to all of them',
-  tally.lecturer + tally.student + tally.other, roles.length);
+check('…and the four add up to all of them',
+  known.reduce((n, k) => n + tally[k], 0), roles.length);
 
 check('a lecturer is a lecturer', personKind('lecturer'), 'lecturer');
 check('a student is a student', personKind('student'), 'student');
-check('every office is in the third group',
+check('every office is in the last group',
   roles.filter((r) => !['lecturer', 'student', 'applicant'].includes(r))
     .every((r) => kinds[r] === 'other'), true);
 check('…and there are more than twenty of them', tally.other > 20, true);
@@ -119,18 +131,29 @@ check('…and so does no role at all', [personKind(null), personKind(undefined)]
   ['other', 'other']);
 
 // ---------------------------------------------------------------------------
-console.log('\nAn applicant is counted with the students and is not called one\n');
+console.log('\nAn applicant is a group of its own, not a footnote under Students\n');
 
-check('an applicant is grouped with the students', personKind('applicant'), 'student');
-check('…and is still distinguishable', isApplicant('applicant'), true);
-check('…while an admitted student is not an applicant', isApplicant('student'), false);
-check('the group is not named after one of its two halves',
-  personKindLabel('student'), 'Students');
+check('an applicant is not filed as a student', personKind('applicant'), 'applicant');
+check('…and has a group of its own', personKindLabel('applicant'), 'Applicants');
+check('…leaving Students meaning admitted', personKindLabel('student'), 'Students');
 
-// THE SCREEN SAYS SO IN WORDS. A distinction held in a boolean nobody renders
-// is a distinction the reader does not have.
-check('the Accounts screen says how many are applicants',
-  /not yet admitted/.test(accounts), true);
+// THE LINE THAT HAD TO MOVE WITH THE TAB. Both populations read the
+// admissions register for their year; neither reads a staff record.
+check('an applicant still reads the admissions register',
+  readsTheAdmissionsRegister('applicant'), true);
+check('…and so does a student', readsTheAdmissionsRegister('student'), true);
+check('…while a member of staff does not',
+  [readsTheAdmissionsRegister('lecturer'), readsTheAdmissionsRegister('other')],
+  [false, false]);
+
+// PROVED ON A ROW RATHER THAN ON THE HELPER, because the helper being right
+// and the branch not calling it is exactly the shape of the fault.
+check('an applicant is filed by when they applied, not by their account',
+  personYear({
+    role: 'applicant', accountOpenedAt: '2026-10-09T00:00:00Z',
+    appliedAt: '2024-11-02T00:00:00Z',
+  }),
+  { year: 2024, basis: 'applied' });
 
 // ---------------------------------------------------------------------------
 console.log('\nThe year is the year they came in, not the year of the account\n');
@@ -225,24 +248,35 @@ for (const [name, src] of [['Accounts', accounts], ['Studio Control', studio]]) 
   // time it fired, which makes it worse than no check.
   check(`…and holds no classification of its own`,
     /\b[rp]\.role === '|row\.role === '/.test(src), false);
-  check(`…draws all three groups`, /PERSON_KINDS/.test(src), true);
+  check(`…draws every group`, /PERSON_KINDS/.test(src), true);
   check(`…and offers the years`, /yearsPresent/.test(src), true);
 }
 
 // THE COUNT ON A TAB AND THE ROWS UNDER IT COME FROM ONE LIST. A count
 // computed from one source beside a list filtered from another is the oldest
 // bug on any screen in this system, and it has been found here twice.
-check('the Accounts tab counts are taken from the classified list',
-  /count: classified\.filter/.test(accounts), true);
-check('the Studio picker counts are taken from the loaded list',
-  /count: people\.filter/.test(studio), true);
+// ---------------------------------------------------------------------------
+console.log('\nThe search scopes to the group, and the counts say where the rest are\n');
 
-// AND A SEARCH IS NOT CONFINED TO THE GROUP SHOWING. Somebody typing a
-// surname wants that person.
-check('a search in Accounts crosses every group',
-  /Searching every group and every year/.test(accounts), true);
-check('…and so does one in the picker',
-  /Searching every group and year/.test(studio), true);
+// THE ORDINARY BEHAVIOUR: a search narrows what is in front of you. The
+// objection to it was that somebody typing a surname while the wrong tab is
+// showing sees an empty table and concludes the person is not there.
+//
+// WHAT ANSWERS THAT IS NOT A WIDER SEARCH BUT A LIVE COUNT. Both screens take
+// the group counts from the SEARCHED pool rather than the whole register, so
+// "Lecturers 1" appears on the tab the moment you type his name. A count
+// drawn from the whole list beside a table drawn from a filtered one would
+// have looked identical and told the reader nothing.
+for (const [name, src, pool] of [
+  ['Accounts', accounts, 'pool'], ['Studio Control', studio, 'pool'],
+]) {
+  check(`${name} counts the groups from the searched pool`,
+    new RegExp(`count: ${pool}\\.filter`).test(src), true);
+  check(`…and filters the table from the same pool`,
+    new RegExp(`${pool}\\.filter\\(\\(.\\) => .\\.kind === kind\\)`).test(src), true);
+  check(`…and says which group does hold the matches`,
+    /elsewhere\.map/.test(src), true);
+}
 
 // THE PICKER'S FORTY-MATCH CAP IS GONE. It was the reason a lecturer could be
 // unreachable without already knowing their name: the list was every account

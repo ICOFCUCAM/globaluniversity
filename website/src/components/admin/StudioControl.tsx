@@ -253,7 +253,7 @@ export default function StudioControl() {
     await loadGrants(chosen);
   };
 
-  // ---- LECTURERS · STUDENTS · ADMINISTRATION, AND THE YEAR -------------
+  // ---- LECTURERS · STUDENTS · APPLICANTS · OTHER, AND THE YEAR ---------
   //
   //   "find persons should be differentiated to lecturers, students, other.
   //    it should also be classified by years."
@@ -266,27 +266,26 @@ export default function StudioControl() {
   // LECTURERS FIRST, because the Studio exists for them: every permission on
   // this screen is about a lecture. The other two groups are reachable rather
   // than hidden, because a grant is occasionally made to an office.
-  const groupCounts = PERSON_KINDS.map((k) => ({
-    ...k, count: people.filter((p) => p.kind === k.kind).length,
-  }));
-
+  // SEARCH NARROWS, THE GROUP SCOPES, THE YEAR NARROWS AGAIN — and every
+  // count comes from its own stage of that one pipeline. The counts on the
+  // group buttons follow the search, so scoping the list hides nobody: type a
+  // surname while Lecturers is showing and "Other 1" says where he is.
   const searching = term.trim().length > 0;
-  const hits = people.filter((p) => {
+  const pool = people.filter((p) => {
     if (!searching) return true;
     const t = term.toLowerCase();
     return p.name.toLowerCase().includes(t) || p.email.toLowerCase().includes(t);
   });
 
-  const inKind = hits.filter((p) => p.kind === kind);
+  const groupCounts = PERSON_KINDS.map((k) => ({
+    ...k, count: pool.filter((p) => p.kind === k.kind).length,
+  }));
+
+  const inKind = pool.filter((p) => p.kind === kind);
   const years = yearsPresent(inKind, (p) => p.year);
   const activeYear = year !== 'all' && years.some((y) => y.year === year) ? year : 'all';
-
-  // A SEARCH CROSSES EVERY GROUP AND EVERY YEAR. Somebody typing a surname
-  // wants that person, not that person if they happen to be in the group
-  // currently showing.
-  const matches = searching
-    ? hits
-    : inKind.filter((p) => activeYear === 'all' || p.year === activeYear);
+  const matches = inKind.filter((p) => activeYear === 'all' || p.year === activeYear);
+  const elsewhere = groupCounts.filter((k) => k.kind !== kind && k.count > 0);
 
   if (!mayGrant) {
     return (
@@ -341,28 +340,34 @@ export default function StudioControl() {
             </div>
           </div>
 
-          {/* ---- THE THREE GROUPS -------------------------------------- */}
-          <div className="flex border-b border-slate-200">
+          {/* ---- THE GROUPS -------------------------------------------- */}
+          {/* FOUR GROUPS IN A TWENTY-REM COLUMN, so two by two rather than
+              four squeezed into one row where the labels would truncate. */}
+          <div className="grid grid-cols-2 border-b border-slate-200">
             {groupCounts.map((g) => (
               <button
                 key={g.kind}
                 type="button"
                 onClick={() => { setKind(g.kind); setYear('all'); }}
                 title={g.note}
-                aria-current={kind === g.kind && !searching}
-                className={`flex-1 px-2 py-2 text-xs font-medium transition-colors ${FOCUS} ${
-                  kind === g.kind && !searching
+                aria-current={kind === g.kind}
+                className={`px-2 py-2 text-xs font-medium transition-colors ${FOCUS} ${
+                  kind === g.kind
                     ? 'bg-[#f4f2fa] text-[#422e59]'
-                    : 'text-slate-600 hover:bg-slate-50'}`}
+                    : 'text-slate-600 hover:bg-slate-50'
+                } ${searching && g.count === 0 ? 'opacity-40' : ''}`}
               >
-                {g.label}
-                <span className="ml-1 text-slate-400">{g.count}</span>
+                {/* See the note on the same line in AccountManagement: JSX
+                    drops the newline, and the accessible name becomes
+                    "Applicants1". */}
+                {g.label}{' '}
+                <span className="text-slate-400">{g.count}</span>
               </button>
             ))}
           </div>
 
           {/* ---- AND THE YEARS WITHIN THE CHOSEN ONE ------------------- */}
-          {!searching && years.length > 0 && (
+          {years.length > 0 && (
             <div className="flex flex-wrap gap-1 border-b border-slate-200 px-3 py-2">
               <button
                 type="button"
@@ -390,9 +395,20 @@ export default function StudioControl() {
             </div>
           )}
 
-          {searching && (
-            <p className="border-b border-slate-200 px-3 py-1.5 text-[11px] text-slate-500">
-              Searching every group and year
+          {/* WHERE THE REST OF THE MATCHES ARE, when this group holds none. */}
+          {searching && inKind.length === 0 && elsewhere.length > 0 && (
+            <p className="flex flex-wrap items-center gap-1 border-b border-slate-200 bg-[#fdf9f0] px-3 py-1.5 text-[11px] text-slate-600">
+              <span>Found in</span>
+              {elsewhere.map((g) => (
+                <button
+                  key={g.kind}
+                  type="button"
+                  onClick={() => { setKind(g.kind); setYear('all'); }}
+                  className={`rounded-full bg-[#422e59] px-2 py-0.5 font-medium text-white ${FOCUS}`}
+                >
+                  {g.label} {g.count}
+                </button>
+              ))}
             </p>
           )}
 
@@ -416,7 +432,7 @@ export default function StudioControl() {
             {matches.length === 0 && (
               <li className="p-3 text-sm text-slate-500">
                 {searching
-                  ? 'Nobody in any group matches that.'
+                  ? 'Nobody in this group matches that.'
                   : 'Nobody in this group and year.'}
               </li>
             )}

@@ -34,15 +34,26 @@
 
 import type { UserRole } from './types';
 
-export type PersonKind = 'lecturer' | 'student' | 'other';
+export type PersonKind = 'lecturer' | 'student' | 'applicant' | 'other';
 
 /**
- * The three the University named.
+ * The groups, in the order they are drawn.
  *
- * `other` IS NOT A LEFTOVER BIN, and the label says so: it is the
- * administration — every office that runs the University rather than teaching
- * in it or studying at it. Naming it "Other" on the screen and meaning
- * "nobody we thought about" is how a group nobody maintains comes about.
+ * ---------------------------------------------------------------------------
+ * AN APPLICANT IS A GROUP, NOT A FOOTNOTE
+ * ---------------------------------------------------------------------------
+ *
+ * The University named three — "lecturers, students, other" — and these were
+ * three, with applicants counted inside Students and a line underneath saying
+ * how many of them there were. The University overruled that: an applicant and
+ * a student are two populations, as they are in every student record system,
+ * and the whole of this codebase already agrees — 018 refuses to delete a
+ * record once it is ADMITTED, precisely because it has stopped being an
+ * application. A tab is the honest shape of that.
+ *
+ * `other` IS THE UNIVERSITY'S OWN WORD and is kept. It was drawn as
+ * "Administration" for a while on the reasoning that a group called Other is a
+ * group nobody maintains; the University's word is the one on the screen.
  */
 export const PERSON_KINDS: { kind: PersonKind; label: string; note: string }[] = [
   {
@@ -54,13 +65,17 @@ export const PERSON_KINDS: { kind: PersonKind; label: string; note: string }[] =
   {
     kind: 'student',
     label: 'Students',
-    note: 'Accounts that came out of the admissions pipeline — a paid application and a '
-      + 'decision sit behind every one. Applicants are here too, and counted separately, '
-      + 'because an applicant is not yet a student.',
+    note: 'Admitted. A paid application and a decision sit behind every one of these accounts.',
+  },
+  {
+    kind: 'applicant',
+    label: 'Applicants',
+    note: 'Not yet admitted. Their year is the year they applied, and they move to Students '
+      + 'when the application is decided.',
   },
   {
     kind: 'other',
-    label: 'Administration',
+    label: 'Other',
     note: 'Every office that runs the University: the Registry, Finance, Admissions, the '
       + 'faculties, HR, the examination offices, the national tier and the two executive '
       + 'offices.',
@@ -68,25 +83,33 @@ export const PERSON_KINDS: { kind: PersonKind; label: string; note: string }[] =
 ];
 
 /**
- * Which of the three a role belongs to.
+ * Which group a role belongs to.
  *
- * AN APPLICANT IS COUNTED WITH THE STUDENTS AND IS NOT CALLED ONE. The
- * University named three groups, so there are three; but this system draws a
- * hard line between an application and an admitted student — 018 refuses to
- * delete a record once it is admitted precisely because it has stopped being
- * an application — and a count that quietly folded applicants into "students"
- * would be the screen disagreeing with the register. So they share the group
- * and `isApplicant` keeps them apart inside it.
+ * A ROLE THIS FILE HAS NOT BEEN TAUGHT LANDS IN `other` rather than being
+ * dropped or inventing a group at runtime. A person with an unrecognised role
+ * still has to appear on a register somewhere; a group with no tab and no
+ * label is a person nobody can see.
  */
 export function personKind(role: string | null | undefined): PersonKind {
   if (role === 'lecturer') return 'lecturer';
-  if (role === 'student' || role === 'applicant') return 'student';
+  if (role === 'student') return 'student';
+  if (role === 'applicant') return 'applicant';
   return 'other';
 }
 
-export function isApplicant(role: string | null | undefined): boolean {
-  return role === 'applicant';
-}
+/**
+ * Whether this group's year is read from the admissions register rather than
+ * from a staff record.
+ *
+ * BOTH OF THEM, and this is the line that would have been silently wrong when
+ * applicants became a group of their own: `personYear` used to branch on
+ * `kind === 'student'`, which covered applicants only because they WERE
+ * students. Splitting the tab without splitting this would have sent every
+ * applicant to look for a staff record, find none, and be filed under the year
+ * their account was opened — a plausible year from the wrong register.
+ */
+export const readsTheAdmissionsRegister = (kind: PersonKind): boolean =>
+  kind === 'student' || kind === 'applicant';
 
 export const personKindLabel = (kind: PersonKind): string =>
   PERSON_KINDS.find((k) => k.kind === kind)?.label ?? kind;
@@ -153,9 +176,7 @@ const yearOfDate = (iso: string | null | undefined): number | null => {
  * wrong year the first time a batch of accounts was opened late.
  */
 export function personYear(facts: PersonFacts): PersonYear {
-  const kind = personKind(facts.role);
-
-  if (kind === 'student') {
+  if (readsTheAdmissionsRegister(personKind(facts.role))) {
     if (typeof facts.admissionYear === 'number' && facts.admissionYear > 0) {
       return { year: facts.admissionYear, basis: 'admitted' };
     }

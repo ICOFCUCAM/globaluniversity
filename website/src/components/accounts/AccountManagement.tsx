@@ -40,7 +40,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { can, canActOn, roleLabels, SYSTEM_ROLES } from '@/lib/roles';
 import type { UserRole } from '@/lib/types';
 import {
-  PERSON_KINDS, personKind, personYear, isApplicant, yearsPresent, yearLabel,
+  PERSON_KINDS, personKind, personYear, yearsPresent, yearLabel,
   YEAR_BASIS_LABELS, type PersonKind,
 } from '@/lib/people';
 import {
@@ -63,7 +63,6 @@ interface Classified extends AccountRow {
   kind: PersonKind;
   year: number;
   basis: keyof typeof YEAR_BASIS_LABELS;
-  applicant: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -241,7 +240,7 @@ export default function AccountManagement() {
     load();
   }
 
-  // ---- THE THREE GROUPS AND THE YEARS ----------------------------------
+  // ---- THE GROUPS AND THE YEARS ----------------------------------------
   //
   // Classified once, here, rather than in the render: three tabs, a row of
   // year chips and a count each all ask the same question of the same list,
@@ -256,9 +255,7 @@ export default function AccountManagement() {
       appliedAt: student?.applied ?? null,
       startedOn: started.get(r.id) ?? null,
     });
-    return {
-      ...r, kind: personKind(r.role), year: y, basis, applicant: isApplicant(r.role),
-    };
+    return { ...r, kind: personKind(r.role), year: y, basis };
   }), [rows, admitted, started]);
 
   if (!allowed) {
@@ -281,31 +278,38 @@ export default function AccountManagement() {
   }
 
 
-  // THE SEARCH REACHES ACROSS ALL THREE GROUPS, and the tabs are set aside
-  // while it does. Somebody who types a surname wants that person, not that
-  // person if they happen to be in the group currently selected — a search
-  // that silently searches a third of the register is worse than none.
+  // ---- SEARCH NARROWS, THE TABS SCOPE, THE YEARS NARROW AGAIN ----------
+  //
+  // One pipeline, in that order, and every count on the screen is taken from
+  // its own stage of it. The search used to reach across every group and set
+  // the tabs aside while it ran, on the reasoning that somebody typing a
+  // surname wants that person wherever they are. The University overruled it,
+  // and the ordinary behaviour is better anyway for the reason that objection
+  // was really about: THE TAB COUNTS FOLLOW THE SEARCH. Type a surname while
+  // Students is showing and "Lecturers 1" says plainly where he is, so
+  // scoping the list hides nobody — it takes one click to reach them.
   const needle = query.trim().toLowerCase();
   const searching = needle.length > 0;
-  const matching = classified.filter((r) => !searching
+
+  const pool = classified.filter((r) => !searching
     || `${r.email ?? ''} ${r.full_name ?? ''} ${roleLabels[r.role] ?? r.role}`
       .toLowerCase().includes(needle));
 
   const counts = PERSON_KINDS.map((k) => ({
     ...k,
-    count: classified.filter((r) => r.kind === k.kind).length,
+    count: pool.filter((r) => r.kind === k.kind).length,
   }));
 
-  const inKind = matching.filter((r) => r.kind === kind);
+  const inKind = pool.filter((r) => r.kind === kind);
   const years = yearsPresent(inKind, (r) => r.year);
   // A YEAR CHIP THAT IS NO LONGER THERE IS NOT LEFT SELECTED, which would
-  // draw an empty table and look like a broken filter.
+  // draw an empty table and look like a broken filter. The same applies while
+  // a search is running and the years under it change.
   const activeYear = year !== 'all' && years.some((y) => y.year === year) ? year : 'all';
-  const filtered = searching
-    ? matching
-    : inKind.filter((r) => activeYear === 'all' || r.year === activeYear);
+  const filtered = inKind.filter((r) => activeYear === 'all' || r.year === activeYear);
 
-  const applicantsHere = classified.filter((r) => r.kind === 'student' && r.applicant).length;
+  // WHERE THE REST OF THE MATCHES ARE, when this group holds none of them.
+  const elsewhere = counts.filter((k) => k.kind !== kind && k.count > 0);
 
   return (
     <div className="space-y-6">
@@ -428,10 +432,12 @@ export default function AccountManagement() {
           </div>
         </div>
 
-        {/* ---- LECTURERS · STUDENTS · ADMINISTRATION ---------------------
-            The three the University named. The count on each tab is taken
-            from the same classified list the table below filters, so the
-            number and the rows can never be two different answers. */}
+        {/* ---- LECTURERS · STUDENTS · APPLICANTS · OTHER -----------------
+            The count on each tab is taken from the same pool the table below
+            filters — so the number and the rows can never be two different
+            answers, and the counts follow the search. That last part is what
+            makes scoping the search to one group safe: the tab says where
+            the matches are. */}
         <div className="flex flex-wrap gap-1 border-b border-[#f0ece4] px-4 pt-3 dark:border-[#2a2333]">
           {counts.map((k) => (
             <button
@@ -439,15 +445,20 @@ export default function AccountManagement() {
               type="button"
               onClick={() => { setKind(k.kind); setYear('all'); }}
               title={k.note}
-              aria-current={kind === k.kind && !searching}
+              aria-current={kind === k.kind}
               className={`rounded-t-lg px-3 py-2 text-sm font-medium transition-colors ${
-                kind === k.kind && !searching
+                kind === k.kind
                   ? 'bg-[#f4f2fa] text-[#422e59]'
                   : 'text-[#6b6076] hover:bg-gray-50 dark:text-[#9c93ad]'
-              }`}
+              } ${searching && k.count === 0 ? 'opacity-40' : ''}`}
             >
-              {k.label}
-              <span className="ml-1.5 text-xs font-normal text-[#a49bb0] dark:text-[#7b7289]">
+              {/* THE SPACE IS EXPLICIT. JSX drops the newline between the
+                  label and the count, so without it the accessible name of
+                  this button is "Applicants1" — which is what a screen reader
+                  reads out. Measured, not assumed: a Playwright query for
+                  "Applicants 1" could not find the button at all. */}
+              {k.label}{' '}
+              <span className="text-xs font-normal text-[#a49bb0] dark:text-[#7b7289]">
                 {k.count}
               </span>
             </button>
@@ -455,11 +466,11 @@ export default function AccountManagement() {
         </div>
 
         {/* ---- AND THE YEARS WITHIN THE CHOSEN GROUP --------------------
-            Set aside while a search is running: a search reaches across all
-            three groups and every year, and leaving the chips lit would say
-            otherwise. */}
-        {!searching && (
-          <div className="flex flex-wrap items-center gap-1.5 border-b border-[#f0ece4] px-4 py-2.5 dark:border-[#2a2333]">
+            Drawn while a search is running too, and narrowed by it: the
+            chips are the years of what is actually in front of you, so a
+            search that leaves one 2024 match shows "2024 1" and nothing
+            else. */}
+        <div className="flex flex-wrap items-center gap-1.5 border-b border-[#f0ece4] px-4 py-2.5 dark:border-[#2a2333]">
             <span className="mr-1 text-xs uppercase tracking-wide text-[#a49bb0] dark:text-[#7b7289]">
               Year
             </span>
@@ -490,27 +501,30 @@ export default function AccountManagement() {
             ))}
             {years.length === 0 && (
               <span className="text-xs text-[#a49bb0] dark:text-[#7b7289]">
-                Nobody is in this group yet.
+                {searching ? 'No match in this group.' : 'Nobody is in this group yet.'}
               </span>
             )}
-          </div>
-        )}
+        </div>
 
-        {/* AN APPLICANT IS NOT A STUDENT, and is said so rather than folded
-            into the count silently. This system refuses to treat an
-            application and an admitted student as the same record; the screen
-            should not either. */}
-        {!searching && kind === 'student' && applicantsHere > 0 && (
-          <p className="border-b border-[#f0ece4] bg-[#fdf9f0] px-4 py-2 text-xs text-[#6b6076] dark:border-[#2a2333] dark:text-[#9c93ad]">
-            {applicantsHere} of these {applicantsHere === 1 ? 'is an applicant' : 'are applicants'},
-            not yet admitted. Their year is the year they applied.
-          </p>
-        )}
-
-        {searching && (
-          <p className="border-b border-[#f0ece4] px-4 py-2 text-xs text-[#6b6076] dark:border-[#2a2333] dark:text-[#9c93ad]">
-            Searching every group and every year · {filtered.length}
-            {filtered.length === 1 ? ' match' : ' matches'}
+        {/* ---- AND WHERE THE REST OF THE MATCHES ARE --------------------
+            The search is scoped to the group showing, which is the ordinary
+            behaviour and the one the University asked for. The counts above
+            already follow the search, so nobody is hidden — but when THIS
+            group holds nothing and another does, saying so outright saves
+            reading four numbers to work out why the table is empty. */}
+        {searching && inKind.length === 0 && elsewhere.length > 0 && (
+          <p className="flex flex-wrap items-center gap-1.5 border-b border-[#f0ece4] bg-[#fdf9f0] px-4 py-2 text-xs text-[#6b6076] dark:border-[#2a2333] dark:text-[#9c93ad]">
+            <span>Not in this group. Found in</span>
+            {elsewhere.map((k) => (
+              <button
+                key={k.kind}
+                type="button"
+                onClick={() => { setKind(k.kind); setYear('all'); }}
+                className="rounded-full bg-[#422e59] px-2 py-0.5 text-[11px] font-medium text-white"
+              >
+                {k.label} {k.count}
+              </button>
+            ))}
           </p>
         )}
 
@@ -603,7 +617,7 @@ export default function AccountManagement() {
                   <tr>
                     <td colSpan={6} className="px-4 py-8 text-center text-sm text-[#a49bb0] dark:text-[#7b7289]">
                       {searching
-                        ? 'Nobody in any group matches that.'
+                        ? 'Nothing in this group matches that.'
                         : 'No accounts in this group and year.'}
                     </td>
                   </tr>
