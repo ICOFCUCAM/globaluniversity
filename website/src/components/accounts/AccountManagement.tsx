@@ -14,13 +14,35 @@
 //
 // So if this screen breaks, accounts do not become editable by other means.
 // They become uneditable, which is the correct direction to fail in.
+//
+// ---------------------------------------------------------------------------
+// AND THE LIST IS SEPARATED, WHICH THE UNIVERSITY HAD TO ASK FOR
+// ---------------------------------------------------------------------------
+//
+//   "all accounts should be separated also likewise" — lecturers, students,
+//   other, "and it should also be classified by years".
+//
+// It was one undifferentiated run of names ordered by creation date with a
+// search box over the top. Finding a lecturer meant reading past every
+// student, and "who came in this year" could not be asked at all.
+//
+// THE YEAR IS NOT `created_at`, AND THAT IS THE WHOLE DIFFICULTY. An account
+// opened this week for a student admitted two years ago belongs to their
+// cohort, not to this week — so the year comes from the admission register for
+// a student and from the staff record for a member of staff, and the screen
+// says which of the four it read. See `personYear` in `src/lib/people.ts`,
+// which both this screen and Studio Control use so that the two cannot drift.
 // ---------------------------------------------------------------------------
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { can, canActOn, roleLabels, SYSTEM_ROLES } from '@/lib/roles';
 import type { UserRole } from '@/lib/types';
+import {
+  PERSON_KINDS, personKind, personYear, isApplicant, yearsPresent, yearLabel,
+  YEAR_BASIS_LABELS, type PersonKind,
+} from '@/lib/people';
 import {
   ShieldAlert, UserPlus, Ban, RotateCcw, Loader2, Search,
   AlertTriangle, CheckCircle2, KeyRound, Copy,
@@ -34,6 +56,14 @@ interface AccountRow {
   suspended_at: string | null;
   suspension_reason: string | null;
   created_at: string;
+}
+
+/** An account with its group and its year worked out once. */
+interface Classified extends AccountRow {
+  kind: PersonKind;
+  year: number;
+  basis: keyof typeof YEAR_BASIS_LABELS;
+  applicant: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -85,8 +115,17 @@ export default function AccountManagement() {
   const allowed = can(user?.role, 'create-staff-account');
 
   const [rows, setRows] = useState<AccountRow[]>([]);
+  // THE TWO REGISTERS THE YEAR COMES OUT OF, keyed by auth user. Read
+  // separately rather than joined in the database, because `profiles` is the
+  // list and these two only annotate it: an account whose student row or staff
+  // record cannot be read still appears, with the year its account was opened
+  // and the screen saying so. A join would have dropped it.
+  const [admitted, setAdmitted] = useState<Map<string, { year: number | null; applied: string | null }>>(new Map());
+  const [started, setStarted] = useState<Map<string, string | null>>(new Map());
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
+  const [kind, setKind] = useState<PersonKind>('other');
+  const [year, setYear] = useState<number | 'all'>('all');
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useState<{ tone: 'ok' | 'bad'; text: string } | null>(null);
   const [handover, setHandover] = useState<{ email: string; password: string } | null>(null);
@@ -98,11 +137,42 @@ export default function AccountManagement() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from('profiles')
-      .select('id, email, full_name, role, suspended_at, suspension_reason, created_at')
-      .order('created_at', { ascending: false });
-    setRows((data ?? []) as AccountRow[]);
+    const [accounts, students, staff] = await Promise.all([
+      supabase
+        .from('profiles')
+        .select('id, email, full_name, role, suspended_at, suspension_reason, created_at')
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('students')
+        .select('auth_user_id, admission_year, created_at')
+        .not('auth_user_id', 'is', null)
+        .limit(5000),
+      supabase
+        .from('staff_records')
+        .select('auth_user_id, started_on')
+        .not('auth_user_id', 'is', null)
+        .limit(2000),
+    ]);
+    setRows((accounts.data ?? []) as AccountRow[]);
+
+    const byStudent = new Map<string, { year: number | null; applied: string | null }>();
+    for (const s of students.data ?? []) {
+      const id = String((s as Record<string, unknown>).auth_user_id);
+      byStudent.set(id, {
+        year: ((s as Record<string, unknown>).admission_year as number | null) ?? null,
+        applied: ((s as Record<string, unknown>).created_at as string | null) ?? null,
+      });
+    }
+    setAdmitted(byStudent);
+
+    const byStaff = new Map<string, string | null>();
+    for (const r of staff.data ?? []) {
+      byStaff.set(
+        String((r as Record<string, unknown>).auth_user_id),
+        ((r as Record<string, unknown>).started_on as string | null) ?? null,
+      );
+    }
+    setStarted(byStaff);
     setLoading(false);
   }, []);
 
@@ -171,6 +241,26 @@ export default function AccountManagement() {
     load();
   }
 
+  // ---- THE THREE GROUPS AND THE YEARS ----------------------------------
+  //
+  // Classified once, here, rather than in the render: three tabs, a row of
+  // year chips and a count each all ask the same question of the same list,
+  // and a count computed one way beside a list filtered another is the oldest
+  // bug on any screen in this system.
+  const classified: Classified[] = useMemo(() => rows.map((r) => {
+    const student = admitted.get(r.id);
+    const { year: y, basis } = personYear({
+      role: r.role,
+      accountOpenedAt: r.created_at,
+      admissionYear: student?.year ?? null,
+      appliedAt: student?.applied ?? null,
+      startedOn: started.get(r.id) ?? null,
+    });
+    return {
+      ...r, kind: personKind(r.role), year: y, basis, applicant: isApplicant(r.role),
+    };
+  }), [rows, admitted, started]);
+
   if (!allowed) {
     return (
       <div className="rounded-xl border border-amber-200 bg-amber-50 p-6">
@@ -190,9 +280,32 @@ export default function AccountManagement() {
     );
   }
 
-  const filtered = rows.filter((r) =>
-    `${r.email ?? ''} ${r.full_name ?? ''} ${r.role}`.toLowerCase().includes(query.toLowerCase()),
-  );
+
+  // THE SEARCH REACHES ACROSS ALL THREE GROUPS, and the tabs are set aside
+  // while it does. Somebody who types a surname wants that person, not that
+  // person if they happen to be in the group currently selected — a search
+  // that silently searches a third of the register is worse than none.
+  const needle = query.trim().toLowerCase();
+  const searching = needle.length > 0;
+  const matching = classified.filter((r) => !searching
+    || `${r.email ?? ''} ${r.full_name ?? ''} ${roleLabels[r.role] ?? r.role}`
+      .toLowerCase().includes(needle));
+
+  const counts = PERSON_KINDS.map((k) => ({
+    ...k,
+    count: classified.filter((r) => r.kind === k.kind).length,
+  }));
+
+  const inKind = matching.filter((r) => r.kind === kind);
+  const years = yearsPresent(inKind, (r) => r.year);
+  // A YEAR CHIP THAT IS NO LONGER THERE IS NOT LEFT SELECTED, which would
+  // draw an empty table and look like a broken filter.
+  const activeYear = year !== 'all' && years.some((y) => y.year === year) ? year : 'all';
+  const filtered = searching
+    ? matching
+    : inKind.filter((r) => activeYear === 'all' || r.year === activeYear);
+
+  const applicantsHere = classified.filter((r) => r.kind === 'student' && r.applicant).length;
 
   return (
     <div className="space-y-6">
@@ -308,10 +421,98 @@ export default function AccountManagement() {
           </h3>
           <div className="relative">
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#a49bb0] dark:text-[#7b7289]" />
-            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search…"
+            <input value={query} onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search every group…"
+              aria-label="Search every group"
               className="w-56 rounded-lg border border-[#ded6c8] dark:border-[#3d3349] py-1.5 pl-9 pr-3 text-sm" />
           </div>
         </div>
+
+        {/* ---- LECTURERS · STUDENTS · ADMINISTRATION ---------------------
+            The three the University named. The count on each tab is taken
+            from the same classified list the table below filters, so the
+            number and the rows can never be two different answers. */}
+        <div className="flex flex-wrap gap-1 border-b border-[#f0ece4] px-4 pt-3 dark:border-[#2a2333]">
+          {counts.map((k) => (
+            <button
+              key={k.kind}
+              type="button"
+              onClick={() => { setKind(k.kind); setYear('all'); }}
+              title={k.note}
+              aria-current={kind === k.kind && !searching}
+              className={`rounded-t-lg px-3 py-2 text-sm font-medium transition-colors ${
+                kind === k.kind && !searching
+                  ? 'bg-[#f4f2fa] text-[#422e59]'
+                  : 'text-[#6b6076] hover:bg-gray-50 dark:text-[#9c93ad]'
+              }`}
+            >
+              {k.label}
+              <span className="ml-1.5 text-xs font-normal text-[#a49bb0] dark:text-[#7b7289]">
+                {k.count}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {/* ---- AND THE YEARS WITHIN THE CHOSEN GROUP --------------------
+            Set aside while a search is running: a search reaches across all
+            three groups and every year, and leaving the chips lit would say
+            otherwise. */}
+        {!searching && (
+          <div className="flex flex-wrap items-center gap-1.5 border-b border-[#f0ece4] px-4 py-2.5 dark:border-[#2a2333]">
+            <span className="mr-1 text-xs uppercase tracking-wide text-[#a49bb0] dark:text-[#7b7289]">
+              Year
+            </span>
+            <button
+              type="button"
+              onClick={() => setYear('all')}
+              className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                activeYear === 'all'
+                  ? 'bg-[#422e59] text-white'
+                  : 'bg-gray-100 text-[#6b6076] hover:bg-gray-200 dark:text-[#9c93ad]'
+              }`}
+            >
+              All {inKind.length}
+            </button>
+            {years.map((y) => (
+              <button
+                key={y.year}
+                type="button"
+                onClick={() => setYear(y.year)}
+                className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                  activeYear === y.year
+                    ? 'bg-[#422e59] text-white'
+                    : 'bg-gray-100 text-[#6b6076] hover:bg-gray-200 dark:text-[#9c93ad]'
+                }`}
+              >
+                {yearLabel(y.year)} {y.count}
+              </button>
+            ))}
+            {years.length === 0 && (
+              <span className="text-xs text-[#a49bb0] dark:text-[#7b7289]">
+                Nobody is in this group yet.
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* AN APPLICANT IS NOT A STUDENT, and is said so rather than folded
+            into the count silently. This system refuses to treat an
+            application and an admitted student as the same record; the screen
+            should not either. */}
+        {!searching && kind === 'student' && applicantsHere > 0 && (
+          <p className="border-b border-[#f0ece4] bg-[#fdf9f0] px-4 py-2 text-xs text-[#6b6076] dark:border-[#2a2333] dark:text-[#9c93ad]">
+            {applicantsHere} of these {applicantsHere === 1 ? 'is an applicant' : 'are applicants'},
+            not yet admitted. Their year is the year they applied.
+          </p>
+        )}
+
+        {searching && (
+          <p className="border-b border-[#f0ece4] px-4 py-2 text-xs text-[#6b6076] dark:border-[#2a2333] dark:text-[#9c93ad]">
+            Searching every group and every year · {filtered.length}
+            {filtered.length === 1 ? ' match' : ' matches'}
+          </p>
+        )}
 
         {loading ? (
           <p className="p-6 text-sm text-[#a49bb0] dark:text-[#7b7289]">Loading…</p>
@@ -323,6 +524,12 @@ export default function AccountManagement() {
                   <th className="px-4 py-2.5 font-medium">Name</th>
                   <th className="px-4 py-2.5 font-medium">Email</th>
                   <th className="px-4 py-2.5 font-medium">Role</th>
+                  {/* THE YEAR, AND WHAT IT IS THE YEAR OF. A bare number here
+                      would be a guess the reader cannot check: for a student
+                      it is the admission year out of the register, for staff
+                      the year they started out of their staff record, and
+                      only otherwise the year the account was opened. */}
+                  <th className="px-4 py-2.5 font-medium">Year</th>
                   <th className="px-4 py-2.5 font-medium">Status</th>
                   <th className="px-4 py-2.5" />
                 </tr>
@@ -345,6 +552,14 @@ export default function AccountManagement() {
                             : 'bg-gray-100 text-[#6b6076] dark:text-[#9c93ad]'
                         }`}>
                           {roleLabels[r.role] ?? r.role}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2.5 whitespace-nowrap">
+                        <span className="text-[#33234a] dark:text-[#e4dcf0]">
+                          {yearLabel(r.year)}
+                        </span>
+                        <span className="ml-1.5 text-[11px] text-[#a49bb0] dark:text-[#7b7289]">
+                          {YEAR_BASIS_LABELS[r.basis]}
                         </span>
                       </td>
                       <td className="px-4 py-2.5">
@@ -384,6 +599,15 @@ export default function AccountManagement() {
                     </tr>
                   );
                 })}
+                {filtered.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-8 text-center text-sm text-[#a49bb0] dark:text-[#7b7289]">
+                      {searching
+                        ? 'Nobody in any group matches that.'
+                        : 'No accounts in this group and year.'}
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

@@ -54,7 +54,10 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { authedPost } from '@/lib/authedFetch';
 import { useAuth } from '@/contexts/AuthContext';
-import { can, type Capability } from '@/lib/roles';
+import { can, roleLabels, type Capability } from '@/lib/roles';
+import {
+  PERSON_KINDS, personKind, personYear, yearsPresent, yearLabel, type PersonKind,
+} from '@/lib/people';
 import { BTN_PRIMARY, BTN_SECONDARY, INPUT, LABEL, FOCUS } from '@/lib/portalTheme';
 import { AlertTriangle, Check, Loader2, Lock, Search, ShieldCheck, Undo2 } from 'lucide-react';
 
@@ -103,7 +106,14 @@ const ACTS: { capability: string; label: string; note: string; group: string }[]
 
 const GROUPS = ['Submitting', 'Asking a model', 'Standing behind it', 'The library'];
 
-interface Person { id: string; name: string; email: string; role: string }
+// A PERSON AS THIS SCREEN FILES THEM: their group and their year worked out
+// at load, by the same `src/lib/people.ts` the Accounts screen uses. The
+// University asked for both lists to be separated the same way, and two copies
+// of "which roles are staff" is two answers waiting to disagree.
+interface Person {
+  id: string; name: string; email: string; role: string;
+  kind: PersonKind; year: number;
+}
 interface Grant {
   id: string; capability: string; reason: string;
   granted_at: string; expires_at: string; revoked_at: string | null;
@@ -116,6 +126,8 @@ export default function StudioControl() {
   const { user } = useAuth();
   const [people, setPeople] = useState<Person[]>([]);
   const [term, setTerm] = useState('');
+  const [kind, setKind] = useState<PersonKind>('lecturer');
+  const [year, setYear] = useState<number | 'all'>('all');
   const [chosen, setChosen] = useState<Person | null>(null);
   const [grants, setGrants] = useState<Grant[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
@@ -131,17 +143,54 @@ export default function StudioControl() {
     && (can(user.role, 'assign-roles' as Capability)
       || can(user.role, 'grant-studio-permission' as Capability)));
 
+  // THE TWO REGISTERS THE YEAR COMES OUT OF, read alongside the accounts
+  // rather than joined to them: a person whose student row or staff record is
+  // unreadable still appears, filed under the year their account was opened.
+  // A join would have dropped them off the list entirely, and a person missing
+  // from a picker is a person nobody can grant anything to.
   const loadPeople = useCallback(async () => {
-    const { data } = await supabase
-      .from('profiles')
-      .select('id, full_name, email, role')
-      .order('full_name');
-    setPeople((data ?? []).map((row) => ({
-      id: String(row.id),
-      name: String(row.full_name ?? row.email ?? 'Unnamed account'),
-      email: String(row.email ?? ''),
-      role: String(row.role ?? ''),
-    })));
+    const [accounts, students, staff] = await Promise.all([
+      supabase.from('profiles').select('id, full_name, email, role, created_at')
+        .order('full_name'),
+      supabase.from('students').select('auth_user_id, admission_year, created_at')
+        .not('auth_user_id', 'is', null).limit(5000),
+      supabase.from('staff_records').select('auth_user_id, started_on')
+        .not('auth_user_id', 'is', null).limit(2000),
+    ]);
+
+    const asStudent = new Map<string, { year: number | null; applied: string | null }>();
+    for (const r of students.data ?? []) {
+      const row = r as Record<string, unknown>;
+      asStudent.set(String(row.auth_user_id), {
+        year: (row.admission_year as number | null) ?? null,
+        applied: (row.created_at as string | null) ?? null,
+      });
+    }
+    const asStaff = new Map<string, string | null>();
+    for (const r of staff.data ?? []) {
+      const row = r as Record<string, unknown>;
+      asStaff.set(String(row.auth_user_id), (row.started_on as string | null) ?? null);
+    }
+
+    setPeople((accounts.data ?? []).map((row) => {
+      const id = String(row.id);
+      const role = String(row.role ?? '');
+      const student = asStudent.get(id);
+      return {
+        id,
+        name: String(row.full_name ?? row.email ?? 'Unnamed account'),
+        email: String(row.email ?? ''),
+        role,
+        kind: personKind(role),
+        year: personYear({
+          role,
+          accountOpenedAt: String(row.created_at ?? new Date().toISOString()),
+          admissionYear: student?.year ?? null,
+          appliedAt: student?.applied ?? null,
+          startedOn: asStaff.get(id) ?? null,
+        }).year,
+      };
+    }));
   }, []);
 
   useEffect(() => { void loadPeople(); }, [loadPeople]);
@@ -204,11 +253,40 @@ export default function StudioControl() {
     await loadGrants(chosen);
   };
 
-  const matches = people.filter((p) => {
-    if (!term.trim()) return true;
+  // ---- LECTURERS · STUDENTS · ADMINISTRATION, AND THE YEAR -------------
+  //
+  //   "find persons should be differentiated to lecturers, students, other.
+  //    it should also be classified by years."
+  //
+  // This picker was one run of every account in the University ordered by
+  // name, capped at the first forty matches — so on a register of any size
+  // the Studio's own lecturers were buried among students and the cap made
+  // some of them unreachable without typing a name you had to know already.
+  //
+  // LECTURERS FIRST, because the Studio exists for them: every permission on
+  // this screen is about a lecture. The other two groups are reachable rather
+  // than hidden, because a grant is occasionally made to an office.
+  const groupCounts = PERSON_KINDS.map((k) => ({
+    ...k, count: people.filter((p) => p.kind === k.kind).length,
+  }));
+
+  const searching = term.trim().length > 0;
+  const hits = people.filter((p) => {
+    if (!searching) return true;
     const t = term.toLowerCase();
     return p.name.toLowerCase().includes(t) || p.email.toLowerCase().includes(t);
-  }).slice(0, 40);
+  });
+
+  const inKind = hits.filter((p) => p.kind === kind);
+  const years = yearsPresent(inKind, (p) => p.year);
+  const activeYear = year !== 'all' && years.some((y) => y.year === year) ? year : 'all';
+
+  // A SEARCH CROSSES EVERY GROUP AND EVERY YEAR. Somebody typing a surname
+  // wants that person, not that person if they happen to be in the group
+  // currently showing.
+  const matches = searching
+    ? hits
+    : inKind.filter((p) => activeYear === 'all' || p.year === activeYear);
 
   if (!mayGrant) {
     return (
@@ -262,6 +340,62 @@ export default function StudioControl() {
               />
             </div>
           </div>
+
+          {/* ---- THE THREE GROUPS -------------------------------------- */}
+          <div className="flex border-b border-slate-200">
+            {groupCounts.map((g) => (
+              <button
+                key={g.kind}
+                type="button"
+                onClick={() => { setKind(g.kind); setYear('all'); }}
+                title={g.note}
+                aria-current={kind === g.kind && !searching}
+                className={`flex-1 px-2 py-2 text-xs font-medium transition-colors ${FOCUS} ${
+                  kind === g.kind && !searching
+                    ? 'bg-[#f4f2fa] text-[#422e59]'
+                    : 'text-slate-600 hover:bg-slate-50'}`}
+              >
+                {g.label}
+                <span className="ml-1 text-slate-400">{g.count}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* ---- AND THE YEARS WITHIN THE CHOSEN ONE ------------------- */}
+          {!searching && years.length > 0 && (
+            <div className="flex flex-wrap gap-1 border-b border-slate-200 px-3 py-2">
+              <button
+                type="button"
+                onClick={() => setYear('all')}
+                className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${FOCUS} ${
+                  activeYear === 'all'
+                    ? 'bg-[#422e59] text-white'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+              >
+                All {inKind.length}
+              </button>
+              {years.map((y) => (
+                <button
+                  key={y.year}
+                  type="button"
+                  onClick={() => setYear(y.year)}
+                  className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${FOCUS} ${
+                    activeYear === y.year
+                      ? 'bg-[#422e59] text-white'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                >
+                  {yearLabel(y.year)} {y.count}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {searching && (
+            <p className="border-b border-slate-200 px-3 py-1.5 text-[11px] text-slate-500">
+              Searching every group and year
+            </p>
+          )}
+
           <ul className="max-h-[28rem] overflow-y-auto">
             {matches.map((p) => (
               <li key={p.id}>
@@ -271,12 +405,20 @@ export default function StudioControl() {
                     chosen?.id === p.id ? 'bg-[#f4f2fa] font-semibold' : ''}`}
                 >
                   <span className="text-[#322244]">{p.name}</span>
-                  <span className="text-xs text-slate-500">{p.role || 'no role'}</span>
+                  <span className="text-xs text-slate-500">
+                    {roleLabels[p.role as keyof typeof roleLabels] ?? p.role ?? 'no role'}
+                    {' · '}
+                    {yearLabel(p.year)}
+                  </span>
                 </button>
               </li>
             ))}
             {matches.length === 0 && (
-              <li className="p-3 text-sm text-slate-500">Nobody matches that.</li>
+              <li className="p-3 text-sm text-slate-500">
+                {searching
+                  ? 'Nobody in any group matches that.'
+                  : 'Nobody in this group and year.'}
+              </li>
             )}
           </ul>
         </section>
