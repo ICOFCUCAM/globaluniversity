@@ -32,7 +32,7 @@ export interface EnforcedRules {
   rules: string[];
 }
 
-export const GENERATED_ON = "2026-09-16";
+export const GENERATED_ON = "2026-10-09";
 
 export const ROLE_PROFILES: RoleProfile[] = [
   {
@@ -3834,6 +3834,23 @@ export const ENFORCED: EnforcedRules[] = [
       "…and the identities its incidents and marks name are still there",
       "deleting the identity itself is refused by the evidence that names it"
     ]
+  },
+  {
+    "migration": "107",
+    "file": "107_the_appointee_supplies_their_own_particulars.sql",
+    "rules": [
+      "a link secret cannot be stored in plain text; only its digest fits",
+      "…and an invitation expires after it is issued, never before",
+      "one live invitation per appointment, so there is one thing to revoke",
+      "a claim names the address and the staff record it produced",
+      "…and once it is used it cannot be used again",
+      "…nor un-used, which would make the link live again",
+      "the token digest is on no view any office can read",
+      "…and no signed-in role can select the digest, view or no view",
+      "the office that issued it can see it",
+      "…while the office can still see that it was used, and by which address",
+      "…and a lecturer reads none of them"
+    ]
   }
 ];
 
@@ -3841,5 +3858,5 @@ export const COUNTS = {
   roles: 25,
   capabilities: 129,
   migrations: 0,
-  provedRules: 132,
+  provedRules: 143,
 };

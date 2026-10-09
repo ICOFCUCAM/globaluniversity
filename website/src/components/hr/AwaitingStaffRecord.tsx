@@ -84,6 +84,7 @@ import {
 import { BTN_PRIMARY, BTN_SECONDARY, INPUT, LABEL } from '@/lib/portalTheme';
 import {
   IdCard, CheckCircle2, AlertTriangle, Loader2, UserPlus, KeyRound, X,
+  Send, MessageCircle, Smartphone, Mail, Copy,
 } from 'lucide-react';
 
 interface Waiting {
@@ -141,6 +142,29 @@ export default function AwaitingStaffRecord() {
   const [drafting, setDrafting] = useState<Waiting | null>(null);
   const [form, setForm] = useState({ email: '', phone: '' });
 
+  // ---------------------------------------------------------------------
+  // THE OTHER WAY, WHICH THE UNIVERSITY ASKED FOR.
+  //
+  //   "there should be a button to forward to the participant through the
+  //    various means, whatsapp, text etc, so that they can add their emails,
+  //    and passwords and create their staff records."
+  //
+  // The form above needs the officer to HAVE the address. For eight people
+  // that is eight telephone calls and eight addresses written down, and an
+  // address transcribed from a call is an address that can be wrong. The
+  // person who knows it is the appointee.
+  //
+  // The link is shown ONCE, here, and never again: the University keeps only
+  // its digest, so a lost link is replaced rather than looked up.
+  // ---------------------------------------------------------------------
+  const [invite, setInvite] = useState<{
+    who: string;
+    url: string;
+    message: string;
+    share: { whatsapp: string | null; sms: string; email: string };
+  } | null>(null);
+  const [copied, setCopied] = useState(false);
+
   const load = useCallback(async () => {
     const { data, error } = await supabase
       .from('appointments_awaiting_staff_record')
@@ -187,6 +211,27 @@ export default function AwaitingStaffRecord() {
       text: (out.detail as string | undefined) ?? String(out.error ?? fallback),
     });
     return Boolean(out.ok);
+  }
+
+  /** Issue a one-time link for the appointee to fill in their own particulars. */
+  async function sendInvitation(row: Waiting) {
+    setBusy(row.appointment_id);
+    setNote(null);
+    setInvite(null);
+    setCopied(false);
+    const out = await authedPost('/api/appointments/invite', {
+      action: 'issue', id: row.appointment_id, phone: row.phone ?? '',
+    });
+    setBusy(null);
+    if (!report(out, 'No invitation was issued.')) return;
+    setInvite({
+      who: String(row.full_name ?? ''),
+      url: String(out.url ?? ''),
+      message: String(out.message ?? ''),
+      share: (out.share ?? { whatsapp: null, sms: '', email: '' }) as {
+        whatsapp: string | null; sms: string; email: string;
+      },
+    });
   }
 
   /** Stage one. Nothing about the post is sent — only what reaches the person. */
@@ -281,6 +326,56 @@ export default function AwaitingStaffRecord() {
             {handOver.username} · {handOver.password}
           </p>
           <p className="mt-1 text-xs">This cannot be shown again.</p>
+        </div>
+      )}
+
+      {/* SHOWN ONCE. The University stores only the digest of this link, so
+          there is nowhere to look it up — which is the point, and is said on
+          the panel rather than discovered. */}
+      {invite && (
+        <div className="m-5 rounded-xl border border-[#ded6c8] bg-[#f8f6fb] p-4 dark:border-[#3d3349] dark:bg-[#2a2233]">
+          <p className="font-medium text-[#422e59] dark:text-[#e4dcf0]">
+            A one-time link for {invite.who}
+          </p>
+          <p className="mt-1 text-xs text-[#6b6076] dark:text-[#9c93ad]">
+            Send it by whichever means reaches them. It works once, it expires, and it carries
+            nothing about the post — they can only supply their address, telephone and a
+            password. <strong>It is shown here once:</strong> the University keeps only a
+            fingerprint of it, so a lost link is replaced rather than found.
+          </p>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            {invite.share.whatsapp && (
+              <a className={BTN_SECONDARY} href={invite.share.whatsapp}
+                target="_blank" rel="noreferrer"
+              >
+                <MessageCircle size={14} /> WhatsApp
+              </a>
+            )}
+            <a className={BTN_SECONDARY} href={invite.share.sms}>
+              <Smartphone size={14} /> Text message
+            </a>
+            <a className={BTN_SECONDARY} href={invite.share.email}>
+              <Mail size={14} /> Email
+            </a>
+            <button
+              type="button" className={BTN_SECONDARY}
+              onClick={() => {
+                void navigator.clipboard?.writeText(invite.url).then(
+                  () => setCopied(true), () => setCopied(false),
+                );
+              }}
+            >
+              <Copy size={14} /> {copied ? 'Copied' : 'Copy the link'}
+            </button>
+          </div>
+
+          {/* THE LINK ITSELF, READABLE. A clipboard button that silently fails
+              — which it does on an insecure origin and in some browsers —
+              leaves the officer with nothing at all unless they can see it. */}
+          <p className="mt-3 break-all rounded-lg bg-white px-3 py-2 font-mono text-xs text-[#422e59] dark:bg-[#1b1521] dark:text-[#e4dcf0]">
+            {invite.url}
+          </p>
         </div>
       )}
 
@@ -394,16 +489,29 @@ export default function AwaitingStaffRecord() {
                     {/* NEVER DISABLED FOR WANT OF AN EMAIL. That was the fault:
                         a button that refused to open and told the officer to go
                         and correct something, with nothing to correct it with. */}
-                    <button
-                      type="button" className={BTN_PRIMARY}
-                      disabled={busy === r.appointment_id}
-                      onClick={() => startDrafting(r)}
-                    >
-                      {busy === r.appointment_id
-                        ? <Loader2 size={14} className="animate-spin" />
-                        : <IdCard size={14} />}
-                      Create staff record
-                    </button>
+                    <div className="flex flex-wrap justify-end gap-2">
+                      {/* ASK THEM, OR DO IT YOURSELF. Two ways to the same
+                          place, and the one that needs no telephone call is
+                          offered first for the rows with no address — which
+                          is every row the University was looking at. */}
+                      <button
+                        type="button" className={BTN_PRIMARY}
+                        disabled={busy === r.appointment_id}
+                        onClick={() => void sendInvitation(r)}
+                      >
+                        {busy === r.appointment_id
+                          ? <Loader2 size={14} className="animate-spin" />
+                          : <Send size={14} />}
+                        Ask them to fill it in
+                      </button>
+                      <button
+                        type="button" className={BTN_SECONDARY}
+                        disabled={busy === r.appointment_id}
+                        onClick={() => startDrafting(r)}
+                      >
+                        <IdCard size={14} /> Create it myself
+                      </button>
+                    </div>
                   </Td>
                 </tr>
               ))}

@@ -409,6 +409,10 @@ select * from (
                  when not exists (select 1 from profiles where email in ('selftest-proctor-015@iguc.net','selftest-marker-015@iguc.net'))
                  then 'YES' else 'NO' end as landed,
          'norows:profiles:email in (''selftest-proctor-015@iguc.net'',''selftest-marker-015@iguc.net'')' as what_it_creates
+  union all
+  select '107' as migration, '107_the_appointee_supplies_their_own_particulars.sql' as file,
+         case when to_regclass('public.appointment_invitations') is not null then 'YES' else 'NO' end as landed,
+         'appointment_invitations' as what_it_creates
 ) as landed_report
  order by migration;
 

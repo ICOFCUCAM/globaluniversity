@@ -1250,6 +1250,29 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
       + 'selftest-marker-015@iguc.net is still listed, 106 has not run. Or ask the database: '
       + 'select email from profiles where email like \'selftest-%25-015@iguc.net\';',
   },
+  {
+    file: '107_the_appointee_supplies_their_own_particulars.sql',
+    what:
+      'AN APPOINTEE CAN BE ASKED TO SUPPLY THEIR OWN PARTICULARS. 104 gave the officer a form '
+      + 'to type an email address into, and it still needs the officer to HAVE the address \u2014 '
+      + 'so eight accepted appointees meant eight telephone calls and eight addresses written '
+      + 'down, each one able to be wrong. An officer can now send a one-time link by WhatsApp, '
+      + 'text, email or copy-paste, and the appointee types their own address, telephone and '
+      + 'password. THE OFFICER\u2019S DECISION IS STILL THE AUTHORITY: issuing the invitation '
+      + 'is guarded by `open-staff-record`, nothing reaches anybody not invited by name, and '
+      + 'the staff record names the INVITING OFFICER as the one who opened it. The appointee '
+      + 'sets nothing about the post \u2014 not the title, faculty, employment type, start '
+      + 'date, staff number or role \u2014 and the claim route does not read those from the '
+      + 'request at all. THE LINK IS 256 BITS AND THE UNIVERSITY KEEPS ONLY ITS DIGEST: good '
+      + 'once, expiring, bound to one appointment, revocable, and every attempt counted. The '
+      + 'database refuses to store anything in that column that is not a 64-character digest, '
+      + 'so a route that forgot to hash would be stopped rather than quietly filing a live '
+      + 'credential in plain text \u2014 and the digest is revoked at the COLUMN from every '
+      + 'signed-in role, which is stronger than leaving it off a view. NOTHING HAPPENS UNTIL '
+      + 'AN OFFICER ISSUES ONE: no seeds, and no existing appointment, record or account is '
+      + 'touched.',
+    table: 'appointment_invitations',
+  },
 ];
 
 /** What a probe came back as. */
