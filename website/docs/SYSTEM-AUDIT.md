@@ -4,7 +4,7 @@ Generated on 9 October 2026 by `npm run audit`. Nothing in it is written by hand
 every figure is read from the repository, so this document can be produced
 again at any time and will describe the system as it is then.
 
-**216 tables and views · 108 migrations · 25 roles · 129 capabilities · 604 source files.**
+**219 tables and views · 109 migrations · 25 roles · 130 capabilities · 606 source files.**
 
 ---
 
@@ -14,7 +14,7 @@ again at any time and will describe the system as it is then.
 their Supabase project, so every statement below about the database describes
 what the REPOSITORY defines, not what is live.
 
-108 migrations exist. 8 bundles are prepared for
+109 migrations exist. 8 bundles are prepared for
 running: RUN-PART-1.sql, RUN-PART-2.sql, RUN-PART-3.sql, RUN-PART-4.sql, RUN-PART-5.sql, RUN-PART-6.sql, RUN-PART-7.sql, RUN-PART-8.sql.
 
 This matters more than any other line in this document. Every screen, route and
@@ -36,7 +36,7 @@ Until one of them is run, everything below is an audit of the plans.
 
 ## 1. No door — machinery nothing can reach
 
-### 39 tables and views are named nowhere in the application
+### 40 tables and views are named nowhere in the application
 
 Each was created by a migration, is protected by row-level security, and is read
 by no screen and no route. Grouped by the migration that created them, because
@@ -66,6 +66,7 @@ the groups have different answers.
 | 088 | `lecturer_directory` | The lecturer directory. |
 | 102 | `refunds_that_touch_a_nations_share` | A helper view nothing has needed yet. |
 | 107 | `appointment_invitation_status` | A helper view nothing has needed yet. |
+| 108 | `records_awaiting_erasure` | A helper view nothing has needed yet. |
 
 **None of these should be deleted.** The University ruled on that when the
 question was last asked, and re-reading them confirms it: every one is a valid

@@ -306,6 +306,7 @@ const MARKERS = {
   // `norows:` in landedTest.
   '106': "norows:profiles:email in ('selftest-proctor-015@iguc.net','selftest-marker-015@iguc.net')",
   '107': 'appointment_invitations',
+  '108': 'deletion_requests',
 };
 
 /** The SQL that answers "is this one here?", for each of the three forms. */

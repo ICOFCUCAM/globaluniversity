@@ -1273,6 +1273,27 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
       + 'touched.',
     table: 'appointment_invitations',
   },
+  {
+    file: '108_nothing_is_deleted_without_the_vice_chancellor.sql',
+    what:
+      'A STUDENT RECORD AND AN UPLOADED DOCUMENT CAN NO LONGER BE DELETED OUTRIGHT BY '
+      + 'ANYBODY \u2014 not by the Superadministrator, and not by the service key the '
+      + 'application writes with, because a trigger refuses every delete that is not the '
+      + 'carrying-out of an approved request whose thirty days have run. The '
+      + 'Superadministrator puts a record up, THE VICE-CHANCELLOR DECIDES, an approved record '
+      + 'leaves every screen at once except for the two offices that can still bring it back, '
+      + 'and it is erased thirty days later. Rejecting it inside that window restores it '
+      + 'exactly as it was; once erased, nothing does, and the system says so rather than '
+      + 'pretending. ALL OF IT IS KEPT: `deletion_request_events` is append-only, and what '
+      + 'the record WAS is copied into the request at the moment of asking, because a history '
+      + 'that reads \u201cdeleted 3f2a\u2026\u201d after the row has gone is a history of '
+      + 'nothing. A RECORD THAT CANNOT BE DELETED IS REFUSED WHEN IT IS ASKED FOR, with the '
+      + 'reason in a sentence \u2014 an issued credential, a transcript, an examination '
+      + 'sitting, a refund, or 018\u2019s rule that an admitted student is no longer an '
+      + 'application at all. THIS CHANGES AN EXISTING BUTTON: /api/admissions/delete used to '
+      + 'destroy the record at once and now raises a request instead.',
+    table: 'deletion_requests',
+  },
 ];
 
 /** What a probe came back as. */

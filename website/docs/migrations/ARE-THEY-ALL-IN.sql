@@ -413,6 +413,10 @@ select * from (
   select '107' as migration, '107_the_appointee_supplies_their_own_particulars.sql' as file,
          case when to_regclass('public.appointment_invitations') is not null then 'YES' else 'NO' end as landed,
          'appointment_invitations' as what_it_creates
+  union all
+  select '108' as migration, '108_nothing_is_deleted_without_the_vice_chancellor.sql' as file,
+         case when to_regclass('public.deletion_requests') is not null then 'YES' else 'NO' end as landed,
+         'deletion_requests' as what_it_creates
 ) as landed_report
  order by migration;
 

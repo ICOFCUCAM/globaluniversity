@@ -819,6 +819,27 @@ export const SYSTEM_CAPABILITIES = [
   // mishandled. That is exactly the class of act this hierarchy exists to keep
   // out of an operational role.
   'delete-application',
+  // ---------------------------------------------------------------------
+  // AND DECIDING ONE, WHICH IS NOT THE SAME ACT.
+  //
+  // The University's ruling: "superadmin should be able to delete these
+  // files. when he takes delete, it should appear to the VC approval."
+  //
+  // So `delete-application` became the right to ASK, and this is the right to
+  // DECIDE. Two capabilities rather than one held by both, because one
+  // capability would let whoever holds it do the whole thing alone — which is
+  // precisely what the ruling exists to prevent. The note above says deleting
+  // an application "removes the evidence that the person ever applied"; the
+  // answer to an act that irreversible is a second pair of eyes, and this is
+  // that pair.
+  //
+  // THE VICE-CHANCELLOR'S, AND NOT THE SUPERADMINISTRATOR'S — who holds
+  // 'all' and therefore holds this too. That is a limit of the matrix rather
+  // than an intention, and 108 does not rely on the matrix for it: the
+  // separation that matters is held in the database, where an approval
+  // records WHO decided and the history cannot afterwards be edited.
+  // ---------------------------------------------------------------------
+  'approve-deletion',
   // TRANSCRIBING A RECORD THE SYSTEM NEVER HELD.
   //
   // A transcript for a year that predates this database cannot be derived from
@@ -942,6 +963,10 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
     'view-own-staff-record',
     // The University named this office to open a staff record from an
     // accepted appointment.
+    // DECIDING A DELETION. 108's ruling: the Superadministrator asks and
+    // this office decides. It is the only capability in this list whose
+    // whole content is saying no to somebody more senior in the matrix.
+    'approve-deletion',
     'open-staff-record','view-executive-dashboard', 'view-all-faculties', 'view-institutional-finance', 'view-admitted-students', 'monitor-progress', 'department-reports', 'approve-credential-design',
     // ---------------------------------------------------------------------
     // THE UNIVERSITY'S RULING OF 16 SEPTEMBER 2026, AND IT TOOK FOUR

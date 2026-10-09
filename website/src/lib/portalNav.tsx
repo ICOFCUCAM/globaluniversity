@@ -19,6 +19,7 @@ import {
   Settings, Shield, ShieldCheck, BookMarked, Wallet, Stamp, UserCog, Inbox,
   ClipboardCheck, Share2, BadgeCheck, Video, Eye, CalendarClock, TrendingUp,
   CalendarDays, MapPin, Building2, Receipt, ScrollText, Globe2, Landmark,  FileSearch,
+  Trash2,
   Undo2,
 } from 'lucide-react';
 
@@ -703,6 +704,21 @@ export const menuGroups: MenuGroup[] = [
     // absence is the control — see src/lib/roles.ts.
     title: 'System',
     items: [
+      // DELETIONS SIT HERE, not beside the register they act on. The
+      // Superadministrator asks from the screen the record lives on; this is
+      // where the Vice-Chancellor decides and where the countdown is read —
+      // one place rather than one per register, so nothing is pending in a
+      // corner nobody opens.
+      //
+      // THE VICE-CHANCELLOR IS ON IT BECAUSE THEY DECIDE. They hold almost no
+      // other System entry, and a screen the deciding office cannot reach is
+      // a decision that never gets taken.
+      {
+        id: 'deletions',
+        label: 'Deletions',
+        icon: <Trash2 size={18} />,
+        roles: ['superadmin', 'admin', 'vice-chancellor'],
+      },
       { id: 'accounts', label: 'Accounts', icon: <UserCog size={18} />, roles: ['superadmin'] },
       // THE WORDING OF EVERY DOCUMENT THE UNIVERSITY ISSUES. Under System with
       // the credential designs rather than under Appointments, because it is

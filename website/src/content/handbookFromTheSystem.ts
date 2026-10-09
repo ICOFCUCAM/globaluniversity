@@ -163,6 +163,7 @@ export const ROLE_PROFILES: RoleProfile[] = [
       "create-credential-type",
       "connect-university-social",
       "delete-application",
+      "approve-deletion",
       "transcribe-historical-record",
       "approve-credential-design",
       "configure-system",
@@ -395,6 +396,7 @@ export const ROLE_PROFILES: RoleProfile[] = [
     ],
     "withheld": [
       "approve-credential-design",
+      "approve-deletion",
       "authorise-certificate-reissue",
       "grant-studio-permission",
       "open-staff-record",
@@ -526,6 +528,7 @@ export const ROLE_PROFILES: RoleProfile[] = [
       "admit-student",
       "approve-announcement",
       "approve-credential-design",
+      "approve-deletion",
       "assign-programme",
       "authorise-certificate-reissue",
       "authorize-appointment",
@@ -642,6 +645,7 @@ export const ROLE_PROFILES: RoleProfile[] = [
       "view-transcript-audit",
       "view-certificate-template",
       "authorise-certificate-reissue",
+      "approve-deletion",
       "approve-credential-design"
     ],
     "withheld": [
@@ -756,6 +760,7 @@ export const ROLE_PROFILES: RoleProfile[] = [
     ],
     "withheld": [
       "approve-announcement",
+      "approve-deletion",
       "approve-refund",
       "authorise-certificate-reissue",
       "authorize-appointment",
@@ -888,6 +893,7 @@ export const ROLE_PROFILES: RoleProfile[] = [
       "admit-student",
       "approve-announcement",
       "approve-credential-design",
+      "approve-deletion",
       "approve-results",
       "approve-transfers",
       "assign-programme",
@@ -1962,6 +1968,7 @@ export const ROLE_PROFILES: RoleProfile[] = [
     ],
     "withheld": [
       "approve-announcement",
+      "approve-deletion",
       "approve-refund",
       "approve-results",
       "approve-transfers",
@@ -2384,6 +2391,13 @@ export const CAPABILITY_HOLDERS: { capability: string; roles: string[] }[] =
       "vice-chancellor",
       "registrar",
       "academic-office"
+    ]
+  },
+  {
+    "capability": "approve-deletion",
+    "roles": [
+      "superadmin",
+      "vice-chancellor"
     ]
   },
   {
@@ -3438,6 +3452,7 @@ export const CAPABILITY_HOLDERS: { capability: string; roles: string[] }[] =
 /** Held by the Vice-Chancellor and the Superadministrator and by nobody else. */
 export const RESTRICTED_TO_THE_TWO: string[] = [
   "amend-issued-credential",
+  "approve-deletion",
   "assign-roles",
   "authorise-certificate-reissue",
   "configure-system",
@@ -3849,12 +3864,31 @@ export const ENFORCED: EnforcedRules[] = [
       "…while the office can still see that it was used, and by which address",
       "…and a lecturer reads none of them"
     ]
+  },
+  {
+    "migration": "108",
+    "file": "108_nothing_is_deleted_without_the_vice_chancellor.sql",
+    "rules": [
+      "a record cannot be deleted outright, by anybody, including the service key",
+      "a record nothing holds reports nothing holding it",
+      "…and an admitted graduate holding a certificate names both reasons, in sentences, before the request is ever raised",
+      "one live request per record, so the Vice-Chancellor decides once",
+      "…and nothing is erased on the asking",
+      "an approved record leaves every screen at once",
+      "…except for the Superadministrator and the Vice-Chancellor, who can still restore it",
+      "thirty days means thirty days: nothing is erased on approval",
+      "rejecting it inside the thirty days puts it back on every screen",
+      "…and when the thirty days have run, it is erased",
+      "the record is gone and the account of why is not",
+      "…and that account is append-only, like every other record of a decision in this system",
+      "an erased record is not restorable, and the system does not pretend otherwise"
+    ]
   }
 ];
 
 export const COUNTS = {
   roles: 25,
-  capabilities: 129,
+  capabilities: 130,
   migrations: 0,
-  provedRules: 141,
+  provedRules: 154,
 };

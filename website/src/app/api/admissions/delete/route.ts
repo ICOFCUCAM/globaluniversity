@@ -145,21 +145,79 @@ export async function POST(request: Request) {
     );
   }
 
-  const { error: delErr } = await admin.from('students').delete().eq('id', studentId);
+  // =======================================================================
+  // IT NO LONGER DELETES. IT ASKS.
+  // =======================================================================
+  //
+  // The University's ruling: "superadmin should be able to delete these files.
+  // when he takes delete, it should appear to the VC approval."
+  //
+  // This route used to call `.delete()` here, and the record was gone. 108
+  // refuses that outright — the trigger binds the service key as well as every
+  // signed-in office — so leaving the call in place would have turned a
+  // working button into an error message. It raises a request instead, and the
+  // Vice-Chancellor decides.
+  //
+  // THE CHECKS ABOVE ARE UNCHANGED AND STILL RUN FIRST. The capability, the
+  // confirmation, 018's refusal of an admitted student, and the audit entry
+  // all happen before anything is asked of anybody — so a request that reaches
+  // the Vice-Chancellor is one that has already passed everything this route
+  // ever enforced.
+  const { data: asked, error: askErr } = await admin
+    .from('deletion_requests')
+    .insert({
+      entity_type: 'students',
+      entity_id: studentId,
+      // THE SNAPSHOT THE AUDIT ALREADY BUILT, not the row read again. It
+      // carries `name` and `matric_no` and is the same description the audit
+      // entry above recorded — two labels for one deletion, differing, would
+      // be the whole fault this scheme exists to avoid.
+      entity_label: [snapshot.matric_no ?? '', snapshot.name ?? '']
+        .filter(Boolean).join(' ') || 'An application',
+      requested_by: caller.id,
+      reason: String(body.reason ?? '').trim()
+        || 'Deletion requested from the Admissions desk.',
+    })
+    .select('id')
+    .maybeSingle();
 
-  if (delErr) {
+  if (askErr) {
+    if (/one_live_deletion_per_record/.test(askErr.message)) {
+      return NextResponse.json({
+        ok: false,
+        error: 'already-requested',
+        detail: 'That application is already with the Vice-Chancellor. They decide it once.',
+      }, { status: 409 });
+    }
     // The audit entry is already written and cannot be withdrawn — the table is
     // append-only by trigger. So say plainly that it records an attempt rather
     // than a deletion, instead of leaving a reader to infer a row is gone.
-    return NextResponse.json(
-      {
-        ok: false,
-        error: `not-deleted: ${delErr.message}`,
-        detail: 'The audit trail records this as an attempt. Nothing was deleted.',
-      },
-      { status: 500 },
-    );
+    return NextResponse.json({
+      ok: false,
+      error: `not-requested: ${askErr.message}`,
+      detail: 'The audit trail records this as an attempt. Nothing was deleted and nothing '
+        + 'was sent to the Vice-Chancellor.',
+    }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true, deleted: snapshot });
+  await admin.from('deletion_request_events').insert({
+    request_id: (asked as { id: string } | null)?.id,
+    event: 'REQUESTED',
+    actor_id: caller.id,
+    actor_role: caller.role ?? null,
+    detail: 'Put up for deletion from the Admissions desk.',
+  });
+
+  return NextResponse.json({
+    ok: true,
+    requested: true,
+    id: (asked as { id: string } | null)?.id,
+    // DELIBERATELY NOT `deleted`. A caller that read `ok` and moved on would
+    // otherwise tell an officer a record was destroyed when it is sitting in
+    // front of the Vice-Chancellor, untouched.
+    pending: snapshot,
+    detail: 'Sent to the Vice-Chancellor. Nothing has been hidden or deleted: if they '
+      + 'approve it, the record leaves every screen at once and is erased 30 days later, '
+      + 'and rejecting it inside that window puts it back exactly as it was.',
+  });
 }

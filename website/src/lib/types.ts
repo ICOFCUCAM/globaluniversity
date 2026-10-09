@@ -415,6 +415,7 @@ export type ViewType =
   // financial clearance. The Superadministrator sets it here.
   | 'fee-schedules'
   | 'refunds'
+  | 'deletions'
   // THE OFFICE'S SIDE OF A STUDENT'S REQUEST. 073 built the request and the
   // student's half of it; nothing could move one off 'submitted'.
   | 'student-request-queue'

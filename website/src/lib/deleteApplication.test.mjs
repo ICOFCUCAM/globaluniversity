@@ -110,15 +110,30 @@ const route = readFileSync(
 
 check("the route guards on 'delete-application'", route.includes("guard(request, 'delete-application')"), true);
 check('the route takes the caller from the token, not the body', route.includes('body.role'), false);
-// The audit entry must be written BEFORE the delete. If a failure can leave the
+// The audit entry must be written BEFORE the act. If a failure can leave the
 // row gone and nothing recorded, the trail cannot be relied on for the one
 // action it exists to cover.
+//
+// THE ACT IS NO LONGER A DELETE. 108's ruling — "when he takes delete, it
+// should appear to the VC approval" — means this route raises a request and
+// the Vice-Chancellor decides. The route no longer contains
+// `.from('students').delete()` at all, which made the old comparison read
+// `indexOf(...) < -1` and fail on correct code.
+//
+// What has to stay true is the same property about the new act: nothing
+// reaches the Vice-Chancellor that the audit trail has not already recorded
+// the asking of.
 check(
-  'the audit entry is written before the delete',
-  route.indexOf('audit(admin') < route.indexOf(".from('students').delete()"),
+  'the route no longer deletes the record itself',
+  route.includes(".from('students').delete()"),
+  false,
+);
+check(
+  'the audit entry is written before the request is raised',
+  route.indexOf('audit(admin') < route.indexOf("from('deletion_requests')"),
   true,
 );
-check('and a failed audit write aborts the deletion', route.includes('not-deleted-because-not-recorded'), true);
+check('and a failed audit write aborts it', route.includes('not-deleted-because-not-recorded'), true);
 check('an admitted student is refused', route.includes('already-admitted'), true);
 check('a reason is required', route.includes('reason-required'), true);
 
