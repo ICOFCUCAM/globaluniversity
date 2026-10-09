@@ -36,6 +36,7 @@ import { BTN_PRIMARY, BTN_SECONDARY, BTN_GHOST, INPUT, LABEL, FOCUS } from '@/li
 import {
   Plus, Loader2, Check, X, AlertTriangle, Users, FileText, Send, Eye, Trash2, Wand2,
   MessageCircle,
+  RefreshCw,
 } from 'lucide-react';
 import {
   EMPLOYMENT_TYPES, EMPLOYMENT_LABELS, CURRENCIES, SALARY_PERIODS, PERIOD_LABELS,
@@ -886,6 +887,36 @@ export default function Appointments() {
                     title="Opens WhatsApp with the message ready. It does not send it for you."
                     onClick={() => void letter('whatsapp', a.id)}>
                     <MessageCircle size={14} /> Send by WhatsApp
+                  </button>
+                )}
+
+                {/* ---------------------------------------------------------
+                    TWO DIFFERENT ACTS, AND THE DIFFERENCE IS THE WHOLE POINT.
+                    ---------------------------------------------------------
+
+                    The University asked to "edit the appointment letter by
+                    using the new letter format but maintaining all dates,
+                    reference numbers".
+
+                    An AMENDMENT is for when what the letter SAYS has changed.
+                    It supersedes: a new row, a new reference from the
+                    register, both documents kept, and the appointee receives a
+                    second letter. That is right when the terms move and wrong
+                    when only the typography has.
+
+                    A REFORMAT is the same letter in the house style it is now.
+                    Same reference, same version, same issue date, same
+                    verification code. The route refuses it if re-rendering
+                    changes the seal — which is computed from the particulars,
+                    so it moves if a name or a date did and does not move if
+                    only the layout did. An officer cannot use it to slip a
+                    change past the amendment path.
+                    --------------------------------------------------------- */}
+                {['issued', 'accepted', 'active'].includes(String(a.status)) && mayIssue && (
+                  <button disabled={busy} className={BTN_SECONDARY}
+                    title="Re-renders this letter in the current format. The reference, version, issue date and verification code do not change, and it is refused if any particular would."
+                    onClick={() => void act({ action: 'reformat', id: a.id })}>
+                    <RefreshCw size={14} /> Re-render in the current format
                   </button>
                 )}
 

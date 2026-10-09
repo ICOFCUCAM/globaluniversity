@@ -7,6 +7,7 @@
 //   issue    { id }            → issue-appointment-letter the VC sends it
 //   email    { id }            → issue-appointment-letter retry a failed delivery
 //   amend    { id, reason }    → issue-appointment-letter a new version
+//   reformat { id }            → issue-appointment-letter the same letter, new house style
 //
 // ---------------------------------------------------------------------------
 // THE ORDER OF THESE FOUR OPERATIONS IS THE WHOLE DESIGN
@@ -99,6 +100,10 @@ const CAPABILITY: Record<string, Capability> = {
   // the route somebody used was decided by which permission they held.
   whatsapp: 'issue-appointment-letter' as Capability,
   amend: 'issue-appointment-letter' as Capability,
+  // THE SAME AUTHORITY AS AMENDING. Re-rendering an issued document changes
+  // what a reader is handed, and that is the Vice-Chancellor's to decide
+  // even when nothing it says has changed.
+  reformat: 'issue-appointment-letter' as Capability,
 };
 
 // A SINGLE STRING LITERAL. Concatenation collapses the supabase-js row type to
@@ -209,6 +214,14 @@ export async function POST(request: Request) {
   const generateInto = async (
     appointment: Row, version: number, reason: string | null,
     preview = false,
+    // ---- RE-RENDERING A DOCUMENT THAT ALREADY EXISTS --------------------
+    //
+    // `keep` is a reformat: the same letter, the same reference, the same
+    // dates, rendered again in whatever the house style is now. It is not an
+    // amendment — nothing it says changes — so it takes no number from the
+    // register and writes no new row. See `reformat` below for the guard that
+    // makes that claim checkable rather than asserted.
+    keep?: { reference: string; issuedOn: string; letterId: string; sealCode: string | null },
   ): Promise<{ letter: Row } | { html: string } | { error: NextResponse }> => {
     const outstanding = missingFrom(appointment);
     if (blocked(outstanding)) {
@@ -225,10 +238,17 @@ export async function POST(request: Request) {
     // NO NUMBER IS TAKEN FROM THE REGISTER FOR A LOOK. A reference allocated
     // to a letter that may never exist is a gap in the University's sequence
     // that nobody can later account for.
-    const reference = preview ? `APT-${year}-0000` : await nextReference(year);
+    //
+    // A REFORMAT TAKES NEITHER. Its reference was allocated when the letter
+    // was first made and its date is the date it was issued; allocating a
+    // second number for the same document would put a hole in the sequence
+    // and give the University two references for one letter.
+    const reference = keep
+      ? keep.reference
+      : (preview ? `APT-${year}-0000` : await nextReference(year));
     if (!reference) return { error: bad('no-reference', 500) };
 
-    const issuedOn = new Date().toISOString().slice(0, 10);
+    const issuedOn = keep ? keep.issuedOn : new Date().toISOString().slice(0, 10);
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? `https://${UNIVERSITY.website}`;
 
     // ---------------------------------------------------------------------
@@ -451,6 +471,61 @@ export async function POST(request: Request) {
     // THE PREVIEW ENDS HERE. Nothing is written: no letter row, no reference
     // consumed, no event, no seal — the document itself says it is a draft.
     if (preview) return { html: generated.html };
+
+    // ===================================================================
+    // THE GUARD THAT MAKES A REFORMAT A REFORMAT
+    // ===================================================================
+    //
+    // The seal is computed over the PARTICULARS — the name, the post, the
+    // dates, the reference — and not over the rendered HTML. So a change of
+    // house style leaves it identical, and a change to any particular changes
+    // it. That is not a convenience; it is the University's own integrity
+    // mechanism answering the exact question being asked here.
+    //
+    // If the code comes out different, something that MATTERS changed, and
+    // this is an amendment wearing a reformat's clothes. It is refused, and
+    // the officer is sent to Amend — which supersedes properly, allocates its
+    // own reference, and leaves both documents on the record.
+    //
+    // It is also why a reformat does not break anything already in the world:
+    // the verification code on a printed copy and the accept link sent by
+    // WhatsApp both carry the seal, and the seal has not moved.
+    if (keep) {
+      const newSeal = generated.seal?.code ?? null;
+      if (newSeal !== keep.sealCode) {
+        return {
+          error: bad('not-a-reformat', 409,
+            'Re-rendering this letter changed its seal, which means a particular changed — a '
+            + 'name, a date, the post, or the officer signing. That is an amendment, not a '
+            + 'change of format: use “Request an amendment”, which supersedes the letter '
+            + 'properly and keeps both on the record.'),
+        };
+      }
+
+      const { data: redone, error: redoErr } = await admin.from('appointment_letters')
+        .update({
+          html: generated.html,
+          content_hash: await contentHash(generated.html),
+          // REFERENCE, VERSION, ISSUED_ON, SEAL_CODE AND SEALED ARE ABSENT
+          // FROM THIS UPDATE ON PURPOSE. They are what the University asked
+          // to be maintained, and the surest way to maintain them is not to
+          // write them.
+          ...(tpl ? { template_id: tpl.id, template_version: tpl.version } : {}),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', keep.letterId)
+        .select(LETTER)
+        .single();
+
+      if (redoErr || !redone) {
+        return { error: bad(`not-reformatted: ${redoErr?.message ?? 'no row'}`, 500) };
+      }
+
+      // THE HISTORY ENTRY IS WRITTEN BY THE CALLER, not here, because the
+      // thing worth recording is the hash BEFORE and after and only the caller
+      // holds the before. Two entries for one act would be worse than one.
+      return { letter: redone as Row };
+    }
 
     const { data, error } = await admin.from('appointment_letters').insert({
       appointment_id: appointment.id as string,
@@ -1083,6 +1158,85 @@ export async function POST(request: Request) {
   // =========================================================================
   // AMEND — a new version; the original is never touched
   // =========================================================================
+  // =========================================================================
+  // REFORMAT — the same letter, rendered in the house style it is now.
+  // =========================================================================
+  //
+  // The University, looking at a letter issued under an older format:
+  //
+  //   "one should be able to edit the appointment letter by using the new
+  //    letter format but maintaining all dates, reference numbers, must be
+  //    maintained."
+  //
+  // `amend` cannot do this. It supersedes: a new row, a new reference from
+  // the register, both documents kept — which is exactly right when the TERMS
+  // change and exactly wrong when only the typography has.
+  //
+  // THE REFERENCE IS UNIQUE ON THE TABLE, so a reformat cannot be a second row
+  // carrying the same number — and that constraint is correct: /verify must
+  // never have two documents to choose between for one reference. So this
+  // re-renders the row that is already there and writes neither reference nor
+  // version nor date.
+  //
+  // WHAT MAKES IT SAFE is in `generateInto`: the seal is computed over the
+  // particulars and not over the HTML, so a genuine reformat leaves it
+  // identical and anything else changes it. The route refuses a re-render
+  // whose seal has moved, which means a reformat cannot quietly alter a date,
+  // a name or the post. The printed copy somebody holds still verifies.
+  if (action === 'reformat') {
+    const appointment = await loadAppointment(body.id);
+    if (!appointment) return bad('appointment-not-found', 404);
+
+    const current = await currentLetter(appointment.id as string);
+    if (!current) {
+      return bad('nothing-to-reformat', 409,
+        'There is no letter for this appointment yet. Generate one and it will come out in '
+        + 'the current format.');
+    }
+
+    const out = await generateInto(
+      appointment,
+      Number(current.version ?? 1),
+      (current.supersedes_reason as string | null) ?? null,
+      false,
+      {
+        reference: String(current.reference),
+        issuedOn: String(current.issued_on),
+        letterId: String(current.id),
+        sealCode: (current.seal_code as string | null) ?? null,
+      },
+    );
+    if ('error' in out) return out.error;
+    if (!('letter' in out)) return bad('not-reformatted', 500);
+
+    // THE HASHES BEFORE AND AFTER. Somebody holding a PDF printed last month
+    // can be told which rendering they have rather than merely that it is not
+    // the current one — and the seal, which is what their copy is verified
+    // against, is recorded as unmoved because the route refused to proceed if
+    // it had moved.
+    await record(appointment.id as string, 'LETTER_REFORMATTED',
+      appointment.status as string, appointment.status as string,
+      `Re-rendered ${printedReference(String(current.reference))} in the current format. `
+      + 'Reference, version, issue date and verification code unchanged.',
+      {
+        reference: current.reference,
+        was_content_hash: current.content_hash,
+        now_content_hash: out.letter.content_hash,
+        seal_code_unchanged: true,
+      });
+
+    return NextResponse.json({
+      ok: true,
+      reference: out.letter.reference,
+      version: out.letter.version,
+      issuedOn: out.letter.issued_on,
+      detail: `${printedReference(String(out.letter.reference))} has been re-rendered in the `
+        + 'current format. Its reference, version, issue date and verification code are '
+        + 'unchanged — the seal is computed from the particulars, and the particulars did not '
+        + 'move, which is what makes this a change of format rather than an amendment.',
+    });
+  }
+
   if (action === 'amend') {
     const appointment = await loadAppointment(body.id);
     if (!appointment) return bad('appointment-not-found', 404);
