@@ -35,6 +35,7 @@ import {
   type ExamMode, type ExamState,
 } from '@/lib/examinations';
 import { Loader2, Plus, AlertTriangle, CheckCircle2, XCircle, CalendarClock } from 'lucide-react';
+import ExamOfficers from './ExamOfficers';
 
 interface Row {
   id: string;
@@ -293,6 +294,15 @@ export default function ExaminationOffice({ role }: { role?: UserRole }) {
                     <p className="mt-2 text-xs text-[#9c93ad]">
                       Waiting for a moderator to approve the questions. You cannot approve your own paper.
                     </p>
+                  )}
+
+                  {/* ---- WHO IS WATCHING IT ---------------------------
+                      Only once the paper is real. A draft nobody can sit
+                      needs no invigilator, and showing "nobody is in the
+                      room" against every unfinished draft would teach the
+                      office to ignore the warning on the one that matters. */}
+                  {['published', 'in_progress', 'closed'].includes(r.status) && (
+                    <ExamOfficers examinationId={r.id} mayAssign={holds('assign-proctor')} />
                   )}
                 </li>
               );

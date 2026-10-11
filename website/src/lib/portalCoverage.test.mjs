@@ -380,9 +380,10 @@ const NOT_ENFORCED = {
   // This test found the stale excuse on the first run after they landed,
   // which is the whole reason the excuse list is checked rather than merely
   // kept.
-  'assign-proctor': 'NO DOOR YET, and kept deliberately. The University ruled on 16 September '
-    + '2026 that proctoring is to be built and `examination_officers` connected to the '
-    + 'examination workflow rather than removed.',
+  // `assign-proctor` WAS HERE AND IS NOT ANY MORE. It read "NO DOOR YET, and
+  // kept deliberately", on the University's ruling that proctoring would be
+  // built. 111 built it: /api/exam/officers guards on this name, and an
+  // appointment made through it is what opens the live room.
   'manage-hostel': 'Named, not enforced, and deliberately so: hostel allocation is not work this '
     + 'system does. Student Affairs\u2019 actual work here is the request queue.',
   'manage-student-welfare': 'The same. A welfare case system is its own thing; what reaches this '

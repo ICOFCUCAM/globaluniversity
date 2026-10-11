@@ -318,6 +318,10 @@ const MARKERS = {
   // What 110 adds is the path a claim follows, and `status` is the column
   // that cannot be there without it.
   '110': 'transfer_credits.status',
+  // NOT `examination_officers`, which 015 created and every database has, and
+  // not a column either — 111 adds none. It adds the FUNCTION the five new
+  // policies are built on, and `fn:` asks whether that is there.
+  '111': 'fn:watches_this_examination',
 };
 
 /** The SQL that answers "is this one here?", for each of the three forms. */
@@ -405,6 +409,24 @@ function landedTest(marker) {
                     where p.polname = '${name}'
                       and position('${needle.replace(/'/g, "''")}' in
                                    pg_get_expr(p.polqual, p.polrelid)) > 0)
+                 then 'YES' else 'NO' end`;
+  }
+  // ---------------------------------------------------------------------
+  // A FUNCTION, for a migration that creates one and no table or column.
+  //
+  // 111 adds no relation and no column: `examination_officers` has been there
+  // since 015. What it adds is the five row policies that make the proctoring
+  // console show anything at all, and the SECURITY DEFINER function all five
+  // are built on. Asking for the function is asking whether the policies have
+  // anything to stand on — and unlike a policy name, a function cannot be
+  // there by coincidence.
+  // ---------------------------------------------------------------------
+  if (marker.startsWith('fn:')) {
+    const name = marker.slice(3);
+    return `case when exists (
+                   select 1 from pg_proc p
+                     join pg_namespace n on n.oid = p.pronamespace
+                    where n.nspname = 'public' and p.proname = '${name}')
                  then 'YES' else 'NO' end`;
   }
   if (marker.startsWith('rows:')) {

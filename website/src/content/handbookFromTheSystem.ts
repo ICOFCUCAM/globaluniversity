@@ -3983,6 +3983,23 @@ export const ENFORCED: EnforcedRules[] = [
       "and no more may be accepted than the other institution gave",
       "half a degree in another institution's teaching is LISTED, not refused — the University has set no cap and this does not invent one"
     ]
+  },
+  {
+    "migration": "111",
+    "file": "111_a_proctor_is_appointed_and_can_see_the_room.sql",
+    "rules": [
+      "an invigilator appointed to nothing watches nothing",
+      "…and one appointed to this paper sees its sittings",
+      "…and not the sittings of a paper they were not put on",
+      "the register answers, and does not recurse through its own policy",
+      "the Examination Office sees every room, appointed or not",
+      "…and a candidate reads their own sitting, which 016 had dropped",
+      "the proctoring trail is the invigilator's and never the candidate's",
+      "a candidate cannot be an officer of their own examination",
+      "…nor can a student be an officer of any examination at all",
+      "and a published paper with nobody appointed to watch it is listed",
+      "…and appointing somebody to mark it afterwards does not take it off"
+    ]
   }
 ];
 
@@ -3990,5 +4007,5 @@ export const COUNTS = {
   roles: 25,
   capabilities: 132,
   migrations: 0,
-  provedRules: 189,
+  provedRules: 200,
 };

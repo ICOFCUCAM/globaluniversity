@@ -435,6 +435,14 @@ select * from (
                       and column_name = 'status')
                  then 'YES' else 'NO' end as landed,
          'transfer_credits.status' as what_it_creates
+  union all
+  select '111' as migration, '111_a_proctor_is_appointed_and_can_see_the_room.sql' as file,
+         case when exists (
+                   select 1 from pg_proc p
+                     join pg_namespace n on n.oid = p.pronamespace
+                    where n.nspname = 'public' and p.proname = 'watches_this_examination')
+                 then 'YES' else 'NO' end as landed,
+         'fn:watches_this_examination' as what_it_creates
 ) as landed_report
  order by migration;
 

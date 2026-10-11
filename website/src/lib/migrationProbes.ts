@@ -1348,6 +1348,33 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
     table: 'transfer_credits',
     column: 'status',
   },
+  {
+    file: '111_a_proctor_is_appointed_and_can_see_the_room.sql',
+    what:
+      'THE LIVE PROCTORING CONSOLE HAS BEEN EMPTY FOR EVERYBODY SINCE 016, and said nothing '
+      + 'about it. 015 enabled row-level security on thirteen examination tables and wrote '
+      + 'three policies; 016 replaced the candidate’s with a view and dropped it. A TABLE '
+      + 'WITH ROW SECURITY ON AND NO POLICY IS INVISIBLE, NOT OPEN — a SELECT succeeds and '
+      + 'returns nothing — so the Examiner Console showed an empty hall to every '
+      + 'invigilator the University has ever had, and looked like a quiet exam rather than a '
+      + 'fault. Asked of the database rather than read off the code: an invigilator, signed '
+      + 'in, saw 0 live sittings of 1. 111 writes the five policies that were missing and '
+      + 'SCOPES THEM TO `examination_officers`, which is the University’s decision of '
+      + '16 September 2026 — "`assign-proctor` is kept… `examination_officers` is '
+      + 'connected to the examination workflow rather than removed". An officer sees the '
+      + 'sittings of the papers they were appointed to and no others; the Examination Office '
+      + 'sees every room; a candidate reads their own sitting (which 016 had dropped) and '
+      + 'NEVER the proctoring flags raised about them. SO AN EXAMINATION NOBODY HAS BEEN '
+      + 'APPOINTED TO IS WATCHED BY NOBODY the day this runs — that is the ruling, not a '
+      + 'side effect, and `examinations_nobody_is_watching` lists them: published or running '
+      + 'papers with no INVIGILATOR, counting invigilators alone because an examiner marks '
+      + 'afterwards and a moderator checks the marking and neither is in the room. '
+      + '`assign-proctor` finally has a door, at /api/exam/officers, and a candidate cannot '
+      + 'be made an officer of their own examination.',
+    table: 'examination_officers',
+    rpc: 'watches_this_examination',
+    rpcArgs: { the_examination: '00000000-0000-0000-0000-000000000000' },
+  },
 ];
 
 /** What a probe came back as. */
