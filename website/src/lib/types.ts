@@ -424,6 +424,9 @@ export type ViewType =
   // WHAT ANOTHER INSTITUTION TAUGHT, and whether it counts toward an ICOF
   // award. 019 built the table and nothing opened it until 110.
   | 'transfer-credits'
+  // THE DOOR ONTO 084–087. Modules, lessons, activities and unlocking were
+  // built in 2025 and no screen ever read any of them.
+  | 'course-hub'
   // THE OFFICE'S SIDE OF A STUDENT'S REQUEST. 073 built the request and the
   // student's half of it; nothing could move one off 'submitted'.
   | 'student-request-queue'

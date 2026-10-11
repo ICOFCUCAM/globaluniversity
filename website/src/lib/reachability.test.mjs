@@ -259,6 +259,27 @@ const READ_ONLY_BY_DESIGN = {
     + 'payment returns money the centre no longer wholly holds. Nothing reverses it '
     + 'automatically \u2014 that would be the system deciding a nation owes back a share it was '
     + 'told it had kept \u2014 so this lists them for the University to rule on.',
+  my_course_progress: 'A view over `course_modules`, `course_lessons` and `lesson_progress` '
+    + '\u2014 how far through a course the student reading it has got. Nothing writes to it '
+    + 'because it is arithmetic: the rows under it are the student\u2019s own lesson '
+    + 'progress, which the Course Hub writes directly under `lesson_progress_own`. A STORED '
+    + 'PERCENTAGE WOULD BE A PERCENTAGE THAT CAN DISAGREE with the lessons beneath it, which '
+    + 'is the reason 098 gives for the national ledger being a view too.',
+  my_module_progress: 'The same, one row per module, and it carries 087\u2019s `unlocked` '
+    + '\u2014 whether the module before this one has been finished. Written by nothing and '
+    + 'computed per reader: `module_is_unlocked` is asked at the moment of the query, so a '
+    + 'module opens the instant the one before it is complete rather than when something '
+    + 'remembers to recompute.',
+  course_lessons: 'The material of a course \u2014 modules, readings, recordings, live '
+    + 'classes. WRITTEN BY THE STUDIO, not by the Hub: a lesson is created when a lecturer\u2019s '
+    + 'artefact is published, through /api/studio/artefacts/[id], and the Course Hub is the '
+    + 'student\u2019s side of the same material and deliberately reads only. The student DOES '
+    + 'write `lesson_progress`, which is their own row and their own assertion that they have '
+    + 'read something.',
+  course_activities: 'The coursework set against a course or a module. Written by the '
+    + 'lecturer\u2019s side of the Studio; the Course Hub lists what is due and when, and a '
+    + 'submission is `activity_submissions`. THE ANSWER KEY IS A SEPARATE TABLE for the '
+    + 'reason 085 gives \u2014 a candidate who could read the key has not been examined.',
   archived_applications: 'A view over `students` \u2014 applications that have left the register '
     + 'because nobody finished them: never paid for, refused, withdrawn, asked for documents '
     + 'that never came, or paid and never processed, and more than ninety days idle. NOTHING '

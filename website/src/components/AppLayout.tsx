@@ -83,6 +83,7 @@ import Refunds from '@/components/finance/Refunds';
 import Deletions from '@/components/admin/Deletions';
 import ArchivedApplications from '@/components/admissions/ArchivedApplications';
 import TransferCredits from '@/components/academic/TransferCredits';
+import CourseHub from '@/components/courses/CourseHub';
 import StudentRequestQueue from './services/StudentRequestQueue';
 import AnalyticsDashboard from './analytics/AnalyticsDashboard';
 import InsightsModule from './insights/InsightsModule';
@@ -454,6 +455,8 @@ export default function AppLayout() {
         return <ArchivedApplications />;
       case 'transfer-credits':
         return <TransferCredits />;
+      case 'course-hub':
+        return <CourseHub />;
       case 'student-request-queue':
         return <StudentRequestQueue />;
       case 'documents':

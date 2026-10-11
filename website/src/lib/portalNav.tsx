@@ -23,6 +23,7 @@ import {
   Undo2,
   Archive,
   ArrowLeftRight,
+  Library,
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -342,6 +343,32 @@ export const menuGroups: MenuGroup[] = [
         action: 'view',
         label: 'My courses',
         icon: <BookOpen size={18} />,
+        roles: ACADEMIC,
+        capability: 'view-own-courses',
+      },
+      // ---------------------------------------------------------------------
+      // AND THE MATERIAL INSIDE THEM, which had no door at all.
+      //
+      // 084 built modules and lessons, 085 activities and their answer keys,
+      // 086 the tutor's citations, 087 the rule that a module unlocks only
+      // when the one before it is finished — and NOT ONE SCREEN read any of
+      // it. A student registered on a course had nowhere to go and see what
+      // the course consisted of.
+      //
+      // IMMEDIATELY AFTER "My courses", because that is the order of the
+      // work: these are your courses, and this is what is in them.
+      //
+      // THE SAME CAPABILITY. Reading the material of a course you are
+      // registered on is not a second permission — the row policies 084 wrote
+      // are what decide which modules and lessons arrive, and they ask
+      // whether you are enrolled rather than what you hold.
+      // ---------------------------------------------------------------------
+      {
+        id: 'course-hub',
+        resource: 'courses',
+        action: 'view',
+        label: 'Course material',
+        icon: <Library size={18} />,
         roles: ACADEMIC,
         capability: 'view-own-courses',
       },
