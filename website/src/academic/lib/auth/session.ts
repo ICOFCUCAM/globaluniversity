@@ -21,7 +21,7 @@
 
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
-export type SessionMode = 'demo' | 'header' | 'supabase';
+export type SessionMode = 'demo' | 'header' | 'supabase' | 'unconfigured';
 
 export interface SessionClaim {
   id: string;
@@ -113,7 +113,60 @@ export function verifySupabaseToken(
   return { claim: { id: claims.sub } };
 }
 
+/**
+ * Which of the three is in force — and a fourth answer the original three did
+ * not have.
+ *
+ * ---------------------------------------------------------------------------
+ * THE DEMONSTRATION SWITCHER IS NOT A PRODUCTION FALLBACK
+ * ---------------------------------------------------------------------------
+ *
+ * This read `mode === 'header' || mode === 'supabase' ? mode : 'demo'`. Every
+ * other value fell to `demo`, INCLUDING ABSENCE, and including a typo — and
+ * in `demo` the Studio takes its identity from a cookie the browser sets,
+ * defaulting to `person-lecturer`. So on a deployment where
+ * ACADEMIC_SESSION_MODE had never been set, anybody who could open
+ * /academic-studio could choose whose eyes to look through, and every
+ * ownership rule in the Studio was advisory.
+ *
+ * It opened as a demonstration, which was the intention when this platform was
+ * a product that had to show itself with nothing configured. It is not that
+ * any more: it is mounted inside a university, serving real lecturers'
+ * material, and the rest of this system refuses rather than falls back —
+ * `adminAuth.ts` will not drop to the publishable key when the service key is
+ * missing, for exactly this reason, and says so: "a silent fallback would
+ * appear to work and change nothing".
+ *
+ * SO AN UNSET VARIABLE IS NOW `unconfigured`, AND `unconfigured` REFUSES.
+ * Demonstration remains available where it belongs: off the production build,
+ * or wherever NEXT_PUBLIC_ENABLE_DEMO is deliberately set — the flag the
+ * configuration report already describes as a hazard when present, and the
+ * same one that puts the role buttons on the login page.
+ */
 export function sessionMode(): SessionMode {
   const mode = process.env.ACADEMIC_SESSION_MODE;
-  return mode === 'header' || mode === 'supabase' ? mode : 'demo';
+  if (mode === 'header' || mode === 'supabase') return mode;
+
+  // ASKED FOR BY NAME, not arrived at. `demo` is a thing somebody chooses.
+  if (mode === 'demo') return 'demo';
+
+  // AND WHERE NOBODY CHOSE: a demonstration off the production build, and a
+  // refusal on it.
+  const demonstrating = process.env.NODE_ENV !== 'production'
+    || process.env.NEXT_PUBLIC_ENABLE_DEMO === 'true';
+  return demonstrating ? 'demo' : 'unconfigured';
 }
+
+/**
+ * What to tell somebody who meets `unconfigured`.
+ *
+ * NAMES THE VARIABLE AND THE VALUE. A refusal that says "not signed in" to an
+ * administrator whose deployment is one environment variable short sends them
+ * looking at their own account.
+ */
+export const SESSION_NOT_CONFIGURED =
+  'The Academic Studio has no way to tell who you are. Set ACADEMIC_SESSION_MODE=supabase on '
+  + 'the deployment (with SUPABASE_JWT_SECRET), or =header behind another host\u2019s sign-in '
+  + '(with ACADEMIC_SESSION_SECRET). Until then the Studio refuses every request rather than '
+  + 'opening the demonstration switcher, where whoever arrives chooses whose eyes to look '
+  + 'through.';

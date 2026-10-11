@@ -355,11 +355,27 @@ export const SETTINGS: Setting[] = [
   },
   {
     name: 'ACADEMIC_SESSION_MODE',
+    // RECOMMENDED, AND IT WAS NEARLY CHANGED TO REQUIRED IN ERROR.
+    //
+    // `required` on this report means the DEPLOYMENT cannot run — the
+    // database, the signing key, the service key. The University runs
+    // admissions, the registry, finance and credentials perfectly well with
+    // no Academic Studio at all, and reporting the whole deployment
+    // inoperable because one subsystem has no session mode would be a report
+    // that cries wolf about the four rows that really do stop everything.
+    //
+    // `configuration.test.mjs` caught that, by holding "the minimum a
+    // University can run on" to exactly four names.
+    //
+    // WHAT CHANGED IS THE COST OF ABSENCE, not the rank: the Studio used to
+    // fall back to the switcher and now refuses. See `ifAbsent`.
     importance: 'recommended',
     purpose: 'How the Studio learns who is asking: `supabase` behind the portal\u2019s own sign-in, '
       + '`header` behind another host\u2019s, `demo` for the switcher.',
-    ifAbsent: 'The Studio falls back to the DEMONSTRATION SWITCHER, where whoever opens it chooses whose '
-      + 'eyes to look through \u2014 a lecturer\u2019s included.',
+    ifAbsent: 'THE STUDIO REFUSES EVERY REQUEST, naming this variable. It no longer falls back to '
+      + 'the demonstration switcher \u2014 where whoever opened it chose whose eyes to look '
+      + 'through, a lecturer\u2019s included \u2014 because that is a fallback that looks like '
+      + 'a working Studio. Set it to `supabase` alongside SUPABASE_JWT_SECRET.',
     public: false,
     area: 'studio',
   },
