@@ -48,8 +48,24 @@ export interface AwardRule {
 
 export interface GraduationInput {
   award: AwardRule | null;
-  /** Credits earned on passed courses only. A failed course earns none. */
+  /** Credits earned on passed courses AT ICOF. A failed course earns none. */
   creditsEarned: number;
+  /**
+   * Credit accepted from another institution, counted toward the award and
+   * never toward the GPA.
+   *
+   * SEPARATE FROM `creditsEarned`, AND IT HAS TO BE. The University's
+   * decision of 16 September 2026 accepts transfer credit and says in the
+   * same breath that it "stays distinguishable from courses completed at
+   * ICOF — that distinction is the point, not a detail". A single total
+   * would satisfy the first half of the ruling and lose the second, and this
+   * is the one place in the system where the two numbers decide something:
+   * a degree.
+   *
+   * Optional, so that a caller that has not been taught about transfer
+   * credit reports the ICOF figure rather than a wrong total.
+   */
+  creditsTransferred?: number;
   cgpa: number | null;
   /** Admission conditions still outstanding, if the offer was conditional. */
   outstandingConditions: { requirement: string; dueBy?: string }[];
@@ -107,16 +123,29 @@ export function assessGraduation(input: GraduationInput): GraduationVerdict {
   }
 
   // --- 1. Credits ----------------------------------------------------------
+  //
+  // THE TOTAL DECIDES, AND THE ANSWER SHOWS ITS WORKING. Transfer credit
+  // counts toward the award — the University's decision of 16 September 2026
+  // — and the two figures are reported apart, because a registrar signing off
+  // a degree is entitled to know how much of it this University taught.
+  const transferred = Math.max(0, input.creditsTransferred ?? 0);
+  const total = input.creditsEarned + transferred;
+  const met = total >= input.award.creditsRequired;
+  const split = transferred > 0
+    ? `${total} toward the award — ${input.creditsEarned} earned at ICOF `
+      + `and ${transferred} transferred`
+    : `${total} earned`;
   checks.push({
     id: 'credits',
     label: 'Credits',
-    state: input.creditsEarned >= input.award.creditsRequired ? 'met' : 'unmet',
+    state: met ? 'met' : 'unmet',
     required: `${input.award.creditsRequired} credits for the ${input.award.title}`,
-    found: `${input.creditsEarned} earned`,
-    remedy: input.creditsEarned >= input.award.creditsRequired
+    found: split,
+    remedy: met
       ? undefined
-      : `${input.award.creditsRequired - input.creditsEarned} credits short. Only passed ` +
-        'courses count; a failed course earns none.',
+      : `${input.award.creditsRequired - total} credits short. Only passed `
+        + 'courses count; a failed course earns none. Accepted transfer credit counts '
+        + 'toward this total and never toward the GPA.',
   });
 
   // --- 2. Cumulative GPA ---------------------------------------------------

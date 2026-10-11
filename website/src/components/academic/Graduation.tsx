@@ -81,6 +81,13 @@ interface Candidate {
   credits_required: number | null;
   credits_earned: number;
   credits_against_award: number | null;
+  /**
+   * 110. NOT ON `graduation_candidate` — that view is 069's and names its
+   * columns one by one, so it did not pick up the two 110 appended to
+   * `student_academic_record`. Read alongside and merged in by student, which
+   * is one more query and no second opinion about the figure.
+   */
+  credits_transferred?: number;
   courses_outstanding: number;
   courses_failed: number;
   cgpa: number | null;
@@ -134,6 +141,10 @@ function verdictFor(c: Candidate): GraduationVerdict {
   return assessGraduation({
     award,
     creditsEarned: Number(c.credits_earned ?? 0),
+    // WITHOUT THIS LINE THE LIST WOULD CALL A TRANSFER STUDENT SHORT of a
+    // degree they qualify for, while `credits_against_award` beside it said
+    // they were not — a screen disagreeing with itself about a conferral.
+    creditsTransferred: Number(c.credits_transferred ?? 0),
     cgpa: c.cgpa === null ? null : Number(c.cgpa),
     outstandingConditions: conditions,
     // See the file header. Unknown, never zero.
@@ -161,7 +172,27 @@ export default function Graduation() {
       );
       if (error) { setFailed(error.message); setRows([]); return; }
       setFailed(null);
-      setRows((data ?? []) as unknown as Candidate[]);
+
+      // ---- AND WHAT ANOTHER INSTITUTION TAUGHT -----------------------
+      //
+      // A SECOND READ RATHER THAN A SECOND SUM. The figure belongs to
+      // `student_academic_record`; this merges it in by student and computes
+      // nothing. A missing row leaves the student at zero transferred, which
+      // is what they were before 110 and never an inflated total.
+      const { data: elsewhere } = await supabase
+        .from('student_academic_record')
+        .select('student_id, credits_transferred')
+        .limit(5000);
+      const transferred = new Map<string, number>(
+        (elsewhere ?? []).map((r) => [
+          String((r as Record<string, unknown>).student_id),
+          Number((r as Record<string, unknown>).credits_transferred ?? 0),
+        ]),
+      );
+
+      setRows(((data ?? []) as unknown as Candidate[]).map((c) => ({
+        ...c, credits_transferred: transferred.get(c.student_id) ?? 0,
+      })));
     } catch (e) {
       setFailed(e instanceof Error ? e.message : 'The graduation register could not be read.');
       setRows([]);
@@ -365,8 +396,14 @@ function CandidateRow({
           </span>
         ) : (
           <span className="text-xs text-[#6b6076] dark:text-[#9c93ad]">
-            {c.credits_earned}
+            {/* THE TOTAL, because that is what the award is measured
+                against — and the split beside it where there is one, because
+                a registrar signing off a degree is entitled to know how much
+                of it this University taught. */}
+            {c.credits_earned + Number(c.credits_transferred ?? 0)}
             {c.award_credits_required ? ` / ${c.award_credits_required}` : ''} credits
+            {Number(c.credits_transferred ?? 0) > 0
+              && ` (${c.credits_earned} at ICOF, ${c.credits_transferred} transferred)`}
             {c.cgpa !== null && ` · CGPA ${Number(c.cgpa).toFixed(2)}`}
           </span>
         )}

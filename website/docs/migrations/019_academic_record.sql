@@ -572,12 +572,47 @@ begin
   end if;
 
   -- ---- An accepted transfer credit must name who accepted it -------------
+  --
+  -- AMENDED AFTER 110, WHICH MOVED THE LEVER AND NOT THE RULE.
+  --
+  -- This proof used to insert a row with `accepted = true` and watch
+  -- `transfer_credits_decided_check` refuse it for naming nobody. 110 made
+  -- `accepted` a DERIVED column — a trigger sets it from `status`, so the two
+  -- can never disagree about whether a credit counts — and an insert asking
+  -- for `accepted = true` now simply arrives as a submitted claim with the
+  -- flag false. Nothing is refused, and from the second run of RUN-ALL.sql
+  -- onwards this proof failed:
+  --
+  --   ERROR: 019 FAILED: a credit was accepted with nobody's name against it
+  --
+  -- …which was this file asserting a rule nobody had broken, in a vocabulary
+  -- that no longer exists.
+  --
+  -- THE RULE IS UNCHANGED AND IS STILL PROVED: a credit cannot reach
+  -- `accepted` with no decider against it. Where 110 has landed the proof
+  -- pushes on the status, which is where acceptance now lives; where it has
+  -- not, it pushes on the boolean, which is where acceptance lived in 2025.
+  -- Both watch the same CHECK constraint refuse.
   refused := false;
-  begin
-    insert into transfer_credits (student_id, institution, course_title, credits, accepted)
-    values (s_id, 'Another University', 'Old Testament Survey', 6, true);
-  exception when others then refused := true;
-  end;
+  if exists (
+    select 1 from pg_trigger
+     where tgrelid = 'transfer_credits'::regclass
+       and tgname = 'a_transfer_credit_follows_its_path_trg'
+  ) then
+    insert into transfer_credits (student_id, institution, course_title, credits, status)
+    values (s_id, 'Another University', 'Old Testament Survey', 6, 'under_review');
+    begin
+      update transfer_credits set status = 'accepted'
+       where student_id = s_id and institution = 'Another University';
+    exception when others then refused := true;
+    end;
+  else
+    begin
+      insert into transfer_credits (student_id, institution, course_title, credits, accepted)
+      values (s_id, 'Another University', 'Old Testament Survey', 6, true);
+    exception when others then refused := true;
+    end;
+  end if;
   if not refused then
     raise exception '019 FAILED: a credit was accepted with nobody''s name against it';
   end if;

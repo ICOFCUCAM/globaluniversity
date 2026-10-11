@@ -374,9 +374,12 @@ const NOT_ENFORCED = {
   // nowhere at all, so the count was four empty names, not three beside a real
   // one. `can('superadmin', <anything>)` answers true, which is what hid it.
   // The survivor is declared now and the Offerings screen checks it.
-  'approve-transfers': 'NO DOOR YET. `transfer_credits` exists as a table and no screen reads '
-    + 'or writes it. The University ruled on 16 September 2026 that ICOF accepts transfer '
-    + 'credit, so this is work outstanding rather than a name to retire.',
+  // `approve-transfers` WAS HERE AND IS NOT ANY MORE. It read "NO DOOR YET.
+  // `transfer_credits` exists as a table and no screen reads or writes it" —
+  // true for a year, and 110 and /api/academic/transfer-credit closed it.
+  // This test found the stale excuse on the first run after they landed,
+  // which is the whole reason the excuse list is checked rather than merely
+  // kept.
   'assign-proctor': 'NO DOOR YET, and kept deliberately. The University ruled on 16 September '
     + '2026 that proctoring is to be built and `examination_officers` connected to the '
     + 'examination workflow rather than removed.',

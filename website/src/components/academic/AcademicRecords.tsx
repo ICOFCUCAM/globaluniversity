@@ -52,7 +52,7 @@ import { within } from './ProgrammeRegister';
 
 // SINGLE STRING LITERALS — concatenation collapses the inferred row type.
 // eslint-disable-next-line max-len
-const RECORD = 'student_id, matric_no, student_number, full_name, status, student_status, academic_standing, admission_year, programme_version_id, programme_code, programme_name, version_label, duration_years, semesters_per_year, credits_required, courses_passed, courses_failed, courses_registered, courses_outstanding, credits_earned, credits_registered, credits_against_award, cgpa, last_semester_gpa, last_computed_year, last_computed_semester';
+const RECORD = 'student_id, matric_no, student_number, full_name, status, student_status, academic_standing, admission_year, programme_version_id, programme_code, programme_name, version_label, duration_years, semesters_per_year, credits_required, courses_passed, courses_failed, courses_registered, courses_outstanding, credits_earned, credits_registered, credits_against_award, cgpa, last_semester_gpa, last_computed_year, last_computed_semester, credits_transferred, credits_total';
 // eslint-disable-next-line max-len
 const PROGRESS = 'student_id, entry_id, course_id, course_code, course_title, year, semester, requirement, credits, grade, grade_point, attempt, taken_in_year, taken_in_semester, state';
 // eslint-disable-next-line max-len
@@ -81,6 +81,11 @@ interface Rec {
   credits_earned: number;
   credits_registered: number;
   credits_against_award: number | null;
+  // 110. SHOWN APART FROM `credits_earned`, never summed into it: the
+  // University's ruling is that credit from elsewhere stays distinguishable
+  // from courses completed at ICOF.
+  credits_transferred: number | null;
+  credits_total: number | null;
   cgpa: number | null;
   last_semester_gpa: number | null;
   last_computed_year: number | null;
@@ -349,16 +354,31 @@ function OneRecord({
 
       {/* ---- THE FOUR FIGURES ---- */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {/* ---- CREDITS, AND WHOSE TEACHING THEY ARE --------------------
+            The headline is the TOTAL, because that is what the award is
+            measured against and what `credits_against_award` now counts. The
+            note underneath splits it, because the University's decision of
+            16 September 2026 says credit from elsewhere "stays
+            distinguishable from courses completed at ICOF — that distinction
+            is the point, not a detail". A single figure would satisfy the
+            first half of that ruling and lose the second. */}
         <Figure
           value={r.credits_required === null
-            ? String(r.credits_earned)
-            : `${r.credits_earned} / ${r.credits_required}`}
-          label="Credits earned"
-          note={r.credits_required === null
-            ? 'The programme states no total'
-            : short
-              ? `${Math.abs(r.credits_against_award as number)} short of the award`
-              : 'The award requirement is met'}
+            ? String(r.credits_total ?? r.credits_earned)
+            : `${r.credits_total ?? r.credits_earned} / ${r.credits_required}`}
+          label="Credits toward the award"
+          note={(() => {
+            const transferred = Number(r.credits_transferred ?? 0);
+            const whose = transferred > 0
+              ? `${r.credits_earned} at ICOF, ${transferred} transferred`
+              : null;
+            const against = r.credits_required === null
+              ? 'The programme states no total'
+              : short
+                ? `${Math.abs(r.credits_against_award as number)} short of the award`
+                : 'The award requirement is met';
+            return whose ? `${whose} · ${against}` : against;
+          })()}
           tone={r.credits_required === null ? 'plain' : short ? 'bad' : 'ok'}
         />
         <Figure

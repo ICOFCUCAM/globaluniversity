@@ -426,6 +426,15 @@ select * from (
                       and column_name = 'restored_to_register_at')
                  then 'YES' else 'NO' end as landed,
          'students.restored_to_register_at' as what_it_creates
+  union all
+  select '110' as migration, '110_a_transfer_credit_is_a_credit.sql' as file,
+         case when exists (
+                   select 1 from information_schema.columns
+                    where table_schema = 'public'
+                      and table_name = 'transfer_credits'
+                      and column_name = 'status')
+                 then 'YES' else 'NO' end as landed,
+         'transfer_credits.status' as what_it_creates
 ) as landed_report
  order by migration;
 

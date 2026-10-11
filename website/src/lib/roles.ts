@@ -392,7 +392,33 @@ export const OPERATIONAL_CAPABILITIES = [
   'set-admission-openings',
   // Dean
   'view-admitted-students',
+  // ---------------------------------------------------------------------
+  // DECIDING THAT ANOTHER INSTITUTION'S TEACHING STANDS AGAINST AN ICOF
+  // AWARD. Held since the matrix was written and checked by nothing until
+  // 110 gave it a route — it was one of the capabilities granted with no
+  // door behind it.
+  //
+  // NOT THE SAME ACT AS RECORDING THE CLAIM, which is `record-transfer-credit`
+  // below. The Registry reads another institution's transcript and types what
+  // it says; deciding that it counts toward a degree is an academic judgement
+  // about somebody else's teaching.
+  //
+  // THIS NARROWS WHAT 019 ALLOWED. Under 019's row policy the Registrar could
+  // set `accepted` directly, and they no longer can. That is a deliberate
+  // separation and not a tidy-up, so it is written here rather than left for
+  // somebody to discover: the University can give the Registrar this name
+  // back in one line if they would rather keep the decision in the Registry.
+  // ---------------------------------------------------------------------
   'approve-transfers',
+  // ---------------------------------------------------------------------
+  // AND RECORDING ONE, WHICH IS THE OTHER HALF.
+  //
+  // The Registry's, matching 019's existing write policy exactly, so no
+  // office that could record a claim before this migration has lost the
+  // ability to. Recording is clerical and reversible — a claim records what
+  // a student presented, and withdrawing one destroys nothing.
+  // ---------------------------------------------------------------------
+  'record-transfer-credit',
   'monitor-progress',
   // Lecturer
   'view-registered-students',
@@ -1334,6 +1360,10 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
     // The register is the Registry's, so returning an aged-off application to
     // it is too. See `restore-archived-application` in the capability list.
     'restore-archived-application',
+    // Reading another institution's transcript and recording what it says.
+    // The DECISION is the Dean's and the Academic Office's — see
+    // `approve-transfers`.
+    'record-transfer-credit',
     'approve-credential-design',
     'recompute-gpa',
     // The last step: writing approved marks to the academic record. It sits
@@ -1362,6 +1392,12 @@ const MATRIX: Record<UserRole, Capability[] | 'all'> = {
   // course withdrawal, an appeal.
   'academic-office': [
     'change-own-password',
+    // BOTH HALVES OF A TRANSFER CREDIT. This office records a claim, under
+    // 019's existing write policy, and decides one — it is the office that
+    // takes academic decisions in this system, holding `decide-admission`
+    // for the same reason.
+    'record-transfer-credit',
+    'approve-transfers',
     // ---------------------------------------------------------------------
     // THE ACADEMIC STUDIO. This office is the "Academic administration" of
     // the University's Studio Control sketch, which shows it ticked against

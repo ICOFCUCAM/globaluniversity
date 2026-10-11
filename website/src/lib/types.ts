@@ -421,6 +421,9 @@ export type ViewType =
   // happens by itself. The University asked for these to be "DELETED OR REMOVE
   // SOMEWHERE", and this is the second.
   | 'archived-applications'
+  // WHAT ANOTHER INSTITUTION TAUGHT, and whether it counts toward an ICOF
+  // award. 019 built the table and nothing opened it until 110.
+  | 'transfer-credits'
   // THE OFFICE'S SIDE OF A STUDENT'S REQUEST. 073 built the request and the
   // student's half of it; nothing could move one off 'submitted'.
   | 'student-request-queue'

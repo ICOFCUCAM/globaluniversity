@@ -82,6 +82,7 @@ import FeeSchedules from './finance/FeeSchedules';
 import Refunds from '@/components/finance/Refunds';
 import Deletions from '@/components/admin/Deletions';
 import ArchivedApplications from '@/components/admissions/ArchivedApplications';
+import TransferCredits from '@/components/academic/TransferCredits';
 import StudentRequestQueue from './services/StudentRequestQueue';
 import AnalyticsDashboard from './analytics/AnalyticsDashboard';
 import InsightsModule from './insights/InsightsModule';
@@ -451,6 +452,8 @@ export default function AppLayout() {
       // from the row's own dates and the register stops showing it.
       case 'archived-applications':
         return <ArchivedApplications />;
+      case 'transfer-credits':
+        return <TransferCredits />;
       case 'student-request-queue':
         return <StudentRequestQueue />;
       case 'documents':

@@ -32,7 +32,7 @@ export interface EnforcedRules {
   rules: string[];
 }
 
-export const GENERATED_ON = "2026-10-09";
+export const GENERATED_ON = "2026-10-11";
 
 export const ROLE_PROFILES: RoleProfile[] = [
   {
@@ -101,6 +101,7 @@ export const ROLE_PROFILES: RoleProfile[] = [
       "set-admission-openings",
       "view-admitted-students",
       "approve-transfers",
+      "record-transfer-credit",
       "monitor-progress",
       "view-registered-students",
       "change-own-password",
@@ -195,6 +196,7 @@ export const ROLE_PROFILES: RoleProfile[] = [
       {
         "title": "Academic",
         "items": [
+          "Transfer credits",
           "Academic overview",
           "Schools & departments",
           "Programmes",
@@ -353,6 +355,7 @@ export const ROLE_PROFILES: RoleProfile[] = [
       "set-admission-openings",
       "view-admitted-students",
       "approve-transfers",
+      "record-transfer-credit",
       "monitor-progress",
       "view-registered-students",
       "change-own-password",
@@ -429,6 +432,7 @@ export const ROLE_PROFILES: RoleProfile[] = [
       {
         "title": "Academic",
         "items": [
+          "Transfer credits",
           "Academic overview",
           "Schools & departments",
           "Programmes",
@@ -556,6 +560,7 @@ export const ROLE_PROFILES: RoleProfile[] = [
       "publish-announcement",
       "publish-results",
       "recompute-gpa",
+      "record-transfer-credit",
       "reject-application",
       "request-documents",
       "restore-archived-application",
@@ -670,6 +675,7 @@ export const ROLE_PROFILES: RoleProfile[] = [
       "process-applications",
       "publish-results",
       "recompute-gpa",
+      "record-transfer-credit",
       "reject-application",
       "request-documents",
       "restore-archived-application",
@@ -763,6 +769,7 @@ export const ROLE_PROFILES: RoleProfile[] = [
       "forward-credential",
       "set-admission-openings",
       "view-admitted-students",
+      "record-transfer-credit",
       "change-own-password",
       "view-own-staff-record",
       "process-applications",
@@ -828,6 +835,7 @@ export const ROLE_PROFILES: RoleProfile[] = [
       {
         "title": "Academic",
         "items": [
+          "Transfer credits",
           "Academic overview",
           "Schools & departments",
           "Programmes",
@@ -940,6 +948,7 @@ export const ROLE_PROFILES: RoleProfile[] = [
       "publish-results",
       "recommend-national-staff",
       "recompute-gpa",
+      "record-transfer-credit",
       "reject-application",
       "request-documents",
       "restore-archived-application",
@@ -1053,6 +1062,7 @@ export const ROLE_PROFILES: RoleProfile[] = [
       {
         "title": "Academic",
         "items": [
+          "Transfer credits",
           "Academic overview",
           "Schools & departments",
           "Programmes",
@@ -1753,6 +1763,7 @@ export const ROLE_PROFILES: RoleProfile[] = [
       "publish-course-material",
       "publish-results",
       "recompute-gpa",
+      "record-transfer-credit",
       "reject-application",
       "request-documents",
       "restore-archived-application",
@@ -1972,6 +1983,8 @@ export const ROLE_PROFILES: RoleProfile[] = [
       "issue-credential",
       "forward-credential",
       "set-admission-openings",
+      "approve-transfers",
+      "record-transfer-credit",
       "change-own-password",
       "view-own-staff-record",
       "publish-course-material",
@@ -1991,7 +2004,6 @@ export const ROLE_PROFILES: RoleProfile[] = [
       "approve-deletion",
       "approve-refund",
       "approve-results",
-      "approve-transfers",
       "assign-programme",
       "authorise-certificate-reissue",
       "authorize-appointment",
@@ -2049,6 +2061,7 @@ export const ROLE_PROFILES: RoleProfile[] = [
       {
         "title": "Academic",
         "items": [
+          "Transfer credits",
           "Academic overview",
           "Schools & departments",
           "Programmes",
@@ -2451,7 +2464,8 @@ export const CAPABILITY_HOLDERS: { capability: string; roles: string[] }[] =
     "roles": [
       "superadmin",
       "admin",
-      "dean"
+      "dean",
+      "academic-office"
     ]
   },
   {
@@ -3060,6 +3074,15 @@ export const CAPABILITY_HOLDERS: { capability: string; roles: string[] }[] =
       "admin",
       "examiner",
       "invigilator"
+    ]
+  },
+  {
+    "capability": "record-transfer-credit",
+    "roles": [
+      "superadmin",
+      "admin",
+      "registrar",
+      "academic-office"
     ]
   },
   {
@@ -3938,12 +3961,34 @@ export const ENFORCED: EnforcedRules[] = [
       "…while the application's own service key can, naming the officer it acted for",
       "…and it does not vanish again the moment the screen is redrawn"
     ]
+  },
+  {
+    "migration": "110",
+    "file": "110_a_transfer_credit_is_a_credit.sql",
+    "rules": [
+      "the % view(s) that read the record are back, with their comments and their grants",
+      "…and every one of them answers a query",
+      "nothing that computes a grade point reads a transfer credit",
+      "a student with no claims has none",
+      "a claim nobody has decided counts for nothing, anywhere",
+      "…and it cannot be accepted without being looked at first",
+      "…nor refused without the University saying why",
+      "accepting a claim sets 019's flag and takes what was offered",
+      "…and it reaches the authoritative record, counted apart from ICOF's own",
+      "…and the progress sheet, for the course it stands for and no other",
+      "a credit that stands for no particular course still counts",
+      "…and no transfer credit of any size moves the CGPA",
+      "rescinding takes a credit back out of the record and off the sheet",
+      "…and a rescinded credit is the end of it; arguing it again is a new claim",
+      "and no more may be accepted than the other institution gave",
+      "half a degree in another institution's teaching is LISTED, not refused — the University has set no cap and this does not invent one"
+    ]
   }
 ];
 
 export const COUNTS = {
   roles: 25,
-  capabilities: 131,
+  capabilities: 132,
   migrations: 0,
-  provedRules: 173,
+  provedRules: 189,
 };

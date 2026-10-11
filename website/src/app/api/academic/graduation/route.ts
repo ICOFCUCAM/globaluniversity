@@ -237,9 +237,27 @@ export async function POST(request: Request) {
     conditions = [{ requirement: 'The recorded admission conditions could not be read' }];
   }
 
+  // ---- AND WHAT ANOTHER INSTITUTION TAUGHT -------------------------------
+  //
+  // READ SEPARATELY, from the view that owns the figure. `graduation_candidate`
+  // is 069's and names its columns one by one, so it did not pick up the two
+  // 110 appended to `student_academic_record` — and the honest fix is one more
+  // read of the authoritative record rather than a second arithmetic here.
+  //
+  // IT IS NOT ADDED TO `creditsEarned`. The University's decision of
+  // 16 September 2026 accepts transfer credit and says in the same breath that
+  // it stays distinguishable from courses completed at ICOF; the assessment
+  // takes the two apart and reports them apart, and the registrar signing off
+  // a degree sees how much of it this University taught.
+  const { data: fromElsewhere } = await admin.from('student_academic_record')
+    .select('credits_transferred').eq('student_id', studentId).maybeSingle();
+
   const verdict = assessGraduation({
     award,
     creditsEarned: Number(c.credits_earned ?? 0),
+    creditsTransferred: Number(
+      (fromElsewhere as Record<string, unknown> | null)?.credits_transferred ?? 0,
+    ),
     cgpa: c.cgpa === null || c.cgpa === undefined ? null : Number(c.cgpa),
     outstandingConditions: conditions,
     // See the header: no per-student fee schedule exists, so this is unknown

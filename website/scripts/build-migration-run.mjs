@@ -314,6 +314,10 @@ const MARKERS = {
   // already in. The column is also what the policy depends on, so if it is
   // there, the register is narrowed.
   '109': 'students.restored_to_register_at',
+  // NOT `transfer_credits`, which 019 created in 2025 and every database has.
+  // What 110 adds is the path a claim follows, and `status` is the column
+  // that cannot be there without it.
+  '110': 'transfer_credits.status',
 };
 
 /** The SQL that answers "is this one here?", for each of the three forms. */

@@ -1319,6 +1319,35 @@ export const MIGRATION_PROBES: MigrationProbe[] = [
     table: 'students',
     column: 'restored_to_register_at',
   },
+  {
+    file: '110_a_transfer_credit_is_a_credit.sql',
+    what:
+      'CREDIT FROM ANOTHER INSTITUTION NOW REACHES THE AWARD. The University decided on '
+      + '16 September 2026 that ICOF accepts transfer credit and that it must reach programme '
+      + 'progress, credit totals, graduation eligibility and the transcript — "staying '
+      + 'distinguishable from courses completed at ICOF, that distinction being the point, not '
+      + 'a detail". 019 built the table in 2025 and NOTHING WAS EVER CONNECTED TO IT: no route, '
+      + 'no screen, and no link to `student_academic_record`, the one record that decides '
+      + 'whether somebody graduates. The University could accept a credit and the system would '
+      + 'still refuse the degree. THE MOMENT THIS RUNS, ANY STUDENT ALREADY HOLDING AN ACCEPTED '
+      + 'CREDIT IS CLOSER TO THEIR AWARD — `credits_against_award` is on the graduation '
+      + 'list, the progress sheet and the student’s own dashboard, and it now counts both. '
+      + 'THE TWO FIGURES STAY APART: `credits_earned` goes on meaning credit passed AT ICOF and '
+      + '`credits_transferred` is the other institution’s, with `credits_total` the sum. '
+      + 'IT IS NEVER SCORED — the CGPA stays a measure of ICOF’s own teaching against '
+      + 'the scale the Senate published, and the migration refuses to land if anything that '
+      + 'computes a grade point reads the table. A claim now follows a path a trigger enforces '
+      + '(recorded → with the Dean → accepted, refused or withdrawn, and an accepted '
+      + 'one rescindable only for a stated reason), and recording a claim is the '
+      + 'Registry’s while deciding it is the Faculty Dean’s and the Academic '
+      + 'Office’s — WHICH NARROWS WHAT 019 ALLOWED, where the Registrar could accept '
+      + 'one directly. NO CAP IS INVENTED: the University has never said how much of a degree '
+      + 'may be somebody else’s teaching, so '
+      + '`transfers_that_carry_most_of_the_award` lists the cases instead of enforcing a rule '
+      + 'nobody made.',
+    table: 'transfer_credits',
+    column: 'status',
+  },
 ];
 
 /** What a probe came back as. */

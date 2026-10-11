@@ -22,6 +22,7 @@ import {
   Trash2,
   Undo2,
   Archive,
+  ArrowLeftRight,
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -252,6 +253,23 @@ export const menuGroups: MenuGroup[] = [
   {
     title: 'Academic',
     items: [
+      // ---------------------------------------------------------------------
+      // WHAT ANOTHER INSTITUTION TAUGHT. 019 built `transfer_credits` in 2025
+      // and nothing ever opened it: no route, no screen, and no connection to
+      // the record that decides whether somebody graduates. The University's
+      // decision of 16 September 2026 made it a real workflow, and 110 made
+      // it reach the award.
+      //
+      // THE ROLES ARE THE TWO HALVES. The Registry records a claim; the
+      // Faculty Dean and the Academic Office decide it. Both halves open the
+      // screen, and each is shown only its own buttons.
+      // ---------------------------------------------------------------------
+      {
+        id: 'transfer-credits',
+        label: 'Transfer credits',
+        icon: <ArrowLeftRight size={18} />,
+        roles: ['superadmin', 'admin', 'registrar', 'academic-office', 'dean'],
+      },
       // ---------------------------------------------------------------
       // THE STRUCTURE FIRST, THEN THE UTILITIES.
       //
