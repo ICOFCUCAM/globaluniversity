@@ -112,8 +112,39 @@ as $$
   select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid;
 $$;
 
+-- ---------------------------------------------------------------------------
+-- AND IT RETURNS NULL WHEN NOBODY SAID, WHICH THIS STUB GOT WRONG.
+--
+-- It used to end `, 'anon')` — a coalesce that real Supabase does not have.
+-- Supabase's own definition is:
+--
+--   select coalesce(
+--     nullif(current_setting('request.jwt.claim.role', true), ''),
+--     (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'role')
+--   )::text
+--
+-- …with no final fallback, so on a direct SQL session it is NULL.
+--
+-- THAT ONE WORD COST A MIGRATION RUN. 109's `restore_application` guards with
+-- `auth.role() <> 'service_role' and …`. Against this stub that read
+-- `'anon' <> 'service_role'`, which is TRUE, so the rest of the guard decided
+-- and the proof passed. Against the University's database it read
+-- `NULL <> 'service_role'`, which is NULL — the whole condition went NULL,
+-- the IF was not taken, the refusal never happened, and the migration died
+-- inside its own proof on a foreign key:
+--
+--   109 FAILED — a profile-less caller was refused for the wrong reason:
+--   insert or update on table "students" violates foreign key constraint
+--   "students_restored_by_fkey"
+--
+-- A stub that is kinder than the thing it stands for is worse than no stub:
+-- every proof run against it is a proof about a database nobody has.
+-- ---------------------------------------------------------------------------
 create or replace function auth.role() returns text
 language sql stable
 as $$
-  select coalesce(nullif(current_setting('request.jwt.claim.role', true), ''), 'anon');
+  select coalesce(
+    nullif(current_setting('request.jwt.claim.role', true), ''),
+    (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'role')
+  )::text;
 $$;

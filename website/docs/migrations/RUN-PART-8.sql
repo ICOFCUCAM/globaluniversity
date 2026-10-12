@@ -4021,7 +4021,26 @@ begin
   -- account with no `profiles` row would have restored at will. That is not a
   -- rule, it is an accident that happens to hold, so the coalesce is explicit.
   -- -----------------------------------------------------------------------
-  if auth.role() <> 'service_role'
+  -- BOTH OPERANDS COALESCED, AND THE SECOND ONE WAS NOT, AT FIRST.
+  --
+  -- The note above is about `auth_role()` going null, and it was right; what
+  -- it missed is that `auth.role()` — Supabase's, the one with the dot — does
+  -- exactly the same thing. Its real definition has no fallback:
+  --
+  --   coalesce(nullif(current_setting('request.jwt.claim.role', true), ''),
+  --            nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'role')
+  --
+  -- so on a session with no claims it is NULL, `NULL <> 'service_role'` is
+  -- NULL, `NULL and anything` is NULL, the IF is not taken, and the function
+  -- carries on and restores the application. The guard was the wrong way round
+  -- from the failure it was written to prevent.
+  --
+  -- IT PASSED HERE AND FAILED ON THE UNIVERSITY'S DATABASE, which is the part
+  -- worth remembering: `tests/supabase-stub.sql` defined `auth.role()` with a
+  -- final `, 'anon'` that Supabase does not have, so the comparison was
+  -- 'anon' <> 'service_role' — true — and every proof passed. The stub has
+  -- been corrected to match, and it now reproduces the failure exactly.
+  if coalesce(auth.role(), '') <> 'service_role'
      and coalesce(auth_role(), '') not in ('superadmin', 'admin', 'registrar') then
     raise exception 'Only the Office of the Registrar may return an application to the register';
   end if;
