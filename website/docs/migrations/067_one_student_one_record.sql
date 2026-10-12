@@ -83,68 +83,51 @@ end $$;
 -- degree on one screen and is six credits short on another.
 
 -- ---------------------------------------------------------------------------
--- AMENDED AFTER 110: THESE VIEWS ARE REBUILT, NOT REPLACED.
+-- AMENDED AFTER 110: 067 WILL NOT DOWNGRADE A VIEW A LATER MIGRATION WIDENED
+-- ---------------------------------------------------------------------------
 --
--- `create or replace view` can append a column and can change nothing else —
--- not a type, and never a removal. 110 widened BOTH of the views below,
--- because the University decided that credit from another institution counts
--- toward the award: `student_curriculum_progress` gained three columns and a
--- state, and `student_academic_record` gained three and changed the type of a
--- fourth. So from the moment 110 has landed, re-running 067 fails —
+-- `create or replace view` can append a column and can change nothing else --
+-- not a type, and never a removal. 110 widened BOTH views below, because the
+-- University decided that credit from another institution counts toward the
+-- award: `student_curriculum_progress` gained three columns and a state, and
+-- `student_academic_record` gained three and changed the type of a fourth.
+-- So from the moment 110 has landed, re-running 067 failed outright:
 --
 --   ERROR: cannot drop columns from view
 --
--- — which is this migration trying to put the record back the way it was in
--- 2025, and the whole bundle stopping dead on its second run.
+-- -- this migration trying to put the record back the way it was in 2025, and
+-- the whole bundle stopping dead on its second run.
 --
--- SO THE CHAIN IS DROPPED AND REBUILT. `student_curriculum_progress` goes
--- first and takes `student_academic_record` with it, because the second reads
--- the first; 067 then builds both as it always did, and 110 widens them again
--- afterwards.
+-- TWO EARLIER ATTEMPTS AT THIS WERE WORSE THAN THE PROBLEM.
 --
--- AND WHATEVER ELSE WAS READING THEM IS PUT BACK EXACTLY. The views that are
--- NOT 067's own — `graduation_candidate` is 069's, `my_journey` is 070's,
--- `transfers_that_carry_most_of_the_award` is 110's — are read out of the
--- catalogue here and replayed at the foot of this file, with their comments
--- and their grants. They are not transcribed: 067 does not own them, and
--- copying somebody else's definition is how it comes to differ from itself.
+-- The first captured the dependent views into a table and replayed them after
+-- a `drop ... cascade`. The University's SQL editor refused it:
 --
--- ON A FRESH DATABASE THERE IS NOTHING TO CAPTURE AND NOTHING TO PUT BACK,
--- and every statement here is a no-op.
+--   ERROR: 42P01: relation "migration_110_replay" does not exist
+--
+-- ...reading a table two statements after creating it. Their editor does not
+-- promise that, and this file is in no position to argue.
+--
+-- The second dropped the chain and warned about it. That was measured rather
+-- than assumed, and the measurement ended it: running RUN-PART-3 on its own
+-- left `my_graduation` and `transfers_that_carry_most_of_the_award` MISSING,
+-- because the migrations that own them are in parts 4 and 8. A student-facing
+-- page silently gone is not an acceptable price for a tidy re-run.
+--
+-- SO 067 DROPS NOTHING AND CARRIES NOTHING. Each of its three views is
+-- attempted as a replace, and where the database refuses because the live view
+-- is a LATER shape -- more columns, or a wider type -- it is left exactly as it
+-- is and said out loud. Which is right on its own terms: 110 is newer than 067,
+-- 067 has no business undoing it, and 110 asserts the shape again later in the
+-- same bundle anyway.
+--
+-- The cost is that the three definitions below sit inside `execute` and read as
+-- strings. That is the whole of the price; they are otherwise unchanged.
 -- ---------------------------------------------------------------------------
 
-drop table if exists migration_067_replay;
-create table migration_067_replay as
-with recursive dependents as (
-  select c.oid, 0 as depth
-    from pg_class c
-   where c.relname = 'student_curriculum_progress' and c.relkind = 'v'
-  union
-  select v.oid, d.depth + 1
-    from dependents d
-    join pg_depend dep on dep.refobjid = d.oid
-    join pg_rewrite rw on rw.oid = dep.objid
-    join pg_class v on v.oid = rw.ev_class and v.relkind = 'v'
-   where v.oid <> d.oid
-)
-select c.relname::text                            as name,
-       max(d.depth)                               as depth,
-       pg_get_viewdef(c.oid, true)                as definition,
-       obj_description(c.oid, 'pg_class')         as note,
-       coalesce((select option_value from pg_options_to_table(c.reloptions)
-                  where option_name = 'security_invoker'), 'false') as invoker,
-       (select coalesce(array_agg(a::text), array[]::text[])
-          from unnest(coalesce(c.relacl, array[]::aclitem[])) a) as acl
-  from dependents d
-  join pg_class c on c.oid = d.oid
-  -- 067'S OWN THREE ARE NOT REPLAYED. This file rebuilds those itself, and
-  -- replaying the 2025 shape over the top would undo 110 a second time.
- where c.relname not in ('student_curriculum_progress', 'student_academic_record',
-                         'student_term_record')
- group by c.oid, c.relname, c.reloptions, c.relacl;
-
-drop view if exists student_curriculum_progress cascade;
-
+do $wrap$
+begin
+  execute $view$
 create or replace view student_curriculum_progress
 with (security_invoker = true) as
 select s.id                                        as student_id,
@@ -197,7 +180,20 @@ select s.id                                        as student_id,
      order by e2.academic_year desc, e2.semester desc
      limit 1
   ) en on true
- where s.programme_version_id is not null;
+ where s.programme_version_id is not null
+$view$;
+exception when others then
+  -- THE TWO REFUSALS THAT MEAN A LATER MIGRATION OWNS THIS SHAPE. Anything
+  -- else is a real fault and is re-raised untouched.
+  if sqlerrm like '%cannot drop columns from view%'
+     or sqlerrm like '%cannot change data type of view column%' then
+    raise notice '067 --  student_curriculum_progress is already in a later migration''s shape '
+                 '(%). Left as it is: 067 is not entitled to undo 110.', sqlerrm;
+  else
+    raise;
+  end if;
+end
+$wrap$;
 
 comment on view student_curriculum_progress is
   'Every course of the curriculum a student was admitted under, with where they are up to: '
@@ -219,6 +215,9 @@ comment on view student_curriculum_progress is
 -- Generator compared against the literal 111 at a University whose Bachelor of
 -- Theology is 180.
 
+do $wrap$
+begin
+  execute $view$
 create or replace view student_academic_record
 with (security_invoker = true) as
 select s.id                                          as student_id,
@@ -287,7 +286,20 @@ select s.id                                          as student_id,
      where sg.student_id = s.id
      order by sg.academic_year desc, sg.semester desc
      limit 1
-  ) g on true;
+  ) g on true
+$view$;
+exception when others then
+  -- THE TWO REFUSALS THAT MEAN A LATER MIGRATION OWNS THIS SHAPE. Anything
+  -- else is a real fault and is re-raised untouched.
+  if sqlerrm like '%cannot drop columns from view%'
+     or sqlerrm like '%cannot change data type of view column%' then
+    raise notice '067 --  student_academic_record is already in a later migration''s shape '
+                 '(%). Left as it is: 067 is not entitled to undo 110.', sqlerrm;
+  else
+    raise;
+  end if;
+end
+$wrap$;
 
 comment on view student_academic_record is
   'One row per student: their programme, how far through the curriculum they are, credits earned '
@@ -308,6 +320,9 @@ comment on view student_academic_record is
 -- second year, and a progress sheet that files it under Year 1 shows them
 -- passing a term they were not enrolled in.
 
+do $wrap$
+begin
+  execute $view$
 create or replace view student_term_record
 with (security_invoker = true) as
 select e.student_id,
@@ -338,7 +353,20 @@ select e.student_id,
    and g.academic_year = e.academic_year
    and g.semester = e.semester
  where e.status = 'registered'
- group by e.student_id, e.academic_year, e.semester, g.gpa, g.cgpa;
+ group by e.student_id, e.academic_year, e.semester, g.gpa, g.cgpa
+$view$;
+exception when others then
+  -- THE TWO REFUSALS THAT MEAN A LATER MIGRATION OWNS THIS SHAPE. Anything
+  -- else is a real fault and is re-raised untouched.
+  if sqlerrm like '%cannot drop columns from view%'
+     or sqlerrm like '%cannot change data type of view column%' then
+    raise notice '067 --  student_term_record is already in a later migration''s shape '
+                 '(%). Left as it is: 067 is not entitled to undo 110.', sqlerrm;
+  else
+    raise;
+  end if;
+end
+$wrap$;
 
 comment on view student_term_record is
   'A student''s terms, one row each, with credits attempted and earned. Keyed on the term the '
@@ -520,83 +548,3 @@ begin
       if sqlerrm <> 'PROOF_ROLLBACK' then raise; end if;
   end;
 end $$;
-
-
--- ===========================================================================
--- AND WHATEVER ELSE WAS READING THESE VIEWS GOES BACK
--- ===========================================================================
---
--- Exactly as the catalogue had it before the drop at the head of this file:
--- the definition, the `security_invoker` setting, the comment and the grants.
--- In dependency order, because one of them may read another.
---
--- AFTER ALL THREE OF 067'S OWN VIEWS, and not after the first: an outsider
--- may read `student_term_record` as readily as the other two, and replaying
--- it before that view exists would fail on the one case this block is for.
---
--- On a fresh database there is nothing to put back and this does nothing.
--- ===========================================================================
-do $$
-declare
-  r   record;
-  g    text;
-  n    integer := 0;
-  lost integer := 0;
-begin
-  for r in select * from migration_067_replay order by depth, name loop
-    -- A DEPENDENT THAT CANNOT BE REBUILT IS A LATER MIGRATION'S, AND IS SAID
-    -- OUT LOUD RATHER THAN LOST QUIETLY.
-    --
-    -- `transfers_that_carry_most_of_the_award` is 110's and reads columns 110
-    -- appends to the record. Replaying it here — before 110 has run again in
-    -- this same bundle — fails with «column "credits_transferred" does not
-    -- exist», and killing the bundle over a view that is about to be rebuilt
-    -- forty migrations later would be this block causing the outage it exists
-    -- to prevent.
-    --
-    -- SO IT CARRIES ON AND NAMES WHAT IT COULD NOT PUT BACK. In a bundle the
-    -- owning migration restores it a few thousand lines later and the notice
-    -- is noise; run alone, the notice is the only warning there will be, and
-    -- it says exactly what to do.
-    begin
-      execute format('create view %I with (security_invoker = %s) as %s',
-                     r.name, r.invoker, r.definition);
-      if r.note is not null then
-        execute format('comment on view %I is %L', r.name, r.note);
-      end if;
-    exception when others then
-      raise notice '067 --  could not rebuild view "%" (%). It belongs to a later migration '
-                   'and will be restored when that one runs. If you are running this file on '
-                   'its own rather than as part of a bundle, RUN THE BUNDLE.', r.name, sqlerrm;
-      lost := lost + 1;
-      continue;
-    end;
-    foreach g in array r.acl loop
-      declare
-        grantee text := split_part(g, '=', 1);
-        privs   text := split_part(split_part(g, '=', 2), '/', 1);
-        letters text[] := array[]::text[];
-      begin
-        if grantee = '' then grantee := 'public'; end if;
-        if position('r' in privs) > 0 then letters := array_append(letters, 'select'); end if;
-        if position('a' in privs) > 0 then letters := array_append(letters, 'insert'); end if;
-        if position('w' in privs) > 0 then letters := array_append(letters, 'update'); end if;
-        if position('d' in privs) > 0 then letters := array_append(letters, 'delete'); end if;
-        if position('D' in privs) > 0 then letters := array_append(letters, 'truncate'); end if;
-        if position('x' in privs) > 0 then letters := array_append(letters, 'references'); end if;
-        if position('t' in privs) > 0 then letters := array_append(letters, 'trigger'); end if;
-        if array_length(letters, 1) is not null then
-          execute format('grant %s on %I to %I',
-                         array_to_string(letters, ', '), r.name, grantee);
-        end if;
-      end;
-    end loop;
-    n := n + 1;
-  end loop;
-  if n > 0 or lost > 0 then
-    raise notice '067 ok: % view(s) that read the record were rebuilt exactly as they were, '
-                 'and % left to the migration that owns them', n, lost;
-  end if;
-end $$;
-
-drop table if exists migration_067_replay;
