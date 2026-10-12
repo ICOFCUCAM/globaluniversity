@@ -37,6 +37,7 @@ import {
   Plus, Loader2, Check, X, AlertTriangle, Users, FileText, Send, Eye, Trash2, Wand2,
   MessageCircle,
   RefreshCw,
+  Undo2,
 } from 'lucide-react';
 import {
   EMPLOYMENT_TYPES, EMPLOYMENT_LABELS, CURRENCIES, SALARY_PERIODS, PERIOD_LABELS,
@@ -46,6 +47,9 @@ import {
   SOLE_AUTHORITY_ROLES,
   STATE_LABELS,
   type Appointment, type AppointmentState, type Allowance,
+  isAwaitingAuthority,
+  MIN_CLOSURE_REASON,
+  MIN_RETURN_REASON,
 } from '@/lib/appointments';
 import { FAMILY_LABELS, type PositionFamily } from '@/lib/positions';
 import {
@@ -784,7 +788,22 @@ export default function Appointments() {
                   </div>
                 )}
 
-                {a.status === 'submitted' && mayApprove && (
+                {/* ---------------------------------------------------
+                    `isAwaitingAuthority`, NOT `a.status === 'submitted'`.
+
+                    This read the status itself, and read only ONE of the two
+                    that count. An appointment whose amendment had been
+                    requested was counted on the dashboard as "Awaiting VC",
+                    was acceptable to /api/appointments, and had NO BUTTON ON
+                    ANY SCREEN — so the Vice-Chancellor opened Appointments,
+                    saw "Awaiting VC — 1", and asked where the approval was.
+                    There was nowhere.
+
+                    The sentence lives in `appointments.ts` now, and the
+                    counter, the drill-down, `canAuthorize` and this all ask
+                    it. A status added later is added once.
+                    --------------------------------------------------- */}
+                {isAwaitingAuthority(a) && mayApprove && (
                   a.drafted_by === user?.id ? (
                     // ---------------------------------------------------
                     // THE OFFICE THAT NEEDS NO SECOND SIGNATURE.
@@ -827,12 +846,55 @@ export default function Appointments() {
                         <Check size={14} /> Approve
                       </button>
                       <input value={reason} onChange={(e) => setReason(e.target.value)}
-                        placeholder="What needs changing" className={`${INPUT} w-64 text-xs`} />
-                      <button disabled={busy || reason.trim().length < 12} className={BTN_SECONDARY}
+                        placeholder="Why — needed to return or refuse"
+                        className={`${INPUT} w-64 text-xs`} />
+                      <button disabled={busy || reason.trim().length < MIN_RETURN_REASON}
+                        className={BTN_SECONDARY}
                         onClick={() => void act({
                           action: 'decide', id: a.id, decision: 'return', reason,
                         })}>
-                        <X size={14} /> Return it
+                        <Undo2 size={14} /> Return for changes
+                      </button>
+
+                      {/* ---------------------------------------------------
+                          AND THE THIRD DECISION, WHICH HAD NO BUTTON HERE.
+
+                          The University asked, looking at this row: "approve
+                          and return it button. where is disapproved button?"
+
+                          It existed, and it was called "The University
+                          withdraws it", inside a dropdown labelled "Close this
+                          appointment…" — a label that reads as filing, not as
+                          refusing. So the office being asked to decide was
+                          offered two of the three decisions and had to find
+                          the third somewhere that did not look like a
+                          decision at all.
+
+                          THE THREE ARE GENUINELY DIFFERENT, which is why this
+                          is a third button and not a rewording of the second:
+
+                            Return for changes  goes back to the drafter and
+                                                comes back. Nobody was refused.
+                            Do not appoint      the University refuses. The
+                                                appointment is over.
+                            The appointee declined  is not the University's
+                                                decision at all, and stays in
+                                                the closing list where it
+                                                belongs.
+
+                          It is the same `close` action the dropdown uses, on
+                          the same capability, writing the same `withdrawn`
+                          outcome — so there is one refusal in the system, with
+                          a name on this screen that says what it does.
+                          --------------------------------------------------- */}
+                      <button
+                        disabled={busy || reason.trim().length < MIN_CLOSURE_REASON}
+                        className={BTN_SECONDARY}
+                        title="The University refuses this appointment. It does not go back to the drafter."
+                        onClick={() => void act({
+                          action: 'close', id: a.id, outcome: 'withdrawn', reason,
+                        })}>
+                        <X size={14} /> Do not appoint
                       </button>
                     </>
                   )

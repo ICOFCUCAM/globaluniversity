@@ -637,12 +637,34 @@ export function canSubmit(a: Appointment): boolean {
  * it alone is the largest version of the thing 005, 009, 014 and 038 all exist
  * to prevent. A Superadministrator who drafted it is still its drafter.
  */
+/**
+ * Is this appointment sitting on the appointing authority's desk?
+ *
+ * ---------------------------------------------------------------------------
+ * ONE SENTENCE, THREE READERS, AND IT USED TO BE WRITTEN OUT THREE TIMES
+ * ---------------------------------------------------------------------------
+ *
+ * The dashboard counts `submitted + amendment_requested` as "Awaiting VC".
+ * `canAuthorize` below accepts both. The route accepts both. And the SCREEN
+ * drew its Approve and Return buttons on `a.status === 'submitted'` alone.
+ *
+ * So an appointment whose amendment had been requested was counted as waiting
+ * on the Vice-Chancellor, was acceptable to the route, and had NO BUTTON
+ * ANYWHERE. The University found it the only way anyone could have: by being
+ * the Vice-Chancellor, opening the screen, seeing "Awaiting VC — 1", and
+ * asking where the approval was.
+ *
+ * It is one sentence now and everything asks it.
+ */
+export function isAwaitingAuthority(a: Pick<Appointment, 'status'>): boolean {
+  return a.status === 'submitted' || a.status === 'amendment_requested';
+}
+
 export function canAuthorize(a: Appointment, callerId: string): boolean {
   // AN AMENDMENT GOES BACK THROUGH APPROVAL, by somebody other than whoever
   // asked for it. A revised letter that one person requested and approved
   // alone is the original rule with an extra step in front of it.
-  return (a.status === 'submitted' || a.status === 'amendment_requested')
-    && a.drafted_by !== callerId;
+  return isAwaitingAuthority(a) && a.drafted_by !== callerId;
 }
 
 /**
@@ -717,8 +739,13 @@ export function canAuthorizeAlone(
   // and 055's constraint still refuses any self-approval that is not
   // permanently marked as one.
   // ---------------------------------------------------------------------
-  return (a.status === 'draft' || a.status === 'submitted'
-          || a.status === 'amendment_requested')
+  // THE SAME SENTENCE AS EVERYBODY ELSE, PLUS ONE STEP EARLIER. Written as
+  // `isAwaitingAuthority(a) || draft` rather than spelling the statuses out
+  // again: the relationship between the two rules is that the sole authority
+  // may act BEFORE the appointment is submitted, and that is now the only
+  // thing this line says. A status added to `isAwaitingAuthority` later is
+  // added here too, without anybody remembering to.
+  return (isAwaitingAuthority(a) || a.status === 'draft')
     && a.drafted_by === callerId
     && (SOLE_AUTHORITY_ROLES as readonly string[]).includes(String(role));
 }
@@ -1088,7 +1115,8 @@ export function dashboardCounters(
     // SUBMITTED MEANS SUBMITTED TO THE VICE-CHANCELLOR. An amendment awaiting
     // approval is also awaiting the VC, and counting it elsewhere would let it
     // sit unseen — which is exactly what happened to amendments before.
-    awaitingVc: is('submitted') + is('amendment_requested'),
+    // THE SAME SENTENCE AS THE SCREEN AND THE ROUTE. See `isAwaitingAuthority`.
+    awaitingVc: rows.filter((r) => isAwaitingAuthority(r)).length,
     approved: is('approved'),
     lettersReady: is('letter_generated'),
     issued: is('issued'),
@@ -1115,8 +1143,7 @@ export function matching(
   switch (counter) {
     case 'draft': return rows.filter((r) => r.status === 'draft');
     case 'awaitingReview': return rows.filter((r) => r.status === 'under_review');
-    case 'awaitingVc':
-      return rows.filter((r) => r.status === 'submitted' || r.status === 'amendment_requested');
+    case 'awaitingVc': return rows.filter((r) => isAwaitingAuthority(r));
     case 'approved': return rows.filter((r) => r.status === 'approved');
     case 'lettersReady': return rows.filter((r) => r.status === 'letter_generated');
     case 'issued': return rows.filter((r) => r.status === 'issued');

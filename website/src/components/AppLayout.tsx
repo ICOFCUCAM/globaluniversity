@@ -394,7 +394,7 @@ export default function AppLayout() {
       case 'announcements':
         return <AnnouncementModule />;
       case 'appointments':
-        return <AppointmentDashboard />;
+        return <AppointmentDashboard onNavigate={setCurrentView} />;
       case 'appointments-board':
         return <Appointments />;
       case 'correspondence':

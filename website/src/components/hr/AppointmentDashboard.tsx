@@ -31,7 +31,8 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { can } from '@/lib/roles';
 import { FOCUS } from '@/lib/portalTheme';
-import { Loader2, X } from 'lucide-react';
+import type { ViewType } from '@/lib/types';
+import { Loader2, X , AlertTriangle} from 'lucide-react';
 import {
   dashboardCounters, DASHBOARD_LABELS, matching, applyFilters, optionsFor,
   APPOINTMENT_FILTERS, boardStatus, ACTION_LABELS, EMPLOYMENT_LABELS,
@@ -50,10 +51,21 @@ const NEEDS_ACTION: (keyof DashboardCounters)[] = [
   'awaitingReview', 'awaitingVc', 'lettersReady', 'awaitingAcceptance', 'expiringSoon',
 ];
 
-export default function AppointmentDashboard() {
+export default function AppointmentDashboard(
+  // THE SAME SHAPE THE OTHER DASHBOARDS TAKE. `ViewType` rather than `string`,
+  // because the layout's setter is typed on the union and a looser parameter
+  // would not accept it — and because a view name this file invents should
+  // fail to compile rather than navigate nowhere.
+  { onNavigate }: { onNavigate?: (view: ViewType) => void } = {},
+) {
   const { user } = useAuth();
+  const mayAuthorize = can(user?.role, 'authorize-appointment');
+  // WHO HAS ANYTHING TO DO THERE. The board drafts, submits, approves,
+  // issues and closes; an executive reader who only watches is shown the
+  // numbers and not a link into a screen that will offer them nothing.
+  const mayAct = mayAuthorize || can(user?.role, 'draft-appointment');
   const maySee = can(user?.role, 'draft-appointment')
-    || can(user?.role, 'authorize-appointment')
+    || mayAuthorize
     || can(user?.role, 'view-executive-dashboard');
 
   const [rows, setRows] = useState<DashboardRow[] | null>(null);
@@ -250,6 +262,40 @@ export default function AppointmentDashboard() {
           <h2 className="text-sm font-semibold text-gray-700">
             {DASHBOARD_LABELS[drill]} — {shown.length}
           </h2>
+
+          {/* ---------------------------------------------------------------
+              WHERE THE DECISION IS TAKEN, SAID ON THE SCREEN THAT COUNTS IT.
+
+              The Vice-Chancellor opened this page, saw "Awaiting VC — 1", read
+              the one row, and asked where the approval was. Nothing here said.
+              This board is deliberately a board — "where every appointment
+              stands" — and the decision belongs on the one that drafts and
+              issues; what was missing was any sentence joining the two.
+
+              ONLY FOR THE OFFICE THAT HOLDS THE AUTHORITY, and only on the
+              counter that is waiting on them. Telling a registrar that
+              somebody else must approve something is noise.
+              --------------------------------------------------------------- */}
+          {drill === 'awaitingVc' && shown.length > 0 && mayAuthorize && (
+            <p className="flex flex-wrap items-center gap-2 rounded-lg border border-amber-300
+                          bg-amber-50 px-3 py-2 text-xs text-amber-900">
+              <AlertTriangle size={13} className="flex-shrink-0" />
+              <span>
+                {shown.length === 1 ? 'This one is' : `These ${shown.length} are`} waiting on
+                you. Approving or returning {shown.length === 1 ? 'it' : 'them'} is done on
+                the appointments board.
+              </span>
+              {onNavigate && (
+                <button
+                  type="button"
+                  onClick={() => onNavigate('appointments-board')}
+                  className={`rounded-lg bg-[#422e59] px-2.5 py-1 font-semibold text-white ${FOCUS}`}
+                >
+                  Open Draft &amp; submit
+                </button>
+              )}
+            </p>
+          )}
           {shown.length === 0 ? (
             <p className="text-sm text-gray-500">Nothing under {DASHBOARD_LABELS[drill]}.</p>
           ) : (
@@ -264,11 +310,40 @@ export default function AppointmentDashboard() {
                     <th className="px-3 py-2">Status</th>
                     <th className="px-3 py-2">Starts</th>
                     <th className="px-3 py-2">Ends</th>
+                    {onNavigate && mayAct && <th className="px-3 py-2" />}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
+                  {/* -------------------------------------------------------
+                      EVERY ROW IS A WAY THROUGH, not just the banner above.
+
+                      The University: "the dashboard should be an easy link to
+                      decision screen too." A board that shows you the work and
+                      makes you go and find the screen that does it is two
+                      screens pretending to be one.
+
+                      THE WHOLE ROW, because a small link at the end of a row
+                      is a target people miss — and only where there is
+                      somewhere to go and somebody who can act, so a reader
+                      with no business there is not given a dead button.
+                      ------------------------------------------------------- */}
                   {shown.map((r) => (
-                    <tr key={r.id}>
+                    <tr
+                      key={r.id}
+                      {...(onNavigate && mayAct ? {
+                        onClick: () => onNavigate('appointments-board'),
+                        role: 'link',
+                        tabIndex: 0,
+                        onKeyDown: (e: React.KeyboardEvent) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            onNavigate('appointments-board');
+                          }
+                        },
+                        className: `cursor-pointer hover:bg-amber-50 ${FOCUS}`,
+                        title: 'Open the appointments board to act on this one',
+                      } : {})}
+                    >
                       <td className="px-3 py-2 font-medium text-gray-900">{r.full_name}</td>
                       <td className="px-3 py-2">{r.position_title}</td>
                       <td className="px-3 py-2">{r.faculty || r.unit_name || '—'}</td>
@@ -280,6 +355,12 @@ export default function AppointmentDashboard() {
                       <td className="px-3 py-2">{boardStatus(r)}</td>
                       <td className="px-3 py-2">{r.start_date ?? '—'}</td>
                       <td className="px-3 py-2">{r.end_date ?? '—'}</td>
+                      {onNavigate && mayAct && (
+                        <td className="whitespace-nowrap px-3 py-2 text-right text-xs
+                                       font-semibold text-[#422e59]">
+                          Open &rarr;
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
