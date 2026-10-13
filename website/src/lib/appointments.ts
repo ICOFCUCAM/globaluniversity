@@ -1198,6 +1198,36 @@ export function optionsFor(rows: DashboardRow[], key: FilterKey): string[] {
   return Array.from(seen).sort();
 }
 
+/**
+ * Is there an archived letter for this appointment to act on?
+ *
+ * ---------------------------------------------------------------------------
+ * THE QUESTION THE SCREEN WAS ASKING INSTEAD
+ * ---------------------------------------------------------------------------
+ *
+ * "Re-render in the current format" was drawn only when the status was one of
+ * `issued`, `accepted` or `active`. The route it calls asks nothing of the
+ * kind — `reformat` loads the current letter and refuses with
+ * `nothing-to-reformat` if there is not one. That is the real precondition,
+ * and the screen was guessing at it with a list of statuses.
+ *
+ * The list is wrong in a state the University reaches by using the system
+ * properly. An amendment generates the superseding letter and puts the
+ * appointment back to `letter_generated`, and approving one puts it back to
+ * `approved` — WHILE `issued_at` STAYS SET, because somebody was issued a
+ * letter and that did not stop being true. So an appointment that plainly has
+ * a letter (the row offers "Open the issued letter (PDF)", which is gated on
+ * exactly that) was refused the one button that re-renders it.
+ *
+ * So this asks what the route asks: `issued_at` is proof a letter was archived
+ * and sent, and the four statuses are the ones only reachable after one was
+ * generated.
+ */
+export function hasALetter(a: Appointment & { issued_at?: string | null }): boolean {
+  return Boolean(a.issued_at)
+    || ['letter_generated', 'issued', 'accepted', 'active'].includes(String(a.status));
+}
+
 /** What the list column says, in the University\'s words rather than the code\'s. */
 export function boardStatus(a: Appointment): string {
   if (a.status === 'approved' || a.status === 'letter_generated') return 'Letter ready';

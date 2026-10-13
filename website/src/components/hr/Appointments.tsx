@@ -48,6 +48,7 @@ import {
   STATE_LABELS,
   type Appointment, type AppointmentState, type Allowance,
   isAwaitingAuthority,
+  hasALetter,
   MIN_CLOSURE_REASON,
   MIN_RETURN_REASON,
 } from '@/lib/appointments';
@@ -210,7 +211,9 @@ export default function Appointments() {
   // capability. Folding them together would have hidden the fact that nothing
   // was calling the letter route at all — which is exactly what happened.
   // -------------------------------------------------------------------------
-  async function letter(action: 'issue' | 'email' | 'whatsapp', id: string) {
+  async function letter(
+    action: 'issue' | 'email' | 'whatsapp' | 'reformat', id: string,
+  ) {
     setBusy(true);
     setNotice(null);
 
@@ -914,10 +917,34 @@ export default function Appointments() {
                     An appointment system whose central document cannot be
                     produced is a list of intentions.
                     ------------------------------------------------------ */}
-                {a.status === 'approved' && mayIssue && (
-                  <button disabled={busy} className={BTN_PRIMARY}
+                {/* AND IT SAYS WHICH OF THE TWO THINGS IT IS ABOUT TO DO.
+
+                    `issue` on an appointment that already carries an
+                    `issued_at` does not produce anything: it loads the
+                    archived letter and SENDS IT AGAIN, unchanged. That is
+                    deliberate — a crash after issuing must be resumable
+                    without a second record — but under a button reading
+                    "Issue the letter" it reads as a refusal to work. The
+                    University pressed it expecting a new rendering and got the
+                    old bytes delivered a second time, which is precisely what
+                    the button did.
+
+                    `letter_generated` is here too. An amendment archives the
+                    superseding letter and leaves the appointment at that
+                    status, and no button on this screen offered to send it:
+                    "Issue the letter" asked for `approved` and "Send it again"
+                    for `issued`, so version 2 sat in the archive with no door. */}
+                {['approved', 'letter_generated'].includes(String(a.status)) && mayIssue && (
+                  <button disabled={busy} className={a.issued_at ? BTN_SECONDARY : BTN_PRIMARY}
+                    title={a.issued_at
+                      ? 'This appointment is already issued. This sends the letter that is in '
+                        + 'the archive again, exactly as it is. It does not re-render it — for '
+                        + 'that, use “Re-render in the current format”.'
+                      : 'Produces the letter, archives the exact bytes, and sends it.'}
                     onClick={() => void letter('issue', a.id)}>
-                    <FileText size={14} /> Issue the letter
+                    <FileText size={14} /> {a.issued_at
+                      ? 'Send the archived letter again'
+                      : 'Issue the letter'}
                   </button>
                 )}
 
@@ -974,10 +1001,35 @@ export default function Appointments() {
                     only the layout did. An officer cannot use it to slip a
                     change past the amendment path.
                     --------------------------------------------------------- */}
-                {['issued', 'accepted', 'active'].includes(String(a.status)) && mayIssue && (
+                {/* ---------------------------------------------------------
+                    AND IT WENT TO THE WRONG ROUTE.
+
+                    The University: "the issue button that cause the letter to
+                    be reissue in the new format is not working. instead the
+                    letter is in the old format still."
+
+                    TWO FAULTS, AND EITHER ALONE WAS ENOUGH TO STOP IT.
+
+                    1. This called `act`, which posts to /api/appointments.
+                       `reformat` lives in /api/appointments/letter. The other
+                       route rejects it at its capability map — "Not an
+                       appointment action. They are: draft, edit, submit,
+                       decide, amend, close" — so the one act that re-renders a
+                       letter in the house style it is now has never once
+                       reached the code that performs it.
+
+                    2. It was drawn only on three statuses this row does not
+                       have. See `hasALetter`.
+
+                    The test that was meant to hold this asked
+                    `/action: 'reformat'/.test(screen)` — that the STRING
+                    appears somewhere in the file. It did. It was being handed
+                    to the wrong function on the same line.
+                    --------------------------------------------------------- */}
+                {hasALetter(a) && mayIssue && (
                   <button disabled={busy} className={BTN_SECONDARY}
                     title="Re-renders this letter in the current format. The reference, version, issue date and verification code do not change, and it is refused if any particular would."
-                    onClick={() => void act({ action: 'reformat', id: a.id })}>
+                    onClick={() => void letter('reformat', a.id)}>
                     <RefreshCw size={14} /> Re-render in the current format
                   </button>
                 )}

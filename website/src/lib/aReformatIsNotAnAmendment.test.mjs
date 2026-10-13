@@ -146,7 +146,17 @@ check('and writes it down once, not twice',
 
 console.log('\nThe screen offers both, and says which is which\n');
 
-check('the screen can reformat', /action: 'reformat'/.test(screen), true);
+// THIS CHECK USED TO READ `/action: 'reformat'/.test(screen)` — that the
+// STRING appears somewhere in the file. It did, in `act({ action: 'reformat' })`,
+// and `act` posts to /api/appointments, which has no such action and rejected
+// every press. A check that a word is present is not a check that anything
+// happens. It now asks the screen to hand `reformat` to the helper that posts
+// to the route implementing it; see theLetterIsReissuedInTheNewFormat.test.mjs
+// for the wiring held end to end.
+check('the screen sends reformat to the LETTER route',
+  /letter\('reformat', a\.id\)/.test(screen), true);
+check('…and never to the appointment route, which does not implement it',
+  /act\(\{ action: 'reformat'/.test(screen), false);
 check('…and still offers an amendment beside it', /action: 'amend'/.test(screen), true);
 check('…and explains that an amendment is for when the terms changed',
   /supersedes/.test(screen), true);
